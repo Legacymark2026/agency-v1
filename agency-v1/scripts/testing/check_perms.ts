@@ -1,1 +1,0 @@
-import { prisma } from "../../lib/prisma"; async function run() { const cu = await prisma.companyUser.findMany({ include: { user: true } }); console.log(JSON.stringify(cu, null, 2)); const comp = await prisma.company.findFirst(); console.log(JSON.stringify(comp?.defaultCompanySettings, null, 2)); } run().catch(console.error);
