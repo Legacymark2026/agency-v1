@@ -1,0 +1,1404 @@
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\admin.ts
+  12:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  95:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\ads.ts
+  4:10  warning  'prisma' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\auth.ts
+  9:10  warning  'redirect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\automation.ts
+    6:10  warning  'generateAIResponse' is defined but never used  @typescript-eslint/no-unused-vars
+    7:10  warning  'sendSlackMessage' is defined but never used    @typescript-eslint/no-unused-vars
+    7:28  warning  'makeHttpRequest' is defined but never used     @typescript-eslint/no-unused-vars
+    7:45  warning  'sendSMS' is defined but never used             @typescript-eslint/no-unused-vars
+    7:54  warning  'sendWhatsApp' is defined but never used        @typescript-eslint/no-unused-vars
+   24:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+   30:42  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   40:29  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   45:73  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   56:48  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   73:72  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+   85:21  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  157:27  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  167:79  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  170:21  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  179:46  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  191:61  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  217:17  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  231:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+  245:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+  259:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+  271:17  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  286:17  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\blog.ts
+   14:10  warning  'getSessionId' is defined but never used  @typescript-eslint/no-unused-vars
+   55:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  103:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  163:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  173:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  231:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  244:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  256:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  267:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  319:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  353:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  385:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  398:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  411:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\cms.ts
+  153:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  207:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  226:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  239:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\crm.ts
+   81:14  warning  'error' is defined but never used                   @typescript-eslint/no-unused-vars
+  122:14  warning  'error' is defined but never used                   @typescript-eslint/no-unused-vars
+  145:14  warning  'error' is defined but never used                   @typescript-eslint/no-unused-vars
+  161:16  warning  'pipelineValue' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  256:56  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  261:46  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  276:58  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  278:69  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  279:22  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  279:30  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  324:56  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  367:26  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  383:40  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  411:58  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  416:26  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\inbox.ts
+   43:22   error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  140:105  error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  181:51   error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  186:41   error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  266:15   error  'channel' is never reassigned. Use 'const' instead       prefer-const
+  266:24   error  'senderName' is never reassigned. Use 'const' instead    prefer-const
+  266:36   error  'senderHandle' is never reassigned. Use 'const' instead  prefer-const
+  266:50   error  'content' is never reassigned. Use 'const' instead       prefer-const
+  355:21   error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  393:21   error  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\leads.ts
+    5:28  warning  'parseUTMParams' is defined but never used  @typescript-eslint/no-unused-vars
+   75:31  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  174:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  206:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  223:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  269:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  293:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  330:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  352:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  368:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  381:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  417:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\marketing\analytics.ts
+  94:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\marketing\automation.ts
+  22:20  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  23:12  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  64:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\marketing\campaigns.ts
+  72:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\projects.ts
+   21:18  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   77:18  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  112:11  warning  'isTemplate' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  112:33  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  113:11  warning  'relatedProjects' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  113:38  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  156:11  warning  'isTemplate' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  156:33  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  157:11  warning  'relatedProjects' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  157:38  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  211:21  warning  '_id' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  211:26  warning  'createdAt' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  211:37  warning  'updatedAt' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  211:48  warning  'slug' is assigned a value but never used             @typescript-eslint/no-unused-vars
+  211:54  warning  'title' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  216:48  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  217:48  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  218:52  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  219:42  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  251:14  warning  'error' is defined but never used                     @typescript-eslint/no-unused-vars
+  278:14  warning  'error' is defined but never used                     @typescript-eslint/no-unused-vars
+  315:14  warning  'error' is defined but never used                     @typescript-eslint/no-unused-vars
+  343:14  warning  'error' is defined but never used                     @typescript-eslint/no-unused-vars
+  358:14  warning  'error' is defined but never used                     @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\settings.ts
+   32:22  warning  'e' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   45:22  warning  'e' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   52:17  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   58:22  warning  'e' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+   77:25  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   88:25  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   99:25  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  237:21  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  246:21  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  255:21  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  265:14  warning  'error' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\actions\vip-action.ts
+   5:10  warning  'revalidatePath' is defined but never used  @typescript-eslint/no-unused-vars
+  99:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\architecture\[id]\not-found.tsx
+  8:13  error  Do not use an `<a>` element to navigate to `/dashboard/admin/architecture/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\architecture\[id]\page.tsx
+  19:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\automation\builder\page.tsx
+   44:64  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+   54:11  warning  'router' is assigned a value but never used                                                                                                     @typescript-eslint/no-unused-vars
+   69:8   warning  React Hook useEffect has missing dependencies: 'loadLatestWorkflow' and 'loadWorkflowById'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  114:46  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  129:47  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  137:41  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  242:56  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  253:22  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  265:56  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  266:56  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  267:53  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  267:97  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  276:47  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  286:51  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+  362:21  error    Unexpected any. Specify a different type                                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\automation\executions\execution-list.tsx
+  30:11  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  37:12  warning  'selectedLog' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  37:25  warning  'setSelectedLog' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  37:52  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\automation\page.tsx
+  47:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\automation\workflow-list.tsx
+  6:24  warning  'Play' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\crm\leads\[id]\page.tsx
+    7:44  warning  'Star' is defined but never used                                 @typescript-eslint/no-unused-vars
+    7:60  warning  'Clock' is defined but never used                                @typescript-eslint/no-unused-vars
+  134:49  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  134:75  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\crm\page.tsx
+  19:10  warning  'Button' is defined but never used    @typescript-eslint/no-unused-vars
+  22:10  warning  'Download' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\admin\crm\pipeline\page.tsx
+  12:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\analytics\page.tsx
+   38:44  warning  'Target' is defined but never used         @typescript-eslint/no-unused-vars
+   39:23  warning  'Sparkles' is defined but never used       @typescript-eslint/no-unused-vars
+   39:33  warning  'Activity' is defined but never used       @typescript-eslint/no-unused-vars
+   39:51  warning  'ArrowRight' is defined but never used     @typescript-eslint/no-unused-vars
+   40:5   warning  'DollarSign' is defined but never used     @typescript-eslint/no-unused-vars
+   40:17  warning  'FlaskConical' is defined but never used   @typescript-eslint/no-unused-vars
+   40:31  warning  'Search' is defined but never used         @typescript-eslint/no-unused-vars
+   40:39  warning  'Share2' is defined but never used         @typescript-eslint/no-unused-vars
+   40:47  warning  'MessageSquare' is defined but never used  @typescript-eslint/no-unused-vars
+   40:62  warning  'Zap' is defined but never used            @typescript-eslint/no-unused-vars
+  179:53  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\experts\page.tsx
+    6:10   warning  'Plus' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   13:10   warning  'Card' is defined but never used                                                                                     @typescript-eslint/no-unused-vars
+   13:16   warning  'CardContent' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   22:18   error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   49:13   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   51:18   warning  'error' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+   68:43   error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   91:18   warning  'error' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+  108:18   warning  'error' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+  141:108  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                      react/no-unescaped-entities
+  141:117  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                      react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\inbox\[conversationId]\page.tsx
+  10:5   warning  'searchParams' is defined but never used  @typescript-eslint/no-unused-vars
+  24:56  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  43:67  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:65  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  62:61  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\inbox\page.tsx
+   9:43  warning  'searchParams' is defined but never used  @typescript-eslint/no-unused-vars
+  18:67  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\marketing\automation\page.tsx
+   8:10  warning  'revalidatePath' is defined but never used  @typescript-eslint/no-unused-vars
+  57:81  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\marketing\campaigns\[id]\page.tsx
+   4:52  warning  'CardDescription' is defined but never used  @typescript-eslint/no-unused-vars
+   9:35  warning  'GripVertical' is defined but never used     @typescript-eslint/no-unused-vars
+  23:38  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  58:38  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  58:56  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  93:49  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\marketing\campaigns\page.tsx
+  87:30  error  'Link' is not defined  react/jsx-no-undef
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\marketing\links\page.tsx
+  59:51  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  59:63  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\posts\page.tsx
+   4:30  warning  'ExternalLink' is defined but never used    @typescript-eslint/no-unused-vars
+   5:10  warning  'revalidatePath' is defined but never used  @typescript-eslint/no-unused-vars
+  43:46  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\projects\page.tsx
+    1:45  warning  'deleteProject' is defined but never used          @typescript-eslint/no-unused-vars
+    1:60  warning  'updateProjectsStatus' is defined but never used   @typescript-eslint/no-unused-vars
+    4:16  warning  'Edit' is defined but never used                   @typescript-eslint/no-unused-vars
+    4:22  warning  'Trash2' is defined but never used                 @typescript-eslint/no-unused-vars
+    4:30  warning  'Eye' is defined but never used                    @typescript-eslint/no-unused-vars
+    4:35  warning  'Star' is defined but never used                   @typescript-eslint/no-unused-vars
+    4:57  warning  'ExternalLink' is defined but never used           @typescript-eslint/no-unused-vars
+    6:10  warning  'revalidatePath' is defined but never used         @typescript-eslint/no-unused-vars
+   29:11  warning  'statusColors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   78:51  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  122:46  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  128:46  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  134:46  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\security\_components\logs-table.tsx
+   2:10  warning  'Badge' is defined but never used         @typescript-eslint/no-unused-vars
+  22:14  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\security\_components\security-stats.tsx
+  2:23  warning  'ShieldCheck' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\settings\page.tsx
+  43:86  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(dashboard)\dashboard\users\page.tsx
+  3:26  warning  'Trash2' is defined but never used          @typescript-eslint/no-unused-vars
+  3:34  warning  'Shield' is defined but never used          @typescript-eslint/no-unused-vars
+  4:10  warning  'revalidatePath' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\blog\[slug]\page.tsx
+   98:23  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   99:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  207:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  283:71  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  288:69  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\nosotros\page.tsx
+   6:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  48:75  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  68:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\politica-cookies\page.tsx
+  3:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+  5:59  warning  'Lock' is defined but never used       @typescript-eslint/no-unused-vars
+  5:86  warning  'User' is defined but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\politica-privacidad\page.tsx
+    3:10  warning  'useEffect' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    4:15  warning  'Metadata' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  224:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\terms\page.tsx
+    3:10   warning  'useEffect' is defined but never used                            @typescript-eslint/no-unused-vars
+    5:42   warning  'FileText' is defined but never used                             @typescript-eslint/no-unused-vars
+  130:111  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:120  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:123  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:134  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:145  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:156  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:159  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  130:170  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  158:129  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  158:143  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\vip\page.tsx
+  2:10  warning  'Sparkles' is defined but never used  @typescript-eslint/no-unused-vars
+  2:25  warning  'Lock' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\api\analytics\heartbeat\route.ts
+   9:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  43:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\api\analytics\track\route.ts
+  187:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\api\leads\capture\route.ts
+  144:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\auth.config.ts
+  17:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  18:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\automation\CustomNodes.tsx
+   12:5    warning  'Webhook' is defined but never used       @typescript-eslint/no-unused-vars
+   13:5    warning  'Smartphone' is defined but never used    @typescript-eslint/no-unused-vars
+   21:100  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   27:45   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   37:33   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:47   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   72:49   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:46   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:45   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  125:44   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:49   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  166:42   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\automation\NodeConfigPanel.tsx
+  12:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\automation\Sidebar.tsx
+  22:90  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\image-upload-preview.tsx
+  31:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\image-upload-preview.tsx:31:9
+  29 |         }
+  30 |
+> 31 |         setIsLoading(true);
+     |         ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |         const img = new window.Image();
+  33 |         img.onload = () => {
+  34 |             setIsValidImage(true);  react-hooks/set-state-in-effect
+  91:50  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\post-form.tsx
+  55:46  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  94:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\project-category-selector.tsx
+  3:20  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\project-form.tsx
+   11:60   warning  'Globe' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   11:92   warning  'ImageIcon' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   11:103  warning  'Copy' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   21:10   warning  'RelatedProjectSelector' is defined but never used                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   43:18   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   55:18   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   60:21   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   61:16   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   96:49   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  109:41   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  123:37   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  175:18   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  339:49   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\project-list.tsx
+    7:36   warning  'Search' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+    7:44   warning  'Filter' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   49:17   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   53:121  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   94:29   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  188:58   warning  'categories' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\related-project-selector.tsx
+  30:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\social-preview.tsx
+  20:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\tag-input.tsx
+  3:28  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\team-member-input.tsx
+  58:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\cms\tech-stack-selector.tsx
+  4:13  warning  'Plus' is defined but never used    @typescript-eslint/no-unused-vars
+  6:10  warning  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+  7:10  warning  'Input' is defined but never used   @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\crm\export-button.tsx
+  8:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  9:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\crm\object-tabs.tsx
+   7:13  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   8:24  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   9:22  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  10:18  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  13:52  warning  'relationshipsFrom' is defined but never used  @typescript-eslint/no-unused-vars
+  13:71  warning  'relationshipsTo' is defined but never used    @typescript-eslint/no-unused-vars
+  13:88  warning  'permissions' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\crm\recent-automations.tsx
+  7:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\crm\revenue-forecast.tsx
+  65:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\date-range-picker.tsx
+  14:18  warning  'setDate' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\experts\ExpertForm.tsx
+  19:33  warning  'SocialLink' is defined but never used    @typescript-eslint/no-unused-vars
+  45:48  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\experts\SortableExpertItem.tsx
+  18:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\forms\vip-form.tsx
+   7:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+  14:10  warning  'SpotlightCard' is defined but never used    @typescript-eslint/no-unused-vars
+  51:18  warning  'e' is defined but never used                @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\chat-window.tsx
+    7:12  warning  'Forward' is defined but never used                   @typescript-eslint/no-unused-vars
+    7:29  warning  'Copy' is defined but never used                      @typescript-eslint/no-unused-vars
+   10:10  warning  'Input' is defined but never used                     @typescript-eslint/no-unused-vars
+   23:15  warning  'CheckCircle2' is defined but never used              @typescript-eslint/no-unused-vars
+   27:88  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+   87:28  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  105:11  warning  'handleCloseDeal' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  202:41  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+  387:40  error    Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\contact-sidebar.tsx
+   4:5   warning  'User' is defined but never used          @typescript-eslint/no-unused-vars
+   4:32  warning  'Tag' is defined but never used           @typescript-eslint/no-unused-vars
+   4:37  warning  'Calendar' is defined but never used      @typescript-eslint/no-unused-vars
+   5:5   warning  'Facebook' is defined but never used      @typescript-eslint/no-unused-vars
+   5:15  warning  'Linkedin' is defined but never used      @typescript-eslint/no-unused-vars
+   5:25  warning  'Instagram' is defined but never used     @typescript-eslint/no-unused-vars
+   5:36  warning  'ExternalLink' is defined but never used  @typescript-eslint/no-unused-vars
+  11:66  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\conversation-list.tsx
+    6:26  warning  'SlidersHorizontal' is defined but never used  @typescript-eslint/no-unused-vars
+   14:16  warning  'TabsContent' is defined but never used        @typescript-eslint/no-unused-vars
+   16:10  warning  'User' is defined but never used               @typescript-eslint/no-unused-vars
+   16:16  warning  'Users' is defined but never used              @typescript-eslint/no-unused-vars
+   16:23  warning  'UserX' is defined but never used              @typescript-eslint/no-unused-vars
+  107:70  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\inbox-layout.tsx
+   4:10  warning  'usePathname' is defined but never used                @typescript-eslint/no-unused-vars
+   4:23  warning  'useRouter' is defined but never used                  @typescript-eslint/no-unused-vars
+   4:34  warning  'useSearchParams' is defined but never used            @typescript-eslint/no-unused-vars
+   7:27  warning  'Filter' is defined but never used                     @typescript-eslint/no-unused-vars
+   7:35  warning  'Phone' is defined but never used                      @typescript-eslint/no-unused-vars
+   7:42  warning  'Video' is defined but never used                      @typescript-eslint/no-unused-vars
+   7:49  warning  'Info' is defined but never used                       @typescript-eslint/no-unused-vars
+  20:27  warning  'setIsSidebarOpen' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\meta-sync-button.tsx
+  11:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  26:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\quick-replies.tsx
+   6:5   warning  'CommandInput' is defined but never used  @typescript-eslint/no-unused-vars
+  10:15  warning  'Clock' is defined but never used         @typescript-eslint/no-unused-vars
+  10:22  warning  'ThumbsUp' is defined but never used      @typescript-eslint/no-unused-vars
+  32:42  warning  'query' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\right-sidebar.tsx
+    3:10  warning  'useState' is defined but never used      @typescript-eslint/no-unused-vars
+    5:32  warning  'Tag' is defined but never used           @typescript-eslint/no-unused-vars
+    5:37  warning  'Clock' is defined but never used         @typescript-eslint/no-unused-vars
+    6:29  warning  'AlertCircle' is defined but never used   @typescript-eslint/no-unused-vars
+    6:42  warning  'Plus' is defined but never used          @typescript-eslint/no-unused-vars
+    6:48  warning  'X' is defined but never used             @typescript-eslint/no-unused-vars
+    9:10  warning  'Badge' is defined but never used         @typescript-eslint/no-unused-vars
+   16:77  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   16:96  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:94  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\inbox\simulation-panel.tsx
+  155:38  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\integrations-form.tsx
+  40:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  52:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\layout\footer.tsx
+  13:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\bento-services.tsx
+    4:17   warning  'useRef' is defined but never used        @typescript-eslint/no-unused-vars
+    4:25   warning  'useState' is defined but never used      @typescript-eslint/no-unused-vars
+    4:35   warning  'useEffect' is defined but never used     @typescript-eslint/no-unused-vars
+    5:54   warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars
+    5:103  warning  'Globe' is defined but never used         @typescript-eslint/no-unused-vars
+  119:11   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\case-studies.tsx
+  4:43  warning  'Calendar' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\cta.tsx
+  5:10  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\faq-accordion.tsx
+  52:88  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  52:98  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\futuristic-hero.tsx
+  6:10  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\hero.tsx
+  6:32  warning  'Terminal' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\infinite-logos.tsx
+  3:8  warning  'Image' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\logo-trust.tsx
+  4:8  warning  'Image' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\methodology.tsx
+  5:63  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\strategic-alliances.tsx
+  4:10  warning  'useState' is defined but never used   @typescript-eslint/no-unused-vars
+  4:20  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\value-proposition.tsx
+  49:26  warning  'index' is defined but never used         @typescript-eslint/no-unused-vars
+  49:42  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\settings-form.tsx
+   8:20  warning  'useEffect' is defined but never used                    @typescript-eslint/no-unused-vars
+  35:46  warning  'currentSystemTheme' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  58:35  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  81:18  warning  'e' is defined but never used                            @typescript-eslint/no-unused-vars
+  89:38  error    Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\settings\meta-disconnect-button.tsx
+  22:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\settings\meta-integrations.tsx
+  2:36  warning  'disconnectIntegration' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\theme-provider.tsx
+  43:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\theme-provider.tsx:43:13
+  41 |         const stored = localStorage.getItem(storageKey) as Theme | null;
+  42 |         if (stored) {
+> 43 |             setThemeState(stored);
+     |             ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  44 |         }
+  45 |         setMounted(true);
+  46 |     }, [storageKey]);  react-hooks/set-state-in-effect
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\tools\project-estimator.tsx
+  41:12  warning  'showResult' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\ambient-background.tsx
+  10:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\ambient-background.tsx:10:9
+   8 |
+   9 |     useEffect(() => {
+> 10 |         setMounted(true);
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  11 |     }, []);
+  12 |
+  13 |     if (!mounted) return null;  react-hooks/set-state-in-effect
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\command-menu.tsx
+  5:53  warning  'X' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\command.tsx
+  26:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\image-upload.tsx
+  27:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\image-upload.tsx:27:9
+  25 |
+  26 |     useEffect(() => {
+> 27 |         setIsMounted(true);
+     |         ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |     }, []);
+  29 |
+  30 |     const onUpload = (result: any) => {  react-hooks/set-state-in-effect
+  30:31  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  43:29  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\magnetic-button.tsx
+  39:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\meteor-card.tsx
+  32:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\meteor-card.tsx:32:9
+  30 |             animationDuration: Math.floor(Math.random() * (10 - 2) + 2) + "s",
+  31 |         }));
+> 32 |         setMeteorStyles(styles);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  33 |     }, [number]);
+  34 |
+  35 |     return (  react-hooks/set-state-in-effect
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\newsletter-popup.tsx
+  59:63  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  59:97  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\scramble-text.tsx
+   4:10  warning  'motion' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  24:13  error    Error: Cannot access variable before it is declared
+
+`startScramble` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\scramble-text.tsx:24:13
+  22 |     useEffect(() => {
+  23 |         if (reveal && isInView) {
+> 24 |             startScramble();
+     |             ^^^^^^^^^^^^^ `startScramble` accessed before it is declared
+  25 |         }
+  26 |     }, [reveal, isInView]);
+  27 |
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\scramble-text.tsx:28:5
+  26 |     }, [reveal, isInView]);
+  27 |
+> 28 |     const startScramble = async () => {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 29 |         if (isScrambling) return;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 30 |         setIsScrambling(true);
+     …
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 58 |         }, speed);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 59 |     };
+     | ^^^^^^^ `startScramble` is declared here
+  60 |
+  61 |     return (
+  62 |         <span ref={ref} className={className} onMouseEnter={!reveal ? startScramble : undefined}>  react-hooks/immutability
+  26:8   warning  React Hook useEffect has a missing dependency: 'startScramble'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/exhaustive-deps
+  39:29  warning  'prev' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\ui\social-links-input.tsx
+  20:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\hooks\use-facebook-pixel.ts
+   6:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  18:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\ai.ts
+  8:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\auth.ts
+   20:39  warning  'profile' is defined but never used       @typescript-eslint/no-unused-vars
+  153:47  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:44  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\crm-charts-config.ts
+  1:10  warning  'format' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\csv-export.ts
+  3:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\data.ts
+   24:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+   39:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+   66:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+   80:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+   91:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  101:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\email.ts
+  34:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations.ts
+   2:11  warning  'WebhookPayload' is defined but never used  @typescript-eslint/no-unused-vars
+  37:83  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  51:17  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\facebook.ts
+  37:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\instagram.ts
+  26:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\linkedin.ts
+  24:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+  28:24  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\mock.ts
+  19:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+  23:24  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\twitter.ts
+  26:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+  31:24  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\types.ts
+   6:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  19:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\whatsapp.ts
+  45:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\integrations\youtube.ts
+  24:27  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+  28:24  warning  'request' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\meta-service.ts
+    2:10   warning  'auth' is defined but never used          @typescript-eslint/no-unused-vars
+  123:105  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  123:123  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\lib\services\meta-sync.ts
+   43:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   48:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  156:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  183:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  197:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\actions\analytics.ts
+     4:26   warning  'revalidateTag' is defined but never used        @typescript-eslint/no-unused-vars
+    71:26   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   109:66   warning  'prevEvents' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   110:28   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   121:28   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   130:28   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   133:28   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   139:62   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   142:75   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   144:56   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   147:60   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   151:63   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   153:57   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   155:61   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   203:32   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   207:32   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   214:56   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   240:45   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   249:35   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   275:44   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   281:57   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   284:29   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   285:26   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   290:27   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   290:35   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   310:44   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   316:47   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   322:34   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   331:57   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   334:29   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   335:26   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   342:27   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   342:35   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   363:44   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   369:50   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   376:37   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   381:57   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   383:34   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   395:25   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   395:33   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   414:49   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   424:47   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   439:44   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   445:41   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   458:52   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   527:31   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   542:42   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   548:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   568:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   580:40   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   628:26   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   637:14   warning  'error' is defined but never used                @typescript-eslint/no-unused-vars
+   649:26   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   658:14   warning  'error' is defined but never used                @typescript-eslint/no-unused-vars
+   687:48   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   690:49   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   695:64   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   698:64   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   701:67   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   734:15   warning  'endDate' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   738:43   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   762:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   802:47   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   808:71   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   812:22   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   816:23   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   816:31   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   818:22   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   825:42   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   831:60   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   835:22   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   839:23   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   839:31   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   841:22   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   861:124  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   881:46   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   890:45   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   898:70   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   913:33   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   954:42   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   963:32   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   994:41   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1053:43   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1059:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1099:43   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1114:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1240:18   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1274:40   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1287:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1315:43   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1324:30   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1358:50   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1363:51   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1368:38   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1406:15   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1407:14   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1430:46   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1435:36   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1461:33   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  1475:41   error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\ab-test-results.tsx
+   3:24  warning  'TrendingUp' is defined but never used    @typescript-eslint/no-unused-vars
+   3:56  warning  'XCircle' is defined but never used       @typescript-eslint/no-unused-vars
+  38:60  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:73  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\activity-heatmap.tsx
+   4:10  warning  'Tooltip' is defined but never used  @typescript-eslint/no-unused-vars
+  51:37  warning  'i' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\analytics-provider.tsx
+   13:59  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  104:42  error    Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\analytics-provider.tsx:104:42
+  102 |
+  103 |     // Refs for tracking
+> 104 |     const pageStartTime = useRef<number>(Date.now());
+      |                                          ^^^^^^^^^^ Cannot call impure function
+  105 |     const currentEventId = useRef<string | null>(null);
+  106 |     const scrollDepth = useRef<number>(0);
+  107 |     const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);  react-hooks/purity
+  132:31  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  175:78  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  196:18  warning  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\annotations-timeline.tsx
+   4:31  warning  'X' is defined but never used                        @typescript-eslint/no-unused-vars
+  65:25  warning  'setAnnotations' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\bounce-trend.tsx
+  21:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\browser-os-stats.tsx
+  11:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\channel-attribution.tsx
+   3:90  warning  'Legend' is defined but never used        @typescript-eslint/no-unused-vars
+  11:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  16:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\device-chart.tsx
+  13:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\engagement-radar.tsx
+  15:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\export-button.tsx
+   8:12  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:32  warning  'data' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\funnel-chart.tsx
+  10:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  56:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\geo-map.tsx
+  3:10  warning  'MapPin' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\goals-widget.tsx
+  3:18  warning  'TrendingUp' is defined but never used    @typescript-eslint/no-unused-vars
+  3:30  warning  'TrendingDown' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\google-tag-manager.tsx
+  10:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\google-tag-manager.tsx:10:9
+   8 |
+   9 |     useEffect(() => {
+> 10 |         setConsent(localStorage.getItem("cookie_consent"));
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  11 |     }, []);
+  12 |
+  13 |     if (!gtmId || consent !== "accepted") return null;  react-hooks/set-state-in-effect
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\kpi-alerts.tsx
+  4:37  warning  'TrendingDown' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\page-speed-metrics.tsx
+  17:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\performance-score.tsx
+  4:10  warning  'Gauge' is defined but never used           @typescript-eslint/no-unused-vars
+  6:11  warning  'ScoreItemProps' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\quick-insights.tsx
+  11:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\revenue-tracker.tsx
+   3:34  warning  'TrendingDown' is defined but never used  @typescript-eslint/no-unused-vars
+  18:31  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\seo-metrics.tsx
+  12:5   warning  'Cell' is defined but never used          @typescript-eslint/no-unused-vars
+  20:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:59  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  26:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\session-histogram.tsx
+  11:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\top-pages.tsx
+  3:10  warning  'ArrowUpRight' is defined but never used    @typescript-eslint/no-unused-vars
+  3:24  warning  'ArrowDownRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\track-page-event.tsx
+  9:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\traffic-chart.tsx
+  19:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\traffic-sources.tsx
+  13:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\analytics\components\user-flow.tsx
+  11:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\auth\lib\auth.ts
+  27:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  28:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\blog\actions\blog.ts
+   14:10  warning  'getSessionId' is defined but never used  @typescript-eslint/no-unused-vars
+   55:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  103:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  163:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  173:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  231:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  244:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  256:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  267:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  319:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  353:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  385:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  398:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  411:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\blog\components\blog-comments.tsx
+    4:38  warning  'User' is defined but never used                  @typescript-eslint/no-unused-vars
+   24:22  warning  'setComments' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  246:33  warning  'postId' is defined but never used                @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\blog\components\blog-engagement.tsx
+  4:22  warning  'MessageCircle' is defined but never used  @typescript-eslint/no-unused-vars
+  4:62  warning  'Share2' is defined but never used         @typescript-eslint/no-unused-vars
+  5:10  warning  'Button' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\blog\components\blog-post-components.tsx
+    4:10  warning  'Button' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   51:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  171:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\blog\components\blog-search.tsx
+    3:44  warning  'FormEvent' is defined but never used                            @typescript-eslint/no-unused-vars
+  146:66  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  146:74  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\actions\crm.ts
+   34:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   64:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   93:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  172:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  187:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\CampaignManager.tsx
+   22:77  warning  'Campaign' is defined but never used      @typescript-eslint/no-unused-vars
+   49:48  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   52:60  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  138:49  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\CsvExportButton.tsx
+  6:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\DealCard.tsx
+  24:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  97:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\DealContextMenu.tsx
+  15:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\DealDetailsDialog.tsx
+  33:18  warning  'Calendar' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  34:10  warning  'formatDistanceToNow' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  54:11  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  61:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  79:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\DealDetailsDialog.tsx:79:19
+  77 |     // Watch stage to conditionally show lost reason
+  78 |     // Watch stage to conditionally show lost reason
+> 79 |     const stage = form.watch("stage"); // accepted for now, will fix if blocking.
+     |                   ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  80 |     // Ideally use useWatch from react-hook-form to avoid this warning, but keeping simple for now or ignoring line if needed. 
+  81 |     // Actually, I'll switch to useWatch if available or just ignore the warning line for now as it's a specific library behavior.
+  82 |     // Let's try to just suppress it for this line as refactoring to useWatch might require more changes  react-hooks/incompatible-library
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\DealExport.tsx
+  9:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\KanbanBoard.tsx
+   19:10  warning  'formatCurrency' is defined but never used       @typescript-eslint/no-unused-vars
+   20:10  warning  'formatDistanceToNow' is defined but never used  @typescript-eslint/no-unused-vars
+   21:10  warning  'Card' is defined but never used                 @typescript-eslint/no-unused-vars
+   21:16  warning  'CardContent' is defined but never used          @typescript-eslint/no-unused-vars
+   21:29  warning  'CardDescription' is defined but never used      @typescript-eslint/no-unused-vars
+   21:46  warning  'CardHeader' is defined but never used           @typescript-eslint/no-unused-vars
+   21:58  warning  'CardTitle' is defined but never used            @typescript-eslint/no-unused-vars
+   22:10  warning  'Badge' is defined but never used                @typescript-eslint/no-unused-vars
+   28:12  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  115:59  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  148:63  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  150:50  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  151:54  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  285:49  warning  'i' is defined but never used                    @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\LeadDashboard.tsx
+  24:88  warning  'Lead' is defined but never used          @typescript-eslint/no-unused-vars
+  26:18  warning  'Filter' is defined but never used        @typescript-eslint/no-unused-vars
+  42:40  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  98:40  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\LeadSourceBadge.tsx
+  65:30  warning  'i' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\NewDealDialog.tsx
+  55:46  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  65:37  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  79:18  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\fields-manager.tsx
+   5:24  warning  'Edit' is defined but never used                 @typescript-eslint/no-unused-vars
+  34:33  warning  'definitionId' is defined but never used         @typescript-eslint/no-unused-vars
+  34:89  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  40:21  warning  'setLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  67:33  warning  'fieldId' is defined but never used              @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\object-tabs.tsx
+  17:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  18:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  19:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\permissions-manager.tsx
+  3:38  warning  'definitionId' is defined but never used  @typescript-eslint/no-unused-vars
+  3:52  warning  'permissions' is defined but never used   @typescript-eslint/no-unused-vars
+  3:67  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\relationships-manager.tsx
+  3:40  warning  'definitionId' is defined but never used       @typescript-eslint/no-unused-vars
+  3:54  warning  'relationshipsFrom' is defined but never used  @typescript-eslint/no-unused-vars
+  3:73  warning  'relationshipsTo' is defined but never used    @typescript-eslint/no-unused-vars
+  3:92  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\crm\components\team-hierarchy.tsx
+  41:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  44:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\leads\actions\leads.ts
+    5:28  warning  'parseUTMParams' is defined but never used  @typescript-eslint/no-unused-vars
+   75:31  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  174:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  206:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  223:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  269:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  293:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  330:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  352:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  368:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  381:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  417:21  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\marketing\actions\marketing.ts
+   10:42  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   15:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   21:73  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:72  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   68:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   82:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  173:69  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  215:31  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  219:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  251:46  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  335:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  353:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\marketing\components\CustomNodes.tsx
+   3:42  warning  'MessageSquare' is defined but never used  @typescript-eslint/no-unused-vars
+   3:57  warning  'Globe' is defined but never used          @typescript-eslint/no-unused-vars
+   3:64  warning  'Smartphone' is defined but never used     @typescript-eslint/no-unused-vars
+   3:76  warning  'MessageCircle' is defined but never used  @typescript-eslint/no-unused-vars
+  76:31  warning  'data' is defined but never used           @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\marketing\components\NodeConfigPanel.tsx
+   8:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   9:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  25:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\modules\portfolio\actions\projects.ts
+   21:18  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   74:18  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  216:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  253:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  281:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  296:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\next.config.ts
+  1:15  warning  'NextConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\proxy.ts
+  1:10  warning  'NextRequest' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\check-app-mode.ts
+  12:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\check-instagram-details.ts
+  17:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\check-permissions-deep.ts
+  44:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\check-specific-page.ts
+  45:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  58:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\check_meta_account.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\check_users_debug.js
+  2:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\create_admin.js
+   2:26  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   3:16  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  44:14  warning  'e' is defined but never used            @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\debug-conversations.ts
+  20:43  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  36:15  warning  'debugUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  40:14  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\debug-meta-connection.ts
+  37:14  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  60:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\debug_integrations.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\deep-ig-probe.ts
+  12:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\demo_full_system.ts
+   80:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\demo_omnichannel.ts
+  41:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  64:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\diagnose-facebook.ts
+  53:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\force-ig-fetch.ts
+  16:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  64:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\force-link-page.ts
+  47:64  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\force-specific-convo.ts
+  12:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\force-subscribe.ts
+  12:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\link_facebook_to_admin.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\link_user_company.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\promote-admin.js
+  2:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\recheck-instagram.ts
+  16:43  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  54:15  warning  'tasksUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  59:51  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  60:75  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  61:14  warning  'e' is defined but never used                  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\reset_admin_password.js
+  2:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\seed_workflow.ts
+  49:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\setup-e2e-user.ts
+  13:11  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\setup_admin_company.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\system-check.ts
+  16:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test-crm-architecture.js
+  2:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test-crm-marketing.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test-inbox-flow.ts
+  99:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test-tokens.ts
+  12:43  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  15:11  warning  'userToken' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  48:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+  56:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+  64:14  warning  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test_login.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify-execution.ts
+  58:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify-instagram.ts
+  20:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify-login-flow.ts
+  2:10  warning  'loadEnvConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify-password.ts
+  3:10  warning  'hash' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify-public-endpoints.ts
+  17:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify_meta_connection.js
+  2:15  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  3:1   error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\verify_setup.js
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\shared\components\ui\input.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\shared\components\ui\lightbox.tsx
+  40:18  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\shared\components\ui\textarea.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\shared\lib\email.ts
+  34:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\tailwind.config.js
+  85:15  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  85:47  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\types\inbox.ts
+  8:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\types\next-auth.d.ts
+  2:8  warning  'NextAuth' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 812 problems (481 errors, 331 warnings)
+

@@ -1,0 +1,21 @@
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\servicios\page.tsx
+  87:23  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\servicios\page.tsx:87:23
+  85 |     const [duration, setDuration] = useState(15);
+  86 |      
+> 87 |     useEffect(() => { setDuration(Math.random() * 10 + 10); }, []);
+     |                       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  88 |
+  89 |     return (
+  90 |         <motion.div  react-hooks/set-state-in-effect
+
+✖ 1 problem (1 error, 0 warnings)
+

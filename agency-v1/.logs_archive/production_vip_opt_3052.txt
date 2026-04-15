@@ -1,0 +1,37 @@
+▲ Next.js 16.1.6
+- Local:         http://localhost:3052
+- Network:       http://192.168.40.84:3052
+
+✓ Starting...
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\hboho\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\hboho\.gemini\antigravity\scratch\legacymark\package-lock.json
+
+✓ Ready in 3s
+Error [InvariantError]: Invariant: The client reference manifest for route "/soluciones/automatizacion" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/soluciones/automatizacion" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/soluciones/automatizacion" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error: Failed to load static file for page: /500 ENOENT: no such file or directory, open 'C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\pages\500.html'
+    at ignore-listed frames
+Error [InvariantError]: Invariant: The client reference manifest for route "/soluciones/web-dev" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/soluciones/web-dev" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/soluciones/web-dev" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+Error [InvariantError]: Invariant: The client reference manifest for route "/servicios" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/servicios" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/servicios" does not exist. This is a bug in Next.js.
+    at Object.get (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_33c85ecc._.js:1:14254)
+⨯ Error: Failed to load static file for page: /500 ENOENT: no such file or directory, open 'C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\pages\500.html'
+    at ignore-listed frames
+⨯ Error: Failed to load static file for page: /500 ENOENT: no such file or directory, open 'C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\pages\500.html'
+    at ignore-listed frames

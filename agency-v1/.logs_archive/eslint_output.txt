@@ -1,0 +1,8 @@
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\sections\testimonial-slider.tsx
+   3:10  warning  'cn' is defined but never used                                   @typescript-eslint/no-unused-vars
+  64:37  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  64:51  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+✖ 3 problems (2 errors, 1 warning)
+

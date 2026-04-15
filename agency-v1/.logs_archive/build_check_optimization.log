@@ -1,0 +1,80 @@
+
+> legacymark@0.1.0 build
+> next build
+
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\hboho\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\hboho\.gemini\antigravity\scratch\legacymark\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx:9:1
+Export buttonVariants doesn't exist in target module
+   7 |
+   8 | import { cn } from "@/lib/utils"
+>  9 | import { buttonVariants } from "@/components/ui/button"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | export type CalendarProps = React.ComponentProps<typeof DayPicker>
+  12 |
+
+The export buttonVariants was not found in module [project]/.gemini/antigravity/scratch/legacymark/components/ui/button.tsx [app-client] (ecmascript).
+Did you mean to import Button?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx [Client Component Browser]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Client Component Browser]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Server Component]
+    ./.gemini/antigravity/scratch/legacymark/app/(dashboard)/dashboard/marketing/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx [Client Component SSR]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Client Component SSR]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Server Component]
+    ./.gemini/antigravity/scratch/legacymark/app/(dashboard)/dashboard/marketing/page.tsx [Server Component]
+
+
+./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx:9:1
+Export buttonVariants doesn't exist in target module
+   7 |
+   8 | import { cn } from "@/lib/utils"
+>  9 | import { buttonVariants } from "@/components/ui/button"
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | export type CalendarProps = React.ComponentProps<typeof DayPicker>
+  12 |
+
+The export buttonVariants was not found in module [project]/.gemini/antigravity/scratch/legacymark/components/ui/button.tsx [app-ssr] (ecmascript).
+Did you mean to import Button?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx [Client Component Browser]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Client Component Browser]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Server Component]
+    ./.gemini/antigravity/scratch/legacymark/app/(dashboard)/dashboard/marketing/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx [Client Component SSR]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Client Component SSR]
+    ./.gemini/antigravity/scratch/legacymark/modules/marketing/components/date-range-picker.tsx [Server Component]
+    ./.gemini/antigravity/scratch/legacymark/app/(dashboard)/dashboard/marketing/page.tsx [Server Component]
+
+
+    at <unknown> (./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx:9:1)
+    at <unknown> (./.gemini/antigravity/scratch/legacymark/components/ui/calendar.tsx:9:1)

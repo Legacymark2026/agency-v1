@@ -1,0 +1,283 @@
+
+> legacymark@0.1.0 build
+> prisma generate && prisma db push --accept-data-loss && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v5.10.2) to .\node_modules\@prisma\client in 5.58s
+
+Start using Prisma Client in Node.js (See: https://pris.ly/d/client)
+```
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+```
+or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+```
+import { PrismaClient } from '@prisma/client/edge'
+const prisma = new PrismaClient()
+```
+
+See other ways of importing Prisma Client: http://pris.ly/d/importing-client
+
+┌─────────────────────────────────────────────────────────────┐
+│  Deploying your app to serverless or edge functions?        │
+│  Try Prisma Accelerate for connection pooling and caching.  │
+│  https://pris.ly/cli/accelerate                             │
+└─────────────────────────────────────────────────────────────┘
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "legacymark", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v5.10.2) to .\node_modules\@prisma\client in 4.46s
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.6min
+  Skipping validation of types
+  Collecting page data using 3 workers ...
+[Integrations] Registered provider for MESSENGER
+[Integrations] Registered provider for INSTAGRAM
+[Integrations] Registered provider for WHATSAPP
+[Integrations] Registered provider for TWITTER
+[Integrations] Registered provider for LINKEDIN
+[Integrations] Registered provider for YOUTUBE
+  Generating static pages using 3 workers (0/112) ...
+[Integrations] Registered provider for MESSENGER
+[Integrations] Registered provider for INSTAGRAM
+[Integrations] Registered provider for WHATSAPP
+[Integrations] Registered provider for TWITTER
+  Generating static pages using 3 workers (28/112) 
+[Integrations] Registered provider for LINKEDIN
+[Integrations] Registered provider for YOUTUBE
+  Generating static pages using 3 workers (56/112) 
+  Generating static pages using 3 workers (84/112) 
+✓ Generating static pages using 3 workers (112/112) in 3.2s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /[locale]
+├ ƒ /[locale]/blog
+├ ƒ /[locale]/blog/[slug]
+├ ƒ /[locale]/contacto
+├ ƒ /[locale]/flyering
+├ ƒ /[locale]/invoice/[token]
+├ ƒ /[locale]/metodologia
+├ ƒ /[locale]/nosotros
+├ ƒ /[locale]/politica-cookies
+├ ƒ /[locale]/politica-privacidad
+├ ƒ /[locale]/portfolio
+├ ƒ /[locale]/portfolio/[slug]
+├ ƒ /[locale]/soluciones/automatizacion
+├ ƒ /[locale]/soluciones/creacion-contenido
+├ ƒ /[locale]/soluciones/estrategia
+├ ƒ /[locale]/soluciones/estrategia-de-marca
+├ ƒ /[locale]/soluciones/web-dev
+├ ƒ /[locale]/terms
+├ ƒ /[locale]/vip
+├ ƒ /api/admin/agent-config
+├ ƒ /api/admin/integrations/payu
+├ ƒ /api/admin/integrations/stripe
+├ ƒ /api/admin/invoices
+├ ƒ /api/admin/invoices/[id]
+├ ƒ /api/admin/kanban
+├ ƒ /api/admin/kanban/tasks
+├ ƒ /api/admin/proposals
+├ ƒ /api/admin/proposals/[id]
+├ ƒ /api/agent
+├ ƒ /api/agent/alerts
+├ ƒ /api/agent/daily-report
+├ ƒ /api/agent/history
+├ ƒ /api/agents/[agentId]/voice
+├ ƒ /api/analytics/end-session
+├ ƒ /api/analytics/heartbeat
+├ ƒ /api/analytics/track
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/automation/trigger
+├ ƒ /api/calendar/sync
+├ ƒ /api/creative/copy
+├ ƒ /api/creative/image
+├ ƒ /api/creative/safety
+├ ƒ /api/creative/score
+├ ƒ /api/creative/video
+├ ƒ /api/crm/ai-forecast
+├ ƒ /api/crm/import-deals
+├ ƒ /api/crm/run-automation
+├ ƒ /api/cron/social-publisher
+├ ƒ /api/cron/subscriptions
+├ ƒ /api/diagnostics/automation
+├ ƒ /api/diagnostics/crm
+├ ƒ /api/email-blast/send
+├ ƒ /api/inbox/copilot
+├ ƒ /api/integrations/facebook/callback
+├ ƒ /api/integrations/facebook/webhook
+├ ƒ /api/integrations/whatsapp/webhook
+├ ƒ /api/invoices/[id]/pay
+├ ƒ /api/kb/upload
+├ ƒ /api/leads/capture
+├ ƒ /api/media/whatsapp-upload
+├ ƒ /api/media/whatsapp/[id]
+├ ƒ /api/proposals/[id]/sign
+├ ƒ /api/propuesta
+├ ƒ /api/public/proposals/[token]
+├ ƒ /api/public/proposals/[token]/sign
+├ ƒ /api/public/proposals/[token]/view
+├ ƒ /api/test-marketing
+├ ƒ /api/upload
+├ ƒ /api/webhooks/[workflowId]
+├ ƒ /api/webhooks/channels/[provider]
+├ ƒ /api/webhooks/cron/audiences
+├ ƒ /api/webhooks/cron/email-worker
+├ ƒ /api/webhooks/google
+├ ƒ /api/webhooks/google-leads
+├ ƒ /api/webhooks/linkedin
+├ ƒ /api/webhooks/linkedin-leads
+├ ƒ /api/webhooks/meta
+├ ƒ /api/webhooks/payu
+├ ƒ /api/webhooks/resend
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/webhooks/tiktok
+├ ƒ /api/webhooks/whatsapp
+├ ƒ /auth/login
+├ ƒ /auth/nueva-contrasena
+├ ƒ /auth/pending-approval
+├ ƒ /auth/recuperar
+├ ƒ /auth/register
+├ ƒ /blog
+├ ƒ /contacto
+├ ƒ /dashboard
+├ ƒ /dashboard/admin/agent-config
+├ ƒ /dashboard/admin/architecture
+├ ƒ /dashboard/admin/architecture/[id]
+├ ƒ /dashboard/admin/automation
+├ ƒ /dashboard/admin/automation/builder
+├ ƒ /dashboard/admin/automation/executions
+├ ƒ /dashboard/admin/automation/executions/[id]
+├ ƒ /dashboard/admin/crm
+├ ƒ /dashboard/admin/crm/automation
+├ ƒ /dashboard/admin/crm/campaigns
+├ ƒ /dashboard/admin/crm/commissions
+├ ƒ /dashboard/admin/crm/deals/[id]
+├ ƒ /dashboard/admin/crm/goals
+├ ƒ /dashboard/admin/crm/leads
+├ ƒ /dashboard/admin/crm/leads/[id]
+├ ƒ /dashboard/admin/crm/pipeline
+├ ƒ /dashboard/admin/crm/reports
+├ ƒ /dashboard/admin/crm/scoring
+├ ƒ /dashboard/admin/crm/sequences
+├ ƒ /dashboard/admin/crm/tasks
+├ ƒ /dashboard/admin/crm/templates
+├ ƒ /dashboard/admin/invoices
+├ ƒ /dashboard/admin/invoices/new
+├ ƒ /dashboard/admin/marketing
+├ ƒ /dashboard/admin/marketing/approvals
+├ ƒ /dashboard/admin/marketing/builder
+├ ƒ /dashboard/admin/marketing/campaigns
+├ ƒ /dashboard/admin/marketing/campaigns/new
+├ ƒ /dashboard/admin/marketing/creative-studio
+├ ƒ /dashboard/admin/marketing/links
+├ ƒ /dashboard/admin/marketing/settings
+├ ƒ /dashboard/admin/marketing/spend
+├ ƒ /dashboard/admin/operations
+├ ƒ /dashboard/admin/operations/kanban
+├ ƒ /dashboard/admin/operations/timesheets
+├ ƒ /dashboard/admin/operations/treasury
+├ ƒ /dashboard/admin/payroll
+├ ƒ /dashboard/admin/payroll/[id]
+├ ƒ /dashboard/admin/payroll/employees
+├ ƒ /dashboard/admin/payroll/employees/new
+├ ƒ /dashboard/admin/payroll/expenses
+├ ƒ /dashboard/admin/payroll/new
+├ ƒ /dashboard/admin/payroll/reports
+├ ƒ /dashboard/admin/payroll/time-off
+├ ƒ /dashboard/admin/payroll/timesheets
+├ ƒ /dashboard/admin/proposals
+├ ƒ /dashboard/admin/proposals/[id]
+├ ƒ /dashboard/admin/proposals/new
+├ ƒ /dashboard/admin/sales/goals
+├ ƒ /dashboard/admin/treasury
+├ ƒ /dashboard/admin/treasury/accounts/new
+├ ƒ /dashboard/admin/treasury/transactions/new
+├ ƒ /dashboard/analytics
+├ ƒ /dashboard/client
+├ ƒ /dashboard/client/projects
+├ ƒ /dashboard/client/proposals
+├ ƒ /dashboard/events
+├ ƒ /dashboard/experts
+├ ƒ /dashboard/inbox
+├ ƒ /dashboard/inbox/[conversationId]
+├ ƒ /dashboard/kanban
+├ ƒ /dashboard/marketing
+├ ƒ /dashboard/marketing/automation
+├ ƒ /dashboard/marketing/calendar
+├ ƒ /dashboard/marketing/campaigns
+├ ƒ /dashboard/marketing/campaigns/[id]
+├ ƒ /dashboard/marketing/email-blast
+├ ƒ /dashboard/marketing/email-blast/audience
+├ ƒ /dashboard/marketing/links
+├ ƒ /dashboard/marketing/spend
+├ ƒ /dashboard/media
+├ ƒ /dashboard/posts
+├ ƒ /dashboard/posts/[id]
+├ ƒ /dashboard/posts/categories
+├ ƒ /dashboard/posts/create
+├ ƒ /dashboard/projects
+├ ƒ /dashboard/projects/[id]
+├ ƒ /dashboard/projects/create
+├ ƒ /dashboard/roles
+├ ƒ /dashboard/security
+├ ƒ /dashboard/settings
+├ ƒ /dashboard/settings/agents
+├ ƒ /dashboard/settings/agents/[id]
+├ ƒ /dashboard/settings/agents/knowledge
+├ ƒ /dashboard/settings/agents/new
+├ ƒ /dashboard/settings/appearance
+├ ƒ /dashboard/settings/billing
+├ ƒ /dashboard/settings/company
+├ ƒ /dashboard/settings/developer
+├ ƒ /dashboard/settings/integrations
+├ ƒ /dashboard/settings/members
+├ ƒ /dashboard/settings/notifications
+├ ƒ /dashboard/settings/profile
+├ ƒ /dashboard/settings/security
+├ ƒ /dashboard/test-analytics
+├ ƒ /dashboard/unauthorized
+├ ƒ /dashboard/users
+├ ƒ /data-deletion
+├ ƒ /flyering
+├ ƒ /metodologia
+├ ƒ /nosotros
+├ ƒ /politica-cookies
+├ ƒ /politica-privacidad
+├ ƒ /portfolio
+├ ƒ /proposal/[token]
+├ ○ /robots.txt
+├ ƒ /rss
+├ ƒ /servicios
+├ ƒ /sign/[token]
+├ ○ /sitemap.xml
+├ ƒ /soluciones/automatizacion
+├ ƒ /soluciones/creacion-contenido
+├ ƒ /soluciones/estrategia
+├ ƒ /soluciones/estrategia-de-marca
+├ ƒ /soluciones/web-dev
+├ ƒ /terms
+├ ƒ /test_auth_debug
+├ ƒ /test-cloudinary
+└ ƒ /vip
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -1,0 +1,45 @@
+🚀 Starting Advanced Lead Scoring Test...
+📝 Creating test scoring rules...
+👤 Creating test lead...
+📊 Adding marketing events for lead...
+Error running test: PrismaClientValidationError: 
+Invalid `prisma.marketingEvent.createMany()` invocation in
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test-scoring.ts:51:33
+
+  48 
+  49 // 5. Add Marketing Events (Interactions & Intent)
+  50 console.log("📊 Adding marketing events for lead...");
+→ 51 await prisma.marketingEvent.createMany({
+       data: [
+         {
+           leadId: "cb1f693d-b05d-4fea-a766-22ac79a895e8",
+           eventType: "PAGE_VIEW",
+           url: "https://example.com/precios"
+         },
+         {
+           leadId: "cb1f693d-b05d-4fea-a766-22ac79a895e8",
+           eventType: "PAGE_VIEW",
+           url: "https://example.com/precios"
+         },
+         {
+           leadId: "cb1f693d-b05d-4fea-a766-22ac79a895e8",
+           eventType: "FORM_SUBMIT",
+           eventName: "Formulario Cotizar"
+         },
+         {
+           leadId: "cb1f693d-b05d-4fea-a766-22ac79a895e8",
+           eventType: "WEBINAR",
+           eventName: "Webinar Intro"
+         }
+       ]
+     })
+
+Argument `companyId` is missing.
+    at Cn (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:116:5888)
+    at _n.handleRequestError (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:123:6510)
+    at _n.handleAndLogRequestError (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at _n.request (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async main (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\test-scoring.ts:51:5) {
+  clientVersion: '5.10.2'
+}

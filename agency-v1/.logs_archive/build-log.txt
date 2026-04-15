@@ -1,0 +1,93 @@
+
+> legacymark@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v5.10.2) to .\node_modules\@prisma\client in 1.84s
+
+Start using Prisma Client in Node.js (See: https://pris.ly/d/client)
+```
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+```
+or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+```
+import { PrismaClient } from '@prisma/client/edge'
+const prisma = new PrismaClient()
+```
+
+See other ways of importing Prisma Client: http://pris.ly/d/importing-client
+
+┌─────────────────────────────────────────────────────────────┐
+│  Deploying your app to serverless or edge functions?        │
+│  Try Prisma Accelerate for connection pooling and caching.  │
+│  https://pris.ly/cli/accelerate                             │
+└─────────────────────────────────────────────────────────────┘
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\hboho\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\hboho\.gemini\antigravity\scratch\legacymark\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 2 errors:
+./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/estrategia-de-marca/page.tsx:16:23
+Ecmascript file had an error
+  14 | import { getTranslations } from 'next-intl/server';
+  15 |
+> 16 | export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
+     |                       ^^^^^^^^^^^^^^^^
+  17 |     const t = await getTranslations({ locale, namespace: 'estrategiaMarcaPage.metadata' });
+  18 |     return {
+  19 |         title: t('title'),
+
+You are attempting to export "generateMetadata" from a component marked with "use client", which is disallowed. Either remove the export, or the "use client" directive. Read more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  Client Component Browser:
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/estrategia-de-marca/page.tsx [Client Component Browser]
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/estrategia-de-marca/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/estrategia-de-marca/page.tsx [Client Component SSR]
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/estrategia-de-marca/page.tsx [Server Component]
+
+
+./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/web-dev/page.tsx:16:23
+Ecmascript file had an error
+  14 | import { getTranslations } from "next-intl/server";
+  15 |
+> 16 | export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
+     |                       ^^^^^^^^^^^^^^^^
+  17 |     const t = await getTranslations({ locale, namespace: 'webDevPage.metadata' });
+  18 |     return {
+  19 |         title: t('title'),
+
+You are attempting to export "generateMetadata" from a component marked with "use client", which is disallowed. Either remove the export, or the "use client" directive. Read more: https://nextjs.org/docs/app/api-reference/directives/use-client
+
+
+
+Import traces:
+  Client Component Browser:
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/web-dev/page.tsx [Client Component Browser]
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/web-dev/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/web-dev/page.tsx [Client Component SSR]
+    ./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/web-dev/page.tsx [Server Component]
+
+
+    at <unknown> (./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/estrategia-de-marca/page.tsx:16:23)
+    at <unknown> (./.gemini/antigravity/scratch/legacymark/app/(marketing)/soluciones/web-dev/page.tsx:16:23)

@@ -1,0 +1,177 @@
+actions/inbox.ts(247,49): error TS2820: Type '"AUDIO"' is not assignable to type '"image" | "video" | "audio" | "document" | "sticker"'. Did you mean '"audio"'?
+actions/integration-config.ts(394,11): error TS2322: Type '{ name: string; }' is not assignable to type '(Without<CompanyCreateInput, CompanyUncheckedCreateInput> & CompanyUncheckedCreateInput) | (Without<...> & CompanyCreateInput)'.
+  Type '{ name: string; }' is not assignable to type 'Without<CompanyUncheckedCreateInput, CompanyCreateInput> & CompanyCreateInput'.
+    Property 'slug' is missing in type '{ name: string; }' but required in type 'CompanyCreateInput'.
+app/api/integrations/facebook/webhook/route.ts(627,18): error TS2353: Object literal may only specify known properties, and 'companyId_email' does not exist in type 'LeadWhereUniqueInput'.
+app/api/integrations/facebook/webhook/route.ts(671,18): error TS2353: Object literal may only specify known properties, and 'companyId_email' does not exist in type 'LeadWhereUniqueInput'.
+app/api/integrations/facebook/webhook/route.ts(737,18): error TS2353: Object literal may only specify known properties, and 'companyId_email' does not exist in type 'LeadWhereUniqueInput'.
+app/api/integrations/facebook/webhook/route.ts(805,18): error TS2353: Object literal may only specify known properties, and 'companyId_email' does not exist in type 'LeadWhereUniqueInput'.
+app/api/integrations/tiktok/webhook/route.ts(124,13): error TS2353: Object literal may only specify known properties, and 'email_companyId' does not exist in type 'LeadWhereUniqueInput'.
+app/api/integrations/tiktok/webhook/route.ts(131,13): error TS2353: Object literal may only specify known properties, and 'socialUsername' does not exist in type '(Without<LeadUpdateInput, LeadUncheckedUpdateInput> & LeadUncheckedUpdateInput) | (Without<...> & LeadUpdateInput)'.
+app/api/integrations/tiktok/webhook/route.ts(137,13): error TS2353: Object literal may only specify known properties, and 'socialUsername' does not exist in type 'Without<LeadCreateInput, LeadUncheckedCreateInput> & LeadUncheckedCreateInput'.
+app/api/integrations/tiktok/webhook/route.ts(216,13): error TS2561: Object literal may only specify known properties, but 'platform' does not exist in type 'SocialPostWhereInput'. Did you mean to write 'platforms'?
+app/api/integrations/tiktok/webhook/route.ts(227,17): error TS2353: Object literal may only specify known properties, and 'socialPostId' does not exist in type '(Without<SocialPostCommentCreateInput, SocialPostCommentUncheckedCreateInput> & SocialPostCommentUncheckedCreateInput) | (Without<...> & SocialPostCommentCreateInput)'.
+app/api/integrations/tiktok/webhook/route.ts(351,55): error TS2352: Conversion of type 'Record<string, unknown>' to type 'TikTokCommentEvent' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'TikTokCommentEvent': event_type, event_id, open_id, video_id, and 3 more.
+app/api/integrations/tiktok/webhook/route.ts(354,55): error TS2352: Conversion of type 'Record<string, unknown>' to type 'TikTokCommentEvent' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'TikTokCommentEvent': event_type, event_id, open_id, video_id, and 3 more.
+app/api/integrations/tiktok/webhook/route.ts(357,55): error TS2352: Conversion of type 'Record<string, unknown>' to type 'TikTokUserUpdateEvent' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'TikTokUserUpdateEvent': event_type, event_id, open_id, field, and 2 more.
+app/api/integrations/tiktok/webhook/route.ts(360,58): error TS2352: Conversion of type 'Record<string, unknown>' to type 'TikTokContentInspectionEvent' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Record<string, unknown>' is missing the following properties from type 'TikTokContentInspectionEvent': event_type, event_id, video_id, status
+app/api/marketing/templates/route.ts(30,31): error TS2304: Cannot find name 'getServerSession'.
+app/api/marketing/templates/route.ts(30,48): error TS2304: Cannot find name 'authOptions'.
+app/api/media/whatsapp-upload/route.ts(23,21): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+app/api/media/whatsapp-upload/route.ts(23,52): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+app/api/media/whatsapp-upload/route.ts(24,21): error TS2339: Property 'phoneNumberId' does not exist on type 'IntegrationConfigData'.
+  Property 'phoneNumberId' does not exist on type 'MetaAppConfig'.
+app/api/media/whatsapp-upload/route.ts(24,59): error TS2339: Property 'phoneNumberId' does not exist on type 'IntegrationConfigData'.
+  Property 'phoneNumberId' does not exist on type 'MetaAppConfig'.
+app/api/media/whatsapp/[id]/route.ts(22,17): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+app/api/media/whatsapp/[id]/route.ts(23,27): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+app/api/webhooks/linkedin/route.ts(159,21): error TS2561: Object literal may only specify known properties, but 'enabled' does not exist in type '(Without<IntegrationConfigUpdateManyMutationInput, IntegrationConfigUncheckedUpdateManyInput> & IntegrationConfigUncheckedUpdateManyInput) | (Without<...> & IntegrationConfigUpdateManyMutationInput)'. Did you mean to write 'isEnabled'?
+app/api/webhooks/linkedin/route.ts(257,33): error TS2352: Conversion of type 'Record<string, unknown>' to type 'LinkedInStatusEvent' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'eventType' is missing in type 'Record<string, unknown>' but required in type 'LinkedInStatusEvent'.
+components/settings/ai-models-integrations.tsx(12,27): error TS2339: Property 'geminiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'geminiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(19,19): error TS2339: Property 'openAiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'openAiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(19,93): error TS2339: Property 'openAiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'openAiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(20,19): error TS2339: Property 'anthropicApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'anthropicApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(20,103): error TS2339: Property 'anthropicApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'anthropicApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(21,19): error TS2339: Property 'geminiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'geminiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(21,93): error TS2339: Property 'geminiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'geminiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(22,19): error TS2339: Property 'deepseekApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'deepseekApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(22,97): error TS2339: Property 'deepseekApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'deepseekApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(23,19): error TS2339: Property 'mistralApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'mistralApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(23,92): error TS2339: Property 'mistralApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'mistralApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(24,19): error TS2339: Property 'xaiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'xaiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/ai-models-integrations.tsx(24,85): error TS2339: Property 'xaiApiKey' does not exist on type 'IntegrationConfigData'.
+  Property 'xaiApiKey' does not exist on type 'MetaAppConfig'.
+components/settings/google-integrations.tsx(12,40): error TS2339: Property 'measurementId' does not exist on type 'IntegrationConfigData'.
+  Property 'measurementId' does not exist on type 'MetaAppConfig'.
+components/settings/google-integrations.tsx(14,42): error TS2339: Property 'containerId' does not exist on type 'IntegrationConfigData'.
+  Property 'containerId' does not exist on type 'MetaAppConfig'.
+components/settings/google-integrations.tsx(26,95): error TS2339: Property 'measurementId' does not exist on type 'IntegrationConfigData'.
+  Property 'measurementId' does not exist on type 'MetaAppConfig'.
+components/settings/google-integrations.tsx(37,95): error TS2339: Property 'containerId' does not exist on type 'IntegrationConfigData'.
+  Property 'containerId' does not exist on type 'MetaAppConfig'.
+components/settings/hotjar-integrations.tsx(9,36): error TS2339: Property 'siteId' does not exist on type 'IntegrationConfigData'.
+  Property 'siteId' does not exist on type 'MetaAppConfig'.
+components/settings/hotjar-integrations.tsx(20,79): error TS2339: Property 'siteId' does not exist on type 'IntegrationConfigData'.
+  Property 'siteId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(4,38): error TS2307: Cannot find module './meta-disconnect-button' or its corresponding type declarations.
+components/settings/meta-integrations.tsx(58,56): error TS2345: Argument of type '"tiktok-pixel"' is not assignable to parameter of type 'IntegrationProvider'.
+components/settings/meta-integrations.tsx(64,60): error TS2345: Argument of type '"linkedin-insight"' is not assignable to parameter of type 'IntegrationProvider'.
+components/settings/meta-integrations.tsx(74,46): error TS2339: Property 'phoneNumberId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'phoneNumberId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(74,75): error TS2339: Property 'accessToken' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(139,44): error TS2339: Property 'tiktokPixelId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'tiktokPixelId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(142,45): error TS2339: Property 'tiktokPixelId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'tiktokPixelId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(142,115): error TS2339: Property 'tiktokPixelId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'tiktokPixelId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(143,48): error TS2339: Property 'tiktokPixelId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'tiktokPixelId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(151,47): error TS2339: Property 'tiktokWebhookSecret' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'tiktokWebhookSecret' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(154,51): error TS2339: Property 'tiktokWebhookSecret' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'tiktokWebhookSecret' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(162,48): error TS2339: Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(165,49): error TS2339: Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(165,129): error TS2339: Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(166,52): error TS2339: Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'linkedinPartnerId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(174,48): error TS2339: Property 'linkedinWebhookSecret' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'linkedinWebhookSecret' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(177,52): error TS2339: Property 'linkedinWebhookSecret' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'linkedinWebhookSecret' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(185,42): error TS2339: Property 'googleAdsId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'googleAdsId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(188,43): error TS2339: Property 'googleAdsId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'googleAdsId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(188,110): error TS2339: Property 'googleAdsId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'googleAdsId' does not exist on type 'MetaAppConfig'.
+components/settings/meta-integrations.tsx(189,46): error TS2339: Property 'googleAdsId' does not exist on type 'MetaAppConfig | InstagramPageConfig | WhatsAppConfig | MetaPixelConfig | TikTokAdsConfig | ... 7 more ... | AiModelsConfig'.
+  Property 'googleAdsId' does not exist on type 'MetaAppConfig'.
+lib/integrations/whatsapp.ts(28,21): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+lib/integrations/whatsapp.ts(28,52): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+lib/integrations/whatsapp.ts(29,21): error TS2339: Property 'phoneNumberId' does not exist on type 'IntegrationConfigData'.
+  Property 'phoneNumberId' does not exist on type 'MetaAppConfig'.
+lib/integrations/whatsapp.ts(29,59): error TS2339: Property 'phoneNumberId' does not exist on type 'IntegrationConfigData'.
+  Property 'phoneNumberId' does not exist on type 'MetaAppConfig'.
+lib/integrations/whatsapp.ts(102,21): error TS2339: Property 'appSecret' does not exist on type 'IntegrationConfigData'.
+  Property 'appSecret' does not exist on type 'FacebookPageConfig'.
+lib/integrations/whatsapp.ts(102,51): error TS2339: Property 'appSecret' does not exist on type 'IntegrationConfigData'.
+  Property 'appSecret' does not exist on type 'FacebookPageConfig'.
+lib/integrations/whatsapp.ts(138,21): error TS2339: Property 'verifyToken' does not exist on type 'IntegrationConfigData'.
+  Property 'verifyToken' does not exist on type 'MetaAppConfig'.
+lib/integrations/whatsapp.ts(138,55): error TS2339: Property 'verifyToken' does not exist on type 'IntegrationConfigData'.
+  Property 'verifyToken' does not exist on type 'MetaAppConfig'.
+lib/services/audiences/meta.ts(26,15): error TS2339: Property 'accessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'accessToken' does not exist on type 'MetaAppConfig'.
+lib/services/audiences/meta.ts(26,38): error TS2339: Property 'pixelId' does not exist on type 'IntegrationConfigData'.
+  Property 'pixelId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(77,16): error TS2339: Property 'capiToken' does not exist on type 'IntegrationConfigData'.
+  Property 'capiToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(77,38): error TS2339: Property 'pixelId' does not exist on type 'IntegrationConfigData'.
+  Property 'pixelId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(106,75): error TS2339: Property 'pixelId' does not exist on type 'IntegrationConfigData'.
+  Property 'pixelId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(106,113): error TS2339: Property 'capiToken' does not exist on type 'IntegrationConfigData'.
+  Property 'capiToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(123,16): error TS2339: Property 'googleAdsDeveloperToken' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsDeveloperToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(123,52): error TS2339: Property 'googleAdsManagerId' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsManagerId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(123,83): error TS2339: Property 'googleAdsAccessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsAccessToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(136,45): error TS2339: Property 'googleAdsCustomerId' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsCustomerId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(136,93): error TS2339: Property 'googleAdsConversionActionId' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsConversionActionId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(146,89): error TS2339: Property 'googleAdsCustomerId' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsCustomerId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(149,41): error TS2339: Property 'googleAdsAccessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsAccessToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(150,33): error TS2339: Property 'googleAdsDeveloperToken' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsDeveloperToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(151,35): error TS2339: Property 'googleAdsManagerId' does not exist on type 'IntegrationConfigData'.
+  Property 'googleAdsManagerId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(167,16): error TS2339: Property 'linkedinAccessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'linkedinAccessToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(167,48): error TS2339: Property 'linkedinConversionId' does not exist on type 'IntegrationConfigData'.
+  Property 'linkedinConversionId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(176,52): error TS2339: Property 'linkedinConversionId' does not exist on type 'IntegrationConfigData'.
+  Property 'linkedinConversionId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(194,41): error TS2339: Property 'linkedinAccessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'linkedinAccessToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(211,16): error TS2339: Property 'tiktokAccessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'tiktokAccessToken' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(211,46): error TS2339: Property 'tiktokPixelId' does not exist on type 'IntegrationConfigData'.
+  Property 'tiktokPixelId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(214,24): error TS2339: Property 'tiktokPixelId' does not exist on type 'IntegrationConfigData'.
+  Property 'tiktokPixelId' does not exist on type 'MetaAppConfig'.
+lib/services/conversions/dispatcher.ts(237,30): error TS2339: Property 'tiktokAccessToken' does not exist on type 'IntegrationConfigData'.
+  Property 'tiktokAccessToken' does not exist on type 'MetaAppConfig'.

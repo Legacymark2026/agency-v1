@@ -1,0 +1,9 @@
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\portfolio\page.tsx
+  12:18  warning  'useScroll' is defined but never used  @typescript-eslint/no-unused-vars
+  12:76  warning  'useSpring' is defined but never used  @typescript-eslint/no-unused-vars
+  13:10  warning  'useRef' is defined but never used     @typescript-eslint/no-unused-vars
+  13:28  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 4 problems (0 errors, 4 warnings)
+
