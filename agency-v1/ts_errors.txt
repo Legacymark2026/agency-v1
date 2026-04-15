@@ -1,0 +1,177 @@
+.next/dev/types/validator.ts(1278,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/admin/invoices/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/invoices/[id]">'.
+  Types of property 'DELETE' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(1314,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/admin/proposals/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/proposals/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ deal: { id: string; title: string; } | null; items: { id: string; proposalId: string; ... 6 more ...; updatedAt: Date; }[]; creator: { ...; }; } & { ...; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(1521,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/invoices/[id]/pay/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/invoices/[id]/pay">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(1566,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/public/proposals/[token]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/proposals/[token]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { token: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ company: { name: string; logoUrl: string | null; defaultCompanySettings: JsonValue; }; items: { ...; }[]; creator: { ...; }; } & { ...; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ token: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ token: string; }>; }' is not assignable to type '{ params: { token: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'token' is missing in type 'Promise<{ token: string; }>' but required in type '{ token: string; }'.
+.next/dev/types/validator.ts(1575,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/public/proposals/[token]/sign/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/proposals/[token]/sign">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { token: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; proposal: { id: string; title: string; content: string | null; ... 14 more ...; updatedAt: Date; }; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ token: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ token: string; }>; }' is not assignable to type '{ params: { token: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'token' is missing in type 'Promise<{ token: string; }>' but required in type '{ token: string; }'.
+.next/dev/types/validator.ts(1584,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/public/proposals/[token]/view/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/proposals/[token]/view">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { token: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ token: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ token: string; }>; }' is not assignable to type '{ params: { token: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'token' is missing in type 'Promise<{ token: string; }>' but required in type '{ token: string; }'.
+.next/types/validator.ts(1332,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/admin/invoices/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/invoices/[id]">'.
+  Types of property 'DELETE' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(1368,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/admin/proposals/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/proposals/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ deal: { id: string; title: string; } | null; items: { id: string; proposalId: string; ... 6 more ...; updatedAt: Date; }[]; creator: { ...; }; } & { ...; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(1611,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/invoices/[id]/pay/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/invoices/[id]/pay">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(1665,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/public/proposals/[token]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/proposals/[token]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { token: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ company: { name: string; logoUrl: string | null; defaultCompanySettings: JsonValue; }; items: { ...; }[]; creator: { ...; }; } & { ...; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ token: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ token: string; }>; }' is not assignable to type '{ params: { token: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'token' is missing in type 'Promise<{ token: string; }>' but required in type '{ token: string; }'.
+.next/types/validator.ts(1674,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/public/proposals/[token]/sign/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/proposals/[token]/sign">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { token: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; proposal: { id: string; title: string; content: string | null; ... 14 more ...; updatedAt: Date; }; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ token: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ token: string; }>; }' is not assignable to type '{ params: { token: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'token' is missing in type 'Promise<{ token: string; }>' but required in type '{ token: string; }'.
+.next/types/validator.ts(1683,31): error TS2344: Type 'typeof import("C:/Users/hboho/.gemini/antigravity/scratch/legacymark/app/api/public/proposals/[token]/view/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/public/proposals/[token]/view">'.
+  Types of property 'POST' are incompatible.
+    Type '(req: Request, { params }: { params: { token: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ success: boolean; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ token: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ token: string; }>; }' is not assignable to type '{ params: { token: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'token' is missing in type 'Promise<{ token: string; }>' but required in type '{ token: string; }'.
+actions/ai-agents.ts(183,50): error TS18047: 'conversation.agent' is possibly 'null'.
+actions/crm-automation.ts(39,13): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
+actions/crm-closing.ts(84,17): error TS2353: Object literal may only specify known properties, and 'total' does not exist in type 'Without<ProposalCreateInput, ProposalUncheckedCreateInput> & ProposalUncheckedCreateInput'.
+actions/crm-closing.ts(129,13): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+actions/crm-closing.ts(153,41): error TS2339: Property 'client' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+actions/crm-closing.ts(161,17): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'Without<InvoiceCreateInput, InvoiceUncheckedCreateInput> & InvoiceUncheckedCreateInput'.
+actions/crm-closing.ts(203,33): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'InvoiceSelect<DefaultArgs>'.
+actions/developer.ts(22,17): error TS2353: Object literal may only specify known properties, and 'createdBy' does not exist in type 'ApiKeyInclude<DefaultArgs>'.
+actions/developer.ts(33,27): error TS2339: Property 'prefix' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(34,27): error TS2339: Property 'scopes' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(36,30): error TS2339: Property 'expiresAt' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(37,31): error TS2339: Property 'lastUsedAt' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(39,30): error TS2339: Property 'createdBy' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(65,17): error TS2353: Object literal may only specify known properties, and 'prefix' does not exist in type 'Without<ApiKeyCreateInput, ApiKeyUncheckedCreateInput> & ApiKeyUncheckedCreateInput'.
+actions/developer.ts(120,17): error TS2353: Object literal may only specify known properties, and 'prefix' does not exist in type 'Without<ApiKeyCreateInput, ApiKeyUncheckedCreateInput> & ApiKeyUncheckedCreateInput'.
+actions/developer.ts(122,34): error TS2339: Property 'scopes' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(125,37): error TS2339: Property 'expiresAt' does not exist on type '{ id: string; name: string; keyHash: string; userId: string | null; companyId: string | null; isActive: boolean; createdAt: Date; }'.
+actions/developer.ts(480,57): error TS2353: Object literal may only specify known properties, and 'integration' does not exist in type 'IntegrationConfigWhereInput'.
+actions/developer.ts(487,32): error TS2339: Property 'apiKey' does not exist on type '{ id: string; companyId: string; provider: string; config: JsonValue; isEnabled: boolean; createdAt: Date; updatedAt: Date; }'.
+actions/developer.ts(590,23): error TS2353: Object literal may only specify known properties, and 'settings' does not exist in type 'CompanySelect<DefaultArgs>'.
+actions/developer.ts(702,90): error TS2353: Object literal may only specify known properties, and 'apiKey' does not exist in type 'IntegrationConfigWhereInput'.
+actions/developer.ts(721,17): error TS2353: Object literal may only specify known properties, and 'expiresAt' does not exist in type 'ApiKeyWhereInput'.
+actions/developer.ts(756,23): error TS2353: Object literal may only specify known properties, and 'secretKey' does not exist in type 'IntegrationConfigSelect<DefaultArgs>'.
+actions/developer.ts(758,54): error TS2339: Property 'secretKey' does not exist on type '{ id: string; companyId: string; provider: string; config: JsonValue; isEnabled: boolean; createdAt: Date; updatedAt: Date; }'.
+actions/developer.ts(771,23): error TS2353: Object literal may only specify known properties, and 'secretKey' does not exist in type '(Without<IntegrationConfigUpdateInput, IntegrationConfigUncheckedUpdateInput> & IntegrationConfigUncheckedUpdateInput) | (Without<...> & IntegrationConfigUpdateInput)'.
+actions/developer.ts(772,62): error TS2353: Object literal may only specify known properties, and 'secretKey' does not exist in type 'Without<IntegrationConfigCreateInput, IntegrationConfigUncheckedCreateInput> & IntegrationConfigUncheckedCreateInput'.
+actions/inbox.ts(412,25): error TS18047: 'lead' is possibly 'null'.
+actions/inbox.ts(422,29): error TS18047: 'lead' is possibly 'null'.
+actions/inbox.ts(447,27): error TS18047: 'lead' is possibly 'null'.
+actions/kanban-projects.ts(26,31): error TS2339: Property 'companyId' does not exist on type '{ id: string; name: string | null; email: string | null; emailVerified: Date | null; image: string | null; passwordHash: string | null; firstName: string | null; lastName: string | null; ... 10 more ...; backupCodes: JsonValue; }'.
+actions/leads.ts(228,44): error TS2554: Expected 1 arguments, but got 2.
+actions/payroll-operations.ts(31,7): error TS2322: Type '{ companyId: string; periodStart: Date; periodEnd: Date; status: string; }' is not assignable to type '(Without<PayrollCreateInput, PayrollUncheckedCreateInput> & PayrollUncheckedCreateInput) | (Without<...> & PayrollCreateInput)'.
+  Type '{ companyId: string; periodStart: Date; periodEnd: Date; status: string; }' is not assignable to type 'Without<PayrollCreateInput, PayrollUncheckedCreateInput> & PayrollUncheckedCreateInput'.
+    Property 'employeeId' is missing in type '{ companyId: string; periodStart: Date; periodEnd: Date; status: string; }' but required in type 'PayrollUncheckedCreateInput'.
+actions/payroll-operations.ts(62,13): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type 'Without<PayrollItemCreateInput, PayrollItemUncheckedCreateInput> & PayrollItemUncheckedCreateInput'.
+app/(dashboard)/dashboard/admin/crm/deals/[id]/page.tsx(360,53): error TS2339: Property 'contactPhone' does not exist on type '{ company: { id: string; name: string; }; activities: ({ user: { name: string | null; image: string | null; }; } & { id: string; type: string; content: string; dealId: string; userId: string; createdAt: Date; updatedAt: Date; })[]; assignedUser: { ...; } | null; } & { ...; }'.
+app/(dashboard)/dashboard/admin/proposals/[id]/page.tsx(267,42): error TS2304: Cannot find name 'Plus'.
+app/(public)/sign/[token]/page.tsx(120,119): error TS2353: Object literal may only specify known properties, and 'backgroundOpacity' does not exist in type 'Properties<string | number, string & {}>'.
+app/api/agent/route.ts(45,28): error TS2339: Property 'suspended' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'suspended' does not exist on type '{ result: string; }'.
+app/api/crm/ai-forecast/route.ts(35,23): error TS2353: Object literal may only specify known properties, and 'accessToken' does not exist in type 'IntegrationConfigSelect<DefaultArgs>'.
+app/api/crm/ai-forecast/route.ts(38,32): error TS2339: Property 'secretKey' does not exist on type '{ id: string; companyId: string; provider: string; config: JsonValue; isEnabled: boolean; createdAt: Date; updatedAt: Date; }'.
+app/api/crm/ai-forecast/route.ts(38,53): error TS2339: Property 'accessToken' does not exist on type '{ id: string; companyId: string; provider: string; config: JsonValue; isEnabled: boolean; createdAt: Date; updatedAt: Date; }'.
+app/api/inbox/copilot/route.ts(21,25): error TS2353: Object literal may only specify known properties, and 'deal' does not exist in type 'LeadInclude<DefaultArgs>'.
+app/api/inbox/copilot/route.ts(41,23): error TS2353: Object literal may only specify known properties, and 'accessToken' does not exist in type 'IntegrationConfigSelect<DefaultArgs>'.
+app/api/inbox/copilot/route.ts(44,32): error TS2339: Property 'secretKey' does not exist on type '{ id: string; companyId: string; provider: string; config: JsonValue; isEnabled: boolean; createdAt: Date; updatedAt: Date; }'.
+app/api/inbox/copilot/route.ts(44,53): error TS2339: Property 'accessToken' does not exist on type '{ id: string; companyId: string; provider: string; config: JsonValue; isEnabled: boolean; createdAt: Date; updatedAt: Date; }'.
+app/api/inbox/copilot/route.ts(51,35): error TS2339: Property 'lead' does not exist on type '{ id: string; channel: string; platformId: string | null; status: string; priority: string; unreadCount: number; leadId: string | null; companyId: string; assignedTo: string | null; lastMessageAt: Date; ... 6 more ...; updatedAt: Date; }'.
+app/api/inbox/copilot/route.ts(56,42): error TS2339: Property 'messages' does not exist on type '{ id: string; channel: string; platformId: string | null; status: string; priority: string; unreadCount: number; leadId: string | null; companyId: string; assignedTo: string | null; lastMessageAt: Date; ... 6 more ...; updatedAt: Date; }'.
+app/api/inbox/copilot/route.ts(56,65): error TS7006: Parameter 'm' implicitly has an 'any' type.
+app/api/webhooks/channels/[provider]/route.ts(97,43): error TS2345: Argument of type '{}' is not assignable to parameter of type 'string'.
+app/api/webhooks/whatsapp/route.ts(67,25): error TS2554: Expected 1 arguments, but got 2.
+components/crm/ProposalPanel.tsx(92,109): error TS2353: Object literal may only specify known properties, and 'truncate' does not exist in type 'Properties<string | number, string & {}>'.
+components/marketing/email-blast/EmailBlastWizard.tsx(445,53): error TS2345: Argument of type '{ name: string; subject: string; htmlBody: string; fromName: string; fromEmail: string; recipients: never[]; csvHeaders: never[]; config: AdvancedConfig; }' is not assignable to parameter of type 'WizardState | (() => WizardState)'.
+  Type '{ name: string; subject: string; htmlBody: string; fromName: string; fromEmail: string; recipients: never[]; csvHeaders: never[]; config: AdvancedConfig; }' is missing the following properties from type 'WizardState': designJson, useDragAndDrop, isAbTest, subjectB, and 3 more.
+components/marketing/email-blast/EmailBlastWizard.tsx(526,40): error TS2339: Property 'sent' does not exist on type '{ queued: boolean; message: string; }'.
+components/marketing/email-blast/EmailBlastWizard.tsx(526,61): error TS2339: Property 'failed' does not exist on type '{ queued: boolean; message: string; }'.
+components/marketing/email-blast/EmailBlastWizard.tsx(527,55): error TS2339: Property 'sent' does not exist on type '{ queued: boolean; message: string; }'.
+components/marketing/email-blast/EmailBlastWizard.tsx(527,78): error TS2339: Property 'failed' does not exist on type '{ queued: boolean; message: string; }'.
+components/marketing/email-blast/EmailBlastWizard.tsx(527,103): error TS2339: Property 'failed' does not exist on type '{ queued: boolean; message: string; }'.
+components/marketing/email-blast/EmailBlastWizard.tsx(840,75): error TS7006: Parameter 'data' implicitly has an 'any' type.
+components/settings/integration-config-dialog.tsx(623,40): error TS2367: This comparison appears to be unintentional because the types '"facebook" | "instagram" | "whatsapp"' and '"gemini"' have no overlap.
+lib/services/meta-sync.ts(296,41): error TS18047: 'lead' is possibly 'null'.
+lib/services/meta-sync.ts(305,45): error TS18047: 'lead' is possibly 'null'.
+lib/services/meta-sync.ts(346,86): error TS18047: 'lead' is possibly 'null'.
+lib/services/ml/attribution.ts(26,53): error TS2339: Property 'utmSource' does not exist on type '{ id: string; eventType: string; eventName: string | null; url: string | null; referrer: string | null; userAgent: string | null; ipAddress: string | null; visitorId: string | null; ... 6 more ...; createdAt: Date; }'.
+lib/services/ml/ltv-cluster.ts(63,7): error TS2353: Object literal may only specify known properties, and 'status' does not exist in type 'DealWhereInput'.
+lib/services/ml/ltv-cluster.ts(65,16): error TS2353: Object literal may only specify known properties, and 'lead' does not exist in type 'DealInclude<DefaultArgs>'.
+lib/services/ml/ltv-cluster.ts(76,15): error TS2339: Property 'lead' does not exist on type '{ id: string; title: string; value: number; currency: string; stage: string; probability: number; contactName: string | null; contactEmail: string | null; companyId: string; priority: string; ... 8 more ...; assignedTo: string | null; }'.
+lib/services/ml/ltv-cluster.ts(77,37): error TS2339: Property 'lead' does not exist on type '{ id: string; title: string; value: number; currency: string; stage: string; probability: number; contactName: string | null; contactEmail: string | null; companyId: string; priority: string; ... 8 more ...; assignedTo: string | null; }'.
+lib/services/ml/ltv-cluster.ts(78,21): error TS2339: Property 'lead' does not exist on type '{ id: string; title: string; value: number; currency: string; stage: string; probability: number; contactName: string | null; contactEmail: string | null; companyId: string; priority: string; ... 8 more ...; assignedTo: string | null; }'.
+lib/services/ml/ltv-cluster.ts(118,37): error TS2345: Argument of type '{ email: string | undefined; phone: string | undefined; }[]' is not assignable to parameter of type 'HashedContact[]'.
+  Type '{ email: string | undefined; phone: string | undefined; }' is not assignable to type 'HashedContact'.
+    Types of property 'email' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string | null'.
+        Type 'undefined' is not assignable to type 'string | null'.
+tests/agent-full-test.ts(20,17): error TS2322: Type '{ name: string; }' is not assignable to type '(Without<CompanyCreateInput, CompanyUncheckedCreateInput> & CompanyUncheckedCreateInput) | (Without<...> & CompanyCreateInput)'.
+  Type '{ name: string; }' is not assignable to type 'Without<CompanyUncheckedCreateInput, CompanyCreateInput> & CompanyCreateInput'.
+    Property 'slug' is missing in type '{ name: string; }' but required in type 'CompanyCreateInput'.
+tests/agent-full-test.ts(61,53): error TS2339: Property 'sentimentScore' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'sentimentScore' does not exist on type '{ result: string; }'.
+tests/agent-full-test.ts(61,112): error TS2339: Property 'tokensUsed' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'tokensUsed' does not exist on type '{ result: string; }'.
+tests/agent-full-test.ts(73,17): error TS2339: Property 'suspended' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'suspended' does not exist on type '{ result: string; }'.
+tests/agent-full-test.ts(75,56): error TS2339: Property 'suspendedReason' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'suspendedReason' does not exist on type '{ result: string; }'.
+tests/agent-full-test.ts(76,55): error TS2339: Property 'sentimentScore' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'sentimentScore' does not exist on type '{ result: string; }'.
+tests/agent-full-test.ts(78,91): error TS2339: Property 'sentimentScore' does not exist on type 'AgentRunOutput | { result: string; }'.
+  Property 'sentimentScore' does not exist on type '{ result: string; }'.

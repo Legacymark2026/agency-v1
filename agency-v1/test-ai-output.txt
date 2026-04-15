@@ -1,0 +1,42 @@
+🚀 Starting Agentic AI Node Execution Test...
+✅ Created Workflow ID: 8f566578-4d02-45f0-9c85-7b806e5d1f88
+⚙️ Triggering workflow...
+[Engine] Executing a9f1b7ac-675c-4055-a607-a1646a87d648 { leadName: 'AI Test User' }
+[Engine] Executing 3d587aa5-d9e7-45cc-a514-758abe5c85ec { leadName: 'AI Test User' }
+[Engine] Executing 8f566578-4d02-45f0-9c85-7b806e5d1f88 { leadName: 'AI Test User' }
+PrismaClientValidationError: 
+Invalid `prisma.workflowExecution.findMany()` invocation in
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\testing\test-ai-nodes.ts:42:55
+
+  39 await new Promise(r => setTimeout(r, 2000));
+  40 
+  41 // 4. Check results
+→ 42 const executions = await prisma.workflowExecution.findMany({
+       where: {
+         workflowId: "8f566578-4d02-45f0-9c85-7b806e5d1f88"
+       },
+       orderBy: {
+         createdAt: "desc",
+         ~~~~~~~~~
+     ?   id?: SortOrder,
+     ?   status?: SortOrder,
+     ?   logs?: SortOrder | SortOrderInput,
+     ?   workflowId?: SortOrder,
+     ?   startedAt?: SortOrder,
+     ?   completedAt?: SortOrder | SortOrderInput,
+     ?   currentStep?: SortOrder,
+     ?   resumeAt?: SortOrder | SortOrderInput,
+     ?   workflow?: WorkflowOrderByWithRelationInput
+       },
+       take: 1
+     })
+
+Unknown argument `createdAt`. Available options are marked with ?.
+    at Cn (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:116:5888)
+    at _n.handleRequestError (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:123:6510)
+    at _n.handleAndLogRequestError (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at _n.request (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async runTest (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\scripts\testing\test-ai-nodes.ts:42:24) {
+  clientVersion: '5.10.2'
+}

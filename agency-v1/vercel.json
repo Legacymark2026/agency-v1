@@ -1,0 +1,46 @@
+{
+    "buildCommand": "prisma generate && prisma migrate deploy && next build",
+    "devCommand": "next dev",
+    "installCommand": "npm install",
+    "framework": "nextjs",
+    "git": {
+        "deploymentEnabled": {
+            "main": true
+        }
+    },
+    "env": {
+        "DATABASE_URL": "@database_url",
+        "AUTH_SECRET": "@auth_secret",
+        "NEXTAUTH_URL": "@nextauth_url"
+    },
+    "regions": [
+        "iad1"
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "DENY"
+                },
+                {
+                    "key": "X-XSS-Protection",
+                    "value": "1; mode=block"
+                },
+                {
+                    "key": "Referrer-Policy",
+                    "value": "strict-origin-when-cross-origin"
+                },
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(), microphone=(), geolocation=()"
+                }
+            ]
+        }
+    ]
+}

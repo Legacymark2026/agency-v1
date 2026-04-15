@@ -1,0 +1,1355 @@
+{
+  "nav": {
+    "services": "Services",
+    "methodology": "Methodology",
+    "portfolio": "Portfolio",
+    "blog": "Blog",
+    "contact": "Contact",
+    "recursos": "Resources",
+    "getStarted": "Get Started"
+  },
+  "footer": {
+    "tagline": "We transform brands through innovation, design, and digital strategy.",
+    "services": "Services",
+    "company": "Company",
+    "newsletter": "Newsletter",
+    "newsletterDesc": "Receive the latest marketing and innovation trends.",
+    "email": "Your email",
+    "subscribe": "Subscribe",
+    "privacyConsent": "I accept the",
+    "privacyPolicy": "Privacy Policy",
+    "rights": "All rights reserved.",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "cookies": "Cookies",
+    "sitemap": "Sitemap",
+    "links": {
+      "strategy": "Brand Strategy",
+      "content": "Content Creation",
+      "marketing": "Digital Marketing",
+      "design": "Design & Creativity",
+      "analytics": "Analytics & ROI",
+      "flyering": "360° Marketing",
+      "automation": "Automation & AI",
+      "webdev": "Web Development",
+      "methodology": "Methodology",
+      "portfolio": "Portfolio",
+      "blog": "Insights",
+      "contact": "Contact",
+      "about": "About Us"
+    },
+    "ctaBadge": "Available for new projects",
+    "ctaTitleStart": "Ready to",
+    "ctaTitleHighlight": "transform your brand?",
+    "ctaBtn": "Schedule a consultation",
+    "trust": {
+      "secure": "100% Secure",
+      "noSpam": "No Spam",
+      "cancelFree": "Cancel Anytime"
+    },
+    "madeWithLove": "Made with ♥ in Girón, Colombia",
+    "country": "Colombia",
+    "rightsEnd": "All rights reserved.",
+    "subscribeSuccess": "Subscribed! You will receive our content soon.",
+    "subscribeLoading": "..."
+  },
+  "home": {
+    "hero": {
+      "badge": "Digital Marketing Agency",
+      "systemActive": "System v2.4 ::",
+      "systemStatus": "Ready for Launch",
+      "titleStart": "We Transform",
+      "titleHighlight": "The Future",
+      "subtitle": "LegacyMark merges ARTIFICIAL INTELLIGENCE with elite strategy to build digital ecosystems that dominate markets.",
+      "ctaPrimary": "Initiate Protocol",
+      "ctaSecondary": "Play Tactical Demo"
+    },
+    "services": {
+      "badge": "Service Architecture",
+      "titleStart": "Comprehensive",
+      "titleHighlight": "Solutions",
+      "subtitle": "Digital infrastructure designed to scale. From strategy to code.",
+      "items": {
+        "marketing": {
+          "title": "Strategic Marketing",
+          "desc": "High-performance data-driven campaigns. Optimized ROAS."
+        },
+        "branding": {
+          "title": "Branding & Identity",
+          "desc": "Brand design that communicates authority and trust."
+        },
+        "webdev": {
+          "title": "Web Development",
+          "desc": "Ultra-fast sites built with Next.js and React."
+        },
+        "automation": {
+          "title": "AI Automation",
+          "desc": "Autonomous systems that reduce operational load."
+        },
+        "seo": {
+          "title": "Technical SEO",
+          "desc": "Organic positioning for market dominance."
+        },
+        "cloud": {
+          "title": "Cloud Infrastructure",
+          "desc": "Scalable and secure hosting on Vercel/AWS."
+        },
+        "analytics": {
+          "title": "Advanced Analytics",
+          "desc": "Real-time dashboards for decision making."
+        }
+      }
+    },
+    "stats": {
+      "badge": "LIVE TELEMETRY",
+      "items": {
+        "roi": {
+          "label": "Average Return",
+          "desc": "Continuous ad optimization"
+        },
+        "leads": {
+          "label": "Qualified Leads",
+          "desc": "High-intent pipeline"
+        },
+        "conversion": {
+          "label": "Conversion Rate",
+          "desc": "Above industry average"
+        },
+        "scale": {
+          "label": "Scaled Systems",
+          "desc": "Robust infrastructure"
+        }
+      }
+    },
+    "alliances": {
+      "badge": "Strategic Ecosystem",
+      "titleStart": "Alliances that",
+      "titleHighlight": "Power your Growth"
+    },
+    "omnichannel": {
+      "badge": "Central Intelligence",
+      "titleStart": "Absolute Control.",
+      "titleHighlight": "Total Presence.",
+      "description": "We merge your digital channels into a centralized ecosystem. Dominate your audience's attention with omnipresent content and real-time data analysis.",
+      "features": {
+        "f1": {
+          "title": "Unified Data Core",
+          "desc": "Connect Meta, Google, and TikTok into a single neural system."
+        },
+        "f2": {
+          "title": "Multi-channel Deployment",
+          "desc": "Instant synchronization of campaigns across all fronts."
+        }
+      },
+      "cta": "Explore Infrastructure",
+      "secureBadge": "Encrypted Connection"
+    },
+    "valueProp": {
+      "titleStart": "Absolute Value",
+      "titleHighlight": "Engineering",
+      "subtitle": "We eliminate friction between strategy and technology.",
+      "items": {
+        "execution": {
+          "title": "Vision to Execution",
+          "desc": "We don't just deliver reports. We build, deploy, and operate the infrastructure your business needs."
+        },
+        "engineering": {
+          "title": "Top-Tier Engineering",
+          "desc": "Clean code, scalable architectures, and banking security standards. Uncompromising technical quality."
+        },
+        "growth": {
+          "title": "Predictable Growth",
+          "desc": "Automated customer acquisition systems that generate consistent results, month after month."
+        }
+      }
+    },
+    "caseStudies": {
+      "badge": "Project Holodeck",
+      "liveDb": "Live Database",
+      "titleStart": "Results that",
+      "titleHighlight": "Define",
+      "projects": {
+        "cs1": {
+          "client": "FinTech Global",
+          "title": "Infrastructure Scaling",
+          "desc": "Migration to serverless architecture reducing latency by 40%.",
+          "tags": {
+            "t1": "Cloud",
+            "t2": "DevOps"
+          }
+        },
+        "cs2": {
+          "client": "E-Commerce Giant",
+          "title": "Conversion Optimization",
+          "desc": "UX/UI redesign focused on checkout and cart recovery.",
+          "tags": {
+            "t1": "UX/UI",
+            "t2": "CRO"
+          }
+        },
+        "cs3": {
+          "client": "SaaS Enterprise",
+          "title": "Unified Design System",
+          "desc": "Implementation of Design System for 12 internal products.",
+          "tags": {
+            "t1": "Design System",
+            "t2": "React"
+          }
+        }
+      }
+    },
+    "testimonials": {
+      "badge": "Encrypted Transmissions",
+      "titleStart": "What our",
+      "titleHighlight": "Allies Say",
+      "reviews": {
+        "r1": {
+          "name": "Carlos Mendez",
+          "role": "CEO, Fincorp",
+          "body": "The re-engineering of our platform increased traffic by 300% in the first quarter. Absolutely brutal."
+        },
+        "r2": {
+          "name": "Elena Torres",
+          "role": "Product Lead, Nova",
+          "body": "I've never seen a development team so aligned with business goals. Impeccable quality."
+        },
+        "r3": {
+          "name": "Javier Ruiz",
+          "role": "Founder, Blockify",
+          "body": "Military execution speed. They delivered the MVP two weeks ahead of schedule."
+        },
+        "r4": {
+          "name": "Ana Soto",
+          "role": "CMO, E-Shop",
+          "body": "The analytics dashboard gave us the clarity we needed to scale ad spend."
+        }
+      }
+    },
+    "methodology": {
+      "badge": "Active Protocol v2.4",
+      "titleStart": "SYSTEM",
+      "titleHighlight": "A.C.T.I.O.N™",
+      "subtitle": "Our proprietary execution framework. A proven methodology to transform chaos into predictable and scalable results.",
+      "steps": {
+        "s1": {
+          "title": "Audit",
+          "subtitle": "DEEP DIAGNOSIS",
+          "desc": "Forensic analysis of your current digital infrastructure, detecting bottlenecks and efficiency leaks."
+        },
+        "s2": {
+          "title": "Conceptualize",
+          "subtitle": "ARCHITECTURE STRATEGY",
+          "desc": "Design of custom solutions merging business goals with technical feasibility."
+        },
+        "s3": {
+          "title": "Tactical Plan",
+          "subtitle": "OPERATIONAL ROADMAP",
+          "desc": "Granular breakdown of milestones, resource allocation, and definition of critical KPIs for success."
+        },
+        "s4": {
+          "title": "Implement",
+          "subtitle": "CODE DEPLOYMENT",
+          "desc": "Agile execution with Enterprise quality standards. CI/CD pipelines and automated testing."
+        },
+        "s5": {
+          "title": "Optimize",
+          "subtitle": "PERFORMANCE MAXIMIZATION",
+          "desc": "Fine-tuning based on real data. A/B testing and latency monitoring for continuous improvement."
+        },
+        "s6": {
+          "title": "Next Steps",
+          "subtitle": "GLOBAL SCALING",
+          "desc": "Planning the next growth phase. Preparation for massive load and new markets."
+        }
+      }
+    },
+    "teamGrid": {
+      "titleStart": "Elite",
+      "titleHighlight": "Operatives",
+      "subtitle": "Masterminds behind the infrastructure."
+    },
+    "faq": {
+      "badge": "Knowledge Base",
+      "titleStart": "Response",
+      "titleHighlight": "Protocols",
+      "q1": {
+        "q": "How long does implementation take?",
+        "a": "Depending on complexity. Tactical landing pages: 2-3 weeks. Complex systems: 4-8 weeks. Our initial sprint lasts 5 days."
+      },
+      "q2": {
+        "q": "Do you have post-launch support?",
+        "a": "Absolutely. We offer 'Always-On' maintenance packages to ensure 99.9% uptime, security updates, and continuous optimization."
+      },
+      "q3": {
+        "q": "Do you integrate with my current stack?",
+        "a": "Yes. We connect via API to any CRM (HubSpot, Salesforce), ERP, or database. We are technology agnostic but integration experts."
+      }
+    },
+    "cta": {
+      "badge": "Secure Channel Open",
+      "titleStart": "Ready to",
+      "titleHighlight": "Scale?",
+      "subtitle": "No more excuses. Start your brand's digital transformation today. Schedule a tactical strategy session.",
+      "btn1": "Initiate Mission",
+      "btn2": "Check Availability",
+      "footerInfo": {
+        "f1": "EST. TIME: 2-4 WEEKS",
+        "f2": "SLOTS: LIMITED",
+        "f3": "REGION: GLOBAL"
+      }
+    },
+    "portfolioPreview": {
+      "badge": "System Archive",
+      "titleStart": "Deployed",
+      "titleHighlight": "Systems",
+      "subtitle": "Active digital infrastructure in production. Audited results.",
+      "btn": "Explore Full Archive",
+      "hoverHint": "Click to access detailed project report ::"
+    },
+    "latestPosts": {
+      "badge": "Intelligence Feed",
+      "titleStart": "Intelligence",
+      "titleHighlight": "Reports",
+      "subtitle": "Tactical analysis of trends and technology.",
+      "btn": "Access Database",
+      "lockedMsg": "Classified content. Requires level 1 access to view full summary.",
+      "readAction": "Read Report"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We're ready to help you take your brand to the next level.",
+    "form": {
+      "name": "Name",
+      "email": "Email address",
+      "company": "Company",
+      "message": "Message",
+      "submit": "Send message",
+      "sending": "Sending...",
+      "success": "Message sent! We'll be in touch soon.",
+      "error": "Error sending. Please try again."
+    },
+    "info": {
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address",
+      "hours": "Business Hours",
+      "hoursValue": "Mon–Fri: 8am – 6pm (COT)"
+    }
+  },
+  "services": {
+    "content": {
+      "title": "Premium Content Creation",
+      "subtitle": "We elevate your brand with high-impact strategic content.",
+      "description": "We produce content that connects, converts, and positions your brand as a leader in your industry.",
+      "cta": "View plans"
+    },
+    "strategy": {
+      "title": "Brand Strategy",
+      "subtitle": "We build lasting brand identities.",
+      "description": "We develop comprehensive brand strategies that differentiate your business and connect with your audience."
+    },
+    "automation": {
+      "title": "Automation & AI",
+      "subtitle": "Power your business with artificial intelligence.",
+      "description": "We implement automation and AI solutions that optimize your processes and maximize efficiency."
+    },
+    "webdev": {
+      "title": "Web Development",
+      "subtitle": "Websites that convert visitors into customers.",
+      "description": "We create modern, fast, SEO-optimized websites that generate measurable results."
+    },
+    "flyering": {
+      "title": "360° Marketing",
+      "subtitle": "Comprehensive strategies covering all channels.",
+      "description": "We design complete marketing campaigns that maximize your presence and ROI across all touchpoints."
+    }
+  },
+  "methodology": {
+    "title": "Our Methodology",
+    "subtitle": "A proven process to guarantee exceptional results.",
+    "steps": {
+      "discover": "Discover",
+      "discoverDesc": "We deeply analyze your business, market, and competition.",
+      "strategy": "Strategy",
+      "strategyDesc": "We develop a personalized plan based on real data.",
+      "execute": "Execute",
+      "executeDesc": "We implement with excellence and attention to detail.",
+      "measure": "Measure",
+      "measureDesc": "We monitor results and continuously optimize."
+    }
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "Projects that have transformed real brands.",
+    "filter": {
+      "all": "All",
+      "branding": "Branding",
+      "digital": "Digital",
+      "content": "Content"
+    },
+    "viewProject": "View project"
+  },
+  "blog": {
+    "title": "Insights & Trends",
+    "subtitle": "Expert knowledge to grow your business.",
+    "readMore": "Read more",
+    "categories": {
+      "all": "All",
+      "marketing": "Marketing",
+      "strategy": "Strategy",
+      "technology": "Technology"
+    }
+  },
+  "terms": {
+    "title": "Terms & Conditions",
+    "subtitle": "Please read these terms before using our services.",
+    "lastUpdated": "Effective as of:"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "subtitle": "At LegacyMark, your privacy is our priority.",
+    "lastUpdated": "Updated:"
+  },
+  "cookies": {
+    "title": "Cookie Policy",
+    "subtitle": "At LegacyMark, we are committed to transparency.",
+    "accept": "Accept all",
+    "reject": "Reject non-essential",
+    "configure": "Configure"
+  },
+  "dataDeletion": {
+    "title": "Privacy & Data Control",
+    "subtitle": "You have full control over your personal information.",
+    "requestDeletion": "Request Deletion",
+    "steps": {
+      "step1": "Submit Request",
+      "step1Desc": "Send an email to our privacy team.",
+      "step2": "Validation",
+      "step2Desc": "We'll verify your identity to protect your data.",
+      "step3": "Secure Deletion",
+      "step3Desc": "Your data will be deleted within 30 days."
+    }
+  },
+  "sitemapPage": {
+    "meta": {
+      "title": "Sitemap | LegacyMark",
+      "description": "Explore the complete structure of LegacyMark. Find all our solutions, services, and legal resources in one place."
+    },
+    "hero": {
+      "badge": "Information Architecture",
+      "titleStart": "Site",
+      "titleHighlight": "Map",
+      "description": "Navigate through our digital ecosystem. Quick access to all sections of LegacyMark."
+    },
+    "sections": {
+      "main": "Main",
+      "solutions": "Digital Solutions",
+      "company": "Company",
+      "legal": "Legal & Privacy"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "learnMore": "Learn more",
+    "viewAll": "View all",
+    "backHome": "Back to home",
+    "nit": "Tax ID",
+    "address": "Address",
+    "whatsappMessage": "Hello LegacyMark, I would like to get more information about your services.",
+    "chatWithUs": "Chat with us"
+  },
+  "methodologyPage": {
+    "meta": {
+      "title": "Methodology | LegacyMark",
+      "description": "Discover LegacyMark's strategic process: how we transform brands through a proven methodology in diagnosis, strategy, execution, and growth."
+    },
+    "hero": {
+      "badge": "Our Process",
+      "titleStart": "LegacyMark",
+      "titleHighlight": "Methodology",
+      "description": "A proven strategic process, designed to transform brands with measurable results. Every project follows four phases establishing clarity, precise execution, and sustained growth."
+    },
+    "steps": {
+      "0": {
+        "title": "Deep Diagnostics",
+        "description": "We analyze your brand, market, and competition with data intelligence tools. We identify gaps, opportunities, and the real positioning you have versus the one you aim for.",
+        "items": {
+          "0": "Brand and communication audit",
+          "1": "Digital competition analysis",
+          "2": "Audience mapping and segmentation",
+          "3": "Online presence diagnosis"
+        }
+      },
+      "1": {
+        "title": "Tailored Strategy",
+        "description": "We design a personalized strategic plan with clear objectives, measurable KPIs, and an action roadmap. No generic templates — each strategy is as unique as your brand.",
+        "items": {
+          "0": "Value proposition definition",
+          "1": "Content architecture",
+          "2": "Media and channel plan",
+          "3": "Key Performance Indicators (KPIs)"
+        }
+      },
+      "2": {
+        "title": "High-Level Execution",
+        "description": "Our senior team implements the strategy with precision: content that connects, campaigns that convert, and systems that scale.",
+        "items": {
+          "0": "Premium content production",
+          "1": "Paid campaign management",
+          "2": "Marketing automation",
+          "3": "Web development and technology"
+        }
+      },
+      "3": {
+        "title": "Measurement and Optimization",
+        "description": "We measure everything. We optimize constantly. Data guides every decision to maximize your return on investment and accelerate growth.",
+        "items": {
+          "0": "Real-time performance reports",
+          "1": "Continuous A/B Testing",
+          "2": "Conversion Rate Optimization (CRO)",
+          "3": "Periodic review meetings"
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "description": "Apply our methodology to your brand and transform results in 90 days.",
+      "button": "Let's work together →"
+    }
+  },
+  "nosotrosPage": {
+    "meta": {
+      "title": "About Us | LegacyMark",
+      "description": "Meet the LegacyMark team and our work philosophy focused on building legacies and transforming brands through validated methodologies."
+    },
+    "hero": {
+      "badge": "LegacyMark Corporate Profile",
+      "titleStart": "Innovation that",
+      "titleHighlight": "Transforms Brands",
+      "description": "<highlight>We don't guess, we validate.</highlight> The heart of Legacy Mark is our data analysis methodology. Our commitment to accuracy allows us to deliver high-impact services, where investment efficiency is guaranteed by evidence, not intuition.",
+      "btnPrimary": "Start Transformation",
+      "btnSecondary": "Watch Agency Reel",
+      "stats": {
+        "precision": {
+          "label": "Precision",
+          "value": "99.8%"
+        },
+        "innovation": {
+          "label": "Innovation",
+          "value": "Top 1%"
+        },
+        "speed": {
+          "label": "Speed",
+          "value": "X10"
+        },
+        "impact": {
+          "label": "Impact",
+          "value": "Global"
+        }
+      }
+    },
+    "philosophy": {
+      "titleStart": "Our",
+      "titleHighlight": "Corporate DNA",
+      "subtitle": "More than an agency, we are business growth architects.",
+      "features": {
+        "mission": {
+          "title": "Mission",
+          "description": "We drive business development through marketing and advertising strategies based on each brand's DNA. We diagnose and resolve communication bottlenecks to transform our clients' potential into sales results and real positioning."
+        },
+        "vision": {
+          "title": "Vision 2030",
+          "description": "To be the benchmark for tactical and strategic marketing in Latin America, recognized for transforming emerging brands into corporate legacies through high-impact results and sustainable growth."
+        },
+        "personality": {
+          "title": "Personality",
+          "description": "We are a creative, innovative, and committed agency. Our kindness and approachability will stand out at the beginning of a conversation, as our legacy is to cultivate human warmth in every company working with us."
+        }
+      }
+    },
+    "values": {
+      "title": "Our Values",
+      "subtitle": "The fundamental pillars supporting every strategic decision at LegacyMark.",
+      "items": {
+        "creativity": {
+          "title": "Creativity",
+          "description": "Disruptive ideas breaking the status quo."
+        },
+        "innovation": {
+          "title": "Innovation",
+          "description": "Cutting-edge technology applied to branding."
+        },
+        "effectiveness": {
+          "title": "Effectiveness",
+          "description": "Resounding results, not just efforts."
+        },
+        "efficiency": {
+          "title": "Efficiency",
+          "description": "Maximum optimization of resources and time."
+        },
+        "responsibility": {
+          "title": "Social Responsibility",
+          "description": "Positive impact on our community and environment."
+        }
+      }
+    },
+    "team": {
+      "title": "Strategic Leadership",
+      "subtitle": "Brilliant minds united by one obsession: your company's growth.",
+      "btn": "Join the Team"
+    }
+  },
+  "contactPage": {
+    "meta": {
+      "title": "Contact | Legacy Mark",
+      "description": "Let's talk about your project. Schedule a free 15-minute audit with our digital strategy team."
+    },
+    "hero": {
+      "badge": "Start Here",
+      "titleStart": "Let's Talk",
+      "titleHighlight": "about your Project",
+      "description": "Do you have a project in mind? We're ready to help you <highlight>take it to the next level.</highlight>",
+      "trust": {
+        "t1": "✓ No contract",
+        "t2": "✓ Response in 24h",
+        "t3": "✓ Free first consultation"
+      },
+      "trustedByLabel": "Trusted by",
+      "status": "Team available"
+    },
+    "methods": {
+      "email": {
+        "label": "Primary Email",
+        "sub": "Response < 24h"
+      },
+      "whatsapp": {
+        "label": "WhatsApp",
+        "sub": "Available Mon-Fri 8am-6pm"
+      },
+      "office": {
+        "label": "Office",
+        "val": "Crr18a 22-21 Villa Linda, Giron, Santander",
+        "sub": "NIT 902028722-3 · Colombia 687541"
+      }
+    },
+    "process": {
+      "s1": {
+        "title": "Send your message",
+        "desc": "Tell us about your project, goals, and estimated budget."
+      },
+      "s2": {
+        "title": "We review your case",
+        "desc": "Our team analyzes your business in less than 24 hours."
+      },
+      "s3": {
+        "title": "Free Audit",
+        "desc": "15 min call to understand your goals and present a plan."
+      },
+      "s4": {
+        "title": "Custom Proposal",
+        "desc": "You receive a personalized strategy with ROI projections."
+      }
+    },
+    "info": {
+      "badge": "Direct channels",
+      "title": "Prefer direct contact?",
+      "desc": "Select the channel that suits you best. Our team is available through all media.",
+      "responseTime": {
+        "badge": "Average Response Time",
+        "val": "<4",
+        "unit": "hours",
+        "desc": "85% of inquiries answered same day"
+      },
+      "faq": {
+        "badge": "Frequently Asked Questions",
+        "q1": {
+          "q": "How long does the first delivery take?",
+          "a": "Onboarding starts in 48h. Initial assets are delivered in 9 business days."
+        },
+        "q2": {
+          "q": "Is there a minimum commitment?",
+          "a": "No. We operate month-to-month. We believe in results, not contracts."
+        },
+        "q3": {
+          "q": "Do you work with international brands?",
+          "a": "Yes, we serve clients from Colombia, USA, Mexico, and Spain with bilingual teams."
+        }
+      }
+    },
+    "form": {
+      "title": "Send us a Message",
+      "desc": "You will receive a response within 24 hours.",
+      "secure": "100% Secure",
+      "step": "Step 1 of 1 — Just 2 minutes",
+      "trust": {
+        "t1": "🔒 Data protected by GDPR",
+        "t2": "⚡ Response in <24h",
+        "t3": "🤝 No spam, promised"
+      }
+    },
+    "location": {
+      "badge": "Our Location",
+      "titleStart": "Presence in",
+      "titleHighlight": "Latin America",
+      "p1": "Although we are digital natives and work remotely, our base is in <highlight>Bogota, Colombia</highlight> and we serve clients across the region.",
+      "p2": "In-person meetings are available by appointment. We also connect via video call in any time zone.",
+      "stats": {
+        "clients": {
+          "label": "Active Clients"
+        },
+        "experience": {
+          "label": "Years of Experience"
+        },
+        "projects": {
+          "label": "Delivered Projects"
+        },
+        "countries": {
+          "label": "Countries Served"
+        }
+      }
+    },
+    "cta": {
+      "badge": "Guaranteed Response",
+      "titleStart": "Prefer us to",
+      "titleHighlight": "call you?",
+      "desc": "Send us your number and we will contact you in under 2 hours on business days.",
+      "btn": "💬 +57 322 304 7353 — Text Us →",
+      "footer": "No bots · Real people · No spam"
+    }
+  },
+  "portfolioPage": {
+    "meta": {
+      "title": "Portfolio | Legacy Mark",
+      "description": "Explore the vault of our most ambitious deployments and real success stories."
+    },
+    "hero": {
+      "badge": "Classified: Level 5 Clearance",
+      "scramble": "PROOF",
+      "titleHighlight": "OF WORK.",
+      "desc": "We don't just write code. We engineer dominance. Explore the vault of our most ambitious deployments.",
+      "stats": {
+        "s1": {
+          "val": "$50M+",
+          "label": "Client Revenue"
+        },
+        "s2": {
+          "val": "100%",
+          "label": "Success Rate"
+        }
+      }
+    },
+    "filters": {
+      "all": "View All",
+      "fintech": "FinTech",
+      "ecommerce": "E-Commerce",
+      "saas": "SaaS"
+    },
+    "projects": {
+      "neobank": {
+        "title": "NEOBANK",
+        "category": "FinTech",
+        "desc": "Re-architecting the core banking core. 99.99% uptime with 5M+ daily transactions.",
+        "stats": {
+          "s1": {
+            "label": "Latency",
+            "val": "12ms"
+          },
+          "s2": {
+            "label": "Uptime",
+            "val": "99.99%"
+          },
+          "s3": {
+            "label": "Transact",
+            "val": "$5B+"
+          }
+        }
+      },
+      "aura": {
+        "title": "AURA MODA",
+        "category": "E-Commerce",
+        "desc": "Immersive 3D shopping experience for luxury streetwear. WebGL powered.",
+        "stats": {
+          "s1": {
+            "label": "Returns",
+            "val": "-30%"
+          },
+          "s2": {
+            "label": "AOV",
+            "val": "$450"
+          },
+          "s3": {
+            "label": "Conversion",
+            "val": "4.8%"
+          }
+        }
+      },
+      "synth": {
+        "title": "SYNTH AI",
+        "category": "SaaS",
+        "desc": "Generative AI platform with real-time scaling and edge inference.",
+        "stats": {
+          "s1": {
+            "label": "Users",
+            "val": "100k+"
+          },
+          "s2": {
+            "label": "Tokens/s",
+            "val": "4M"
+          },
+          "s3": {
+            "label": "MRR",
+            "val": "$80k"
+          }
+        }
+      }
+    },
+    "gallery": {
+      "end": "/// END OF PUBLIC RECORDS ///",
+      "req": "Request Full Credentials"
+    },
+    "cta": {
+      "title": "BE THE NEXT",
+      "titleBr": "UNICORN.",
+      "btn": "Start Project"
+    }
+  },
+  "estrategiaPage": {
+    "hero": {
+      "badge": "Digital Transformation Architects",
+      "title1": "We Design",
+      "title2": "Market Dominance.",
+      "desc": "Stop reacting to the market. Start dictating it. We provide the <strong>strategic infrastructure</strong> for companies ready to lead.",
+      "btn1": "Book Consulting",
+      "btn2": "View Blueprint",
+      "cards": {
+        "c1": "Executive Vision",
+        "c2": "Data Core",
+        "c3": "Architecture",
+        "c4": "Market Leader"
+      }
+    },
+    "roadmap": {
+      "badge": "Operational Blueprint",
+      "title": "Transformation Roadmap",
+      "desc": "A structured, military-grade approach to upgrade your entire digital ecosystem.",
+      "phases": {
+        "p01": {
+          "step": "Phase 01",
+          "title": "Forensic Audit",
+          "desc": "We dismantle your current processes, tech stack, and data flow. We find where you are losing money and where your data is disconnected."
+        },
+        "p02": {
+          "step": "Phase 02",
+          "title": "Strategic Architecture",
+          "desc": "We design the new operating system. We select the Enterprise Tech Stack (ERP, CRM, BI), define KPI dashboards, and map the Customer Journey."
+        },
+        "p03": {
+          "step": "Phase 03",
+          "title": "Deployment & Integration",
+          "desc": "The build phase. We migrate data, configure API connections, automation flows, and train your key stakeholders."
+        },
+        "p04": {
+          "step": "Phase 04",
+          "title": "Aggressive Scaling",
+          "desc": "Continuous optimization cycle. We use the new data clarity to inject capital into profitable channels and ruthlessly cut what doesn't work."
+        }
+      }
+    },
+    "services": {
+      "title": "Executive Services",
+      "desc": "High-leverage interventions for growing companies.",
+      "cmo": {
+        "title": "Fractional CMO",
+        "desc": "Expert marketing leadership without the cost of a full-time executive. We direct your strategy, manage your team, and are accountable for results.",
+        "l1": "Board Advisory",
+        "l2": "Team Management",
+        "l3": "Budget Allocation"
+      },
+      "tech": {
+        "title": "Tech Architecture",
+        "desc": "We build the digital backbone of your company. Seamless integration between CRM, Marketing Automation, and Analytics.",
+        "l1": "CRM Implementation",
+        "l2": "Custom APIs",
+        "l3": "Data Warehousing"
+      },
+      "growth": {
+        "title": "Growth Consulting",
+        "desc": "Sniper consulting to solve specific revenue blocks. Pricing strategy, market expansion, and product-market fit.",
+        "l1": "Go-to-Market Strategy",
+        "l2": "Unit Economics Analysis",
+        "l3": "Funnel Optimization"
+      }
+    },
+    "stack": {
+      "badge": "Powered by Enterprise Data",
+      "title": "Intelligence Stack"
+    },
+    "pricing": {
+      "badge": "Investment Models",
+      "title": "Partnership Tiers",
+      "t1": {
+        "title": "Strategic Advisory",
+        "price": "$12M",
+        "unit": "COP / month",
+        "desc": "For leaders who need a sounding board and high-level direction without operational execution.",
+        "f1": "Bi-weekly Strategy Calls",
+        "f2": "Dashboards & KPIs Review",
+        "f3": "Vendor/Team Selection",
+        "f4": "Unlimited Asynchronous Support",
+        "btn": "Request Advisory"
+      },
+      "t2": {
+        "badge": "Limited Capacity",
+        "title": "Fractional Executive",
+        "price": "$25M",
+        "unit": "COP / month",
+        "desc": "We step in as your interim CxO. Full operational control, team leadership, and revenue accountability.",
+        "f1": "Leadership Team Member",
+        "f2": "Weekly Planning & Review",
+        "f3": "Full Department Management",
+        "f4": "Board Representation",
+        "btn": "Check Availability"
+      }
+    },
+    "cta": {
+      "title1": "Stop Guessing.",
+      "title2": "Start ",
+      "title2Span": "Architecting.",
+      "desc1": "Strategy is the difference between movement and progress.",
+      "desc2": "Let's build your roadmap to market dominance.",
+      "btn": "Book Consultant"
+    }
+  },
+  "automatizacionPage": {
+    "hero": {
+      "badge": "Enterprise AI Workforce v2.0",
+      "title1": "Stop hiring more staff.",
+      "title2": "Clone the best.",
+      "desc1": "We deploy <strong>Autonomous Digital Agents</strong> that operate your company 24/7.",
+      "desc2": "From sales to support, with machine precision and human empathy.",
+      "btn1": "Process Audit (Free)",
+      "btn2": "View Agents Catalog",
+      "trusted": "Optimizing Workflow For"
+    },
+    "problem": {
+      "title1": "The \"Black Hole\" of",
+      "title2": "Human Productivity",
+      "desc1": "Your team loses <strong>40% of their week</strong> on repetitive tasks.",
+      "desc2": "That's 2 fully paid days just moving data from one spreadsheet to another.",
+      "list1": "Slow and costly manual processes.",
+      "list2": "Human errors in critical data.",
+      "list3": "Operational blindness due to lack of real reporting.",
+      "comparison": {
+        "manual": "Huma-Ops",
+        "manualTime": "40h",
+        "timeLabel": "Time / Process",
+        "ai": "Agent-Ops",
+        "aiTime": "10ms",
+        "efficiency": "Efficiency Gained"
+      }
+    },
+    "agents": {
+      "badge": "Digital Workforce v2.0",
+      "title": "Your New Star \"Employees\"",
+      "desc": "Pre-trained, instantiable, and infinitely scalable agents. They don't sleep, don't ask for time off, they just execute.",
+      "list": {
+        "a1": {
+          "role": "Lead Qualification",
+          "desc": "Interacts with leads. Qualifies interest, answers questions, and schedules meetings.",
+          "statsLabel": "Response"
+        },
+        "a2": {
+          "role": "Deep Automation",
+          "desc": "Orchestrates ERPs and CRMs. Moves data, invoices, and alerts anomalies.",
+          "statsLabel": "Uptime"
+        },
+        "a3": {
+          "role": "Predictive BI",
+          "desc": "Predicts market trends and generates autonomous executive reports.",
+          "statsLabel": "Accuracy"
+        }
+      }
+    },
+    "stack": {
+      "title": "Powered by Modern Infrastructure"
+    },
+    "roi": {
+      "badge": "Return On Investment",
+      "title1": "The Math is",
+      "title2": "Irrefutable.",
+      "desc": "Deploying a LegacyMark agent costs a fraction of an average salary, but produces exponentially superior results. No sick days, no errors.",
+      "stats": {
+        "s1Val": "70%",
+        "s1Label": "Cost Savings",
+        "s2Val": "10x",
+        "s2Label": "Speed"
+      },
+      "graph": {
+        "before": "Before",
+        "manual": "Manual"
+      }
+    },
+    "faq": {
+      "title": "Engineering FAQs",
+      "q1": "Is it safe to connect my data?",
+      "a1": "Absolutely. We use bank-grade encryption (AES-256) and our integrations work via secure APIs with granular read/write permissions.",
+      "q2": "How long does implementation take?",
+      "a2": "Our pre-trained agents can be deployed in 3-5 business days. For custom flows, 2-3 weeks.",
+      "q3": "What happens if the process changes?",
+      "a3": "Our agents are modular. Updating the logic is as simple as reconfiguring the decision node, without rewriting code."
+    },
+    "cta": {
+      "badge": "SYSTEM READY FOR DEPLOYMENT",
+      "title1": "Ready to launch your",
+      "title2": "digital workforce?",
+      "desc": "Book a technical demo today. We will show you exactly how much time and money you can save in the first week.",
+      "btn": "Book Tech Demo"
+    }
+  },
+  "creacionContenidoPage": {
+    "hero": {
+      "badge": "Next-Gen Content Studio",
+      "title1": "We Create",
+      "title2": "Content",
+      "title3": "that Sells.",
+      "desc1": "Strategy. Production. Virality.",
+      "desc2": "Results from month one.",
+      "btn1": "Start Project",
+      "btn2": "View Process"
+    },
+    "services": {
+      "badge": "Audiovisual Production",
+      "title": "Content Services",
+      "desc": "Professional production in all formats that dominate today's platforms.",
+      "s1Title": "Video Short-Form",
+      "s1Desc": "Reels, TikToks and Shorts optimized to go viral. Hormozi-style script, production, and editing.",
+      "s2Title": "Visual Identity",
+      "s2Desc": "High-impact graphic design that stops the scroll. Thumbnails, carousels, and posts that convert.",
+      "s3Title": "Copywriting",
+      "s3Desc": "Words that sell. Email sequences, captions, and scripts with 45%+ open rates.",
+      "s4Title": "Strategy & Data",
+      "s4Desc": "We do not create blindly. We analyze metrics, trends, and competitors to maximize every action."
+    },
+    "process": {
+      "badge": "In Production",
+      "title1": "From idea to",
+      "title2": "viral",
+      "desc": "Our 9-day production pipeline. Zero improvisation.",
+      "guarantee": "Guaranteed delivery in",
+      "days": "9 business days",
+      "s1Title": "Strategy & Concept",
+      "s1Desc": "We analyze trends in real-time and design viral hooks for your specific niche.",
+      "s1Time": "Day 1–2",
+      "s2Title": "Editorial Planning",
+      "s2Desc": "Word-for-word scripts, storyboards, and a 30-day calendar ready for your approval.",
+      "s2Time": "Day 3",
+      "s3Title": "Premium Production",
+      "s3Desc": "4K recording, professional lighting, and world-class creative direction.",
+      "s3Time": "Day 4–5",
+      "s4Title": "Hormozi-Style Editing",
+      "s4Desc": "Dynamic cuts, native animated subtitles, and motion graphics that stop the scroll.",
+      "s4Time": "Day 6–8",
+      "s5Title": "Distribution & Scale",
+      "s5Desc": "Posting at peak hours, first 48h management, and detailed metrics report.",
+      "s5Time": "Day 9+"
+    },
+    "testimonials": {
+      "rating": "4.9/5 · 120+ clients",
+      "title1": "Numbers that",
+      "title2": "speak for themselves",
+      "desc": "Real data from active campaigns.",
+      "t1Text": "We went from 500 to 15k average reel views in just 3 weeks. They know exactly how to create scroll-stopping content.",
+      "t1Metric": "Views",
+      "t2Text": "The visual quality is next level. Our clients now perceive us as industry leaders.",
+      "t2Metric": "ROAS",
+      "t3Text": "Positive ROI from month 1, and we tripled our subscriber base in 90 days.",
+      "t3Metric": "Clients"
+    },
+    "pricing": {
+      "badge": "Investment",
+      "title": "Flexible Plans",
+      "desc": "Choose the level of impact you need for your brand.",
+      "popular": "Most Popular",
+      "month": "COP /mo",
+      "btn": "Start Now",
+      "urgentTitle": "Limited Offer This Week",
+      "urgentDesc1": "Book your strategy call and get",
+      "urgentDesc2": "2 Extra Videos",
+      "urgentDesc3": "in your first month.",
+      "urgentBtn": "Book Now",
+      "f1": "Content Strategy",
+      "f2": "Scripts & Storyboards",
+      "f3": "Professional 4K Recording",
+      "f4": "Hormozi-Style Editing",
+      "f5": "Multi-platform Distribution",
+      "f6": "Monthly Metrics Report",
+      "f7": "Community Management",
+      "f8": "Clickbait Thumbnails",
+      "p1Desc": "Perfect for personal brands just starting out.",
+      "p2Desc": "For businesses ready to scale aggressively.",
+      "p3Desc": "Complete \"Done-For-You\" solution."
+    },
+    "roi": {
+      "badge": "Live",
+      "title": "Calculate Your Potential ROI",
+      "desc": "Visualize the financial impact of a professional content strategy.",
+      "l1": "Videos per Month",
+      "l2": "Average Lead Value ($)",
+      "l3": "Conversion Rate (%)",
+      "reach": "Monthly Reach",
+      "time": "Time Saved",
+      "timeUnit": "/mo",
+      "revenue": "Estimated Monthly Revenue",
+      "projected": "+400% Projected ROI"
+    },
+    "cta": {
+      "badge": "On Air — Only 3 Spots This Week",
+      "title1": "Ready to scale",
+      "title2": "your content?",
+      "desc1": "Book your free 15-min audit. We will deliver",
+      "desc2": "3 personalized viral ideas",
+      "desc3": "— no strings attached.",
+      "btn": "Book Free Audit",
+      "c1": "✓ No credit card required",
+      "c2": "✓ Response within 24h",
+      "c3": "✓ 100% Free"
+    }
+  },
+  "estrategiaMarcaPage": {
+    "metadata": {
+      "title": "Brand Strategy & Rebranding | LegacyMark",
+      "description": "We deconstruct and reconstruct entire identity systems to align with your next stage of growth."
+    },
+    "hero": {
+      "badge": "Strategic Design Office",
+      "title1": "BRAND",
+      "title2": "LOGIC.",
+      "desc1": "We clarify the chaos.",
+      "desc2": "We build identity systems that convert attention into value.",
+      "btn1": "Start Audit",
+      "btn2": "Explore Tools",
+      "graphic": {
+        "tag": "Strategy",
+        "title": "Precision over noise."
+      }
+    },
+    "tools": {
+      "badge": "Strategic Toolkit",
+      "title": "Define Your True North.",
+      "desc": "Explore our interactive tools to understand the components of a winning strategy.",
+      "archetypes": {
+        "title": "Archetype Simulator",
+        "a1Name": "The Hero",
+        "a1Traits": "Brave, Bold, Competent",
+        "a1Voice": "Voice: Confident",
+        "a1Drive": "Drive: Mastery",
+        "a2Name": "The Sage",
+        "a2Traits": "Wise, Visionary, Truth-Seeker",
+        "a2Voice": "Voice: Analytical",
+        "a2Drive": "Drive: Understanding",
+        "a3Name": "The Creator",
+        "a3Traits": "Imaginative, Expressive, Innovative",
+        "a3Voice": "Voice: Inspiring",
+        "a3Drive": "Drive: Innovation",
+        "a4Name": "The Rebel",
+        "a4Traits": "Disruptive, Liberated, Wild",
+        "a4Voice": "Voice: Defiant",
+        "a4Drive": "Drive: Liberation"
+      },
+      "equity": {
+        "title": "Brand Equity Estimator",
+        "l1": "Brand Awareness",
+        "l2": "Customer Loyalty",
+        "l3": "Perceived Quality",
+        "result": "Market Impact Potential"
+      },
+      "color": {
+        "title": "Color Psychology Lab",
+        "c1Name": "Red",
+        "c1Emotion": "Passion, Urgency, Energy",
+        "c2Name": "Blue",
+        "c2Emotion": "Trust, Calm, Stability",
+        "c3Name": "Green",
+        "c3Emotion": "Growth, Health, Nature",
+        "c4Name": "Black",
+        "c4Emotion": "Luxury, Power, Mystery"
+      },
+      "impact": {
+        "title": "Brand Value Impact",
+        "desc": "Understand how awareness, loyalty, and perceived quality combine to create market value. Use the estimator to visualize your potential.",
+        "p1": "Higher Customer LTV",
+        "p2": "Greater Price Elasticity",
+        "p3": "Lower Acquisition Cost"
+      }
+    },
+    "process": {
+      "title1": "TOTAL",
+      "title2": "REBRANDING.",
+      "desc": "We don't just \"refresh\" logos. We deconstruct and reconstruct entire identity systems to align with your next stage of growth.",
+      "stats": {
+        "v1": "4-6",
+        "l1": "Weeks",
+        "v2": "50+",
+        "l2": "Assets"
+      },
+      "steps": {
+        "s0Title": "Brand Audit",
+        "s0Desc": "Scientific analysis of current perception gaps.",
+        "s1Title": "Strategic Core",
+        "s1Desc": "Definition of Mission, Vision, and Competitive Positioning.",
+        "s2Title": "Verbal Identity",
+        "s2Desc": "Naming, Taglines, and Voice Guidelines.",
+        "s3Title": "Visual System",
+        "s3Desc": "Logo, Typography, Color, and Motion behaviors.",
+        "s4Title": "Brand Guidelines",
+        "s4Desc": "The 'Bible' for your internal team.",
+        "s5Title": "Launch Assets",
+        "s5Desc": "Social kit, presentation templates, and web skin."
+      }
+    },
+    "cta": {
+      "title1": "BE ",
+      "title2": "TIMELESS.",
+      "desc": "Ready to build a brand that outlives the trends?",
+      "btn": "Schedule Strategy"
+    }
+  },
+  "webDevPage": {
+    "metadata": {
+      "title": "Next.js Web Development | LegacyMark",
+      "description": "World-class software engineering. Extreme speed, flawless technical SEO, and conversion as the sole objective."
+    },
+    "hero": {
+      "badge": "Next.js Enterprise Architecture",
+      "title1": "Your Web Is Not",
+      "title2": "An Expense.",
+      "title3": "It's An Investment.",
+      "desc1": "Software engineering of ",
+      "desc2": "world-class caliber",
+      "desc3": ". Extreme speed, flawless technical SEO, and conversion as the sole objective.",
+      "btn1": "Start Project",
+      "btn2": "View Success Stories",
+      "term": {
+        "title": "vercel-deploy-pipeline.sh",
+        "c1": "// Deploy to Edge Network",
+        "c2": "target:",
+        "c2v": "'serverless'",
+        "c3": "performance:",
+        "c3v": "'obsessed-mode'",
+        "c4": "security:",
+        "c4v": "true",
+        "status": "COMPILING..."
+      }
+    },
+    "marquee": {
+      "tag": "Tech Landscape",
+      "title": "We Build on Giants"
+    },
+    "performance": {
+      "tag": "Core Web Vitals",
+      "title1": "Speed is",
+      "title2": "SEO & Conversion.",
+      "desc": "Every millisecond counts. We optimize the Critical Rendering Path to achieve perfect scores that Google (and your users) love.",
+      "features": {
+        "f1Title": "LCP < 1.0s",
+        "f1Desc": "The main content loads in the blink of an eye.",
+        "f2Title": "Native Mobile First",
+        "f2Desc": "UI/UX designed for touch, not just adapted.",
+        "f3Title": "Semantic SEO",
+        "f3Desc": "Integrated JSON-LD structure for Rich Snippets."
+      },
+      "report": "Lighthouse 12.0 Report",
+      "status": "PASSED"
+    },
+    "comparison": {
+      "title": "The Ugly Truth",
+      "desc": "Most agencies sell $50 USD templates as \"professional web design\".",
+      "bad": {
+        "title": "\"The Competition\"",
+        "items": [
+          "Wordpress / Wix (Slow)",
+          "Generic Templates",
+          "No Code Access",
+          "Vulnerable to Hacks"
+        ]
+      },
+      "good": {
+        "title": "LegacyMark Custom",
+        "items": [
+          "Next.js Enterprise Stack",
+          "100% Custom Design",
+          "Full Code Ownership",
+          "Military-Grade Security"
+        ]
+      }
+    },
+    "pricing": {
+      "tag": "Scalable Solutions",
+      "title": "Transparent Investment",
+      "t1": {
+        "title": "MVP Launch",
+        "price": "$7.5M",
+        "currency": "COP",
+        "desc": "Ideal for startups that need to validate their product in the market quickly.",
+        "features": [
+          "Landing Page (5 Sections)",
+          "Custom UI/UX Design",
+          "Contact Form",
+          "Basic Analytics",
+          "1 Month Support"
+        ],
+        "btn": "Select Plan"
+      },
+      "t2": {
+        "badge": "MOST POPULAR",
+        "title": "Growth Scale",
+        "price": "$12M",
+        "currency": "COP",
+        "desc": "The complete suite for companies looking to dominate their digital niche.",
+        "features": [
+          "Full Website (10+ Pages)",
+          "Self-Manageable CMS (Sanity)",
+          "SEO-Optimized Blog",
+          "CRM & Email Integration",
+          "Analytics Dashboard",
+          "3 Months VIP Support"
+        ],
+        "btn": "Start Now"
+      },
+      "t3": {
+        "title": "Custom SaaS",
+        "price": "Talk to Us",
+        "currency": "",
+        "desc": "Complex architecture, admin panels, and advanced business logic.",
+        "features": [
+          "Serverless Architecture",
+          "Dedicated Database",
+          "Auth & Roles (RBAC)",
+          "REST / GraphQL API",
+          "CI/CD Pipelines",
+          "Guaranteed SLA"
+        ],
+        "btn": "Contact Sales Eng."
+      }
+    },
+    "faq": {
+      "title": "Technical Doubts Resolved",
+      "q1": "Why not use Wordpress?",
+      "a1": "Wordpress loads slowly and is insecure. Next.js is the technology used by Netflix, Twitch, and Nike for instant speed.",
+      "q2": "Can I edit the content?",
+      "a2": "Yes. We implement a Headless CMS (Sanity/Strapi) so you can visually edit texts and images without touching code.",
+      "q3": "What does maintenance include?",
+      "a3": "24/7 monitoring, security updates, daily backups, and direct technical support via WhatsApp.",
+      "q4": "How long does development take?",
+      "a4": "An MVP can be ready in 2 weeks. A complete corporate site takes 4-6 weeks to ensure quality."
+    },
+    "cta": {
+      "title1": "Stop Losing",
+      "title2": "Customers.",
+      "desc1": "Your competition is still using slow templates.",
+      "desc2": "It's the perfect time to overtake them.",
+      "btn": "Start Transformation"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\soluciones\estrategia-de-marca\page.tsx
+   7:17  warning  'Palette' is defined but never used            @typescript-eslint/no-unused-vars
+   7:35  warning  'Type' is defined but never used               @typescript-eslint/no-unused-vars
+   7:41  warning  'Layers' is defined but never used             @typescript-eslint/no-unused-vars
+   8:5   warning  'Share2' is defined but never used             @typescript-eslint/no-unused-vars
+   8:13  warning  'Fingerprint' is defined but never used        @typescript-eslint/no-unused-vars
+   8:31  warning  'MessageSquare' is defined but never used      @typescript-eslint/no-unused-vars
+   9:5   warning  'Sparkles' is defined but never used           @typescript-eslint/no-unused-vars
+   9:15  warning  'Gem' is defined but never used                @typescript-eslint/no-unused-vars
+   9:20  warning  'Feather' is defined but never used            @typescript-eslint/no-unused-vars
+   9:29  warning  'Aperture' is defined but never used           @typescript-eslint/no-unused-vars
+   9:39  warning  'Combine' is defined but never used            @typescript-eslint/no-unused-vars
+  10:5   warning  'Hexagon' is defined but never used            @typescript-eslint/no-unused-vars
+  10:14  warning  'CircleNotch' is defined but never used        @typescript-eslint/no-unused-vars
+  10:27  warning  'Frame' is defined but never used              @typescript-eslint/no-unused-vars
+  10:34  warning  'Component' is defined but never used          @typescript-eslint/no-unused-vars
+  10:45  warning  'Video' is defined but never used              @typescript-eslint/no-unused-vars
+  11:5   warning  'Quote' is defined but never used              @typescript-eslint/no-unused-vars
+  11:12  warning  'Mic2' is defined but never used               @typescript-eslint/no-unused-vars
+  11:18  warning  'Move3d' is defined but never used             @typescript-eslint/no-unused-vars
+  11:26  warning  'Box' is defined but never used                @typescript-eslint/no-unused-vars
+  11:38  warning  'Star' is defined but never used               @typescript-eslint/no-unused-vars
+  11:44  warning  'TrendingUp' is defined but never used         @typescript-eslint/no-unused-vars
+  12:5   warning  'Grid' is defined but never used               @typescript-eslint/no-unused-vars
+  12:27  warning  'Briefcase' is defined but never used          @typescript-eslint/no-unused-vars
+  12:50  warning  'Heart' is defined but never used              @typescript-eslint/no-unused-vars
+  15:43  warning  'useSpring' is defined but never used          @typescript-eslint/no-unused-vars
+  15:54  warning  'useInView' is defined but never used          @typescript-eslint/no-unused-vars
+  15:81  warning  'useMotionTemplate' is defined but never used  @typescript-eslint/no-unused-vars
+  16:18  warning  'useEffect' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\app\(marketing)\soluciones\estrategia\page.tsx
+    5:10  warning  'Accordion' is defined but never used          @typescript-eslint/no-unused-vars
+    5:21  warning  'AccordionItem' is defined but never used      @typescript-eslint/no-unused-vars
+    5:36  warning  'AccordionTrigger' is defined but never used   @typescript-eslint/no-unused-vars
+    5:54  warning  'AccordionContent' is defined but never used   @typescript-eslint/no-unused-vars
+    7:29  warning  'Target' is defined but never used             @typescript-eslint/no-unused-vars
+    7:37  warning  'Share2' is defined but never used             @typescript-eslint/no-unused-vars
+    8:5   warning  'BarChart3' is defined but never used          @typescript-eslint/no-unused-vars
+    8:16  warning  'Zap' is defined but never used                @typescript-eslint/no-unused-vars
+    8:21  warning  'Layers' is defined but never used             @typescript-eslint/no-unused-vars
+    8:29  warning  'Users' is defined but never used              @typescript-eslint/no-unused-vars
+    8:44  warning  'CheckCircle2' is defined but never used       @typescript-eslint/no-unused-vars
+    9:13  warning  'MousePointerClick' is defined but never used  @typescript-eslint/no-unused-vars
+    9:32  warning  'RefreshCcw' is defined but never used         @typescript-eslint/no-unused-vars
+    9:44  warning  'PieChart' is defined but never used           @typescript-eslint/no-unused-vars
+   10:39  warning  'Divide' is defined but never used             @typescript-eslint/no-unused-vars
+   11:5   warning  'ShieldCheck' is defined but never used        @typescript-eslint/no-unused-vars
+   11:18  warning  'GraduationCap' is defined but never used      @typescript-eslint/no-unused-vars
+   11:45  warning  'Globe' is defined but never used              @typescript-eslint/no-unused-vars
+   11:52  warning  'Laptop' is defined but never used             @typescript-eslint/no-unused-vars
+   14:43  warning  'useSpring' is defined but never used          @typescript-eslint/no-unused-vars
+   14:54  warning  'useInView' is defined but never used          @typescript-eslint/no-unused-vars
+   15:18  warning  'useEffect' is defined but never used          @typescript-eslint/no-unused-vars
+   15:29  warning  'useState' is defined but never used           @typescript-eslint/no-unused-vars
+   49:28  warning  'width' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   49:35  warning  'height' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   85:54  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  129:11  warning  'rotate' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+✖ 56 problems (1 error, 55 warnings)
+

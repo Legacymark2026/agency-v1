@@ -1,0 +1,7 @@
+
+C:\Users\hboho\.gemini\antigravity\scratch\legacymark\components\layout\header.tsx
+   4:10  warning  'useRef' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  60:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+✖ 2 problems (0 errors, 2 warnings)
+

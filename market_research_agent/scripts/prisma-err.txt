@@ -1,0 +1,16 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Error: Prisma schema validation - (get-dmmf wasm)
+Error code: P1012
+error: Error validating field `agent` in model `AgentConversation`: The relation field `agent` on model `AgentConversation` is missing an opposite relation field on the model `AIAgent`. Either run `prisma format` or add it manually.
+  -->  schema.prisma:1558
+   | 
+1557 |   company  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+1558 |   agent    AIAgent?       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+1559 | 
+   | 
+
+Validation Error Count: 1
+[Context: getDmmf]
+
+Prisma CLI Version : 5.10.2

@@ -1,0 +1,72 @@
+
+> legacymark@0.1.0 build
+> prisma generate && prisma db push --accept-data-loss && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v5.10.2) to .\node_modules\@prisma\client in 16.58s
+
+Start using Prisma Client in Node.js (See: https://pris.ly/d/client)
+```
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+```
+or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+```
+import { PrismaClient } from '@prisma/client/edge'
+const prisma = new PrismaClient()
+```
+
+See other ways of importing Prisma Client: http://pris.ly/d/importing-client
+
+┌─────────────────────────────────────────────────────────────┐
+│  Deploying your app to serverless or edge functions?        │
+│  Try Prisma Accelerate for connection pooling and caching.  │
+│  https://pris.ly/cli/accelerate                             │
+└─────────────────────────────────────────────────────────────┘
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "legacymark", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v5.10.2) to .\node_modules\@prisma\client in 17.52s
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./app/(dashboard)/dashboard/settings/inbox/macros/_components/macro-form-modal.tsx:172:76
+Parsing ecmascript source code failed
+  170 |                                     />
+  171 |                                     <p className="text-xs text-slate-500">
+> 172 |                                         Variables beta: Puedes usar `{{lead.name}}` en futuras actualizaciones.
+      |                                                                            ^
+  173 |                                     </p>
+  174 |                                 </div>
+  175 |                             )}
+
+Expected a semicolon
+
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/dashboard/settings/inbox/macros/_components/macro-form-modal.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/settings/inbox/macros/_components/macros-client.tsx [Client Component Browser]
+    ./app/(dashboard)/dashboard/settings/inbox/macros/_components/macros-client.tsx [Server Component]
+    ./app/(dashboard)/dashboard/settings/inbox/macros/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./app/(dashboard)/dashboard/settings/inbox/macros/_components/macro-form-modal.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/settings/inbox/macros/_components/macros-client.tsx [Client Component SSR]
+    ./app/(dashboard)/dashboard/settings/inbox/macros/_components/macros-client.tsx [Server Component]
+    ./app/(dashboard)/dashboard/settings/inbox/macros/page.tsx [Server Component]
+
+
+    at <unknown> (./app/(dashboard)/dashboard/settings/inbox/macros/_components/macro-form-modal.tsx:172:76)

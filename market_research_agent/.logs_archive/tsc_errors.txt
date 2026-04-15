@@ -1,0 +1,2 @@
+components/inbox/chat-window.tsx(7,62): error TS2300: Duplicate identifier 'Timer'.
+components/inbox/chat-window.tsx(23,90): error TS2300: Duplicate identifier 'Timer'.

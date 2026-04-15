@@ -1,0 +1,16 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+error: Field "probability" is already defined on model "Deal".
+  -->  schema.prisma:707
+   | 
+706 |   kanbanTaskId  String?        @unique @map("kanban_task_id")
+707 |   probability   Int            @default(0)
+   | 
+
+Validation Error Count: 1
+[Context: validate]
+
+Prisma CLI Version : 5.10.2

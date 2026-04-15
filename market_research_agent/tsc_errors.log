@@ -1,0 +1,14 @@
+scripts/testing/check-inbox.ts(1,39): error TS1002: Unterminated string literal.
+scripts/testing/test-automation.ts(10,42): error TS1002: Unterminated string literal.
+scripts/testing/test-automation.ts(11,60): error TS1002: Unterminated string literal.
+scripts/testing/test-graph-api.ts(1,56): error TS1002: Unterminated string literal.
+scripts/testing/test-graph-api.ts(2,39): error TS1002: Unterminated string literal.
+scripts/testing/test-inbox-flow.ts(3,120): error TS1002: Unterminated string literal.
+scripts/testing/test-meta-sync.ts(1,73): error TS1002: Unterminated string literal.
+scripts/testing/test-meta-sync.ts(2,39): error TS1002: Unterminated string literal.
+scripts/testing/test-permissions.ts(1,39): error TS1002: Unterminated string literal.
+scripts/testing/test-scoring.ts(2,63): error TS1002: Unterminated string literal.
+scripts/testing/verify-execution.ts(3,56): error TS1002: Unterminated string literal.
+scripts/testing/verify-instagram-sync.ts(3,56): error TS1002: Unterminated string literal.
+scripts/utils/trigger-meta-sync.ts(1,60): error TS1002: Unterminated string literal.
+scripts/utils/trigger-meta-sync.ts(2,39): error TS1002: Unterminated string literal.

@@ -1,0 +1,54 @@
+Starting Meta Sync Test...
+Testing with User: 7e860ceb-70ba-493f-a29f-f4c2cf696eb9, Company: 839e33e6-307b-4100-b9c3-b21e17a89295
+
+--- Testing MetaService.getConnectedPages ---
+[MetaSync] Found Facebook Account. Token Length: 364
+[MetaSync] Facebook Pages Found via API: 1
+[MetaSync] Found MANUAL PAGE override: 929804106889746
+[MetaSync] Injected profile manual page into sync list.
+Has Account Entry: true
+Pages Found: 2
+ - LegacyMark (984150528110497) access_token: YES
+ - Legacymark  (929804106889746) access_token: YES
+
+--- Testing MetaSyncService.syncAllConversations ---
+[MetaSync] Starting sync for user 7e860ceb-70ba-493f-a29f-f4c2cf696eb9 in company 839e33e6-307b-4100-b9c3-b21e17a89295
+[MetaSync] Found Facebook Account. Token Length: 364
+[MetaSync] Facebook Pages Found via API: 1
+[MetaSync] Found MANUAL PAGE override: 929804106889746
+[MetaSync] Injected profile manual page into sync list.
+[MetaSync] Processing page: LegacyMark (984150528110497)
+[MetaSync] Fetching LegacyMark conversations (IG + FB)...
+[MetaSync] Fetching instagram conversations (inbox)...
+[MetaSync] IG Inbox Count: 0
+[MetaSync] Fetching instagram conversations (general)...
+[MetaSync] IG General Count: 0
+[MetaSync] Fetching messenger conversations (inbox)...
+[MetaSync] Messenger Count: 0
+[MetaSync] Found 0 total conversations for page LegacyMark
+[MetaSync] Processing page: Legacymark  (929804106889746)
+[MetaSync] Fetching Legacymark  conversations (IG + FB)...
+[MetaSync] Fetching instagram conversations (inbox)...
+[MetaSync] Waring fetching instagram/inbox: Any of the pages_read_engagement, pages_manage_metadata,
+        pages_read_user_content, pages_manage_ads, pages_show_list or
+        pages_messaging permission(s) must be granted before impersonating a
+        user's page.
+[MetaSync] IG Inbox Count: 0
+[MetaSync] Fetching instagram conversations (general)...
+[MetaSync] Waring fetching instagram/general: Any of the pages_read_engagement, pages_manage_metadata,
+        pages_read_user_content, pages_manage_ads, pages_show_list or
+        pages_messaging permission(s) must be granted before impersonating a
+        user's page.
+[MetaSync] IG General Count: 0
+[MetaSync] Fetching messenger conversations (inbox)...
+[MetaSync] Waring fetching messenger/inbox: Any of the pages_read_engagement, pages_manage_metadata,
+        pages_read_user_content, pages_manage_ads, pages_show_list or
+        pages_messaging permission(s) must be granted before impersonating a
+        user's page.
+[MetaSync] Messenger Count: 0
+[MetaSync] Found 0 total conversations for page Legacymark 
+Sync Result: {
+  "success": true,
+  "conversationsSynced": 0,
+  "messagesSynced": 0
+}

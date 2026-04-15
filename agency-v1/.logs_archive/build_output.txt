@@ -1,0 +1,444 @@
+
+> legacymark@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v5.10.2) to .\node_modules\@prisma\client in 993ms
+
+Start using Prisma Client in Node.js (See: https://pris.ly/d/client)
+```
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+```
+or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+```
+import { PrismaClient } from '@prisma/client/edge'
+const prisma = new PrismaClient()
+```
+
+See other ways of importing Prisma Client: http://pris.ly/d/importing-client
+
+┌─────────────────────────────────────────────────────────────┐
+│  Deploying your app to serverless or edge functions?        │
+│  Try Prisma Accelerate for connection pooling and caching.  │
+│  https://pris.ly/cli/accelerate                             │
+└─────────────────────────────────────────────────────────────┘
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\hboho\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\hboho\.gemini\antigravity\scratch\legacymark\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 80s
+  Running TypeScript ...
+  Collecting page data using 3 workers ...
+[Integrations] Registered provider for MESSENGER
+[Integrations] Registered provider for INSTAGRAM
+[Integrations] Registered provider for WHATSAPP
+[Integrations] Registered provider for TWITTER
+[Integrations] Registered provider for LINKEDIN
+[Integrations] Registered provider for YOUTUBE
+  Generating static pages using 3 workers (0/103) ...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+  Generating static pages using 3 workers (25/103) 
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+  Generating static pages using 3 workers (51/103) 
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+Error fetching conversations: Error: Dynamic server usage: Route /dashboard/inbox couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at w (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\c3278_next_dist_415cccc7._.js:1:7049)
+    at m (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\c3278_next_331d5411._.js:1:14206)
+    at <unknown> (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_d680fa69._.js:404:57705)
+    at h (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\_gemini_antigravity_scratch_legacymark_e54c8f72._.js:1:3152)
+    at j (C:\Users\hboho\.gemini\antigravity\scratch\legacymark\.next\server\chunks\ssr\[root-of-the-server]__16fa9aed._.js:1:4670)
+    at stringify (<anonymous>) {
+  description: "Route /dashboard/inbox couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+  Generating static pages using 3 workers (77/103) 
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Initializing Public Integrations Retrieval...
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] Found 0 enabled integration configs
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+[Settings] No active public integrations found.
+✓ Generating static pages using 3 workers (103/103) in 3.3s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /[locale]
+├ ƒ /[locale]/blog
+├ ƒ /[locale]/contacto
+├ ƒ /[locale]/flyering
+├ ƒ /[locale]/metodologia
+├ ƒ /[locale]/nosotros
+├ ƒ /[locale]/politica-cookies
+├ ƒ /[locale]/politica-privacidad
+├ ƒ /[locale]/portfolio
+├ ƒ /[locale]/soluciones/automatizacion
+├ ƒ /[locale]/soluciones/creacion-contenido
+├ ƒ /[locale]/soluciones/estrategia
+├ ƒ /[locale]/soluciones/estrategia-de-marca
+├ ƒ /[locale]/soluciones/web-dev
+├ ƒ /[locale]/terms
+├ ƒ /[locale]/vip
+├ ƒ /api/analytics/end-session
+├ ƒ /api/analytics/heartbeat
+├ ƒ /api/analytics/track
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/automation/trigger
+├ ƒ /api/integrations/facebook/callback
+├ ƒ /api/integrations/whatsapp/webhook
+├ ƒ /api/leads/capture
+├ ƒ /api/media/whatsapp-upload
+├ ƒ /api/media/whatsapp/[id]
+├ ƒ /api/propuesta
+├ ƒ /api/test-marketing
+├ ƒ /api/webhooks/[workflowId]
+├ ƒ /api/webhooks/channels/[provider]
+├ ƒ /auth/login
+├ ƒ /auth/nueva-contrasena
+├ ƒ /auth/recuperar
+├ ƒ /auth/register
+├ ƒ /blog
+├ ƒ /blog/[slug]
+├ ƒ /contacto
+├ ƒ /dashboard
+├ ƒ /dashboard/admin/architecture
+├ ƒ /dashboard/admin/architecture/[id]
+├ ƒ /dashboard/admin/automation
+├ ƒ /dashboard/admin/automation/builder
+├ ƒ /dashboard/admin/automation/executions
+├ ƒ /dashboard/admin/crm
+├ ƒ /dashboard/admin/crm/campaigns
+├ ƒ /dashboard/admin/crm/deals/[id]
+├ ƒ /dashboard/admin/crm/leads
+├ ƒ /dashboard/admin/crm/leads/[id]
+├ ƒ /dashboard/admin/crm/pipeline
+├ ƒ /dashboard/admin/crm/reports
+├ ƒ /dashboard/admin/crm/scoring
+├ ƒ /dashboard/admin/crm/tasks
+├ ƒ /dashboard/admin/crm/templates
+├ ƒ /dashboard/analytics
+├ ƒ /dashboard/experts
+├ ƒ /dashboard/inbox
+├ ƒ /dashboard/inbox/[conversationId]
+├ ƒ /dashboard/marketing
+├ ƒ /dashboard/marketing/automation
+├ ƒ /dashboard/marketing/campaigns
+├ ƒ /dashboard/marketing/campaigns/[id]
+├ ƒ /dashboard/marketing/links
+├ ƒ /dashboard/marketing/spend
+├ ƒ /dashboard/posts
+├ ƒ /dashboard/posts/[id]
+├ ƒ /dashboard/posts/create
+├ ƒ /dashboard/projects
+├ ƒ /dashboard/projects/[id]
+├ ƒ /dashboard/projects/create
+├ ƒ /dashboard/security
+├ ƒ /dashboard/settings
+├ ƒ /dashboard/settings/appearance
+├ ƒ /dashboard/settings/billing
+├ ƒ /dashboard/settings/company
+├ ƒ /dashboard/settings/developer
+├ ƒ /dashboard/settings/integrations
+├ ƒ /dashboard/settings/members
+├ ƒ /dashboard/settings/notifications
+├ ƒ /dashboard/settings/profile
+├ ƒ /dashboard/settings/security
+├ ƒ /dashboard/test-analytics
+├ ƒ /dashboard/unauthorized
+├ ƒ /dashboard/users
+├ ƒ /data-deletion
+├ ƒ /flyering
+├ ƒ /metodologia
+├ ƒ /nosotros
+├ ƒ /politica-cookies
+├ ƒ /politica-privacidad
+├ ƒ /portfolio
+├ ƒ /portfolio/[slug]
+├ ○ /robots.txt
+├ ƒ /rss
+├ ƒ /servicios
+├ ○ /sitemap.xml
+├ ƒ /soluciones/automatizacion
+├ ƒ /soluciones/creacion-contenido
+├ ƒ /soluciones/estrategia
+├ ƒ /soluciones/estrategia-de-marca
+├ ƒ /soluciones/web-dev
+├ ƒ /terms
+├ ƒ /test_auth_debug
+├ ƒ /test-cloudinary
+└ ƒ /vip
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
