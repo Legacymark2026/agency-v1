@@ -503,32 +503,32 @@ model ApiKey {
 }
 
 model Post {
-  id              String           @id @default(uuid())
+  id              String      @id @default(uuid())
   title           String
-  slug            String           @unique
+  slug            String      @unique
   excerpt         String?
   content         String
-  coverImage      String?          @map("cover_image")
-  imageAlt        String?          @map("image_alt")
-  published       Boolean          @default(false)
-  metaTitle       String?          @map("meta_title")
-  metaDescription String?          @map("meta_description")
-  canonicalUrl    String?          @map("canonical_url")
-  focusKeyword    String?          @map("focus_keyword")
-  status          String           @default("draft")
-  scheduledDate   DateTime?        @map("scheduled_date")
-  authorId        String           @map("author_id")
-  seriesId        String?          @map("series_id")
-  seriesOrder     Int?             @map("series_order")
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
-  CategoryToPost  CategoryToPost[]
-  PostToTag       PostToTag[]
+  coverImage      String?     @map("cover_image")
+  imageAlt        String?     @map("image_alt")
+  published       Boolean     @default(false)
+  metaTitle       String?     @map("meta_title")
+  metaDescription String?     @map("meta_description")
+  canonicalUrl    String?     @map("canonical_url")
+  focusKeyword    String?     @map("focus_keyword")
+  status          String      @default("draft")
+  scheduledDate   DateTime?   @map("scheduled_date")
+  authorId        String      @map("author_id")
+  seriesId        String?     @map("series_id")
+  seriesOrder     Int?        @map("series_order")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  categories      Category[]
+  tags            Tag[]
   comments        Comment[]
   likes           PostLike[]
   views           PostView[]
-  author          User             @relation(fields: [authorId], references: [id])
-  series          PostSeries?      @relation(fields: [seriesId], references: [id])
+  author          User        @relation(fields: [authorId], references: [id])
+  series          PostSeries? @relation(fields: [seriesId], references: [id])
 
   @@index([authorId])
   @@index([seriesId])
@@ -629,18 +629,18 @@ model Service {
 }
 
 model Tag {
-  id        String      @id @default(uuid())
-  name      String      @unique
-  PostToTag PostToTag[]
+  id    String @id @default(uuid())
+  name  String @unique
+  posts Post[]
 
   @@map("tags")
 }
 
 model Category {
-  id             String           @id @default(uuid())
-  name           String           @unique
-  slug           String           @unique
-  CategoryToPost CategoryToPost[]
+  id    String @id @default(uuid())
+  name  String @unique
+  slug  String @unique
+  posts Post[]
 
   @@map("categories")
 }
@@ -1940,37 +1940,37 @@ model AgentConfig {
 }
 
 model AIAgent {
-  id                        String                   @id @default(uuid())
-  companyId                 String                   @map("company_id")
+  id                        String              @id @default(uuid())
+  companyId                 String              @map("company_id")
   name                      String
   description               String?
-  agentType                 String                   @default("CUSTOM") @map("agent_type")
-  isActive                  Boolean                  @default(true) @map("is_active")
-  isInboxAgent              Boolean                  @default(false) @map("is_inbox_agent")
-  systemPrompt              String                   @map("system_prompt")
-  llmModel                  String                   @default("gemini-2.0-flash") @map("llm_model")
-  temperature               Float                    @default(0.4)
-  maxTokens                 Int                      @default(400) @map("max_tokens")
-  enabledTools              Json                     @default("[]") @map("enabled_tools")
-  strictRagMode             Boolean                  @default(false) @map("strict_rag_mode")
-  humanTransferWebhook      String?                  @map("human_transfer_webhook")
-  suspensionDurationMinutes Int                      @default(30) @map("suspension_duration_minutes")
-  priorityAlpha             Boolean                  @default(true) @map("priority_alpha")
-  frustrationThreshold      Float                    @default(0.8) @map("frustration_threshold")
-  enforceTempClamp          Boolean                  @default(false) @map("enforce_temp_clamp")
-  enforceTokenLimit         Boolean                  @default(true) @map("enforce_token_limit")
-  simulateLatency           Boolean                  @default(true) @map("simulate_latency")
-  filterRoboticLists        Boolean                  @default(true) @map("filter_robotic_lists")
-  voiceId                   String?                  @map("voice_id")
-  stability                 Float                    @default(0.5)
-  similarityBoost           Float                    @default(0.75) @map("similarity_boost")
-  accentRegion              String?                  @map("accent_region")
+  agentType                 String              @default("CUSTOM") @map("agent_type")
+  isActive                  Boolean             @default(true) @map("is_active")
+  isInboxAgent              Boolean             @default(false) @map("is_inbox_agent")
+  systemPrompt              String              @map("system_prompt")
+  llmModel                  String              @default("gemini-2.0-flash") @map("llm_model")
+  temperature               Float               @default(0.4)
+  maxTokens                 Int                 @default(400) @map("max_tokens")
+  enabledTools              Json                @default("[]") @map("enabled_tools")
+  strictRagMode             Boolean             @default(false) @map("strict_rag_mode")
+  humanTransferWebhook      String?             @map("human_transfer_webhook")
+  suspensionDurationMinutes Int                 @default(30) @map("suspension_duration_minutes")
+  priorityAlpha             Boolean             @default(true) @map("priority_alpha")
+  frustrationThreshold      Float               @default(0.8) @map("frustration_threshold")
+  enforceTempClamp          Boolean             @default(false) @map("enforce_temp_clamp")
+  enforceTokenLimit         Boolean             @default(true) @map("enforce_token_limit")
+  simulateLatency           Boolean             @default(true) @map("simulate_latency")
+  filterRoboticLists        Boolean             @default(true) @map("filter_robotic_lists")
+  voiceId                   String?             @map("voice_id")
+  stability                 Float               @default(0.5)
+  similarityBoost           Float               @default(0.75) @map("similarity_boost")
+  accentRegion              String?             @map("accent_region")
   gender                    String?
-  createdAt                 DateTime                 @default(now()) @map("created_at")
-  updatedAt                 DateTime                 @updatedAt @map("updated_at")
-  AIAgentToKnowledgeBase    AIAgentToKnowledgeBase[]
+  createdAt                 DateTime            @default(now()) @map("created_at")
+  updatedAt                 DateTime            @updatedAt @map("updated_at")
+  knowledgeBases            KnowledgeBase[]
   conversations             AgentConversation[]
-  company                   Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company                   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([isActive])
@@ -2654,20 +2654,20 @@ model IntegrationLog {
 }
 
 model KnowledgeBase {
-  id                     String                   @id @default(uuid())
-  companyId              String                   @map("company_id")
-  name                   String
-  description            String?
-  sourceType             String                   @default("TEXT") @map("source_type")
-  sourceUrl              String?                  @map("source_url")
-  mimeType               String?                  @map("mime_type")
-  fileUri                String?                  @map("file_uri")
-  content                String
-  isActive               Boolean                  @default(true) @map("is_active")
-  createdAt              DateTime                 @default(now()) @map("created_at")
-  updatedAt              DateTime                 @updatedAt @map("updated_at")
-  AIAgentToKnowledgeBase AIAgentToKnowledgeBase[]
-  company                Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  name        String
+  description String?
+  sourceType  String    @default("TEXT") @map("source_type")
+  sourceUrl   String?   @map("source_url")
+  mimeType    String?   @map("mime_type")
+  fileUri     String?   @map("file_uri")
+  content     String
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  agents      AIAgent[]
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("knowledge_bases")
@@ -2727,39 +2727,6 @@ model WebhookEvent {
   @@index([platform])
   @@index([eventType])
   @@map("webhook_events")
-}
-
-model AIAgentToKnowledgeBase {
-  A               String
-  B               String
-  ai_agents       AIAgent       @relation(fields: [A], references: [id], onDelete: Cascade)
-  knowledge_bases KnowledgeBase @relation(fields: [B], references: [id], onDelete: Cascade)
-
-  @@id([A, B], map: "_AIAgentToKnowledgeBase_AB_pkey")
-  @@index([B], map: "_AIAgentToKnowledgeBase_B_index")
-  @@map("_AIAgentToKnowledgeBase")
-}
-
-model CategoryToPost {
-  A          String
-  B          String
-  categories Category @relation(fields: [A], references: [id], onDelete: Cascade)
-  posts      Post     @relation(fields: [B], references: [id], onDelete: Cascade)
-
-  @@id([A, B], map: "_CategoryToPost_AB_pkey")
-  @@index([B], map: "_CategoryToPost_B_index")
-  @@map("_CategoryToPost")
-}
-
-model PostToTag {
-  A     String
-  B     String
-  posts Post   @relation(fields: [A], references: [id], onDelete: Cascade)
-  tags  Tag    @relation(fields: [B], references: [id], onDelete: Cascade)
-
-  @@id([A, B], map: "_PostToTag_AB_pkey")
-  @@index([B], map: "_PostToTag_B_index")
-  @@map("_PostToTag")
 }
 
 model ProjectToService {
