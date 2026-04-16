@@ -20,14 +20,10 @@ export class FacebookProvider implements ChannelProvider {
         // Prioritize the pageId from the message context if available
         let tokenToUse = this.pageAccessToken;
 
-        // Dynamic Token Retrieval — cast to any: union type doesn't expose accessToken directly
+        // Dynamic Token Retrieval
         const config = await getSystemIntegrationConfig('facebook') as any;
         if (config?.accessToken) {
             tokenToUse = config.accessToken;
-        }
-
-        if (message.pageId) {
-            // For advanced multi-page, we might look up a specific page token here
         }
 
         if (!tokenToUse) {
@@ -35,7 +31,22 @@ export class FacebookProvider implements ChannelProvider {
         }
 
         try {
-            const result = await MetaService.sendTextMessage(tokenToUse, message.conversationId, message.content);
+            let result;
+            if (message.attachments && message.attachments.length > 0) {
+                const attachment = message.attachments[0];
+                const typeMap: Record<string, 'audio' | 'image' | 'video' | 'file'> = {
+                    audio: 'audio',
+                    image: 'image',
+                    video: 'video',
+                    document: 'file',
+                    sticker: 'image'
+                };
+                const type = typeMap[attachment.type] || 'file';
+                result = await MetaService.sendMediaMessage(tokenToUse, message.conversationId, type, attachment.url);
+            } else {
+                result = await MetaService.sendTextMessage(tokenToUse, message.conversationId, message.content);
+            }
+            
             return { success: true, messageId: result.message_id };
         } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
             console.error("Facebook Send Error:", error);

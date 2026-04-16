@@ -52,7 +52,7 @@ export class MetaService {
     }
 
     /**
-     * Send a text message via Messenger API.
+     * Send a text message via Messenger/Instagram API.
      */
     static async sendTextMessage(pageAccessToken: string, recipientId: string, text: string) {
         const url = `${BASE_URL}/me/messages?access_token=${pageAccessToken}`;
@@ -63,6 +63,37 @@ export class MetaService {
             body: JSON.stringify({
                 recipient: { id: recipientId },
                 message: { text: text },
+                messaging_type: "RESPONSE"
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(`Meta API Error: ${data.error.message}`);
+        }
+        return data;
+    }
+
+    /**
+     * Send a media message (audio, image, video, file) via Messenger/Instagram API.
+     */
+    static async sendMediaMessage(pageAccessToken: string, recipientId: string, type: 'audio' | 'image' | 'video' | 'file', url: string) {
+        const apiUrl = `${BASE_URL}/me/messages?access_token=${pageAccessToken}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                recipient: { id: recipientId },
+                message: {
+                    attachment: {
+                        type: type,
+                        payload: {
+                            url: url,
+                            is_lazy: true
+                        }
+                    }
+                },
                 messaging_type: "RESPONSE"
             })
         });
