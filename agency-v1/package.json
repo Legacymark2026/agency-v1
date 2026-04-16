@@ -18,6 +18,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
+    "sync-meta": "tsx scripts/sync-meta-env.ts",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "verify:deployment": "node scripts/testing/verify-deployment.js",
     "generate:secrets": "node scripts/utils/generate-secrets.js"
