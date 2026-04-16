@@ -30,22 +30,26 @@ function getBaseUrl() {
 
 /**
  * GET: Webhook challenge / verification
- * Always forward to /api/webhooks/channels/facebook because all Meta channels
- * share the same META_WEBHOOK_VERIFY_TOKEN.
  */
 export async function GET(req: NextRequest) {
-    const base = getBaseUrl();
+    const url = new URL(req.url);
+    const base = `${url.protocol}//${url.host}`;
     const targetUrl = `${base}/api/webhooks/channels/facebook${req.nextUrl.search}`;
 
     console.log('[Meta Proxy] GET → forwarding challenge to', targetUrl);
 
-    const res = await fetch(targetUrl, {
-        method: 'GET',
-        headers: Object.fromEntries(req.headers.entries()),
-    });
+    try {
+        const res = await fetch(targetUrl, {
+            method: 'GET',
+            headers: Object.fromEntries(req.headers.entries()),
+        });
 
-    const body = await res.text();
-    return new NextResponse(body, { status: res.status });
+        const body = await res.text();
+        return new NextResponse(body, { status: res.status });
+    } catch (err) {
+        console.error('[Meta Proxy] GET forward failed:', err);
+        return new NextResponse('Internal Proxy Error', { status: 500 });
+    }
 }
 
 /**
@@ -56,6 +60,8 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
     const rawBody = await req.text();
+    const url = new URL(req.url);
+    const base = `${url.protocol}//${url.host}`;
 
     // Peek at the object field to route to the right provider
     let object = '';
@@ -81,7 +87,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true });
     }
 
-    const base = getBaseUrl();
     const targetUrl = `${base}/api/webhooks/channels/${provider}`;
 
     console.log(`[Meta Proxy] POST object="${object}" → forwarding to ${targetUrl}`);
