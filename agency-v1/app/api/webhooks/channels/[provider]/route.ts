@@ -117,8 +117,8 @@ async function handlePost(
         let lead = await prisma.lead.findFirst({
             where: {
                 OR: [
-                    { phone: inboundMessage.externalId },
-                    { email: `${channel.toLowerCase()}_${inboundMessage.externalId}@placeholder.com` }
+                    { phone: inboundMessage.sender.id },
+                    { email: `${channel.toLowerCase()}_${inboundMessage.sender.id}@placeholder.com` }
                 ],
                 companyId: validCompanyId
             }
@@ -126,13 +126,13 @@ async function handlePost(
 
         if (!lead) {
             // Create a new lead for this user with a safer, channel-specific placeholder
-            const placeholderEmail = `${channel.toLowerCase()}_${inboundMessage.externalId}@placeholder.com`;
+            const placeholderEmail = `${channel.toLowerCase()}_${inboundMessage.sender.id}@placeholder.com`;
 
             const result = await createLead({
                 email: placeholderEmail,
                 companyId: validCompanyId,
                 name: inboundMessage.sender.name || `${channel} User`,
-                phone: channel === 'WHATSAPP' || channel === 'SMS' ? inboundMessage.externalId : undefined,
+                phone: channel === 'WHATSAPP' || channel === 'SMS' ? inboundMessage.sender.id : undefined,
                 utmSource: channel.toLowerCase(),
                 tags: [`${channel.toLowerCase()}-inbound`]
             });
@@ -140,16 +140,20 @@ async function handlePost(
             if (result.success && result.data) {
                 lead = result.data as any;
             } else {
-                console.error("Failed to create lead from WhatsApp:", result.error);
+                console.error("Failed to create lead from Webhook:", result.error);
                 // Continue without linking lead? Or fail? 
                 // We will proceed to save the message but leadId will be null
             }
         }
 
         // 4. Find or Create Conversation
+        // For WhatsApp/SMS, the platformId is the phone number (sender.id)
+        // For Messenger/Instagram, it's the PSID (sender.id)
+        const conversationPlatformId = inboundMessage.sender.id;
+
         let conversation = await prisma.conversation.findFirst({
             where: {
-                platformId: inboundMessage.externalId,
+                platformId: conversationPlatformId,
                 channel: channel,
                 companyId: validCompanyId
             }
@@ -160,7 +164,7 @@ async function handlePost(
             conversation = await prisma.conversation.create({
                 data: {
                     channel: channel,
-                    platformId: inboundMessage.externalId,
+                    platformId: conversationPlatformId,
                     companyId: validCompanyId,
                     leadId: lead?.id,
                     status: 'OPEN',
