@@ -6,12 +6,16 @@ import Image from "next/image";
 import { getExperts } from "@/actions/experts";
 import { Linkedin, Twitter, Github, Globe, ArrowUpRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('nosotrosPage.meta');
     return {
         title: t('title'),
         description: t('description'),
+        alternates: {
+            canonical: "https://legacymarksas.com/es/nosotros",
+        },
     };
 }
 

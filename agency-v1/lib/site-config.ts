@@ -1,8 +1,8 @@
 export const siteConfig = {
     name: "LegacyMark",
-    description: "Agencia de marketing performance con foco en ROI. Transformamos datos en crecimiento sostenible.",
+    description: "Agencia líder en marketing de performance y growth hacking en Colombia. Especialistas en maximizar el ROI mediante estrategias basadas en datos, automatización de ventas y SEO avanzado.",
     url: "https://legacymarksas.com",
-    ogImage: "https://legacymark.com/og.jpg",
+    ogImage: "https://legacymarksas.com/og.jpg",
     nit: "902028722-3",
     address: {
         street: "Crr18a 22-21 Villa Linda",
@@ -22,18 +22,22 @@ export const siteConfig = {
         whatsapp: "https://wa.me/573223047353",
     },
     keywords: [
-        "Marketing Digital",
-        "Growth Hacking",
-        "Performance Marketing",
-        "Agencia SEO",
-        "Publicidad Online",
-        "ROI",
-        "Estrategia de Marca",
+        "Marketing Digital en Colombia",
+        "Agencia de Growth Hacking",
+        "Performance Marketing ROI",
+        "SEO Avanzado",
+        "Estrategia de Marketing Digital",
+        "Automatización de Ventas",
+        "Desarrollo Web Profesional Next.js",
+        "Inbound Marketing",
+        "Google Ads y Meta Ads",
+        "Analítica de Datos Marketing",
+        "LegacyMark SAS"
     ],
     authors: [
         {
             name: "LegacyMark Team",
-            url: "https://legacymark.com",
+            url: "https://legacymarksas.com",
         },
     ],
     creator: "LegacyMark",

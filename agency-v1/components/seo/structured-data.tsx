@@ -37,7 +37,7 @@ export function ArticleSchema({
             "name": "LegacyMark",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://legacymark.com/logo.png"
+                "url": "https://legacymarksas.com/logo.png"
             }
         },
         "datePublished": publishedDate,
@@ -117,6 +117,19 @@ interface OrganizationSchemaProps {
     logo?: string;
     sameAs?: string[]; // Social media URLs
     description?: string;
+    address?: {
+        streetAddress: string;
+        addressLocality: string;
+        addressRegion: string;
+        postalCode: string;
+        addressCountry: string;
+    };
+    contactPoint?: {
+        telephone: string;
+        contactType: string;
+        areaServed: string | string[];
+        availableLanguage: string | string[];
+    };
 }
 
 export function OrganizationSchema({
@@ -124,7 +137,9 @@ export function OrganizationSchema({
     url,
     logo,
     sameAs = [],
-    description
+    description,
+    address,
+    contactPoint
 }: OrganizationSchemaProps) {
     const schema = {
         "@context": "https://schema.org",
@@ -133,7 +148,80 @@ export function OrganizationSchema({
         "url": url,
         "logo": logo,
         "description": description,
-        "sameAs": sameAs.length > 0 ? sameAs : undefined
+        "sameAs": sameAs.length > 0 ? sameAs : undefined,
+        "address": address ? {
+            "@type": "PostalAddress",
+            ...address
+        } : undefined,
+        "contactPoint": contactPoint ? {
+            "@type": "ContactPoint",
+            ...contactPoint
+        } : undefined
+    };
+
+    const cleanSchema = JSON.parse(JSON.stringify(schema));
+
+    return (
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(cleanSchema) }}
+        />
+    );
+}
+
+interface LocalBusinessSchemaProps {
+    name: string;
+    url: string;
+    logo?: string;
+    image?: string;
+    description?: string;
+    telephone?: string;
+    address: {
+        streetAddress: string;
+        addressLocality: string;
+        addressRegion: string;
+        postalCode: string;
+        addressCountry: string;
+    };
+    geo?: {
+        latitude: number;
+        longitude: number;
+    };
+    openingHours?: string | string[];
+    priceRange?: string;
+}
+
+export function LocalBusinessSchema({
+    name,
+    url,
+    logo,
+    image,
+    description,
+    telephone,
+    address,
+    geo,
+    openingHours,
+    priceRange
+}: LocalBusinessSchemaProps) {
+    const schema = {
+        "@context": "https://schema.org",
+        "@type": "MarketingAgency",
+        "name": name,
+        "url": url,
+        "logo": logo,
+        "image": image,
+        "description": description,
+        "telephone": telephone,
+        "address": {
+            "@type": "PostalAddress",
+            ...address
+        },
+        "geo": geo ? {
+            "@type": "GeoCoordinates",
+            ...geo
+        } : undefined,
+        "openingHours": openingHours,
+        "priceRange": priceRange
     };
 
     const cleanSchema = JSON.parse(JSON.stringify(schema));

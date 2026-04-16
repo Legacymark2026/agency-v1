@@ -14,14 +14,41 @@ import { TeamGrid } from "@/components/sections/team-grid";
 import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { Stats } from "@/components/sections/stats";
 import { CTA } from "@/components/sections/cta";
+import { Metadata } from "next";
+import { siteConfig } from "@/lib/site-config";
+import { FAQSchema } from "@/components/seo/structured-data";
+
+export const metadata: Metadata = {
+    title: "Agencia de Marketing Digital y Growth Hacking | LegacyMark",
+    description: "Impulsamos el crecimiento de tu empresa con marketing de performance, SEO avanzado y automatización. Expertos en maximizar tu ROI.",
+    alternates: {
+        canonical: "https://legacymarksas.com/es",
+    },
+};
 
 export default async function HomePage() {
     const projects = await getRecentProjects(4);
     const posts = await getRecentPosts(3);
     const experts = await getExperts();
 
+    const faqs = [
+        {
+            question: "¿Qué es el marketing de performance?",
+            answer: "Es un modelo de marketing digital donde el anunciante solo paga por resultados medibles, como leads o ventas, asegurando una inversión eficiente y un ROI positivo."
+        },
+        {
+            question: "¿Cómo ayuda el Growth Hacking a mi negocio?",
+            answer: "El Growth Hacking utiliza experimentos rápidos y datos para identificar las formas más eficientes de hacer crecer un negocio de manera acelerada y sostenible."
+        },
+        {
+            question: "¿Por qué es importante el SEO avanzado?",
+            answer: "El SEO avanzado permite que tu marca domine los resultados de búsqueda orgánicos, atrayendo tráfico de alta calidad de forma gratuita y constante a largo plazo."
+        }
+    ];
+
     return (
         <main className="relative bg-slate-950 text-white overflow-hidden scroll-smooth">
+            <FAQSchema questions={faqs} />
             {/* 12. Dense Editorial Noise */}
             <div className="bg-noise fixed inset-0 z-50 pointer-events-none mix-blend-multiply opacity-[0.015]" />
 

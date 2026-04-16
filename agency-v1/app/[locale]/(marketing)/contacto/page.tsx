@@ -1,11 +1,15 @@
 import { ContactForm } from "@/components/sections/contact-form";
 import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations('contactPage.meta');
     return {
         title: t('title'),
         description: t('description'),
+        alternates: {
+            canonical: "https://legacymarksas.com/es/contacto",
+        },
     };
 }
 
