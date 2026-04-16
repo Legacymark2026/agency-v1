@@ -16,6 +16,7 @@
  *   DATABASE_URL       — URL de tu base de datos (ya debe estar configurada)
  */
 
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
