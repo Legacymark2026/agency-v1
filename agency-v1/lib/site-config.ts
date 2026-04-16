@@ -22,13 +22,16 @@ export const siteConfig = {
         whatsapp: "https://wa.me/573223047353",
     },
     keywords: [
-        "Marketing Digital",
+        "Marketing Digital B2B",
+        "Agencia de Desarrollo Web",
+        "Diseño Web Next.js",
         "Growth Hacking",
         "Performance Marketing",
-        "Agencia SEO",
-        "Publicidad Online",
-        "ROI",
-        "Estrategia de Marca",
+        "Agencia SEO Internacional",
+        "Publicidad Online Orientada a ROI",
+        "Estrategia de Marca Empresarial",
+        "Automatización de Procesos de Marketing",
+        "Agencia de Marketing Colombia y EE.UU.",
     ],
     authors: [
         {

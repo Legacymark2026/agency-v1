@@ -7,11 +7,31 @@ import { getExperts } from "@/actions/experts";
 import { Linkedin, Twitter, Github, Globe, ArrowUpRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
-export async function generateMetadata() {
-    const t = await getTranslations('nosotrosPage.meta');
+import { Metadata } from 'next';
+import { siteConfig } from '@/lib/site-config';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'nosotrosPage.meta' });
+
     return {
         title: t('title'),
         description: t('description'),
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: `${siteConfig.url}/${locale}/nosotros`,
+            siteName: siteConfig.name,
+            locale: locale === 'en' ? 'en_US' : 'es_ES',
+            type: 'website',
+        },
+        alternates: {
+            canonical: `${siteConfig.url}/${locale}/nosotros`,
+            languages: {
+                'es': `${siteConfig.url}/es/nosotros`,
+                'en': `${siteConfig.url}/en/nosotros`,
+            },
+        },
     };
 }
 

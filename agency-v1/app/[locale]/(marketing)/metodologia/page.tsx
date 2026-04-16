@@ -1,12 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { siteConfig } from "@/lib/site-config";
 
-export async function generateMetadata() {
-    const t = await getTranslations('methodologyPage.meta');
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'methodologyPage.meta' });
+
     return {
         title: t('title'),
         description: t('description'),
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: `${siteConfig.url}/${locale}/metodologia`,
+            siteName: siteConfig.name,
+            locale: locale === 'en' ? 'en_US' : 'es_ES',
+            type: 'website',
+        },
+        alternates: {
+            canonical: `${siteConfig.url}/${locale}/metodologia`,
+            languages: {
+                'es': `${siteConfig.url}/es/metodologia`,
+                'en': `${siteConfig.url}/en/metodologia`,
+            },
+        },
     };
 }
 

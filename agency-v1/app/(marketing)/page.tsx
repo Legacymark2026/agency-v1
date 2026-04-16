@@ -14,7 +14,7 @@ import { TeamGrid } from "@/components/sections/team-grid";
 import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { Stats } from "@/components/sections/stats";
 import { CTA } from "@/components/sections/cta";
-import { OrganizationSchema, WebSiteSchema, FAQSchema } from "@/components/seo/structured-data";
+import { OrganizationSchema, WebSiteSchema, FAQSchema, LocalBusinessSchema } from "@/components/seo/structured-data";
 import { siteConfig } from "@/lib/site-config";
 
 export default async function HomePage() {
@@ -35,6 +35,21 @@ export default async function HomePage() {
                     siteConfig.links.whatsapp
                 ]}
                 description={siteConfig.description}
+            />
+            <LocalBusinessSchema
+                name={siteConfig.name}
+                description={siteConfig.description}
+                url={siteConfig.url}
+                telephone="+573223047353"
+                address={{
+                    streetAddress: siteConfig.address.street,
+                    addressLocality: siteConfig.address.city,
+                    addressRegion: siteConfig.address.department,
+                    postalCode: siteConfig.address.postalCode,
+                    addressCountry: siteConfig.address.country
+                }}
+                image={`${siteConfig.url}/logo.png`}
+                priceRange="$$"
             />
             <WebSiteSchema
                 name={siteConfig.name}

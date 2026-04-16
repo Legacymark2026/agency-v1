@@ -133,7 +133,71 @@ export function OrganizationSchema({
         "url": url,
         "logo": logo,
         "description": description,
-        "sameAs": sameAs.length > 0 ? sameAs : undefined
+        "sameAs": sameAs.length > 0 ? sameAs : undefined,
+        "contactPoint": [
+            {
+                "@type": "ContactPoint",
+                "telephone": "+57-322-3047353",
+                "contactType": "customer service",
+                "areaServed": ["CO", "US", "ES", "MX"],
+                "availableLanguage": ["es", "en"]
+            }
+        ]
+    };
+
+    const cleanSchema = JSON.parse(JSON.stringify(schema));
+
+    return (
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(cleanSchema) }}
+        />
+    );
+}
+
+interface LocalBusinessSchemaProps {
+    name: string;
+    description: string;
+    url: string;
+    telephone: string;
+    address: {
+        streetAddress: string;
+        addressLocality: string;
+        addressRegion: string;
+        postalCode: string;
+        addressCountry: string;
+    };
+    image?: string;
+    priceRange?: string;
+}
+
+export function LocalBusinessSchema({
+    name,
+    description,
+    url,
+    telephone,
+    address,
+    image,
+    priceRange = "$$"
+}: LocalBusinessSchemaProps) {
+    const schema = {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": name,
+        "image": image,
+        "@id": url,
+        "url": url,
+        "telephone": telephone,
+        "priceRange": priceRange,
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": address.streetAddress,
+            "addressLocality": address.addressLocality,
+            "addressRegion": address.addressRegion,
+            "postalCode": address.postalCode,
+            "addressCountry": address.addressCountry
+        },
+        "description": description
     };
 
     const cleanSchema = JSON.parse(JSON.stringify(schema));
