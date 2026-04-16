@@ -14,6 +14,8 @@ import { TeamGrid } from "@/components/sections/team-grid";
 import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { Stats } from "@/components/sections/stats";
 import { CTA } from "@/components/sections/cta";
+import { OrganizationSchema, WebSiteSchema, FAQSchema } from "@/components/seo/structured-data";
+import { siteConfig } from "@/lib/site-config";
 
 export default async function HomePage() {
     const projects = await getRecentProjects(4);
@@ -22,6 +24,33 @@ export default async function HomePage() {
 
     return (
         <main className="relative bg-slate-950 text-white overflow-hidden scroll-smooth">
+            <OrganizationSchema
+                name={siteConfig.name}
+                url={siteConfig.url}
+                logo={`${siteConfig.url}/logo.png`}
+                sameAs={[
+                    siteConfig.links.linkedin,
+                    siteConfig.links.facebook,
+                    siteConfig.links.instagram,
+                    siteConfig.links.whatsapp
+                ]}
+                description={siteConfig.description}
+            />
+            <WebSiteSchema
+                name={siteConfig.name}
+                url={siteConfig.url}
+                searchUrl={`${siteConfig.url}/search?q={search_term_string}`}
+            />
+            <FAQSchema
+                questions={[
+                    { question: "¿Cómo garantizan que la IA realmente genere retorno y no sea solo una tendencia?", answer: "No implementamos IA de forma aislada; diseñamos Arquitecturas de Autonomía. Nuestro protocolo comienza con el mapeo de fricciones operativas y cuellos de botella en tu embudo de ventas. Desarrollamos agentes personalizados que se integran a tu stack tecnológico actual (CRM, APIs de pauta) para automatizar la captura y calificación de leads en tiempo real. La meta no es 'usar IA', es reducir tu costo de adquisición (CAC) y liberar el talento humano para tareas de cierre de alto impacto." },
+                    { question: "¿Por qué utilizan Next.js y arquitecturas de microservicios para sus proyectos?", answer: "La autoridad digital se construye sobre la velocidad y la escalabilidad. Utilizamos Next.js porque ofrece el rendimiento más alto del mercado (Core Web Vitals), esencial para el SEO técnico y la retención de usuarios. Al trabajar con microservicios y bases de datos optimizadas (PostgreSQL/Redis), garantizamos que tu ecosistema digital sea capaz de soportar picos de tráfico masivos y expansión internacional sin degradación del servicio ni deuda técnica." },
+                    { question: "¿Cómo solucionan la pérdida de datos de conversión por las restricciones de privacidad actuales?", answer: "Implementamos Protocolos de Medición de Lazo Cerrado. Ante las limitaciones de las cookies de terceros, integramos la API de Conversiones (CAPI) directamente desde tu servidor. Esto nos permite enviar señales de datos precisas a las plataformas de pauta (Meta, Google), recuperando la visibilidad del ROAS real y permitiendo que los algoritmos de aprendizaje automático optimicen tus campañas con datos de primera fuente, no con suposiciones." },
+                    { question: "¿Qué estrategia siguen para posicionar una marca en mercados competitivos como EE.UU. o España?", answer: "La expansión no es solo traducción, es Localización de Autoridad. Aplicamos estrategias de SEO Internacional dinámico y arquitecturas de contenido específicas por región. Analizamos los motores de respuesta (AEO) de cada mercado para asegurar que tu marca sea la solución recomendada por la IA. Combinamos esto con una infraestructura técnica que detecta la ubicación del usuario para entregar una experiencia de carga ultrarrápida desde el nodo más cercano, eliminando cualquier fricción geográfica." },
+                    { question: "¿Cómo es el seguimiento una vez lanzado el ecosistema digital?", answer: "LegacyMark no entrega proyectos, gestiona activos digitales. Cada cliente tiene acceso a su propio Client Terminal, donde monitoreamos en tiempo real el estado de los protocolos activos, métricas de rendimiento y actualizaciones de seguridad mTLS. Operamos bajo un modelo de iteración continua: utilizamos los datos del mercado para ajustar la estrategia mensualmente, asegurando que tu infraestructura evolucione al mismo ritmo que la tecnología." }
+                ]}
+            />
+
             {/* 12. Dense Editorial Noise */}
             <div className="bg-noise fixed inset-0 z-50 pointer-events-none mix-blend-multiply opacity-[0.015]" />
 

@@ -54,6 +54,10 @@
     "subscribeLoading": "..."
   },
   "home": {
+    "metadata": {
+      "title": "Digital Marketing & Web Development Agency | LegacyMark",
+      "description": "LegacyMark is a boutique digital marketing, web development, and growth strategy agency. Boost your business with advanced technology solutions."
+    },
     "hero": {
       "badge": "Digital Marketing Agency",
       "systemActive": "System v2.4 ::",
@@ -429,6 +433,12 @@
       "step2Desc": "We'll verify your identity to protect your data.",
       "step3": "Secure Deletion",
       "step3Desc": "Your data will be deleted within 30 days."
+    }
+  },
+  "servicios": {
+    "metadata": {
+      "title": "Digital Marketing Services | LegacyMark",
+      "description": "Explore our digital marketing, web development, SEO and automation services to scale your business."
     }
   },
   "sitemapPage": {

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { VIPWelcomeTemplate, AdminAlertTemplate, getNotificationHtml } from '../lib/email-templates.ts';
+import { VIPWelcomeTemplate, AdminAlertTemplate, getNotificationHtml } from '../lib/email-templates.js';
 
 describe('Email Templates', () => {
     describe('VIPWelcomeTemplate', () => {
