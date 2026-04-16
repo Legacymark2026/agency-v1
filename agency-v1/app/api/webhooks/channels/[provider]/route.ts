@@ -199,24 +199,48 @@ async function handlePost(
             conversation.leadId = lead.id; // Update local object
         }
 
-        // 5. Create Message
+        // 5. Create Message — deduplicate by externalId, persist media
+        const existingMsg = await prisma.message.findFirst({
+            where: {
+                conversationId: conversation.id,
+                externalId: inboundMessage.externalId,
+            }
+        });
+
+        if (existingMsg) {
+            console.log(`[Webhook:${channel}] Duplicate externalId=${inboundMessage.externalId}, skipping.`);
+            return NextResponse.json({ success: true });
+        }
+
+        // Resolve media from metadata or attachments array
+        const mediaUrl: string | null =
+            (inboundMessage.metadata?.mediaUrl as string | undefined) ??
+            inboundMessage.attachments?.[0]?.url ??
+            inboundMessage.images?.[0] ??
+            null;
+
+        // Map attachment type string → DB enum string (e.g. 'audio' → 'AUDIO')
+        const rawMediaType =
+            (inboundMessage.metadata?.mediaType as string | undefined) ??
+            (inboundMessage.attachments?.[0]?.type?.toUpperCase()) ??
+            (inboundMessage.images?.length ? 'IMAGE' : null);
+        const mediaType = rawMediaType ?? (mediaUrl ? 'DOCUMENT' : 'TEXT');
+
         const message = await prisma.message.create({
             data: {
                 conversationId: conversation.id,
+                externalId: inboundMessage.externalId,
                 content: inboundMessage.content,
                 senderId: inboundMessage.sender.id,
-                externalId: inboundMessage.externalId,
-                // senderName/Avatar not in schema, store in metadata
-                mediaUrl: (inboundMessage.metadata?.mediaUrl as string) || inboundMessage.images?.[0],
-                mediaType: (inboundMessage.metadata?.mediaType as any) || (inboundMessage.images?.length ? 'IMAGE' : 'TEXT'),
+                mediaUrl,
+                mediaType: mediaType as any,
                 metadata: {
                     ...inboundMessage.metadata,
                     senderName: inboundMessage.sender.name,
-                    senderAvatar: inboundMessage.sender.avatar
+                    senderAvatar: inboundMessage.sender.avatar,
                 },
                 direction: 'INBOUND',
                 status: 'DELIVERED',
-                // leadId removed as it's on Conversation
             }
         });
 

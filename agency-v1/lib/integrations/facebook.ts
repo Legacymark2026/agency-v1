@@ -1,5 +1,5 @@
 import { ChannelType, ProcessingResult } from "@/types/inbox";
-import { ChannelProvider, OutboundMessage, InboundMessage } from "./types";
+import { ChannelProvider, OutboundMessage, InboundMessage, Attachment } from "./types";
 import { MetaService } from "@/lib/meta-service";
 import crypto from "crypto";
 import { getSystemIntegrationConfig } from "@/lib/integration-config-service";
@@ -105,30 +105,62 @@ export class FacebookProvider implements ChannelProvider {
 
             if (body.object === 'page') {
                 for (const entry of body.entry) {
-                    // 1. Handle Messaging Events
+                    // ── 1. Messaging Events (Messenger DMs) ──────────────────
                     const webhookEvent = entry.messaging?.[0];
 
                     if (webhookEvent && webhookEvent.message) {
-                        const senderPsid = webhookEvent.sender.id;
-                        const pageId = entry.id;
+                        const msg = webhookEvent.message as Record<string, unknown>;
+                        if (msg.is_echo) continue; // skip own echoes
+
+                        const senderPsid = webhookEvent.sender.id as string;
+                        const pageId = entry.id as string;
+
+                        // Extract text
+                        const textContent = (msg.text as string) || '';
+
+                        // Extract attachments (audio, image, video, document, sticker)
+                        const rawAttachments = (msg.attachments as Array<{ type: string; payload: { url?: string; sticker_id?: number } }>) || [];
+                        const attachments: Attachment[] = rawAttachments.map(a => ({
+                            type: (a.type as Attachment['type']) || 'document',
+                            url: a.payload?.url || '',
+                        })).filter(a => a.url);
+
+                        // Derive primary media info for quick access
+                        const firstAttachment = attachments[0];
+                        const mediaUrl = firstAttachment?.url;
+                        const mediaType = firstAttachment?.type?.toUpperCase();
+
+                        // Human-readable content fallback
+                        const contentMap: Record<string, string> = {
+                            audio: '🎤 Nota de Voz',
+                            image: '📷 Imagen',
+                            video: '🎥 Video',
+                            document: '📄 Documento',
+                            sticker: '👾 Sticker',
+                        };
+                        const content = textContent
+                            || (firstAttachment ? (contentMap[firstAttachment.type] || '[Adjunto]') : '[Mensaje]');
 
                         return {
                             channel: this.channel,
-                            externalId: webhookEvent.message.mid,
-                            content: webhookEvent.message.text || "[Attachment]",
+                            externalId: (msg.mid as string) || `fb-${Date.now()}`,
+                            content,
                             sender: {
                                 id: senderPsid,
-                                name: "Facebook User",
-                                avatar: undefined
+                                name: 'Facebook User',
+                                avatar: undefined,
                             },
+                            attachments: attachments.length ? attachments : undefined,
                             metadata: {
-                                pageId: pageId,
-                                messageId: webhookEvent.message.mid
-                            }
+                                pageId,
+                                messageId: msg.mid as string,
+                                mediaUrl,
+                                mediaType,
+                            },
                         };
                     }
 
-                    // 2. Handle LeadGen Events
+                    // ── 2. LeadGen Events ────────────────────────────────────
                     if (entry.changes) {
                         for (const change of entry.changes) {
                             if (change.field === 'leadgen') {
@@ -139,19 +171,16 @@ export class FacebookProvider implements ChannelProvider {
                                 console.log(`[LeadAds] New Lead detected: ${leadgenId}`);
 
                                 return {
-                                    channel: 'EMAIL', // Treat as Lead
+                                    channel: 'EMAIL',
                                     externalId: leadgenId,
                                     content: `New Lead Ad Submission: ${leadgenId}`,
-                                    sender: {
-                                        id: 'system',
-                                        name: 'Meta Lead Ads',
-                                    },
+                                    sender: { id: 'system', name: 'Meta Lead Ads' },
                                     metadata: {
                                         type: 'LEAD_AD',
-                                        leadgenId: leadgenId,
-                                        formId: formId,
-                                        pageId: pageId
-                                    }
+                                        leadgenId,
+                                        formId,
+                                        pageId,
+                                    },
                                 };
                             }
                         }
@@ -160,7 +189,7 @@ export class FacebookProvider implements ChannelProvider {
             }
             return null;
         } catch (error) {
-            console.error("Error parsing Facebook webhook:", error);
+            console.error('Error parsing Facebook webhook:', error);
             return null;
         }
     }

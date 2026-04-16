@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
                      if (convRes.success && convRes.data) {
                          const conversationId = convRes.data.id;
                          
-                         // Check if message ID already exists to prevent duplication
+                         // Deduplicate by platform message ID (idempotent — safe against Meta retries)
                          const existingMsg = await db.message.findFirst({
-                             where: { conversationId, content: msg.content, createdAt: { gte: new Date(Date.now() - 5000) } }
+                             where: { conversationId, externalId: msg.externalId }
                          });
 
                          if (!existingMsg) {
