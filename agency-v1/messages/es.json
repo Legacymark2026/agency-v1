@@ -54,6 +54,10 @@
     "subscribeLoading": "..."
   },
   "home": {
+    "metadata": {
+      "title": "Agencia de Marketing Digital y Desarrollo Web | LegacyMark",
+      "description": "LegacyMark es una agencia boutique de marketing digital, desarrollo web y estrategias de crecimiento. Impulsa tu negocio con soluciones tecnológicas avanzadas."
+    },
     "hero": {
       "badge": "Agencia Boutique Especializada",
       "systemActive": "System v2.4 ::",
@@ -429,6 +433,12 @@
       "step2Desc": "Verificaremos tu identidad para proteger tus datos.",
       "step3": "Borrado Seguro",
       "step3Desc": "Tus datos serán eliminados en 30 días."
+    }
+  },
+  "servicios": {
+    "metadata": {
+      "title": "Servicios de Marketing Digital | LegacyMark",
+      "description": "Explora nuestros servicios de marketing digital, desarrollo web, SEO y automatización para escalar tu negocio."
     }
   },
   "sitemapPage": {
