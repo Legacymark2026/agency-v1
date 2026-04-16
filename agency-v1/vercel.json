@@ -8,11 +8,6 @@
             "main": true
         }
     },
-    "env": {
-        "DATABASE_URL": "@database_url",
-        "AUTH_SECRET": "@auth_secret",
-        "NEXTAUTH_URL": "@nextauth_url"
-    },
     "regions": [
         "iad1"
     ],

@@ -60,3 +60,5 @@ prisma_validate*.log
 debug-whatsapp.log
 
 public/uploads
+.vercel
+.env*.local
