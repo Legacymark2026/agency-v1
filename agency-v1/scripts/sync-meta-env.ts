@@ -149,27 +149,58 @@ async function main() {
 
   // 1. Leer configs de la DB
   const configs = await prisma.integrationConfig.findMany({
-    where: { provider: { in: ['facebook', 'whatsapp', 'instagram'] }, isEnabled: true },
+    where: { isEnabled: true },
   }).finally(() => prisma.$disconnect());
 
-  const fb = configs.find(c => c.provider === 'facebook')?.config   as any;
-  const wa = configs.find(c => c.provider === 'whatsapp')?.config   as any;
-  const ig = configs.find(c => c.provider === 'instagram')?.config  as any;
+  const fb = configs.find(c => c.provider === 'facebook')?.config         as any;
+  const wa = configs.find(c => c.provider === 'whatsapp')?.config         as any;
+  const ig = configs.find(c => c.provider === 'instagram')?.config        as any;
+  const ga = configs.find(c => c.provider === 'google-analytics')?.config as any;
+  const fbp = configs.find(c => c.provider === 'facebook-pixel')?.config  as any;
+  const tk = configs.find(c => c.provider === 'tiktok-pixel')?.config     as any;
+  const hj = configs.find(c => c.provider === 'hotjar')?.config           as any;
+  const gtm = configs.find(c => c.provider === 'google-tag-manager')?.config as any;
 
   // 2. Construir mapa de variables
   const records: EnvRecord[] = [
     // Meta / Facebook
-    fb?.appId      && { key: 'META_APP_ID',              value: fb.appId,      source: 'DB:facebook.appId' },
-    fb?.appSecret  && { key: 'META_APP_SECRET',          value: fb.appSecret,  source: 'DB:facebook.appSecret' },
-    fb?.verifyToken && { key: 'META_WEBHOOK_VERIFY_TOKEN', value: fb.verifyToken, source: 'DB:facebook.verifyToken' },
-    fb?.accessToken && { key: 'META_ACCESS_TOKEN',       value: fb.accessToken, source: 'DB:facebook.accessToken' },
+    fb?.appId       && { key: 'META_APP_ID',              value: fb.appId,       source: 'DB:facebook.appId' },
+    fb?.appSecret   && { key: 'META_APP_SECRET',          value: fb.appSecret,   source: 'DB:facebook.appSecret' },
+    fb?.verifyToken  && { key: 'META_WEBHOOK_VERIFY_TOKEN', value: fb.verifyToken,  source: 'DB:facebook.verifyToken' },
+    fb?.accessToken  && { key: 'META_ACCESS_TOKEN',       value: fb.accessToken,  source: 'DB:facebook.accessToken' },
+    fb?.pixelId      && { key: 'NEXT_PUBLIC_FACEBOOK_PIXEL_ID', value: fb.pixelId,  source: 'DB:facebook.pixelId' },
+    fb?.capiToken    && { key: 'FACEBOOK_CAPI_TOKEN',      value: fb.capiToken,   source: 'DB:facebook.capiToken' },
+
     // Instagram (can share Meta configs)
-    ig?.appId      && { key: 'META_APP_ID',              value: ig.appId,      source: 'DB:instagram.appId' },
-    ig?.appSecret  && { key: 'META_APP_SECRET',          value: ig.appSecret,  source: 'DB:instagram.appSecret' },
+    ig?.appId       && { key: 'META_APP_ID',              value: ig.appId,       source: 'DB:instagram.appId' },
+    ig?.appSecret   && { key: 'META_APP_SECRET',          value: ig.appSecret,   source: 'DB:instagram.appSecret' },
+
     // WhatsApp
     wa?.phoneNumberId && { key: 'WHATSAPP_PHONE_NUMBER_ID', value: wa.phoneNumberId, source: 'DB:whatsapp.phoneNumberId' },
     wa?.accessToken   && { key: 'WHATSAPP_API_TOKEN',        value: wa.accessToken,   source: 'DB:whatsapp.accessToken' },
     wa?.businessAccountId && { key: 'WHATSAPP_BUSINESS_ACCOUNT_ID', value: wa.businessAccountId, source: 'DB:whatsapp.businessAccountId' },
+
+    // Google Analytics
+    ga?.measurementId && { key: 'NEXT_PUBLIC_GA_MEASUREMENT_ID', value: ga.measurementId, source: 'DB:google-analytics.measurementId' },
+    ga?.measurementId && { key: 'NEXT_PUBLIC_GA_ID',             value: ga.measurementId, source: 'DB:google-analytics.measurementId' },
+    ga?.propertyId    && { key: 'NEXT_PUBLIC_GA_PROPERTY_ID',    value: ga.propertyId,    source: 'DB:google-analytics.propertyId' },
+    ga?.apiSecret     && { key: 'GA_API_SECRET',                 value: ga.apiSecret,     source: 'DB:google-analytics.apiSecret' },
+    ga?.privateKey    && { key: 'GA_PRIVATE_KEY',                value: ga.privateKey,    source: 'DB:google-analytics.privateKey' },
+
+    // Facebook Pixel (Direct integration)
+    fbp?.pixelId      && { key: 'NEXT_PUBLIC_FACEBOOK_PIXEL_ID', value: fbp.pixelId,  source: 'DB:facebook-pixel.pixelId' },
+    fbp?.capiToken    && { key: 'FACEBOOK_CAPI_TOKEN',           value: fbp.capiToken, source: 'DB:facebook-pixel.capiToken' },
+
+    // TikTok Pixel
+    tk?.tiktokPixelId   && { key: 'NEXT_PUBLIC_TIKTOK_PIXEL_ID', value: tk.tiktokPixelId,   source: 'DB:tiktok-pixel.tiktokPixelId' },
+    tk?.tiktokAccessToken && { key: 'TIKTOK_ACCESS_TOKEN',       value: tk.tiktokAccessToken, source: 'DB:tiktok-pixel.tiktokAccessToken' },
+
+    // Hotjar
+    hj?.siteId && { key: 'NEXT_PUBLIC_HOTJAR_ID', value: hj.siteId, source: 'DB:hotjar.siteId' },
+
+    // Google Tag Manager
+    gtm?.containerId && { key: 'NEXT_PUBLIC_GTM_ID', value: gtm.containerId, source: 'DB:google-tag-manager.containerId' },
+
   ].filter(Boolean) as EnvRecord[];
 
   // Eliminar duplicados (primera ocurrencia gana)
