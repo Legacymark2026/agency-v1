@@ -132,8 +132,8 @@ async function main() {
         const appSecret = process.env.META_APP_SECRET || "DEV_SECRET";
         const signature = "sha256=" + crypto.createHmac("sha256", appSecret).update(rawBody).digest("hex");
 
-        // 3. Enviar al Webhook Local
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+        // 3. Enviar al Webhook
+        const baseUrl = getArg('--url') || process.env.NEXTAUTH_URL || 'https://legacymarksas.com';
         const url = `${baseUrl}/api/webhooks/channels/${channel}`;
 
         console.log(`🔗 Llamando a ${url}...`);
@@ -156,7 +156,7 @@ async function main() {
                 console.error(`❌ Error en el backend (${response.status}):`, result);
             }
         } catch (e: any) {
-            console.error("❌ Error conectando al servidor local. ¿Esta corriendo el proyecto (npm run dev)?", e.message);
+            console.error(`❌ Error conectando a ${baseUrl}. ¿Es la URL correcta?`, e.message);
         }
     }
 }

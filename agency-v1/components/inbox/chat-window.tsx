@@ -151,6 +151,12 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     useEffect(() => {
         let stream: MediaStream | null = null;
         if (activeCall === 'video' && !isVideoOff) {
+            if (!window.isSecureContext) {
+                toast.error('La cámara requiere una conexión segura (HTTPS).');
+                setIsVideoOff(true);
+                return;
+            }
+
             navigator.mediaDevices.getUserMedia({ video: true, audio: true })
                 .then(s => {
                     stream = s;
@@ -159,7 +165,13 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 })
                 .catch(err => {
                     console.error("Camera access denied or failed", err);
-                    toast.error("No se pudo acceder a la cámara o micrófono.");
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        toast.error("Permiso de cámara/micro denegado. Actívalo en el candado (🔒) de tu navegador.");
+                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                        toast.error("No se encontró cámara o micrófono en este equipo.");
+                    } else {
+                        toast.error("Error al acceder a la cámara o micrófono.");
+                    }
                     setIsVideoOff(true);
                 });
         }
@@ -308,6 +320,11 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     const toggleRecording = async () => {
         if (!isRecording) {
             try {
+                if (!window.isSecureContext) {
+                    toast.error('Acceso bloqueado: El micrófono requiere una conexión segura (HTTPS).');
+                    return;
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const mimeType = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
                     ? 'audio/ogg;codecs=opus'
@@ -327,9 +344,15 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 mediaRecorder.start(200);
                 setIsRecording(true);
                 toast.success('Grabando nota de voz...');
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Mic error:", error);
-                toast.error('No se pudo acceder al micrófono. Verifica los permisos del navegador.');
+                if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                    toast.error('Permiso denegado: Haz clic en el ícono del candado (🔒) en la barra de direcciones y permite el micrófono.');
+                } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                    toast.error('No se encontró ningún micrófono conectado a este dispositivo.');
+                } else {
+                    toast.error('Error al acceder al micrófono. Verifica la configuración de tu sistema.');
+                }
             }
         } else {
             // Stop recording — file will be obtained via stopRecordingAndGetFile()
