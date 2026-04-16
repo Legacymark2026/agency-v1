@@ -1,10 +1,11 @@
 import { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site-config";
-import { getAllPosts } from "@/lib/data";
+import { getAllPosts, getAllProjects } from "@/lib/data";
 import { routing } from "@/i18n/routing";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const posts = await getAllPosts();
+    const projects = await getAllProjects();
 
     const staticRoutes = [
         "",
@@ -66,9 +67,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             const route = `/blog/${post.slug}`;
             sitemapEntries.push({
                 url: `${baseUrl}/${locale}${route}`,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 lastModified: (post as any).updatedAt ? new Date((post as any).updatedAt) : new Date(),
                 changeFrequency: "weekly",
                 priority: 0.6,
+                alternates: buildAlternates(route),
+            });
+        });
+    });
+
+    // 3. Dynamic Portfolio Routes across locales
+    projects.forEach((project) => {
+        routing.locales.forEach((locale) => {
+            const route = `/portfolio/${project.slug}`;
+            sitemapEntries.push({
+                url: `${baseUrl}/${locale}${route}`,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                lastModified: (project as any).updatedAt ? new Date((project as any).updatedAt) : new Date(),
+                changeFrequency: "weekly",
+                priority: 0.7,
                 alternates: buildAlternates(route),
             });
         });

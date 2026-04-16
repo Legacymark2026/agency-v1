@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LocalBusinessSchema, OrganizationSchema, FAQSchema } from "@/components/seo/structured-data";
+import { siteConfig } from "@/lib/site-config";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import {
     ArrowRight, TrendingUp, Target, Share2,
@@ -179,6 +181,40 @@ export default function ServicesPage() {
 
     return (
         <main className="bg-slate-950 selection:bg-teal-500 selection:text-white overflow-hidden text-white w-full">
+            <OrganizationSchema
+                name={siteConfig.name}
+                url={siteConfig.url}
+                logo={`${siteConfig.url}/logo.png`}
+                sameAs={[
+                    siteConfig.links.linkedin,
+                    siteConfig.links.facebook,
+                    siteConfig.links.instagram,
+                    siteConfig.links.whatsapp
+                ]}
+                description={siteConfig.description}
+            />
+            <LocalBusinessSchema
+                name={siteConfig.name}
+                description={siteConfig.description}
+                url={siteConfig.url}
+                telephone="+573223047353"
+                address={{
+                    streetAddress: siteConfig.address.street,
+                    addressLocality: siteConfig.address.city,
+                    addressRegion: siteConfig.address.department,
+                    postalCode: siteConfig.address.postalCode,
+                    addressCountry: siteConfig.address.country
+                }}
+                image={`${siteConfig.url}/logo.png`}
+                priceRange="$$"
+            />
+            <FAQSchema
+                questions={[
+                    { question: "¿Cuánto debo invertir en Ads?", answer: "Recomendamos que tu presupuesto publicitario sea al menos 3x nuestro fee de gestión para tener suficiente data para optimizar. Generalmente sugerimos iniciar con $1,000 - $3,000 USD mensuales en pauta." },
+                    { question: "¿Garantizan resultados?", answer: "Nadie honesto puede garantizar resultados específicos en plataformas de subasta (Google/Facebook). Lo que garantizamos es la excelencia en la ejecución y transparencia total en los datos." },
+                    { question: "¿Trabajan con mi equipo interno?", answer: "Sí. Frecuentemente actuamos como consultores estratégicos o 'brazo armado' para equipos de marketing in-house que necesitan expertise en canales específicos." }
+                ]}
+            />
 
             {/* 5. Scroll Progress Bar */}
             <motion.div

@@ -1,11 +1,31 @@
 import { ContactForm } from "@/components/sections/contact-form";
 import { getTranslations } from "next-intl/server";
 
-export async function generateMetadata() {
-    const t = await getTranslations('contactPage.meta');
+import { Metadata } from 'next';
+import { siteConfig } from '@/lib/site-config';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'contactPage.meta' });
+
     return {
         title: t('title'),
         description: t('description'),
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: `${siteConfig.url}/${locale}/contacto`,
+            siteName: siteConfig.name,
+            locale: locale === 'en' ? 'en_US' : 'es_ES',
+            type: 'website',
+        },
+        alternates: {
+            canonical: `${siteConfig.url}/${locale}/contacto`,
+            languages: {
+                'es': `${siteConfig.url}/es/contacto`,
+                'en': `${siteConfig.url}/en/contacto`,
+            },
+        },
     };
 }
 
