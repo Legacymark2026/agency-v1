@@ -18,6 +18,7 @@ import { PageTransition } from "@/components/ui/page-transition";
 import { SocialShare } from "@/components/ui/social-share";
 import { ChatWidget } from "@/components/chat/chat-widget";
 import { getLocale } from "next-intl/server";
+import { headers } from "next/headers";
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -28,10 +29,17 @@ import { siteConfig } from "@/lib/site-config";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
   const openGraphLocale = locale === 'en' ? 'en_US' : 'es_ES';
+
+  const canonicalUrl = `${siteConfig.url}${pathname}`;
 
   return {
     metadataBase: new URL(siteConfig.url),
+    alternates: {
+      canonical: canonicalUrl,
+    },
     title: {
       default: siteConfig.name,
       template: `%s | ${siteConfig.name}`,
