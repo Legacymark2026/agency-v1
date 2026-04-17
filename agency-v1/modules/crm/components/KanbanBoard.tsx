@@ -25,10 +25,18 @@ import { DealCard } from "./DealCard";
 import { DealContextMenu } from "./DealContextMenu";
 import { toast } from "sonner";
 import { createDeal, deleteDeal } from "@/actions/crm";
+import { Deal } from "@/modules/crm/actions/crm";
+import React, { memo, useCallback } from "react";
+
+export interface StageType {
+    id: string;
+    label: string;
+    color: string;
+    accent?: string;
+}
 
 function DroppableStage({ stage, children, totalValue, dealCount, onQuickAdd, stagnantCount, avgDaysInStage }: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    stage: any,
+    stage: StageType,
     children: React.ReactNode,
     totalValue: number,
     dealCount: number,
@@ -129,12 +137,12 @@ function DroppableStage({ stage, children, totalValue, dealCount, onQuickAdd, st
     );
 }
 
-function DraggableDeal({
+const DraggableDeal = memo(function DraggableDeal({
     deal, onClick, onEdit, onDuplicate, onDelete,
     onQuickUpdate, isBulkMode, isSelected, onToggleSelect, users
 }: {
-    deal: any, onClick: () => void, onEdit: () => void, onDuplicate: () => void, onDelete: () => void,
-    onQuickUpdate?: (id: string, updates: any) => void,
+    deal: Deal, onClick: () => void, onEdit: () => void, onDuplicate: () => void, onDelete: () => void,
+    onQuickUpdate?: (id: string, updates: Partial<Deal>) => void,
     isBulkMode?: boolean,
     isSelected?: boolean,
     onToggleSelect?: () => void,
@@ -196,12 +204,12 @@ function DraggableDeal({
             </DealContextMenu>
         </div>
     );
-}
+});
 
-export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: any[]; users?: { id: string; name: string | null; email: string | null }[] }) {
-    const [deals, setDeals] = useState(initialDeals);
-    const [activeDeal, setActiveDeal] = useState<any | null>(null);
-    const [selectedDeal, setSelectedDeal] = useState<any | null>(null);
+export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: Deal[]; users?: { id: string; name: string | null; email: string | null }[] }) {
+    const [deals, setDeals] = useState<Deal[]>(initialDeals);
+    const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
+    const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
     const [mounted, setMounted] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
@@ -240,7 +248,7 @@ export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: any[];
     });
 
     function handleDragStart(event: DragStartEvent) {
-        setActiveDeal(event.active.data.current);
+        setActiveDeal((event.active.data.current as Deal) || null);
     }
 
     async function handleDragEnd(event: DragEndEvent) {
@@ -302,24 +310,24 @@ export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: any[];
     }
 
     // --- Fase 2: Mutaciones de Productividad Senior ---
-    const handleQuickUpdate = async (dealId: string, updates: any) => {
-        setDeals(deals.map(d => d.id === dealId ? { ...d, ...updates } : d));
+    const handleQuickUpdate = useCallback(async (dealId: string, updates: Partial<Deal>) => {
+        setDeals(deals => deals.map(d => d.id === dealId ? { ...d, ...updates } : d));
         try {
             await updateDeal(dealId, updates);
             toast.success("Valor actualizado");
         } catch (e) {
             toast.error("Error al actualizar rápidamente");
         }
-    }
+    }, []);
 
-    const toggleSelection = (dealId: string) => {
+    const toggleSelection = useCallback((dealId: string) => {
         setSelectedDealIds(prev => prev.includes(dealId) ? prev.filter(id => id !== dealId) : [...prev, dealId]);
-    }
+    }, []);
 
-    const toggleBulkMode = () => {
-        setIsBulkMode(!isBulkMode);
+    const toggleBulkMode = useCallback(() => {
+        setIsBulkMode(prev => !prev);
         setSelectedDealIds([]);
-    }
+    }, []);
 
     const handleBulkMove = async (newStage: string) => {
         if (selectedDealIds.length === 0) return;
@@ -341,7 +349,7 @@ export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: any[];
     }
 
     // Handlers for Context Menu
-    async function executeDuplicate(dealToDupe: any) {
+    const executeDuplicate = useCallback(async (dealToDupe: Deal) => {
         try {
             const { id, createdAt, updatedAt, ...dealData } = dealToDupe;
             const res = await createDeal({
@@ -353,9 +361,9 @@ export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: any[];
         } catch (e) {
             toast.error("Error intentando duplicar...");
         }
-    }
+    }, []);
 
-    async function executeDelete(dealId: string) {
+    const executeDelete = useCallback(async (dealId: string) => {
         if (confirm("¿Estás seguro de que deseas eliminar este Deal? Esta acción no se puede deshacer.")) {
             try {
                 const res = await deleteDeal(dealId);
@@ -365,7 +373,7 @@ export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: any[];
                 toast.error("Error inesperado al borrar");
             }
         }
-    }
+    }, []);
 
     if (!mounted) {
         return (

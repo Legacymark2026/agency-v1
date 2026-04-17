@@ -18,8 +18,10 @@ export function NewsletterPopup({ delay = 30000, exitIntent = true }: Newsletter
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         // Check if already dismissed or subscribed
         const dismissed = localStorage.getItem('newsletter_dismissed');
         const subscribed = localStorage.getItem('newsletter_subscribed');
@@ -77,7 +79,7 @@ export function NewsletterPopup({ delay = 30000, exitIntent = true }: Newsletter
         }
     };
 
-    if (!isVisible) return null;
+    if (!mounted || !isVisible) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
