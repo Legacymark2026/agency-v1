@@ -173,24 +173,25 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                 {/* Fields */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-10">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Nombre</label>
-                                        <Input {...form.register("firstName")} placeholder="Tu nombre" />
+                                        <label htmlFor="firstName" className="text-sm font-medium">Nombre</label>
+                                        <Input id="firstName" {...form.register("firstName")} placeholder="Tu nombre" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Apellido</label>
-                                        <Input {...form.register("lastName")} placeholder="Tu apellido" />
+                                        <label htmlFor="lastName" className="text-sm font-medium">Apellido</label>
+                                        <Input id="lastName" {...form.register("lastName")} placeholder="Tu apellido" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Cargo / Título</label>
-                                        <Input {...form.register("jobTitle")} placeholder="Ej. Senior Dev" />
+                                        <label htmlFor="jobTitle" className="text-sm font-medium">Cargo / Título</label>
+                                        <Input id="jobTitle" {...form.register("jobTitle")} placeholder="Ej. Senior Dev" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Teléfono</label>
-                                        <Input {...form.register("phone")} placeholder="+57 300..." />
+                                        <label htmlFor="phone" className="text-sm font-medium">Teléfono</label>
+                                        <Input id="phone" {...form.register("phone")} placeholder="+57 300..." />
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
-                                        <label className="text-sm font-medium">Biografía</label>
+                                        <label htmlFor="bio" className="text-sm font-medium">Biografía</label>
                                         <textarea
+                                            id="bio"
                                             {...form.register("bio")}
                                             className="w-full min-h-[100px] p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm"
                                             placeholder="Cuéntanos un poco sobre ti..."
@@ -209,13 +210,13 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">LinkedIn URL</label>
-                                        <Input {...form.register("linkedin")} placeholder="https://linkedin.com/in/..." />
+                                        <label htmlFor="linkedin" className="text-sm font-medium">LinkedIn URL</label>
+                                        <Input id="linkedin" {...form.register("linkedin")} placeholder="https://linkedin.com/in/..." />
                                         {form.formState.errors.linkedin && <p className="text-xs text-red-500">{form.formState.errors.linkedin.message?.toString()}</p>}
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">GitHub URL</label>
-                                        <Input {...form.register("github")} placeholder="https://github.com/..." />
+                                        <label htmlFor="github" className="text-sm font-medium">GitHub URL</label>
+                                        <Input id="github" {...form.register("github")} placeholder="https://github.com/..." />
                                         {form.formState.errors.github && <p className="text-xs text-red-500">{form.formState.errors.github.message?.toString()}</p>}
                                     </div>
                                 </div>
@@ -301,8 +302,9 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Zona Horaria (Timezone)</label>
+                                        <label htmlFor="timezone" className="text-sm font-medium">Zona Horaria (Timezone)</label>
                                         <select
+                                            id="timezone"
                                             {...form.register("timezone")}
                                             className="w-full p-2.5 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm bg-white"
                                         >
@@ -316,8 +318,9 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Moneda Predeterminada</label>
+                                        <label htmlFor="currency" className="text-sm font-medium">Moneda Predeterminada</label>
                                         <select
+                                            id="currency"
                                             {...form.register("currency")}
                                             className="w-full p-2.5 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black text-sm bg-white"
                                         >

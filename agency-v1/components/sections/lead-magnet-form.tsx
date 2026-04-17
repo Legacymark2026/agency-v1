@@ -162,8 +162,9 @@ export function LeadMagnetForm() {
                                     >
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Nombre</label>
+                                                <label htmlFor="lm-name" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Nombre</label>
                                                 <Input
+                                                    id="lm-name"
                                                     placeholder="Tu nombre completo"
                                                     {...register("name")}
                                                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-teal-500 focus:ring-teal-500/20 h-12"
@@ -172,8 +173,9 @@ export function LeadMagnetForm() {
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Teléfono</label>
+                                                <label htmlFor="lm-phone" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Teléfono</label>
                                                 <Input
+                                                    id="lm-phone"
                                                     placeholder="+57 300..."
                                                     {...register("phone")}
                                                     className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-teal-500 focus:ring-teal-500/20 h-12"
@@ -183,8 +185,9 @@ export function LeadMagnetForm() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Email Corporativo</label>
+                                            <label htmlFor="lm-email" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Email Corporativo</label>
                                             <Input
+                                                id="lm-email"
                                                 placeholder="nombre@empresa.com"
                                                 type="email"
                                                 {...register("email")}
@@ -194,9 +197,9 @@ export function LeadMagnetForm() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Interés Principal</label>
+                                            <label htmlFor="lm-service" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Interés Principal</label>
                                             <Select onValueChange={(val) => setValue("service", val)}>
-                                                <SelectTrigger className="bg-white/5 border-white/10 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12">
+                                                <SelectTrigger id="lm-service" className="bg-white/5 border-white/10 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12">
                                                     <SelectValue placeholder="Selecciona una opción..." />
                                                 </SelectTrigger>
                                                 <SelectContent className="bg-slate-900 border-slate-700 text-white">
@@ -211,8 +214,9 @@ export function LeadMagnetForm() {
                                         </div>
 
                                         <div className="space-y-2">
-                                            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Mensaje (Opcional)</label>
+                                            <label htmlFor="lm-message" className="text-xs font-semibold text-gray-400 uppercase tracking-wider ml-1">Mensaje (Opcional)</label>
                                             <Textarea
+                                                id="lm-message"
                                                 placeholder="Cuéntanos brevemente tus objetivos..."
                                                 {...register("message")}
                                                 className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-teal-500 focus:ring-teal-500/20 resize-none h-24"

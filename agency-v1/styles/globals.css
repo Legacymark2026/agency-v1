@@ -56,18 +56,18 @@
   /* Text */
   --ds-text-primary: #f8fafc;
   /* slate-50 */
-  --ds-text-secondary: #94a3b8;
-  /* slate-400 */
-  --ds-text-muted: #475569;
-  /* slate-600 */
-  --ds-text-dim: #334155;
-  /* slate-700 */
+  --ds-text-secondary: #cbd5e1;
+  /* slate-300 — improved contrast from slate-400 */
+  --ds-text-muted: #64748b;
+  /* slate-500 — improved contrast from slate-600 */
+  --ds-text-dim: #475569;
+  /* slate-600 — improved contrast from slate-700 */
 
   /* Teal accent system */
   --ds-teal: #0d9488;
-  /* teal-600 */
+  /* teal-600 — for backgrounds/accents */
   --ds-teal-md: #14b8a6;
-  /* teal-500 */
+  /* teal-500 — for text (WCAG AA) */
   --ds-teal-bright: #2dd4bf;
   /* teal-400 */
   --ds-teal-dim: rgba(13, 148, 136, 0.15);

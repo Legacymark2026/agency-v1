@@ -250,9 +250,11 @@ export function Footer() {
                                 <div className="relative mb-3">
                                     <input
                                         type="email"
+                                        id="newsletter-email"
                                         value={email}
                                         onChange={e => setEmail(e.target.value)}
                                         placeholder={t('email')}
+                                        aria-label={t('email')}
                                         required
                                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-32 text-sm text-white placeholder-gray-500 backdrop-blur-sm transition-all duration-200 focus:border-teal-500/60 focus:bg-white/8 focus:outline-none focus:ring-1 focus:ring-teal-500/40"
                                     />
@@ -266,10 +268,11 @@ export function Footer() {
                                     </button>
                                 </div>
                                 {/* ── 21. Privacy consent styled ── */}
-                                <label className="flex cursor-pointer items-start gap-2.5">
+                                <label htmlFor="newsletter-consent" className="flex cursor-pointer items-start gap-2.5">
                                     <div className="relative mt-0.5 flex-shrink-0">
                                         <input
                                             type="checkbox"
+                                            id="newsletter-consent"
                                             required
                                             className="peer h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-white/20 bg-white/5 transition-colors checked:border-teal-500 checked:bg-teal-500"
                                         />

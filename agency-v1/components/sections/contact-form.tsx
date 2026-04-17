@@ -347,7 +347,7 @@ function ContactFormContent() {
                             type="checkbox"
                             id="contact-consent"
                             className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-400"
-                            {...register("consent", { required: true })}
+                            {...register("consent")}
                         />
                         <label htmlFor="contact-consent" className="text-xs text-slate-500 leading-relaxed">
                             He leído y acepto la <a href="/politica-privacidad" className="text-teal-600 underline hover:text-teal-700">Política de Privacidad</a> y el tratamiento de mis datos personales para recibir respuesta a esta consulta.

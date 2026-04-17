@@ -118,6 +118,7 @@ export function GlobalSearch() {
                             setResults([]);
                             inputRef.current?.focus();
                         }}
+                        aria-label="Limpiar búsqueda"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer transition-colors"
                     >
                         <X className="h-4 w-4" />

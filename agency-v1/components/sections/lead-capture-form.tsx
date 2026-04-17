@@ -81,7 +81,9 @@ export function LeadCaptureForm({
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
+                <label htmlFor="lead-name" className="sr-only">Nombre completo</label>
                 <Input
+                    id="lead-name"
                     placeholder="Tu nombre completo"
                     {...register("name")}
                     className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-teal-500 focus:ring-teal-500 h-11"
@@ -89,7 +91,9 @@ export function LeadCaptureForm({
                 {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
             </div>
             <div>
+                <label htmlFor="lead-email" className="sr-only">Email profesional</label>
                 <Input
+                    id="lead-email"
                     type="email"
                     placeholder="Tu email profesional"
                     {...register("email")}
