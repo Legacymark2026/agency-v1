@@ -6,6 +6,7 @@ import { CsvExportButton } from "@/modules/crm/components/CsvExportButton";
 import { CsvImportDialog } from "@/components/crm/CsvImportDialog";
 import { AiForecastWidget } from "@/components/crm/AiForecastWidget";
 import { GitFork, DollarSign, TrendingUp, Users, BarChart2 } from "lucide-react";
+import { ComponentErrorBoundary } from "@/shared/components/ui/ComponentErrorBoundary";
 
 export default async function PipelinePage() {
     const company = await prisma.company.findFirst();
@@ -108,7 +109,9 @@ export default async function PipelinePage() {
 
             {/* Board */}
             <div className="relative z-10 flex-1 min-h-[500px] overflow-hidden ds-section">
-                <KanbanBoard initialDeals={deals} users={companyUsers} />
+                <ComponentErrorBoundary title="Error cargando el Tablero Kanban">
+                    <KanbanBoard initialDeals={deals} users={companyUsers} />
+                </ComponentErrorBoundary>
             </div>
         </div>
     );

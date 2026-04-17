@@ -21,8 +21,7 @@ function useSessionId() {
             id = Math.random().toString(36).substring(2) + Date.now().toString(36);
             localStorage.setItem('blog_session_id', id);
         }
-        const timer = setTimeout(() => setSessionId(id || ''), 0);
-        return () => clearTimeout(timer);
+        setSessionId(id);
     }, []);
 
     return sessionId;
@@ -40,16 +39,11 @@ export function ViewCounter({ postId, initialCount = 0 }: ViewCounterProps) {
     const [tracked, setTracked] = useState(false);
 
     useEffect(() => {
-        // Record view once
         if (!tracked) {
             recordPostView(postId);
-            const timer = setTimeout(() => setTracked(true), 0);
-            // Get updated count
-            getPostViewCount(postId).then(setCount);
-            return () => clearTimeout(timer);
-        } else {
-            getPostViewCount(postId).then(setCount);
+            setTracked(true);
         }
+        getPostViewCount(postId).then(setCount);
     }, [postId, tracked]);
 
     const formatCount = (n: number) => {
@@ -138,12 +132,22 @@ interface BookmarkButtonProps {
 export function BookmarkButton({ postSlug }: BookmarkButtonProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         const readingList = JSON.parse(localStorage.getItem('reading_list') || '[]');
-        const timer = setTimeout(() => setIsSaved(readingList.includes(postSlug)), 0);
-        return () => clearTimeout(timer);
+        setIsSaved(readingList.includes(postSlug));
     }, [postSlug]);
+
+    if (!mounted) {
+        return (
+            <button className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                <Bookmark className="h-5 w-5" />
+                <span className="font-medium hidden sm:inline">Guardar</span>
+            </button>
+        );
+    }
 
     const toggleBookmark = () => {
         setIsAnimating(true);
@@ -200,8 +204,7 @@ export function TextToSpeech({ content, title }: TextToSpeechProps) {
 
     // Check for browser support after mount to avoid hydration mismatch
     useEffect(() => {
-        const timer = setTimeout(() => setIsSupported('speechSynthesis' in window), 0);
-        return () => clearTimeout(timer);
+        setIsSupported('speechSynthesis' in window);
     }, []);
 
     useEffect(() => {
@@ -221,10 +224,9 @@ export function TextToSpeech({ content, title }: TextToSpeechProps) {
             setIsPaused(false);
         };
 
-        const timer = setTimeout(() => setUtterance(speech), 0);
+        setUtterance(speech);
 
         return () => {
-            clearTimeout(timer);
             window.speechSynthesis.cancel();
         };
     }, [content, title, isSupported]);
