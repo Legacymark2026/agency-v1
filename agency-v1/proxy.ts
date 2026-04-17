@@ -14,10 +14,18 @@ const { auth } = NextAuth(authConfig);
 export default auth(function middleware(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
 
+    // Preparar headers para inyectar la ruta (para SEO/Canónicas)
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-pathname', pathname);
+
     // Si es una ruta de API o Auth, dejamos que NextAuth se encargue
     const isApiOrAuth = pathname.startsWith("/api") || pathname.startsWith("/auth") || pathname.startsWith("/_next");
     if (isApiOrAuth) {
-        const response = NextResponse.next();
+        const response = NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        });
         
         // CORS preventivo básico para APIs
         if (pathname.startsWith("/api")) {
@@ -33,7 +41,11 @@ export default auth(function middleware(req: NextRequest) {
     // NO hacer NextResponse.next() aquí — eso bypasaría el RBAC.
     // auth() wrapper aplica authorized() antes de llegar a este handler.
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
-        return NextResponse.next();
+        return NextResponse.next({
+            request: {
+                headers: requestHeaders,
+            },
+        });
     }
 
     // Para todo lo demás (marketing), aplicamos Next-Intl.
@@ -52,7 +64,12 @@ export default auth(function middleware(req: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    return intlMiddleware(req);
+    // Inyectamos los headers en la petición que va al middleware de internacionalización
+    const intlRequest = new NextRequest(req, {
+        headers: requestHeaders,
+    });
+
+    return intlMiddleware(intlRequest);
 } as any);
 export const config = {
     // Ignorar estáticos
