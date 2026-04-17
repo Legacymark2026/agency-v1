@@ -59,7 +59,11 @@ function getInitials(name?: string, first?: string, last?: string) {
 
 function isOverdue(dueDate?: string | null) {
   if (!dueDate) return false;
-  return new Date(dueDate) < new Date();
+  try {
+    return new Date(dueDate) < new Date();
+  } catch (e) {
+    return false;
+  }
 }
 
 function formatDue(dueDate?: string | null) {
@@ -129,7 +133,7 @@ function SortableTask({ task, onClick, onDelete, onDuplicate, showDetails }: {
         {showDetails && (
           <>
             {/* Due date */}
-            {task.dueDate && (
+            {task.dueDate && showDetails && hasMounted && (
               <div className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${overdue ? "text-red-400" : "text-slate-500"}`}>
                 <Clock className="w-3 h-3" /> {overdue ? "Vencida" : ""} {formatDue(task.dueDate)}
               </div>
@@ -303,6 +307,7 @@ export function SwimlaneKanban({ initialProject }: { initialProject: any }) {
   const [showFilters, setShowFilters] = useState(false);
   const [collapsedSwimlanes, setCollapsedSwimlanes] = useState<Set<string>>(new Set());
   const [globalSearch, setGlobalSearch] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
 
   // Ctrl+K → Open global search
   useEffect(() => {
@@ -314,6 +319,10 @@ export function SwimlaneKanban({ initialProject }: { initialProject: any }) {
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
+  useEffect(() => {
+    setHasMounted(true);
   }, []);
 
   // Parse data
@@ -533,7 +542,7 @@ export function SwimlaneKanban({ initialProject }: { initialProject: any }) {
 
           {/* Stats */}
           <div className="ml-auto">
-            <StatsBar swimlanes={swimlanes} />
+            {hasMounted && <StatsBar swimlanes={swimlanes} />}
           </div>
         </div>
 
