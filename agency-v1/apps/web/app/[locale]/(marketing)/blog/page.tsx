@@ -1,7 +1,28 @@
-import { Button } from "@/components/ui/button";
 import { getAllPosts } from "@/lib/data";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Rss } from "lucide-react";
+import { Metadata } from "next";
+import { siteConfig } from "@/lib/site-config";
+import { getTranslations } from "next-intl/server";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'nav' });
+
+    return {
+        title: `Blog | ${siteConfig.name}`,
+        description: "Insights y estrategias de alto nivel sobre marketing digital, diseño y automatización.",
+        openGraph: {
+            title: `Blog - Insights & Estrategias | ${siteConfig.name}`,
+            description: "Contenido de alto nivel para escalar tu negocio.",
+            url: `${siteConfig.url}/${locale}/blog`,
+            siteName: siteConfig.name,
+            images: [{ url: `${siteConfig.url}/logo.png` }],
+            locale: locale === 'en' ? 'en_US' : 'es_ES',
+            type: 'website',
+        },
+    };
+}
 
 // ─── Decorative Components ─────────────────────────────────────────────────
 
