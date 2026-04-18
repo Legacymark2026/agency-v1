@@ -101,8 +101,12 @@ function ServiceModal({ service, isOpen, onClose, isSelected, onToggle, quantity
             <h2 className="ds-heading-card flex items-center gap-2">
                {service.nombre_servicio}
             </h2>
-            <button onClick={onClose} className="p-2 w-8 h-8 flex items-center justify-center ds-icon-box hover:text-white transition">
-              <X className="w-4 h-4" />
+            <button 
+              onClick={onClose} 
+              className="p-2 w-8 h-8 flex items-center justify-center ds-icon-box hover:text-white transition"
+              aria-label="Cerrar detalles de servicio"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
@@ -115,7 +119,7 @@ function ServiceModal({ service, isOpen, onClose, isSelected, onToggle, quantity
                 <div className="text-3xl font-bold text-white">
                   {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(subtotal)}
                 </div>
-                <span className="text-xs text-gray-500">Impuestos incluidos</span>
+                <span className="text-xs text-slate-400 font-medium">Impuestos incluidos</span>
               </div>
             </div>
 
@@ -128,12 +132,20 @@ function ServiceModal({ service, isOpen, onClose, isSelected, onToggle, quantity
                 <span className="text-xs text-gray-400">Selecciona la cantidad needed</span>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-                  <Minus className="w-4 h-4" />
+                <button 
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))} 
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+                  aria-label="Disminuir cantidad"
+                >
+                  <Minus className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <span className="w-12 text-center text-xl font-bold">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
-                  <Plus className="w-4 h-4" />
+                <button 
+                  onClick={() => setQuantity(quantity + 1)} 
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+                  aria-label="Aumentar cantidad"
+                >
+                  <Plus className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -193,12 +205,12 @@ function ServiceCard({ service, isSelected, onToggle, highestId, onOpenModal, in
 
       <div className="relative p-8 flex flex-col h-full z-10">
         <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
-          <ArrowUpRight className="text-white/50" />
+          <ArrowUpRight className="text-white/50" aria-hidden="true" />
         </div>
 
         <div className="flex items-start justify-between mb-6">
           <div className={`ds-icon-box transition-all group-hover:scale-110`}>
-            <style.icon size={20} className={style.color} />
+            <style.icon size={20} className={style.color} aria-hidden="true" />
           </div>
           <div className="flex flex-col items-end gap-2">
             {isPremium && (
@@ -219,7 +231,7 @@ function ServiceCard({ service, isSelected, onToggle, highestId, onOpenModal, in
 
         {service.descripcion.length > 60 && (
           <button onClick={(e: any) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 mb-4 self-start">
-            {isExpanded ? <><ChevronUp className="w-3 h-3" /> Ver menos</> : <><Info className="w-3 h-3" /> Ver detalles</>}
+            {isExpanded ? <><ChevronUp className="w-3 h-3" aria-hidden="true" /> Ver menos</> : <><Info className="w-3 h-3" aria-hidden="true" /> Ver detalles</>}
           </button>
         )}
 
@@ -237,7 +249,7 @@ function ServiceCard({ service, isSelected, onToggle, highestId, onOpenModal, in
               ? "bg-[rgba(13,148,136,0.2)] border-[rgba(13,148,136,0.5)] text-teal-300 shadow-[0_0_15px_rgba(13,148,136,0.3)]" 
               : "bg-white/5 border-[rgba(30,41,59,0.8)] text-slate-300 hover:border-teal-500/50 hover:bg-teal-900/40"
           }`}>
-            {isSelected ? <><CheckCircle2 className="w-4 h-4" /> Añadido</> : <><Plus className="w-4 h-4" /> Añadir</>}
+            {isSelected ? <><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Añadido</> : <><Plus className="w-4 h-4" aria-hidden="true" /> Añadir</>}
           </button>
         </div>
       </div>
@@ -357,7 +369,7 @@ export function PublicPricingClient({ services }: PublicPricingClientProps) {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
-                     <ShoppingBag className="w-6 h-6 text-white" />
+                     <ShoppingBag className="w-6 h-6 text-white" aria-hidden="true" />
                    </div>
                    <div>
                      <div className="text-sm font-bold text-white">Tu Paquete</div>
@@ -372,8 +384,12 @@ export function PublicPricingClient({ services }: PublicPricingClientProps) {
                   <button onClick={handleCheckout} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all shadow-lg shadow-white/10">
                     Cotizar <ArrowRight className="w-4 h-4" />
                   </button>
-                  <button onClick={() => setSelectedServices([])} className="p-3 rounded-lg border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5">
-                    <X className="w-5 h-5" />
+                   <button 
+                    onClick={() => setSelectedServices([])} 
+                    className="p-3 rounded-lg border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5"
+                    aria-label="Limpiar selección de servicios"
+                  >
+                    <X className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -421,15 +437,30 @@ export function PublicPricingClient({ services }: PublicPricingClientProps) {
           {/* Sidebar */}
           <div className="lg:col-span-3 space-y-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input type="text" placeholder="Buscar servicios..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/20" />
+              <label htmlFor="pricing-search" className="sr-only">Buscar servicios</label>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" aria-hidden="true" />
+              <input 
+                id="pricing-search"
+                type="text" 
+                placeholder="Buscar servicios..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-white/20" 
+              />
             </div>
 
             {/* Coupon Input */}
             <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <label className="text-xs font-bold text-gray-400 uppercase block mb-2">Código descuento</label>
+              <label htmlFor="coupon-input" className="text-xs font-bold text-gray-400 uppercase block mb-2">Código descuento</label>
               <div className="flex gap-2">
-                <input type="text" placeholder="Ingresa código" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} className={`flex-1 bg-black/20 border rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 ${couponError ? 'border-red-500' : 'border-white/10'}`} />
+                <input 
+                  id="coupon-input"
+                  type="text" 
+                  placeholder="Ingresa código" 
+                  value={couponCode} 
+                  onChange={(e) => setCouponCode(e.target.value)} 
+                  className={`flex-1 bg-black/20 border rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 ${couponError ? 'border-red-500' : 'border-white/10'}`} 
+                />
                 <button onClick={applyCoupon} className="shrink-0 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium">Aplicar</button>
               </div>
               {couponApplied && <div className="text-xs text-emerald-400 mt-2 flex items-center gap-1"><CheckIcon className="w-3 h-3" /> Aplicado</div>}
@@ -445,10 +476,12 @@ export function PublicPricingClient({ services }: PublicPricingClientProps) {
               {isFiltersOpen && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-4 bg-white/5 p-4 rounded-xl border border-white/10">
                   <div>
-                    <label className="text-xs font-mono text-gray-400 uppercase block mb-2">Precio</label>
+                    <span className="text-xs font-mono text-gray-400 uppercase block mb-2">Precio</span>
                     <div className="flex gap-2">
-                      <input type="number" value={priceRange[0]} onChange={e => setPriceRange([+e.target.value, priceRange[1]])} className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" />
-                      <input type="number" value={priceRange[1]} onChange={e => setPriceRange([priceRange[0], +e.target.value])} className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" />
+                      <label htmlFor="min-price" className="sr-only">Precio mínimo</label>
+                      <input id="min-price" type="number" value={priceRange[0]} onChange={e => setPriceRange([+e.target.value, priceRange[1]])} className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" />
+                      <label htmlFor="max-price" className="sr-only">Precio máximo</label>
+                      <input id="max-price" type="number" value={priceRange[1]} onChange={e => setPriceRange([priceRange[0], +e.target.value])} className="w-full bg-black/20 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">

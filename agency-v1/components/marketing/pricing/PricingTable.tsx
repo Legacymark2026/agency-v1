@@ -90,10 +90,17 @@ function SortableCard({
     >
       {/* Selection & Drag Handle */}
       <div className="flex items-center gap-3 md:w-16 flex-shrink-0">
-        <button {...attributes} {...listeners} className="text-slate-600 hover:text-slate-300 cursor-grab active:cursor-grabbing p-1">
-          <GripVertical className="w-5 h-5" />
+        <button 
+          {...attributes} 
+          {...listeners} 
+          className="text-slate-600 hover:text-slate-300 cursor-grab active:cursor-grabbing p-1"
+          aria-label={`Arrastrar para reordenar ${item.nombre_servicio}`}
+        >
+          <GripVertical className="w-5 h-5" aria-hidden="true" />
         </button>
+        <label htmlFor={`select-${item.id}`} className="sr-only">Seleccionar {item.nombre_servicio}</label>
         <input 
+          id={`select-${item.id}`}
           type="checkbox" 
           checked={isSelected}
           onChange={() => onToggleSelect(item.id)}
@@ -134,24 +141,28 @@ function SortableCard({
         <div className="flex flex-col items-start md:items-end w-full">
             <span className="text-xs text-slate-500 font-mono uppercase tracking-wider mb-0.5">Precio Base (Sin IVA)</span>
             {editPrice !== null ? (
-                <input 
-                  autoFocus
-                  type="number" 
-                  className="w-28 bg-slate-950 border border-teal-600 rounded px-2 py-1 text-base font-mono outline-none text-white focus:ring-1 focus:ring-teal-500"
-                  value={editPrice}
-                  onChange={e => setEditPrice(e.target.value)}
-                  onBlur={() => {
-                    onInlineEdit(item.id, "precio_base", Number(editPrice));
-                    setEditPrice(null);
-                  }}
-                  onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                          onInlineEdit(item.id, "precio_base", Number(editPrice));
-                          setEditPrice(null);
-                      }
-                      if (e.key === 'Escape') setEditPrice(null);
-                  }}
-                />
+                <>
+                  <label htmlFor={`price-edit-${item.id}`} className="sr-only">Editar precio de {item.nombre_servicio}</label>
+                  <input 
+                    id={`price-edit-${item.id}`}
+                    autoFocus
+                    type="number" 
+                    className="w-28 bg-slate-950 border border-teal-600 rounded px-2 py-1 text-base font-mono outline-none text-white focus:ring-1 focus:ring-teal-500"
+                    value={editPrice}
+                    onChange={e => setEditPrice(e.target.value)}
+                    onBlur={() => {
+                      onInlineEdit(item.id, "precio_base", Number(editPrice));
+                      setEditPrice(null);
+                    }}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                            onInlineEdit(item.id, "precio_base", Number(editPrice));
+                            setEditPrice(null);
+                        }
+                        if (e.key === 'Escape') setEditPrice(null);
+                    }}
+                  />
+                </>
             ) : (
                 <div 
                    onClick={() => setEditPrice(item.precio_base.toString())}
@@ -193,9 +204,9 @@ function SortableCard({
 
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-1.5 md:w-24 mt-2 md:mt-0 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-        <button aria-label="Copiar detalles del precio" onClick={handleCopy} title="Copiar detalles" className="p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-800 rounded-lg transition-colors"><Copy className="w-4 h-4" /></button>
-        <button aria-label="Editar precio" onClick={() => onEdit(item)} title="Editar" className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-        <button aria-label="Eliminar precio" onClick={() => onDelete(item.id)} title="Eliminar" className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-950/50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+        <button aria-label={`Copiar detalles de ${item.nombre_servicio}`} onClick={handleCopy} title="Copiar detalles" className="p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-800 rounded-lg transition-colors"><Copy className="w-4 h-4" aria-hidden="true" /></button>
+        <button aria-label={`Editar ${item.nombre_servicio}`} onClick={() => onEdit(item)} title="Editar" className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors"><Edit2 className="w-4 h-4" aria-hidden="true" /></button>
+        <button aria-label={`Eliminar ${item.nombre_servicio}`} onClick={() => onDelete(item.id)} title="Eliminar" className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-950/50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" aria-hidden="true" /></button>
       </div>
 
     </div>
