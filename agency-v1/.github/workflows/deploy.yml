@@ -1,4 +1,4 @@
-name: Quality Checks
+name: Quality, Tests & Observability
 
 on:
   push:
@@ -7,33 +7,51 @@ on:
     branches: [main]
 
 jobs:
-  quality-check:
-    name: Quality Checks
+  quality-and-tests:
+    name: "CI Pipeline — Type Check, Lint & Unit Tests"
     runs-on: ubuntu-latest
-    
+
     steps:
+      # ── Checkout ───────────────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js
+
+      # ── Node.js Setup ──────────────────────────────────────
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      
+          node-version: "20"
+          cache: "npm"
+
+      # ── Dependencies ───────────────────────────────────────
       - name: Install dependencies
         run: npm install --prefer-offline
-      
+
+      # ── Prisma ─────────────────────────────────────────────
       - name: Generate Prisma Client
         run: npx prisma generate
-      
-      - name: Type check
+
+      # ── Static Analysis ────────────────────────────────────
+      - name: TypeScript type check
         run: npm run type-check
         continue-on-error: true
-      
-      - name: Lint
+
+      - name: ESLint
         run: npm run lint
         continue-on-error: true
+
+      # ── Unit Tests ─────────────────────────────────────────
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      # ── Upload Coverage Report as Artifact ─────────────────
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-${{ github.sha }}
+          path: coverage/
+          retention-days: 14
 
 # NOTE: Production deployments are handled automatically by Vercel's
 # native GitHub integration (configured in vercel.json).

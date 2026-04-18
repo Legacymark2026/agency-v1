@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -83,4 +84,40 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+// ── Sentry Configuration ─────────────────────────────────────────────────────
+// withSentryConfig wraps the Next.js config to:
+//  1. Auto-upload source maps to Sentry on build (for readable stack traces)
+//  2. Instrument Server Actions, API Routes and Middleware automatically
+//  3. Tree-shake Sentry from client-side bundle when DSN is not provided
+export default withSentryConfig(
+  withNextIntl(nextConfig),
+  {
+    // ── Sentry Organization & Project ──────────────────────
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT || 'agency-v1',
+
+    // ── Silent mode: suppress build output noise ───────────
+    silent: !process.env.CI,
+
+    // ── Source Maps ────────────────────────────────────────
+    // Upload source maps to Sentry so production stack traces
+    // point to original TypeScript code, not minified JS.
+    sourcemaps: {
+      deleteSourcemapsAfterUpload: true, // Don't ship maps to clients
+    },
+
+    // ── Automatic Instrumentation ──────────────────────────
+    // Note: Some of these options require webpack explicitly in recent SDKs
+    webpack: {
+      autoInstrumentServerFunctions: true,
+      autoInstrumentMiddleware: true,
+      autoInstrumentAppDirectory: true,
+      treeshake: {
+        removeDebugLogging: true
+      }
+    },
+
+    // ── Tunneling (bypass ad-blockers for error reports) ───
+    tunnelRoute: '/monitoring-tunnel',
+  }
+);
