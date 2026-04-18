@@ -91,6 +91,7 @@ export function GlobalSearch() {
 
     return (
         <div ref={containerRef} className="relative w-full">
+            <div className="relative">
                 <label htmlFor="global-search-input" className="sr-only">Buscar en el sitio</label>
                 <input
                     ref={inputRef}
