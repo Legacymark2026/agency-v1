@@ -173,7 +173,7 @@ const TechCard = ({
             />
 
             {/* Tech Decoration */}
-            <div className="absolute top-6 right-6 text-xs font-mono text-slate-600 group-hover:text-slate-400 transition-colors uppercase tracking-widest z-10">
+            <div className="absolute top-6 right-6 text-xs font-mono text-slate-400 group-hover:text-slate-200 transition-colors uppercase tracking-widest z-10">
                 [{bgCode}]
             </div>
 

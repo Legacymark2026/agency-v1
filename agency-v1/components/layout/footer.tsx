@@ -21,10 +21,9 @@ function SocialLink({ href, label, hoverClass, children }: SocialLinkProps) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={label}
-            className={`group relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-400 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-transparent hover:text-white ${hoverClass} hover:shadow-lg`}
+            className={`group relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-400 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-transparent hover:text-white ${hoverClass} hover:shadow-lg`}
         >
             <span aria-hidden="true">{children}</span>
-            <span className="sr-only">{label}</span>
         </a>
     );
 }
@@ -119,7 +118,7 @@ export function Footer() {
                     >
                         <span className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
                         {t('ctaBtn')}
-                        <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </Link>
@@ -161,7 +160,7 @@ export function Footer() {
                                 className="flex items-start gap-2.5 text-xs text-gray-400 transition-colors hover:text-teal-400"
                             >
                                 {/* ── 12. Icon with teal accent ── */}
-                                <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <svg className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
@@ -282,7 +281,7 @@ export function Footer() {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                         </svg>
                                     </div>
-                                    <span className="text-xs leading-relaxed text-gray-500">
+                                    <span className="text-xs leading-relaxed text-slate-400">
                                         {t('privacyConsent')} <Link href="/politica-privacidad" className="text-teal-500 underline-offset-2 hover:underline">
                                             {t('privacyPolicy')}
                                         </Link>
@@ -313,11 +312,11 @@ export function Footer() {
                 {/* ── Bottom bar ── */}
                 <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
                     {/* ── 24. Copyright with year + entity name styled ── */}
-                    <p className="text-center text-xs text-gray-600 sm:text-left">
+                    <p className="text-center text-xs text-slate-400 sm:text-left">
                         © {year}{" "}
-                        <span className="font-semibold text-gray-400">LegacyMark SAS</span>
+                        <span className="font-semibold text-slate-300">LegacyMark SAS</span>
                         {" "}— {t('rightsEnd')}{" "}
-                        <span className="text-gray-600">NIT {siteConfig.nit}</span>
+                        <span className="text-slate-400">NIT {siteConfig.nit}</span>
                     </p>
 
                     {/* ── 25. Legal links with separators ── */}

@@ -157,7 +157,7 @@ export function FuturisticHero() {
                             </span>
                         </Button>
 
-                        <Button variant="ghost" size="lg" aria-label={t('ctaSecondary')} className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-sm border border-slate-200 text-slate-600 hover:bg-white hover:border-slate-300 hover:text-slate-900 transition-all group relative overflow-hidden font-mono uppercase tracking-wider text-sm">
+                        <Button variant="ghost" size="lg" aria-label={t('ctaSecondary')} className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-sm border border-slate-200 text-slate-400 hover:bg-white hover:border-slate-300 hover:text-slate-900 transition-all group relative overflow-hidden font-mono uppercase tracking-wider text-sm">
                             <span className="flex items-center gap-2 relative z-10">
                                 <Play className="w-4 h-4 fill-current" aria-hidden="true" strokeWidth={1.5} /> {t('ctaSecondary')}
                             </span>

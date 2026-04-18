@@ -55,36 +55,36 @@ export function LatestPosts({ posts }: LatestPostsProps) {
                             viewport={{ once: true }}
                             className="group flex flex-col overflow-hidden rounded-sm bg-slate-900/50 backdrop-blur-sm border border-slate-800 hover:border-teal-500/30 hover:shadow-[0_20px_50px_-12px_rgba(13,148,136,0.15)] transition-all duration-300 hover:-translate-y-1"
                         >
-                            <Link href={`/blog/${post.slug}`} className="block overflow-hidden aspect-[16/9] relative border-b border-slate-800">
-                                <div
-                                    className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
-                                    style={{ backgroundImage: `url(${post.coverImage || 'https://images.unsplash.com/photo-1432821596592-e2c18b781492?q=80&w=2070&auto=format&fit=crop'})` }}
-                                />
-                                <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-slate-900/10 transition-colors" />
-                            </Link>
-
-                            <div className="flex flex-1 flex-col p-6">
-                                <div className="mb-4 flex items-center gap-4 text-xs font-mono text-teal-500 uppercase tracking-widest">
-                                    <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} /> {new Date(post.createdAt).toLocaleDateString()}</span>
-                                    {post.author?.name && (
-                                        <span className="flex items-center gap-1.5"><User size={12} strokeWidth={1.5} /> {post.author.name}</span>
-                                    )}
+                            <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
+                                <div className="block overflow-hidden aspect-[16/9] relative border-b border-slate-800">
+                                    <div
+                                        className="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+                                        style={{ backgroundImage: `url(${post.coverImage || 'https://images.unsplash.com/photo-1432821596592-e2c18b781492?q=80&w=2070&auto=format&fit=crop'})` }}
+                                    />
+                                    <div className="absolute inset-0 bg-slate-900/40 group-hover:bg-slate-900/10 transition-colors" />
                                 </div>
 
-                                <h3 className="mb-3 text-xl font-black text-white group-hover:text-teal-50 transition-colors leading-tight">
-                                    <Link href={`/blog/${post.slug}`}>
+                                <div className="flex flex-1 flex-col p-6">
+                                    <div className="mb-4 flex items-center gap-4 text-xs font-mono text-teal-500 uppercase tracking-widest">
+                                        <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} aria-hidden="true" /> {new Date(post.createdAt).toLocaleDateString()}</span>
+                                        {post.author?.name && (
+                                            <span className="flex items-center gap-1.5"><User size={12} strokeWidth={1.5} aria-hidden="true" /> {post.author.name}</span>
+                                        )}
+                                    </div>
+
+                                    <h3 className="mb-3 text-xl font-black text-white group-hover:text-teal-50 transition-colors leading-tight">
                                         {post.title}
-                                    </Link>
-                                </h3>
+                                    </h3>
 
-                                <p className="mb-6 flex-1 text-slate-400 line-clamp-3 text-sm leading-relaxed font-light">
-                                    {post.excerpt || t('lockedMsg')}
-                                </p>
+                                    <p className="mb-6 flex-1 text-slate-400 line-clamp-3 text-sm leading-relaxed font-light">
+                                        {post.excerpt || t('lockedMsg')}
+                                    </p>
 
-                                <Link href={`/blog/${post.slug}`} className="inline-flex items-center font-bold text-teal-400 hover:text-teal-300 transition-colors text-xs uppercase tracking-widest font-mono">
-                                    {t('readAction')} <ArrowRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
-                                </Link>
-                            </div>
+                                    <div className="inline-flex items-center font-bold text-teal-400 hover:text-teal-300 transition-colors text-xs uppercase tracking-widest font-mono">
+                                        {t('readAction')} <ArrowRight className="ml-2 h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                                    </div>
+                                </div>
+                            </Link>
                         </motion.article>
                     ))}
                 </div>

@@ -187,7 +187,7 @@ export function Header() {
                     className={`lg:hidden transition-colors ${isScrolled ? "text-slate-900" : isDarkPage ? "text-white" : "text-slate-900"}`}
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    {isOpen ? <X size={24} /> : <Menu size={24} />}
+                    {isOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
                 </button>
             </div>
 

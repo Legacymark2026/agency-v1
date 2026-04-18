@@ -109,7 +109,7 @@ export function OmnichannelShowcase() {
                                     <Zap size={18} strokeWidth={1.5} />
                                 </div>
                                 <h3 className="text-white font-bold">{t('features.f2.title')}</h3>
-                                <p className="text-sm text-slate-500 leading-relaxed">{t('features.f2.desc')}</p>
+                                <p className="text-sm text-slate-400 leading-relaxed">{t('features.f2.desc')}</p>
                             </div>
                         </motion.div>
 
@@ -244,7 +244,7 @@ export function OmnichannelShowcase() {
                                     {t('secureBadge')}
                                 </span>
                             </div>
-                            <div className="font-mono text-xs text-slate-500 uppercase tracking-widest text-right">
+                            <div className="font-mono text-xs text-slate-400 uppercase tracking-widest text-right">
                                 EXTRACTING_METRICS... <br />
                                 SYNC_STATUS: <span className="text-emerald-400">OPTIMAL</span>
                             </div>

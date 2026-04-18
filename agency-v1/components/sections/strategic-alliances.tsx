@@ -50,7 +50,7 @@ export function StrategicAlliances() {
 
                             <div className="text-center transition-all group-hover:opacity-100 opacity-60">
                                 <h3 className="font-bold text-white mb-1 tracking-tight text-lg">{partner.name}</h3>
-                                <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-4">
+                                <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-4">
                                     {partner.tier}
                                 </p>
                                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 rounded-sm border border-slate-800 text-xs font-bold text-slate-300 shadow-sm font-mono tracking-wider">
@@ -68,7 +68,7 @@ export function StrategicAlliances() {
                         {[...Array(2)].map((_, i) => (
                             <div key={i} className="flex gap-16">
                                 {["SYSTEM STATUS: ONLINE", "AVG. ROAS: 450%", "UPTIME: 99.99%", "SECURE CONNECTION", "LIVE TELEMETRY"].map((text, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 text-xs font-mono text-slate-500 uppercase tracking-widest">
+                                    <div key={idx} className="flex items-center gap-2 text-xs font-mono text-slate-400 uppercase tracking-widest">
                                         <div className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.8)] animate-pulse" />
                                         {text}
                                     </div>
