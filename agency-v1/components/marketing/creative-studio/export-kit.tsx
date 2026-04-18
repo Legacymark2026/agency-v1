@@ -90,7 +90,7 @@ export function ExportKitPanel({ assetId, assetName }: { assetId: string; assetN
                             {platform}
                         </span>
                         <div className="flex-1 h-px bg-slate-800" />
-                        <span className="text-[10px] text-slate-600 font-mono">{items.length} formato{items.length > 1 ? "s" : ""}</span>
+                        <span className="text-xs text-slate-600 font-mono">{items.length} formato{items.length > 1 ? "s" : ""}</span>
                     </div>
                     <div className="space-y-1.5">
                         {items.map((item: any) => (
@@ -106,7 +106,7 @@ export function ExportKitPanel({ assetId, assetName }: { assetId: string; assetN
                                         {downloaded.has(item.name) && <CheckCircle size={11} className="text-emerald-400" />}
                                         <span className="text-xs font-medium text-slate-200">{item.name}</span>
                                     </div>
-                                    <span className="text-[10px] font-mono text-slate-500 mt-0.5">{item.spec}</span>
+                                    <span className="text-xs font-mono text-slate-500 mt-0.5">{item.spec}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <button
@@ -118,7 +118,7 @@ export function ExportKitPanel({ assetId, assetName }: { assetId: string; assetN
                                     </button>
                                     <button
                                         onClick={() => handleDownload(item)}
-                                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-mono transition"
+                                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-mono transition"
                                     >
                                         <Download size={11} /> Descargar
                                     </button>

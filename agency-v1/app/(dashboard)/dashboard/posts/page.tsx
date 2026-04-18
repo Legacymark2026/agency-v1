@@ -43,13 +43,13 @@ export default async function PostsPage() {
                 <div className="flex items-center gap-3">
                     {totalComments > 0 && (
                         <Link href="/dashboard/posts/comments"
-                            className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
+                            className="flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
                             style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)' }}>
                             <MessageCircle size={12} /> Comentarios
                         </Link>
                     )}
                     <Link href="/dashboard/posts/create"
-                        className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
+                        className="flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
                         style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)' }}>
                         <Plus size={12} /> New Post
                     </Link>
@@ -62,7 +62,7 @@ export default async function PostsPage() {
                     <thead>
                         <tr style={{ borderBottom: '1px solid rgba(30,41,59,0.8)' }}>
                             {["Title", "Author", "Status", "Date", "Actions"].map((h, i) => (
-                                <th key={h} className={`px-4 py-3 font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-slate-600 ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                <th key={h} className={`px-4 py-3 font-mono text-xs font-bold uppercase tracking-[0.14em] text-slate-600 ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
                             ))}
                         </tr>
                     </thead>
@@ -70,7 +70,7 @@ export default async function PostsPage() {
                         {posts.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="px-4 py-12 text-center">
-                                    <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; No posts encontrados · Crea el primero_</p>
+                                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; No posts encontrados · Crea el primero_</p>
                                 </td>
                             </tr>
                         ) : (
@@ -79,11 +79,11 @@ export default async function PostsPage() {
                                     style={{ borderBottom: '1px solid rgba(30,41,59,0.5)' }}>
                                     <td className="px-4 py-4">
                                         <p className="text-[13px] font-bold text-slate-200">{post.title}</p>
-                                        <p className="font-mono text-[9px] text-slate-600 mt-0.5 truncate max-w-[200px]">{post.slug}</p>
+                                        <p className="font-mono text-xs text-slate-600 mt-0.5 truncate max-w-[200px]">{post.slug}</p>
                                     </td>
                                     <td className="px-4 py-4">
                                         <p className="text-[12px] text-slate-300">{post.author.name || 'Unknown'}</p>
-                                        <p className="font-mono text-[9px] text-slate-600">{post.author.email}</p>
+                                        <p className="font-mono text-xs text-slate-600">{post.author.email}</p>
                                     </td>
                                     <td className="px-4 py-4">
                                         <span className={`ds-badge ${post.published ? 'ds-badge-teal' : 'ds-badge-amber'}`}>
@@ -91,7 +91,7 @@ export default async function PostsPage() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-4">
-                                        <span className="font-mono text-[9px] text-slate-500 uppercase tracking-widest">
+                                        <span className="font-mono text-xs text-slate-500 uppercase tracking-widest">
                                             {new Date(post.createdAt).toLocaleDateString()}
                                         </span>
                                     </td>

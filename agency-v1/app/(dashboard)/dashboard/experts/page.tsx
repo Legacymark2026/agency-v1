@@ -215,9 +215,9 @@ export default function ExpertsPage() {
                         </div>
                         Team Management
                     </h1>
-                    <p className="text-slate-400 mt-1 text-lg font-mono text-[11px] uppercase tracking-widest">Manage the experts displayed on your "About Us" page</p>
+                    <p className="text-slate-400 mt-1 text-lg font-mono text-xs uppercase tracking-widest">Manage the experts displayed on your "About Us" page</p>
                 </div>
-                <Button onClick={openCreateSheet} size="lg" className="shadow-lg bg-teal-600/20 hover:bg-teal-600/30 text-teal-400 border border-teal-500/30 rounded-sm px-6 font-mono text-[10px] uppercase tracking-widest font-bold">
+                <Button onClick={openCreateSheet} size="lg" className="shadow-lg bg-teal-600/20 hover:bg-teal-600/30 text-teal-400 border border-teal-500/30 rounded-sm px-6 font-mono text-xs uppercase tracking-widest font-bold">
                     <UserPlus size={16} className="mr-2" /> Add Expert
                 </Button>
             </div>
@@ -290,13 +290,13 @@ export default function ExpertsPage() {
                                         <UserPlus className="h-10 w-10 text-slate-500" />
                                     </div>
                                     <h3 className="text-lg font-medium text-slate-200">No experts found</h3>
-                                    <p className="text-slate-500 max-w-sm mt-2 font-mono text-[11px]">
+                                    <p className="text-slate-500 max-w-sm mt-2 font-mono text-xs">
                                         {searchQuery || filterStatus !== 'all'
                                             ? "Try adjusting your search or filters."
                                             : "Get started by adding the first member of your team."}
                                     </p>
                                     {!searchQuery && filterStatus === 'all' && (
-                                        <Button variant="ghost" onClick={openCreateSheet} className="mt-4 text-teal-500 hover:text-teal-400 hover:bg-teal-500/10 font-mono text-[10px] uppercase tracking-widest">
+                                        <Button variant="ghost" onClick={openCreateSheet} className="mt-4 text-teal-500 hover:text-teal-400 hover:bg-teal-500/10 font-mono text-xs uppercase tracking-widest">
                                             Add your first expert
                                         </Button>
                                     )}
@@ -317,7 +317,7 @@ export default function ExpertsPage() {
                 >
                     <SheetHeader className="mb-6">
                         <SheetTitle className="text-slate-100 font-bold">{editingExpert ? "Edit Expert" : "Add New Expert"}</SheetTitle>
-                        <SheetDescription className="text-slate-400 font-mono text-[11px]">
+                        <SheetDescription className="text-slate-400 font-mono text-xs">
                             {editingExpert
                                 ? "Make changes to the expert's profile here. Click save when you're done."
                                 : "Fill in the details to add a new expert to your team."}

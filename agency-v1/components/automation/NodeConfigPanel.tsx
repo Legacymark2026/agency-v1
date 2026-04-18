@@ -39,7 +39,7 @@ function Field({ label, hint, children }: any) {
         <div className="space-y-1">
             <Label className="text-xs font-semibold text-slate-300">{label}</Label>
             {children}
-            {hint && <p className="text-[10px] text-slate-500">{hint}</p>}
+            {hint && <p className="text-xs text-slate-500">{hint}</p>}
         </div>
     );
 }
@@ -221,7 +221,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
         if (type === 'splitNode') {
             return (<>
                 <Section title="Básico" icon={<Zap size={12}/>} color="blue">
-                    <Field label="Ratio A/B" hint="Suma debe ser 100"><div className="flex gap-2"><div className="flex-1"><Label className="text-[10px]">Variante A (%)</Label><Input type="number" value={data.ratioA||50} onChange={e=>h('ratioA',e.target.value)}/></div><div className="flex-1"><Label className="text-[10px]">Variante B (%)</Label><Input type="number" value={data.ratioB||50} onChange={e=>h('ratioB',e.target.value)}/></div></div></Field>
+                    <Field label="Ratio A/B" hint="Suma debe ser 100"><div className="flex gap-2"><div className="flex-1"><Label className="text-xs">Variante A (%)</Label><Input type="number" value={data.ratioA||50} onChange={e=>h('ratioA',e.target.value)}/></div><div className="flex-1"><Label className="text-xs">Variante B (%)</Label><Input type="number" value={data.ratioB||50} onChange={e=>h('ratioB',e.target.value)}/></div></div></Field>
                     <Field label="Métrica de éxito"><Select value={data.metric||'OPEN_RATE'} onValueChange={v=>h('metric',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="OPEN_RATE">Tasa Apertura</SelectItem><SelectItem value="CLICK_RATE">Tasa Clic</SelectItem><SelectItem value="CONVERSION">Conversión</SelectItem></SelectContent></Select></Field>
                 </Section>
                 <Section title="Avanzado" icon={<Settings2 size={12}/>} color="gray" defaultOpen={false}>
@@ -272,7 +272,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                     <Field label="Método"><Select value={data.method||'POST'} onValueChange={v=>h('method',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="GET">GET</SelectItem><SelectItem value="POST">POST</SelectItem><SelectItem value="PUT">PUT</SelectItem><SelectItem value="PATCH">PATCH</SelectItem><SelectItem value="DELETE">DELETE</SelectItem></SelectContent></Select></Field>
                     <Field label="URL"><Input value={data.url||''} onChange={e=>h('url',e.target.value)} placeholder="https://api.externo.com/v1/data" className="font-mono text-xs"/></Field>
-                    <Field label="Body JSON"><Textarea value={data.payload||'{\n  "id": "{{lead.id}}"\n}'} onChange={e=>h('payload',e.target.value)} className="h-28 font-mono text-[11px] bg-slate-950 text-green-400 border-0"/></Field>
+                    <Field label="Body JSON"><Textarea value={data.payload||'{\n  "id": "{{lead.id}}"\n}'} onChange={e=>h('payload',e.target.value)} className="h-28 font-mono text-xs bg-slate-950 text-green-400 border-0"/></Field>
                 </Section>
                 <Section title="Avanzado" icon={<Settings2 size={12}/>} color="gray" defaultOpen={false}>
                     <Field label="Headers (JSON)" hint='{"Authorization":"Bearer token"}'><Textarea value={data.headers||'{}'} onChange={e=>h('headers',e.target.value)} className="h-20 font-mono text-xs bg-slate-900 text-blue-300 border-0"/></Field>
@@ -424,7 +424,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
         if (type === 'codeNode') {
             return (<>
                 <Section title="Básico" icon={<Zap size={12}/>} color="blue">
-                    <Field label="JavaScript (Node.js)" hint="Accede a: triggerData, workflowData"><Textarea value={data.code||'return {\n  result: true\n};'} onChange={e=>h('code',e.target.value)} className="h-48 font-mono text-[11px] bg-slate-950 text-green-400 border-slate-700" spellCheck={false}/></Field>
+                    <Field label="JavaScript (Node.js)" hint="Accede a: triggerData, workflowData"><Textarea value={data.code||'return {\n  result: true\n};'} onChange={e=>h('code',e.target.value)} className="h-48 font-mono text-xs bg-slate-950 text-green-400 border-slate-700" spellCheck={false}/></Field>
                 </Section>
                 <Section title="Avanzado" icon={<Settings2 size={12}/>} color="gray" defaultOpen={false}>
                     <Field label="Timeout (ms)"><Input type="number" value={data.timeout||5000} onChange={e=>h('timeout',e.target.value)}/></Field>
@@ -480,7 +480,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
 
             <div className="p-4 flex-1 overflow-y-auto custom-scrollbar" style={{scrollbarColor:'#334155 #0f172a'}}>
                 <div className="mb-4">
-                    <Label className="text-[10px] text-teal-400/70 font-bold mb-1 block uppercase tracking-widest">Nombre del Nodo</Label>
+                    <Label className="text-xs text-teal-400/70 font-bold mb-1 block uppercase tracking-widest">Nombre del Nodo</Label>
                     <input
                         value={data.label||''}
                         onChange={e=>onChange(id, { ...data, label: e.target.value })}
@@ -493,7 +493,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 {renderContent()}
             </div>
 
-            <div className="p-3 border-t border-slate-700/60 bg-slate-950 text-[10px] text-slate-500 font-mono text-center truncate">
+            <div className="p-3 border-t border-slate-700/60 bg-slate-950 text-xs text-slate-500 font-mono text-center truncate">
                 ID: {id}
             </div>
         </div>

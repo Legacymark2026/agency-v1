@@ -63,7 +63,7 @@ function FloatingInput({
                         htmlFor={id}
                         className={cn(
                             "absolute left-0 transition-all duration-200 pointer-events-none",
-                            active ? "top-0 text-[10px] text-teal-600 font-semibold" : "top-1/2 -translate-y-1/2 text-sm text-zinc-400"
+                            active ? "top-0 text-xs text-teal-600 font-semibold" : "top-1/2 -translate-y-1/2 text-sm text-zinc-400"
                         )}
                     >
                         {label} {required && <span className="text-red-500">*</span>}
@@ -119,7 +119,7 @@ function ReasonDropdown({
                     <label
                         className={cn(
                             "absolute left-0 transition-all duration-200 pointer-events-none",
-                            active || value ? "top-0 text-[10px] text-teal-600 font-semibold" : "top-1/2 -translate-y-1/2 text-sm text-zinc-400"
+                            active || value ? "top-0 text-xs text-teal-600 font-semibold" : "top-1/2 -translate-y-1/2 text-sm text-zinc-400"
                         )}
                     >
                         Motivo de consulta
@@ -211,7 +211,7 @@ export function LeadForm({ onChatStarted }: LeadFormProps) {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex items-center gap-3">
                 <div className="flex -space-x-2">
                     {TEAM_AVATARS.map((a, i) => (
-                        <div key={i} className={cn("w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-bold border-2 border-white dark:border-zinc-900", a.color)}>
+                        <div key={i} className={cn("w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-xs font-bold border-2 border-white dark:border-zinc-900", a.color)}>
                             {a.initials}
                         </div>
                     ))}
@@ -230,7 +230,7 @@ export function LeadForm({ onChatStarted }: LeadFormProps) {
                     </div>
                     <div>
                         <p className="text-xs font-semibold text-teal-700 dark:text-teal-300">&lt; 2 min</p>
-                        <p className="text-[10px] text-zinc-500">Tiempo de respuesta</p>
+                        <p className="text-xs text-zinc-500">Tiempo de respuesta</p>
                     </div>
                 </div>
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl p-3 flex items-center gap-2.5 border border-emerald-100 dark:border-emerald-900/50">
@@ -239,7 +239,7 @@ export function LeadForm({ onChatStarted }: LeadFormProps) {
                     </div>
                     <div>
                         <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">100% Seguro</p>
-                        <p className="text-[10px] text-zinc-500">Datos protegidos</p>
+                        <p className="text-xs text-zinc-500">Datos protegidos</p>
                     </div>
                 </div>
             </motion.div>

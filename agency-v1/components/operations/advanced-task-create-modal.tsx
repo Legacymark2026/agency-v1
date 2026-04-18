@@ -104,7 +104,7 @@ export function AdvancedTaskCreateModal({
             </h4>
             <div className="space-y-4">
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Título de la tarea *</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Título de la tarea *</label>
                 <input 
                   autoFocus
                   placeholder="Ej: Diseñar landing page..."
@@ -114,7 +114,7 @@ export function AdvancedTaskCreateModal({
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Descripción detallada</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Descripción detallada</label>
                 <textarea 
                   rows={4} placeholder="Describe los requerimientos (soporta markdown en el modal)..."
                   value={description} onChange={e => setDescription(e.target.value)}
@@ -124,14 +124,14 @@ export function AdvancedTaskCreateModal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block flex items-center gap-1"><Flag className="w-3 h-3" /> Prioridad</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block flex items-center gap-1"><Flag className="w-3 h-3" /> Prioridad</label>
                   <div className="flex gap-2">
                     {["URGENT","HIGH","MEDIUM","LOW"].map(p => {
                       const cfg = PRIORITY_CONFIG[p];
                       return (
                         <button 
                           key={p} onClick={() => setPriority(p)} 
-                          className="flex-1 py-2 rounded-lg text-[11px] font-bold transition-all" 
+                          className="flex-1 py-2 rounded-lg text-xs font-bold transition-all" 
                           style={{ 
                             color: priority === p ? "#fff" : cfg.color, 
                             background: priority === p ? cfg.color : cfg.bg, 
@@ -145,7 +145,7 @@ export function AdvancedTaskCreateModal({
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block flex items-center gap-1">Columna / Estado</label>
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block flex items-center gap-1">Columna / Estado</label>
                   <select 
                     value={swimlaneId} onChange={e => setSwimlaneId(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-teal-500 outline-none"
@@ -166,7 +166,7 @@ export function AdvancedTaskCreateModal({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="col-span-1 md:col-span-2">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Asignar A</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">Asignar A</label>
                 <select 
                   value={assigneeId} onChange={e => setAssigneeId(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-teal-500 outline-none"
@@ -178,7 +178,7 @@ export function AdvancedTaskCreateModal({
                 </select>
               </div>
               <div className="col-span-1 md:col-span-2">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><Calendar className="w-3 h-3" /> Fecha Límite</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><Calendar className="w-3 h-3" /> Fecha Límite</label>
                 <input 
                   type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-teal-500 outline-none [color-scheme:dark]"
@@ -186,14 +186,14 @@ export function AdvancedTaskCreateModal({
               </div>
               
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><Clock className="w-3 h-3" /> Horas Est.</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><Clock className="w-3 h-3" /> Horas Est.</label>
                 <input 
                   type="number" min="0" step="0.5" placeholder="0" value={estimatedHours} onChange={e => setEstimatedHours(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-teal-500 outline-none"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><Target className="w-3 h-3" /> Story Pts</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><Target className="w-3 h-3" /> Story Pts</label>
                 <input 
                   type="number" min="0" step="1" placeholder="0" value={storyPoints} onChange={e => setStoryPoints(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:border-teal-500 outline-none"
@@ -209,7 +209,7 @@ export function AdvancedTaskCreateModal({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><DollarSign className="w-3 h-3 text-emerald-500" /> Presupuesto Cap</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><DollarSign className="w-3 h-3 text-emerald-500" /> Presupuesto Cap</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-slate-500">$</span>
                   <input 
@@ -219,7 +219,7 @@ export function AdvancedTaskCreateModal({
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><DollarSign className="w-3 h-3 text-emerald-500" /> Costo x Hora</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><DollarSign className="w-3 h-3 text-emerald-500" /> Costo x Hora</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-slate-500">$</span>
                   <input 
@@ -229,7 +229,7 @@ export function AdvancedTaskCreateModal({
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><ShieldAlert className="w-3 h-3 text-rose-500" /> SLA Deadline</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1 block"><ShieldAlert className="w-3 h-3 text-rose-500" /> SLA Deadline</label>
                 <input 
                   type="date" value={slaDeadline} onChange={e => setSlaDeadline(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-rose-200 focus:border-rose-500 outline-none [color-scheme:dark]"

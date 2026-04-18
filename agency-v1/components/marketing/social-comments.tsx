@@ -67,7 +67,7 @@ export function SocialComments({ postId, authorId }: { postId: string; authorId:
                             <div className="flex-1">
                                 <div className="flex items-baseline gap-2 mb-1">
                                     <span className="text-xs font-bold text-slate-200">{c.user?.name || "Usuario"}</span>
-                                    <span className="text-[10px] text-slate-500 font-mono">{format(new Date(c.createdAt), 'MMM dd, HH:mm')}</span>
+                                    <span className="text-xs text-slate-500 font-mono">{format(new Date(c.createdAt), 'MMM dd, HH:mm')}</span>
                                 </div>
                                 <div className="bg-slate-800/50 border border-slate-700/50 p-3 rounded-r-lg rounded-bl-lg text-sm text-slate-300 shadow-sm">
                                     {c.content}

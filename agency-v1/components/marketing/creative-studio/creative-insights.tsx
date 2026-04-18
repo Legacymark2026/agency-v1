@@ -99,7 +99,7 @@ export function CreativeInsights() {
                                     <div key={m.label} className="text-center bg-white/3 rounded-xl p-2">
                                         <div className="text-gray-500 flex justify-center mb-1">{m.icon}</div>
                                         <p className={cn('text-sm font-bold', m.color)}>{m.value}</p>
-                                        <p className="text-[9px] text-gray-600">{m.label}</p>
+                                        <p className="text-xs text-gray-600">{m.label}</p>
                                     </div>
                                 ))}
                             </div>
@@ -115,8 +115,8 @@ export function CreativeInsights() {
                             {/* ROAS bar */}
                             <div>
                                 <div className="flex justify-between mb-1">
-                                    <span className="text-[10px] text-gray-600">ROAS Promedio</span>
-                                    <span className="text-[10px] text-gray-400">{insight.avgRoas.toFixed(2)}x</span>
+                                    <span className="text-xs text-gray-600">ROAS Promedio</span>
+                                    <span className="text-xs text-gray-400">{insight.avgRoas.toFixed(2)}x</span>
                                 </div>
                                 <div className="h-1.5 rounded-full bg-white/5">
                                     <div className="h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-emerald-500 transition-all"

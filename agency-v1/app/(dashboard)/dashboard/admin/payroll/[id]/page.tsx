@@ -246,7 +246,7 @@ export default function PayrollDetailsPage({ params }: { params: { id: string } 
                             <div key={item.id} className="flex justify-between items-start">
                                 <div>
                                     <div className="text-sm text-slate-200">{item.description}</div>
-                                    <div className="text-[10px] text-slate-500 font-mono">{item.concept}</div>
+                                    <div className="text-xs text-slate-500 font-mono">{item.concept}</div>
                                 </div>
                                 <span className="text-sm font-medium text-emerald-400">{formatCurrency(item.amount)}</span>
                             </div>
@@ -266,7 +266,7 @@ export default function PayrollDetailsPage({ params }: { params: { id: string } 
                             <div key={item.id} className="flex justify-between items-start">
                                 <div>
                                     <div className="text-sm text-slate-200">{item.description}</div>
-                                    <div className="text-[10px] text-slate-500 font-mono">{item.concept}</div>
+                                    <div className="text-xs text-slate-500 font-mono">{item.concept}</div>
                                 </div>
                                 <span className="text-sm font-medium text-red-400">-{formatCurrency(item.amount)}</span>
                             </div>
@@ -282,7 +282,7 @@ export default function PayrollDetailsPage({ params }: { params: { id: string } 
                 <div className="p-6 bg-slate-950/80 border-t border-slate-800 flex justify-between items-center">
                     <div>
                         <p className="text-sm text-slate-400 font-medium">NETO A PAGAR</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">La transferencia debe hacerse por este monto exacto.</p>
+                        <p className="text-xs text-slate-500 mt-0.5">La transferencia debe hacerse por este monto exacto.</p>
                     </div>
                     <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-300">
                         {formatCurrency(payroll.netPay)}

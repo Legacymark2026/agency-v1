@@ -54,7 +54,7 @@ export function DashboardPageHeader({ title, subtitle, badgeText, badgeVariant =
 
             <div className="flex items-center gap-3 shrink-0">
                 {code && (
-                    <span className="font-mono text-[9px] text-slate-600 uppercase tracking-widest hidden md:block">
+                    <span className="font-mono text-xs text-slate-600 uppercase tracking-widest hidden md:block">
                         [{code}]
                     </span>
                 )}

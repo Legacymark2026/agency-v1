@@ -46,7 +46,7 @@ export function AiForecastWidget({ companyId }: { companyId: string }) {
         <div className="ds-section flex items-center justify-center h-24">
             <div className="flex items-center gap-3">
                 <Loader2 size={14} className="animate-spin text-teal-400" />
-                <p className="font-mono text-[9px] text-slate-500">Generando predicción con IA...</p>
+                <p className="font-mono text-xs text-slate-500">Generando predicción con IA...</p>
             </div>
         </div>
     );
@@ -61,12 +61,12 @@ export function AiForecastWidget({ companyId }: { companyId: string }) {
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <div className="ds-icon-box w-7 h-7"><Brain size={12} className="text-violet-400" /></div>
-                    <p className="font-mono text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    <p className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">
                         AI Sales Forecast {isGemini ? "· Gemini" : "· Algorítmico"}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="font-mono text-[8px] px-2 py-0.5 rounded-sm" style={{ background: risk.bg, border: `1px solid ${risk.border}`, color: risk.color }}>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded-sm" style={{ background: risk.bg, border: `1px solid ${risk.border}`, color: risk.color }}>
                         {risk.label}
                     </span>
                     <button onClick={loadForecast} className="p-1 text-slate-600 hover:text-slate-300 transition-colors rounded">
@@ -77,11 +77,11 @@ export function AiForecastWidget({ companyId }: { companyId: string }) {
 
             <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="text-center">
-                    <p className="font-mono text-[8px] text-slate-600 uppercase tracking-widest mb-1">Predicción</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest mb-1">Predicción</p>
                     <p className="font-mono text-xl font-black text-teal-400">${(data.predictedRevenue / 1000).toFixed(1)}k</p>
                 </div>
                 <div className="text-center">
-                    <p className="font-mono text-[8px] text-slate-600 uppercase tracking-widest mb-1">Confianza</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest mb-1">Confianza</p>
                     <div className="flex items-center justify-center gap-1">
                         <div className="w-12 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(30,41,59,0.8)' }}>
                             <div className="h-full rounded-full" style={{ width: `${data.confidenceScore}%`, background: 'linear-gradient(90deg, #7c3aed, #0ea5e9)' }} />
@@ -90,7 +90,7 @@ export function AiForecastWidget({ companyId }: { companyId: string }) {
                     </div>
                 </div>
                 <div className="text-center">
-                    <p className="font-mono text-[8px] text-slate-600 uppercase tracking-widest mb-1">Deals Activos</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest mb-1">Deals Activos</p>
                     <p className="font-mono text-xl font-black text-slate-200">{data.activeDealCount}</p>
                 </div>
             </div>
@@ -98,16 +98,16 @@ export function AiForecastWidget({ companyId }: { companyId: string }) {
             {/* Best/Worst case */}
             <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="p-2.5 rounded-lg text-center" style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                    <p className="font-mono text-[8px] text-emerald-500 mb-1">Optimista</p>
+                    <p className="font-mono text-xs text-emerald-500 mb-1">Optimista</p>
                     <p className="font-mono text-sm font-black text-emerald-400">${(data.bestCaseRevenue / 1000).toFixed(1)}k</p>
                 </div>
                 <div className="p-2.5 rounded-lg text-center" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                    <p className="font-mono text-[8px] text-red-500 mb-1">Conservador</p>
+                    <p className="font-mono text-xs text-red-500 mb-1">Conservador</p>
                     <p className="font-mono text-sm font-black text-red-400">${(data.worstCaseRevenue / 1000).toFixed(1)}k</p>
                 </div>
             </div>
 
-            <button onClick={() => setExpanded(e => !e)} className="w-full font-mono text-[9px] text-slate-600 hover:text-slate-400 transition-colors text-center">
+            <button onClick={() => setExpanded(e => !e)} className="w-full font-mono text-xs text-slate-600 hover:text-slate-400 transition-colors text-center">
                 {expanded ? "▲ Ocultar insights" : "▼ Ver insights y recomendaciones"}
             </button>
 
@@ -115,22 +115,22 @@ export function AiForecastWidget({ companyId }: { companyId: string }) {
                 <div className="mt-4 space-y-3">
                     {data.keyInsights.length > 0 && (
                         <div>
-                            <p className="font-mono text-[8px] text-slate-600 uppercase tracking-widest mb-2">Insights</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest mb-2">Insights</p>
                             {data.keyInsights.map((insight, i) => (
                                 <div key={i} className="flex items-start gap-2 mb-1.5">
                                     <Target size={9} className="text-violet-400 shrink-0 mt-0.5" />
-                                    <p className="font-mono text-[9px] text-slate-400">{insight}</p>
+                                    <p className="font-mono text-xs text-slate-400">{insight}</p>
                                 </div>
                             ))}
                         </div>
                     )}
                     {data.recommendations.length > 0 && (
                         <div>
-                            <p className="font-mono text-[8px] text-slate-600 uppercase tracking-widest mb-2">Recomendaciones</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest mb-2">Recomendaciones</p>
                             {data.recommendations.map((rec, i) => (
                                 <div key={i} className="flex items-start gap-2 mb-1.5">
                                     <TrendingUp size={9} className="text-sky-400 shrink-0 mt-0.5" />
-                                    <p className="font-mono text-[9px] text-slate-400">{rec}</p>
+                                    <p className="font-mono text-xs text-slate-400">{rec}</p>
                                 </div>
                             ))}
                         </div>

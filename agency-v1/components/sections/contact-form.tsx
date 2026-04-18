@@ -69,7 +69,10 @@ type FormValues = z.infer<typeof formSchema>;
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
     return (
-        <div className={`w-2 h-2 rounded-full transition-all duration-300 ${done ? 'bg-teal-500 scale-100' : active ? 'bg-teal-400 scale-125 ring-4 ring-teal-100' : 'bg-slate-200'}`} />
+        <div 
+            aria-hidden="true"
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${done ? 'bg-teal-500 scale-100' : active ? 'bg-teal-400 scale-125 ring-4 ring-teal-100' : 'bg-slate-200'}`} 
+        />
     );
 }
 
@@ -85,12 +88,14 @@ function SelectField({ label, id, options, error, register }: {
             <select
                 id={id}
                 {...register(id as keyof FormValues)}
+                aria-invalid={!!error}
+                aria-describedby={error ? `${id}-error` : undefined}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all appearance-none cursor-pointer"
             >
                 <option value="">— Selecciona —</option>
                 {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p id={`${id}-error`} className="text-xs text-red-500">{error}</p>}
         </div>
     );
 }
@@ -103,7 +108,7 @@ function StepCard({ step, total, title, children }: { step: number; total: numbe
             <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-sky-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0">{step}</div>
                 <div>
-                    <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">Paso {step} de {total}</p>
+                    <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">Paso {step} de {total}</p>
                     <h3 className="text-sm font-black text-slate-900">{title}</h3>
                 </div>
             </div>
@@ -204,7 +209,7 @@ function ContactFormContent() {
     if (isSuccess) {
         return (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-4xl mb-6 shadow-xl shadow-teal-200">✅</div>
+                <div role="img" aria-label="Éxito" className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-4xl mb-6 shadow-xl shadow-teal-200">✅</div>
                 <h3 className="text-2xl font-black text-slate-900 mb-2">¡Solicitud Recibida!</h3>
                 <p className="text-slate-500 max-w-xs">Nuestro equipo revisará tu caso y se pondrá en contacto en <strong className="text-slate-700">menos de 24 horas</strong>.</p>
                 <div className="mt-8 p-4 bg-teal-50 rounded-2xl border border-teal-100 text-left max-w-xs w-full">
@@ -242,19 +247,42 @@ function ContactFormContent() {
                 <StepCard step={1} total={TOTAL_STEPS} title="¿Quién eres?">
                     <div className="space-y-2">
                         <label htmlFor="name" className="text-sm font-semibold text-slate-700">Nombre completo <span className="text-red-400">*</span></label>
-                        <Input id="name" placeholder="Ana García" {...register("name")} className="bg-slate-50 border-slate-200 focus:ring-teal-400" />
-                        {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
+                        <Input 
+                            id="name" 
+                            placeholder="Ana García" 
+                            {...register("name")} 
+                            aria-invalid={!!errors.name}
+                            aria-describedby={errors.name ? "name-error" : undefined}
+                            className="bg-slate-50 border-slate-200 focus:ring-teal-400" 
+                        />
+                        {errors.name && <p id="name-error" className="text-xs text-red-500">{errors.name.message}</p>}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email profesional <span className="text-red-400">*</span></label>
-                            <Input id="email" type="email" placeholder="ana@empresa.com" {...register("email")} className="bg-slate-50 border-slate-200 focus:ring-teal-400" />
-                            {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+                            <Input 
+                                id="email" 
+                                type="email" 
+                                placeholder="ana@empresa.com" 
+                                {...register("email")} 
+                                aria-invalid={!!errors.email}
+                                aria-describedby={errors.email ? "email-error" : undefined}
+                                className="bg-slate-50 border-slate-200 focus:ring-teal-400" 
+                            />
+                            {errors.email && <p id="email-error" className="text-xs text-red-500">{errors.email.message}</p>}
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="phone" className="text-sm font-semibold text-slate-700">WhatsApp / Teléfono <span className="text-red-400">*</span></label>
-                            <Input id="phone" type="tel" placeholder="+57 300 000 0000" {...register("phone")} className="bg-slate-50 border-slate-200 focus:ring-teal-400" />
-                            {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
+                            <Input 
+                                id="phone" 
+                                type="tel" 
+                                placeholder="+57 300 000 0000" 
+                                {...register("phone")} 
+                                aria-invalid={!!errors.phone}
+                                aria-describedby={errors.phone ? "phone-error" : undefined}
+                                className="bg-slate-50 border-slate-200 focus:ring-teal-400" 
+                            />
+                            {errors.phone && <p id="phone-error" className="text-xs text-red-500">{errors.phone.message}</p>}
                         </div>
                     </div>
                 </StepCard>
@@ -321,8 +349,10 @@ function ContactFormContent() {
                             placeholder="Mi objetivo es..."
                             className="min-h-[100px] bg-slate-50 border-slate-200 focus:ring-teal-400 text-sm"
                             {...register("goal")}
+                            aria-invalid={!!errors.goal}
+                            aria-describedby={errors.goal ? "goal-error" : undefined}
                         />
-                        {errors.goal && <p className="text-xs text-red-500">{errors.goal.message}</p>}
+                        {errors.goal && <p id="goal-error" className="text-xs text-red-500">{errors.goal.message}</p>}
                     </div>
                     <div className="space-y-2">
                         <label htmlFor="how_found" className="text-sm font-semibold text-slate-700">

@@ -102,7 +102,7 @@ export function MetaFamilyConfig({ companyId }: MetaFamilyConfigProps) {
         <div className="flex items-center gap-2">
           <Facebook className="h-5 w-5 text-blue-600" />
           <h3 className="text-sm font-semibold">Meta App Credentials (Shared)</h3>
-          <Badge variant="secondary" className="text-[10px]">All Meta Products</Badge>
+          <Badge variant="secondary" className="text-xs">All Meta Products</Badge>
         </div>
         
         <div className="grid grid-cols-2 gap-4">

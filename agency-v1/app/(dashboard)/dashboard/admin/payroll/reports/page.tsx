@@ -258,7 +258,7 @@ export default function PayrollReportsPage() {
                             <p className="text-xs text-emerald-400 font-mono">PERÍODO: {pilaPeriod} · {pilaRows.length} empleados · ${pilaRows.reduce((s, r) => s + r.totalContribution, 0).toLocaleString("es-CO")} total aportes</p>
                         </div>
                         <table className="w-full text-xs text-left min-w-[900px]">
-                            <thead className="text-[10px] text-slate-500 uppercase bg-slate-900/50 border-b border-slate-800">
+                            <thead className="text-xs text-slate-500 uppercase bg-slate-900/50 border-b border-slate-800">
                                 <tr>
                                     <th className="px-4 py-3">Empleado</th>
                                     <th className="px-4 py-3">Documento</th>

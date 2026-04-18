@@ -75,7 +75,7 @@ export function TimesheetManager({ initialData }: Props) {
                                 <div className="text-xs text-slate-400 font-medium">
                                     Periodo contable
                                 </div>
-                                <div className={`px-2.5 py-1 rounded-md border text-[10px] font-bold tracking-wider uppercase ${statusConfig.color}`}>
+                                <div className={`px-2.5 py-1 rounded-md border text-xs font-bold tracking-wider uppercase ${statusConfig.color}`}>
                                     {statusConfig.label}
                                 </div>
                             </div>
@@ -104,7 +104,7 @@ export function TimesheetManager({ initialData }: Props) {
                                     <div className="text-xl font-black text-blue-400">
                                         {sheet.totalHours}<span className="text-xs text-slate-500 font-medium ml-1">hrs</span>
                                     </div>
-                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Total</div>
+                                    <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Total</div>
                                 </div>
                             </div>
 

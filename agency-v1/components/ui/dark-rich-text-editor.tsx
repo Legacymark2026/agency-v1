@@ -282,7 +282,7 @@ export function DarkRichTextEditor({ initialValue, onChange, placeholder = "Escr
             {/* Table Secondary Toolbar (only shows if table is focused) */}
             {editor.isActive('table') && (
                 <div className="bg-slate-800/50 border-b border-slate-800 px-3 py-1.5 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-bold text-teal-400 uppercase tracking-widest text-[10px] mr-2">Tabla:</span>
+                    <span className="font-bold text-teal-400 uppercase tracking-widest text-xs mr-2">Tabla:</span>
                     <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="text-slate-300 hover:text-white flex items-center gap-1"><ArrowRightSquare className="w-3 h-3 rotate-180" /> Col. Antes</button>
                     <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="text-slate-300 hover:text-white flex items-center gap-1"><ArrowRightSquare className="w-3 h-3" /> Col. Después</button>
                     <button onClick={() => editor.chain().focus().deleteColumn().run()} className="text-red-400 hover:text-red-300 px-1 border-r border-slate-700 mr-1">Eliminar Col.</button>
@@ -349,7 +349,7 @@ export function DarkRichTextEditor({ initialValue, onChange, placeholder = "Escr
             </div>
 
             {/* Footer / Status bar */}
-            <div className="bg-slate-900 border-t border-slate-800 p-2 text-[10px] font-mono text-slate-500 uppercase tracking-widest flex justify-between items-center selection:bg-teal-500/30">
+            <div className="bg-slate-900 border-t border-slate-800 p-2 text-xs font-mono text-slate-500 uppercase tracking-widest flex justify-between items-center selection:bg-teal-500/30">
                 <div className="flex gap-4">
                     <span>{editor.storage.characterCount.words()} palabras</span>
                     <span>{editor.storage.characterCount.characters()} caracteres</span>

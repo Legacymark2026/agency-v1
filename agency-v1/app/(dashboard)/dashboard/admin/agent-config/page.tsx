@@ -140,7 +140,7 @@ export default function AgentConfigPage() {
                                     onChange={(e) => setConfig({ ...config, temperature: parseFloat(e.target.value) })}
                                     className="w-full accent-teal-500"
                                 />
-                                <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                                <div className="flex justify-between text-xs text-slate-500 mt-1">
                                     <span>Preciso</span>
                                     <span>Creativo</span>
                                 </div>
@@ -177,7 +177,7 @@ export default function AgentConfigPage() {
                                     placeholder="573145629141"
                                     className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-sm rounded-lg p-2.5 outline-none focus:border-teal-500"
                                 />
-                                <p className="text-[10px] text-slate-400 mt-1">Incluir código de país, sin espacios ni el signo +.</p>
+                                <p className="text-xs text-slate-400 mt-1">Incluir código de país, sin espacios ni el signo +.</p>
                             </div>
 
                             <div>

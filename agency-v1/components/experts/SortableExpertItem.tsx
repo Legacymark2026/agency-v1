@@ -84,12 +84,12 @@ export function SortableExpertItem({ expert, onEdit, onDelete }: SortableExpertI
                     <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-gray-900">{expert.name}</h3>
                         {!expert.isVisible && (
-                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-gray-100 text-gray-500">
+                            <Badge variant="secondary" className="text-xs h-5 px-1.5 bg-gray-100 text-gray-500">
                                 <EyeOff size={10} className="mr-1" /> Hidden
                             </Badge>
                         )}
                         {expert.isVisible && (
-                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 text-green-600 border-green-200 bg-green-50">
+                            <Badge variant="outline" className="text-xs h-5 px-1.5 text-green-600 border-green-200 bg-green-50">
                                 <Eye size={10} className="mr-1" /> Active
                             </Badge>
                         )}

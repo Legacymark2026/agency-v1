@@ -108,7 +108,7 @@ export default function NewAccountPage() {
                                 className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-shadow font-mono"
                             />
                         </div>
-                        <p className="text-[10px] text-slate-500">¿Con cuánto dinero en positivo o saldo en negativo arranca esta cuenta en el sistema?</p>
+                        <p className="text-xs text-slate-500">¿Con cuánto dinero en positivo o saldo en negativo arranca esta cuenta en el sistema?</p>
                     </div>
 
                     <div className="space-y-2 col-span-full">

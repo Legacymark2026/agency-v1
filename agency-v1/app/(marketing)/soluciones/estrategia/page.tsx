@@ -112,7 +112,7 @@ const TimelineNode = ({
             <ExecutiveCard className="p-8 rounded-sm border-l-2 border-l-slate-800 hover:border-l-teal-500 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                     <h3 className="text-xl font-bold text-white tracking-tight">{title}</h3>
-                    <span className="text-[10px] font-mono text-teal-500 uppercase tracking-widest border border-teal-500/20 px-2 py-1 bg-teal-500/5">{step}</span>
+                    <span className="text-xs font-mono text-teal-500 uppercase tracking-widest border border-teal-500/20 px-2 py-1 bg-teal-500/5">{step}</span>
                 </div>
                 <p className="text-slate-400 text-sm leading-relaxed">{desc}</p>
             </ExecutiveCard>
@@ -155,7 +155,7 @@ export default function StrategyPage() {
                                 className="inline-flex items-center gap-3 px-3 py-1 border border-slate-800 bg-black/50 backdrop-blur-sm mb-8 hover:border-teal-500/30 transition-colors cursor-default"
                             >
                                 <BrainCircuit size={14} className="text-teal-500" />
-                                <span className="text-slate-400 text-[10px] font-mono font-medium uppercase tracking-[0.2em]">{t('hero.badge')}</span>
+                                <span className="text-slate-400 text-xs font-mono font-medium uppercase tracking-[0.2em]">{t('hero.badge')}</span>
                             </motion.div>
 
                             <h1 className="text-5xl lg:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.95]">
@@ -353,7 +353,7 @@ export default function StrategyPage() {
                 <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black to-transparent z-10" />
 
                 <div className="container mx-auto px-6 lg:px-8 relative z-20 text-center mb-16">
-                    <p className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.3em] mb-4">{t('stack.badge')}</p>
+                    <p className="text-xs font-mono text-slate-600 uppercase tracking-[0.3em] mb-4">{t('stack.badge')}</p>
                     <h2 className="text-2xl font-bold text-white">{t('stack.title')}</h2>
                 </div>
 
@@ -406,7 +406,7 @@ export default function StrategyPage() {
 
                         {/* Fractional Executive - Feature */}
                         <div className="bg-white p-12 border border-white flex flex-col relative overflow-hidden group shadow-[0_0_80px_rgba(255,255,255,0.1)] transform scale-105">
-                            <div className="absolute top-0 right-0 bg-black text-white text-[10px] font-bold px-4 py-2 uppercase tracking-widest">{t('pricing.t2.badge')}</div>
+                            <div className="absolute top-0 right-0 bg-black text-white text-xs font-bold px-4 py-2 uppercase tracking-widest">{t('pricing.t2.badge')}</div>
                             <div className="mb-6"><Crown size={32} className="text-black" /></div>
                             <h3 className="text-2xl font-bold text-black mb-2">{t('pricing.t2.title')}</h3>
                             <div className="text-4xl font-bold text-black mb-6 font-mono tracking-tight">{t('pricing.t2.price')} <span className="text-sm font-normal text-slate-500 font-sans">{t('pricing.t2.unit')}</span></div>

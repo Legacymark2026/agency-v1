@@ -69,7 +69,7 @@ export function EventsClient({ initialEvents }: { initialEvents: any[] }) {
                     </div>
                     <div>
                         <div className="flex items-center gap-2 mb-0.5">
-                            <span className="font-mono text-[9px] text-teal-500/70 uppercase tracking-widest">CAL_MOD · EVENTOS</span>
+                            <span className="font-mono text-xs text-teal-500/70 uppercase tracking-widest">CAL_MOD · EVENTOS</span>
                             <span className="relative flex h-1.5 w-1.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-60" />
                                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
@@ -155,9 +155,9 @@ export function EventsClient({ initialEvents }: { initialEvents: any[] }) {
                     {/* Upcoming events list */}
                     <div className="p-4 flex-1 overflow-y-auto">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-mono text-[9px] text-slate-500 uppercase tracking-widest">Próximos (Esta Semana)</h3>
+                            <h3 className="font-mono text-xs text-slate-500 uppercase tracking-widest">Próximos (Esta Semana)</h3>
                             <span
-                                className="font-mono text-[9px] text-teal-400 px-2 py-0.5 rounded-full"
+                                className="font-mono text-xs text-teal-400 px-2 py-0.5 rounded-full"
                                 style={{ background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)' }}
                             >
                                 {stats.upcoming}
@@ -180,7 +180,7 @@ export function EventsClient({ initialEvents }: { initialEvents: any[] }) {
                                     >
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.type === 'ONLINE' ? 'bg-blue-400' : e.type === 'PHYSICAL' ? 'bg-amber-400' : 'bg-purple-400'}`} />
-                                            <span className="font-mono text-[9px] text-slate-500 uppercase">
+                                            <span className="font-mono text-xs text-slate-500 uppercase">
                                                 {new Date(e.startDate).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
                                             </span>
                                         </div>
@@ -194,7 +194,7 @@ export function EventsClient({ initialEvents }: { initialEvents: any[] }) {
                                     style={{ border: '1px dashed rgba(30,41,59,0.7)' }}
                                 >
                                     <CalendarIcon className="w-7 h-7 text-slate-700 mx-auto mb-2" />
-                                    <p className="font-mono text-[9px] text-slate-600 uppercase tracking-wide">No hay eventos próximos esta semana.</p>
+                                    <p className="font-mono text-xs text-slate-600 uppercase tracking-wide">No hay eventos próximos esta semana.</p>
                                 </div>
                             )}
                         </div>
@@ -272,7 +272,7 @@ function StatCard({ icon: Icon, label, value, accent }: { icon: any; label: stri
                 <Icon className="w-4 h-4" style={{ color: a.text }} />
             </div>
             <div>
-                <p className="font-mono text-[9px] uppercase tracking-widest" style={{ color: 'rgba(148,163,184,0.6)' }}>{label}</p>
+                <p className="font-mono text-xs uppercase tracking-widest" style={{ color: 'rgba(148,163,184,0.6)' }}>{label}</p>
                 <p className="text-lg font-black mt-0.5" style={{ color: a.text }}>{value}</p>
             </div>
         </div>

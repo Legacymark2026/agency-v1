@@ -101,8 +101,8 @@ function AudioPlayer({ durationText, audioSrc, isMe }: { durationText: string, a
                     <div className={cn("absolute left-0 top-0 h-full rounded-full transition-all duration-75", isMe ? "bg-white" : "bg-teal-500")} style={{ width: `${progress}%` }} />
                 </div>
                 <div className="flex justify-between items-center px-0.5">
-                    <span className="text-[9px] font-mono opacity-60 uppercase tracking-tighter">{durationText}</span>
-                    <span className="text-[9px] font-bold opacity-40">AUDIO WAVE</span>
+                    <span className="text-xs font-mono opacity-60 uppercase tracking-tighter">{durationText}</span>
+                    <span className="text-xs font-bold opacity-40">AUDIO WAVE</span>
                 </div>
             </div>
         </div>
@@ -635,7 +635,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         </div>
                         <div className="flex flex-col">
                             <span className="text-xs font-semibold text-slate-100">Nuevo mensaje de WhatsApp</span>
-                            <span className="text-[11px] text-slate-300">Carlos Díaz: "¡Listo, gracias!"</span>
+                            <span className="text-xs text-slate-300">Carlos Díaz: "¡Listo, gracias!"</span>
                         </div>
                     </motion.div>
                 )}
@@ -706,7 +706,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                                                         <div className="w-full h-full bg-slate-800 flex items-center justify-center relative shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] overflow-hidden">
                                                             {/* Real webcam feed */}
                                                             <video ref={localVideoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />
-                                                            <span className="bg-black/40 px-2 py-0.5 rounded text-white font-medium z-10 font-mono text-[10px] tracking-widest absolute top-2 right-2 backdrop-blur-sm pointer-events-none border border-white/10">LIVE</span>
+                                                            <span className="bg-black/40 px-2 py-0.5 rounded text-white font-medium z-10 font-mono text-xs tracking-widest absolute top-2 right-2 backdrop-blur-sm pointer-events-none border border-white/10">LIVE</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -865,7 +865,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 {/* Date Separator */}
                 <div className="flex items-center gap-4 my-8">
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
-                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-950/50 px-3 py-1 rounded-full border border-slate-800/50 backdrop-blur-sm">
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] bg-slate-950/50 px-3 py-1 rounded-full border border-slate-800/50 backdrop-blur-sm">
                         {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </span>
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
@@ -891,7 +891,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                                     isMe ? "items-end" : "items-start"
                                 )}>
                                     {!isMe && (
-                                        <span className="text-[11px] text-gray-500 ml-1 mb-0.5 font-medium">{conversation.lead?.name?.split(' ')[0]}</span>
+                                        <span className="text-xs text-gray-500 ml-1 mb-0.5 font-medium">{conversation.lead?.name?.split(' ')[0]}</span>
                                     )}
 
                                     <div className={cn(
@@ -934,7 +934,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                                         )}
 
                                         <div className={cn(
-                                            "text-[10px] mt-1.5 flex items-center gap-1.5 opacity-80",
+                                            "text-xs mt-1.5 flex items-center gap-1.5 opacity-80",
                                             isMe ? "justify-end text-blue-100" : "justify-start text-gray-400"
                                         )}>
                                             {format(new Date(msg.createdAt), 'h:mm a')}
@@ -1071,14 +1071,14 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         <div className="absolute bottom-full right-4 mb-4 z-40 hidden md:flex items-center gap-2 bg-slate-950/80 backdrop-blur-xl p-1 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.3)] border border-violet-500/30">
                             <div className="bg-gradient-to-r from-violet-600 to-indigo-600 px-3 py-1.5 rounded-xl flex items-center gap-2">
                                 <Sparkles size={12} className="text-amber-300 animate-pulse" />
-                                <span className="text-[10px] text-white font-black uppercase tracking-widest">COPILOT</span>
+                                <span className="text-xs text-white font-black uppercase tracking-widest">COPILOT</span>
                             </div>
                             <div className="flex items-center gap-1 pr-2">
-                                <button className="text-[10px] font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={(e) => { e.preventDefault(); toast.success('AI: Resumen copiado al portapapeles'); }}>Resumir Chat</button>
+                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={(e) => { e.preventDefault(); toast.success('AI: Resumen copiado al portapapeles'); }}>Resumir Chat</button>
                                 <div className="w-px h-3 bg-white/10"></div>
-                                <button className="text-[10px] font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={(e) => { e.preventDefault(); toast.loading('IA Mejorando tono...', { duration: 1500 }); setTimeout(() => setNewItem('Hola! Excelente día. ¿En qué puedo apoyarte hoy?'), 1500); }}>Mejorar Tono</button>
+                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={(e) => { e.preventDefault(); toast.loading('IA Mejorando tono...', { duration: 1500 }); setTimeout(() => setNewItem('Hola! Excelente día. ¿En qué puedo apoyarte hoy?'), 1500); }}>Mejorar Tono</button>
                                 <div className="w-px h-3 bg-white/10"></div>
-                                <button className="text-[10px] font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={async (e) => { 
+                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={async (e) => { 
                                     e.preventDefault(); 
                                     const id = toast.loading('IA Sugiriendo respuesta...');
                                     const res = await draftCopilotServerAction(conversation.id);

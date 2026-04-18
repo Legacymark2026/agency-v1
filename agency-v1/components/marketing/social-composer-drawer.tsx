@@ -391,7 +391,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                             <div key={index} className="relative mb-3">
                                                 {isThread && (
                                                     <div className="flex justify-between items-center bg-slate-800/50 px-3 py-1.5 rounded-t-md border border-slate-700 border-b-0">
-                                                        <span className="text-[10px] text-slate-400 font-mono font-bold uppercase">Slide/Post {index + 1}</span>
+                                                        <span className="text-xs text-slate-400 font-mono font-bold uppercase">Slide/Post {index + 1}</span>
                                                         {threadItems.length > 1 && (
                                                             <button 
                                                                 onClick={() => {
@@ -429,7 +429,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                                                 size="sm" 
                                                                 onClick={handleShortenLinks}
                                                                 disabled={isShortening}
-                                                                className="h-8 text-[10px] font-mono bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 border border-teal-500/20 shadow-[0_4px_10px_rgba(45,212,191,0.1)] transition-all"
+                                                                className="h-8 text-xs font-mono bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 border border-teal-500/20 shadow-[0_4px_10px_rgba(45,212,191,0.1)] transition-all"
                                                             >
                                                                 {isShortening ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <Link2 className="w-3 h-3 mr-1.5" />}
                                                                 {isShortening ? "ACORTANDO..." : "AUTO-SHORTEN & UTM"}
@@ -466,7 +466,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                         {mediaUrls.length > 0 && (
                                             <div className="mt-4 flex gap-2">
                                                 {mediaUrls.map((url, i) => (
-                                                    <div key={i} className="w-16 h-16 rounded bg-slate-800 overflow-hidden border border-slate-700 flex items-center justify-center text-[10px] text-slate-500 break-all p-1">
+                                                    <div key={i} className="w-16 h-16 rounded bg-slate-800 overflow-hidden border border-slate-700 flex items-center justify-center text-xs text-slate-500 break-all p-1">
                                                         {url.substring(0, 15)}...
                                                     </div>
                                                 ))}
@@ -511,7 +511,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                         </div>
                                     ))}
                                 </div>
-                                <p className="text-[11px] text-slate-500 mt-2">Los posts con rol PENDING o REJECTED no se publicarán, incluso si llega la fecha programada.</p>
+                                <p className="text-xs text-slate-500 mt-2">Los posts con rol PENDING o REJECTED no se publicarán, incluso si llega la fecha programada.</p>
                             </div>
 
                             <div className="space-y-3">
@@ -525,7 +525,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                     placeholder="Instrucciones para edición, notas del cliente, feedback de rechazo..."
                                     className="w-full bg-slate-900 border border-slate-800 rounded-md p-4 text-sm text-yellow-500/80 focus:outline-none focus:ring-1 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono"
                                 />
-                                <p className="text-[10px] text-slate-600 font-mono">Visible solo para el equipo. No se publicará.</p>
+                                <p className="text-xs text-slate-600 font-mono">Visible solo para el equipo. No se publicará.</p>
                             </div>
 
                             <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-lg p-5 space-y-3">
@@ -539,7 +539,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                     placeholder="Ej: Link en nuestra biografía / Más info en: https..."
                                     className="w-full bg-slate-950/50 border border-slate-800 rounded-md p-3 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
                                 />
-                                <p className="text-[10px] text-slate-500">Se publicará automáticamente como 1er comentario tras postear (Meta/LinkedIn).</p>
+                                <p className="text-xs text-slate-500">Se publicará automáticamente como 1er comentario tras postear (Meta/LinkedIn).</p>
                             </div>
                         </div>
                         )}
@@ -590,7 +590,7 @@ export function SocialComposerDrawer({ companyId, authorId, open, onClose, onSav
                                         Evergreen Content Recycling
                                     </label>
                                 </div>
-                                <p className="text-[10px] text-slate-500 mt-1 ml-6">El motor republicará este contenido automáticamente cada "X" semanas para rellenar vacíos en el calendario.</p>
+                                <p className="text-xs text-slate-500 mt-1 ml-6">El motor republicará este contenido automáticamente cada "X" semanas para rellenar vacíos en el calendario.</p>
                             </div>
 
                         </div>

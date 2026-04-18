@@ -65,11 +65,11 @@ function KPICard({ title, value, trend, up, icon: Icon, code, delay }: {
             />
 
             {/* Code tag */}
-            <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{code}]</span>
+            <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{code}]</span>
 
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{title}</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{title}</p>
                     <div className="ds-icon-box w-9 h-9">
                         <Icon size={15} strokeWidth={1.5} className="text-slate-500 group-hover:text-teal-400 transition-colors" />
                     </div>
@@ -78,14 +78,14 @@ function KPICard({ title, value, trend, up, icon: Icon, code, delay }: {
                 <p className="ds-stat-value">{value}</p>
 
                 <div className="flex items-center gap-2 mt-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold rounded-sm border ${up
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-bold rounded-sm border ${up
                         ? 'bg-teal-950/50 text-teal-400 border-teal-900/50'
                         : 'bg-red-950/50 text-red-400 border-red-900/50'
                         }`}>
                         {up ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
                         {trend}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">vs mes ant.</span>
+                    <span className="text-xs font-mono text-slate-600 uppercase tracking-widest">vs mes ant.</span>
                 </div>
             </div>
         </motion.div>

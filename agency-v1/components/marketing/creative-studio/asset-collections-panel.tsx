@@ -72,7 +72,7 @@ export function AssetCollectionsPanel({ currentAssetId }: { currentAssetId?: str
                 <Button
                     size="sm"
                     onClick={() => setShowCreate(!showCreate)}
-                    className="h-7 text-[10px] font-mono gap-1 bg-slate-800 text-slate-300 hover:text-white"
+                    className="h-7 text-xs font-mono gap-1 bg-slate-800 text-slate-300 hover:text-white"
                 >
                     <Plus size={11} /> Nueva
                 </Button>
@@ -117,14 +117,14 @@ export function AssetCollectionsPanel({ currentAssetId }: { currentAssetId?: str
                             <div className="flex items-center justify-between mb-3">
                                 <div>
                                     <p className="text-sm font-semibold text-slate-100">{col.name}</p>
-                                    <p className="text-[10px] font-mono text-slate-500">{col._count.items} asset{col._count.items !== 1 ? "s" : ""}</p>
+                                    <p className="text-xs font-mono text-slate-500">{col._count.items} asset{col._count.items !== 1 ? "s" : ""}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {currentAssetId && (
                                         <Button
                                             size="sm"
                                             onClick={() => handleAddCurrent(col.id)}
-                                            className="h-7 text-[10px] font-mono gap-1 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 border border-yellow-500/20"
+                                            className="h-7 text-xs font-mono gap-1 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 border border-yellow-500/20"
                                         >
                                             <Plus size={10} /> Añadir seleccionado
                                         </Button>

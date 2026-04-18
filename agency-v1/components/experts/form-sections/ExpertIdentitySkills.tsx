@@ -129,7 +129,7 @@ export function ExpertIdentitySkills({ isLoading }: { isLoading: boolean }) {
                     <FormItem>
                         <div className="flex items-center gap-1.5">
                             <FormLabel>Habilidades Clave (Skills)</FormLabel>
-                            <FormDescription className="text-[9px] font-mono tracking-widest uppercase m-0">Presiona Enter o Coma para agregar</FormDescription>
+                            <FormDescription className="text-xs font-mono tracking-widest uppercase m-0">Presiona Enter o Coma para agregar</FormDescription>
                         </div>
                         <FormControl>
                             <div className="p-3 bg-slate-900/50 border border-slate-800 rounded-xl focus-within:border-teal-500/50 focus-within:ring-1 focus-within:ring-teal-500/20 transition-all">

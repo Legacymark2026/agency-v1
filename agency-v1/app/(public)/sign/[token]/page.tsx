@@ -95,7 +95,7 @@ export default function SignProposalPage({ params }: { params: Promise<{ token: 
     if (error) return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: '#020817' }}>
             <div className="text-center">
-                <p className="font-mono text-[11px] font-bold text-red-400 uppercase tracking-widest">{error}</p>
+                <p className="font-mono text-xs font-bold text-red-400 uppercase tracking-widest">{error}</p>
             </div>
         </div>
     );
@@ -107,8 +107,8 @@ export default function SignProposalPage({ params }: { params: Promise<{ token: 
                     <CheckCircle size={36} className="text-teal-400" />
                 </div>
                 <h1 className="font-mono text-2xl font-black text-slate-100 mb-3">¡Propuesta Firmada!</h1>
-                <p className="font-mono text-[10px] text-slate-500">Tu firma ha sido registrada exitosamente. Recibirás una copia por email.</p>
-                <p className="font-mono text-[9px] text-slate-700 mt-4">{new Date().toLocaleString()}</p>
+                <p className="font-mono text-xs text-slate-500">Tu firma ha sido registrada exitosamente. Recibirás una copia por email.</p>
+                <p className="font-mono text-xs text-slate-700 mt-4">{new Date().toLocaleString()}</p>
             </div>
         </div>
     );
@@ -121,35 +121,35 @@ export default function SignProposalPage({ params }: { params: Promise<{ token: 
             <div className="max-w-2xl mx-auto space-y-6" style={{ backgroundImage: "url('/grid.svg')", backgroundSize: 'contain', opacity: 0.03 }}>
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 font-mono text-[9px] text-teal-400" style={{ background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.2)' }}>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 font-mono text-xs text-teal-400" style={{ background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.2)' }}>
                         <Shield size={10} />FIRMA DIGITAL SEGURA
                     </div>
                     <h1 className="font-mono text-2xl font-black text-slate-100">{proposal?.title}</h1>
-                    <p className="font-mono text-[10px] text-slate-500 mt-2">{proposal?.company?.name}</p>
+                    <p className="font-mono text-xs text-slate-500 mt-2">{proposal?.company?.name}</p>
                 </div>
 
                 {/* Proposal details */}
                 <div className="rounded-2xl p-6" style={{ background: 'rgba(15,20,35,0.9)', border: '1px solid rgba(30,41,59,0.8)' }}>
-                    <p className="font-mono text-[9px] text-slate-500 uppercase tracking-widest mb-4">Detalle de la Propuesta</p>
+                    <p className="font-mono text-xs text-slate-500 uppercase tracking-widest mb-4">Detalle de la Propuesta</p>
                     <div className="space-y-2 mb-4">
                         {items.map((item: any, i: number) => (
                             <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
                                 <div>
-                                    <p className="font-mono text-[11px] text-slate-200">{item.title}</p>
-                                    {item.description && <p className="font-mono text-[9px] text-slate-600">{item.description}</p>}
+                                    <p className="font-mono text-xs text-slate-200">{item.title}</p>
+                                    {item.description && <p className="font-mono text-xs text-slate-600">{item.description}</p>}
                                 </div>
-                                <p className="font-mono text-[11px] font-bold text-slate-100">${(item.price * item.quantity).toLocaleString()}</p>
+                                <p className="font-mono text-xs font-bold text-slate-100">${(item.price * item.quantity).toLocaleString()}</p>
                             </div>
                         ))}
                     </div>
                     <div className="flex justify-between items-center pt-2">
-                        <p className="font-mono text-[10px] font-bold text-slate-400">TOTAL</p>
+                        <p className="font-mono text-xs font-bold text-slate-400">TOTAL</p>
                         <p className="font-mono text-2xl font-black text-teal-400">${total.toLocaleString()}</p>
                     </div>
                     {proposal?.expiresAt && (
                         <div className="flex items-center gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
                             <Clock size={12} className="text-amber-400" />
-                            <p className="font-mono text-[9px] text-amber-400">Vence: {new Date(proposal.expiresAt).toLocaleDateString()}</p>
+                            <p className="font-mono text-xs text-amber-400">Vence: {new Date(proposal.expiresAt).toLocaleDateString()}</p>
                         </div>
                     )}
                 </div>
@@ -157,9 +157,9 @@ export default function SignProposalPage({ params }: { params: Promise<{ token: 
                 {/* Signature pad */}
                 <div className="rounded-2xl p-6" style={{ background: 'rgba(15,20,35,0.9)', border: '1px solid rgba(30,41,59,0.8)' }}>
                     <div className="flex items-center justify-between mb-4">
-                        <p className="font-mono text-[9px] text-slate-500 uppercase tracking-widest">Firma Digital</p>
+                        <p className="font-mono text-xs text-slate-500 uppercase tracking-widest">Firma Digital</p>
                         {hasSignature && (
-                            <button onClick={clearSignature} className="font-mono text-[9px] text-slate-600 hover:text-slate-400 transition-colors">
+                            <button onClick={clearSignature} className="font-mono text-xs text-slate-600 hover:text-slate-400 transition-colors">
                                 Limpiar
                             </button>
                         )}
@@ -171,13 +171,13 @@ export default function SignProposalPage({ params }: { params: Promise<{ token: 
                         onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={() => setIsDrawing(false)}
                     />
                     {!hasSignature && (
-                        <p className="font-mono text-[8px] text-slate-700 text-center mt-2">Dibuja tu firma con el mouse o el dedo</p>
+                        <p className="font-mono text-xs text-slate-700 text-center mt-2">Dibuja tu firma con el mouse o el dedo</p>
                     )}
                 </div>
 
                 {/* Legal & Sign button */}
                 <div className="rounded-2xl p-6" style={{ background: 'rgba(15,20,35,0.9)', border: '1px solid rgba(30,41,59,0.8)' }}>
-                    <p className="font-mono text-[8px] text-slate-600 text-center mb-4 leading-relaxed">
+                    <p className="font-mono text-xs text-slate-600 text-center mb-4 leading-relaxed">
                         Al firmar este documento, confirmo que he leído y acepto los términos y condiciones de la propuesta. Esta firma electrónica tiene validez legal.
                     </p>
                     <button onClick={handleSign} disabled={!hasSignature || signingLoading}

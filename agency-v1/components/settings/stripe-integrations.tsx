@@ -117,7 +117,7 @@ export function StripeIntegrations() {
                             onChange={(e) => setFormData(prev => ({ ...prev, webhookSecret: e.target.value }))}
                             required={!status.hasWebhookSecret}
                         />
-                         <p className="text-[10px] text-slate-500 mt-1">La URL del Webhook debe apuntar a: <code>https://tu-dominio.com/api/webhooks/stripe</code> con el evento <code>checkout.session.completed</code>.</p>
+                         <p className="text-xs text-slate-500 mt-1">La URL del Webhook debe apuntar a: <code>https://tu-dominio.com/api/webhooks/stripe</code> con el evento <code>checkout.session.completed</code>.</p>
                     </div>
 
                     <button

@@ -45,7 +45,7 @@ export function CaseStudies() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-24 gap-6">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-6 uppercase tracking-widest shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm">
                             <Target size={12} strokeWidth={1.5} />
                             {t('badge')}
                         </div>
@@ -77,7 +77,7 @@ export function CaseStudies() {
                                     fill
                                     className="object-cover transform group-hover:scale-[1.03] transition-transform duration-700 opacity-80 group-hover:opacity-100"
                                 />
-                                <div className="absolute top-4 right-4 z-20 bg-slate-900/80 backdrop-blur-md text-teal-400 text-[10px] font-mono tracking-widest uppercase px-3 py-1 rounded-sm border border-slate-700/50 shadow-sm">
+                                <div className="absolute top-4 right-4 z-20 bg-slate-900/80 backdrop-blur-md text-teal-400 text-xs font-mono tracking-widest uppercase px-3 py-1 rounded-sm border border-slate-700/50 shadow-sm">
                                     {project.id}
                                 </div>
                             </div>
@@ -86,7 +86,7 @@ export function CaseStudies() {
                             <div className="p-8">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-2 font-medium">{project.client}</p>
+                                        <p className="text-xs font-mono text-slate-400 uppercase tracking-widest mb-2 font-medium">{project.client}</p>
                                         <h3 className="text-2xl font-black tracking-tight text-white group-hover:text-teal-50 transition-colors">
                                             {project.title}
                                         </h3>
@@ -104,7 +104,7 @@ export function CaseStudies() {
                                 <div className="pt-6 border-t border-slate-800 flex justify-between items-center">
                                     <div className="flex gap-2">
                                         {project.tags.map(tag => (
-                                            <span key={tag} className="text-[10px] font-mono uppercase tracking-widest bg-slate-900 text-slate-400 px-2 py-1 rounded-sm border border-slate-800">
+                                            <span key={tag} className="text-xs font-mono uppercase tracking-widest bg-slate-900 text-slate-400 px-2 py-1 rounded-sm border border-slate-800">
                                                 {tag}
                                             </span>
                                         ))}

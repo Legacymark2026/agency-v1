@@ -63,7 +63,7 @@ export function ActivityFeed({ activities }: { activities: ActivityItem[] }) {
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                     📋 Recent Activity
-                    <Badge variant="outline" className="text-[10px]">{activities.length}</Badge>
+                    <Badge variant="outline" className="text-xs">{activities.length}</Badge>
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -83,7 +83,7 @@ export function ActivityFeed({ activities }: { activities: ActivityItem[] }) {
                                         <p className="text-gray-700 truncate">
                                             {getActivityText(activity)}
                                         </p>
-                                        <p className="text-[10px] text-gray-400">
+                                        <p className="text-xs text-gray-400">
                                             {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                                         </p>
                                     </div>
@@ -157,7 +157,7 @@ export function TemplateSelector({ onSelect }: { onSelect: (template: typeof DEA
                     <span className="text-xl">{template.icon}</span>
                     <div>
                         <p className="text-sm font-medium">{template.name}</p>
-                        <p className="text-[10px] text-gray-500">${template.defaults.value.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">${template.defaults.value.toLocaleString()}</p>
                     </div>
                 </button>
             ))}

@@ -355,7 +355,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             <input type="range" min="0.3" max="1" step="0.1" value={frustrationThreshold}
                                 onChange={e => setFrustrationThreshold(parseFloat(e.target.value))}
                                 className="w-full accent-orange-500 h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-700" />
-                            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <div className="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>Sensible (0.3)</span>
                                 <span>Tolerante (1.0)</span>
                             </div>
@@ -368,7 +368,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             <input type="range" min="5" max="120" step="5" value={suspensionDurationMinutes}
                                 onChange={e => setSuspensionDurationMinutes(parseInt(e.target.value))}
                                 className="w-full accent-orange-500 h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-700" />
-                            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <div className="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>5 min</span>
                                 <span>2 horas</span>
                             </div>
@@ -408,7 +408,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             <input type="range" min="0" max="2" step="0.05" value={temperature}
                                 onChange={e => setTemperature(parseFloat(e.target.value))}
                                 className="w-full accent-teal-500 h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-700" />
-                            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <div className="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>Preciso/Lógico</span>
                                 <span>Creativo</span>
                             </div>
@@ -462,7 +462,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             <input type="range" min="0" max="1" step="0.05" value={stability}
                                 onChange={e => setStability(parseFloat(e.target.value))}
                                 className="w-full accent-pink-500 h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-700" />
-                            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <div className="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>Expresiva</span>
                                 <span>Monótona</span>
                             </div>
@@ -475,7 +475,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             <input type="range" min="0" max="1" step="0.05" value={similarityBoost}
                                 onChange={e => setSimilarityBoost(parseFloat(e.target.value))}
                                 className="w-full accent-pink-500 h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-700" />
-                            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                            <div className="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>Baja</span>
                                 <span>Alta</span>
                             </div>

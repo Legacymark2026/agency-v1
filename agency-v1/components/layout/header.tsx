@@ -54,7 +54,6 @@ export function Header() {
                 { name: tFooter("strategy"), href: "/soluciones/estrategia-de-marca" },
                 { name: tFooter("design") === "Design & Creativity" ? "Automation AI" : "Automatización IA", href: "/soluciones/automatizacion" },
                 { name: tFooter("design") === "Design & Creativity" ? "Web Dev" : "Desarrollo Web", href: "/soluciones/web-dev" },
-                { name: tFooter("marketing"), href: "/servicios" },
                 { name: tFooter("flyering"), href: "/flyering" }
             ]
         },
@@ -166,7 +165,7 @@ export function Header() {
                     <LanguageSwitcher />
                     {session ? (
                         <Link href="/dashboard">
-                            <Button size="sm" className="rounded-full px-4 lg:px-6 shadow-lg hover:shadow-xl transition-all bg-teal-600 text-slate-950 font-bold font-mono text-[11px] tracking-widest hover:bg-teal-500 flex items-center gap-2 whitespace-nowrap">
+                            <Button size="sm" className="rounded-full px-4 lg:px-6 shadow-lg hover:shadow-xl transition-all bg-teal-600 text-slate-950 font-bold font-mono text-xs tracking-widest hover:bg-teal-500 flex items-center gap-2 whitespace-nowrap">
                                 <LayoutDashboard size={14} className="shrink-0" />
                                 <span className="hidden xl:block whitespace-nowrap uppercase">{isAgency ? 'Control' : 'Portal'}</span>
                                 <span className="block xl:hidden whitespace-nowrap">GO</span>
@@ -174,7 +173,7 @@ export function Header() {
                         </Link>
                     ) : (
                         <Link href="/contacto">
-                            <Button size="sm" className="rounded-full px-5 shadow-lg hover:shadow-teal-500/20 transition-all bg-white text-slate-950 font-bold font-mono text-[11px] tracking-widest hover:bg-teal-400">
+                            <Button size="sm" className="rounded-full px-5 shadow-lg hover:shadow-teal-500/20 transition-all bg-white text-slate-950 font-bold font-mono text-xs tracking-widest hover:bg-teal-400">
                                 START
                             </Button>
                         </Link>
@@ -184,6 +183,7 @@ export function Header() {
                 {/* Mobile Menu Toggle */}
                 <button
                     aria-label={isOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+                    aria-expanded={isOpen}
                     className={`lg:hidden transition-colors ${isScrolled ? "text-slate-900" : isDarkPage ? "text-white" : "text-slate-900"}`}
                     onClick={() => setIsOpen(!isOpen)}
                 >

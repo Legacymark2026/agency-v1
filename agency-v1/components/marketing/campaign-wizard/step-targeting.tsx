@@ -351,7 +351,7 @@ export function StepTargeting() {
                                 </button>
                                 <div className="flex items-center gap-2 mb-1.5">
                                     {loc.type === 'COUNTRY' ? <Globe className="w-3.5 h-3.5 text-emerald-500" /> : loc.type === 'COORDINATES' ? <Target className="w-3.5 h-3.5 text-rose-500" /> : <MapPin className="w-3.5 h-3.5 text-teal-400"/>}
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{loc.type}</span>
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{loc.type}</span>
                                 </div>
                                 <span className="text-sm font-semibold text-slate-200 pr-6 truncate">{loc.name}</span>
                                 {loc.type === 'COORDINATES' && (
@@ -364,7 +364,7 @@ export function StepTargeting() {
                                 {loc.type === 'SECTOR' && loc.tags && loc.tags.length > 0 && (
                                     <div className="mt-2 pt-2 border-t border-white/5 flex flex-wrap gap-1">
                                         {loc.tags.map(t => (
-                                            <Badge key={t} className="px-1 py-0 bg-white/5 text-[10px] text-slate-300 border-none font-normal">{t}</Badge>
+                                            <Badge key={t} className="px-1 py-0 bg-white/5 text-xs text-slate-300 border-none font-normal">{t}</Badge>
                                         ))}
                                     </div>
                                 )}
@@ -451,7 +451,7 @@ export function StepTargeting() {
                 <div className="space-y-2">
                     <Label htmlFor="custom-audiences" className="text-sm font-semibold text-gray-300 flex justify-between">
                         Cruce de Bases de Datos (CRM)
-                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest">Opcional</span>
+                        <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-widest">Opcional</span>
                     </Label>
                     <Input
                         id="custom-audiences"

@@ -59,7 +59,7 @@ export function QuickReplies({ onSelect, query }: QuickRepliesProps) {
                                     {reply.content}
                                 </span>
                             </div>
-                            <span className="ml-auto text-[10px] text-gray-300 capitalize">{reply.category}</span>
+                            <span className="ml-auto text-xs text-gray-300 capitalize">{reply.category}</span>
                         </CommandItem>
                     ))}
                 </CommandGroup>

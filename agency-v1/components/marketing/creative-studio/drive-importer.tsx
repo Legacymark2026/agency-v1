@@ -126,7 +126,7 @@ export function DriveImporter({ onImport }: DriveImporterProps) {
                                 Importar
                             </Button>
                         </div>
-                        <p className="text-[10px] text-gray-600">Soporta: PNG, JPG, WebP, MP4, MOV, GIF. HTTPS requerido.</p>
+                        <p className="text-xs text-gray-600">Soporta: PNG, JPG, WebP, MP4, MOV, GIF. HTTPS requerido.</p>
                     </div>
 
                     {/* Preview of last imported */}
@@ -166,7 +166,7 @@ export function DriveImporter({ onImport }: DriveImporterProps) {
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin text-gray-600" /> : <FolderOpen className="w-4 h-4 text-yellow-500" />}
                                 Conectar con Google Drive
                             </Button>
-                            <p className="text-[10px] text-gray-600">Requiere GOOGLE_DRIVE_CLIENT_ID en .env</p>
+                            <p className="text-xs text-gray-600">Requiere GOOGLE_DRIVE_CLIENT_ID en .env</p>
                         </div>
                     ) : (
                         <>
@@ -193,7 +193,7 @@ export function DriveImporter({ onImport }: DriveImporterProps) {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs text-white truncate">{file.name}</p>
-                                                <p className="text-[10px] text-gray-500">{file.size}</p>
+                                                <p className="text-xs text-gray-500">{file.size}</p>
                                             </div>
                                             {isSelected && <CheckCircle2 className="w-4 h-4 text-violet-400 shrink-0" />}
                                         </button>

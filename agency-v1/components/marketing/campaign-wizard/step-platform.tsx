@@ -174,7 +174,7 @@ export function StepPlatform() {
                     </Label>
                     {/* FIX #4: Connection status legend */}
                     {!loadingStatus && (
-                        <div className="flex items-center gap-3 text-[10px] font-mono text-gray-500">
+                        <div className="flex items-center gap-3 text-xs font-mono text-gray-500">
                             <span className="flex items-center gap-1"><Wifi className="w-3 h-3 text-teal-400" /> Conectada</span>
                             <span className="flex items-center gap-1"><WifiOff className="w-3 h-3 text-amber-400" /> Sin configurar</span>
                         </div>
@@ -209,21 +209,21 @@ export function StepPlatform() {
                                         {/* FIX #4: Connection badge */}
                                         <div className="mt-1">
                                             {stillLoading ? (
-                                                <span className="flex items-center gap-1 text-[10px] text-gray-600 font-mono">
+                                                <span className="flex items-center gap-1 text-xs text-gray-600 font-mono">
                                                     <Loader2 className="w-2.5 h-2.5 animate-spin" /> Verificando...
                                                 </span>
                                             ) : isConnected ? (
-                                                <span className="flex items-center gap-1 text-[10px] text-teal-400 font-mono font-bold">
+                                                <span className="flex items-center gap-1 text-xs text-teal-400 font-mono font-bold">
                                                     <Wifi className="w-2.5 h-2.5" /> CONECTADA
                                                 </span>
                                             ) : (
-                                                <span className="flex items-center gap-1 text-[10px] text-amber-400 font-mono">
+                                                <span className="flex items-center gap-1 text-xs text-amber-400 font-mono">
                                                     <WifiOff className="w-2.5 h-2.5" /> SIN CONFIGURAR
                                                 </span>
                                             )}
                                         </div>
                                         {selected && (
-                                            <Badge className="mt-1 bg-violet-500/30 text-teal-300 border-0 text-[10px]">
+                                            <Badge className="mt-1 bg-violet-500/30 text-teal-300 border-0 text-xs">
                                                 Seleccionada
                                             </Badge>
                                         )}
@@ -242,12 +242,12 @@ export function StepPlatform() {
                                 {/* FIX #4: Quick connect hint for unconnected platforms */}
                                 {!isConnected && !stillLoading && (
                                     <div className="flex items-center justify-between px-1">
-                                        <p className="text-[10px] text-gray-600">{hint}</p>
+                                        <p className="text-xs text-gray-600">{hint}</p>
                                         {key === 'FACEBOOK_ADS' ? (
                                             <button
                                                 type="button"
                                                 onClick={() => setShowFBSetup(v => !v)}
-                                                className="text-[10px] text-amber-400 hover:text-amber-300 underline underline-offset-2 font-mono"
+                                                className="text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2 font-mono"
                                             >
                                                 Configurar →
                                             </button>
@@ -255,7 +255,7 @@ export function StepPlatform() {
                                             <Link
                                                 href={settingsPath}
                                                 target="_blank"
-                                                className="flex items-center gap-0.5 text-[10px] text-amber-400 hover:text-amber-300 underline underline-offset-2 font-mono"
+                                                className="flex items-center gap-0.5 text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2 font-mono"
                                             >
                                                 Configurar <ExternalLink className="w-2.5 h-2.5" />
                                             </Link>
@@ -284,7 +284,7 @@ export function StepPlatform() {
                             <h4 style={{ color: '#fbbf24', fontFamily: 'monospace', fontSize: '12px', fontWeight: 800, marginBottom: '4px' }}>
                                 📘 CONFIGURAR META ADS
                             </h4>
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-xs text-gray-500">
                                 Ingresa tu Ad Account ID y un Access Token permanente de Meta Business Manager.
                             </p>
                         </div>
@@ -305,7 +305,7 @@ export function StepPlatform() {
                                 placeholder="act_123456789 ó 123456789"
                                 className="bg-black/30 border-amber-500/20 text-white placeholder:text-gray-600 h-9 font-mono text-xs"
                             />
-                            <p className="text-[10px] text-gray-600">Meta Business Manager → Cuentas publicitarias → ID</p>
+                            <p className="text-xs text-gray-600">Meta Business Manager → Cuentas publicitarias → ID</p>
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-xs text-gray-400 font-mono">Access Token</Label>
@@ -317,7 +317,7 @@ export function StepPlatform() {
                                 placeholder="EAAG..."
                                 className="bg-black/30 border-amber-500/20 text-white placeholder:text-gray-600 h-9 font-mono text-xs"
                             />
-                            <p className="text-[10px] text-gray-600">System User Token con permisos ads_management</p>
+                            <p className="text-xs text-gray-600">System User Token con permisos ads_management</p>
                         </div>
                     </div>
 
@@ -325,7 +325,7 @@ export function StepPlatform() {
                         <Link
                             href="https://developers.facebook.com/tools/explorer/"
                             target="_blank"
-                            className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300"
+                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
                         >
                             <ExternalLink className="w-3 h-3" /> Obtener token en Graph API Explorer
                         </Link>

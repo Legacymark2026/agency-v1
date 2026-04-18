@@ -42,7 +42,7 @@ export function LoginHistoryTable({ logs }: { logs: LoginLog[] }) {
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="font-semibold text-slate-900">{log.userAgent}</span>
                                     {log.status === 'failed' && (
-                                        <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                                        <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full uppercase">
                                             Fallido
                                         </span>
                                     )}

@@ -347,7 +347,7 @@ export function GalleryManager({
                                 <div className="relative w-24 h-24 bg-slate-950 rounded-lg flex-shrink-0 flex items-center justify-center border border-slate-800 shadow-sm overflow-hidden">
                                     {renderPreview(image)}
                                     {image.type && (
-                                        <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded text-[9px] font-mono font-bold uppercase tracking-widest text-white">
+                                        <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded text-xs font-mono font-bold uppercase tracking-widest text-white">
                                             {image.type}
                                         </div>
                                     )}

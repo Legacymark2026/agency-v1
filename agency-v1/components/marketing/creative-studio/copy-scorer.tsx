@@ -117,7 +117,7 @@ export function CopyScorer({ copy, platform }: CopyScorerProps) {
                             {/* Suggestions */}
                             {result.suggestions.length > 0 && (
                                 <div className="space-y-1.5">
-                                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
                                         <Lightbulb className="w-3 h-3" /> Sugerencias de Mejora
                                     </p>
                                     {result.suggestions.map((s, i) => (

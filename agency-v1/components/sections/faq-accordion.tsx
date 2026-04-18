@@ -42,7 +42,7 @@ export function FaqAccordion() {
         <section className="bg-transparent py-24 relative">
             <div className="mx-auto max-w-3xl px-6 lg:px-8 relative z-10">
                 <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-6 uppercase tracking-widest shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm">
                         <Terminal size={12} strokeWidth={1.5} />
                         Protocolos de Respuesta
                     </div>
@@ -58,7 +58,7 @@ export function FaqAccordion() {
                             <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
                         </div>
-                        <div className="mx-auto text-[10px] font-mono text-slate-400">secure_protocol_v2.sh</div>
+                        <div className="mx-auto text-xs font-mono text-slate-400">secure_protocol_v2.sh</div>
                     </div>
 
                     <div className="p-6 md:p-8">

@@ -537,7 +537,7 @@ function AutomationBuilder() {
                             onChange={(e) => setWorkflowName(e.target.value)}
                             className="text-xl font-bold text-white bg-transparent border-none focus:ring-0 p-0 outline-none hover:bg-slate-800/50 rounded px-1 transition-colors"
                         />
-                        {workflowId && <div className="text-[10px] text-teal-400/70 font-mono mt-0.5">ID: {workflowId}</div>}
+                        {workflowId && <div className="text-xs text-teal-400/70 font-mono mt-0.5">ID: {workflowId}</div>}
                     </div>
                 </div>
 

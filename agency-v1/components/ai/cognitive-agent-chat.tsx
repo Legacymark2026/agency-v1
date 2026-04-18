@@ -314,7 +314,7 @@ export function CognitiveAgentChat() {
                 {isOpen ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6 group-hover:scale-110 transition-transform" />}
                 {/* Alert badge */}
                 {alertCount > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5 animate-pulse">
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5 animate-pulse">
                         {alertCount}
                     </span>
                 )}
@@ -342,7 +342,7 @@ export function CognitiveAgentChat() {
                                     <option value="marketing" className="bg-slate-900">CMO (Marketing)</option>
                                     <option value="sales" className="bg-slate-900">Director Ventas</option>
                                 </select>
-                                <p className="text-[10px] text-teal-500 tracking-wider font-mono">EN LÍNEA · 7 HERRAMIENTAS</p>
+                                <p className="text-xs text-teal-500 tracking-wider font-mono">EN LÍNEA · 7 HERRAMIENTAS</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1.5">

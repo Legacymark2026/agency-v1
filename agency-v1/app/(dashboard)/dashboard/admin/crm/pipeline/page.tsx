@@ -76,16 +76,16 @@ export default async function PipelinePage() {
             <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {kpis.map((k, i) => (
                     <div key={k.code} className="ds-kpi group relative">
-                        <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{k.code}]</span>
+                        <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{k.code}]</span>
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-3">
-                                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
+                                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
                                 <div className="ds-icon-box w-7 h-7">
                                     <k.icon size={12} strokeWidth={1.5} className="text-slate-500 group-hover:text-teal-400 transition-colors" />
                                 </div>
                             </div>
                             <p className="ds-stat-value">{k.value}</p>
-                            <span className="inline-flex items-center gap-1 mt-3 px-2 py-0.5 font-mono text-[9px] font-bold rounded-sm text-teal-400"
+                            <span className="inline-flex items-center gap-1 mt-3 px-2 py-0.5 font-mono text-xs font-bold rounded-sm text-teal-400"
                                 style={{ background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.25)' }}>
                                 {k.trend}
                             </span>

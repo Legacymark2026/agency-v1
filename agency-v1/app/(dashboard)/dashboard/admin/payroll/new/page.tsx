@@ -174,13 +174,13 @@ export default function NewPayrollPage() {
                                 <h3 className="text-sm font-medium text-white flex items-center gap-2">
                                     Adicionales y Descuentos Manuales
                                 </h3>
-                                <p className="text-[10px] text-slate-500 mt-0.5">La pensión y salud se calculan automáticamente si es contrato Laboral, y la retefuente si es Prestación. Añade aquí extras manuales.</p>
+                                <p className="text-xs text-slate-500 mt-0.5">La pensión y salud se calculan automáticamente si es contrato Laboral, y la retefuente si es Prestación. Añade aquí extras manuales.</p>
                             </div>
                             <div className="flex gap-2">
-                                <button type="button" onClick={() => addManualItem('EARNING')} className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded inline-flex items-center gap-1 hover:bg-emerald-500/20 transition-colors uppercase font-bold tracking-widest">
+                                <button type="button" onClick={() => addManualItem('EARNING')} className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded inline-flex items-center gap-1 hover:bg-emerald-500/20 transition-colors uppercase font-bold tracking-widest">
                                     <Plus className="w-3 h-3" /> Ingreso
                                 </button>
-                                <button type="button" onClick={() => addManualItem('DEDUCTION')} className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-1 rounded inline-flex items-center gap-1 hover:bg-red-500/20 transition-colors uppercase font-bold tracking-widest">
+                                <button type="button" onClick={() => addManualItem('DEDUCTION')} className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-1 rounded inline-flex items-center gap-1 hover:bg-red-500/20 transition-colors uppercase font-bold tracking-widest">
                                     <Plus className="w-3 h-3" /> Descuento
                                 </button>
                             </div>
@@ -191,7 +191,7 @@ export default function NewPayrollPage() {
                                 {manualItems.map((item, index) => (
                                     <div key={index} className={`flex gap-3 items-start p-3 rounded-lg border ${item.type === 'EARNING' ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
                                         <div className="w-1/3">
-                                            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1 block">Concepto</label>
+                                            <label className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-1 block">Concepto</label>
                                             <select
                                                 value={item.concept} onChange={e => updateManualItem(index, 'concept', e.target.value)}
                                                 className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-teal-500 transition-shadow"
@@ -211,7 +211,7 @@ export default function NewPayrollPage() {
                                             </select>
                                         </div>
                                         <div className="w-1/3">
-                                            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1 block">Descripción</label>
+                                            <label className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-1 block">Descripción</label>
                                             <input
                                                 type="text" required placeholder="Ej. Bono de cumplimiento"
                                                 value={item.description} onChange={e => updateManualItem(index, 'description', e.target.value)}
@@ -219,10 +219,10 @@ export default function NewPayrollPage() {
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1 block">Monto (COP)</label>
+                                            <label className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-1 block">Monto (COP)</label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                                                    <span className={`text-[10px] ${item.type === 'EARNING' ? 'text-emerald-500' : 'text-red-500'}`}>$</span>
+                                                    <span className={`text-xs ${item.type === 'EARNING' ? 'text-emerald-500' : 'text-red-500'}`}>$</span>
                                                 </div>
                                                 <input
                                                     type="number" required min="1" step="1000"

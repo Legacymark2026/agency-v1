@@ -82,7 +82,7 @@ export function EmailTemplatesClient({ templates: initial, companyId }: Props) {
                             {tpl.description && <p className="text-xs text-slate-400 leading-relaxed">{tpl.description}</p>}
                             {tpl.variables.length > 0 && (
                                 <div className="mt-3 flex flex-wrap gap-1">
-                                    {tpl.variables.map((v) => <span key={v} className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-violet-50 text-violet-600 border border-violet-100 rounded">{"{{" + v + "}}"}</span>)}
+                                    {tpl.variables.map((v) => <span key={v} className="px-1.5 py-0.5 text-xs font-mono font-bold bg-violet-50 text-violet-600 border border-violet-100 rounded">{"{{" + v + "}}"}</span>)}
                                 </div>
                             )}
                         </div>
@@ -124,7 +124,7 @@ export function EmailTemplatesClient({ templates: initial, companyId }: Props) {
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600">Cuerpo del email *</label>
                                 <textarea value={form.body} onChange={(e) => set("body", e.target.value)} required rows={8} placeholder={"Hola {{name}},\n\nEspero que estés muy bien. Quería hacer seguimiento a nuestra conversación...\n\nQuedo atento,\n{{senderName}}"} className={`${inputCls} resize-none font-mono text-xs`} />
-                                <p className="text-[10px] text-slate-400">Usa {"{{variable}}"} para las variables personalizables.</p>
+                                <p className="text-xs text-slate-400">Usa {"{{variable}}"} para las variables personalizables.</p>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600">Variables (separadas por coma)</label>
@@ -156,11 +156,11 @@ export function EmailTemplatesClient({ templates: initial, companyId }: Props) {
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="bg-slate-50 rounded-xl p-4">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">ASUNTO</p>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">ASUNTO</p>
                                 <p className="text-sm font-semibold text-slate-900">{preview.subject}</p>
                             </div>
                             <div className="bg-slate-50 rounded-xl p-4">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">CUERPO</p>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">CUERPO</p>
                                 <pre className="text-sm text-slate-700 font-sans whitespace-pre-wrap leading-relaxed">{preview.body}</pre>
                             </div>
                             {preview.variables.length > 0 && (

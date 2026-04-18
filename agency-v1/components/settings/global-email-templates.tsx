@@ -54,7 +54,7 @@ export function GlobalEmailTemplates() {
                         <div>
                             <div className="flex items-center gap-3 mb-1">
                                 <span className="font-semibold text-slate-900">{template.name}</span>
-                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
                                     {template.type}
                                 </span>
                             </div>

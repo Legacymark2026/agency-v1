@@ -25,10 +25,10 @@ export function IAStatus() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-500"></span>
             </div>
             <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-teal-500">
+                <span className="text-xs font-bold uppercase tracking-widest text-teal-500">
                     IA Agents Activos
                 </span>
-                <div className="flex items-center gap-1.5 font-mono text-[10px] text-teal-400/80">
+                <div className="flex items-center gap-1.5 font-mono text-xs text-teal-400/80">
                     <span>{activeAgents}</span>
                     <span className="h-px w-2 bg-teal-500/20" />
                     <motion.span

@@ -67,8 +67,8 @@ export function SalesGoalFormClient({
                   <Target size={15} className="text-teal-400" />
                 </div>
                 <div>
-                  <p className="font-mono text-[11px] font-black text-slate-200 uppercase tracking-widest">Nueva Meta</p>
-                  <p className="font-mono text-[9px] text-slate-600">{period}</p>
+                  <p className="font-mono text-xs font-black text-slate-200 uppercase tracking-widest">Nueva Meta</p>
+                  <p className="font-mono text-xs text-slate-600">{period}</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} className="text-slate-600 hover:text-slate-300 transition-colors">
@@ -79,7 +79,7 @@ export function SalesGoalFormClient({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Nivel */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">Nivel de Meta</label>
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">Nivel de Meta</label>
                 <select
                   value={form.level}
                   onChange={(e) => setForm((f) => ({ ...f, level: e.target.value }))}
@@ -94,7 +94,7 @@ export function SalesGoalFormClient({
 
               {/* Vendedor */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">
                   Vendedor <span className="text-slate-700">(vacío = meta global)</span>
                 </label>
                 <select
@@ -113,7 +113,7 @@ export function SalesGoalFormClient({
 
               {/* Target */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">Target ($USD)</label>
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">Target ($USD)</label>
                 <input
                   type="number"
                   min="0"
@@ -128,7 +128,7 @@ export function SalesGoalFormClient({
 
               {/* Etiqueta */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">Etiqueta</label>
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">Etiqueta</label>
                 <input
                   type="text"
                   value={form.label}
@@ -141,7 +141,7 @@ export function SalesGoalFormClient({
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full py-3 rounded-xl font-mono text-[11px] font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-50 hover:scale-[1.02]"
+                className="w-full py-3 rounded-xl font-mono text-xs font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-50 hover:scale-[1.02]"
                 style={{ background: "linear-gradient(135deg, #0d9488, #0ea5e9)", boxShadow: "0 0 20px rgba(13,148,136,0.3)" }}
               >
                 {isPending ? "Guardando..." : "✓ Registrar Meta"}

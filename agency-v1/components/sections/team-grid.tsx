@@ -65,7 +65,7 @@ export function TeamGrid({ experts }: TeamGridProps) {
                                             <div className="flex items-center gap-2 mb-2">
                                                 <IconComponent size={14} strokeWidth={1.5} className="text-slate-300" />
                                                 {member.badgeId && (
-                                                    <span className="text-[10px] font-mono tracking-widest uppercase bg-white/10 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/20">{member.badgeId}</span>
+                                                    <span className="text-xs font-mono tracking-widest uppercase bg-white/10 px-2 py-0.5 rounded-sm backdrop-blur-md border border-white/20">{member.badgeId}</span>
                                                 )}
                                             </div>
                                             <div className="font-black tracking-tight text-xl sm:text-2xl leading-tight text-shadow-sm line-clamp-2 uppercase font-mono">{member.name}</div>
@@ -82,7 +82,7 @@ export function TeamGrid({ experts }: TeamGridProps) {
                                         {/* Skills Tags */}
                                         <div className="flex flex-wrap gap-2 mb-8">
                                             {member.skills?.map(skill => (
-                                                <span key={skill} className="text-[10px] uppercase tracking-widest font-mono px-2 py-1 bg-slate-950 border border-slate-800 rounded-sm text-slate-400 group-hover:border-teal-500/30 group-hover:text-teal-400 transition-colors">
+                                                <span key={skill} className="text-xs uppercase tracking-widest font-mono px-2 py-1 bg-slate-950 border border-slate-800 rounded-sm text-slate-400 group-hover:border-teal-500/30 group-hover:text-teal-400 transition-colors">
                                                     {skill}
                                                 </span>
                                             ))}

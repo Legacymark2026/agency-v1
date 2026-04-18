@@ -73,7 +73,7 @@ export function TemplatePicker({ companyId, onCreated, onSkip }: TemplatePicker)
                 <p className="text-slate-400 text-xs mt-0.5">{tpl.description}</p>
                 <div className="flex items-center gap-1.5 mt-2">
                   <Clock className="w-3 h-3 text-slate-500" />
-                  <span className="text-[10px] text-slate-500">{tpl.taskCount} tareas pre-configuradas</span>
+                  <span className="text-xs text-slate-500">{tpl.taskCount} tareas pre-configuradas</span>
                 </div>
               </div>
               {selected === tpl.id && (

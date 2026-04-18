@@ -32,7 +32,7 @@ function VelocityChart({ data }: { data: { week: string; count: number }[] }) {
       <div className="flex items-end gap-1 h-28">
         {data.map((d, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <span className="text-[10px] text-teal-400 font-mono">{d.count}</span>
+            <span className="text-xs text-teal-400 font-mono">{d.count}</span>
             <div className="w-full rounded-t-md transition-all duration-700" style={{ height: `${max > 0 ? (d.count / max) * 80 : 4}px`, minHeight: "4px", background: d.count > 0 ? "#10b981" : "#1e293b" }} />
           </div>
         ))}
@@ -40,7 +40,7 @@ function VelocityChart({ data }: { data: { week: string; count: number }[] }) {
       <div className="flex gap-1 mt-1">
         {data.map((d, i) => (
           <div key={i} className="flex-1 text-center">
-            <span className="text-[9px] text-slate-600">{d.week}</span>
+            <span className="text-xs text-slate-600">{d.week}</span>
           </div>
         ))}
       </div>
@@ -73,7 +73,7 @@ function CumulativeFlow({ data }: { data: any[] }) {
       </div>
       <div className="flex gap-0.5 mt-1">
         {data.slice(-10).map((d, i) => (
-          <div key={i} className="flex-1 text-center"><span className="text-[8px] text-slate-700">{d.date.split(" ")[1]}</span></div>
+          <div key={i} className="flex-1 text-center"><span className="text-xs text-slate-700">{d.date.split(" ")[1]}</span></div>
         ))}
       </div>
       <div className="flex items-center gap-3 mt-3 flex-wrap">
@@ -83,7 +83,7 @@ function CumulativeFlow({ data }: { data: any[] }) {
           { label: "En Progreso",color: CFD_COLORS.inProgress },
           { label: "Por Hacer",  color: CFD_COLORS.todo },
         ].map(l => (
-          <div key={l.label} className="flex items-center gap-1.5 text-[10px] text-slate-500">
+          <div key={l.label} className="flex items-center gap-1.5 text-xs text-slate-500">
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color }} />
             {l.label}
           </div>
@@ -132,7 +132,7 @@ export function KanbanAnalyticsDashboard({ projectId }: KanbanAnalyticsDashboard
             <span className="text-xs text-slate-500 font-semibold">Total</span>
           </div>
           <p className="text-3xl font-black text-white">{data.total}</p>
-          <p className="text-[10px] text-slate-600 mt-1">tareas</p>
+          <p className="text-xs text-slate-600 mt-1">tareas</p>
         </div>
         <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
@@ -150,7 +150,7 @@ export function KanbanAnalyticsDashboard({ projectId }: KanbanAnalyticsDashboard
             <span className="text-xs text-slate-500 font-semibold">Vencidas</span>
           </div>
           <p className={`text-3xl font-black ${data.overdue > 0 ? "text-red-400" : "text-slate-300"}`}>{data.overdue}</p>
-          <p className="text-[10px] text-slate-600 mt-1">tareas atrasadas</p>
+          <p className="text-xs text-slate-600 mt-1">tareas atrasadas</p>
         </div>
         <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
@@ -158,7 +158,7 @@ export function KanbanAnalyticsDashboard({ projectId }: KanbanAnalyticsDashboard
             <span className="text-xs text-slate-500 font-semibold">Horas Log</span>
           </div>
           <p className="text-3xl font-black text-purple-400">{data.totalEstimated.toFixed(0)}h</p>
-          <p className="text-[10px] text-slate-600 mt-1">estimadas totales</p>
+          <p className="text-xs text-slate-600 mt-1">estimadas totales</p>
         </div>
       </div>
 

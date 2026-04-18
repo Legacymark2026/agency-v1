@@ -18,7 +18,7 @@ export function CTA() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     whileInView={{ opacity: 1, scale: 1 }}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-slate-800 bg-slate-900/50 backdrop-blur-sm shadow-sm text-slate-300 text-[10px] font-mono mb-12 uppercase tracking-widest"
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-slate-800 bg-slate-900/50 backdrop-blur-sm shadow-sm text-slate-300 text-xs font-mono mb-12 uppercase tracking-widest"
                 >
                     <Radio size={12} strokeWidth={1.5} className="animate-pulse text-teal-400" />
                     {t('badge')}

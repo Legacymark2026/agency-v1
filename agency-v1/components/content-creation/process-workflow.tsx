@@ -181,11 +181,11 @@ export default function ProcessWorkflow() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[10px] font-mono font-bold tracking-widest bg-gradient-to-r ${step.color} bg-clip-text text-transparent`}>
+                                                    <span className={`text-xs font-mono font-bold tracking-widest bg-gradient-to-r ${step.color} bg-clip-text text-transparent`}>
                                                         PASO {step.number}
                                                     </span>
-                                                    <span className="text-[10px] text-white/30 font-mono">·</span>
-                                                    <span className="text-[10px] font-mono text-white/40 tracking-wider">{step.time}</span>
+                                                    <span className="text-xs text-white/30 font-mono">·</span>
+                                                    <span className="text-xs font-mono text-white/40 tracking-wider">{step.time}</span>
                                                 </div>
                                                 <h3 className="text-white font-bold text-lg mb-2">{step.title}</h3>
                                                 <p className="text-slate-400 text-sm leading-relaxed mb-4">{step.description}</p>
@@ -195,7 +195,7 @@ export default function ProcessWorkflow() {
                                                     {step.deliverables.map((d, i) => (
                                                         <span
                                                             key={i}
-                                                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-[11px] font-medium"
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs font-medium"
                                                         >
                                                             <CheckCircle2 className="w-3 h-3 text-teal-400" />
                                                             {d}

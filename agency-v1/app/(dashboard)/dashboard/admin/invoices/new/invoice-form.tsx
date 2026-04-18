@@ -299,7 +299,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                     />
                                 </div>
                                 <div className="w-24">
-                                    <label className="text-[10px] text-slate-500 block mb-1">Cant.</label>
+                                    <label className="text-xs text-slate-500 block mb-1">Cant.</label>
                                     <input
                                         type="number"
                                         min="1"
@@ -310,7 +310,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                     />
                                 </div>
                                 <div className="w-32">
-                                    <label className="text-[10px] text-slate-500 block mb-1">Precio Unitario</label>
+                                    <label className="text-xs text-slate-500 block mb-1">Precio Unitario</label>
                                     <input
                                         type="number"
                                         min="0"
@@ -322,7 +322,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                     />
                                 </div>
                                 <div className="w-24">
-                                    <label className="text-[10px] text-slate-500 block mb-1">Impuesto</label>
+                                    <label className="text-xs text-slate-500 block mb-1">Impuesto</label>
                                     <select
                                         className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-teal-500 focus:outline-none"
                                         value={item.taxRate}

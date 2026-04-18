@@ -178,7 +178,7 @@ export default function MembersPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${roleCfg.color}`}>{roleCfg.label}</span>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full border ${roleCfg.color}`}>{roleCfg.label}</span>
                                     <div className="flex items-center gap-1 text-xs text-slate-500">
                                         <Clock className="w-3 h-3" />
                                         <span>{new Date(m.joinedAt).toLocaleDateString("es-CO")}</span>

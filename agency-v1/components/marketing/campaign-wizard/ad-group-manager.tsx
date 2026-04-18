@@ -805,13 +805,13 @@ Genera ${count} variants de copy en español, seguindo as directrices de marca. 
                                                             {(!validation.valid || validation.warnings.length > 0) && (
                                                                 <div className="mb-3 flex flex-wrap gap-1">
                                                                     {validation.errors.map((err, i) => (
-                                                                        <Badge key={i} variant="outline" className="border-red-500/30 text-red-400 text-[10px]">
+                                                                        <Badge key={i} variant="outline" className="border-red-500/30 text-red-400 text-xs">
                                                                             <AlertCircle className="w-3 h-3 mr-1" />
                                                                             {err}
                                                                         </Badge>
                                                                     ))}
                                                                     {validation.warnings.map((warn, i) => (
-                                                                        <Badge key={i} variant="outline" className="border-yellow-500/30 text-yellow-400 text-[10px]">
+                                                                        <Badge key={i} variant="outline" className="border-yellow-500/30 text-yellow-400 text-xs">
                                                                             {warn}
                                                                         </Badge>
                                                                     ))}
@@ -845,7 +845,7 @@ Genera ${count} variants de copy en español, seguindo as directrices de marca. 
                                                             {expandedAd === ad.id && (
                                                                 <div className="space-y-2 mb-3 p-2 bg-slate-900 rounded-lg">
                                                                     <div>
-                                                                        <Label className="text-slate-500 text-[10px]">Headline</Label>
+                                                                        <Label className="text-slate-500 text-xs">Headline</Label>
                                                                         <Input
                                                                             value={ad.headlines[0] || ''}
                                                                             onChange={(e) => {
@@ -864,7 +864,7 @@ Genera ${count} variants de copy en español, seguindo as directrices de marca. 
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <Label className="text-slate-500 text-[10px]">Descripción</Label>
+                                                                        <Label className="text-slate-500 text-xs">Descripción</Label>
                                                                         <Input
                                                                             value={ad.descriptions[0] || ''}
                                                                             onChange={(e) => {

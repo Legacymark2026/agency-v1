@@ -30,7 +30,7 @@ export function PortfolioPreview({ projects }: PortfolioPreviewProps) {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="mb-24 flex flex-col items-end justify-between gap-6 md:flex-row md:items-end border-b border-slate-200 pb-12">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-6 uppercase tracking-widest shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm">
                             <Layers size={12} strokeWidth={1.5} />
                             {t('badge')}
                         </div>
@@ -42,7 +42,7 @@ export function PortfolioPreview({ projects }: PortfolioPreviewProps) {
                         </p>
                     </div>
                     <Link href="/portfolio">
-                        <Button variant="outline" className="text-slate-800 border-slate-300 hover:bg-slate-900 hover:text-white rounded-sm group font-bold tracking-widest uppercase text-[10px] px-6 h-12 transition-all duration-300">
+                        <Button variant="outline" className="text-slate-800 border-slate-300 hover:bg-slate-900 hover:text-white rounded-sm group font-bold tracking-widest uppercase text-xs px-6 h-12 transition-all duration-300">
                             <FolderOpen className="mr-2 h-4 w-4" strokeWidth={1.5} />
                             {t('btn')}
                         </Button>
@@ -70,7 +70,7 @@ export function PortfolioPreview({ projects }: PortfolioPreviewProps) {
                                 <div className="absolute inset-0 p-8 flex flex-col justify-end">
                                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                         <div className="flex justify-between items-end mb-4">
-                                            <p className="text-[10px] font-mono text-teal-400 uppercase tracking-widest bg-slate-900/80 w-fit px-3 py-1.5 rounded-sm border border-slate-700/50 backdrop-blur-md">
+                                            <p className="text-xs font-mono text-teal-400 uppercase tracking-widest bg-slate-900/80 w-fit px-3 py-1.5 rounded-sm border border-slate-700/50 backdrop-blur-md">
                                                 {project.client || "CONFIDENTIAL"}
                                             </p>
                                             <div className="w-12 h-12 rounded-sm bg-slate-900 border border-slate-800 text-teal-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg group-hover:bg-teal-500 group-hover:text-slate-950 group-hover:border-teal-400">

@@ -179,7 +179,7 @@ export default function PayrollDashboard() {
                         <div className="flex items-center gap-2 mt-1">
                             <p className="text-xs text-slate-500">{card.sub}</p>
                             {card.trend !== null && card.trend !== undefined && (
-                                <span className={`text-[10px] font-mono font-bold ${card.trend >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                <span className={`text-xs font-mono font-bold ${card.trend >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                                     {fmt2(card.trend)}
                                 </span>
                             )}
@@ -370,7 +370,7 @@ export default function PayrollDashboard() {
                                             <td className="px-4 py-4 text-right tabular-nums text-white font-medium">{fmt(row.netPay)}</td>
                                             <td className="px-4 py-4">
                                                 <div className="flex justify-center">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border ${STATUS_CFG[row.status]?.cls || STATUS_CFG.PENDING.cls}`}>
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase border ${STATUS_CFG[row.status]?.cls || STATUS_CFG.PENDING.cls}`}>
                                                         {STATUS_CFG[row.status]?.label || row.status}
                                                     </span>
                                                 </div>
@@ -455,7 +455,7 @@ export default function PayrollDashboard() {
                                             <td className="px-5 py-4 text-right tabular-nums text-white font-medium">{fmt(exp.amount)}</td>
                                             <td className="px-5 py-4">
                                                 <div className="flex justify-center">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border ${exp.status === "APPROVED" || exp.status === "PAID"
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase border ${exp.status === "APPROVED" || exp.status === "PAID"
                                                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                                         : exp.status === "REJECTED"
                                                             ? "bg-red-500/10 text-red-400 border-red-500/20"

@@ -166,9 +166,9 @@ export function LeadSources({ data }: LeadSourcesProps) {
                         >
                             <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                             <div className="flex-1 overflow-hidden">
-                                <p className="text-[11px] font-bold text-slate-600 truncate">{entry.name}</p>
+                                <p className="text-xs font-bold text-slate-600 truncate">{entry.name}</p>
                             </div>
-                            <span className="text-[11px] font-mono font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-100">{entry.value}</span>
+                            <span className="text-xs font-mono font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-100">{entry.value}</span>
                         </div>
                     ))}
                 </div>

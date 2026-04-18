@@ -57,7 +57,7 @@ export default async function CampaignsPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-[9px] text-slate-700 uppercase tracking-widest hidden md:block">[MKT_LIVE]</span>
+                    <span className="font-mono text-xs text-slate-700 uppercase tracking-widest hidden md:block">[MKT_LIVE]</span>
                     <Link href="/dashboard/admin/marketing/settings">
                         <button id="campaigns-api-btn" className="flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-widest text-slate-400 border border-slate-800 hover:border-teal-800 hover:text-teal-400 transition-all rounded-sm bg-slate-950/50">
                             <Settings className="h-3.5 w-3.5" /> Conexiones API

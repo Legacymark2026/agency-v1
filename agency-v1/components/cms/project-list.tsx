@@ -289,10 +289,10 @@ export function ProjectList({ projects: initialProjects, categories }: ProjectLi
     };
 
     const statusColors: Record<string, string> = {
-        draft: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-[10px]',
-        published: 'bg-teal-500/10 text-teal-400 border-teal-500/20 text-[10px]',
-        scheduled: 'bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px]',
-        archived: 'bg-slate-800 text-slate-400 border-slate-700 text-[10px]'
+        draft: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20 text-xs',
+        published: 'bg-teal-500/10 text-teal-400 border-teal-500/20 text-xs',
+        scheduled: 'bg-blue-500/10 text-blue-400 border-blue-500/20 text-xs',
+        archived: 'bg-slate-800 text-slate-400 border-slate-700 text-xs'
     };
 
     return (

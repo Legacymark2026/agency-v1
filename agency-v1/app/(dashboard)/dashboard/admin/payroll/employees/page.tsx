@@ -111,7 +111,7 @@ export default function EmployeesList() {
                                             <Briefcase className="w-4 h-4 text-slate-500" />
                                             <div>
                                                 <div className="text-slate-300">{row.position}</div>
-                                                <div className="text-[10px] font-mono text-teal-500/80 uppercase tracking-wider">{row.contractType.replace("_", " ")}</div>
+                                                <div className="text-xs font-mono text-teal-500/80 uppercase tracking-wider">{row.contractType.replace("_", " ")}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -121,9 +121,9 @@ export default function EmployeesList() {
                                     <td className="px-6 py-4">
                                         <div className="flex justify-center">
                                             {row.isActive ? (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase bg-teal-500/10 text-teal-400 border border-teal-500/20">ACTIVO</span>
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold tracking-widest uppercase bg-teal-500/10 text-teal-400 border border-teal-500/20">ACTIVO</span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase bg-slate-500/10 text-slate-400 border border-slate-500/20">INACTIVO</span>
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold tracking-widest uppercase bg-slate-500/10 text-slate-400 border border-slate-500/20">INACTIVO</span>
                                             )}
                                         </div>
                                     </td>

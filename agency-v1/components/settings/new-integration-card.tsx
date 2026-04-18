@@ -78,7 +78,7 @@ export function NewIntegrationCard({ integration, status }: NewIntegrationCardPr
                         <span className="text-sm font-semibold text-slate-200">{integration.name}</span>
                         <div className="flex items-center gap-1">
                             {cfg.icon}
-                            <span className="text-[10px] text-slate-500">{cfg.label}</span>
+                            <span className="text-xs text-slate-500">{cfg.label}</span>
                         </div>
                     </div>
                     <p className="text-xs text-slate-500 truncate">{integration.desc}</p>

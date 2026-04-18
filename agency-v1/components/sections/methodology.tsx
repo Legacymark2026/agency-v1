@@ -107,7 +107,7 @@ export function Methodology() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
                 {/* 2. Header with 'System Status' aesthetic */}
                 <div className="text-center mb-16 sm:mb-24 relative">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-6 uppercase tracking-widest shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm">
                         <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
@@ -168,7 +168,7 @@ export function Methodology() {
                                             </h3>
                                             {activeStep === index && <ArrowRight size={16} strokeWidth={1.5} className="text-teal-400" />}
                                         </div>
-                                        <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">{step.subtitle}</p>
+                                        <p className="text-xs font-mono text-slate-400 uppercase tracking-widest">{step.subtitle}</p>
                                     </div>
                                 </div>
                             ))}
@@ -221,7 +221,7 @@ export function Methodology() {
                                     })()}
 
                                     {/* Tech Spec Label */}
-                                    <div className="mb-6 inline-flex items-center gap-2 text-[10px] font-mono text-teal-500 bg-slate-950/80 px-3 py-1.5 rounded-sm border border-slate-800 tracking-widest uppercase shadow-sm relative z-20">
+                                    <div className="mb-6 inline-flex items-center gap-2 text-xs font-mono text-teal-500 bg-slate-950/80 px-3 py-1.5 rounded-sm border border-slate-800 tracking-widest uppercase shadow-sm relative z-20">
                                         <CodeIcon />
                                         {STEPS[activeStep].tech_spec}
                                     </div>
@@ -236,7 +236,7 @@ export function Methodology() {
                                         {STEPS[activeStep].desc}
                                     </p>
 
-                                    <div className="mt-12 flex items-center gap-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase relative z-20">
+                                    <div className="mt-12 flex items-center gap-4 text-xs text-slate-400 font-mono tracking-widest uppercase relative z-20">
                                         <span>STATUS:</span>
                                         <span className="text-teal-400 font-bold">OPTIMAL</span>
                                         <span className="w-px h-4 bg-slate-800" />

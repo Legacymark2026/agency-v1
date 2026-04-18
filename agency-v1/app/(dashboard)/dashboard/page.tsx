@@ -31,7 +31,7 @@ export default async function DashboardPage() {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.07),transparent_70%)] pointer-events-none" />
 
                 {/* Code tag */}
-                <div className="absolute top-4 right-4 font-mono text-[9px] text-slate-700 uppercase tracking-widest">[SYS_CORE · OVW]</div>
+                <div className="absolute top-4 right-4 font-mono text-xs text-slate-700 uppercase tracking-widest">[SYS_CORE · OVW]</div>
 
                 {/* Teal accent top line — identical to home TechCard bottom line on hover */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
                     {/* Role badge */}
                     <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-[10px] text-teal-400 uppercase tracking-widest"
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-xs text-teal-400 uppercase tracking-widest"
                             style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)' }}>
                             <ShieldCheck size={12} className="text-teal-500" />
                             {currentRole}
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
                     <div className="ds-icon-box w-6 h-6">
                         <Activity size={12} strokeWidth={1.5} className="text-teal-400" />
                     </div>
-                    <h2 className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Métricas Estratégicas</h2>
+                    <h2 className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Métricas Estratégicas</h2>
                 </div>
                 <AnalyticsOverview />
             </div>
@@ -90,8 +90,8 @@ export default async function DashboardPage() {
                             <Clock size={14} strokeWidth={1.5} className="text-teal-400" />
                         </div>
                         <div>
-                            <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Registro de Actividad Reciente</p>
-                            <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Log de sistema · Actualización automática</p>
+                            <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Registro de Actividad Reciente</p>
+                            <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Log de sistema · Actualización automática</p>
                         </div>
                     </div>
                     <span className="ds-badge ds-badge-teal">
@@ -119,13 +119,13 @@ export default async function DashboardPage() {
                                     <div className="ds-card-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                         <div className="flex-1 min-w-0">
                                             <p className="font-bold text-[13px] text-slate-200 truncate">{log.action}</p>
-                                            <p className="text-[11px] text-slate-500 mt-0.5 font-light truncate">
+                                            <p className="text-xs text-slate-500 mt-0.5 font-light truncate">
                                                 {log.details ? (typeof log.details === 'string' ? log.details : JSON.stringify(log.details)) : 'Operación de sistema completada exitosamente.'}
                                             </p>
                                         </div>
                                         <div className="text-right shrink-0">
-                                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">{new Date(log.createdAt).toLocaleDateString()}</p>
-                                            <p className="font-mono text-[9px] text-slate-700 mt-0.5">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">{new Date(log.createdAt).toLocaleDateString()}</p>
+                                            <p className="font-mono text-xs text-slate-700 mt-0.5">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -136,7 +136,7 @@ export default async function DashboardPage() {
                             <div className="ds-icon-box w-10 h-10 mb-4 mx-auto">
                                 <Terminal size={16} strokeWidth={1.5} className="text-slate-600" />
                             </div>
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; No hay actividad reciente_</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; No hay actividad reciente_</p>
                         </div>
                     )}
                 </div>

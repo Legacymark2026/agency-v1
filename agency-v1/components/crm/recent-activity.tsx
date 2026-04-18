@@ -23,8 +23,8 @@ export function RecentActivity({ activities }: ActivityProps) {
                         <ActivityIcon size={14} strokeWidth={1.5} className="text-teal-400" />
                     </div>
                     <div>
-                        <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Registro de Actividad Reciente</p>
-                        <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Historial automático de eventos</p>
+                        <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Registro de Actividad Reciente</p>
+                        <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Historial automático de eventos</p>
                     </div>
                 </div>
                 {/* Live badge */}
@@ -40,7 +40,7 @@ export function RecentActivity({ activities }: ActivityProps) {
             {/* Activities */}
             {!activities || activities.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center">
-                    <p className="font-mono text-[10px] text-slate-600 uppercase tracking-widest">&gt; Sin actividad registrada_</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Sin actividad registrada_</p>
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto pr-1 relative z-10 space-y-0"
@@ -59,7 +59,7 @@ export function RecentActivity({ activities }: ActivityProps) {
                                 <div className="absolute -left-[calc(1.25rem+0.75rem)] top-3 h-6 w-6 rounded-sm flex items-center justify-center"
                                     style={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(30,41,59,0.8)' }}>
                                     <Avatar className="h-5 w-5">
-                                        <AvatarFallback className="text-[8px] rounded-sm bg-transparent">
+                                        <AvatarFallback className="text-xs rounded-sm bg-transparent">
                                             {isDeal
                                                 ? <ArrowUpCircle className="w-3 h-3 text-teal-500" />
                                                 : <ArrowDownCircle className="w-3 h-3 text-slate-500" />}
@@ -72,12 +72,12 @@ export function RecentActivity({ activities }: ActivityProps) {
                                     <div className="flex justify-between items-start gap-4">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[12px] font-bold text-slate-200 leading-snug truncate">{activity.title}</p>
-                                            <p className="text-[11px] text-slate-500 font-light mt-0.5 leading-relaxed">{activity.desc}</p>
+                                            <p className="text-xs text-slate-500 font-light mt-0.5 leading-relaxed">{activity.desc}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 mt-2">
                                         <span className={`w-1 h-1 rounded-full ${isDeal ? 'bg-teal-500' : 'bg-slate-600'}`} />
-                                        <span className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">
+                                        <span className="font-mono text-xs text-slate-600 uppercase tracking-widest">
                                             {formatDistanceToNow(new Date(activity.date), { addSuffix: true, locale: es })}
                                         </span>
                                     </div>

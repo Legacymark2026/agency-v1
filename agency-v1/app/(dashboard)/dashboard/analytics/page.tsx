@@ -55,7 +55,7 @@ export const metadata = {
 function DarkCard({ children, className = "", code }: { children: React.ReactNode; className?: string; code?: string }) {
     return (
         <div className={`ds-card group relative ${className}`}>
-            {code && <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest">[{code}]</span>}
+            {code && <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest">[{code}]</span>}
             {children}
         </div>
     );
@@ -68,8 +68,8 @@ function SectionHeader({ icon: Icon, label, sub }: { icon: any; label: string; s
                 <Icon size={13} strokeWidth={1.5} className="text-teal-400" />
             </div>
             <div>
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
-                {sub && <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">{sub}</p>}
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
+                {sub && <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">{sub}</p>}
             </div>
         </div>
     );

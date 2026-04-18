@@ -75,14 +75,14 @@ export function BrandKitPanel({ onSaved, compact = false }: BrandKitPanelProps) 
                     <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-1.5">
                             <div className="w-4 h-4 rounded-full border border-white/20" style={{ background: kit.primaryColor }} />
-                            <span className="text-[10px] text-gray-500">{kit.primaryColor}</span>
+                            <span className="text-xs text-gray-500">{kit.primaryColor}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-4 h-4 rounded-full border border-white/20" style={{ background: kit.secondaryColor }} />
-                            <span className="text-[10px] text-gray-500">{kit.secondaryColor}</span>
+                            <span className="text-xs text-gray-500">{kit.secondaryColor}</span>
                         </div>
-                        <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">{kit.fontFamily}</span>
-                        <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-0.5 rounded capitalize">{kit.toneOfVoice}</span>
+                        <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded">{kit.fontFamily}</span>
+                        <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded capitalize">{kit.toneOfVoice}</span>
                     </div>
                 </div>
             </div>
@@ -134,12 +134,12 @@ export function BrandKitPanel({ onSaved, compact = false }: BrandKitPanelProps) 
                                 { key: 'accentColor' as const, label: 'Acento' },
                             ].map(({ key, label }) => (
                                 <div key={key} className="space-y-1">
-                                    <Label className="text-[10px] text-gray-600">{label}</Label>
+                                    <Label className="text-xs text-gray-600">{label}</Label>
                                     <div className="relative">
                                         <input type="color" value={kit[key] ?? '#000000'}
                                             onChange={(e) => setKit((k) => ({ ...k, [key]: e.target.value }))}
                                             className="w-full h-12 rounded-xl border border-white/10 cursor-pointer bg-transparent" />
-                                        <span className="absolute bottom-1 left-0 right-0 text-center text-[9px] text-gray-400 font-mono">
+                                        <span className="absolute bottom-1 left-0 right-0 text-center text-xs text-gray-400 font-mono">
                                             {kit[key]}
                                         </span>
                                     </div>

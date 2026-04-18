@@ -17,8 +17,8 @@ function SectionLabel({ icon: Icon, label, sub }: { icon: any; label: string; su
                 <Icon size={12} strokeWidth={1.5} className="text-teal-400" />
             </div>
             <div>
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
-                {sub && <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">{sub}</p>}
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
+                {sub && <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">{sub}</p>}
             </div>
         </div>
     );
@@ -31,7 +31,7 @@ export default async function MarketingDashboardPage() {
     const companyUser = await prisma.companyUser.findFirst({ where: { userId: session.user.id } });
     if (!companyUser) return (
         <div className="ds-page flex items-center justify-center">
-            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
+            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
         </div>
     );
     const companyId = companyUser.companyId;
@@ -83,10 +83,10 @@ export default async function MarketingDashboardPage() {
             <div className="relative z-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {kpiCards.map((k, i) => (
                     <div key={k.code} className="ds-kpi group">
-                        <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{k.code}]</span>
+                        <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{k.code}]</span>
                         <div className="relative z-10">
                             <div className="flex items-center justify-between mb-3">
-                                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
+                                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
                                 <div className="ds-icon-box w-7 h-7">
                                     <k.icon size={12} strokeWidth={1.5} className="text-slate-500 group-hover:text-teal-400 transition-colors" />
                                 </div>
@@ -113,11 +113,11 @@ export default async function MarketingDashboardPage() {
                                     <p className="text-[13px] font-bold text-slate-200">{item.source}</p>
                                     <p className="ds-mono-label">Best performing source</p>
                                 </div>
-                                <span className="font-mono font-black text-sm text-teal-400">{item.count} <span className="text-[9px] text-slate-600">Leads</span></span>
+                                <span className="font-mono font-black text-sm text-teal-400">{item.count} <span className="text-xs text-slate-600">Leads</span></span>
                             </div>
                         ))}
                         {attribution.length === 0 && (
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest text-center py-6">&gt; Sin datos aún_</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest text-center py-6">&gt; Sin datos aún_</p>
                         )}
                     </div>
                 </div>
@@ -148,14 +148,14 @@ export default async function MarketingDashboardPage() {
                                     {' '}&bull; {new Date(event.createdAt).toLocaleTimeString()}
                                 </p>
                             </div>
-                            <p className="font-mono text-[9px] text-slate-700 uppercase tracking-widest truncate max-w-[160px]">
+                            <p className="font-mono text-xs text-slate-700 uppercase tracking-widest truncate max-w-[160px]">
                                 {event.url}
                             </p>
                         </div>
                     ))}
                     {recentEvents.length === 0 && (
                         <div className="py-10 flex items-center justify-center">
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Esperando eventos de tráfico entrante..._</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Esperando eventos de tráfico entrante..._</p>
                         </div>
                     )}
                 </div>

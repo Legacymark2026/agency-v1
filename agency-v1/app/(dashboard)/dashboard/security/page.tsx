@@ -49,7 +49,7 @@ export default async function SecurityLogsPage({ searchParams }: PageProps) {
                         <p className="text-xs text-slate-500 font-mono">Monitoreo de actividad, accesos y alertas del sistema en tiempo real.</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500">
+                <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block" />
                     Sistema activo · {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </div>

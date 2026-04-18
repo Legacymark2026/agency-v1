@@ -49,7 +49,7 @@ export function KanbanCard({ task, isOverlay }: { task: any; isOverlay?: boolean
 
             {/* Labels / Priority */}
             <div className="flex items-center justify-between pl-3">
-                <span className={cn("text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border", priorityColors[task.priority || "MEDIUM"])}>
+                <span className={cn("text-xs uppercase font-bold px-2 py-0.5 rounded-md border", priorityColors[task.priority || "MEDIUM"])}>
                     {task.priority || "MED"}
                 </span>
                 
@@ -76,7 +76,7 @@ export function KanbanCard({ task, isOverlay }: { task: any; isOverlay?: boolean
                             {task.assignee.image ? (
                                 <img src={task.assignee.image} alt="assignee" className="h-full w-full object-cover" />
                             ) : (
-                                <div className="h-full w-full flex items-center justify-center text-[10px] text-white">
+                                <div className="h-full w-full flex items-center justify-center text-xs text-white">
                                     {task.assignee.name?.charAt(0)}
                                 </div>
                             )}

@@ -39,8 +39,8 @@ export function SalesLeaderboard({ data }: SalesLeaderboardProps) {
                     <Trophy size={14} strokeWidth={1.5} className="text-teal-400" />
                 </div>
                 <div>
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Leaderboard</p>
-                    <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Top Performers · By Revenue</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Leaderboard</p>
+                    <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Top Performers · By Revenue</p>
                 </div>
                 <span className="ml-auto ds-badge ds-badge-amber">RANKINGS</span>
             </div>
@@ -49,7 +49,7 @@ export function SalesLeaderboard({ data }: SalesLeaderboardProps) {
             <div className="flex-1 space-y-2 relative z-10">
                 {data.length === 0 ? (
                     <div className="py-10 flex items-center justify-center">
-                        <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Sin datos de rendimiento_</p>
+                        <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Sin datos de rendimiento_</p>
                     </div>
                 ) : (
                     data.map((user, i) => {
@@ -70,11 +70,11 @@ export function SalesLeaderboard({ data }: SalesLeaderboardProps) {
                                 <div className="mr-3 w-5 flex justify-center shrink-0">
                                     {RankIcon
                                         ? <RankIcon className={`w-4 h-4 ${rank.color}`} strokeWidth={1.5} />
-                                        : <span className="font-mono text-[10px] font-bold text-slate-600">{i + 1}</span>}
+                                        : <span className="font-mono text-xs font-bold text-slate-600">{i + 1}</span>}
                                 </div>
 
                                 {/* Avatar */}
-                                <div className={`w-8 h-8 rounded-sm flex items-center justify-center font-mono text-[10px] font-black shrink-0 ${rank ? `ring-1 ${rank.ring}` : ''}`}
+                                <div className={`w-8 h-8 rounded-sm flex items-center justify-center font-mono text-xs font-black shrink-0 ${rank ? `ring-1 ${rank.ring}` : ''}`}
                                     style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.8)' }}>
                                     {user.name.substring(0, 2).toUpperCase()}
                                 </div>
@@ -82,7 +82,7 @@ export function SalesLeaderboard({ data }: SalesLeaderboardProps) {
                                 {/* Info */}
                                 <div className="ml-3 flex-1 min-w-0">
                                     <p className="text-[12px] font-bold text-slate-200 truncate">{user.name}</p>
-                                    <p className="font-mono text-[8px] text-slate-600 uppercase tracking-widest">
+                                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">
                                         {i === 0 ? 'MVB · Most Valuable Biller' : 'Sales Representative'}
                                     </p>
                                 </div>
@@ -92,7 +92,7 @@ export function SalesLeaderboard({ data }: SalesLeaderboardProps) {
                                     <span className="font-mono font-black text-sm text-slate-100">{fmt.format(user.wonValue)}</span>
                                     <button
                                         onClick={(e) => fireKudos(user.name, e)}
-                                        className="opacity-0 group-hover:opacity-100 flex items-center gap-1 font-mono text-[8px] uppercase tracking-widest text-teal-400 hover:text-teal-300 transition-all"
+                                        className="opacity-0 group-hover:opacity-100 flex items-center gap-1 font-mono text-xs uppercase tracking-widest text-teal-400 hover:text-teal-300 transition-all"
                                     >
                                         <Zap className="w-2.5 h-2.5" /> Kudos
                                     </button>

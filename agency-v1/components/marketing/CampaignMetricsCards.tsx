@@ -43,11 +43,11 @@ function MetricCard({ label, value, subtext, icon: Icon, code, delay, isFeatured
                 style={{ background: useMotionTemplate`radial-gradient(280px circle at ${mouseX}px ${mouseY}px, rgba(45,212,191,0.05), transparent 80%)` }}
             />
 
-            <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{code}]</span>
+            <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[{code}]</span>
 
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
                     <div className="ds-icon-box w-8 h-8">
                         <Icon size={13} strokeWidth={1.5} className={`${isFeatured ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400'} transition-colors`} />
                     </div>

@@ -59,7 +59,7 @@ export function ExpertSocialNetworks({ isLoading }: { isLoading: boolean }) {
                                     )}></span>
                                 </span>
                             </FormLabel>
-                            <FormDescription className={field.value ? "text-teal-400/70 text-[10px] font-mono tracking-widest uppercase" : "text-slate-500 text-[10px] font-mono tracking-widest uppercase"}>
+                            <FormDescription className={field.value ? "text-teal-400/70 text-xs font-mono tracking-widest uppercase" : "text-slate-500 text-xs font-mono tracking-widest uppercase"}>
                                 {field.value
                                     ? "Visible: Aparecerá listado en la web."
                                     : "Oculto: Solo tú puedes verlo aquí."}

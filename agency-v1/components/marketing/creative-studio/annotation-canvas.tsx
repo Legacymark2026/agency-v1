@@ -120,7 +120,7 @@ export function AnnotationCanvas({
                 )}
 
                 {addMode && (
-                    <div className="absolute top-2 left-2 bg-teal-600/80 backdrop-blur-sm text-white text-[10px] font-mono px-2 py-1 rounded-full">
+                    <div className="absolute top-2 left-2 bg-teal-600/80 backdrop-blur-sm text-white text-xs font-mono px-2 py-1 rounded-full">
                         Click en la imagen para fijar un comentario
                     </div>
                 )}
@@ -133,7 +133,7 @@ export function AnnotationCanvas({
                         className="absolute z-20"
                         onClick={e => { e.stopPropagation(); setActivePin(activePin === ann.id ? null : ann.id); }}
                     >
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all shadow-lg
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold cursor-pointer transition-all shadow-lg
                             ${ann.status === "RESOLVED"
                                 ? "bg-emerald-500 border-emerald-300 text-white"
                                 : "bg-slate-900 border-indigo-400 text-indigo-300 hover:scale-110"}`}>
@@ -144,7 +144,7 @@ export function AnnotationCanvas({
                         {activePin === ann.id && (
                             <div className="absolute z-30 top-8 left-1/2 -translate-x-1/2 w-64 bg-slate-900 border border-slate-700 rounded-xl p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-mono text-teal-400 font-bold">{ann.author.name || "Usuario"}</p>
+                                    <p className="text-xs font-mono text-teal-400 font-bold">{ann.author.name || "Usuario"}</p>
                                     <div className="flex gap-1">
                                         {ann.status === "OPEN" && (
                                             <button onClick={() => handleResolve(ann.id)} className="text-emerald-400 hover:text-emerald-300 transition">
@@ -160,7 +160,7 @@ export function AnnotationCanvas({
                                     </div>
                                 </div>
                                 <p className="text-xs text-slate-200">{ann.content}</p>
-                                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${ann.status === "RESOLVED" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
+                                <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${ann.status === "RESOLVED" ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400"}`}>
                                     {ann.status}
                                 </span>
                             </div>
@@ -177,7 +177,7 @@ export function AnnotationCanvas({
                     >
                         <div className="w-6 h-6 rounded-full bg-amber-500 border-2 border-amber-300 animate-pulse shadow-lg" />
                         <div className="absolute top-8 left-1/2 -translate-x-1/2 w-60 bg-slate-900 border border-amber-500/40 rounded-xl p-3 shadow-2xl space-y-2">
-                            <p className="text-[10px] font-mono text-amber-400">Nuevo comentario</p>
+                            <p className="text-xs font-mono text-amber-400">Nuevo comentario</p>
                             <textarea
                                 value={draftContent}
                                 onChange={e => setDraftContent(e.target.value)}
@@ -187,10 +187,10 @@ export function AnnotationCanvas({
                                 className="w-full bg-slate-950 border border-slate-700 rounded text-xs text-slate-200 p-2 resize-none focus:outline-none focus:border-amber-500"
                             />
                             <div className="flex gap-2">
-                                <Button size="sm" onClick={submitAnnotation} disabled={isAdding || !draftContent.trim()} className="flex-1 h-7 text-[10px] bg-amber-600 hover:bg-amber-500 font-mono">
+                                <Button size="sm" onClick={submitAnnotation} disabled={isAdding || !draftContent.trim()} className="flex-1 h-7 text-xs bg-amber-600 hover:bg-amber-500 font-mono">
                                     {isAdding ? <Loader2 size={10} className="animate-spin" /> : <Plus size={10} />} Añadir
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={() => setPendingPin(null)} className="h-7 text-[10px] text-slate-400">
+                                <Button size="sm" variant="ghost" onClick={() => setPendingPin(null)} className="h-7 text-xs text-slate-400">
                                     Cancelar
                                 </Button>
                             </div>
@@ -204,18 +204,18 @@ export function AnnotationCanvas({
                 <div className="space-y-2">
                     {annotations.map((ann, idx) => (
                         <div key={ann.id} className={`flex gap-3 p-3 rounded-lg border text-sm transition-all ${ann.status === "RESOLVED" ? "border-slate-800 opacity-50" : "border-slate-700 bg-slate-900/50 hover:border-indigo-500/30"}`}>
-                            <div className={`w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5 ${ann.status === "RESOLVED" ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white"}`}>
+                            <div className={`w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${ann.status === "RESOLVED" ? "bg-emerald-500 text-white" : "bg-indigo-600 text-white"}`}>
                                 {idx + 1}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-mono text-teal-400">{ann.author.name}</p>
+                                    <p className="text-xs font-mono text-teal-400">{ann.author.name}</p>
                                     {ann.status === "OPEN" ? (
-                                        <button onClick={() => handleResolve(ann.id)} className="text-[10px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                                        <button onClick={() => handleResolve(ann.id)} className="text-xs font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
                                             <CheckCircle2 size={10} /> Resolver
                                         </button>
                                     ) : (
-                                        <span className="text-[10px] font-mono text-emerald-600">✓ Resuelto</span>
+                                        <span className="text-xs font-mono text-emerald-600">✓ Resuelto</span>
                                     )}
                                 </div>
                                 <p className="text-xs text-slate-300 mt-0.5">{ann.content}</p>

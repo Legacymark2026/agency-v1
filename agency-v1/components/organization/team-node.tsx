@@ -44,7 +44,7 @@ const TeamNode = ({ data }: { data: any }) => {
                     <div className="flex-1">
                         <h3 className="text-sm font-semibold text-teal-50">{data.name}</h3>
                         {data.level === 0 && (
-                            <span className="inline-flex items-center text-[10px] uppercase font-mono tracking-wider text-teal-400 bg-teal-950/50 px-1.5 py-0.5 rounded mt-1">
+                            <span className="inline-flex items-center text-xs uppercase font-mono tracking-wider text-teal-400 bg-teal-950/50 px-1.5 py-0.5 rounded mt-1">
                                 <Shield className="w-3 h-3 mr-1" /> HQ / Root
                             </span>
                         )}

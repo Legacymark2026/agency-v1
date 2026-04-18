@@ -359,10 +359,10 @@ export default function WorkflowListClient({ initialWorkflows, analytics, recent
                                         <Link href={`/dashboard/admin/automation/builder?id=${workflow.id}`}>{workflow.name}</Link>
                                     </CardTitle>
                                     <div className="flex items-center gap-2 mt-2">
-                                        <span className={`px-2 py-0.5 inline-flex text-[10px] font-medium rounded-full ${badge.color}`}>
+                                        <span className={`px-2 py-0.5 inline-flex text-xs font-medium rounded-full ${badge.color}`}>
                                             {badge.label}
                                         </span>
-                                        <span className={`px-2 py-0.5 inline-flex text-[10px] items-center gap-1 font-medium rounded-full border ${workflow.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                        <span className={`px-2 py-0.5 inline-flex text-xs items-center gap-1 font-medium rounded-full border ${workflow.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                             <span className={`w-1.5 h-1.5 rounded-full ${workflow.isActive ? 'bg-green-500' : 'bg-slate-400'}`}></span>
                                             {workflow.isActive ? 'Activo' : 'Pausado'}
                                         </span>

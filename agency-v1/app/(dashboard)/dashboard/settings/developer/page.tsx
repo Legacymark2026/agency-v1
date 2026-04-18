@@ -164,22 +164,22 @@ function ApiKeySection() {
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="text-sm font-medium text-slate-200">{k.name}</span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVA</span>
+                                <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVA</span>
                             </div>
                             <div className="flex items-center gap-3 flex-wrap">
                                 <code className="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded">{k.prefix}••••••••••••••</code>
                                 {k.expiresAt && (
-                                    <span className="text-[10px] text-amber-400 flex items-center gap-1">
+                                    <span className="text-xs text-amber-400 flex items-center gap-1">
                                         <Clock className="w-3 h-3" /> Vence {new Date(k.expiresAt).toLocaleDateString("es-CO")}
                                     </span>
                                 )}
                                 {k.lastUsedAt && (
-                                    <span className="text-[10px] text-slate-600">Último uso: {new Date(k.lastUsedAt).toLocaleDateString("es-CO")}</span>
+                                    <span className="text-xs text-slate-600">Último uso: {new Date(k.lastUsedAt).toLocaleDateString("es-CO")}</span>
                                 )}
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1.5">
                                 {k.scopes.map((sc: string) => (
-                                    <span key={sc} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">{sc}</span>
+                                    <span key={sc} className="text-xs font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">{sc}</span>
                                 ))}
                             </div>
                         </div>
@@ -299,7 +299,7 @@ function CronConfigSection() {
                             {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                         </button>
                     </div>
-                    <p className="text-[11px] text-slate-600 mt-1.5">Configúralo para ejecutarse cada hora: <code className="text-slate-500">0 * * * *</code></p>
+                    <p className="text-xs text-slate-600 mt-1.5">Configúralo para ejecutarse cada hora: <code className="text-slate-500">0 * * * *</code></p>
                 </div>
 
                 <div className="flex justify-end">
@@ -442,13 +442,13 @@ function WebhookSection() {
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className={`w-2 h-2 rounded-full shrink-0 ${isSuccess(getStatusCode(w)) ? "bg-emerald-400" : w.lastStatusCode ? "bg-red-400" : "bg-slate-600"}`} />
                                     <span className="text-sm font-medium text-slate-200">{w.name}</span>
-                                    {w.deliveryCount > 0 && <span className="text-[10px] text-slate-500">{w.deliveryCount} entregas</span>}
-                                    {w.failureCount > 0 && <span className="text-[10px] font-bold text-red-400">{w.failureCount} fallos</span>}
+                                    {w.deliveryCount > 0 && <span className="text-xs text-slate-500">{w.deliveryCount} entregas</span>}
+                                    {w.failureCount > 0 && <span className="text-xs font-bold text-red-400">{w.failureCount} fallos</span>}
                                 </div>
                                 <code className="text-xs text-slate-400 font-mono">{w.url}</code>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                     {w.events.map((ev: string) => (
-                                        <span key={ev} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">{ev}</span>
+                                        <span key={ev} className="text-xs font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">{ev}</span>
                                     ))}
                                 </div>
                             </div>

@@ -134,14 +134,14 @@ export function DealContextMenu({ children, deal, onEdit, onDelete, onDuplicate,
                                         <UserCheck className="h-3.5 w-3.5" />
                                     </div>
                                     Asignar Vendedor
-                                    {deal.assignedUser?.name && <span className="ml-auto text-[10px] text-gray-400 truncate max-w-[70px]">{deal.assignedUser.name}</span>}
+                                    {deal.assignedUser?.name && <span className="ml-auto text-xs text-gray-400 truncate max-w-[70px]">{deal.assignedUser.name}</span>}
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuPortal>
                                     <DropdownMenuSubContent className="w-52 p-2 bg-white/95 backdrop-blur-xl border border-gray-100/60 shadow-lg rounded-xl z-[9999]">
                                         <DropdownMenuItem asChild>
                                             <div onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation(); handleAssign(null);}}
                                                 className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 text-gray-500 text-sm font-medium">
-                                                <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[9px]">—</span>
+                                                <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs">—</span>
                                                 Sin asignar
                                             </div>
                                         </DropdownMenuItem>
@@ -152,7 +152,7 @@ export function DealContextMenu({ children, deal, onEdit, onDelete, onDuplicate,
                                             <DropdownMenuItem key={u.id} asChild>
                                                 <div onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation(); handleAssign(u.id);}}
                                                     className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-violet-50 text-sm font-medium transition-colors ${deal.assignedTo === u.id ? 'bg-violet-50 text-violet-700' : 'text-gray-700'}`}>
-                                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                                                         style={{ background: 'linear-gradient(135deg, #7c3aed, #0ea5e9)' }}>
                                                         {(u.name ?? u.email ?? '?')[0].toUpperCase()}
                                                     </div>

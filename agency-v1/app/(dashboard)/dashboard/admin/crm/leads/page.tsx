@@ -12,7 +12,7 @@ export default async function LeadsPage() {
         return (
             <div className="ds-page flex items-center justify-center min-h-screen">
                 <div className="ds-section text-center max-w-sm">
-                    <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
                 </div>
             </div>
         );
@@ -61,14 +61,14 @@ export default async function LeadsPage() {
                         </div>
                     </div>
                 </div>
-                <span className="font-mono text-[9px] text-slate-700 uppercase tracking-widest hidden md:block">[LDS_CORE]</span>
+                <span className="font-mono text-xs text-slate-700 uppercase tracking-widest hidden md:block">[LDS_CORE]</span>
             </div>
 
             {/* KPI Strip */}
             <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {stats.map((s, i) => (
                     <div key={s.label} className="ds-kpi group">
-                        <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest">[{s.code}]</span>
+                        <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest">[{s.code}]</span>
                         <div className="relative z-10">
                             <div className="ds-icon-box w-9 h-9 mb-3">
                                 <s.icon size={14} strokeWidth={1.5} className="text-slate-500 group-hover:text-teal-400 transition-colors" />

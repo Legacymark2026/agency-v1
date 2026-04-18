@@ -155,7 +155,7 @@ export function PricingDashboard() {
         {/* Header Section */}
         <div className="relative z-10 ds-card group" style={{ padding: '2rem 2.5rem' }}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.07),transparent_70%)] pointer-events-none" />
-          <div className="absolute top-4 right-4 font-mono text-[9px] text-slate-700 uppercase tracking-widest">[MKT_SYS · PRICING]</div>
+          <div className="absolute top-4 right-4 font-mono text-xs text-slate-700 uppercase tracking-widest">[MKT_SYS · PRICING]</div>
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
 
           <header className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -179,7 +179,7 @@ export function PricingDashboard() {
 
             <button
                onClick={handleAddNew}
-               className="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-teal-900/40 border border-teal-500/30 rounded hover:bg-teal-800/60 transition-all font-mono text-[10px] text-teal-300 uppercase tracking-widest whitespace-nowrap"
+               className="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-teal-900/40 border border-teal-500/30 rounded hover:bg-teal-800/60 transition-all font-mono text-xs text-teal-300 uppercase tracking-widest whitespace-nowrap"
              >
                <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
                Nuevo Servicio
@@ -224,7 +224,7 @@ export function PricingDashboard() {
             </div>
           ) : (
             <div className={`transition-opacity ${isPending ? 'opacity-70 pointer-events-none' : 'opacity-100'}`}>
-              <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono py-2 gap-1.5 uppercase tracking-wider mb-4 border-b border-white/5 pb-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 font-mono py-2 gap-1.5 uppercase tracking-wider mb-4 border-b border-white/5 pb-3">
                  <div>&gt; Mostrando [{filteredItems.length}] servicios</div>
                  <div className="flex items-center gap-1.5 hidden sm:flex">
                     <HelpCircle className="w-3.5 h-3.5 text-teal-500/70" />

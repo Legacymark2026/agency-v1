@@ -171,7 +171,7 @@ export function EmailPreview({ lastEmail }: { lastEmail?: { subject: string, sni
     if (!lastEmail) return null
 
     return (
-        <div className="text-[10px] bg-gray-50 p-2 rounded border border-gray-100 mt-2">
+        <div className="text-xs bg-gray-50 p-2 rounded border border-gray-100 mt-2">
             <div className="flex items-center gap-1 text-gray-500 mb-0.5">
                 <span>📧</span>
                 <span className="font-medium truncate flex-1">{lastEmail.subject}</span>

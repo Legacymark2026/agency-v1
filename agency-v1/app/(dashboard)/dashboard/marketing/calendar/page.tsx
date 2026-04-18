@@ -19,7 +19,7 @@ export default async function SocialPublisherPage() {
     if (!companyUser) {
         return (
             <div className="ds-page flex items-center justify-center">
-                <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
+                <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
             </div>
         );
     }

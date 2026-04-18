@@ -353,11 +353,11 @@ const ConditionNode = memo(({ id, data, selected }: any) => {
 
             <div className="flex justify-between px-3 pb-3 rounded-b-lg bg-slate-900 mt-4">
                 <div className="relative">
-                    <span className="absolute -bottom-6 -left-1 text-[10px] font-bold text-green-400">YES</span>
+                    <span className="absolute -bottom-6 -left-1 text-xs font-bold text-green-400">YES</span>
                     <Handle type="source" id="true" position={Position.Bottom} className="w-3 h-3 bg-green-500 border-2 border-slate-900" style={{ left: 10 }} />
                 </div>
                 <div className="relative">
-                    <span className="absolute -bottom-6 -right-1 text-[10px] font-bold text-red-400">NO</span>
+                    <span className="absolute -bottom-6 -right-1 text-xs font-bold text-red-400">NO</span>
                     <Handle type="source" id="false" position={Position.Bottom} className="w-3 h-3 bg-red-500 border-2 border-slate-900" style={{ left: 'auto', right: 10 }} />
                 </div>
             </div>
@@ -392,7 +392,7 @@ const SwitchNode = memo(({ id, data, selected }: any) => {
 
                     return (
                         <div key={branch.id} className="absolute flex flex-col items-center" style={{ left: leftPos, transform: 'translateX(-50%)', bottom: '-4px' }}>
-                            <span className="absolute -bottom-5 whitespace-nowrap text-[10px] font-bold text-indigo-400 max-w-[50px] truncate" title={branch.label || branch.value}>
+                            <span className="absolute -bottom-5 whitespace-nowrap text-xs font-bold text-indigo-400 max-w-[50px] truncate" title={branch.label || branch.value}>
                                 {branch.label || branch.value || `Path ${index + 1}`}
                             </span>
                             <Handle
@@ -424,11 +424,11 @@ const LoopNode = memo(({ id, data, selected }: any) => {
 
             <div className="flex justify-between px-3 pb-3 rounded-b-lg bg-slate-900 mt-4 relative">
                 <div className="relative">
-                    <span className="absolute -bottom-6 -left-4 text-[10px] font-bold text-teal-400 whitespace-nowrap">NEXT ITEM</span>
+                    <span className="absolute -bottom-6 -left-4 text-xs font-bold text-teal-400 whitespace-nowrap">NEXT ITEM</span>
                     <Handle type="source" id="loop" position={Position.Bottom} className="w-3 h-3 bg-teal-500 border-2 border-slate-900" style={{ left: 10 }} />
                 </div>
                 <div className="relative">
-                    <span className="absolute -bottom-6 -right-4 text-[10px] font-bold text-gray-500 whitespace-nowrap">DONE</span>
+                    <span className="absolute -bottom-6 -right-4 text-xs font-bold text-gray-500 whitespace-nowrap">DONE</span>
                     <Handle type="source" id="done" position={Position.Bottom} className="w-3 h-3 bg-slate-800/800 border-2 border-slate-900" style={{ left: 'auto', right: 10 }} />
                 </div>
             </div>
@@ -449,11 +449,11 @@ const SplitNode = memo(({ id, data, selected }: any) => {
             </div>
             <div className="flex justify-between px-3 pb-3 rounded-b-lg bg-slate-900 mt-4">
                 <div className="relative">
-                    <span className="absolute -bottom-6 -left-1 text-[10px] font-bold text-fuchsia-400">A (50%)</span>
+                    <span className="absolute -bottom-6 -left-1 text-xs font-bold text-fuchsia-400">A (50%)</span>
                     <Handle type="source" id="path_a" position={Position.Bottom} className="w-3 h-3 bg-fuchsia-500 border-2 border-slate-900" style={{ left: 10 }} />
                 </div>
                 <div className="relative">
-                    <span className="absolute -bottom-6 -right-1 text-[10px] font-bold text-fuchsia-400">B (50%)</span>
+                    <span className="absolute -bottom-6 -right-1 text-xs font-bold text-fuchsia-400">B (50%)</span>
                     <Handle type="source" id="path_b" position={Position.Bottom} className="w-3 h-3 bg-fuchsia-500 border-2 border-slate-900" style={{ left: 'auto', right: 10 }} />
                 </div>
             </div>

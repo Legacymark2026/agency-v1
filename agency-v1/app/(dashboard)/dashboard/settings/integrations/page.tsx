@@ -39,7 +39,7 @@ export default function IntegrationsPage() {
                 <div className="absolute -top-10 -left-10 w-40 h-40 bg-violet-500/10 blur-3xl rounded-full pointer-events-none" />
                 
                 <div className="relative">
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] uppercase font-mono tracking-widest mb-3">
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs uppercase font-mono tracking-widest mb-3">
                         <Plug2 className="w-3.5 h-3.5" /> App Store — Ecosistema
                     </div>
                     <div className="flex items-center gap-4">

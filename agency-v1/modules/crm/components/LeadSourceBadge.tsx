@@ -16,8 +16,8 @@ export function LeadSourceBadge({ source, showLabel = true, size = 'md' }: LeadS
     const info = getSourceDisplayInfo(source as LeadSource);
 
     const sizeClasses = {
-        sm: 'text-[9px] px-1.5 py-0.5',
-        md: 'text-[10px] px-2 py-1',
+        sm: 'text-xs px-1.5 py-0.5',
+        md: 'text-xs px-2 py-1',
         lg: 'text-xs px-2.5 py-1.5'
     };
 

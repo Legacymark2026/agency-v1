@@ -333,7 +333,7 @@ export default function PublicProposalPage({ params }: { params: { token: string
                     <div className="bg-slate-100 p-3 rounded-lg border border-slate-300">
                         <img src={proposal.signature} alt="Firma del Cliente" className="h-[60px] w-full object-contain mix-blend-multiply" />
                     </div>
-                    <div className="mt-3 flex justify-between items-center text-[10px] text-slate-500 font-mono">
+                    <div className="mt-3 flex justify-between items-center text-xs text-slate-500 font-mono">
                         <span>ID: {proposal.id.split("-")[0]}</span>
                         <span>{new Date(proposal.signedAt).toLocaleDateString()}</span>
                     </div>

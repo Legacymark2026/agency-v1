@@ -13,7 +13,7 @@ const TriggerNode = memo(({ data, isConnectable }: NodeProps) => {
                         <PlayCircle size={18} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <div className="text-[10px] font-bold text-blue-500 tracking-wider uppercase">Trigger</div>
+                        <div className="text-xs font-bold text-blue-500 tracking-wider uppercase">Trigger</div>
                         <div className="text-sm font-bold text-gray-900">{data.label}</div>
                     </div>
                 </div>
@@ -35,14 +35,14 @@ const ActionNode = memo(({ data, isConnectable }: NodeProps) => {
                         <Mail size={18} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <div className="text-[10px] font-bold text-purple-500 tracking-wider uppercase">Action</div>
+                        <div className="text-xs font-bold text-purple-500 tracking-wider uppercase">Action</div>
                         <div className="text-sm font-bold text-gray-900">{data.label}</div>
                     </div>
                 </div>
                 {/* Status Indicator (Mock) */}
                 <div className="mt-2 flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div>
-                    <span className="text-[10px] text-gray-400">Ready</span>
+                    <span className="text-xs text-gray-400">Ready</span>
                 </div>
             </div>
             <Handle type="source" position={Position.Bottom} isConnectable={isConnectable} className="w-3 h-3 bg-purple-500 border-2 border-white shadow-sm" />
@@ -60,7 +60,7 @@ const WaitNode = memo(({ data, isConnectable }: NodeProps) => {
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <div className="text-[10px] font-bold text-orange-500 tracking-wider uppercase">Wait</div>
+                        <div className="text-xs font-bold text-orange-500 tracking-wider uppercase">Wait</div>
                         <div className="text-md font-bold text-gray-800">
                             {data.delayValue || '24'} <span className="text-xs text-gray-400 font-normal">{data.delayUnit === 'm' ? 'min' : data.delayUnit === 'd' ? 'days' : 'hours'}</span>
                         </div>
@@ -80,20 +80,20 @@ const ConditionNode = memo(({ data, isConnectable }: NodeProps) => {
 
             <div className="w-24 h-24 bg-white border-2 border-gray-200 transform rotate-45 flex items-center justify-center shadow-lg group-hover:border-gray-400 transition-colors">
                 <div className="transform -rotate-45 text-center">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase">Check</div>
+                    <div className="text-xs font-bold text-gray-400 uppercase">Check</div>
                     <div className="text-xs font-bold text-gray-800">If...</div>
                 </div>
             </div>
 
             {/* True Handle */}
             <div className="absolute -right-2 top-1/2 transform -translate-y-1/2">
-                <div className="text-[9px] font-bold text-green-600 bg-white px-1 rounded shadow-sm border border-green-100 absolute -top-5 left-1">Yes</div>
+                <div className="text-xs font-bold text-green-600 bg-white px-1 rounded shadow-sm border border-green-100 absolute -top-5 left-1">Yes</div>
                 <Handle type="source" id="true" position={Position.Right} isConnectable={isConnectable} className="w-3 h-3 bg-green-500 border-2 border-white shadow-sm" />
             </div>
 
             {/* False Handle */}
             <div className="absolute -left-2 top-1/2 transform -translate-y-1/2">
-                <div className="text-[9px] font-bold text-red-600 bg-white px-1 rounded shadow-sm border border-red-100 absolute -top-5 right-1">No</div>
+                <div className="text-xs font-bold text-red-600 bg-white px-1 rounded shadow-sm border border-red-100 absolute -top-5 right-1">No</div>
                 <Handle type="source" id="false" position={Position.Left} isConnectable={isConnectable} className="w-3 h-3 bg-red-500 border-2 border-white shadow-sm" />
             </div>
         </div>
@@ -115,17 +115,17 @@ const AINode = memo(({ data, isConnectable }: NodeProps) => {
                         <Brain size={20} className="animate-pulse" />
                     </div>
                     <div>
-                        <div className="text-[10px] font-bold text-indigo-400 tracking-wider uppercase">AI Agent</div>
+                        <div className="text-xs font-bold text-indigo-400 tracking-wider uppercase">AI Agent</div>
                         <div className="text-sm font-bold text-white">{data.label || 'AI Brain'}</div>
                     </div>
                 </div>
 
                 {/* Details Pill */}
                 <div className="mt-3 flex gap-2">
-                    <span className="text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700">
+                    <span className="text-xs bg-gray-800 text-gray-300 px-2 py-0.5 rounded border border-gray-700">
                         {data.aiTask || 'General Task'}
                     </span>
-                    {data.aiModel && <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700">{data.aiModel}</span>}
+                    {data.aiModel && <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700">{data.aiModel}</span>}
                 </div>
             </div>
 

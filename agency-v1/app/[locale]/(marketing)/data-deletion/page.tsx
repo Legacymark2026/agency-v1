@@ -83,7 +83,7 @@ export default function DataDeletionPage() {
                                 Legacy<span className="text-teal-500">Mark</span>
                             </span>
                         </Link>
-                        <Badge variant="outline" className="border-teal-500/30 bg-teal-500/5 text-teal-400 font-mono text-[10px] uppercase tracking-widest px-3">
+                        <Badge variant="outline" className="border-teal-500/30 bg-teal-500/5 text-teal-400 font-mono text-xs uppercase tracking-widest px-3">
                             Security Hub
                         </Badge>
                     </div>
@@ -173,7 +173,7 @@ export default function DataDeletionPage() {
 
                                     <div className="flex flex-col items-center gap-6 w-full md:w-auto">
                                         <div className="text-center md:text-right hidden md:block">
-                                            <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-1 font-bold">Oficial Support</p>
+                                            <p className="text-xs uppercase tracking-widest text-slate-500 mb-1 font-bold">Oficial Support</p>
                                             <p className="text-white font-mono text-sm">legacymarkcolombia@legacymarksas.com</p>
                                         </div>
                                         <a
@@ -218,7 +218,7 @@ export default function DataDeletionPage() {
                                 <p className="text-slate-400 text-sm leading-relaxed italic">
                                     "Nuestro compromiso con la privacidad va más allá del cumplimiento legal. Diseñamos sistemas que priorizan la soberanía del usuario sobre sus propios datos, asegurando que 'eliminado' signifique exactamente eso."
                                 </p>
-                                <div className="pt-6 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.2em] text-teal-500">
+                                <div className="pt-6 flex items-center justify-between text-xs font-mono uppercase tracking-[0.2em] text-teal-500">
                                     <span>Audit Level 4</span>
                                     <span>DPO Certified</span>
                                 </div>
@@ -232,7 +232,7 @@ export default function DataDeletionPage() {
                         <div className="text-sm text-slate-500 font-mono">
                             © {new Date().getFullYear()} LEGACYMARK SAS. ALL RIGHTS RESERVED.
                         </div>
-                        <div className="flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                        <div className="flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-slate-400">
                             <Link href="/politica-privacidad" className="hover:text-teal-500 transition-colors">Privacy</Link>
                             <Link href="/terms" className="hover:text-teal-500 transition-colors">Terms</Link>
                             <Link href="/contacto" className="hover:text-teal-500 transition-colors">Support</Link>

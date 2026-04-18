@@ -48,7 +48,7 @@ export function CompPlanPanel({ rules, commissions }: { rules: any[], commission
         <div className="mt-6 space-y-3">
           <h4 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
             Recent Activity
-            <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] uppercase font-bold tracking-wider">Clawbacks Active</span>
+            <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-xs uppercase font-bold tracking-wider">Clawbacks Active</span>
           </h4>
           <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
             {commissions.slice(0, 5).map((comm, idx) => (
@@ -61,7 +61,7 @@ export function CompPlanPanel({ rules, commissions }: { rules: any[], commission
                   <span className={`font-mono block ${comm.type === 'CLAWBACK' ? 'text-red-400' : comm.type === 'ACCELERATOR' ? 'text-teal-400' : 'text-slate-200'}`}>
                     {formatCurrency(comm.amount)}
                   </span>
-                  <span className="text-[10px] text-slate-400 uppercase">{comm.type}</span>
+                  <span className="text-xs text-slate-400 uppercase">{comm.type}</span>
                 </div>
               </div>
             ))}

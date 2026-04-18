@@ -136,7 +136,7 @@ export function FileAttachmentButton({ onFilesSelected, maxFiles = 5, maxSizeMB 
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-medium text-zinc-700 dark:text-zinc-200 truncate">{att.file.name}</p>
-                                                <p className="text-[10px] text-zinc-400">{(att.file.size / 1024 / 1024).toFixed(1)} MB</p>
+                                                <p className="text-xs text-zinc-400">{(att.file.size / 1024 / 1024).toFixed(1)} MB</p>
                                             </div>
                                             <button onClick={() => removeAttachment(att.id)} className="p-1 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/50 transition-all">
                                                 <X className="h-3.5 w-3.5 text-red-500" />

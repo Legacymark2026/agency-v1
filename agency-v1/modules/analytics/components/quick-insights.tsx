@@ -35,10 +35,10 @@ export function QuickInsights({ data = [] }: QuickInsightsProps) {
                     <Sparkles size={13} strokeWidth={1.5} className="text-teal-400" />
                 </div>
                 <div>
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Insights Inteligentes</p>
-                    <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Generados por análisis de datos en tiempo real</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Insights Inteligentes</p>
+                    <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Generados por análisis de datos en tiempo real</p>
                 </div>
-                <span className="ml-auto font-mono text-[8px] text-slate-700 uppercase tracking-widest">[AI_INS]</span>
+                <span className="ml-auto font-mono text-xs text-slate-700 uppercase tracking-widest">[AI_INS]</span>
             </div>
 
             {/* Insights grid */}
@@ -63,11 +63,11 @@ export function QuickInsights({ data = [] }: QuickInsightsProps) {
                                     <h4 className="font-bold text-white text-xs mb-1 leading-tight">
                                         {insight.title}
                                     </h4>
-                                    <p className={`text-[10px] text-slate-400 leading-relaxed`}>
+                                    <p className={`text-xs text-slate-400 leading-relaxed`}>
                                         {insight.description}
                                     </p>
                                     {insight.action && (
-                                        <button className={`mt-2 text-[10px] font-black ${colors.text} hover:opacity-80 transition-opacity uppercase tracking-wider`}>
+                                        <button className={`mt-2 text-xs font-black ${colors.text} hover:opacity-80 transition-opacity uppercase tracking-wider`}>
                                             {insight.action} →
                                         </button>
                                     )}

@@ -135,7 +135,7 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
 
             {/* System HUD indicators */}
             <div className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: '1px solid rgba(30,41,59,0.4)' }}>
-                <div className="flex items-center gap-1.5 text-[9px] font-mono text-teal-400 uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-teal-400 uppercase tracking-widest">
                     <Activity size={8} className="text-teal-500" /> SYS: ONLINE
                 </div>
                 <div className="ml-auto flex items-center gap-1">
@@ -160,7 +160,7 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                             {/* Group header with toggle */}
                             <div 
                                 onClick={() => toggleGroup(group.code)}
-                                className={`flex items-center gap-1.5 px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] cursor-pointer hover:bg-slate-800/50 ${colors.label}`}
+                                className={`flex items-center gap-1.5 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.15em] cursor-pointer hover:bg-slate-800/50 ${colors.label}`}
                             >
                                 <span className={`w-1 h-1 rounded-full ${colors.dot} opacity-60`} />
                                 <span className="flex-1 text-left">{group.code}</span>
@@ -180,7 +180,7 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                                             <Link
                                                 key={item.href}
                                                 href={item.href}
-                                                className={`group flex items-center gap-2.5 px-4 py-1.5 text-[11px] font-medium transition-all duration-200 relative ${
+                                                className={`group flex items-center gap-2.5 px-4 py-1.5 text-xs font-medium transition-all duration-200 relative ${
                                                     isActive ? 'bg-slate-800/50' : ''
                                                 }`}
                                                 style={{ color: isActive ? '#ffffff' : 'rgba(148,163,184,0.9)' }}
@@ -208,20 +208,20 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                             <Image src={userInfo.image} alt={userInfo.name ?? "Avatar"} fill className="object-cover" />
                         </div>
                     ) : (
-                        <div className="h-7 w-7 rounded-sm flex items-center justify-center text-[10px] font-black shrink-0 font-mono" style={{ background: 'rgba(13,148,136,0.15)', color: '#14b8a6', border: '1px solid rgba(13,148,136,0.3)' }}>
+                        <div className="h-7 w-7 rounded-sm flex items-center justify-center text-xs font-black shrink-0 font-mono" style={{ background: 'rgba(13,148,136,0.15)', color: '#14b8a6', border: '1px solid rgba(13,148,136,0.3)' }}>
                             {userInfo.name?.[0]?.toUpperCase() ?? "U"}
                         </div>
                     )}
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-[11px] font-semibold text-slate-200 truncate">{userInfo.name}</p>
-                        <p className="text-[9px] font-mono text-slate-600 truncate">{userInfo.email}</p>
+                        <p className="text-xs font-semibold text-slate-200 truncate">{userInfo.name}</p>
+                        <p className="text-xs font-mono text-slate-600 truncate">{userInfo.email}</p>
                     </div>
                 </div>
                 <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 mb-2 font-mono text-[8.5px] font-bold uppercase tracking-widest border rounded-sm ${userInfo.badge.color}`}>
                     <Lock size={7} /> {userInfo.badge.label}
                 </div>
                 <form action={signOutAction}>
-                    <button type="submit" className="w-full flex items-center gap-2 px-2 py-1.5 text-[10px] font-mono uppercase tracking-widest text-slate-600 hover:text-red-400 transition-colors group">
+                    <button type="submit" className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-mono uppercase tracking-widest text-slate-600 hover:text-red-400 transition-colors group">
                         <LogOut size={10} className="group-hover:translate-x-0.5 transition-transform" />
                         LOGOUT
                     </button>

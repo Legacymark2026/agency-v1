@@ -66,10 +66,10 @@ export function LogsTable({ logs }: { logs: Log[] }) {
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
             {/* Table Header */}
             <div className="grid grid-cols-12 items-center px-4 py-3 border-b border-slate-800 bg-slate-950/60">
-                <span className="col-span-4 text-[10px] font-mono uppercase tracking-widest text-slate-500">Evento</span>
-                <span className="col-span-3 text-[10px] font-mono uppercase tracking-widest text-slate-500">Usuario</span>
-                <span className="col-span-3 text-[10px] font-mono uppercase tracking-widest text-slate-500">IP / Dispositivo</span>
-                <span className="col-span-2 text-[10px] font-mono uppercase tracking-widest text-slate-500 text-right">Fecha</span>
+                <span className="col-span-4 text-xs font-mono uppercase tracking-widest text-slate-500">Evento</span>
+                <span className="col-span-3 text-xs font-mono uppercase tracking-widest text-slate-500">Usuario</span>
+                <span className="col-span-3 text-xs font-mono uppercase tracking-widest text-slate-500">IP / Dispositivo</span>
+                <span className="col-span-2 text-xs font-mono uppercase tracking-widest text-slate-500 text-right">Fecha</span>
             </div>
 
             {/* Rows */}
@@ -88,7 +88,7 @@ export function LogsTable({ logs }: { logs: Log[] }) {
                                 <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
                                 <div className="flex flex-col min-w-0">
                                     <span className="text-sm font-medium text-slate-100 truncate">{formatAction(log.action)}</span>
-                                    <span className={`text-[10px] font-mono px-1.5 py-px rounded border w-fit mt-0.5 ${style.badge}`}>
+                                    <span className={`text-xs font-mono px-1.5 py-px rounded border w-fit mt-0.5 ${style.badge}`}>
                                         {category.toUpperCase()}
                                     </span>
                                 </div>
@@ -103,7 +103,7 @@ export function LogsTable({ logs }: { logs: Log[] }) {
                                     <span className="text-xs font-medium text-slate-300 truncate">
                                         {log.user?.name || "Sistema"}
                                     </span>
-                                    <span className="text-[10px] text-slate-600 truncate font-mono">
+                                    <span className="text-xs text-slate-600 truncate font-mono">
                                         {log.user?.email || "anonymous@system"}
                                     </span>
                                 </div>
@@ -113,12 +113,12 @@ export function LogsTable({ logs }: { logs: Log[] }) {
                             <div className="col-span-3 flex flex-col gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Globe size={11} className="text-slate-600 flex-shrink-0" />
-                                    <span className="text-[11px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                                    <span className="text-xs font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
                                         {log.ipAddress || "—"}
                                     </span>
                                 </div>
                                 {log.userAgent && (
-                                    <span className="text-[9px] text-slate-600 truncate font-mono max-w-[160px]" title={log.userAgent}>
+                                    <span className="text-xs text-slate-600 truncate font-mono max-w-[160px]" title={log.userAgent}>
                                         {log.userAgent.split(" ")[0]}
                                     </span>
                                 )}
@@ -126,10 +126,10 @@ export function LogsTable({ logs }: { logs: Log[] }) {
 
                             {/* Time */}
                             <div className="col-span-2 flex flex-col items-end gap-1">
-                                <span className="text-[11px] text-slate-400 font-mono">
+                                <span className="text-xs text-slate-400 font-mono">
                                     {format(new Date(log.createdAt), "HH:mm:ss")}
                                 </span>
-                                <span className="text-[9px] text-slate-600">
+                                <span className="text-xs text-slate-600">
                                     {format(new Date(log.createdAt), "dd MMM yyyy", { locale: es })}
                                 </span>
                             </div>

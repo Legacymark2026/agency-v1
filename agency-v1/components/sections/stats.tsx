@@ -77,7 +77,7 @@ export function Stats() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
                 {/* Section Header */}
                 <div className="flex justify-center mb-24">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono uppercase tracking-widest shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono uppercase tracking-widest shadow-sm">
                         <Activity size={12} strokeWidth={1.5} />
                         {t('badge')}
                     </div>
@@ -110,7 +110,7 @@ export function Stats() {
                                     <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors font-mono">
                                         {stat.label}
                                     </h3>
-                                    <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">
+                                    <p className="text-xs text-slate-400 font-mono tracking-widest uppercase">
                                         [{stat.id}] :: {stat.desc}
                                     </p>
                                 </div>

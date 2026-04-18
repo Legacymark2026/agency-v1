@@ -70,7 +70,7 @@ export function KanbanGlobalSearch({ projectId, onSelectTask, onClose }: GlobalS
             className="flex-1 bg-transparent text-white placeholder-slate-500 outline-none text-sm"
           />
           {query && <button onClick={() => { setQuery(""); setResults([]); }} className="text-slate-500 hover:text-slate-300"><X className="w-4 h-4" /></button>}
-          <kbd className="text-[10px] text-slate-600 border border-slate-700 rounded px-1.5 py-0.5">ESC</kbd>
+          <kbd className="text-xs text-slate-600 border border-slate-700 rounded px-1.5 py-0.5">ESC</kbd>
         </div>
 
         {/* Results */}
@@ -96,10 +96,10 @@ export function KanbanGlobalSearch({ projectId, onSelectTask, onClose }: GlobalS
                 <Icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-200 truncate">{r.title}</p>
-                  <p className="text-[10px] text-slate-500 truncate">{r.subtitle}</p>
+                  <p className="text-xs text-slate-500 truncate">{r.subtitle}</p>
                 </div>
                 {r.priority && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ color: PRIORITY_COLORS[r.priority], background: `${PRIORITY_COLORS[r.priority]}20` }}>
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ color: PRIORITY_COLORS[r.priority], background: `${PRIORITY_COLORS[r.priority]}20` }}>
                     {r.priority}
                   </span>
                 )}
@@ -110,7 +110,7 @@ export function KanbanGlobalSearch({ projectId, onSelectTask, onClose }: GlobalS
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 border-t border-slate-800 flex items-center gap-4 text-[10px] text-slate-600">
+        <div className="px-4 py-2 border-t border-slate-800 flex items-center gap-4 text-xs text-slate-600">
           <span><kbd className="border border-slate-700 rounded px-1">↑↓</kbd> navegar</span>
           <span><kbd className="border border-slate-700 rounded px-1">Enter</kbd> abrir</span>
           <span><kbd className="border border-slate-700 rounded px-1">Esc</kbd> cerrar</span>

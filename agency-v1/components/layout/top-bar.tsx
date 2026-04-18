@@ -116,7 +116,7 @@ export function TopBar() {
                         >
                             <Link 
                                 href="/contacto"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-[10px] font-bold rounded-full hover:shadow-lg hover:shadow-teal-500/30 transition-all hover:scale-105"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold rounded-full hover:shadow-lg hover:shadow-teal-500/30 transition-all hover:scale-105"
                             >
                                 <span>Contáctanos</span>
                                 <ChevronRight className="w-3 h-3" />

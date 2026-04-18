@@ -78,7 +78,7 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
           <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-slate-950/80 backdrop-blur-sm border-b border-slate-800">
             <div className="flex items-center gap-2">
               <span className="text-slate-400 text-xs">Asset Proofing</span>
-              {assetVersion && <span className="text-[10px] px-2 py-0.5 bg-teal-500/20 text-teal-400 rounded font-bold">{assetVersion}</span>}
+              {assetVersion && <span className="text-xs px-2 py-0.5 bg-teal-500/20 text-teal-400 rounded font-bold">{assetVersion}</span>}
             </div>
             <div className="flex items-center gap-2">
               <a href={assetUrl} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-300 transition-colors">
@@ -110,7 +110,7 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
                 onMouseLeave={() => setHovered(null)}
                 onClick={e => { e.stopPropagation(); }}
               >
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 cursor-pointer transition-all ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black border-2 cursor-pointer transition-all ${
                   ann.resolved
                     ? "bg-teal-500 border-teal-400 text-white"
                     : "bg-red-500 border-red-400 text-white hover:scale-125"
@@ -120,9 +120,9 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
                 {hovered === ann.id && (
                   <div className="absolute z-20 left-8 top-0 w-56 bg-slate-900 border border-slate-700 rounded-xl p-3 shadow-2xl">
                     <p className="text-xs text-slate-300 leading-relaxed">{ann.comment}</p>
-                    <p className="text-[10px] text-slate-600 mt-1">{ann.author?.name || `${ann.author?.firstName} ${ann.author?.lastName}`}</p>
+                    <p className="text-xs text-slate-600 mt-1">{ann.author?.name || `${ann.author?.firstName} ${ann.author?.lastName}`}</p>
                     {!ann.resolved && (
-                      <button onClick={() => handleResolve(ann.id)} className="mt-2 flex items-center gap-1 text-[10px] text-teal-400 hover:text-teal-300">
+                      <button onClick={() => handleResolve(ann.id)} className="mt-2 flex items-center gap-1 text-xs text-teal-400 hover:text-teal-300">
                         <CheckCircle2 className="w-3 h-3" /> Marcar resuelto
                       </button>
                     )}
@@ -134,7 +134,7 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
             {/* Pending pin */}
             {pending && (
               <div
-                className="absolute w-6 h-6 rounded-full bg-yellow-500 border-2 border-yellow-400 flex items-center justify-center text-[10px] font-black text-white animate-pulse"
+                className="absolute w-6 h-6 rounded-full bg-yellow-500 border-2 border-yellow-400 flex items-center justify-center text-xs font-black text-white animate-pulse"
                 style={{ left: `${pending.x}%`, top: `${pending.y}%`, transform: "translate(-50%, -50%)" }}
                 onClick={e => e.stopPropagation()}
               >
@@ -144,7 +144,7 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
           </div>
 
           {isImage && (
-            <div className="absolute bottom-3 left-0 right-0 text-center text-[10px] text-slate-600 pointer-events-none">
+            <div className="absolute bottom-3 left-0 right-0 text-center text-xs text-slate-600 pointer-events-none">
               Click en la imagen para agregar un comentario de revisión
             </div>
           )}
@@ -157,7 +157,7 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
               <MessageSquare className="w-4 h-4 text-teal-400" />
               Revisiones ({visible.length})
             </h3>
-            <button onClick={() => setShowResolved(v => !v)} className={`text-[10px] transition-colors ${showResolved ? "text-teal-400" : "text-slate-500"}`}>
+            <button onClick={() => setShowResolved(v => !v)} className={`text-xs transition-colors ${showResolved ? "text-teal-400" : "text-slate-500"}`}>
               {showResolved ? "Ocultar resueltos" : "Ver resueltos"}
             </button>
           </div>
@@ -165,7 +165,7 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
           {/* Pending annotation form */}
           {pending && (
             <div className="p-3 bg-yellow-500/5 border-b border-yellow-500/20 space-y-2">
-              <p className="text-[10px] text-yellow-400 font-medium">Nueva revisión en punto #{annotations.length + 1}</p>
+              <p className="text-xs text-yellow-400 font-medium">Nueva revisión en punto #{annotations.length + 1}</p>
               <textarea
                 autoFocus
                 value={comment}
@@ -194,17 +194,17 @@ export function AssetProofing({ taskId, assetUrl, assetVersion, onClose }: Asset
             {visible.map((ann, idx) => (
               <div key={ann.id} className={`p-3 space-y-1 ${ann.resolved ? "opacity-50" : ""}`} onMouseEnter={() => setHovered(ann.id)} onMouseLeave={() => setHovered(null)}>
                 <div className="flex items-start gap-2">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 ${ann.resolved ? "bg-teal-500/20 text-teal-400" : "bg-red-500 text-white"}`}>{idx + 1}</span>
-                  <p className="text-[11px] text-slate-300 leading-relaxed flex-1">{ann.comment}</p>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5 ${ann.resolved ? "bg-teal-500/20 text-teal-400" : "bg-red-500 text-white"}`}>{idx + 1}</span>
+                  <p className="text-xs text-slate-300 leading-relaxed flex-1">{ann.comment}</p>
                 </div>
                 <div className="flex items-center justify-between pl-7">
-                  <span className="text-[9px] text-slate-600">{ann.author?.name || `${ann.author?.firstName} ${ann.author?.lastName}`}</span>
+                  <span className="text-xs text-slate-600">{ann.author?.name || `${ann.author?.firstName} ${ann.author?.lastName}`}</span>
                   {!ann.resolved && (
-                    <button onClick={() => handleResolve(ann.id)} className="text-[9px] text-teal-500 hover:text-teal-400 flex items-center gap-0.5">
+                    <button onClick={() => handleResolve(ann.id)} className="text-xs text-teal-500 hover:text-teal-400 flex items-center gap-0.5">
                       <CheckCircle2 className="w-2.5 h-2.5" /> Resolver
                     </button>
                   )}
-                  {ann.resolved && <span className="text-[9px] text-teal-500 flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Resuelto</span>}
+                  {ann.resolved && <span className="text-xs text-teal-500 flex items-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Resuelto</span>}
                 </div>
               </div>
             ))}

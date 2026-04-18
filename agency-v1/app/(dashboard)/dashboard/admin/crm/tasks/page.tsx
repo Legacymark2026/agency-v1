@@ -7,7 +7,7 @@ export default async function TasksPage() {
     const company = await prisma.company.findFirst();
     if (!company) return (
         <div className="ds-page flex items-center justify-center">
-            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
+            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
         </div>
     );
 
@@ -51,14 +51,14 @@ export default async function TasksPage() {
                         </div>
                     </div>
                 </div>
-                <span className="font-mono text-[9px] text-slate-700 uppercase tracking-widest hidden md:block">[TSK_BOARD]</span>
+                <span className="font-mono text-xs text-slate-700 uppercase tracking-widest hidden md:block">[TSK_BOARD]</span>
             </div>
 
             {/* KPI Strip */}
             <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {kpis.map(k => (
                     <div key={k.label} className="ds-kpi group">
-                        <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest">[{k.code}]</span>
+                        <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest">[{k.code}]</span>
                         <div className="relative z-10">
                             <div className="ds-icon-box w-9 h-9 mb-3">
                                 <k.icon size={14} strokeWidth={1.5} className={`transition-colors ${k.code === 'VNC' ? 'text-red-500' : 'text-slate-500 group-hover:text-teal-400'}`} />

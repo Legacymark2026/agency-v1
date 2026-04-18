@@ -18,7 +18,7 @@ export default async function CommissionsPage() {
         const cu = await prisma.companyUser.findFirst({ where: { userId: session.user.id } });
         if (!cu) return (
             <div className="ds-page flex items-center justify-center">
-                <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">Empresa no configurada</p>
+                <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">Empresa no configurada</p>
             </div>
         );
 
@@ -90,7 +90,7 @@ export default async function CommissionsPage() {
                     ].map(k => (
                         <div key={k.label} className="ds-kpi group">
                             <div className="flex items-center justify-between mb-3">
-                                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
+                                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
                                 <div className="ds-icon-box w-7 h-7"><k.icon size={12} strokeWidth={1.5} className={k.color} /></div>
                             </div>
                             <p className="ds-stat-value">{k.value}</p>
@@ -101,7 +101,7 @@ export default async function CommissionsPage() {
                 {/* By Rep */}
                 {Object.keys(byUser).length > 0 && (
                     <div className="relative z-10 ds-section">
-                        <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Por Vendedor</p>
+                        <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Por Vendedor</p>
                         <div className="space-y-3">
                             {Object.entries(byUser).sort(([, a], [, b]) => b.total - a.total).map(([userId, data]) => (
                                 <div key={userId} className="flex items-center gap-4">
@@ -110,12 +110,12 @@ export default async function CommissionsPage() {
                                         {data.name[0].toUpperCase()}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="font-mono text-[10px] font-bold text-slate-300">{data.name}</p>
-                                        <p className="font-mono text-[8px] text-slate-600">{data.count} pagos</p>
+                                        <p className="font-mono text-xs font-bold text-slate-300">{data.name}</p>
+                                        <p className="font-mono text-xs text-slate-600">{data.count} pagos</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-mono font-black text-sm text-teal-400">${(data.total / 1000).toFixed(2)}k</p>
-                                        <p className="font-mono text-[8px] text-amber-500">${(data.pending / 1000).toFixed(2)}k pendiente</p>
+                                        <p className="font-mono text-xs text-amber-500">${(data.pending / 1000).toFixed(2)}k pendiente</p>
                                     </div>
                                 </div>
                             ))}
@@ -125,16 +125,16 @@ export default async function CommissionsPage() {
 
                 {/* Commission Rules */}
                 <div className="relative z-10 ds-section">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Reglas de Comisión</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Reglas de Comisión</p>
                     {rules.length === 0 ? (
-                        <p className="font-mono text-[9px] text-slate-600 text-center py-6">Sin reglas configuradas. Las comisiones se crean automáticamente al ganar un deal.</p>
+                        <p className="font-mono text-xs text-slate-600 text-center py-6">Sin reglas configuradas. Las comisiones se crean automáticamente al ganar un deal.</p>
                     ) : (
                         <div className="space-y-2">
                             {rules.map(rule => (
                                 <div key={rule.id} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'rgba(30,41,59,0.4)', border: '1px solid rgba(30,41,59,0.8)' }}>
                                     <div>
-                                        <p className="font-mono text-[10px] font-bold text-slate-200">{rule.label ?? ((rule.user as any)?.name ?? "Regla Global")}</p>
-                                        <p className="font-mono text-[8px] text-slate-600">Mín. deal: ${rule.minDealValue.toLocaleString()}{rule.capAmount ? ` · Cap: $${rule.capAmount.toLocaleString()}` : ""}</p>
+                                        <p className="font-mono text-xs font-bold text-slate-200">{rule.label ?? ((rule.user as any)?.name ?? "Regla Global")}</p>
+                                        <p className="font-mono text-xs text-slate-600">Mín. deal: ${rule.minDealValue.toLocaleString()}{rule.capAmount ? ` · Cap: $${rule.capAmount.toLocaleString()}` : ""}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <span className="font-mono font-black text-xl text-teal-400">{(rule.rate * 100).toFixed(1)}%</span>
@@ -148,20 +148,20 @@ export default async function CommissionsPage() {
 
                 {/* Recent Payments */}
                 <div className="relative z-10 ds-section">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Historial de Pagos</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Historial de Pagos</p>
                     <div className="space-y-2">
                         {payments.length === 0 ? (
-                            <p className="font-mono text-[9px] text-slate-600 text-center py-6">Sin historial de pagos aún.</p>
+                            <p className="font-mono text-xs text-slate-600 text-center py-6">Sin historial de pagos aún.</p>
                         ) : payments.slice(0, 20).map(p => {
                             const st = STATUS_MAP[p.status] ?? STATUS_MAP.PENDING;
                             return (
                                 <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg transition-all" style={{ background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(30,41,59,0.6)' }}>
                                     <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: st.color }} />
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-mono text-[10px] text-slate-300 truncate">{(p.deal as any).title}</p>
-                                        <p className="font-mono text-[8px] text-slate-600">{(p.user as any).name} · {(p.rate * 100).toFixed(1)}%</p>
+                                        <p className="font-mono text-xs text-slate-300 truncate">{(p.deal as any).title}</p>
+                                        <p className="font-mono text-xs text-slate-600">{(p.user as any).name} · {(p.rate * 100).toFixed(1)}%</p>
                                     </div>
-                                    <span className="font-mono text-[9px] font-bold flex-shrink-0" style={{ color: st.color }}>{st.label}</span>
+                                    <span className="font-mono text-xs font-bold flex-shrink-0" style={{ color: st.color }}>{st.label}</span>
                                     <p className="font-mono font-black text-sm text-slate-100 flex-shrink-0">${p.amount.toFixed(0)}</p>
                                     <CommissionActions paymentId={p.id} currentStatus={p.status} />
                                 </div>

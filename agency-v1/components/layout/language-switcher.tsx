@@ -24,7 +24,7 @@ export function LanguageSwitcher() {
                 onClick={() => switchLocale('es')}
                 disabled={isPending}
                 aria-label="Español"
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold transition-all duration-300 font-mono tracking-widest ${locale === 'es'
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 font-mono tracking-widest ${locale === 'es'
                         ? 'bg-teal-500 text-slate-950 shadow-[0_0_15px_rgba(20,184,166,0.4)]'
                         : 'text-slate-500 hover:text-slate-300'
                     }`}
@@ -36,7 +36,7 @@ export function LanguageSwitcher() {
                 onClick={() => switchLocale('en')}
                 disabled={isPending}
                 aria-label="English"
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold transition-all duration-300 font-mono tracking-widest ${locale === 'en'
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 font-mono tracking-widest ${locale === 'en'
                         ? 'bg-teal-500 text-slate-950 shadow-[0_0_15px_rgba(20,184,166,0.4)]'
                         : 'text-slate-500 hover:text-slate-300'
                     }`}

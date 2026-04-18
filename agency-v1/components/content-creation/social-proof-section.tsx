@@ -205,7 +205,7 @@ export default function SocialProofSection() {
                                                 <span className="font-bold text-slate-900 text-sm">{t.author}</span>
                                                 <span className="text-slate-400 text-xs ml-2">{t.role} · {t.company}</span>
                                             </div>
-                                            <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{t.platform}</span>
+                                            <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{t.platform}</span>
                                         </div>
                                         <p className={`text-sm leading-relaxed transition-all duration-300 ${activeTestimonial === idx ? "text-slate-700" : "text-slate-500 line-clamp-2"}`}>
                                             {t.text}
@@ -241,7 +241,7 @@ export default function SocialProofSection() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-sky-500/10" />
                                 <div className="absolute top-0 right-0 w-48 h-48 bg-teal-400/10 blur-[60px] rounded-full" />
 
-                                <span className="relative z-10 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-400 text-[10px] font-bold tracking-widest uppercase mb-4">
+                                <span className="relative z-10 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-400 text-xs font-bold tracking-widest uppercase mb-4">
                                     <Zap className="w-2.5 h-2.5" /> Case Study Destacado
                                 </span>
                                 <h3 className="relative z-10 text-2xl font-black text-white mb-1">Campaña Black Friday</h3>
@@ -260,7 +260,7 @@ export default function SocialProofSection() {
                                         />
                                     ))}
                                 </div>
-                                <p className="relative z-10 text-slate-500 text-[10px] mt-2 font-mono">Revenue · 30 días de campaña</p>
+                                <p className="relative z-10 text-slate-500 text-xs mt-2 font-mono">Revenue · 30 días de campaña</p>
                             </div>
 
                             {/* Stats */}
@@ -276,7 +276,7 @@ export default function SocialProofSection() {
                                                 <s.icon className="w-4 h-4" />
                                             </div>
                                             <div className="text-xl font-black text-slate-900">{s.value}</div>
-                                            <div className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</div>
+                                            <div className="text-xs text-slate-400 uppercase tracking-wider">{s.label}</div>
                                         </div>
                                     ))}
                                 </div>

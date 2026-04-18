@@ -29,7 +29,7 @@ export function SalesFunnel({ data }: FunnelProps) {
     if (!funnelData.length) {
         return (
             <div className="ds-section h-full flex flex-col justify-center items-center">
-                <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Sin datos de progresión de deals_</p>
+                <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Sin datos de progresión de deals_</p>
             </div>
         );
     }
@@ -46,8 +46,8 @@ export function SalesFunnel({ data }: FunnelProps) {
                         <Filter size={14} strokeWidth={1.5} className="text-teal-400" />
                     </div>
                     <div>
-                        <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Embudo de Ventas</p>
-                        <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Conversión por etapa · Drop-off rate</p>
+                        <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Embudo de Ventas</p>
+                        <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Conversión por etapa · Drop-off rate</p>
                     </div>
                 </div>
                 <Link href="/dashboard/admin/crm/pipeline" className="ds-icon-box w-8 h-8 hover:border-teal-800 transition-all">
@@ -60,7 +60,7 @@ export function SalesFunnel({ data }: FunnelProps) {
                 {funnelData.map((stage, idx) => (
                     <div key={stage.name} className="relative w-full">
                         <div className="flex justify-between items-end mb-1.5">
-                            <span className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-widest">{stage.name}</span>
+                            <span className="font-mono text-xs font-bold text-slate-500 uppercase tracking-widest">{stage.name}</span>
                             <span className="font-mono text-sm font-black text-slate-200">{stage.value}</span>
                         </div>
 
@@ -92,7 +92,7 @@ export function SalesFunnel({ data }: FunnelProps) {
                                 style={{ background: 'rgba(2,6,23,0.95)', border: '1px solid rgba(239,68,68,0.3)' }}
                             >
                                 <TrendingDown className="w-2.5 h-2.5 text-red-400" />
-                                <span className="font-mono text-[8px] font-bold text-red-400">-{stage.drop.toFixed(1)}%</span>
+                                <span className="font-mono text-xs font-bold text-red-400">-{stage.drop.toFixed(1)}%</span>
                             </motion.div>
                         )}
                     </div>

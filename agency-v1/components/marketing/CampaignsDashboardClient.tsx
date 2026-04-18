@@ -135,16 +135,16 @@ export default function CampaignsDashboardClient({ initialCampaigns, serverChart
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'ACTIVE': return (
-                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 border font-mono text-[10px] uppercase gap-1">
+                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 border font-mono text-xs uppercase gap-1">
                     <Play size={9} /> Active
                 </Badge>
             );
             case 'PAUSED': return (
-                <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 border font-mono text-[10px] uppercase gap-1">
+                <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 border font-mono text-xs uppercase gap-1">
                     <Pause size={9} /> Paused
                 </Badge>
             );
-            default: return <Badge className="bg-slate-800 text-slate-400 border-slate-700 border font-mono text-[10px]">{status}</Badge>;
+            default: return <Badge className="bg-slate-800 text-slate-400 border-slate-700 border font-mono text-xs">{status}</Badge>;
         }
     };
 
@@ -162,7 +162,7 @@ export default function CampaignsDashboardClient({ initialCampaigns, serverChart
             <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400">Gasto vs. Conversiones — Últimos 7 Días</h3>
-                    <span className="text-[10px] font-mono text-emerald-500 flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-sm border border-emerald-500/20"><Zap size={10} /> Live Data Sync</span>
+                    <span className="text-xs font-mono text-emerald-500 flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-sm border border-emerald-500/20"><Zap size={10} /> Live Data Sync</span>
                 </div>
                 <div className="h-[120px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -229,19 +229,19 @@ export default function CampaignsDashboardClient({ initialCampaigns, serverChart
                 <Table>
                     <TableHeader>
                         <TableRow className="border-slate-800 hover:bg-transparent">
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest py-3">
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest py-3">
                                 <button onClick={() => handleSort('name')} className="flex items-center gap-1">Campaña {getSortIcon('name')}</button>
                             </TableHead>
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest">Plataforma</TableHead>
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest">Estado</TableHead>
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest text-right">Presupuesto</TableHead>
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest text-right">
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest">Plataforma</TableHead>
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest">Estado</TableHead>
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest text-right">Presupuesto</TableHead>
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest text-right">
                                 <button onClick={() => handleSort('spend')} className="flex items-center gap-1 ml-auto">Gasto {getSortIcon('spend')}</button>
                             </TableHead>
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest text-right">
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest text-right">
                                 <button onClick={() => handleSort('conversions')} className="flex items-center gap-1 ml-auto">Conv. / CPA {getSortIcon('conversions')}</button>
                             </TableHead>
-                            <TableHead className="text-slate-500 font-mono text-[10px] uppercase tracking-widest w-[80px]">Reglas</TableHead>
+                            <TableHead className="text-slate-500 font-mono text-xs uppercase tracking-widest w-[80px]">Reglas</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -259,7 +259,7 @@ export default function CampaignsDashboardClient({ initialCampaigns, serverChart
                                     <TableCell className="py-3">
                                         <div className="flex flex-col">
                                             <span className="text-sm font-medium text-slate-100 truncate max-w-[240px]">{camp.name}</span>
-                                            <span className="text-[10px] text-slate-600 font-mono mt-0.5">ID: {camp.code}</span>
+                                            <span className="text-xs text-slate-600 font-mono mt-0.5">ID: {camp.code}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>{getPlatformBadge(camp.platform)}</TableCell>
@@ -283,7 +283,7 @@ export default function CampaignsDashboardClient({ initialCampaigns, serverChart
                                     <TableCell className="text-right">
                                         <div className="flex flex-col items-end">
                                             <span className="text-sm font-bold text-emerald-400">{camp.conversions}</span>
-                                            <span className="text-[10px] text-slate-500 font-mono">CPA: ${cpa.toFixed(2)}</span>
+                                            <span className="text-xs text-slate-500 font-mono">CPA: ${cpa.toFixed(2)}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -326,10 +326,10 @@ function KpiCard({ icon, label, value, sub, color }: { icon: React.ReactNode; la
         <div className={`rounded-xl border p-4 flex flex-col gap-2 ${ring[color]}`}>
             <div className="flex items-center gap-2">
                 <div className="bg-slate-950 p-1.5 rounded-md border border-slate-800">{icon}</div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">{label}</span>
+                <span className="text-xs font-mono uppercase tracking-widest text-slate-400">{label}</span>
             </div>
             <span className="text-2xl font-bold text-slate-100 leading-none">{value}</span>
-            <span className="text-[11px] text-slate-500">{sub}</span>
+            <span className="text-xs text-slate-500">{sub}</span>
         </div>
     );
 }

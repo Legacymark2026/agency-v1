@@ -90,7 +90,7 @@ export function ABTestDashboard({ abTestId, onWinnerDeclared }: ABTestDashboardP
                             className={cn('relative p-4 rounded-2xl border transition-all', isWinner ? 'border-yellow-500/50 bg-yellow-500/5' : isLeader ? 'border-violet-500/50 bg-violet-500/5' : 'border-white/8 bg-white/2')}>
 
                             {(isWinner || isLeader) && (
-                                <div className={cn('absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border', isWinner ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-300' : 'bg-violet-500/20 border-violet-500/40 text-violet-300')}>
+                                <div className={cn('absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border', isWinner ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-300' : 'bg-violet-500/20 border-violet-500/40 text-violet-300')}>
                                     {isWinner ? <Trophy className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
                                     {isWinner ? 'GANADOR' : `#${i + 1} LÍDER`}
                                 </div>
@@ -104,7 +104,7 @@ export function ABTestDashboard({ abTestId, onWinnerDeclared }: ABTestDashboardP
                             )}
 
                             <p className="font-semibold text-white text-sm mb-3">{variant.name}</p>
-                            <p className="text-[10px] text-gray-500 mb-3">Peso: {variant.weight}%</p>
+                            <p className="text-xs text-gray-500 mb-3">Peso: {variant.weight}%</p>
 
                             {/* Metrics */}
                             <div className="space-y-2.5">
@@ -115,7 +115,7 @@ export function ABTestDashboard({ abTestId, onWinnerDeclared }: ABTestDashboardP
                                 ].map((m) => (
                                     <div key={m.label}>
                                         <div className="flex items-center justify-between mb-1">
-                                            <span className="flex items-center gap-1 text-[10px] text-gray-500">{m.icon}{m.label}</span>
+                                            <span className="flex items-center gap-1 text-xs text-gray-500">{m.icon}{m.label}</span>
                                             <span className={cn('text-xs font-bold', m.highlight ? 'text-emerald-400' : 'text-white')}>{m.value}</span>
                                         </div>
                                         {m.label === 'Impresiones' && (

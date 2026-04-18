@@ -22,7 +22,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 export default async function AutomationPage() {
     const company = await prisma.company.findFirst();
-    if (!company) return <div className="ds-page flex items-center justify-center"><p className="font-mono text-[9px] text-slate-600">Empresa no configurada</p></div>;
+    if (!company) return <div className="ds-page flex items-center justify-center"><p className="font-mono text-xs text-slate-600">Empresa no configurada</p></div>;
 
     const rules = await listAutomationRules(company.id);
 
@@ -63,7 +63,7 @@ export default async function AutomationPage() {
                 ].map(k => (
                     <div key={k.label} className="ds-kpi group">
                         <div className="flex items-center justify-between mb-3">
-                            <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
+                            <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
                             <div className="ds-icon-box w-7 h-7"><k.icon size={12} strokeWidth={1.5} className={k.color} /></div>
                         </div>
                         <p className="ds-stat-value">{k.value}</p>
@@ -74,7 +74,7 @@ export default async function AutomationPage() {
             {/* Cron info */}
             <div className="relative z-10 flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(30,41,59,0.3)', border: '1px solid rgba(30,41,59,0.8)' }}>
                 <Clock size={14} className="text-teal-400 shrink-0" />
-                <p className="font-mono text-[9px] text-slate-500">
+                <p className="font-mono text-xs text-slate-500">
                     El motor de automatización se ejecuta cada hora via <code className="text-teal-400">GET /api/crm/run-automation?secret=CRON_SECRET</code>.
                     Configura tu cron en Vercel, Railway, o cualquier scheduler.
                 </p>
@@ -82,12 +82,12 @@ export default async function AutomationPage() {
 
             {/* Rules List */}
             <div className="relative z-10 space-y-4">
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Reglas Configuradas</p>
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Reglas Configuradas</p>
                 {rules.length === 0 ? (
                     <div className="ds-section h-32 flex flex-col items-center justify-center text-center">
                         <Zap size={24} className="text-slate-700 mb-3" />
-                        <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">Sin reglas de automatización</p>
-                        <p className="font-mono text-[8px] text-slate-700 mt-1">Crea tu primera regla para automatizar el pipeline</p>
+                        <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">Sin reglas de automatización</p>
+                        <p className="font-mono text-xs text-slate-700 mt-1">Crea tu primera regla para automatizar el pipeline</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -97,22 +97,22 @@ export default async function AutomationPage() {
                                     <div className="flex items-start gap-3">
                                         <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${rule.isActive ? "bg-teal-400 shadow-[0_0_8px_rgba(13,148,136,0.5)]" : "bg-slate-700"}`} />
                                         <div>
-                                            <p className="font-mono text-[11px] font-bold text-slate-200">{rule.name}</p>
-                                            {rule.description && <p className="font-mono text-[9px] text-slate-600 mt-0.5">{rule.description}</p>}
+                                            <p className="font-mono text-xs font-bold text-slate-200">{rule.name}</p>
+                                            {rule.description && <p className="font-mono text-xs text-slate-600 mt-0.5">{rule.description}</p>}
                                             <div className="flex items-center gap-3 mt-2">
-                                                <span className="font-mono text-[9px] px-2 py-0.5 rounded-sm text-violet-400" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
+                                                <span className="font-mono text-xs px-2 py-0.5 rounded-sm text-violet-400" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
                                                     SI: {TRIGGER_LABELS[rule.triggerType] ?? rule.triggerType}{rule.triggerDays ? ` (${rule.triggerDays}d)` : ""}
                                                 </span>
-                                                <span className="text-slate-600 font-mono text-[9px]">→</span>
-                                                <span className="font-mono text-[9px] px-2 py-0.5 rounded-sm text-sky-400" style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>
+                                                <span className="text-slate-600 font-mono text-xs">→</span>
+                                                <span className="font-mono text-xs px-2 py-0.5 rounded-sm text-sky-400" style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>
                                                     {ACTION_LABELS[rule.actionType] ?? rule.actionType}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <p className="font-mono text-[9px] text-slate-600">{rule.executionCount} ejecuciones</p>
-                                        {rule.lastRunAt && <p className="font-mono text-[8px] text-slate-700">{new Date(rule.lastRunAt).toLocaleDateString()}</p>}
+                                        <p className="font-mono text-xs text-slate-600">{rule.executionCount} ejecuciones</p>
+                                        {rule.lastRunAt && <p className="font-mono text-xs text-slate-700">{new Date(rule.lastRunAt).toLocaleDateString()}</p>}
                                     </div>
                                 </div>
                                 {rule.logs.length > 0 && (
@@ -120,7 +120,7 @@ export default async function AutomationPage() {
                                         {rule.logs.map(log => (
                                             <div key={log.id} className="flex items-center gap-2">
                                                 {log.result === "SUCCESS" ? <CheckCircle size={10} className="text-teal-400" /> : <XCircle size={10} className="text-red-400" />}
-                                                <p className="font-mono text-[8px] text-slate-600">{log.message}</p>
+                                                <p className="font-mono text-xs text-slate-600">{log.message}</p>
                                             </div>
                                         ))}
                                     </div>

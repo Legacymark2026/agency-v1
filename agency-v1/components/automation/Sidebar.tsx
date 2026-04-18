@@ -285,7 +285,7 @@ function Section({ title, description, children }: { title: string, description?
         <div>
             <div className="mb-3">
                 <h3 className="text-xs font-bold text-white drop-shadow-sm uppercase tracking-wider">{title}</h3>
-                {description && <p className="text-[10px] text-gray-400">{description}</p>}
+                {description && <p className="text-xs text-gray-400">{description}</p>}
             </div>
             <div className="space-y-2">
                 {children}

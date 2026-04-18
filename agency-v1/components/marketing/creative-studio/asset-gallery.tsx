@@ -186,12 +186,12 @@ export function AssetGallery({ campaignId, onAssetSelected, showUpload = true }:
 
                                     {/* Badges */}
                                     <div className="absolute top-2 left-2 flex gap-1">
-                                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium',
+                                        <span className={cn('text-xs px-1.5 py-0.5 rounded font-medium',
                                             isVideo ? 'bg-pink-500/80 text-white' : 'bg-violet-500/80 text-white')}>
                                             {isVideo ? 'VIDEO' : 'IMG'}
                                         </span>
                                         {Boolean(meta?.platform) && (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-gray-300">
+                                            <span className="text-xs px-1.5 py-0.5 rounded bg-black/60 text-gray-300">
                                                 {String(meta?.platform).replace('_ADS', '')}
                                             </span>
                                         )}
@@ -206,11 +206,11 @@ export function AssetGallery({ campaignId, onAssetSelected, showUpload = true }:
 
                                 {/* Footer */}
                                 <div className="p-2 bg-black/60">
-                                    <p className="text-[10px] text-gray-400 truncate">
+                                    <p className="text-xs text-gray-400 truncate">
                                         {asset.name ?? (meta?.originalPrompt ? String(meta.originalPrompt).slice(0, 40) + '...' : 'Asset')}
                                     </p>
                                     {asset.width && asset.height && (
-                                        <p className="text-[10px] text-gray-600">{asset.width}×{asset.height}</p>
+                                        <p className="text-xs text-gray-600">{asset.width}×{asset.height}</p>
                                     )}
                                 </div>
                             </div>

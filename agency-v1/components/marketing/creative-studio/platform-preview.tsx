@@ -57,18 +57,18 @@ function FacebookMockup({ imageUrl, headline, description }: { imageUrl?: string
                         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">M</div>
                         <div>
                             <p className="text-xs font-semibold text-gray-900 leading-none">Tu Empresa</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">Publicidad · 🌐</p>
+                            <p className="text-xs text-gray-400 mt-0.5">Publicidad · 🌐</p>
                         </div>
                         <div className="ml-auto text-gray-400 text-lg">···</div>
                     </div>
                     {description && <p className="px-3 pb-2 text-xs text-gray-700 leading-snug">{description}</p>}
                     <div className="relative aspect-square bg-gradient-to-br from-violet-400 to-indigo-600">
                         {imageUrl && <Image src={imageUrl} alt="Ad" fill className="object-cover" unoptimized />}
-                        <div className="absolute top-2 right-2 bg-black/20 text-white text-[9px] px-2 py-0.5 rounded-full backdrop-blur-sm">Patrocinado</div>
+                        <div className="absolute top-2 right-2 bg-black/20 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">Patrocinado</div>
                     </div>
                     <div className="p-3 border-t border-gray-100 flex items-center justify-between">
                         <div className="min-w-0 pr-2">
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wide">tudominio.com</p>
+                            <p className="text-xs text-gray-400 uppercase tracking-wide">tudominio.com</p>
                             <p className="text-sm font-bold text-gray-900 leading-tight truncate">{headline ?? 'Tu titular aquí'}</p>
                         </div>
                         <button className="bg-[#1877F2] text-white text-xs px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-sm hover:bg-blue-700 transition-colors">Más info</button>
@@ -76,9 +76,9 @@ function FacebookMockup({ imageUrl, headline, description }: { imageUrl?: string
                     {/* Reactions bar */}
                     <div className="px-3 py-2 flex items-center justify-between border-t border-gray-50 text-gray-500 text-xs">
                         <div className="flex items-center gap-1">
-                            <span>👍 ❤️</span><span className="text-[10px]">1.2K</span>
+                            <span>👍 ❤️</span><span className="text-xs">1.2K</span>
                         </div>
-                        <div className="flex gap-3 text-[10px]">
+                        <div className="flex gap-3 text-xs">
                             <span>248 comentarios</span>
                             <span>56 compartir</span>
                         </div>
@@ -120,7 +120,7 @@ function InstagramStoryMockup({ imageUrl, callToAction }: { imageUrl?: string; c
                     <div className="w-7 h-7 rounded-full border-2 border-white" style={{ background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)' }} />
                     <div>
                         <p className="text-white text-xs font-semibold leading-none">Tu Empresa</p>
-                        <p className="text-white/60 text-[9px]">Publicidad</p>
+                        <p className="text-white/60 text-xs">Publicidad</p>
                     </div>
                     <div className="ml-auto text-white text-xs px-2 py-0.5 border border-white/30 rounded-full backdrop-blur-sm">Seguir</div>
                 </div>
@@ -164,12 +164,12 @@ function TikTokMockup({ imageUrl, headline }: { imageUrl?: string; headline?: st
                         style={{ animation: liked ? 'heartBeat 0.3s ease-in-out' : undefined }}>
                         <span className="text-2xl">{liked ? '❤️' : '🤍'}</span>
                     </button>
-                    <span className="text-white text-[10px]">{liked ? '2.4K' : '2.3K'}</span>
+                    <span className="text-white text-xs">{liked ? '2.4K' : '2.3K'}</span>
                 </div>
                 {[{ icon: '💬', n: '183' }, { icon: '↗️', n: '48' }, { icon: '⊕', n: '' }].map(({ icon, n }) => (
                     <div key={icon} className="flex flex-col items-center gap-0.5">
                         <span className="text-xl">{icon}</span>
-                        {n && <span className="text-white text-[10px]">{n}</span>}
+                        {n && <span className="text-white text-xs">{n}</span>}
                     </div>
                 ))}
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center" style={{ animation: 'feedScroll 3s linear infinite' }}>
@@ -178,13 +178,13 @@ function TikTokMockup({ imageUrl, headline }: { imageUrl?: string; headline?: st
             </div>
             {/* Bottom text */}
             <div className="absolute bottom-4 left-3 right-14">
-                <p className="text-white text-[11px] font-bold mb-0.5">@tuempresa · <span className="font-normal opacity-70 text-[10px]">Publicidad</span></p>
+                <p className="text-white text-xs font-bold mb-0.5">@tuempresa · <span className="font-normal opacity-70 text-xs">Publicidad</span></p>
                 <p className="text-white text-xs leading-snug line-clamp-2">{headline ?? 'Tu mensaje viral aquí 🔥'}</p>
                 <div className="flex items-center gap-1 mt-1">
-                    <span className="text-[10px] text-white/70">🎵 Sonido original</span>
+                    <span className="text-xs text-white/70">🎵 Sonido original</span>
                 </div>
             </div>
-            <div className="absolute top-3 right-3 bg-black/30 text-white text-[9px] px-2 py-0.5 rounded-full backdrop-blur-sm">Patrocinado</div>
+            <div className="absolute top-3 right-3 bg-black/30 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">Patrocinado</div>
         </div>
     );
 }
@@ -205,7 +205,7 @@ function LinkedInMockup({ imageUrl, headline }: { imageUrl?: string; headline?: 
                         <div className="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">T</div>
                         <div>
                             <p className="text-sm font-semibold text-gray-900">Tu Empresa</p>
-                            <p className="text-[10px] text-gray-400">Publicidad · 24.000 seguidores</p>
+                            <p className="text-xs text-gray-400">Publicidad · 24.000 seguidores</p>
                         </div>
                         <button className="ml-auto text-blue-700 text-xs font-bold border border-blue-700 px-2.5 py-0.5 rounded-full hover:bg-blue-50">+ Seguir</button>
                     </div>

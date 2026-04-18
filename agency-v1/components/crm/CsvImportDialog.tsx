@@ -71,14 +71,14 @@ export function CsvImportDialog({ companyId }: { companyId: string }) {
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="ds-icon-box w-8 h-8"><Upload size={14} className="text-teal-400" /></div>
-                                <p className="font-mono text-[11px] font-black text-slate-200 uppercase tracking-widest">Importar Deals desde CSV</p>
+                                <p className="font-mono text-xs font-black text-slate-200 uppercase tracking-widest">Importar Deals desde CSV</p>
                             </div>
                             <button onClick={() => { setOpen(false); setFile(null); setResult(null); }} className="text-slate-600 hover:text-slate-300"><X size={16} /></button>
                         </div>
 
                         <button onClick={downloadTemplate} className="w-full flex items-center gap-2 px-3 py-2 mb-4 rounded-lg text-sky-400 hover:text-sky-300 transition-colors" style={{ background: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.15)' }}>
                             <Download size={12} />
-                            <span className="font-mono text-[9px]">Descargar plantilla CSV de ejemplo</span>
+                            <span className="font-mono text-xs">Descargar plantilla CSV de ejemplo</span>
                         </button>
 
                         {/* Drop Zone */}
@@ -96,14 +96,14 @@ export function CsvImportDialog({ companyId }: { companyId: string }) {
                                 {file ? (
                                     <div>
                                         <FileText size={24} className="text-teal-400 mx-auto mb-2" />
-                                        <p className="font-mono text-[11px] text-slate-200 font-bold">{file.name}</p>
-                                        <p className="font-mono text-[9px] text-slate-600">{(file.size / 1024).toFixed(1)} KB</p>
+                                        <p className="font-mono text-xs text-slate-200 font-bold">{file.name}</p>
+                                        <p className="font-mono text-xs text-slate-600">{(file.size / 1024).toFixed(1)} KB</p>
                                     </div>
                                 ) : (
                                     <div>
                                         <Upload size={24} className="text-slate-600 mx-auto mb-3" />
-                                        <p className="font-mono text-[10px] text-slate-400">Arrastra un archivo CSV aquí o haz clic para seleccionar</p>
-                                        <p className="font-mono text-[8px] text-slate-600 mt-2">Columnas: title, value, stage, priority, contactName, contactEmail, source</p>
+                                        <p className="font-mono text-xs text-slate-400">Arrastra un archivo CSV aquí o haz clic para seleccionar</p>
+                                        <p className="font-mono text-xs text-slate-600 mt-2">Columnas: title, value, stage, priority, contactName, contactEmail, source</p>
                                     </div>
                                 )}
                             </div>
@@ -114,16 +114,16 @@ export function CsvImportDialog({ companyId }: { companyId: string }) {
                             <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(13,148,136,0.05)', border: '1px solid rgba(13,148,136,0.2)' }}>
                                 <div className="flex items-center gap-2 mb-3">
                                     <CheckCircle size={14} className="text-teal-400" />
-                                    <p className="font-mono text-[10px] font-bold text-teal-400">Importación completada</p>
+                                    <p className="font-mono text-xs font-bold text-teal-400">Importación completada</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 mb-3">
                                     <div className="text-center">
                                         <p className="font-mono text-2xl font-black text-teal-400">{result.imported}</p>
-                                        <p className="font-mono text-[8px] text-slate-500">Deals importados</p>
+                                        <p className="font-mono text-xs text-slate-500">Deals importados</p>
                                     </div>
                                     <div className="text-center">
                                         <p className="font-mono text-2xl font-black text-slate-400">{result.total - result.imported}</p>
-                                        <p className="font-mono text-[8px] text-slate-500">Omitidos</p>
+                                        <p className="font-mono text-xs text-slate-500">Omitidos</p>
                                     </div>
                                 </div>
                                 {result.warnings.length > 0 && (
@@ -131,7 +131,7 @@ export function CsvImportDialog({ companyId }: { companyId: string }) {
                                         {result.warnings.slice(0, 5).map((w, i) => (
                                             <div key={i} className="flex items-start gap-1.5">
                                                 <AlertTriangle size={9} className="text-amber-400 shrink-0 mt-0.5" />
-                                                <p className="font-mono text-[8px] text-amber-500">{w}</p>
+                                                <p className="font-mono text-xs text-amber-500">{w}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -142,13 +142,13 @@ export function CsvImportDialog({ companyId }: { companyId: string }) {
                         <div className="flex gap-3">
                             {!result ? (
                                 <button onClick={handleImport} disabled={!file || loading}
-                                    className="flex-1 py-3 rounded-xl font-mono text-[11px] font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-40"
+                                    className="flex-1 py-3 rounded-xl font-mono text-xs font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-40"
                                     style={{ background: 'linear-gradient(135deg, #0d9488, #0ea5e9)', boxShadow: '0 0 20px rgba(13,148,136,0.3)' }}>
                                     {loading ? "Importando..." : `Importar ${file ? "archivo" : "(selecciona un archivo)"}`}
                                 </button>
                             ) : (
                                 <button onClick={() => { setOpen(false); setFile(null); setResult(null); }}
-                                    className="flex-1 py-3 rounded-xl font-mono text-[11px] font-black uppercase tracking-widest text-slate-200 transition-all"
+                                    className="flex-1 py-3 rounded-xl font-mono text-xs font-black uppercase tracking-widest text-slate-200 transition-all"
                                     style={{ background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(30,41,59,0.9)' }}>
                                     Cerrar y ver Pipeline
                                 </button>

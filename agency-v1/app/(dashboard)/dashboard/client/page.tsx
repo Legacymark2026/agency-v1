@@ -194,7 +194,7 @@ export default async function ClientPortalPage() {
                             <div key={invoice.id} className="bg-slate-950 border border-slate-800 rounded-lg p-5 flex flex-col justify-between hover:border-slate-700 transition">
                                 <div>
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="bg-amber-500/10 text-amber-400 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ring-1 ring-amber-500/20">Por Pagar</span>
+                                        <span className="bg-amber-500/10 text-amber-400 text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded ring-1 ring-amber-500/20">Por Pagar</span>
                                         <span className="text-xs text-slate-500 font-mono">#{invoice.id.split('-')[0].toUpperCase()}</span>
                                     </div>
                                     <h4 className="font-semibold text-white mb-1">{invoice.serviceDescription}</h4>

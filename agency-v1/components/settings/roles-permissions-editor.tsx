@@ -260,13 +260,13 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                             <h3 className="text-[15px] font-black text-slate-100">Control de Acceso Basado en Roles</h3>
                             <span className="ds-badge ds-badge-teal">RBAC_CTRL</span>
                         </div>
-                        <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">
+                        <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">
                             Define módulos · Acciones · Permisos granulares por rol personalizado
                         </p>
                     </div>
                 </div>
                 {!canManage && (
-                    <div className="flex items-center gap-2 px-3 py-2 font-mono text-[9px] text-amber-400 uppercase tracking-widest"
+                    <div className="flex items-center gap-2 px-3 py-2 font-mono text-xs text-amber-400 uppercase tracking-widest"
                         style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '0.15rem' }}>
                         <AlertTriangle size={10} /> Requiere SuperAdmin
                     </div>
@@ -277,13 +277,13 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                 {/* ── LEFT: Role list ─────────────────────────────────── */}
                 <div className="w-full lg:w-64 shrink-0 p-4 space-y-1.5"
                     style={{ borderRight: '1px solid rgba(30,41,59,0.7)', background: 'rgba(10,17,35,0.3)' }}>
-                    <p className="font-mono text-[8px] text-slate-700 uppercase tracking-[0.16em] px-2 pb-2 mb-2"
+                    <p className="font-mono text-xs text-slate-700 uppercase tracking-[0.16em] px-2 pb-2 mb-2"
                         style={{ borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
                         Roles personalizados
                     </p>
 
                     {roles.length === 0 && (
-                        <p className="font-mono text-[9px] text-slate-700 text-center py-6">&gt; Sin roles creados_</p>
+                        <p className="font-mono text-xs text-slate-700 text-center py-6">&gt; Sin roles creados_</p>
                     )}
 
                     {roles.map((role) => {
@@ -292,7 +292,7 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                             <div key={role.id} className="group flex items-center gap-1.5">
                                 <button
                                     onClick={() => setSelectedRole(role)}
-                                    className={`flex-1 text-left px-3 py-2.5 font-mono text-[10px] font-bold uppercase tracking-wider rounded-sm transition-all flex items-center justify-between ${isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`flex-1 text-left px-3 py-2.5 font-mono text-xs font-bold uppercase tracking-wider rounded-sm transition-all flex items-center justify-between ${isActive ? 'text-teal-400' : 'text-slate-500 hover:text-slate-300'}`}
                                     style={isActive
                                         ? { background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.3)' }
                                         : { background: 'rgba(15,23,42,0.3)', border: '1px solid rgba(30,41,59,0.5)' }}
@@ -320,7 +320,7 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                         <DialogTrigger asChild>
                             <button
                                 disabled={!canManage}
-                                className="w-full flex items-center justify-center gap-1.5 mt-4 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-slate-600 hover:text-teal-400 transition-all rounded-sm disabled:opacity-30"
+                                className="w-full flex items-center justify-center gap-1.5 mt-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-slate-600 hover:text-teal-400 transition-all rounded-sm disabled:opacity-30"
                                 style={{ border: '1px dashed rgba(30,41,59,0.8)' }}>
                                 <Plus size={10} /> Crear Nuevo Rol
                             </button>
@@ -332,19 +332,19 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                             </DialogHeader>
                             <div className="py-4 space-y-4">
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">Nombre del Rol</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">Nombre del Rol</label>
                                     <input
                                         placeholder="ej. Analista de Datos"
                                         value={newRoleName}
                                         onChange={(e) => setNewRoleName(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleCreateRole()}
                                         autoFocus
-                                        className="w-full px-3 py-2 font-mono text-[11px] text-slate-200 placeholder:text-slate-700 focus:outline-none rounded-sm"
+                                        className="w-full px-3 py-2 font-mono text-xs text-slate-200 placeholder:text-slate-700 focus:outline-none rounded-sm"
                                         style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}
                                     />
                                 </div>
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">Color del badge</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">Color del badge</label>
                                     <div className="flex flex-wrap gap-2">
                                         {COLORS.map(c => (
                                             <button key={c} onClick={() => setNewRoleColor(c)}
@@ -355,11 +355,11 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                             </div>
                             <DialogFooter>
                                 <button onClick={() => setIsDialogOpen(false)}
-                                    className="px-3 py-2 font-mono text-[9px] text-slate-500 hover:text-slate-300 uppercase tracking-widest">
+                                    className="px-3 py-2 font-mono text-xs text-slate-500 hover:text-slate-300 uppercase tracking-widest">
                                     Cancelar
                                 </button>
                                 <button onClick={handleCreateRole}
-                                    className="px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-white rounded-sm"
+                                    className="px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm"
                                     style={{ background: 'rgba(13,148,136,0.25)', border: '1px solid rgba(13,148,136,0.5)' }}>
                                     Crear Rol
                                 </button>
@@ -375,7 +375,7 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                             <div className="ds-icon-box w-14 h-14 mx-auto mb-5">
                                 <ShieldCheck className="w-6 h-6 text-slate-700" />
                             </div>
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Selecciona un rol para editar sus permisos_</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Selecciona un rol para editar sus permisos_</p>
                         </div>
                     ) : (
                         <>
@@ -387,14 +387,14 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                                         <span className={`w-2 h-2 rounded-full bg-${selectedRole.color}-500`} />
                                         <h4 className="font-black text-[14px] text-slate-100">{selectedRole.name}</h4>
                                     </div>
-                                    <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">
+                                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">
                                         {activePermissions.length} / {PERMISSIONS.reduce((s, g) => s + g.actions.length, 0)} permisos habilitados
                                     </p>
                                 </div>
                                 <button
                                     onClick={handleSave}
                                     disabled={!canManage || isSaving}
-                                    className="flex items-center gap-2 px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                                     style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)' }}>
                                     {isSaving ? (
                                         <><span className="w-3 h-3 border border-teal-400 border-t-transparent rounded-full animate-spin" /> Guardando...</>
@@ -427,10 +427,10 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                                                     {allActive && activeCount > 0 && <Check size={9} className="text-teal-400" />}
                                                 </button>
                                                 <div className="flex-1 flex items-center gap-2">
-                                                    <span className="font-mono text-[8px] font-bold text-teal-600 uppercase tracking-widest">{group.code}</span>
+                                                    <span className="font-mono text-xs font-bold text-teal-600 uppercase tracking-widest">{group.code}</span>
                                                     <span className="font-bold text-[12px] text-slate-300">{group.module}</span>
                                                 </div>
-                                                <span className="font-mono text-[9px] text-slate-600 mr-2">{activeCount}/{group.actions.length}</span>
+                                                <span className="font-mono text-xs text-slate-600 mr-2">{activeCount}/{group.actions.length}</span>
                                                 {isExpanded ? <ChevronDown size={12} className="text-slate-600" /> : <ChevronRight size={12} className="text-slate-600" />}
                                             </div>
 
@@ -453,10 +453,10 @@ export function RolesPermissionsEditor({ customRoles = [], currentUserRole }: { 
                                                                     {isActive && <Check size={9} className="text-teal-400" />}
                                                                 </div>
                                                                 <div>
-                                                                    <span className={`block text-[11px] font-bold ${isActive ? 'text-slate-100' : 'text-slate-500'}`}>
+                                                                    <span className={`block text-xs font-bold ${isActive ? 'text-slate-100' : 'text-slate-500'}`}>
                                                                         {action.label}
                                                                     </span>
-                                                                    <span className="block font-mono text-[8px] text-slate-700 mt-0.5 uppercase tracking-widest">
+                                                                    <span className="block font-mono text-xs text-slate-700 mt-0.5 uppercase tracking-widest">
                                                                         SCOPE: {action.id}
                                                                     </span>
                                                                 </div>

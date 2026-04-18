@@ -101,13 +101,13 @@ export function ExpertCard({ expert, onEdit, onDelete, onToggleVisibility, onDup
 
                             {/* Tech/Military Badge Style */}
                             {expert.badgeId && (
-                                <Badge variant="outline" className="font-mono text-[10px] tracking-widest uppercase bg-slate-900 text-white border-transparent px-1.5 py-0">
+                                <Badge variant="outline" className="font-mono text-xs tracking-widest uppercase bg-slate-900 text-white border-transparent px-1.5 py-0">
                                     {expert.badgeId}
                                 </Badge>
                             )}
 
                             {!expert.isVisible && (
-                                <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-slate-800/50 text-slate-400 border-slate-700">
+                                <Badge variant="secondary" className="text-xs h-5 px-1.5 bg-slate-800/50 text-slate-400 border-slate-700">
                                     Oculto
                                 </Badge>
                             )}
@@ -119,12 +119,12 @@ export function ExpertCard({ expert, onEdit, onDelete, onToggleVisibility, onDup
                         {expert.skills && expert.skills.length > 0 && (
                             <div className="flex gap-1.5 mt-2 flex-wrap">
                                 {expert.skills.slice(0, 3).map((skill, i) => (
-                                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-sm bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap font-mono tracking-tight">
+                                    <span key={i} className="text-xs px-2 py-0.5 rounded-sm bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap font-mono tracking-tight">
                                         {skill}
                                     </span>
                                 ))}
                                 {expert.skills.length > 3 && (
-                                    <span className="text-[10px] px-2 py-0.5 rounded-sm text-slate-500 font-medium font-mono">
+                                    <span className="text-xs px-2 py-0.5 rounded-sm text-slate-500 font-medium font-mono">
                                         +{expert.skills.length - 3}
                                     </span>
                                 )}

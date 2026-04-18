@@ -29,18 +29,18 @@ export function ExpertToolbar({ searchQuery, onSearchChange, filterStatus, onFil
                     placeholder="Search experts by name or role..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="pl-9 bg-slate-950/50 border-slate-800 focus:bg-slate-900 text-slate-200 transition-all font-mono text-[11px]"
+                    className="pl-9 bg-slate-950/50 border-slate-800 focus:bg-slate-900 text-slate-200 transition-all font-mono text-xs"
                 />
             </div>
             <div className="flex items-center gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="gap-2 bg-slate-950/50 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-slate-100 font-mono text-[10px] uppercase tracking-widest">
+                        <Button variant="outline" className="gap-2 bg-slate-950/50 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-slate-100 font-mono text-xs uppercase tracking-widest">
                             <SlidersHorizontal className="h-4 w-4 opacity-70" />
                             Filter: {filterStatus === 'all' ? 'All' : filterStatus === 'active' ? 'Active' : 'Hidden'}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 bg-slate-900 border-slate-800 text-slate-200 font-mono text-[11px]">
+                    <DropdownMenuContent align="end" className="w-48 bg-slate-900 border-slate-800 text-slate-200 font-mono text-xs">
                         <DropdownMenuLabel className="text-slate-400">Filter by Status</DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-slate-800" />
                         <DropdownMenuRadioGroup value={filterStatus} onValueChange={onFilterChange}>

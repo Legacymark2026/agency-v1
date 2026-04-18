@@ -115,7 +115,7 @@ export async function AnalyticsOverview() {
                     className={`ds-card group relative overflow-hidden hover:shadow-lg transition-all duration-300 border ${accentMap[metric.accentColor]} hover:shadow-sm`}
                 >
                     {/* Code tag */}
-                    <span className="absolute top-2 right-2 font-mono text-[8px] text-slate-700 uppercase tracking-widest">[{metric.code}]</span>
+                    <span className="absolute top-2 right-2 font-mono text-xs text-slate-700 uppercase tracking-widest">[{metric.code}]</span>
 
                     {/* Icon */}
                     <div className="ds-icon-box w-8 h-8 mb-3">
@@ -123,7 +123,7 @@ export async function AnalyticsOverview() {
                     </div>
 
                     {/* Title */}
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-1">
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-1">
                         {metric.title}
                     </p>
 
@@ -132,7 +132,7 @@ export async function AnalyticsOverview() {
                         <span className="text-2xl font-black text-white tracking-tight">
                             {metric.value}
                         </span>
-                        <span className={`flex items-center text-[10px] font-bold ${metric.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
+                        <span className={`flex items-center text-xs font-bold ${metric.trend === 'up' ? 'text-emerald-400' : 'text-red-400'
                             }`}>
                             {metric.trend === 'up'
                                 ? <ArrowUpRight className="h-3 w-3" />
@@ -141,7 +141,7 @@ export async function AnalyticsOverview() {
                         </span>
                     </div>
 
-                    <p className="text-[10px] text-slate-600 leading-tight">{metric.description}</p>
+                    <p className="text-xs text-slate-600 leading-tight">{metric.description}</p>
 
                     {/* Bottom accent bar */}
                     <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r ${barAccentMap[metric.accentColor]} w-0 group-hover:w-full transition-all duration-500`} />

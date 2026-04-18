@@ -93,7 +93,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                 {/* Phase 15: Deal Age Badge & AI Score - Top Right Corner */}
                 <div className="absolute top-2 right-2 flex gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
                     <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm border ${dealScore >= 70 ? 'bg-green-50 text-green-700 border-green-200 shadow-[0_0_10px_rgba(34,197,94,0.2)]' :
+                        className={`text-xs px-2 py-0.5 rounded-full font-bold shadow-sm border ${dealScore >= 70 ? 'bg-green-50 text-green-700 border-green-200 shadow-[0_0_10px_rgba(34,197,94,0.2)]' :
                             dealScore >= 40 ? 'bg-amber-50 text-amber-700 border-amber-200' :
                                 'bg-red-50 text-red-700 border-red-200'
                             }`}
@@ -114,7 +114,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                             <StarRating priority={deal.priority} />
 
                             {deal.source && deal.source !== 'Unknown' && (
-                                <Badge variant="outline" className="text-[9px] h-4 px-1.5 py-0 bg-blue-50/50 text-blue-700 border-blue-100 font-medium">
+                                <Badge variant="outline" className="text-xs h-4 px-1.5 py-0 bg-blue-50/50 text-blue-700 border-blue-100 font-medium">
                                     <Tag className="w-2.5 h-2.5 mr-1 opacity-70" />{deal.source}
                                 </Badge>
                             )}
@@ -125,7 +125,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                 {/* Value Row with Trend */}
                 <div className="flex items-end justify-between mb-3 bg-gray-50/50 rounded-lg p-2 border border-gray-100/50">
                     <div className="flex flex-col">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em] mb-0.5">Valor Estimado</span>
+                        <span className="text-xs text-slate-400 font-bold uppercase tracking-[0.1em] mb-0.5">Valor Estimado</span>
                         <div
                             className="flex items-center gap-2 cursor-pointer group/value"
                             title="Haz doble clic para editar"
@@ -159,7 +159,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
 
                     <div className="flex flex-col items-end gap-1.5">
                         {isOverdue && (
-                            <div className="flex items-center text-[9px] font-extrabold uppercase tracking-wide text-rose-600 bg-rose-100/90 px-2 py-0.5 rounded-md shadow-sm border border-rose-200/50" title="Overdue!">
+                            <div className="flex items-center text-xs font-extrabold uppercase tracking-wide text-rose-600 bg-rose-100/90 px-2 py-0.5 rounded-md shadow-sm border border-rose-200/50" title="Overdue!">
                                 <Calendar className="w-3 h-3 mr-1" />
                                 Vencido
                             </div>
@@ -167,7 +167,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                         {isStagnant && (
                             <div className="group/stagnant flex items-center bg-cyan-50/80 rounded-md shadow-sm pl-1.5 pr-1 py-0.5 border border-cyan-200/60" title="Ice: Stagnant > 7 days">
                                 ❄️
-                                <span className="text-[9px] font-bold text-cyan-700 mr-1 opacity-90 ml-1">
+                                <span className="text-xs font-bold text-cyan-700 mr-1 opacity-90 ml-1">
                                     {daysSinceAction}d congelado
                                 </span>
                                 {deal.contactEmail && (
@@ -184,7 +184,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                         )}
                         {isHot && !isStagnant && !isOverdue && (
                             <div className="group/hot flex items-center bg-orange-50/80 rounded-md shadow-sm px-1.5 py-0.5 border border-orange-200/60" title="Hot Deal! Activity < 24h">
-                                🔥 <span className="text-[9px] font-bold text-orange-700 ml-1">Caliente</span>
+                                🔥 <span className="text-xs font-bold text-orange-700 ml-1">Caliente</span>
                             </div>
                         )}
                     </div>
@@ -199,22 +199,22 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                             className="w-4 h-4 rounded-full bg-slate-100 ring-1 ring-slate-200"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
-                        <span className="text-[11px] font-bold text-slate-700 truncate">{deal.company?.name || 'Empresa'}</span>
+                        <span className="text-xs font-bold text-slate-700 truncate">{deal.company?.name || 'Empresa'}</span>
                     </div>
 
                     {deal.probability > 0 ? (
                         <div className="w-[45%] flex flex-col items-end">
-                            <span className="text-[10px] font-extrabold text-slate-400 mb-1">{deal.probability}% WIN PROB.</span>
+                            <span className="text-xs font-extrabold text-slate-400 mb-1">{deal.probability}% WIN PROB.</span>
                             <Progress value={deal.probability} className="h-1.5 w-full bg-slate-100 [&>div]:bg-gradient-to-r [&>div]:from-blue-400 [&>div]:to-blue-600" />
                         </div>
                     ) : (
-                        <span className="text-[10px] font-bold text-slate-400">Sin prob.</span>
+                        <span className="text-xs font-bold text-slate-400">Sin prob.</span>
                     )}
                 </div>
 
                 {/* Phase 15: Next Action Reminder */}
                 {daysUntilAction !== null && daysUntilAction > 0 && daysUntilAction <= 7 && (
-                    <div className="text-[10px] font-medium text-purple-700 bg-purple-50/80 px-2.5 py-1.5 rounded-md mb-3 flex items-center border border-purple-100/50">
+                    <div className="text-xs font-medium text-purple-700 bg-purple-50/80 px-2.5 py-1.5 rounded-md mb-3 flex items-center border border-purple-100/50">
                         <Bell className="w-3 h-3 mr-1.5 text-purple-500" />
                         Seguimiento en {daysUntilAction} día{daysUntilAction !== 1 ? 's' : ''}
                     </div>
@@ -222,7 +222,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
 
                 {/* Expected Close Date */}
                 {deal.expectedClose && !isOverdue && daysUntilAction && daysUntilAction > 7 && (
-                    <div className="text-[10px] font-medium text-gray-500 mb-3 flex items-center">
+                    <div className="text-xs font-medium text-gray-500 mb-3 flex items-center">
                         <Calendar className="w-3 h-3 mr-1.5 text-gray-400" />
                         Cierra en {formatDistanceToNow(new Date(deal.expectedClose))}
                     </div>
@@ -233,11 +233,11 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                     <div className="flex items-center gap-2.5">
                         <Avatar className="h-7 w-7 ring-2 ring-white shadow-sm">
                             <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${deal.contactName}`} />
-                            <AvatarFallback className="text-[10px] bg-slate-100 text-slate-600 font-bold">{deal.contactName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-xs bg-slate-100 text-slate-600 font-bold">{deal.contactName?.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                            <span className="text-[11px] font-bold text-gray-700 truncate max-w-[100px] leading-tight">{deal.contactName || 'Sin Contacto'}</span>
-                            <span className="text-[9px] text-gray-400 font-medium">Hace {dealAge} días</span>
+                            <span className="text-xs font-bold text-gray-700 truncate max-w-[100px] leading-tight">{deal.contactName || 'Sin Contacto'}</span>
+                            <span className="text-xs text-gray-400 font-medium">Hace {dealAge} días</span>
                         </div>
                     </div>
 

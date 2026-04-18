@@ -784,7 +784,7 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                         <div className="flex items-center justify-between mb-3 border-b border-slate-700/50 pb-3">
                             <div>
                                 <label className="text-xs font-bold text-slate-300">Constructor de Correo</label>
-                                <p className="text-[10px] text-slate-500 mt-0.5">Elige cómo diseñar tu mensaje</p>
+                                <p className="text-xs text-slate-500 mt-0.5">Elige cómo diseñar tu mensaje</p>
                             </div>
                             <div className="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700">
                                 <button className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${!state.useDragAndDrop ? 'bg-teal-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`} onClick={() => setState(s => ({ ...s, useDragAndDrop: false }))}>HTML Puro</button>

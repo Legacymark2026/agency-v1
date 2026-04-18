@@ -144,7 +144,7 @@ export default function ContentShowcase() {
                                                 {item.icon}
                                             </div>
                                             {item.id === 1 && (
-                                                <span className="px-3 py-1 bg-rose-500 text-white text-[10px] font-bold tracking-widest uppercase rounded-full animate-pulse shadow-lg shadow-rose-500/30">
+                                                <span className="px-3 py-1 bg-rose-500 text-white text-xs font-bold tracking-widest uppercase rounded-full animate-pulse shadow-lg shadow-rose-500/30">
                                                     HOT
                                                 </span>
                                             )}

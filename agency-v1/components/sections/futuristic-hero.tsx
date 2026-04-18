@@ -89,10 +89,10 @@ export function FuturisticHero() {
 
             {/* 2. HUD Overlay Elements (Teal Text on Dark) */}
             <div className="absolute top-24 left-8 hidden lg:flex flex-col gap-2 pointer-events-none z-20">
-                <div className="flex items-center gap-2 text-[10px] font-mono text-teal-400 uppercase tracking-widest border border-teal-900/50 px-2 py-1 bg-slate-900/80 backdrop-blur-sm rounded-sm shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-mono text-teal-400 uppercase tracking-widest border border-teal-900/50 px-2 py-1 bg-slate-900/80 backdrop-blur-sm rounded-sm shadow-sm">
                     <Wifi size={10} className="animate-pulse text-teal-500" /> NET: SECURE
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-mono text-teal-400 uppercase tracking-widest border border-teal-900/50 px-2 py-1 bg-slate-900/80 backdrop-blur-sm rounded-sm shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-mono text-teal-400 uppercase tracking-widest border border-teal-900/50 px-2 py-1 bg-slate-900/80 backdrop-blur-sm rounded-sm shadow-sm">
                     <Activity size={10} className="text-teal-500" /> SYS: OPTIMAL
                 </div>
             </div>
@@ -107,7 +107,7 @@ export function FuturisticHero() {
                         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                         className="relative hidden sm:block"
                     >
-                        <span className="relative inline-flex items-center gap-2 rounded-full border border-teal-900/50 bg-slate-900/60 backdrop-blur-md px-4 py-1.5 text-[10px] font-bold text-teal-50 shadow-sm uppercase tracking-widest font-mono">
+                        <span className="relative inline-flex items-center gap-2 rounded-full border border-teal-900/50 bg-slate-900/60 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-teal-50 shadow-sm uppercase tracking-widest font-mono">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
@@ -157,9 +157,9 @@ export function FuturisticHero() {
                             </span>
                         </Button>
 
-                        <Button variant="ghost" size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-sm border border-slate-200 text-slate-600 hover:bg-white hover:border-slate-300 hover:text-slate-900 transition-all group relative overflow-hidden font-mono uppercase tracking-wider text-sm">
+                        <Button variant="ghost" size="lg" aria-label={t('ctaSecondary')} className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-sm border border-slate-200 text-slate-600 hover:bg-white hover:border-slate-300 hover:text-slate-900 transition-all group relative overflow-hidden font-mono uppercase tracking-wider text-sm">
                             <span className="flex items-center gap-2 relative z-10">
-                                <Play className="w-4 h-4 fill-current" strokeWidth={1.5} /> {t('ctaSecondary')}
+                                <Play className="w-4 h-4 fill-current" aria-hidden="true" strokeWidth={1.5} /> {t('ctaSecondary')}
                             </span>
                         </Button>
                     </motion.div>
@@ -211,7 +211,7 @@ export function FuturisticHero() {
 
                                 {/* Card 2: Code Snippet */}
                                 <div className="absolute top-1/3 right-1/4 translate-x-1/2 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl max-w-xs hidden md:block transform hover:scale-105 transition-transform duration-300 pointer-events-auto">
-                                    <div className="font-mono text-[10px] text-emerald-400 leading-tight">
+                                    <div className="font-mono text-xs text-emerald-400 leading-tight">
                                         <p>{"> initializing_core..."}</p>
                                         <p>{"> loading_modules [OK]"}</p>
                                         <p className="animate-pulse">{"> awaiting_user_input_"}</p>
@@ -235,7 +235,7 @@ export function FuturisticHero() {
 
             {/* Scroll Indicator */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-400 opacity-70">
-                <span className="font-mono text-[10px] tracking-widest uppercase">Scroll</span>
+                <span className="font-mono text-xs tracking-widest uppercase">Scroll</span>
                 <div className="w-px h-8 bg-slate-300 relative overflow-hidden">
                     <motion.div
                         className="absolute top-0 left-0 w-full h-full bg-slate-600"

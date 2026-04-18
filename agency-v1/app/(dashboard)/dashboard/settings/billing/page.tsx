@@ -106,7 +106,7 @@ export default function BillingPage() {
                                 </h3>
                                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-3">
                                     <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-500 rounded shrink-0 flex items-center justify-center">
-                                        <span className="text-white text-[9px] font-bold">VISA</span>
+                                        <span className="text-white text-xs font-bold">VISA</span>
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm font-mono text-slate-300">•••• •••• •••• 4242</p>

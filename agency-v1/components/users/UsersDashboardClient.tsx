@@ -219,13 +219,13 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                     </div>
                 </div>
                 <div className="flex gap-3 shrink-0">
-                    <button className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-teal-400 rounded-sm transition-all"
+                    <button className="flex items-center gap-2 px-3 py-2 font-mono text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-teal-400 rounded-sm transition-all"
                         style={{ background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}>
                         <Download size={12} /> Exportar IAM
                     </button>
                     <button 
                         onClick={() => setIsInviteOpen(true)}
-                        className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
+                        className="flex items-center gap-2 px-3 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
                         style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.5)' }}>
                         <UserPlus size={12} /> Invitar Miembro
                     </button>
@@ -243,7 +243,7 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                         placeholder="Buscar identidad (Cmd+K)..."
                         value={searchQuery}
                         onChange={handleSearchChange}
-                        className="pl-9 pr-14 py-2 font-mono text-[11px] text-slate-200 placeholder:text-slate-700 rounded-sm transition-all focus:outline-none w-full xl:w-80"
+                        className="pl-9 pr-14 py-2 font-mono text-xs text-slate-200 placeholder:text-slate-700 rounded-sm transition-all focus:outline-none w-full xl:w-80"
                         style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}
                     />
                     <AnimatePresence>
@@ -262,13 +262,13 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                 <div className="flex w-full xl:w-auto items-center gap-3 overflow-x-auto pb-1 xl:pb-0">
                     <div className="flex gap-1 p-1 rounded-sm" style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}>
                         <button onClick={() => setRoleFilter('all')}
-                            className={`px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider rounded-sm transition-all ${roleFilter === 'all' ? 'text-teal-400' : 'text-slate-600 hover:text-slate-400'}`}
+                            className={`px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-wider rounded-sm transition-all ${roleFilter === 'all' ? 'text-teal-400' : 'text-slate-600 hover:text-slate-400'}`}
                             style={roleFilter === 'all' ? { background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)' } : {}}>
                             Todos
                         </button>
                         {Object.entries(dynamicRoleInfo).filter(([k]) => k !== 'guest').map(([k, info]) => (
                             <button key={k} onClick={() => setRoleFilter(k)}
-                                className={`px-3 py-1.5 flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-wider rounded-sm transition-all ${roleFilter === k ? 'text-teal-400' : 'text-slate-600 hover:text-slate-400'}`}
+                                className={`px-3 py-1.5 flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider rounded-sm transition-all ${roleFilter === k ? 'text-teal-400' : 'text-slate-600 hover:text-slate-400'}`}
                                 style={roleFilter === k ? { background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)' } : {}}>
                                 {info.icon} <span className="hidden sm:inline">{info.label}</span>
                             </button>
@@ -325,7 +325,7 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                             {user.deactivatedAt && (
                                 <div className="absolute inset-0 z-10 flex items-center justify-center"
                                     style={{ background: 'rgba(2,6,23,0.7)', backdropFilter: 'blur(2px)' }}>
-                                    <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-red-400 px-3 py-1.5"
+                                    <span className="font-mono text-xs font-bold uppercase tracking-widest text-red-400 px-3 py-1.5"
                                         style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.15rem' }}>
                                         Cuenta Suspendida
                                     </span>
@@ -342,11 +342,11 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                                     </button>
                                 </div>
                                 <h3 className="font-black text-[13px] text-slate-100 truncate">{user.name || "Usuario Sin Nombre"}</h3>
-                                <p className="font-mono text-[9px] text-slate-600 truncate mb-4 mt-0.5">{user.email}</p>
+                                <p className="font-mono text-xs text-slate-600 truncate mb-4 mt-0.5">{user.email}</p>
                                 <div className="flex items-center gap-2 mb-4" onClick={(e) => e.stopPropagation()}>
                                     <RoleSelector userId={user.id} currentRole={user.role} isSelf={user.id === currentUserId} customRoles={customRoles} />
                                 </div>
-                                <div className="pt-4 flex justify-between items-center font-mono text-[9px] text-slate-700 uppercase tracking-widest"
+                                <div className="pt-4 flex justify-between items-center font-mono text-xs text-slate-700 uppercase tracking-widest"
                                     style={{ borderTop: '1px solid rgba(30,41,59,0.8)' }}>
                                     <span>{user._count.activityLogs ?? 0} Logins</span>
                                     <span>{getRelativeDate(new Date(user.createdAt))}</span>
@@ -363,8 +363,8 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                     <div className="ds-icon-box w-14 h-14 mx-auto mb-5">
                         <Inbox className="w-6 h-6 text-slate-700" />
                     </div>
-                    <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest mb-1">&gt; Sin identidades que coincidan_</p>
-                    <p className="font-mono text-[9px] text-slate-700 uppercase tracking-widest">Intenta con otro filtro o término de búsqueda</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest mb-1">&gt; Sin identidades que coincidan_</p>
+                    <p className="font-mono text-xs text-slate-700 uppercase tracking-widest">Intenta con otro filtro o término de búsqueda</p>
                 </div>
             )}
 
@@ -376,19 +376,19 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                 >
                     {/* Teal top line */}
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/40 to-transparent" />
-                    <p className="font-mono text-[8px] font-bold text-slate-600 uppercase tracking-widest px-3 pt-2 pb-1.5 mb-1"
+                    <p className="font-mono text-xs font-bold text-slate-600 uppercase tracking-widest px-3 pt-2 pb-1.5 mb-1"
                         style={{ borderBottom: '1px solid rgba(30,41,59,0.8)' }}>Opciones Rápidas</p>
                     <button onClick={() => { setSelectedUserForDrawer(users.find(u => u.id === contextMenu.userId) || null); setContextMenu(null); }}
-                        className="w-full text-left px-3 py-2 font-mono text-[10px] text-slate-400 hover:text-teal-400 rounded-sm transition-colors hover:bg-teal-950/20">
+                        className="w-full text-left px-3 py-2 font-mono text-xs text-slate-400 hover:text-teal-400 rounded-sm transition-colors hover:bg-teal-950/20">
                         Abrir Ficha Técnica
                     </button>
                     <button onClick={() => { handleToggleStatus(contextMenu.userId); setContextMenu(null); }}
-                        className="w-full text-left px-3 py-2 font-mono text-[10px] text-amber-400/70 hover:text-amber-400 rounded-sm transition-colors hover:bg-amber-950/20">
+                        className="w-full text-left px-3 py-2 font-mono text-xs text-amber-400/70 hover:text-amber-400 rounded-sm transition-colors hover:bg-amber-950/20">
                         Alterar Estado
                     </button>
                     <button
                         onClick={() => { confirmDelete(contextMenu.userId); setContextMenu(null); }}
-                        className="w-full text-left px-3 py-2 font-mono text-[10px] text-red-400/70 hover:text-red-400 rounded-sm transition-colors hover:bg-red-950/20">
+                        className="w-full text-left px-3 py-2 font-mono text-xs text-red-400/70 hover:text-red-400 rounded-sm transition-colors hover:bg-red-950/20">
                         Eliminar del Hub
                     </button>
                 </div>
@@ -413,12 +413,12 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
                                     <h3 className="font-black text-[15px] text-slate-100">Eliminar Usuario</h3>
-                                    <span className="font-mono text-[8px] font-bold uppercase tracking-widest text-red-400 px-1.5 py-0.5"
+                                    <span className="font-mono text-xs font-bold uppercase tracking-widest text-red-400 px-1.5 py-0.5"
                                         style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.15rem' }}>
                                         IRREVERSIBLE
                                     </span>
                                 </div>
-                                <p className="font-mono text-[9px] text-slate-500 uppercase tracking-widest">Acción permanente · Sin recuperación</p>
+                                <p className="font-mono text-xs text-slate-500 uppercase tracking-widest">Acción permanente · Sin recuperación</p>
                             </div>
                         </div>
 
@@ -427,7 +427,7 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                             <p className="text-[12px] text-slate-300 mb-1">
                                 ¿Estás seguro de eliminar a <span className="font-black text-slate-100">{deleteConfirm.userName}</span>?
                             </p>
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">
                                 Se eliminarán todos sus datos, sesiones y registros de actividad.
                             </p>
                         </div>
@@ -436,14 +436,14 @@ export function UsersDashboardClient({ initialUsers, currentUserId, customRoles 
                             <button
                                 onClick={() => setDeleteConfirm(null)}
                                 disabled={isDeleting}
-                                className="flex-1 py-2.5 font-mono text-[9px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors rounded-sm disabled:opacity-40"
+                                className="flex-1 py-2.5 font-mono text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-300 transition-colors rounded-sm disabled:opacity-40"
                                 style={{ border: '1px solid rgba(30,41,59,0.8)' }}>
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleDeleteUser}
                                 disabled={isDeleting}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 font-mono text-[9px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-all rounded-sm disabled:opacity-40"
+                                className="flex-1 flex items-center justify-center gap-2 py-2.5 font-mono text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-all rounded-sm disabled:opacity-40"
                                 style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)' }}>
                                 {isDeleting ? (
                                     <><span className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> Eliminando...</>

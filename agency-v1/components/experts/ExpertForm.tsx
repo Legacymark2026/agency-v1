@@ -89,10 +89,10 @@ export function ExpertForm({ initialData, onSubmit, onCancel, isLoading }: Exper
 
                     {/* Floater footer actions */}
                     <div className="sticky bottom-0 left-0 right-0 p-4 -mx-6 bg-slate-950/80 backdrop-blur-md border-t border-slate-800 flex justify-end gap-3 rounded-b-lg shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)]">
-                        <Button variant="ghost" type="button" onClick={onCancel} disabled={isLoading} className="hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-sm font-mono text-[10px] tracking-widest uppercase font-bold">
+                        <Button variant="ghost" type="button" onClick={onCancel} disabled={isLoading} className="hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-sm font-mono text-xs tracking-widest uppercase font-bold">
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={isLoading} className="bg-teal-600 hover:bg-teal-500 text-white border border-teal-500/50 rounded-sm px-8 shadow-md hover:shadow-lg transition-all font-mono text-[10px] tracking-widest uppercase font-bold">
+                        <Button type="submit" disabled={isLoading} className="bg-teal-600 hover:bg-teal-500 text-white border border-teal-500/50 rounded-sm px-8 shadow-md hover:shadow-lg transition-all font-mono text-xs tracking-widest uppercase font-bold">
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

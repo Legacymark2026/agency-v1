@@ -123,7 +123,7 @@ export default function SettingsHubPage() {
                                             style={{ width: `${p}%` }}
                                         />
                                     </div>
-                                    <div className="text-right text-[10px] text-slate-600">{p}% usado</div>
+                                    <div className="text-right text-xs text-slate-600">{p}% usado</div>
                                 </div>
                             );
                         })}
@@ -149,10 +149,10 @@ export default function SettingsHubPage() {
                                 <div key={h.key} className="flex flex-col items-center gap-1.5 p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/60">
                                     <div className="flex items-center gap-1">
                                         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                                        <span className={`text-[10px] font-mono font-bold ${cfg.cls}`}>{cfg.label}</span>
+                                        <span className={`text-xs font-mono font-bold ${cfg.cls}`}>{cfg.label}</span>
                                     </div>
-                                    <span className="text-slate-400 text-[10px] text-center">{h.key}</span>
-                                    {h.latencyMs && <span className="text-slate-600 text-[9px]">{h.latencyMs}ms</span>}
+                                    <span className="text-slate-400 text-xs text-center">{h.key}</span>
+                                    {h.latencyMs && <span className="text-slate-600 text-xs">{h.latencyMs}ms</span>}
                                 </div>
                             );
                         })}

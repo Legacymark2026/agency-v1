@@ -70,11 +70,11 @@ function MetricBox({ icon, label, value, trend }: { icon: React.ReactNode, label
                 <div className="bg-slate-950 p-1.5 rounded-md border border-slate-800">
                     {icon}
                 </div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">{label}</span>
+                <span className="text-xs font-mono uppercase tracking-wider text-slate-400">{label}</span>
             </div>
             <div className="flex items-end gap-2 relative z-10">
                 <span className="text-2xl font-bold text-white leading-none">{value}</span>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-1 py-0.5 rounded leading-none mb-0.5">{trend}</span>
+                <span className="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-1 py-0.5 rounded leading-none mb-0.5">{trend}</span>
             </div>
         </div>
     );

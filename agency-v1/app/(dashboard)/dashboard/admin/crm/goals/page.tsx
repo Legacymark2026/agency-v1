@@ -6,7 +6,7 @@ import { GoalFormClient } from "./GoalFormClient";
 
 export default async function SalesGoalsPage() {
     const company = await prisma.company.findFirst();
-    if (!company) return <div className="ds-page flex items-center justify-center"><p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">Empresa no configurada</p></div>;
+    if (!company) return <div className="ds-page flex items-center justify-center"><p className="font-mono text-xs text-slate-600 uppercase tracking-widest">Empresa no configurada</p></div>;
 
     const now = new Date();
     const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -48,7 +48,7 @@ export default async function SalesGoalsPage() {
                 ].map(k => (
                     <div key={k.label} className="ds-kpi group">
                         <div className="flex items-center justify-between mb-3">
-                            <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
+                            <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{k.label}</p>
                             <div className="ds-icon-box w-7 h-7"><k.icon size={12} strokeWidth={1.5} className={k.color} /></div>
                         </div>
                         <p className="ds-stat-value">{k.value}</p>
@@ -58,13 +58,13 @@ export default async function SalesGoalsPage() {
 
             {/* Goals Cards */}
             <div className="relative z-10 space-y-4">
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Progreso Individual · {period}</p>
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Progreso Individual · {period}</p>
                 {dashboard.goals.length === 0 ? (
                     <div className="ds-section flex items-center justify-center h-32">
                         <div className="text-center">
                             <Target size={24} className="text-slate-700 mx-auto mb-3" />
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">Sin metas configuradas para {period}</p>
-                            <p className="font-mono text-[8px] text-slate-700 mt-1">Click en "Nueva Meta" para agregar</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">Sin metas configuradas para {period}</p>
+                            <p className="font-mono text-xs text-slate-700 mt-1">Click en "Nueva Meta" para agregar</p>
                         </div>
                     </div>
                 ) : (
@@ -82,13 +82,13 @@ export default async function SalesGoalsPage() {
                                                 {(goal.user?.name ?? "?")[0].toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="font-mono text-[11px] font-bold text-slate-200">{goal.user?.name ?? "Meta Global"}</p>
-                                                <p className="font-mono text-[9px] text-slate-600">{goal.label ?? goal.period}</p>
+                                                <p className="font-mono text-xs font-bold text-slate-200">{goal.user?.name ?? "Meta Global"}</p>
+                                                <p className="font-mono text-xs text-slate-600">{goal.label ?? goal.period}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-mono font-black text-sm text-slate-100">${(goal.wonAmount / 1000).toFixed(1)}k <span className="text-slate-600 font-normal">/ ${(goal.targetAmount / 1000).toFixed(1)}k</span></p>
-                                            <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 font-mono text-[9px] font-bold rounded-sm ${isOver ? 'text-teal-400' : isWarning ? 'text-amber-400' : 'text-slate-400'}`}
+                                            <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 font-mono text-xs font-bold rounded-sm ${isOver ? 'text-teal-400' : isWarning ? 'text-amber-400' : 'text-slate-400'}`}
                                                 style={{ background: isOver ? 'rgba(13,148,136,0.1)' : isWarning ? 'rgba(245,158,11,0.1)' : 'rgba(100,116,139,0.1)', border: `1px solid ${isOver ? 'rgba(13,148,136,0.3)' : isWarning ? 'rgba(245,158,11,0.3)' : 'rgba(100,116,139,0.3)'}` }}>
                                                 {isOver ? '🎯 ' : ''}{pct}%
                                             </span>

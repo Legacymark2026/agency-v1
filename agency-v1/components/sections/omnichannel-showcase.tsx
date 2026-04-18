@@ -64,7 +64,7 @@ export function OmnichannelShowcase() {
                             initial={{ opacity: 0, y: 10 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-500/30 bg-teal-500/10 text-teal-400 text-[10px] font-mono mb-8 uppercase tracking-widest shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]"
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-500/30 bg-teal-500/10 text-teal-400 text-xs font-mono mb-8 uppercase tracking-widest shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]"
                         >
                             <Network size={12} strokeWidth={1.5} />
                             {t('badge')}
@@ -165,7 +165,7 @@ export function OmnichannelShowcase() {
                                         <TrendingUp size={16} />
                                     </div>
                                     <div className="hidden sm:block">
-                                        <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Meta Ads ROAS</p>
+                                        <p className="text-xs text-slate-400 font-medium whitespace-nowrap">Meta Ads ROAS</p>
                                         <p className="text-sm font-bold text-white">+245%</p>
                                     </div>
                                 </motion.div>
@@ -186,7 +186,7 @@ export function OmnichannelShowcase() {
                                         <Globe size={16} />
                                     </div>
                                     <div className="hidden sm:block text-left">
-                                        <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Web Traffic</p>
+                                        <p className="text-xs text-slate-400 font-medium whitespace-nowrap">Web Traffic</p>
                                         <p className="text-sm font-bold text-white">45k visitors</p>
                                     </div>
                                 </motion.div>
@@ -208,7 +208,7 @@ export function OmnichannelShowcase() {
                                         <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center border-2 border-slate-900 shadow-sm"><Layers size={12} className="text-white" /></div>
                                     </div>
                                     <div className="hidden sm:block">
-                                        <p className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Auto-Design</p>
+                                        <p className="text-xs text-slate-400 font-medium whitespace-nowrap">Auto-Design</p>
                                         <p className="text-xs font-bold text-white">Generating...</p>
                                     </div>
                                 </motion.div>
@@ -229,7 +229,7 @@ export function OmnichannelShowcase() {
                                         <MousePointerClick size={16} />
                                     </div>
                                     <div className="hidden sm:block">
-                                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider whitespace-nowrap">Google CPC</p>
+                                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider whitespace-nowrap">Google CPC</p>
                                         <p className="text-sm font-bold text-white">$0.45</p>
                                     </div>
                                 </motion.div>
@@ -239,12 +239,12 @@ export function OmnichannelShowcase() {
                         {/* Tech Data Overlay */}
                         <div className="absolute bottom-6 left-6 right-6 z-20 flex justify-between items-end">
                             <div className="bg-slate-950/60 backdrop-blur-md border border-slate-800/80 rounded-md px-4 py-2 opacity-80">
-                                <span className="flex items-center gap-2 text-[10px] font-mono text-teal-400 uppercase tracking-widest">
+                                <span className="flex items-center gap-2 text-xs font-mono text-teal-400 uppercase tracking-widest">
                                     <Shield size={10} />
                                     {t('secureBadge')}
                                 </span>
                             </div>
-                            <div className="font-mono text-[9px] text-slate-500 uppercase tracking-widest text-right">
+                            <div className="font-mono text-xs text-slate-500 uppercase tracking-widest text-right">
                                 EXTRACTING_METRICS... <br />
                                 SYNC_STATUS: <span className="text-emerald-400">OPTIMAL</span>
                             </div>

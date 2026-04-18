@@ -108,7 +108,7 @@ export default function SitemapPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <Badge variant="outline" className="border-teal-500/30 bg-teal-500/5 text-teal-400 font-mono text-[10px] uppercase tracking-widest px-3 mb-6">
+                        <Badge variant="outline" className="border-teal-500/30 bg-teal-500/5 text-teal-400 font-mono text-xs uppercase tracking-widest px-3 mb-6">
                             {t('hero.badge')}
                         </Badge>
                         <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-white mb-6">
@@ -182,13 +182,13 @@ export default function SitemapPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-4 md:justify-end">
-                        <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-white/5 font-mono text-[10px]">
+                        <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-white/5 font-mono text-xs">
                             SSL SECURED
                         </Badge>
-                        <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-white/5 font-mono text-[10px]">
+                        <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-white/5 font-mono text-xs">
                             HTTP/3 ENABLED
                         </Badge>
-                        <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-white/5 font-mono text-[10px]">
+                        <Badge variant="secondary" className="bg-slate-900 text-slate-400 border-white/5 font-mono text-xs">
                             GLOBAL EDGE
                         </Badge>
                     </div>

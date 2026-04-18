@@ -313,14 +313,14 @@ export function StepBudget() {
                     <div className="p-5 border border-white/10 rounded-xl bg-slate-900/50">
                         <div className="flex items-center justify-between mb-4">
                             <h4 className="text-sm font-semibold text-slate-300">Selección de Horarios</h4>
-                            <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
                                 <div className="flex items-center gap-1"><div className="w-3 h-3 bg-teal-500 rounded-sm shadow-[0_0_8px_rgba(20,184,166,0.3)]"></div> Activo</div>
                                 <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-800 rounded-sm border border-white/5"></div> Pausado</div>
                             </div>
                         </div>
                         <div className="overflow-x-auto pb-2">
                             <div className="min-w-[500px]">
-                                <div className="flex gap-px mb-1 relative ml-12 pr-1 text-[9px] text-slate-500 justify-between">
+                                <div className="flex gap-px mb-1 relative ml-12 pr-1 text-xs text-slate-500 justify-between">
                                     <span>0:00</span>
                                     <span>6:00</span>
                                     <span>12:00</span>
@@ -334,7 +334,7 @@ export function StepBudget() {
                                         
                                         return (
                                             <div key={day.key} className="flex items-center gap-2">
-                                                <div className="w-10 text-[10px] text-slate-400 font-medium">{day.label.substring(0,3)}</div>
+                                                <div className="w-10 text-xs text-slate-400 font-medium">{day.label.substring(0,3)}</div>
                                                 <div className="flex-1 flex gap-px">
                                                     {[...Array(24)].map((_, hour) => {
                                                         const isActive = activeHours.includes(hour);

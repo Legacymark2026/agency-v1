@@ -277,7 +277,7 @@ export default function ExpensesPage() {
                                     <td className="px-5 py-4 text-slate-400 text-xs">{exp.date ? format(new Date(exp.date), "d MMM yyyy", { locale: es }) : "—"}</td>
                                     <td className="px-5 py-4 text-right tabular-nums font-medium text-white">{fmt(exp.amount)}</td>
                                     <td className="px-5 py-4 text-center">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-bold tracking-widest uppercase ${STATUS_MAP[exp.status]?.cls || STATUS_MAP.PENDING.cls}`}>
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-bold tracking-widest uppercase ${STATUS_MAP[exp.status]?.cls || STATUS_MAP.PENDING.cls}`}>
                                             {STATUS_MAP[exp.status]?.label || exp.status}
                                         </span>
                                     </td>

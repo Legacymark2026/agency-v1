@@ -143,10 +143,10 @@ export default function NotificationsPage() {
                                                 </div>
                                                 <div className="flex gap-1">
                                                     <button onClick={() => handleEnableAll(ch.key, true)} disabled={isSaving}
-                                                        className="text-[9px] text-teal-500 hover:text-teal-400 font-mono transition-colors">ON</button>
+                                                        className="text-xs text-teal-500 hover:text-teal-400 font-mono transition-colors">ON</button>
                                                     <span className="text-slate-700">·</span>
                                                     <button onClick={() => handleEnableAll(ch.key, false)} disabled={isSaving}
-                                                        className="text-[9px] text-slate-500 hover:text-red-400 font-mono transition-colors">OFF</button>
+                                                        className="text-xs text-slate-500 hover:text-red-400 font-mono transition-colors">OFF</button>
                                                 </div>
                                             </div>
                                         </th>
@@ -158,7 +158,7 @@ export default function NotificationsPage() {
                                     <>
                                         <tr key={`group-${group}`} className="bg-slate-950/40">
                                             <td colSpan={5} className="px-5 py-2">
-                                                <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest">{group}</span>
+                                                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest">{group}</span>
                                             </td>
                                         </tr>
                                         {events.filter(e => e.group === group).map(event => (

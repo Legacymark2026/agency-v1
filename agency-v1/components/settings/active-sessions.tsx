@@ -95,7 +95,7 @@ export function ActiveSessions() {
                                 <div>
                                     <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
                                         {device}
-                                        {index === 0 && <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Actual</span>}
+                                        {index === 0 && <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Actual</span>}
                                     </h4>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500 font-medium">
                                         <div className="flex items-center gap-1.5 border border-gray-200 bg-gray-50 px-2 py-1 rounded-md">

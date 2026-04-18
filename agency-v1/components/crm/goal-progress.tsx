@@ -38,10 +38,10 @@ export function GoalProgress({ wonValue, monthlyTarget, progress }: GoalProgress
                     <Target size={14} strokeWidth={1.5} className="text-teal-400" />
                 </div>
                 <div>
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">
                         Meta Mensual {simActive && <span className="text-teal-400 ml-1">(SIM)</span>}
                     </p>
-                    <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Objetivo de ingresos · Forecast</p>
+                    <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Objetivo de ingresos · Forecast</p>
                 </div>
             </div>
 
@@ -82,7 +82,7 @@ export function GoalProgress({ wonValue, monthlyTarget, progress }: GoalProgress
             {/* Simulator */}
             <div className="mt-auto pt-4 relative z-10" style={{ borderTop: '1px dashed rgba(30,41,59,0.6)' }}>
                 <div className="flex justify-between items-center mb-3">
-                    <span className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">Simulador de Escenarios</span>
+                    <span className="font-mono text-xs text-slate-600 uppercase tracking-widest">Simulador de Escenarios</span>
                     <button
                         onClick={() => { setSimActive(!simActive); setSimulated(wonValue); }}
                         className={`font-mono text-[8.5px] px-2.5 py-1 uppercase tracking-widest transition-all border rounded-sm ${simActive
@@ -102,7 +102,7 @@ export function GoalProgress({ wonValue, monthlyTarget, progress }: GoalProgress
                             onChange={e => setSimulated(Number(e.target.value))}
                             className="w-full accent-teal-500"
                         />
-                        <div className="flex justify-between mt-2 font-mono text-[9px]">
+                        <div className="flex justify-between mt-2 font-mono text-xs">
                             <span className="text-slate-600 uppercase tracking-widest">Mover para simular cierres</span>
                             <span className="text-teal-400">+{fmt.format(simulated - wonValue)}</span>
                         </div>

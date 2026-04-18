@@ -91,9 +91,10 @@ export function GlobalSearch() {
 
     return (
         <div ref={containerRef} className="relative w-full">
-            <div className="relative">
+                <label htmlFor="global-search-input" className="sr-only">Buscar en el sitio</label>
                 <input
                     ref={inputRef}
+                    id="global-search-input"
                     type="text"
                     placeholder="Buscar..."
                     value={query}
@@ -139,10 +140,10 @@ export function GlobalSearch() {
                         <div className="py-2">
                             {Object.entries(groupedResults).map(([type, items]) => (
                                 <div key={type} className="mb-2">
-                                    <div className="px-4 py-2 text-[10px] font-bold text-teal-500/70 uppercase tracking-widest bg-white/5 flex items-center gap-2 font-mono">
+                                    <div className="px-4 py-2 text-xs font-bold text-teal-500/70 uppercase tracking-widest bg-white/5 flex items-center gap-2 font-mono">
                                         {getIcon(type)}
                                         {getTypeLabel(type)}
-                                        <span className="ml-auto text-[9px] bg-teal-500/10 text-teal-400 px-2 py-0.5 rounded-full border border-teal-500/20">{items.length}</span>
+                                        <span className="ml-auto text-xs bg-teal-500/10 text-teal-400 px-2 py-0.5 rounded-full border border-teal-500/20">{items.length}</span>
                                     </div>
                                     <div className="py-1">
                                         {items.map((result) => (
@@ -184,16 +185,16 @@ export function GlobalSearch() {
 
                     {results.length > 0 && (
                         <div className="p-3 border-t border-white/5 bg-white/5">
-                            <Link
-                                href={`/buscar?q=${encodeURIComponent(query)}`}
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setQuery('');
-                                }}
-                                className="block text-center text-[10px] font-bold text-teal-500 hover:text-teal-400 transition-colors uppercase tracking-widest font-mono"
-                            >
-                                ACCESS COMPLETE DATABASE →
-                            </Link>
+                                <Link
+                                    href={`/buscar?q=${encodeURIComponent(query)}`}
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        setQuery('');
+                                    }}
+                                    className="block text-center text-xs font-bold text-teal-500 hover:text-teal-400 transition-colors uppercase tracking-widest font-mono"
+                                >
+                                    ACCESS COMPLETE DATABASE →
+                                </Link>
                         </div>
                     )}
                 </div>

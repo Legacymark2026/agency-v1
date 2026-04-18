@@ -41,7 +41,7 @@ export function SecurityPagination({ currentPage, totalPages, totalLogs }: Secur
 
     return (
         <div className="flex items-center justify-between px-1">
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs font-mono text-slate-500">
                 Página <span className="text-teal-400 font-bold">{currentPage}</span> de{" "}
                 <span className="text-slate-300">{totalPages}</span>{" "}
                 <span className="text-slate-600">· {totalLogs.toLocaleString()} eventos</span>

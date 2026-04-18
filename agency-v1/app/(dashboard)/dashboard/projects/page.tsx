@@ -46,7 +46,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                     </div>
                 </div>
                 <Link href="/dashboard/projects/create"
-                    className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5 shrink-0"
+                    className="flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5 shrink-0"
                     style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)' }}>
                     <Plus size={12} /> New Project
                 </Link>
@@ -56,7 +56,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
             <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {kpis.map(k => (
                     <div key={k.code} className="ds-kpi group">
-                        <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest">[{k.code}]</span>
+                        <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest">[{k.code}]</span>
                         <div className="relative z-10">
                             <p className="ds-stat-value">{k.value}</p>
                             <p className="ds-stat-label">{k.label}</p>
@@ -73,7 +73,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                         <div className="relative">
                             <input type="text" name="search" defaultValue={params.search || ''}
                                 placeholder="Buscar proyectos..."
-                                className="w-full pl-8 pr-4 py-2 font-mono text-[11px] text-slate-200 rounded-sm transition-all focus:outline-none focus:border-teal-800/50"
+                                className="w-full pl-8 pr-4 py-2 font-mono text-xs text-slate-200 rounded-sm transition-all focus:outline-none focus:border-teal-800/50"
                                 style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }} />
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-600" />
                         </div>
@@ -81,7 +81,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                     <div className="w-[180px]">
                         <label className="ds-mono-label mb-2 block">Category</label>
                         <select name="category" defaultValue={params.category || ''}
-                            className="w-full px-3 py-2 font-mono text-[11px] text-slate-200 rounded-sm transition-all focus:outline-none focus:border-teal-800/50"
+                            className="w-full px-3 py-2 font-mono text-xs text-slate-200 rounded-sm transition-all focus:outline-none focus:border-teal-800/50"
                             style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}>
                             <option value="">All Categories</option>
                             {categories.map((cat: any) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
@@ -90,7 +90,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                     <div className="w-[150px]">
                         <label className="ds-mono-label mb-2 block">Status</label>
                         <select name="status" defaultValue={params.status || ''}
-                            className="w-full px-3 py-2 font-mono text-[11px] text-slate-200 rounded-sm transition-all focus:outline-none focus:border-teal-800/50"
+                            className="w-full px-3 py-2 font-mono text-xs text-slate-200 rounded-sm transition-all focus:outline-none focus:border-teal-800/50"
                             style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}>
                             <option value="">All Status</option>
                             <option value="draft">Draft</option>
@@ -100,13 +100,13 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
                         </select>
                     </div>
                     <button type="submit"
-                        className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-teal-400 transition-all rounded-sm"
+                        className="flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-teal-400 transition-all rounded-sm"
                         style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(30,41,59,0.8)' }}>
                         <Filter size={12} /> Apply
                     </button>
                     {(params.search || params.category || params.status) && (
                         <Link href="/dashboard/projects"
-                            className="px-4 py-2 font-mono text-[10px] text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-all">
+                            className="px-4 py-2 font-mono text-xs text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-all">
                             Clear
                         </Link>
                     )}

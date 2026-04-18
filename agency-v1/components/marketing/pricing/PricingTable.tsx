@@ -105,13 +105,13 @@ function SortableCard({
       <div className="flex-grow min-w-[200px] flex flex-col justify-center">
         <div className="flex items-center gap-2 mb-1.5">
            {item.codigo_id && (
-              <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-[0.1em] bg-slate-800/80 text-amber-500/90 border border-slate-700">
+              <span className="px-2 py-0.5 rounded text-xs font-mono font-bold uppercase tracking-[0.1em] bg-slate-800/80 text-amber-500/90 border border-slate-700">
                 {item.codigo_id}
               </span>
            )}
            <span
               onClick={() => onInlineEdit(item.id, "estado", item.estado === "activo" ? "inactivo" : "activo")}
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-[0.1em] border cursor-pointer hover:opacity-80 transition-opacity ${
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono font-bold uppercase tracking-[0.1em] border cursor-pointer hover:opacity-80 transition-opacity ${
                 item.estado === "activo"
                   ? "bg-teal-950/60 text-teal-400 border-teal-900/50"
                   : "bg-slate-900 text-slate-500 border-slate-800"
@@ -132,7 +132,7 @@ function SortableCard({
       {/* Pricing Module */}
       <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center min-w-[200px] p-3 rounded-lg bg-black/40 border border-slate-800/50 relative group/price">
         <div className="flex flex-col items-start md:items-end w-full">
-            <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider mb-0.5">Precio Base (Sin IVA)</span>
+            <span className="text-xs text-slate-500 font-mono uppercase tracking-wider mb-0.5">Precio Base (Sin IVA)</span>
             {editPrice !== null ? (
                 <input 
                   autoFocus
@@ -171,20 +171,20 @@ function SortableCard({
         {/* Taxes Tooltip Hover (Desktop) / Expand (Mobile) */}
         <div className="md:absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-700 shadow-2xl rounded-lg overflow-hidden z-30
             hidden md:group-hover/price:block">
-            <div className="bg-slate-800 px-3 py-1.5 text-[10px] uppercase text-slate-400 tracking-wider font-bold">
+            <div className="bg-slate-800 px-3 py-1.5 text-xs uppercase text-slate-400 tracking-wider font-bold">
                 Retenciones Aplicables
             </div>
             <div className="p-2 space-y-1">
                 <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-400 text-[10px]">ReteIVA ({item.reteiva_porc}%)</span>
+                    <span className="text-slate-400 text-xs">ReteIVA ({item.reteiva_porc}%)</span>
                     <span className="text-red-400">{formatMoney(reteiva)}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-400 text-[10px]">ReteFuente ({item.retefuente_porc}%)</span>
+                    <span className="text-slate-400 text-xs">ReteFuente ({item.retefuente_porc}%)</span>
                     <span className="text-red-400">{formatMoney(retefuente)}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-400 text-[10px]">ICA ({item.ica_porc}%)</span>
+                    <span className="text-slate-400 text-xs">ICA ({item.ica_porc}%)</span>
                     <span className="text-red-400">{formatMoney(ica)}</span>
                 </div>
             </div>
@@ -246,11 +246,11 @@ export function PricingTable({ items, onEdit, onDelete, onInlineEdit, onReorder,
               className="w-4 h-4 rounded-sm border-slate-700 bg-slate-900 accent-teal-500 cursor-pointer" 
               id="selectAll"
             />
-            <label htmlFor="selectAll" className="text-slate-300 font-medium cursor-pointer font-mono text-[11px] uppercase tracking-wider">
+            <label htmlFor="selectAll" className="text-slate-300 font-medium cursor-pointer font-mono text-xs uppercase tracking-wider">
               Seleccionar todos [{items.length}]
             </label>
          </div>
-         <div className="text-slate-500 font-mono text-[10px] uppercase tracking-wider hidden sm:block">
+         <div className="text-slate-500 font-mono text-xs uppercase tracking-wider hidden sm:block">
             Arrástralos para priorizar el portafolio
          </div>
       </div>

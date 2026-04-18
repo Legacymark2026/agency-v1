@@ -46,7 +46,7 @@ export function TestimonialSlider() {
 
             <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-0">
                 <div className="text-center mb-24">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-6 uppercase tracking-widest shadow-sm">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm">
                         <MessageSquare size={12} strokeWidth={1.5} />
                         {t('badge')}
                     </div>
@@ -70,7 +70,7 @@ export function TestimonialSlider() {
                                     <img className="h-12 w-12 rounded-sm bg-slate-900 border border-slate-800 grayscale" src={review.img} alt="" />
                                     <div>
                                         <div className="text-sm font-black tracking-tight text-white uppercase font-mono">{review.name}</div>
-                                        <div className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">{review.role}</div>
+                                        <div className="text-xs text-slate-500 uppercase tracking-widest font-mono mt-0.5">{review.role}</div>
                                     </div>
                                 </div>
                             </div>

@@ -35,7 +35,7 @@ export function CommissionActions({ paymentId, currentStatus }: { paymentId: str
                     style={{ background: 'rgba(15,20,35,0.98)', border: '1px solid rgba(30,41,59,0.9)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
                     {STATUSES.filter(s => s !== currentStatus).map(s => (
                         <button key={s} onClick={() => handleChange(s)}
-                            className="w-full text-left px-3 py-2 font-mono text-[10px] text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
+                            className="w-full text-left px-3 py-2 font-mono text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
                             {STATUS_LABELS[s]}
                         </button>
                     ))}

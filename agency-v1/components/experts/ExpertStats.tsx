@@ -19,7 +19,7 @@ export function ExpertStats({ total, active, hidden }: ExpertStatsProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-slate-100">{total}</div>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">
+                    <p className="text-xs font-mono uppercase tracking-widest text-slate-500 mt-1">
                         Total members in DB
                     </p>
                 </CardContent>
@@ -31,7 +31,7 @@ export function ExpertStats({ total, active, hidden }: ExpertStatsProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-slate-100">{active}</div>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">
+                    <p className="text-xs font-mono uppercase tracking-widest text-slate-500 mt-1">
                         Live on "About Us"
                     </p>
                 </CardContent>
@@ -43,7 +43,7 @@ export function ExpertStats({ total, active, hidden }: ExpertStatsProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-slate-100">{hidden}</div>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">
+                    <p className="text-xs font-mono uppercase tracking-widest text-slate-500 mt-1">
                         Drafts or inactive
                     </p>
                 </CardContent>
@@ -55,7 +55,7 @@ export function ExpertStats({ total, active, hidden }: ExpertStatsProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold text-slate-100">100%</div>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">
+                    <p className="text-xs font-mono uppercase tracking-widest text-slate-500 mt-1">
                         System operational
                     </p>
                 </CardContent>

@@ -110,28 +110,28 @@ export function CreativeBriefWizard({ campaignId, onImageReady }: { campaignId?:
                     <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-teal-400">Brief Generado por IA</h3>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                            <p className="text-[10px] text-slate-500 uppercase font-mono">Headline</p>
+                            <p className="text-xs text-slate-500 uppercase font-mono">Headline</p>
                             <p className="text-sm font-bold text-slate-100">{brief.headline}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] text-slate-500 uppercase font-mono">CTA</p>
+                            <p className="text-xs text-slate-500 uppercase font-mono">CTA</p>
                             <p className="text-sm font-bold text-emerald-400">{brief.cta}</p>
                         </div>
                         <div className="col-span-2 space-y-1">
-                            <p className="text-[10px] text-slate-500 uppercase font-mono">Subheadline</p>
+                            <p className="text-xs text-slate-500 uppercase font-mono">Subheadline</p>
                             <p className="text-xs text-slate-300">{brief.subheadline}</p>
                         </div>
                         <div className="col-span-2 space-y-1">
-                            <p className="text-[10px] text-slate-500 uppercase font-mono">Audiencia</p>
+                            <p className="text-xs text-slate-500 uppercase font-mono">Audiencia</p>
                             <p className="text-xs text-slate-400">{brief.targetAudience}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[10px] text-slate-500 uppercase font-mono">Tono</p>
-                            <span className="text-[11px] bg-violet-500/10 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/20">{brief.tone}</span>
+                            <p className="text-xs text-slate-500 uppercase font-mono">Tono</p>
+                            <span className="text-xs bg-violet-500/10 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/20">{brief.tone}</span>
                         </div>
                         {brief.colorPalette && (
                             <div className="space-y-1">
-                                <p className="text-[10px] text-slate-500 uppercase font-mono">Paleta</p>
+                                <p className="text-xs text-slate-500 uppercase font-mono">Paleta</p>
                                 <div className="flex gap-1">
                                     {brief.colorPalette.map((c: string) => (
                                         <div key={c} className="w-5 h-5 rounded border border-slate-700" style={{ backgroundColor: c }} title={c} />
@@ -142,10 +142,10 @@ export function CreativeBriefWizard({ campaignId, onImageReady }: { campaignId?:
                     </div>
                     {brief.copy && (
                         <div className="space-y-2 pt-2 border-t border-slate-800">
-                            <p className="text-[10px] text-slate-500 uppercase font-mono">Copy por Plataforma</p>
+                            <p className="text-xs text-slate-500 uppercase font-mono">Copy por Plataforma</p>
                             {Object.entries(brief.copy).map(([plat, text]) => (
                                 <div key={plat} className="bg-slate-950 rounded-lg p-3">
-                                    <p className="text-[10px] font-mono text-teal-400 mb-1">{plat}</p>
+                                    <p className="text-xs font-mono text-teal-400 mb-1">{plat}</p>
                                     <p className="text-xs text-slate-300">{text as string}</p>
                                 </div>
                             ))}
@@ -184,7 +184,7 @@ export function CreativeBriefWizard({ campaignId, onImageReady }: { campaignId?:
                                                 <p className="text-xs font-mono font-bold text-white">{styleInfo.emoji} {styleInfo.label}</p>
                                                 <Button
                                                     size="sm"
-                                                    className="mt-2 h-7 text-[10px] bg-teal-600 hover:bg-teal-500 font-mono"
+                                                    className="mt-2 h-7 text-xs bg-teal-600 hover:bg-teal-500 font-mono"
                                                     onClick={() => { if (onImageReady) onImageReady(result.url!); toast.success("Imagen seleccionada."); }}
                                                 >
                                                     Usar esta
@@ -194,13 +194,13 @@ export function CreativeBriefWizard({ campaignId, onImageReady }: { campaignId?:
                                     ) : result && !result.success ? (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 text-center p-2">
                                             <XCircle className="text-red-400 mb-1" size={20} />
-                                            <p className="text-[10px] text-slate-500 font-mono">{styleInfo.label}</p>
-                                            <p className="text-[9px] text-red-400 mt-1">Error</p>
+                                            <p className="text-xs text-slate-500 font-mono">{styleInfo.label}</p>
+                                            <p className="text-xs text-red-400 mt-1">Error</p>
                                         </div>
                                     ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/50">
                                             <Loader2 className="text-slate-600 animate-spin" size={20} />
-                                            <p className="text-[10px] text-slate-600 font-mono mt-2">{styleInfo.label}</p>
+                                            <p className="text-xs text-slate-600 font-mono mt-2">{styleInfo.label}</p>
                                         </div>
                                     )}
                                 </div>

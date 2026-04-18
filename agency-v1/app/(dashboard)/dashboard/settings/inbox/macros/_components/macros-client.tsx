@@ -134,7 +134,7 @@ export function MacrosClient({ initialMacros, companyId }: MacrosClientProps) {
                                         <div className="flex items-center gap-2">
                                             <h4 className="font-semibold text-slate-200 text-sm truncate">{macro.title}</h4>
                                             {!macro.isActive && (
-                                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-slate-700 text-slate-400 bg-slate-800">
+                                                <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded border border-slate-700 text-slate-400 bg-slate-800">
                                                     Inactiva
                                                 </span>
                                             )}

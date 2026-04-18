@@ -101,7 +101,7 @@ export default function AppearancePage() {
                             <div className={`w-9 h-9 rounded-xl ${c.bg} transition-all group-hover:scale-110 ${accent === c.key ? "ring-2 ring-offset-2 ring-offset-slate-900 " + c.ring : ""}`}>
                                 {accent === c.key && <div className="w-full h-full flex items-center justify-center"><Check className="w-4 h-4 text-white" /></div>}
                             </div>
-                            <span className="text-[10px] text-slate-500">{c.label}</span>
+                            <span className="text-xs text-slate-500">{c.label}</span>
                         </button>
                     ))}
                 </div>
@@ -137,7 +137,7 @@ export default function AppearancePage() {
                                 {font === f.key && <Check className="w-3.5 h-3.5 text-teal-400" />}
                             </div>
                             <p className="text-xs font-semibold text-slate-300">{f.label}</p>
-                            <p className="text-[10px] text-slate-600">{f.preview}</p>
+                            <p className="text-xs text-slate-600">{f.preview}</p>
                         </button>
                     ))}
                 </div>

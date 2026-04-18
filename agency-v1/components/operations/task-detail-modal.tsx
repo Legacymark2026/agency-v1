@@ -45,7 +45,7 @@ function Avatar({ user, size = "sm" }: { user: any; size?: "sm" | "md" }) {
   const initials = user?.firstName && user?.lastName
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : (user?.name || "??").substring(0, 2).toUpperCase();
-  const cls = size === "md" ? "w-8 h-8 text-xs" : "w-6 h-6 text-[10px]";
+  const cls = size === "md" ? "w-8 h-8 text-xs" : "w-6 h-6 text-xs";
   return (
     <div className={`${cls} rounded-full bg-teal-700 flex items-center justify-center font-bold text-white border border-slate-800 overflow-hidden flex-shrink-0`}>
       {user?.image ? <img src={user.image} alt="" className="w-full h-full object-cover" /> : initials}
@@ -101,7 +101,7 @@ function TimeTracker({ taskId, onLogged }: { taskId: string; onLogged: (comment:
         <div className="flex items-center gap-2">
           <Clock className={`w-4 h-4 ${running ? "text-teal-400" : "text-slate-500"}`} />
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cronómetro</span>
-          {running && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400 font-bold animate-pulse">EN CURSO</span>}
+          {running && <span className="text-xs px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400 font-bold animate-pulse">EN CURSO</span>}
         </div>
         <div className="font-mono text-2xl font-bold" style={{ color: running ? "#2dd4bf" : "#64748b" }}>
           {fmt(elapsed)}
@@ -145,7 +145,7 @@ function MediaPreview({ url, type }: { url: string; type?: string }) {
         <img src={url} alt="Asset preview" className="w-full max-h-64 object-cover" />
       )}
       <div className="px-3 py-2 flex items-center justify-between">
-        <span className="text-[10px] text-slate-500 font-mono truncate">{url.split("/").pop()}</span>
+        <span className="text-xs text-slate-500 font-mono truncate">{url.split("/").pop()}</span>
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:text-teal-300 transition-colors">
           <ExternalLink className="w-3.5 h-3.5" />
         </a>
@@ -296,20 +296,20 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
             <div className="flex items-start justify-between p-5 border-b border-slate-800 gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <span className="text-[10px] font-mono text-slate-600 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                  <span className="text-xs font-mono text-slate-600 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
                     {task.id.split("-")[0].toUpperCase()}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded font-bold" style={{ color: STATUS_OPTIONS.find(s => s.value === task.status)?.color, background: `${STATUS_OPTIONS.find(s => s.value === task.status)?.color}20` }}>
+                  <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ color: STATUS_OPTIONS.find(s => s.value === task.status)?.color, background: `${STATUS_OPTIONS.find(s => s.value === task.status)?.color}20` }}>
                     {STATUS_OPTIONS.find(s => s.value === task.status)?.label}
                   </span>
                   {blockingIncomplete && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 font-bold">
+                    <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 font-bold">
                       <AlertTriangle className="w-3 h-3" /> Checklist incompleto
                     </span>
                   )}
-                  {isOverdue && <span className="text-[10px] px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-bold">⚠ Vencida</span>}
+                  {isOverdue && <span className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 font-bold">⚠ Vencida</span>}
                   {task.storyPoints && (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">
+                    <span className="text-xs px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">
                       <Zap className="w-3 h-3 inline mr-1" />{task.storyPoints} pts
                     </span>
                   )}
@@ -328,7 +328,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                 {task.labels?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {task.labels.map((l: string) => (
-                      <span key={l} className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-white" style={{ background: LABEL_COLORS[l] || "#64748b" }}>{l}</span>
+                      <span key={l} className="text-xs px-2 py-0.5 rounded-full font-semibold text-white" style={{ background: LABEL_COLORS[l] || "#64748b" }}>{l}</span>
                     ))}
                   </div>
                 )}
@@ -381,7 +381,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-xs font-semibold text-slate-300">{c.author?.name || c.author?.firstName}</span>
-                                <span className="text-[10px] text-slate-600">{new Date(c.createdAt).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                                <span className="text-xs text-slate-600">{new Date(c.createdAt).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                               </div>
                               <div className="text-xs text-slate-300 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2">{c.content}</div>
                             </div>
@@ -410,7 +410,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
 
                     {/* Status */}
                     <div>
-                      <label className="text-[11px] text-slate-500 mb-1.5 block font-semibold">Estado</label>
+                      <label className="text-xs text-slate-500 mb-1.5 block font-semibold">Estado</label>
                       <select value={task.status} onChange={e => update({ status: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:border-teal-500/50 cursor-pointer">
                         {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
@@ -419,11 +419,11 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
 
                     {/* Priority */}
                     <div>
-                      <label className="text-[11px] text-slate-500 mb-1.5 block font-semibold">Prioridad</label>
+                      <label className="text-xs text-slate-500 mb-1.5 block font-semibold">Prioridad</label>
                       <div className="grid grid-cols-2 gap-1">
                         {PRIORITY_OPTIONS.map(p => (
                           <button key={p.value} onClick={() => update({ priority: p.value })}
-                            className="py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                            className="py-1.5 rounded-lg text-xs font-bold transition-all"
                             style={{ color: p.color, background: task.priority === p.value ? `${p.color}20` : "transparent", border: `1px solid ${task.priority === p.value ? p.color : "#334155"}` }}>
                             {p.label}
                           </button>
@@ -433,7 +433,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
 
                     {/* Story Points */}
                     <div>
-                      <label className="text-[11px] text-slate-500 mb-1.5 block font-semibold flex items-center gap-1"><Zap className="w-3 h-3 text-purple-400" /> Puntos de Esfuerzo</label>
+                      <label className="text-xs text-slate-500 mb-1.5 block font-semibold flex items-center gap-1"><Zap className="w-3 h-3 text-purple-400" /> Puntos de Esfuerzo</label>
                       <div className="flex flex-wrap gap-1">
                         {EFFORT_POINTS.map(pt => (
                           <button key={pt} onClick={() => update({ storyPoints: pt })}
@@ -446,7 +446,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
 
                     {/* Assignee */}
                     <div>
-                      <label className="text-[11px] text-slate-500 mb-1.5 block font-semibold">Asignado a</label>
+                      <label className="text-xs text-slate-500 mb-1.5 block font-semibold">Asignado a</label>
                       <select value={task.assignee?.id || ""} onChange={e => update({ assigneeId: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 outline-none focus:border-teal-500/50 cursor-pointer">
                         <option value="">Sin asignar</option>
@@ -456,7 +456,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
 
                     {/* Due Date */}
                     <div>
-                      <label className="text-[11px] text-slate-500 mb-1.5 block font-semibold">Vencimiento</label>
+                      <label className="text-xs text-slate-500 mb-1.5 block font-semibold">Vencimiento</label>
                       <input type="date" value={task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""}
                         onChange={e => update({ dueDate: e.target.value ? new Date(e.target.value) : null })}
                         className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-xs text-slate-200 outline-none focus:border-teal-500/50 cursor-pointer transition-colors ${isOverdue ? "border-red-500/50" : "border-slate-800"}`}
@@ -466,13 +466,13 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                     {/* Labels */}
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-[11px] text-slate-500 font-semibold">Etiquetas</label>
-                        <button onClick={() => setShowLabelPicker(v => !v)} className="text-[10px] text-teal-400 hover:text-teal-300">{showLabelPicker ? "Cerrar" : "Editar"}</button>
+                        <label className="text-xs text-slate-500 font-semibold">Etiquetas</label>
+                        <button onClick={() => setShowLabelPicker(v => !v)} className="text-xs text-teal-400 hover:text-teal-300">{showLabelPicker ? "Cerrar" : "Editar"}</button>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {task.labels?.length > 0 ? task.labels.map((l: string) => (
-                          <span key={l} className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold text-white" style={{ background: LABEL_COLORS[l] || "#64748b" }}>{l}</span>
-                        )) : <span className="text-[10px] text-slate-600">Sin etiquetas</span>}
+                          <span key={l} className="text-xs px-1.5 py-0.5 rounded-full font-semibold text-white" style={{ background: LABEL_COLORS[l] || "#64748b" }}>{l}</span>
+                        )) : <span className="text-xs text-slate-600">Sin etiquetas</span>}
                       </div>
                       {showLabelPicker && (
                         <div className="mt-2 p-2 bg-slate-900 border border-slate-700 rounded-xl flex flex-wrap gap-1">
@@ -480,7 +480,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                             const active = task.labels?.includes(label);
                             return (
                               <button key={label} onClick={() => toggleLabel(label)}
-                                className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold transition-all"
+                                className="text-xs px-1.5 py-0.5 rounded-full font-semibold transition-all"
                                 style={{ color: active ? "#fff" : LABEL_COLORS[label], background: active ? LABEL_COLORS[label] : `${LABEL_COLORS[label]}15`, border: `1px solid ${LABEL_COLORS[label]}50` }}>
                                 {label}
                               </button>
@@ -491,7 +491,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                     </div>
 
                     {/* Meta */}
-                    <div className="pt-3 border-t border-slate-800 space-y-1.5 text-[10px] text-slate-500">
+                    <div className="pt-3 border-t border-slate-800 space-y-1.5 text-xs text-slate-500">
                       {task.creator && <div>Creado por <span className="text-slate-300">{task.creator.name || task.creator.firstName}</span></div>}
                       <div>{new Date(task.createdAt).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}</div>
                     </div>
@@ -558,7 +558,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                         </button>
                         <span className={`text-sm flex-1 ${st.completed ? "line-through text-slate-600" : "text-slate-300"}`}>{st.title}</span>
                         {st.isBlocking && !st.completed && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold flex-shrink-0">Bloqueante</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold flex-shrink-0">Bloqueante</span>
                         )}
                         <button onClick={() => handleDeleteSub(st.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash2 className="w-3.5 h-3.5 text-slate-600 hover:text-red-400 transition-colors" />
@@ -615,7 +615,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                             <Clock className="w-4 h-4 text-teal-400 flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="text-xs text-slate-300">{c.content.replace("⏱ **Sesión de trabajo:** ", "")}</p>
-                              <p className="text-[10px] text-slate-600 mt-0.5">{c.author?.name} · {new Date(c.createdAt).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                              <p className="text-xs text-slate-600 mt-0.5">{c.author?.name} · {new Date(c.createdAt).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                             </div>
                           </div>
                         ))}
@@ -673,7 +673,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                       {task.mediaUrls.map((m: any, i: number) => (
                         <div key={i}>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] px-2 py-0.5 rounded font-bold text-white bg-slate-700">{m.version || "V1"}</span>
+                            <span className="text-xs px-2 py-0.5 rounded font-bold text-white bg-slate-700">{m.version || "V1"}</span>
                             <button onClick={() => {
                               const next = task.mediaUrls.filter((_: any, idx: number) => idx !== i);
                               update({ mediaUrls: next });
@@ -806,7 +806,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                           <div key={m.label} className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
                             <div className="flex items-center gap-1.5 mb-1">
                               <m.icon className="w-3.5 h-3.5 text-slate-500" />
-                              <span className="text-[10px] text-slate-500 uppercase tracking-wider">{m.label}</span>
+                              <span className="text-xs text-slate-500 uppercase tracking-wider">{m.label}</span>
                             </div>
                             <p className="text-base font-bold font-mono text-slate-200">{m.value}</p>
                           </div>
@@ -858,7 +858,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                         {aiBrief.checklist.map((item, i) => (
                           <div key={i} className="flex items-start gap-2 text-sm text-slate-300">
                             <div className="w-5 h-5 rounded-md border border-slate-600 flex-shrink-0 flex items-center justify-center mt-0.5">
-                              <span className="text-[10px] font-bold text-slate-500">{i + 1}</span>
+                              <span className="text-xs font-bold text-slate-500">{i + 1}</span>
                             </div>
                             {item}
                           </div>
@@ -937,7 +937,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                           <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden">
                             {log.actor?.image
                               ? <img src={log.actor.image} alt="" className="w-full h-full object-cover" />
-                              : <span className="text-[9px] font-bold text-slate-400">{actorName.substring(0, 2).toUpperCase()}</span>
+                              : <span className="text-xs font-bold text-slate-400">{actorName.substring(0, 2).toUpperCase()}</span>
                             }
                           </div>
                           <div className="flex-1 min-w-0">
@@ -948,7 +948,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
                                 <span className="text-slate-500"> &bull; <span className="line-through text-slate-600">{log.fromValue}</span> → <span className="text-teal-400">{log.toValue}</span></span>
                               )}
                             </p>
-                            <p className="text-[10px] text-slate-600 mt-0.5">
+                            <p className="text-xs text-slate-600 mt-0.5">
                               {new Date(log.createdAt).toLocaleString("es", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                             </p>
                           </div>

@@ -159,7 +159,7 @@ export default function ExecutionDetailClient({ initialExecution }: { initialExe
                                                                     {log.durationMs ? `${log.durationMs}ms latencia` : '< 1ms latencia'}
                                                                 </p>
                                                             </div>
-                                                            {isError && <Badge variant="destructive" className="text-[10px]">Error Crítico</Badge>}
+                                                            {isError && <Badge variant="destructive" className="text-xs">Error Crítico</Badge>}
                                                         </div>
 
                                                         {isError && log.error && (
@@ -171,10 +171,10 @@ export default function ExecutionDetailClient({ initialExecution }: { initialExe
 
                                                         {isDebugMode && log.payload && (
                                                             <div className="mt-4">
-                                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 block">
+                                                                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 block">
                                                                     Payload Inspector (State)
                                                                 </span>
-                                                                <pre className="bg-slate-900 text-emerald-400 p-3 rounded-md text-[10px] overflow-x-auto font-mono leading-relaxed border border-slate-800">
+                                                                <pre className="bg-slate-900 text-emerald-400 p-3 rounded-md text-xs overflow-x-auto font-mono leading-relaxed border border-slate-800">
                                                                     {JSON.stringify(log.payload, null, 2)}
                                                                 </pre>
                                                             </div>

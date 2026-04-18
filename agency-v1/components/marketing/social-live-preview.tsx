@@ -31,7 +31,7 @@ export function SocialLivePreview({ platform, content, mediaUrl, authorName, aut
                         <p className="text-gray-500 text-[12px] flex items-center gap-1">
                             <span>{today}</span>
                             <span>·</span>
-                            <span className="w-3 h-3 rounded-full bg-gray-300 inline-block text-[8px] text-center leading-3">🌍</span>
+                            <span className="w-3 h-3 rounded-full bg-gray-300 inline-block text-xs text-center leading-3">🌍</span>
                         </p>
                     </div>
                 </div>
@@ -45,7 +45,7 @@ export function SocialLivePreview({ platform, content, mediaUrl, authorName, aut
                 )}
                 <div className="px-4 py-3 flex items-center justify-between border-b border-gray-200 text-gray-500">
                     <div className="flex items-center gap-1 text-[13px]">
-                        <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[10px]">👍</span>
+                        <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">👍</span>
                         <span>0</span>
                     </div>
                     <div className="text-[13px]">
@@ -121,24 +121,24 @@ export function SocialLivePreview({ platform, content, mediaUrl, authorName, aut
                         <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
                             ❤️
                         </div>
-                        <span className="text-[11px] font-bold">0</span>
+                        <span className="text-xs font-bold">0</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                         <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
                             💬
                         </div>
-                        <span className="text-[11px] font-bold">0</span>
+                        <span className="text-xs font-bold">0</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                         <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
                             🔖
                         </div>
-                        <span className="text-[11px] font-bold">0</span>
+                        <span className="text-xs font-bold">0</span>
                     </div>
                     <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/50 mt-2 rotate-slow">
                          <Avatar className="w-full h-full">
                             <AvatarImage src={authorImage} />
-                            <AvatarFallback className="bg-zinc-800 text-[10px]">{authorName.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="bg-zinc-800 text-xs">{authorName.charAt(0)}</AvatarFallback>
                         </Avatar>
                     </div>
                 </div>

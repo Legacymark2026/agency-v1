@@ -143,7 +143,7 @@ export function DealDetailsDialog({ deal, open, onOpenChange }: DealDetailsDialo
 
                             {/* Panel: CORE */}
                             <div className="bg-slate-800/30 rounded-2xl p-5 border border-slate-700/50 shadow-inner">
-                                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                                     <DollarSign className="w-3.5 h-3.5 text-blue-400" /> Núcleo del Negocio
                                 </h3>
                                 <div className="grid grid-cols-2 gap-5">
@@ -179,7 +179,7 @@ export function DealDetailsDialog({ deal, open, onOpenChange }: DealDetailsDialo
                             <div className="grid grid-cols-2 gap-6 w-full">
                                 {/* Panel: ESTADO */}
                                 <div className="bg-slate-800/30 rounded-2xl p-5 border border-slate-700/50 shadow-inner">
-                                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                                         <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Estado y Progreso
                                     </h3>
                                     <div className="space-y-4">
@@ -262,7 +262,7 @@ export function DealDetailsDialog({ deal, open, onOpenChange }: DealDetailsDialo
                                 {/* Panel: CONTACTO */}
                                 <div className="bg-slate-800/30 rounded-2xl p-5 border border-slate-700/50 shadow-inner flex flex-col justify-between">
                                     <div className="space-y-4">
-                                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                                             <User className="w-3.5 h-3.5 text-indigo-400" /> Datos de Contacto
                                         </h3>
                                         <FormField
@@ -297,7 +297,7 @@ export function DealDetailsDialog({ deal, open, onOpenChange }: DealDetailsDialo
 
                             {/* Panel: INTELIGENCIA & NOTAS */}
                             <div className="bg-slate-800/30 rounded-2xl p-5 border border-slate-700/50 shadow-inner">
-                                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
                                     <BrainCircuit className="w-3.5 h-3.5 text-purple-400" /> Inteligencia & Metadatos
                                 </h3>
                                 <div className="grid grid-cols-3 gap-4 mb-4">

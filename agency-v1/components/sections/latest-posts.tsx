@@ -31,7 +31,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
                 <div className="mb-16 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-4 uppercase tracking-widest shadow-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-4 uppercase tracking-widest shadow-sm">
                             <FileText size={12} strokeWidth={1.5} />
                             {t('badge')}
                         </div>
@@ -39,7 +39,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
                         <p className="mt-2 text-lg text-slate-400 font-light">{t('subtitle')}</p>
                     </div>
                     <Link href="/blog">
-                        <Button variant="outline" className="text-slate-300 border-slate-700 hover:bg-teal-500 hover:text-slate-950 hover:border-teal-400 rounded-sm font-bold tracking-widest uppercase text-[10px] transition-all duration-300 shadow-sm">
+                        <Button variant="outline" className="text-slate-300 border-slate-700 hover:bg-teal-500 hover:text-slate-950 hover:border-teal-400 rounded-sm font-bold tracking-widest uppercase text-xs transition-all duration-300 shadow-sm">
                             {t('btn')}
                         </Button>
                     </Link>
@@ -64,7 +64,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
                             </Link>
 
                             <div className="flex flex-1 flex-col p-6">
-                                <div className="mb-4 flex items-center gap-4 text-[10px] font-mono text-teal-500 uppercase tracking-widest">
+                                <div className="mb-4 flex items-center gap-4 text-xs font-mono text-teal-500 uppercase tracking-widest">
                                     <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} /> {new Date(post.createdAt).toLocaleDateString()}</span>
                                     {post.author?.name && (
                                         <span className="flex items-center gap-1.5"><User size={12} strokeWidth={1.5} /> {post.author.name}</span>
@@ -81,7 +81,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
                                     {post.excerpt || t('lockedMsg')}
                                 </p>
 
-                                <Link href={`/blog/${post.slug}`} className="inline-flex items-center font-bold text-teal-400 hover:text-teal-300 transition-colors text-[10px] uppercase tracking-widest font-mono">
+                                <Link href={`/blog/${post.slug}`} className="inline-flex items-center font-bold text-teal-400 hover:text-teal-300 transition-colors text-xs uppercase tracking-widest font-mono">
                                     {t('readAction')} <ArrowRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
                                 </Link>
                             </div>

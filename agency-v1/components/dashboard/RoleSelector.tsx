@@ -57,7 +57,7 @@ export function RoleSelector({ userId, currentRole, isSelf, customRoles = [] }: 
         return (
             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${currentOption.color}`}>
                 {currentOption.label}
-                <span className="ml-1.5 text-[10px] opacity-60">(tú)</span>
+                <span className="ml-1.5 text-xs opacity-60">(tú)</span>
             </span>
         );
     }
@@ -84,7 +84,7 @@ export function RoleSelector({ userId, currentRole, isSelf, customRoles = [] }: 
                     <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
 
                     <div className="absolute left-0 top-full mt-1 z-20 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 overflow-hidden">
-                        <p className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
+                        <p className="px-3 py-1.5 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
                             Cambiar rol
                         </p>
                         {dynamicRoles.map((option) => (

@@ -50,7 +50,7 @@ export function InboxCommandMenu() {
                             className="flex-1 h-14 bg-transparent border-none outline-none focus:ring-0 text-slate-900 placeholder:text-slate-400 px-3 text-base"
                             autoFocus
                         />
-                        <kbd className="hidden sm:inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-100 px-2 py-1 font-mono text-[10px] font-medium text-slate-500">
+                        <kbd className="hidden sm:inline-flex items-center gap-1 rounded border border-slate-200 bg-slate-100 px-2 py-1 font-mono text-xs font-medium text-slate-500">
                             ESC
                         </kbd>
                         <button onClick={() => setOpen(false)} className="sm:hidden -mr-2 p-2 text-slate-400 hover:text-slate-600">
@@ -75,7 +75,7 @@ export function InboxCommandMenu() {
                                     <p className="text-sm font-medium text-slate-900 group-aria-selected:text-blue-700">María Sánchez</p>
                                     <p className="text-xs text-slate-500 truncate group-aria-selected:text-blue-500">¿Me puedes dar info sobre el plan Pro?</p>
                                 </div>
-                                <span className="text-[10px] text-slate-400">Hace 5m</span>
+                                <span className="text-xs text-slate-400">Hace 5m</span>
                             </Command.Item>
 
                             <Command.Item
@@ -89,7 +89,7 @@ export function InboxCommandMenu() {
                                     <p className="text-sm font-medium text-slate-900 group-aria-selected:text-blue-700">Carlos Díaz</p>
                                     <p className="text-xs text-slate-500 truncate group-aria-selected:text-blue-500">Ya les envié el pago.</p>
                                 </div>
-                                <span className="text-[10px] text-slate-400">Hace 1h</span>
+                                <span className="text-xs text-slate-400">Hace 1h</span>
                             </Command.Item>
                         </Command.Group>
 

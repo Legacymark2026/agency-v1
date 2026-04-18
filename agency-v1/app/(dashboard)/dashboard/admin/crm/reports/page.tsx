@@ -18,7 +18,7 @@ export default async function ReportsPage() {
     const company = await prisma.company.findFirst();
     if (!company) return (
         <div className="ds-page flex items-center justify-center">
-            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
+            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
         </div>
     );
 
@@ -30,7 +30,7 @@ export default async function ReportsPage() {
 
     if ("error" in data) return (
         <div className="ds-page flex items-center justify-center">
-            <p className="font-mono text-[9px] text-red-500 uppercase tracking-widest">&gt; Error al cargar reportes_</p>
+            <p className="font-mono text-xs text-red-500 uppercase tracking-widest">&gt; Error al cargar reportes_</p>
         </div>
     );
 
@@ -77,7 +77,7 @@ export default async function ReportsPage() {
             <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {kpis.map(k => (
                     <div key={k.code} className="ds-kpi group">
-                        <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest">[{k.code}]</span>
+                        <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest">[{k.code}]</span>
                         <div className="relative z-10">
                             <div className="ds-icon-box w-9 h-9 mb-3">
                                 <k.icon size={14} strokeWidth={1.5} className="text-slate-500 group-hover:text-teal-400 transition-colors" />
@@ -92,11 +92,11 @@ export default async function ReportsPage() {
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* Revenue by Month */}
                 <div className="ds-section">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Revenue por Mes</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Revenue por Mes</p>
                     <div className="flex items-end gap-2 h-40">
                         {revenueByMonth.map(m => (
                             <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                                <span className="font-mono text-[8px] font-bold text-teal-400">${(m.revenue / 1000).toFixed(1)}k</span>
+                                <span className="font-mono text-xs font-bold text-teal-400">${(m.revenue / 1000).toFixed(1)}k</span>
                                 <div className="w-full rounded-sm bg-gradient-to-t from-teal-600 to-teal-400 transition-all relative overflow-hidden"
                                     style={{ height: `${Math.max((m.revenue / maxRevenue) * 100, 4)}%` }}>
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_2s_linear_infinite]" />
@@ -109,7 +109,7 @@ export default async function ReportsPage() {
 
                 {/* Win Rate Trend */}
                 <div className="ds-section">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Win Rate por Mes</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Win Rate por Mes</p>
                     <div className="relative h-40">
                         <svg viewBox="0 0 500 130" className="w-full h-full" preserveAspectRatio="none">
                             <defs>
@@ -132,7 +132,7 @@ export default async function ReportsPage() {
                         <div className="flex justify-between mt-2">
                             {winRateByMonth.map(m => (
                                 <div key={m.month} className="text-center">
-                                    <p className="font-mono text-[8px] font-bold text-teal-400">{m.winRate}%</p>
+                                    <p className="font-mono text-xs font-bold text-teal-400">{m.winRate}%</p>
                                     <p className="font-mono text-[7px] text-slate-600 capitalize">{m.month}</p>
                                 </div>
                             ))}
@@ -142,20 +142,20 @@ export default async function ReportsPage() {
 
                 {/* Conversion by Source */}
                 <div className="ds-section">
-                    <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Conversión por Fuente</p>
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Conversión por Fuente</p>
                     <div className="space-y-3">
                         {conversionBySource.map(s => (
                             <div key={s.source} className="flex items-center gap-3">
-                                <span className="font-mono text-[9px] text-slate-400 w-24 truncate uppercase tracking-widest">{s.source}</span>
+                                <span className="font-mono text-xs text-slate-400 w-24 truncate uppercase tracking-widest">{s.source}</span>
                                 <div className="flex-1 h-1.5 overflow-hidden" style={{ background: 'rgba(30,41,59,0.8)', borderRadius: 0 }}>
                                     <div className="h-full bg-gradient-to-r from-teal-600 to-teal-400" style={{ width: `${s.rate}%` }} />
                                 </div>
-                                <span className="font-mono text-[9px] font-bold text-teal-400 w-10 text-right">{s.rate}%</span>
-                                <span className="font-mono text-[8px] text-slate-600 w-20 text-right">{s.converted}/{s.total} leads</span>
+                                <span className="font-mono text-xs font-bold text-teal-400 w-10 text-right">{s.rate}%</span>
+                                <span className="font-mono text-xs text-slate-600 w-20 text-right">{s.converted}/{s.total} leads</span>
                             </div>
                         ))}
                         {conversionBySource.length === 0 && (
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest text-center py-4">&gt; Sin datos aún_</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest text-center py-4">&gt; Sin datos aún_</p>
                         )}
                     </div>
                 </div>
@@ -163,11 +163,11 @@ export default async function ReportsPage() {
                 {/* Stage Revenue + Leaderboard */}
                 <div className="space-y-5">
                     <div className="ds-section">
-                        <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-4">Pipeline por Etapa</p>
+                        <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-4">Pipeline por Etapa</p>
                         <div className="space-y-2">
                             {Object.entries(stageRevenue).map(([stage, value]) => (
                                 <div key={stage} className="flex items-center justify-between">
-                                    <span className="font-mono text-[9px] text-slate-400 uppercase tracking-widest">{STAGE_LABELS[stage]?.label ?? stage}</span>
+                                    <span className="font-mono text-xs text-slate-400 uppercase tracking-widest">{STAGE_LABELS[stage]?.label ?? stage}</span>
                                     <span className="font-mono font-black text-sm text-slate-100">${(value as number).toLocaleString()}</span>
                                 </div>
                             ))}
@@ -178,15 +178,15 @@ export default async function ReportsPage() {
                             <div className="ds-icon-box w-7 h-7">
                                 <Trophy size={12} strokeWidth={1.5} className="text-teal-400" />
                             </div>
-                            <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Leaderboard Ventas</p>
+                            <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Leaderboard Ventas</p>
                         </div>
                         <div className="space-y-3">
                             {salesReps.map((rep, i) => (
                                 <div key={rep.name} className="flex items-center gap-3">
-                                    <span className={`w-5 h-5 rounded-sm flex items-center justify-center font-mono text-[8px] font-black ${i === 0 ? "text-amber-400" : i === 1 ? "text-slate-300" : "text-orange-400"}`}
+                                    <span className={`w-5 h-5 rounded-sm flex items-center justify-center font-mono text-xs font-black ${i === 0 ? "text-amber-400" : i === 1 ? "text-slate-300" : "text-orange-400"}`}
                                         style={{ background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(30,41,59,0.8)' }}>{i + 1}</span>
-                                    <span className="flex-1 font-mono text-[10px] text-slate-300 truncate">{rep.name}</span>
-                                    <span className="font-mono text-[9px] text-slate-600">{rep.won} deals</span>
+                                    <span className="flex-1 font-mono text-xs text-slate-300 truncate">{rep.name}</span>
+                                    <span className="font-mono text-xs text-slate-600">{rep.won} deals</span>
                                     <span className="font-mono font-black text-sm text-teal-400">${(rep.value / 1000).toFixed(1)}k</span>
                                 </div>
                             ))}
@@ -197,11 +197,11 @@ export default async function ReportsPage() {
 
             {/* Leads Volume */}
             <div className="relative z-10 ds-section">
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Volumen de Leads por Mes</p>
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-5">Volumen de Leads por Mes</p>
                 <div className="flex items-end gap-3 h-32">
                     {revenueByMonth.map(m => (
                         <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                            <span className="font-mono text-[8px] font-bold text-teal-400">{m.leads}</span>
+                            <span className="font-mono text-xs font-bold text-teal-400">{m.leads}</span>
                             <div className="w-full rounded-sm bg-gradient-to-t from-sky-700 to-sky-500" style={{ height: `${Math.max((m.leads / maxLeads) * 100, 4)}%` }} />
                             <span className="font-mono text-[7px] text-slate-600 capitalize">{m.month}</span>
                         </div>
@@ -211,26 +211,26 @@ export default async function ReportsPage() {
 
             {/* F6: Funnel Conversion Chart */}
             <div className="relative z-10 ds-section">
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-6">Embudo de Conversión por Etapa</p>
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em] mb-6">Embudo de Conversión por Etapa</p>
                 <div className="space-y-4">
                     {funnelData.filter(f => f.stage !== 'LOST').map((f, i) => {
                         const cfg = STAGE_LABELS[f.stage];
                         const barWidth = maxFunnelCount > 0 ? Math.max((f.count / maxFunnelCount) * 100, 2) : 2;
                         return (
                             <div key={f.stage} className="flex items-center gap-4">
-                                <span className="font-mono text-[9px] text-slate-400 uppercase tracking-widest w-24 shrink-0">{cfg?.label ?? f.stage}</span>
+                                <span className="font-mono text-xs text-slate-400 uppercase tracking-widest w-24 shrink-0">{cfg?.label ?? f.stage}</span>
                                 <div className="flex-1 relative h-6 flex items-center">
                                     <div className="absolute inset-0 rounded-sm" style={{ background: 'rgba(30,41,59,0.5)' }} />
                                     <div className="relative h-full rounded-sm transition-all duration-700"
                                         style={{ width: `${barWidth}%`, background: `linear-gradient(90deg, ${cfg?.color ?? '#64748b'}, ${cfg?.accent ?? '#94a3b8'})`, boxShadow: `0 0 12px ${cfg?.color ?? '#64748b'}44` }}>
                                         <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-white/30" />
                                     </div>
-                                    <span className="ml-3 font-mono text-[9px] font-black" style={{ color: cfg?.accent ?? '#94a3b8' }}>{f.count} deals</span>
+                                    <span className="ml-3 font-mono text-xs font-black" style={{ color: cfg?.accent ?? '#94a3b8' }}>{f.count} deals</span>
                                 </div>
                                 <div className="text-right shrink-0 w-32">
                                     <p className="font-mono font-black text-sm text-slate-100">${(f.value / 1000).toFixed(1)}k</p>
                                     {i > 0 && f.conversionRate > 0 && (
-                                        <p className="font-mono text-[8px] text-slate-600">→ {f.conversionRate}% conversión</p>
+                                        <p className="font-mono text-xs text-slate-600">→ {f.conversionRate}% conversión</p>
                                     )}
                                 </div>
                             </div>
@@ -247,8 +247,8 @@ export default async function ReportsPage() {
                             <AlertTriangle size={12} className="text-amber-400" />
                         </div>
                         <div>
-                            <p className="font-mono text-[9px] font-bold text-amber-500 uppercase tracking-[0.14em]">Deals Estancados · {stagnantDeals.length} alertas</p>
-                            <p className="font-mono text-[8px] text-slate-600">Sin actividad por más de 7 días</p>
+                            <p className="font-mono text-xs font-bold text-amber-500 uppercase tracking-[0.14em]">Deals Estancados · {stagnantDeals.length} alertas</p>
+                            <p className="font-mono text-xs text-slate-600">Sin actividad por más de 7 días</p>
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -259,12 +259,12 @@ export default async function ReportsPage() {
                                     className="flex items-center gap-3 p-2.5 rounded-lg transition-all hover:bg-amber-900/20"
                                     style={{ border: '1px solid rgba(245,158,11,0.1)' }}>
                                     <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" style={{ boxShadow: '0 0 6px #f59e0b66' }} />
-                                    <span className="flex-1 font-mono text-[10px] text-slate-300 truncate">{d.title}</span>
-                                    <span className="font-mono text-[9px] font-black" style={{ color: STAGE_LABELS[d.stage]?.color ?? '#64748b' }}>
+                                    <span className="flex-1 font-mono text-xs text-slate-300 truncate">{d.title}</span>
+                                    <span className="font-mono text-xs font-black" style={{ color: STAGE_LABELS[d.stage]?.color ?? '#64748b' }}>
                                         {STAGE_LABELS[d.stage]?.label ?? d.stage}
                                     </span>
                                     <span className="font-mono font-black text-sm text-teal-400">${(d.value / 1000).toFixed(1)}k</span>
-                                    <span className="font-mono text-[9px] font-bold text-amber-500 shrink-0">{daysSince}d ❄️</span>
+                                    <span className="font-mono text-xs font-bold text-amber-500 shrink-0">{daysSince}d ❄️</span>
                                 </Link>
                             );
                         })}

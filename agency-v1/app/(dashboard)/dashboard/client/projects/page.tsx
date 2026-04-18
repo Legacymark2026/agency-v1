@@ -103,7 +103,7 @@ export default async function ClientProjectsPage() {
                                         {project.kanbanTasks.map(task => (
                                             <div key={task.id} className="bg-slate-900 border border-slate-800 p-4 rounded-lg flex flex-col shadow-sm hover:border-slate-700 transition-colors">
                                                 <div className="flex items-start justify-between gap-2 mb-3">
-                                                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] uppercase font-bold tracking-widest ring-1 ring-inset ${priorityBadge[task.priority] || priorityBadge.LOW}`}>
+                                                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs uppercase font-bold tracking-widest ring-1 ring-inset ${priorityBadge[task.priority] || priorityBadge.LOW}`}>
                                                         {task.priority}
                                                     </span>
                                                     {task.status === "DONE" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}

@@ -206,7 +206,7 @@ export function ChatWidget() {
                                                 <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
                                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
                                             </span>
-                                            <span className="text-[10px] sm:text-xs text-white/70">En línea</span>
+                                            <span className="text-xs sm:text-xs text-white/70">En línea</span>
                                         </div>
                                     </div>
                                 </div>
@@ -296,7 +296,7 @@ export function ChatWidget() {
                     </AnimatePresence>
                 </motion.button>
                 
-                <div className="hidden sm:block absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                <div className="hidden sm:block absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         Arrastra para mover
                     </div>
             </div>

@@ -261,14 +261,14 @@ export function LeadDashboard({ companyId }: LeadDashboardProps) {
                                     <TableCell>
                                         <LeadSourceBadge source={lead.source} size="sm" />
                                         {lead.utmCampaign && (
-                                            <p className="text-[10px] text-gray-400 mt-1">
+                                            <p className="text-xs text-gray-400 mt-1">
                                                 {lead.utmCampaign}
                                             </p>
                                         )}
                                     </TableCell>
                                     <TableCell>
                                         {lead.campaign ? (
-                                            <Badge variant="outline" className="text-[10px]">
+                                            <Badge variant="outline" className="text-xs">
                                                 {lead.campaign.name}
                                             </Badge>
                                         ) : (

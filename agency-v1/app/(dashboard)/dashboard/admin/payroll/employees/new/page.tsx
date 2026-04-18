@@ -156,7 +156,7 @@ export default function NewEmployeePage() {
                             <option value="LABORAL">Laboral (Término Fijo/Indefinido)</option>
                             <option value="PRESTACION_SERVICIOS">Prestación de Servicios (Freelance)</option>
                         </select>
-                         <p className="text-[10px] text-slate-500 mt-1">El contrato Laboral calcula automáticamente Salud y Pensión. Prestación de servicios calcula Retefuente.</p>
+                         <p className="text-xs text-slate-500 mt-1">El contrato Laboral calcula automáticamente Salud y Pensión. Prestación de servicios calcula Retefuente.</p>
                     </div>
 
                     <div className="space-y-2">

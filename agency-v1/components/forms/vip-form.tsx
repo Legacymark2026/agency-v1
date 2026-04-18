@@ -62,12 +62,9 @@ export function VIPForm() {
                 className="w-full text-center bg-[#0a0a0a] rounded-xl border border-green-500/20 shadow-2xl overflow-hidden p-8"
             >
                 <div className="flex flex-col items-center gap-6 py-8">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-green-500 blur-xl opacity-20 rounded-full" />
-                        <div className="relative h-20 w-20 rounded-full bg-green-900/20 border border-green-500/30 flex items-center justify-center">
+                        <div aria-hidden="true" className="relative h-20 w-20 rounded-full bg-green-900/20 border border-green-500/30 flex items-center justify-center">
                             <CheckCircle2 className="h-10 w-10 text-green-400" />
                         </div>
-                    </div>
 
                     <div className="space-y-2">
                         <h3 className="text-3xl font-bold text-white">¡Bienvenido!</h3>
@@ -108,45 +105,61 @@ export function VIPForm() {
             <div className="p-6 space-y-5">
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-400 ml-1">Tus Datos</label>
+                        <label htmlFor="vip-name" className="text-xs font-medium text-gray-400 ml-1">Nombre Completo <span className="text-red-400">*</span></label>
                         <Input
+                            id="vip-name"
                             {...form.register("name")}
                             placeholder="Nombre Completo"
+                            aria-invalid={!!form.formState.errors.name}
+                            aria-describedby={form.formState.errors.name ? "vip-name-error" : undefined}
                             className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 focus:bg-purple-500/5 transition-all h-11"
                         />
                         {form.formState.errors.name && (
-                            <span className="text-xs text-red-400 pl-1">{form.formState.errors.name.message}</span>
+                            <span id="vip-name-error" className="text-xs text-red-400 pl-1">{form.formState.errors.name.message}</span>
                         )}
                     </div>
 
                     <div className="space-y-2">
+                        <label htmlFor="vip-email" className="sr-only">Email Corporativo</label>
                         <Input
+                            id="vip-email"
                             {...form.register("email")}
                             type="email"
                             placeholder="Email Corporativo"
+                            aria-invalid={!!form.formState.errors.email}
+                            aria-describedby={form.formState.errors.email ? "vip-email-error" : undefined}
                             className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 focus:bg-purple-500/5 transition-all h-11"
                         />
                         {form.formState.errors.email && (
-                            <span className="text-xs text-red-400 pl-1">{form.formState.errors.email.message}</span>
+                            <span id="vip-email-error" className="text-xs text-red-400 pl-1">{form.formState.errors.email.message}</span>
                         )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                        <Input
-                            {...form.register("phone")}
-                            placeholder="WhatsApp / Tel"
-                            className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 transition-all h-11"
-                        />
-                        <Input
-                            {...form.register("company")}
-                            placeholder="Empresa / Web"
-                            className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 transition-all h-11"
-                        />
+                        <div className="space-y-1.5">
+                            <label htmlFor="vip-phone" className="sr-only">WhatsApp / Tel</label>
+                            <Input
+                                id="vip-phone"
+                                {...form.register("phone")}
+                                placeholder="WhatsApp / Tel"
+                                className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 transition-all h-11"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label htmlFor="vip-company" className="sr-only">Empresa / Web</label>
+                            <Input
+                                id="vip-company"
+                                {...form.register("company")}
+                                placeholder="Empresa / Web"
+                                className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 transition-all h-11"
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-400 ml-1">¿Cómo podemos ayudarte hoy?</label>
+                        <label htmlFor="vip-note" className="text-xs font-medium text-gray-400 ml-1">¿Cómo podemos ayudarte hoy?</label>
                         <Textarea
+                            id="vip-note"
                             {...form.register("note")}
                             placeholder="Quiero escalar mis ventas, mejorar mi branding, etc..."
                             className="bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-purple-500/50 focus:bg-purple-500/5 transition-all resize-none min-h-[80px]"
@@ -176,7 +189,7 @@ export function VIPForm() {
                         </Button>
                     </MagneticButton>
 
-                    <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 pt-2 opacity-60">
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500 pt-2 opacity-60">
                         <ShieldCheck className="h-3 w-3" />
                         <span>Datos encriptados. 0% Spam garantizado.</span>
                     </div>

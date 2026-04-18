@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 
 const StatsCounter = ({ value, label }: { value: string, label: string }) => (
     <div className="bg-slate-900/50 backdrop-blur-md rounded-sm p-4 border border-slate-800 hover:border-teal-500/30 transition-all duration-300 group">
-        <div className="text-[10px] text-teal-500/70 font-mono uppercase tracking-widest mb-2 group-hover:text-teal-400 transition-colors">{label}</div>
+        <div className="text-xs text-teal-500/70 font-mono uppercase tracking-widest mb-2 group-hover:text-teal-400 transition-colors">{label}</div>
         <div className="text-2xl font-black text-white tracking-tight">{value}</div>
     </div>
 );
@@ -76,7 +76,7 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
             <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-between z-10">
                 {/* Top Bar: Category & Tech Stack */}
                 <div className="flex justify-between items-start">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-slate-700 bg-slate-900/60 text-slate-300 text-[10px] font-mono uppercase tracking-widest backdrop-blur-md">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-slate-700 bg-slate-900/60 text-slate-300 text-xs font-mono uppercase tracking-widest backdrop-blur-md">
                         {project.category?.name || "Uncategorized"}
                     </div>
                     <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
@@ -166,7 +166,7 @@ export function PortfolioClient({ projects, categories }: { projects: any[]; cat
                 >
                     <div className="inline-flex items-center gap-2 mb-10 px-4 py-2 rounded-sm border border-teal-900/50 bg-slate-900/60 backdrop-blur-sm shadow-sm">
                         <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_8px_#14b8a6]" />
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-teal-400/80">
+                        <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-teal-400/80">
                             {t('hero.badge')}
                         </span>
                     </div>
@@ -184,11 +184,11 @@ export function PortfolioClient({ projects, categories }: { projects: any[]; cat
                         <div className="flex gap-8">
                             <div className="text-left md:text-center">
                                 <div className="text-3xl font-black text-white">{projects.length > 0 ? projects.length : t('hero.stats.s1.val')}</div>
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t('hero.stats.s1.label')}</div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t('hero.stats.s1.label')}</div>
                             </div>
                             <div className="text-left md:text-center">
                                 <div className="text-3xl font-black text-white">{t('hero.stats.s2.val')}</div>
-                                <div className="text-[10px] font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t('hero.stats.s2.label')}</div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t('hero.stats.s2.label')}</div>
                             </div>
                         </div>
                     </div>

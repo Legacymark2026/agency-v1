@@ -133,7 +133,7 @@ export function SmartRulesDrawer({ open, onClose, campaign }: Props) {
                     ) : rules.map((rule, idx) => (
                         <div key={rule.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 relative group hover:border-amber-500/30 transition-colors">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest">
+                                <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
                                     Regla #{idx + 1}
                                 </span>
                                 <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export function SmartRulesDrawer({ open, onClose, campaign }: Props) {
 
                             {/* IF condition */}
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] w-8 text-teal-400 font-mono font-bold">SI</span>
+                                <span className="text-xs w-8 text-teal-400 font-mono font-bold">SI</span>
                                 <select
                                     value={rule.metric}
                                     onChange={e => updateRule(rule.id, { metric: e.target.value as SmartRule["metric"] })}
@@ -162,7 +162,7 @@ export function SmartRulesDrawer({ open, onClose, campaign }: Props) {
                                 </select>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] w-8 text-teal-400 font-mono font-bold"></span>
+                                <span className="text-xs w-8 text-teal-400 font-mono font-bold"></span>
                                 <select
                                     value={rule.operator}
                                     onChange={e => updateRule(rule.id, { operator: e.target.value as SmartRule["operator"] })}
@@ -180,7 +180,7 @@ export function SmartRulesDrawer({ open, onClose, campaign }: Props) {
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] w-8 text-slate-500 font-mono font-bold">WIND.</span>
+                                <span className="text-xs w-8 text-slate-500 font-mono font-bold">WIND.</span>
                                 <select
                                     value={rule.window}
                                     onChange={e => updateRule(rule.id, { window: parseInt(e.target.value) as SmartRule["window"] })}
@@ -194,7 +194,7 @@ export function SmartRulesDrawer({ open, onClose, campaign }: Props) {
 
                             {/* THEN action */}
                             <div className="flex items-center gap-2 pt-1 border-t border-slate-800">
-                                <span className="text-[10px] w-8 text-indigo-400 font-mono font-bold">ACCIÓN</span>
+                                <span className="text-xs w-8 text-indigo-400 font-mono font-bold">ACCIÓN</span>
                                 <select
                                     value={rule.action}
                                     onChange={e => updateRule(rule.id, { action: e.target.value as SmartRule["action"] })}
@@ -237,7 +237,7 @@ export function SmartRulesDrawer({ open, onClose, campaign }: Props) {
                             Guardar Reglas
                         </Button>
                     </div>
-                    <p className="text-[10px] text-slate-600 font-mono text-center mt-3">
+                    <p className="text-xs text-slate-600 font-mono text-center mt-3">
                         El motor evaluará las reglas cada hora vía Cron automáticamente.
                     </p>
                 </div>

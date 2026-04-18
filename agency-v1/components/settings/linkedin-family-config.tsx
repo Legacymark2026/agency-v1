@@ -76,7 +76,7 @@ export function LinkedInFamilyConfig() {
         <div className="flex items-center gap-2">
           <Megaphone className="h-5 w-5 text-[#0A66C2]" />
           <h3 className="text-sm font-semibold">LinkedIn Ads</h3>
-          <Badge variant="secondary" className="text-[10px]">Insight Tag</Badge>
+          <Badge variant="secondary" className="text-xs">Insight Tag</Badge>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
@@ -132,7 +132,7 @@ export function LinkedInFamilyConfig() {
         <div className="flex items-center gap-2">
           <Globe className="h-5 w-5 text-[#0A66C2]" />
           <h3 className="text-sm font-semibold">LinkedIn Organization Webhooks</h3>
-          <Badge variant="secondary" className="text-[10px]">Status & Follows</Badge>
+          <Badge variant="secondary" className="text-xs">Status & Follows</Badge>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
@@ -190,7 +190,7 @@ export function LinkedInFamilyConfig() {
                 {showWebhookSecret ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
               </Button>
             </div>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-xs text-gray-400">
               Configure this URL in LinkedIn Developer: /api/webhooks/linkedin
             </p>
           </div>

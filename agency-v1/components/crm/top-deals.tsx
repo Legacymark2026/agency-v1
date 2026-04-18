@@ -35,8 +35,8 @@ export function TopDeals({ deals }: TopDealsProps) {
                             <Flame size={14} strokeWidth={1.5} className="text-teal-400" />
                         </div>
                         <div>
-                            <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Top Deals Priority</p>
-                            <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Tratos calientes · próximos al cierre</p>
+                            <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Top Deals Priority</p>
+                            <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Tratos calientes · próximos al cierre</p>
                         </div>
                     </div>
                     <Link href="/dashboard/admin/crm/pipeline"
@@ -49,7 +49,7 @@ export function TopDeals({ deals }: TopDealsProps) {
                 <div className="flex-1 space-y-2 relative z-10 overflow-y-auto">
                     {deals.length === 0 ? (
                         <div className="py-10 flex flex-col items-center justify-center">
-                            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; No hay pipeline crítico_</p>
+                            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; No hay pipeline crítico_</p>
                         </div>
                     ) : (
                         deals.map((deal, i) => {

@@ -76,7 +76,7 @@ export function TikTokFamilyConfig() {
         <div className="flex items-center gap-2">
           <Megaphone className="h-5 w-5 text-pink-600" />
           <h3 className="text-sm font-semibold">TikTok Ads</h3>
-          <Badge variant="secondary" className="text-[10px]">Pixel</Badge>
+          <Badge variant="secondary" className="text-xs">Pixel</Badge>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
@@ -122,7 +122,7 @@ export function TikTokFamilyConfig() {
         <div className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-black" />
           <h3 className="text-sm font-semibold">TikTok Webhooks</h3>
-          <Badge variant="secondary" className="text-[10px]">Comments sync</Badge>
+          <Badge variant="secondary" className="text-xs">Comments sync</Badge>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
@@ -180,7 +180,7 @@ export function TikTokFamilyConfig() {
                 {showWebhookSecret ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
               </Button>
             </div>
-            <p className="text-[10px] text-gray-400">
+            <p className="text-xs text-gray-400">
               Configure this URL in TikTok Developers: /api/integrations/tiktok/webhook
             </p>
           </div>

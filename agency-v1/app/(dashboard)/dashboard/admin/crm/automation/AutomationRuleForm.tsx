@@ -72,18 +72,18 @@ export function AutomationRuleForm({ companyId }: { companyId: string }) {
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="ds-icon-box w-8 h-8"><Zap size={14} className="text-teal-400" /></div>
-                                <p className="font-mono text-[11px] font-black text-slate-200 uppercase tracking-widest">Nueva Regla de Automatización</p>
+                                <p className="font-mono text-xs font-black text-slate-200 uppercase tracking-widest">Nueva Regla de Automatización</p>
                             </div>
                             <button onClick={() => setOpen(false)} className="text-slate-600 hover:text-slate-300"><X size={16} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Nombre de la regla *</label>
+                                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Nombre de la regla *</label>
                                 <input required value={form.name} onChange={e => set("name", e.target.value)} placeholder="Ej: Alertar deals estancados en Propuesta"
                                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none" />
                             </div>
                             <div>
-                                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Disparador (SI...)</label>
+                                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Disparador (SI...)</label>
                                 <select value={form.triggerType} onChange={e => set("triggerType", e.target.value)}
                                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none">
                                     {TRIGGERS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -92,21 +92,21 @@ export function AutomationRuleForm({ companyId }: { companyId: string }) {
                             {form.triggerType === "STAGE_STUCK_X_DAYS" && (
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Etapa</label>
+                                        <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Etapa</label>
                                         <select value={form.triggerStage} onChange={e => set("triggerStage", e.target.value)}
                                             className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none">
                                             {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Días sin actividad</label>
+                                        <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Días sin actividad</label>
                                         <input type="number" min="1" value={form.triggerDays} onChange={e => set("triggerDays", e.target.value)}
                                             className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none" />
                                     </div>
                                 </div>
                             )}
                             <div>
-                                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Acción (ENTONCES...)</label>
+                                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Acción (ENTONCES...)</label>
                                 <select value={form.actionType} onChange={e => set("actionType", e.target.value)}
                                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none">
                                     {ACTIONS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
@@ -114,14 +114,14 @@ export function AutomationRuleForm({ companyId }: { companyId: string }) {
                             </div>
                             {(form.actionType === "NOTIFY_ASSIGNEE" || form.actionType === "NOTIFY_ADMIN") && (
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Mensaje</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Mensaje</label>
                                     <input value={form.message} onChange={e => set("message", e.target.value)} placeholder="El deal requiere seguimiento urgente"
                                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none" />
                                 </div>
                             )}
                             {form.actionType === "CHANGE_PRIORITY" && (
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Nueva prioridad</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Nueva prioridad</label>
                                     <select value={form.priority} onChange={e => set("priority", e.target.value)}
                                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none">
                                         {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -130,7 +130,7 @@ export function AutomationRuleForm({ companyId }: { companyId: string }) {
                             )}
                             {form.actionType === "MOVE_STAGE" && (
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Mover a etapa</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Mover a etapa</label>
                                     <select value={form.stage} onChange={e => set("stage", e.target.value)}
                                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none">
                                         {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -139,20 +139,20 @@ export function AutomationRuleForm({ companyId }: { companyId: string }) {
                             )}
                             {form.actionType === "ADD_TAG" && (
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">Tag a agregar</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">Tag a agregar</label>
                                     <input value={form.tag} onChange={e => set("tag", e.target.value)} placeholder="urgente"
                                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none" />
                                 </div>
                             )}
                             {form.actionType === "SEND_WEBHOOK" && (
                                 <div>
-                                    <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-1.5">URL del Webhook</label>
+                                    <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-1.5">URL del Webhook</label>
                                     <input type="url" value={form.webhookUrl} onChange={e => set("webhookUrl", e.target.value)} placeholder="https://hooks.zapier.com/..."
                                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 font-mono text-sm text-slate-200 focus:border-teal-500 focus:outline-none" />
                                 </div>
                             )}
                             <button type="submit" disabled={isPending}
-                                className="w-full py-3 rounded-xl font-mono text-[11px] font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-50"
+                                className="w-full py-3 rounded-xl font-mono text-xs font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-50"
                                 style={{ background: 'linear-gradient(135deg, #0d9488, #0ea5e9)', boxShadow: '0 0 20px rgba(13,148,136,0.3)' }}>
                                 {isPending ? "Creando..." : "Crear Regla"}
                             </button>

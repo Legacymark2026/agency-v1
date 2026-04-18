@@ -54,14 +54,14 @@ export function SecurityStats({ totalEvents, failedLogins, uniqueUsers, activeSe
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div className="bg-slate-950 p-1.5 rounded-md border border-slate-800">{card.icon}</div>
-                            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">{card.label}</span>
+                            <span className="text-xs font-mono uppercase tracking-widest text-slate-500">{card.label}</span>
                         </div>
                         {card.badge && (
-                            <span className="text-[9px] font-mono px-1.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">{card.badge}</span>
+                            <span className="text-xs font-mono px-1.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full">{card.badge}</span>
                         )}
                     </div>
                     <span className="text-2xl font-bold text-slate-100 leading-none">{card.value}</span>
-                    <span className="text-[11px] text-slate-500">{card.sub}</span>
+                    <span className="text-xs text-slate-500">{card.sub}</span>
                 </div>
             ))}
         </div>

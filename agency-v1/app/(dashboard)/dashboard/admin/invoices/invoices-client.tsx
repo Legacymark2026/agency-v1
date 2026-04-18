@@ -198,7 +198,7 @@ export function InvoicesClient({ invoices, stats }: InvoicesClientProps) {
                                     </td>
                                     <td className="px-6 py-4 font-mono">
                                         <div className="text-slate-200 text-base font-medium">${invoice.finalAmount.toLocaleString()} {invoice.currency}</div>
-                                        <div className="text-[10px] text-slate-500">Total: ${invoice.totalAmount.toLocaleString()}</div>
+                                        <div className="text-xs text-slate-500">Total: ${invoice.totalAmount.toLocaleString()}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${statusInfo.color}`}>

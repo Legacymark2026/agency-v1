@@ -81,7 +81,7 @@ export default async function CRMDashboardPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-mono text-[9px] text-slate-700 uppercase tracking-widest hidden md:block">[CRM_CORE]</span>
+                    <span className="font-mono text-xs text-slate-700 uppercase tracking-widest hidden md:block">[CRM_CORE]</span>
                     <CalendarDateRangePicker />
                     <CRMExportButton stats={stats} advancedStats={advancedStats} />
                 </div>

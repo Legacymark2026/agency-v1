@@ -180,7 +180,7 @@ export function StepLaunch() {
                             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 shrink-0" />
                             <div>
                                 <p className="font-semibold text-gray-200">Tu Compañía</p>
-                                <p className="text-[11px] text-gray-400">Patrocinado • 🌎</p>
+                                <p className="text-xs text-gray-400">Patrocinado • 🌎</p>
                             </div>
                         </div>
                         <p className="text-gray-300 mb-3 whitespace-pre-wrap leading-tight text-[13px]">
@@ -195,7 +195,7 @@ export function StepLaunch() {
                         </div>
                         <div className="bg-[#242526] p-3 -mx-4 -mb-4 flex items-center justify-between border-t border-white/5">
                             <div className="pr-4">
-                                <p className="text-[11px] text-gray-400 tracking-wide uppercase mb-0.5">
+                                <p className="text-xs text-gray-400 tracking-wide uppercase mb-0.5">
                                     {creative.destinationUrl ? (() => { try { return new URL(creative.destinationUrl).hostname } catch(e){return 'TUDOMINIO.COM'} })() : 'TUDOMINIO.COM'}
                                 </p>
                                 <p className="text-base font-bold text-gray-200 leading-tight">

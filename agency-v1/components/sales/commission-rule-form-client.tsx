@@ -81,8 +81,8 @@ export function CommissionRuleFormClient({
                   <DollarSign size={15} className="text-teal-400" />
                 </div>
                 <div>
-                  <p className="font-mono text-[11px] font-black text-slate-200 uppercase tracking-widest">Nueva Regla de Comisión</p>
-                  <p className="font-mono text-[9px] text-slate-600">Commission Engine</p>
+                  <p className="font-mono text-xs font-black text-slate-200 uppercase tracking-widest">Nueva Regla de Comisión</p>
+                  <p className="font-mono text-xs text-slate-600">Commission Engine</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} className="text-slate-600 hover:text-slate-300 transition-colors">
@@ -94,14 +94,14 @@ export function CommissionRuleFormClient({
               {/* Info banner */}
               <div className="flex gap-2 p-3 rounded-lg" style={{ background: "rgba(14,165,233,0.08)", border: "1px solid rgba(14,165,233,0.2)" }}>
                 <Info size={13} className="text-sky-400 mt-0.5 flex-shrink-0" />
-                <p className="font-mono text-[9px] text-sky-400/80 leading-relaxed">
+                <p className="font-mono text-xs text-sky-400/80 leading-relaxed">
                   Si dejas el vendedor vacío, la regla aplica globalmente a todo el equipo. Las reglas específicas por usuario tienen prioridad.
                 </p>
               </div>
 
               {/* Vendedor */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">
                   Vendedor <span className="text-slate-700">(vacío = regla global)</span>
                 </label>
                 <select
@@ -120,7 +120,7 @@ export function CommissionRuleFormClient({
 
               {/* Tasa */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">
                   Tasa de Comisión (%)
                 </label>
                 <div className="relative">
@@ -138,7 +138,7 @@ export function CommissionRuleFormClient({
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-sm text-slate-500">%</span>
                 </div>
                 {form.rate && (
-                  <p className="font-mono text-[9px] text-teal-500 mt-1">
+                  <p className="font-mono text-xs text-teal-500 mt-1">
                     = ${(parseFloat(form.rate || "0") / 100 * 10000).toFixed(0)} por cada $10,000 en ventas
                   </p>
                 )}
@@ -146,7 +146,7 @@ export function CommissionRuleFormClient({
 
               {/* Min Deal Value */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">
                   Valor Mínimo de Deal ($USD)
                 </label>
                 <input
@@ -162,7 +162,7 @@ export function CommissionRuleFormClient({
 
               {/* Cap optional */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">
                   Límite Máximo de Comisión ($USD) <span className="text-slate-700">— opcional</span>
                 </label>
                 <input
@@ -178,7 +178,7 @@ export function CommissionRuleFormClient({
 
               {/* Label */}
               <div>
-                <label className="font-mono text-[9px] text-slate-500 uppercase tracking-widest block mb-2">Etiqueta</label>
+                <label className="font-mono text-xs text-slate-500 uppercase tracking-widest block mb-2">Etiqueta</label>
                 <input
                   type="text"
                   value={form.label}
@@ -191,7 +191,7 @@ export function CommissionRuleFormClient({
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full py-3 rounded-xl font-mono text-[11px] font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-50 hover:scale-[1.02]"
+                className="w-full py-3 rounded-xl font-mono text-xs font-black uppercase tracking-widest text-slate-900 transition-all disabled:opacity-50 hover:scale-[1.02]"
                 style={{ background: "linear-gradient(135deg, #0d9488, #0ea5e9)", boxShadow: "0 0 20px rgba(13,148,136,0.3)" }}
               >
                 {isPending ? "Creando regla..." : "✓ Crear Regla de Comisión"}

@@ -78,7 +78,7 @@ function DateSeparator({ date }: { date: Date }) {
     return (
         <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-zinc-700 to-transparent" />
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-medium px-2">
+            <span className="text-xs text-zinc-400 uppercase tracking-wider font-medium px-2">
                 {label}
             </span>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-zinc-700 to-transparent" />
@@ -94,7 +94,7 @@ function MessageReactions({ onReact }: { onReact: (emoji: string) => void }) {
         <div className="relative">
             <button
                 onClick={() => setShowPicker(!showPicker)}
-                className="text-[10px] text-zinc-400 hover:text-teal-500 opacity-0 group-hover:opacity-100 transition-all"
+                className="text-xs text-zinc-400 hover:text-teal-500 opacity-0 group-hover:opacity-100 transition-all"
             >
                 <Smile className="h-3.5 w-3.5" />
             </button>
@@ -179,7 +179,7 @@ function MessageBubble({ msg, onReact }: { msg: Message; onReact: (emoji: string
                     )}
                 </div>
                 <div className={cn("flex items-center gap-1.5 mt-1", isInbound ? "flex-row-reverse" : "flex-row")}>
-                    <span className="text-[10px] text-zinc-400 font-medium">{time}</span>
+                    <span className="text-xs text-zinc-400 font-medium">{time}</span>
                     {isInbound && (
                         msg.status === "SENDING"
                             ? <Check className="h-3 w-3 text-zinc-400" />
@@ -642,7 +642,7 @@ export function ChatWindow({ conversationId, visitorId, onClose }: ChatWindowPro
                             <Send className="h-4 w-4" />
                         </motion.button>
                     </div>
-                    <p className="text-[10px] text-center text-zinc-400 mt-2.5">
+                    <p className="text-xs text-center text-zinc-400 mt-2.5">
                         <span className="font-semibold text-teal-600">LegacyMark</span> • Asistente Virtual
                     </p>
                 </div>

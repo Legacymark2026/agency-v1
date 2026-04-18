@@ -114,7 +114,7 @@ export default function MediaManagerPage() {
                         <div className="p-4">
                             <p className="text-sm font-medium text-slate-200 truncate" title={media.name}>{media.name}</p>
                             <div className="flex justify-between items-center mt-3">
-                                <span className="text-[10px] font-mono text-slate-500 uppercase px-2 py-0.5 bg-slate-800 rounded">{media.type}</span>
+                                <span className="text-xs font-mono text-slate-500 uppercase px-2 py-0.5 bg-slate-800 rounded">{media.type}</span>
                                 <Button 
                                     variant="ghost" 
                                     size="sm" 

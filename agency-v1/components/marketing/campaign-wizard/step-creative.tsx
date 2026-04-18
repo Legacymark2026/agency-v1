@@ -320,7 +320,7 @@ export function StepCreative() {
                             size="sm" 
                             onClick={handleAIGenerate} 
                             disabled={isGeneratingAI}
-                            className="bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 h-6 px-2 text-[10px] font-mono border border-indigo-500/20"
+                            className="bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 h-6 px-2 text-xs font-mono border border-indigo-500/20"
                         >
                             {isGeneratingAI ? <Loader2 className="w-3 h-3 animate-spin mr-1"/> : <Sparkles className="w-3 h-3 mr-1"/>}
                             {isGeneratingAI ? "Generando..." : "Copilot AI"}
@@ -337,7 +337,7 @@ export function StepCreative() {
                                     maxLength={40}
                                     className="bg-white/5 border-white/10 text-white h-11 pr-10"
                                 />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-500">
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
                                     {hl.length}/40
                                 </span>
                             </div>
@@ -377,7 +377,7 @@ export function StepCreative() {
                                 maxLength={125}
                                 className="bg-white/5 border-white/10 text-white resize-none min-h-[80px]"
                             />
-                            <div className="absolute right-3 bottom-2 text-[10px] text-gray-500">
+                            <div className="absolute right-3 bottom-2 text-xs text-gray-500">
                                 {desc.length}/125
                             </div>
                         </div>
@@ -434,13 +434,13 @@ export function StepCreative() {
                     <div className="flex items-start justify-between p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                         <div className="flex gap-2 min-w-0 pr-4">
                             <ExternalLink className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-emerald-300 break-all font-mono leading-relaxed truncate whitespace-normal overflow-hidden max-h-16">{destinationWithUtm}</p>
+                            <p className="text-xs text-emerald-300 break-all font-mono leading-relaxed truncate whitespace-normal overflow-hidden max-h-16">{destinationWithUtm}</p>
                         </div>
                         <Button 
                             size="sm" 
                             disabled={isShortening}
                             onClick={handleAutoShorten}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.3)] h-8 font-mono text-[10px] tracking-wide"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.3)] h-8 font-mono text-xs tracking-wide"
                         >
                             {isShortening ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <Link2 className="w-3 h-3 mr-1.5" />}
                             {isShortening ? "ACORTANDO..." : "ACORTAR LINK"}

@@ -250,7 +250,7 @@ export function EventDrawer({ isOpen, onClose, eventId, initialEvent, prefilledD
                                         type="button"
                                         onClick={handleGenerateAgenda}
                                         disabled={generatingAgenda || !formData.title}
-                                        className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-2 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors disabled:opacity-50"
                                     >
                                         {generatingAgenda ? <span className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" /> : <Sparkles className="w-3 h-3" />}
                                         Generar con IA
@@ -268,7 +268,7 @@ export function EventDrawer({ isOpen, onClose, eventId, initialEvent, prefilledD
                                     <button
                                         key={type} type="button"
                                         onClick={() => setFormData({ ...formData, type: type as any })}
-                                        className={`py-2 text-[11px] font-black uppercase tracking-wider rounded-xl transition-all flex justify-center items-center gap-1.5 ${formData.type === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                                        className={`py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all flex justify-center items-center gap-1.5 ${formData.type === type ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                                     >
                                         {type === "ONLINE" && <Video className="w-3.5 h-3.5" />}
                                         {type === "PHYSICAL" && <MapPin className="w-3.5 h-3.5" />}
@@ -303,21 +303,21 @@ export function EventDrawer({ isOpen, onClose, eventId, initialEvent, prefilledD
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Fecha Inicio</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Fecha Inicio</label>
                                     <input type="date" required value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900" />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Hora Inicio</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Hora Inicio</label>
                                     <input type="time" required value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Fecha Fin</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Fecha Fin</label>
                                     <input type="date" required value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900" />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Hora Fin</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Hora Fin</label>
                                     <input type="time" required value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900" />
                                 </div>
                             </div>
@@ -327,7 +327,7 @@ export function EventDrawer({ isOpen, onClose, eventId, initialEvent, prefilledD
                             </label>
 
                             <div className="pt-2 border-t border-slate-100">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Repetición</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Repetición</label>
                                 <select
                                     value={formData.recurrenceRule}
                                     onChange={(e) => setFormData({ ...formData, recurrenceRule: e.target.value })}
@@ -349,16 +349,16 @@ export function EventDrawer({ isOpen, onClose, eventId, initialEvent, prefilledD
                                     Acceso Virtual
                                 </h3>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Enlace de Reunión (URL)</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Enlace de Reunión (URL)</label>
                                     <input type="url" value={formData.meetingUrl} onChange={e => setFormData({ ...formData, meetingUrl: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900" placeholder="https://zoom.us/j/..." />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">ID Reunión</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">ID Reunión</label>
                                         <input value={formData.meetingId} onChange={e => setFormData({ ...formData, meetingId: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900" placeholder="Opcional" />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Código / Key</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Código / Key</label>
                                         <input value={formData.passcode} onChange={e => setFormData({ ...formData, passcode: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900" placeholder="Opcional" />
                                     </div>
                                 </div>
@@ -373,16 +373,16 @@ export function EventDrawer({ isOpen, onClose, eventId, initialEvent, prefilledD
                                     Ubicación Física
                                 </h3>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Dirección Exacta</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Dirección Exacta</label>
                                     <input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900" placeholder="Centro de Convenciones..." />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Ciudad</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Ciudad</label>
                                         <input value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900" placeholder="Madrid, MX..." />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Aforo Máximo</label>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Aforo Máximo</label>
                                         <input type="number" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: e.target.value })} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900" placeholder="Ej. 150" />
                                     </div>
                                 </div>

@@ -58,7 +58,7 @@ export function LogsFilter() {
                     <button
                         key={t.value}
                         onClick={() => handleTypeChange(t.value)}
-                        className={`text-[11px] font-mono px-3 py-1.5 rounded-full border transition-all ${
+                        className={`text-xs font-mono px-3 py-1.5 rounded-full border transition-all ${
                             currentType === t.value
                                 ? "bg-teal-500/15 text-teal-400 border-teal-500/30 shadow-[0_0_8px_rgba(20,184,166,0.15)]"
                                 : "border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-700"
@@ -70,7 +70,7 @@ export function LogsFilter() {
                 {hasFilters && (
                     <button
                         onClick={handleClearAll}
-                        className="text-[11px] font-mono px-2 py-1.5 rounded-full border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all flex items-center gap-1"
+                        className="text-xs font-mono px-2 py-1.5 rounded-full border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all flex items-center gap-1"
                     >
                         <X size={10} /> Limpiar
                     </button>

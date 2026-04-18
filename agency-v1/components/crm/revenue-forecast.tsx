@@ -25,9 +25,9 @@ export function RevenueForecast({ data }: RevenueForecastProps) {
     if (!data || data.length === 0) {
         return (
             <div className="ds-section h-full flex flex-col">
-                <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Forecast de Ingresos</p>
+                <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Forecast de Ingresos</p>
                 <div className="flex-1 flex items-center justify-center">
-                    <p className="font-mono text-[10px] text-slate-600 uppercase tracking-widest">&gt; Sin datos para proyección_</p>
+                    <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Sin datos para proyección_</p>
                 </div>
             </div>
         );
@@ -46,8 +46,8 @@ export function RevenueForecast({ data }: RevenueForecastProps) {
                         <TrendingUp size={14} strokeWidth={1.5} className="text-teal-400" />
                     </div>
                     <div>
-                        <p className="font-mono text-[9px] font-bold text-slate-500 uppercase tracking-[0.14em]">Forecast Mensual</p>
-                        <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest mt-0.5">Proyección 3 meses — Probable vs Total</p>
+                        <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Forecast Mensual</p>
+                        <p className="font-mono text-xs text-slate-700 uppercase tracking-widest mt-0.5">Proyección 3 meses — Probable vs Total</p>
                     </div>
                 </div>
                 <Link href="/dashboard/admin/crm/pipeline"

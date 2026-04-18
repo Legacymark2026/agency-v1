@@ -59,7 +59,7 @@ export function NotificationBell() {
                 <Button variant="ghost" size="icon" className="relative group">
                     <Bell className="h-5 w-5 text-slate-300 group-hover:text-teal-400 transition-colors" />
                     {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] text-[10px] bg-teal-500 hover:bg-teal-400 border-none flex items-center justify-center animate-pulse">
+                        <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] text-xs bg-teal-500 hover:bg-teal-400 border-none flex items-center justify-center animate-pulse">
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>
                     )}
@@ -114,11 +114,11 @@ export function NotificationBell() {
                                             {notif.message}
                                         </p>
                                         <div className="flex items-center gap-2 mt-2">
-                                            <span className="text-[10px] text-slate-600 font-medium tracking-wider uppercase">
+                                            <span className="text-xs text-slate-600 font-medium tracking-wider uppercase">
                                                 {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: es })}
                                             </span>
                                             {notif.link && (
-                                                <Link href={notif.link} className="text-[10px] font-medium text-teal-500 hover:text-teal-400 transition-colors">
+                                                <Link href={notif.link} className="text-xs font-medium text-teal-500 hover:text-teal-400 transition-colors">
                                                     Ver detalles &rarr;
                                                 </Link>
                                             )}

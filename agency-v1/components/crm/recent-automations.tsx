@@ -79,7 +79,7 @@ export function RecentAutomations({ data }: { data: any[] }) {
                                             <p className="text-sm font-bold text-slate-700 leading-tight">
                                                 {exec.workflow?.name || "Flujo de Trabajo Desconocido"}
                                             </p>
-                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-sm tracking-wider uppercase ${isSuccess ? 'bg-emerald-100 text-emerald-700' :
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-sm tracking-wider uppercase ${isSuccess ? 'bg-emerald-100 text-emerald-700' :
                                                     isFailed ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'
                                                 }`}>
                                                 {exec.status}
@@ -93,7 +93,7 @@ export function RecentAutomations({ data }: { data: any[] }) {
                                             {isFailed && (
                                                 <button
                                                     onClick={() => handleRetry(exec.id)}
-                                                    className="flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-2.5 py-1 rounded-md transition-colors font-bold uppercase tracking-wider text-[10px]"
+                                                    className="flex items-center gap-1.5 text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 px-2.5 py-1 rounded-md transition-colors font-bold uppercase tracking-wider text-xs"
                                                 >
                                                     <RotateCw className="w-3 h-3" />
                                                     Reintentar

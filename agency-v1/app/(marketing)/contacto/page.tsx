@@ -115,7 +115,7 @@ export default async function ContactPage() {
                 {/* Status indicator */}
                 <div className="absolute top-24 right-5 flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 backdrop-blur-sm border border-emerald-500/20 rounded-full shadow-sm hidden md:flex" aria-hidden>
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" style={{ animationDuration: '2s' }} />
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{t('hero.status')}</span>
+                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{t('hero.status')}</span>
                 </div>
 
                 <div className="container mx-auto px-4 md:px-6 max-w-4xl text-center relative z-10">
@@ -145,7 +145,7 @@ export default async function ContactPage() {
 
                         {/* Trusted by marquee */}
                         <div className="mt-4 overflow-hidden w-full max-w-xl">
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">{t('hero.trustedByLabel')}</p>
+                            <p className="text-xs font-black text-slate-600 uppercase tracking-widest mb-3">{t('hero.trustedByLabel')}</p>
                             <div className="flex gap-6 overflow-hidden">
                                 <div className="flex gap-6 shrink-0 animate-marquee">
                                     {[...trustedBy, ...trustedBy].map((name, i) => (
@@ -170,7 +170,7 @@ export default async function ContactPage() {
                                 )}
                                 <div className="relative z-10 w-14 h-14 rounded-2xl bg-slate-800/80 border border-teal-500/20 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 group-hover:border-teal-400/50 transition-all duration-300 shadow-sm shadow-teal-500/5">
                                     {step.icon}
-                                    <span className="absolute -top-1.5 -right-1.5 text-[10px] font-black text-teal-400 bg-slate-900 border border-teal-500/30 rounded-full w-5 h-5 flex items-center justify-center">{step.num}</span>
+                                    <span className="absolute -top-1.5 -right-1.5 text-xs font-black text-teal-400 bg-slate-900 border border-teal-500/30 rounded-full w-5 h-5 flex items-center justify-center">{step.num}</span>
                                 </div>
                                 <h3 className="text-sm font-bold text-white mb-1">{t(`process.${step.key}.title`)}</h3>
                                 <p className="text-xs text-slate-500 leading-relaxed">{t(`process.${step.key}.desc`)}</p>
@@ -208,7 +208,7 @@ export default async function ContactPage() {
                                             {m.icon}
                                         </div>
                                         <div className="relative z-10 min-w-0">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{t(`methods.${m.key}.label`)}</p>
+                                            <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-0.5">{t(`methods.${m.key}.label`)}</p>
                                             <p className="font-bold text-white text-sm truncate">{m.value || t(`methods.${m.key}.val`)}</p>
                                             <p className="text-xs text-teal-400 font-medium mt-0.5">{t(`methods.${m.key}.sub`)}</p>
                                         </div>
@@ -265,7 +265,7 @@ export default async function ContactPage() {
                                         {/* Security badge */}
                                         <div className="flex flex-col items-center gap-1 p-3 rounded-xl border border-slate-700 bg-slate-800/50">
                                             <span className="text-xl">🔒</span>
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">{t('form.secure')}</span>
+                                            <span className="text-xs font-black text-slate-500 uppercase tracking-wider">{t('form.secure')}</span>
                                         </div>
                                     </div>
 
@@ -275,7 +275,7 @@ export default async function ContactPage() {
                                             <div key={s} className={`h-1 flex-1 rounded-full ${s === 1 ? 'bg-gradient-to-r from-teal-400 to-sky-400' : 'bg-slate-700'}`} />
                                         ))}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 mt-1">{t('form.step')}</p>
+                                    <p className="text-xs text-slate-500 mt-1">{t('form.step')}</p>
                                 </div>
 
                                 {/* The form itself */}
@@ -336,7 +336,7 @@ export default async function ContactPage() {
                             </div>
                             {/* Coordinate badge */}
                             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-900 rounded-xl border border-slate-700 shadow-lg text-center whitespace-nowrap">
-                                <p className="text-[10px] font-mono text-slate-500">7.0682° N, 73.1698° W</p>
+                                <p className="text-xs font-mono text-slate-500">7.0682° N, 73.1698° W</p>
                                 <p className="text-xs font-bold text-slate-300">📍 Girón, Santander</p>
                             </div>
                         </div>

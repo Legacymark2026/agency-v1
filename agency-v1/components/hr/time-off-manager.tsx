@@ -80,11 +80,11 @@ export function TimeOffManager({ initialData }: Props) {
                     return (
                         <div key={req.id} className="relative flex flex-col rounded-2xl border border-slate-800 bg-[#0b0d14] p-5 shadow-sm hover:border-slate-700 transition-all group">
                             <div className="flex justify-between items-start mb-4">
-                                <div className={`px-2.5 py-1 rounded-md border text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 ${type.color}`}>
+                                <div className={`px-2.5 py-1 rounded-md border text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 ${type.color}`}>
                                     <TypeIcon className="w-3 h-3" />
                                     {type.label}
                                 </div>
-                                <div className={`px-2.5 py-1 rounded-md border text-[10px] font-bold tracking-wider uppercase ${status.color}`}>
+                                <div className={`px-2.5 py-1 rounded-md border text-xs font-bold tracking-wider uppercase ${status.color}`}>
                                     {status.label}
                                 </div>
                             </div>

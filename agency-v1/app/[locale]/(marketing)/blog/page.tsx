@@ -57,7 +57,7 @@ export default async function BlogPage() {
                 {/* Live indicator */}
                 <div className="absolute top-24 right-5 flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 backdrop-blur-sm border border-teal-500/20 rounded-full shadow-sm hidden md:flex" aria-hidden>
                     <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" style={{ animationDuration: '2s' }} />
-                    <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">LIVE FEED</span>
+                    <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">LIVE FEED</span>
                 </div>
 
                 <div className="container mx-auto px-4 md:px-6 max-w-4xl text-center relative z-10">
@@ -104,7 +104,7 @@ export default async function BlogPage() {
                         <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-800" />
                         <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-800 bg-slate-900/50">
                             <BookOpen className="w-3.5 h-3.5 text-teal-400" />
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Publicaciones Recientes</span>
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Publicaciones Recientes</span>
                         </div>
                         <div className="h-px flex-1 bg-gradient-to-r from-slate-800 to-transparent" />
                     </div>
@@ -131,7 +131,7 @@ export default async function BlogPage() {
 
                                     {/* Index badge */}
                                     <div className="absolute top-3 left-3 w-7 h-7 rounded-lg bg-slate-950/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center">
-                                        <span className="text-[10px] font-black text-teal-400 font-mono">{String(index + 1).padStart(2, '0')}</span>
+                                        <span className="text-xs font-black text-teal-400 font-mono">{String(index + 1).padStart(2, '0')}</span>
                                     </div>
                                 </div>
 
@@ -139,7 +139,7 @@ export default async function BlogPage() {
                                 <div className="flex flex-1 flex-col p-6">
                                     {/* Date / Category */}
                                     <div className="mb-3 flex items-center gap-2">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-teal-400">
+                                        <span className="text-xs font-black uppercase tracking-widest text-teal-400">
                                             {new Date(post.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}
                                         </span>
                                     </div>

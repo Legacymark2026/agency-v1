@@ -151,7 +151,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
                     <button
                         onClick={() => setActiveChannel('ALL')}
                         className={cn(
-                            "h-[26px] px-2.5 rounded-full text-[10px] font-extrabold cursor-pointer font-mono whitespace-nowrap transition-colors border",
+                            "h-[26px] px-2.5 rounded-full text-xs font-extrabold cursor-pointer font-mono whitespace-nowrap transition-colors border",
                             activeChannel === 'ALL' 
                                 ? "border-teal-600/40 bg-teal-600/15 text-teal-400" 
                                 : "border-slate-800/90 bg-slate-900/80 text-slate-500 hover:text-slate-300"
@@ -192,7 +192,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
                             key={status}
                             onClick={() => setStatusFilter(status as any)}
                             className={cn(
-                                "text-[10px] font-extrabold py-1 px-2.5 rounded-md cursor-pointer font-mono transition-all border",
+                                "text-xs font-extrabold py-1 px-2.5 rounded-md cursor-pointer font-mono transition-all border",
                                 statusFilter === status
                                     ? "border-teal-600/40 bg-teal-600/15 text-teal-400"
                                     : "border-slate-800/90 bg-slate-900/80 text-slate-600 hover:text-slate-400"
@@ -205,7 +205,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
                     <button
                         onClick={() => { setSelectionMode(!selectionMode); setSelectedIds([]); }}
                         className={cn(
-                            "text-[10px] font-extrabold py-1 px-2 rounded-md cursor-pointer font-mono border",
+                            "text-xs font-extrabold py-1 px-2 rounded-md cursor-pointer font-mono border",
                             selectionMode
                                 ? "bg-teal-600/15 border-transparent text-teal-400"
                                 : "bg-transparent border-transparent text-slate-600 hover:text-slate-400 hover:bg-slate-800/40"
@@ -218,7 +218,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
                 {/* Bulk Actions Bar */}
                 {selectionMode && selectedIds.length > 0 && (
                     <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-2 flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold text-teal-400 font-mono">{selectedIds.length} seleccionados</span>
+                        <span className="text-xs font-extrabold text-teal-400 font-mono">{selectedIds.length} seleccionados</span>
                     </div>
                 )}
             </div>
@@ -272,7 +272,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
                                                 {convo.lead?.name?.substring(0, 2).toUpperCase() || 'UN'}
                                             </div>
                                             <div style={{ position: "absolute", bottom: "-3px", right: "-3px", width: "18px", height: "18px", background: "rgba(8,12,20,0.95)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(30,41,59,0.9)" }}>
-                                                <ChannelIcon channel={convo.channel} className="text-[10px]" />
+                                                <ChannelIcon channel={convo.channel} className="text-xs" />
                                             </div>
                                         </div>
 
@@ -290,12 +290,12 @@ export function ConversationList({ conversations, currentUser }: { conversations
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "4px" }}>
                                                 <div style={{display: "flex", gap: "4px", flexWrap: "wrap", overflow: "hidden"}}>
                                                   {convo.topic && (
-                                                      <span className={cn("px-1.5 py-[2px] rounded border text-[9px] font-mono leading-none", getSentimentColor(convo.sentiment))}>
+                                                      <span className={cn("px-1.5 py-[2px] rounded border text-xs font-mono leading-none", getSentimentColor(convo.sentiment))}>
                                                           {convo.topic}
                                                       </span>
                                                   )}
                                                   {convo.sentiment === 'URGENT' && (
-                                                      <span className="px-1.5 py-[2px] rounded border text-[9px] font-mono leading-none text-rose-400 bg-rose-400/10 border-rose-400/20">
+                                                      <span className="px-1.5 py-[2px] rounded border text-xs font-mono leading-none text-rose-400 bg-rose-400/10 border-rose-400/20">
                                                           URGENT
                                                       </span>
                                                   )}

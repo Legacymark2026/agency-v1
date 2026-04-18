@@ -20,7 +20,7 @@ export const BentoServices = () => {
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-[10px] font-mono mb-6 uppercase tracking-widest shadow-sm"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm"
                     >
                         <Briefcase size={12} strokeWidth={1.5} />
                         {t('badge')}
@@ -173,7 +173,7 @@ const TechCard = ({
             />
 
             {/* Tech Decoration */}
-            <div className="absolute top-6 right-6 text-[10px] font-mono text-slate-600 group-hover:text-slate-400 transition-colors uppercase tracking-widest z-10">
+            <div className="absolute top-6 right-6 text-xs font-mono text-slate-600 group-hover:text-slate-400 transition-colors uppercase tracking-widest z-10">
                 [{bgCode}]
             </div>
 

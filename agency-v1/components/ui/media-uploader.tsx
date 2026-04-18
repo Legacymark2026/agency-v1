@@ -225,7 +225,7 @@ export function MediaUploader({
                             <p className="text-xs text-slate-500 max-w-[250px]">
                                 {description}
                                 <br/>
-                                <span className="opacity-70 text-[10px] mt-1 block">Tamaño máx: {maxSizeMB}MB</span>
+                                <span className="opacity-70 text-xs mt-1 block">Tamaño máx: {maxSizeMB}MB</span>
                             </p>
                         </>
                     ) : (

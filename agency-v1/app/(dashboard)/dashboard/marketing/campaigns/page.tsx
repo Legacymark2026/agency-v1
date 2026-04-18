@@ -18,7 +18,7 @@ export default async function CampaignsPage() {
     const companyId = user?.companies[0]?.companyId;
     if (!companyId) return (
         <div className="ds-page flex items-center justify-center">
-            <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
+            <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Empresa no configurada_</p>
         </div>
     );
 
@@ -66,11 +66,11 @@ export default async function CampaignsPage() {
                         name="name"
                         placeholder="Nueva campaña..."
                         required
-                        className="px-3 py-2 font-mono text-[11px] text-slate-200 rounded-sm placeholder:text-slate-700 focus:outline-none focus:border-teal-800/50 transition-all w-[200px]"
+                        className="px-3 py-2 font-mono text-xs text-slate-200 rounded-sm placeholder:text-slate-700 focus:outline-none focus:border-teal-800/50 transition-all w-[200px]"
                         style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}
                     />
                     <button type="submit"
-                        className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
+                        className="flex items-center gap-2 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-white rounded-sm transition-all hover:-translate-y-0.5"
                         style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)' }}>
                         <Plus size={12} /> Crear
                     </button>
@@ -84,7 +84,7 @@ export default async function CampaignsPage() {
                     return (
                         <div key={campaign.id} className="ds-card group">
                             {/* Code tag */}
-                            <span className="absolute top-3 right-3 font-mono text-[8px] text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[CAMP]</span>
+                            <span className="absolute top-3 right-3 font-mono text-xs text-slate-700 uppercase tracking-widest group-hover:text-slate-500 transition-colors">[CAMP]</span>
 
                             {/* Teal accent bar top for active */}
                             {isActive && (
@@ -100,7 +100,7 @@ export default async function CampaignsPage() {
                                         </div>
                                         <div>
                                             <h3 className="text-[13px] font-black text-slate-100 truncate max-w-[160px]">{campaign.name}</h3>
-                                            <p className="font-mono text-[8px] text-slate-700 uppercase tracking-widest">{campaign.code}</p>
+                                            <p className="font-mono text-xs text-slate-700 uppercase tracking-widest">{campaign.code}</p>
                                         </div>
                                     </div>
                                     <span className={`ds-badge ${isActive ? 'ds-badge-teal' : 'ds-badge-slate'}`}>
@@ -134,7 +134,7 @@ export default async function CampaignsPage() {
 
                                 {/* CTA */}
                                 <Link href={`/dashboard/marketing/campaigns/${campaign.id}`}
-                                    className="flex items-center justify-center gap-2 w-full mt-5 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-teal-400 transition-all rounded-sm"
+                                    className="flex items-center justify-center gap-2 w-full mt-5 py-2 font-mono text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-teal-400 transition-all rounded-sm"
                                     style={{ background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}>
                                     Edit Sequence →
                                 </Link>
@@ -148,7 +148,7 @@ export default async function CampaignsPage() {
                         <div className="ds-icon-box w-14 h-14 mx-auto mb-5">
                             <Mail size={20} strokeWidth={1.5} className="text-slate-600" />
                         </div>
-                        <p className="font-mono text-[9px] text-slate-600 uppercase tracking-widest">&gt; Sin campañas activas · Crea una arriba_</p>
+                        <p className="font-mono text-xs text-slate-600 uppercase tracking-widest">&gt; Sin campañas activas · Crea una arriba_</p>
                     </div>
                 )}
             </div>

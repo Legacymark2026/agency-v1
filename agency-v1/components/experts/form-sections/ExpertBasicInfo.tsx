@@ -87,7 +87,7 @@ export function ExpertBasicInfo() {
                                         />
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] font-medium tabular-nums font-mono uppercase tracking-widest",
+                                        "text-xs font-medium tabular-nums font-mono uppercase tracking-widest",
                                         isOverLimit ? "text-red-500" : isApproachingLimit ? "text-amber-500" : "text-slate-500"
                                     )}>
                                         {bioLength}/500

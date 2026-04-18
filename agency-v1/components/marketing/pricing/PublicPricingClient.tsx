@@ -232,7 +232,7 @@ function ServiceCard({ service, isSelected, onToggle, highestId, onOpenModal, in
               {service.tiempo_estimado ? `[T] ${service.tiempo_estimado}` : '[IMPUESTOS INCL.]'}
             </div>
           </div>
-          <button onClick={(e: any) => { e.stopPropagation(); onToggle(); }} className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border rounded-sm font-mono text-[10px] uppercase tracking-widest font-bold transition-all ${
+          <button onClick={(e: any) => { e.stopPropagation(); onToggle(); }} className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border rounded-sm font-mono text-xs uppercase tracking-widest font-bold transition-all ${
             isSelected 
               ? "bg-[rgba(13,148,136,0.2)] border-[rgba(13,148,136,0.5)] text-teal-300 shadow-[0_0_15px_rgba(13,148,136,0.3)]" 
               : "bg-white/5 border-[rgba(30,41,59,0.8)] text-slate-300 hover:border-teal-500/50 hover:bg-teal-900/40"
@@ -352,7 +352,7 @@ export function PublicPricingClient({ services }: PublicPricingClientProps) {
                 <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                   <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, (selectedServices.length / 3) * 100)}%` }} className={`h-full ${selectedServices.length >= 3 ? 'bg-emerald-500' : 'bg-teal-500'}`} />
                 </div>
-                {calculateTotal().volumeDiscount > 0 && <div className="text-[10px] text-emerald-400 font-bold mt-1 text-right">✓ {calculateTotal().volumeDiscount * 100}% DESCUENTO</div>}
+                {calculateTotal().volumeDiscount > 0 && <div className="text-xs text-emerald-400 font-bold mt-1 text-right">✓ {calculateTotal().volumeDiscount * 100}% DESCUENTO</div>}
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -387,7 +387,7 @@ export function PublicPricingClient({ services }: PublicPricingClientProps) {
         {/* Header */}
         <div className="text-center mb-16 sm:mb-24 relative z-10 ds-card" style={{ padding: '4rem 2rem' }}>
           <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.07),transparent_70%)] pointer-events-none" />
-          <div className="absolute top-4 right-4 font-mono text-[9px] text-slate-700 uppercase tracking-widest">[CMO_SYS · BUILDER]</div>
+          <div className="absolute top-4 right-4 font-mono text-xs text-slate-700 uppercase tracking-widest">[CMO_SYS · BUILDER]</div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="mb-4">
              <span className="ds-badge ds-badge-teal mb-4">
                 <span className="relative flex h-1.5 w-1.5">

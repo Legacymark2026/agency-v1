@@ -122,7 +122,7 @@ export default function TreasuryDashboard() {
                                             </div>
                                             <div>
                                                 <h4 className="text-sm font-medium text-slate-200">{acc.name}</h4>
-                                                <p className="text-[10px] text-slate-500 font-mono tracking-widest">{acc.currency}</p>
+                                                <p className="text-xs text-slate-500 font-mono tracking-widest">{acc.currency}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -145,7 +145,7 @@ export default function TreasuryDashboard() {
                     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="text-[10px] font-bold tracking-widest text-slate-500 uppercase bg-slate-900/50 border-b border-slate-800">
+                                <thead className="text-xs font-bold tracking-widest text-slate-500 uppercase bg-slate-900/50 border-b border-slate-800">
                                     <tr>
                                         <th className="px-6 py-4">Fecha / Detalle</th>
                                         <th className="px-6 py-4">Cuenta</th>
@@ -162,7 +162,7 @@ export default function TreasuryDashboard() {
                                         <tr key={tx.id} className="hover:bg-slate-800/30 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-slate-200">{tx.description || tx.category.replace("_", " ")}</div>
-                                                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                                <div className="text-xs text-slate-500 font-mono mt-0.5">
                                                     {format(new Date(tx.date), "d MMM yyyy", { locale: es })}
                                                     {tx.reference && ` • Ref: ${tx.reference}`}
                                                 </div>
@@ -175,15 +175,15 @@ export default function TreasuryDashboard() {
                                             <td className="px-6 py-4">
                                                 <div className="flex justify-center">
                                                     {tx.type === 'INCOME' ? (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                                             <ArrowUpRight className="w-3 h-3" /> DEPOSITO
                                                         </span>
                                                     ) : tx.type === 'EXPENSE' ? (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-red-500/10 text-red-400 border border-red-500/20">
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase bg-red-500/10 text-red-400 border border-red-500/20">
                                                             <ArrowDownRight className="w-3 h-3" /> RETIRO
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold tracking-widest uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                                             TRANSF
                                                         </span>
                                                     )}

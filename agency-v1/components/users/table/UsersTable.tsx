@@ -39,10 +39,10 @@ export function UsersTable({
                     <thead>
                         <tr style={{ borderBottom: '1px solid rgba(30,41,59,0.8)', background: 'rgba(15,23,42,0.4)' }}>
                             <th className="py-3.5 px-5 w-10"><Star size={12} className="text-slate-700" /></th>
-                            <th className="py-3.5 px-5 font-mono text-[9px] font-bold tracking-[0.14em] text-slate-600 uppercase">Identidad Registrada</th>
-                            <th className="py-3.5 px-5 font-mono text-[9px] font-bold tracking-[0.14em] text-slate-600 uppercase">Asignación de Rol</th>
-                            {showMetrics && <th className="py-3.5 px-5 font-mono text-[9px] font-bold tracking-[0.14em] text-slate-600 uppercase">Actividad</th>}
-                            <th className="py-3.5 px-5 font-mono text-[9px] font-bold tracking-[0.14em] text-slate-600 uppercase text-right">Controles</th>
+                            <th className="py-3.5 px-5 font-mono text-xs font-bold tracking-[0.14em] text-slate-600 uppercase">Identidad Registrada</th>
+                            <th className="py-3.5 px-5 font-mono text-xs font-bold tracking-[0.14em] text-slate-600 uppercase">Asignación de Rol</th>
+                            {showMetrics && <th className="py-3.5 px-5 font-mono text-xs font-bold tracking-[0.14em] text-slate-600 uppercase">Actividad</th>}
+                            <th className="py-3.5 px-5 font-mono text-xs font-bold tracking-[0.14em] text-slate-600 uppercase text-right">Controles</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -74,16 +74,16 @@ export function UsersTable({
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <p className="text-[13px] font-black text-slate-100">{user.name || "Sin Nombre"}</p>
-                                                    {isSelf && <span className="font-mono text-[8px] font-black px-1.5 py-0.5 rounded-sm" style={{ background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)', color: '#14b8a6' }}>TÚ</span>}
+                                                    {isSelf && <span className="font-mono text-xs font-black px-1.5 py-0.5 rounded-sm" style={{ background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)', color: '#14b8a6' }}>TÚ</span>}
                                                     {user.mfaEnabled && <span title="MFA Activado"><Lock size={10} className="text-teal-500" /></span>}
                                                 </div>
-                                                <p className="font-mono text-[9px] text-slate-600 mt-0.5">{user.email}</p>
+                                                <p className="font-mono text-xs text-slate-600 mt-0.5">{user.email}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="py-4 px-5" onClick={(e) => e.stopPropagation()}>
                                         <RoleSelector userId={user.id} currentRole={user.role} isSelf={isSelf} customRoles={customRoles} />
-                                        {user.jobTitle && <p className="font-mono text-[9px] text-slate-700 mt-1.5 flex items-center gap-1"><Briefcase size={9} /> {user.jobTitle}</p>}
+                                        {user.jobTitle && <p className="font-mono text-xs text-slate-700 mt-1.5 flex items-center gap-1"><Briefcase size={9} /> {user.jobTitle}</p>}
                                     </td>
                                     {showMetrics && (
                                         <td className="py-4 px-5">
@@ -92,7 +92,7 @@ export function UsersTable({
                                                     <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
                                                     {user._count?.activityLogs ?? 0} Inicios de sesión
                                                 </p>
-                                                <p className="font-mono text-[9px] text-slate-600">Ingreso: {getRelativeDate(new Date(user.createdAt))}</p>
+                                                <p className="font-mono text-xs text-slate-600">Ingreso: {getRelativeDate(new Date(user.createdAt))}</p>
                                             </div>
                                         </td>
                                     )}
@@ -100,7 +100,7 @@ export function UsersTable({
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onToggleStatus(user.id); }}
-                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[9px] font-bold tracking-widest uppercase rounded-sm transition-all ${isDeactivated ? 'text-red-400' : 'text-slate-500 hover:text-amber-400'}`}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs font-bold tracking-widest uppercase rounded-sm transition-all ${isDeactivated ? 'text-red-400' : 'text-slate-500 hover:text-amber-400'}`}
                                                 style={isDeactivated
                                                     ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }
                                                     : { background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(30,41,59,0.8)' }}

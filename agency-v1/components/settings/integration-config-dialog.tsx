@@ -232,11 +232,11 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                             {/* Provider Specific Section */}
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                         <Hash className="h-3 w-3" />
                                         Identity & Access
                                     </h4>
-                                    <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 pointer-events-none">
+                                    <Badge variant="secondary" className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 pointer-events-none">
                                         Required
                                     </Badge>
                                 </div>
@@ -308,7 +308,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     placeholder="G-XXXXXXXXXX"
                                                 />
                                             </div>
-                                            <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 GA4 → Admin → Flujos de datos → tu flujo web → Measurement ID
                                             </p>
@@ -354,7 +354,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Requerido para el rastreo Server-Side.
                                             </p>
@@ -461,7 +461,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Generado en el Administrador de Eventos para envíos Server-Side.
                                             </p>
@@ -526,7 +526,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Requerido para envíos Server-Side de TikTok.
                                             </p>
@@ -575,7 +575,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Requerido para envíos Server-Side.
                                             </p>
@@ -596,7 +596,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                             </div>
                                         </div>
                                         <Separator className="my-4 bg-gray-100" />
-                                        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                                             <Key className="h-3 w-3" /> Lead Gen Webhook
                                         </h4>
                                         <div className="grid gap-2">
@@ -625,7 +625,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Secreto compartido para validar los envíos del webhook de LinkedIn.
                                             </p>
@@ -647,7 +647,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                 placeholder="e.g., AW-123456789"
                                             />
                                         </div>
-                                        <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                             <Info className="h-3 w-3" />
                                             Utilizado para Global Site Tag (gtag.js).
                                         </p>
@@ -666,13 +666,13 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                 placeholder="e.g., 987654321"
                                             />
                                         </div>
-                                        <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                             <Info className="h-3 w-3" />
                                             ID de la acción de conversión específica en Google/YouTube Ads.
                                         </p>
                                     </div>
                                     <Separator className="my-4 bg-gray-100" />
-                                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                                         <Key className="h-3 w-3" /> Enhanced Conversions S2S API
                                     </h4>
                                     <div className="grid grid-cols-2 gap-4">
@@ -706,7 +706,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                         </div>
                                     </div>
                                         <Separator className="my-4 bg-gray-100" />
-                                        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                                             <Key className="h-3 w-3" /> Lead Form Webhook
                                         </h4>
                                         <div className="grid gap-2">
@@ -726,7 +726,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 El "Google Key" se configura al crear la extensión de Formulario de Clientes Potenciales en Google / YouTube Ads.
                                             </p>
@@ -774,7 +774,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Generate this in Meta Business Manager under System Users.
                                             </p>
@@ -811,7 +811,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     placeholder="e.g., 1029384..."
                                                 />
                                             </div>
-                                            <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                            <p className="text-xs text-gray-400 flex items-center gap-1">
                                                 <Info className="h-3 w-3" />
                                                 Necesario para identificar leads entrantes vía Webhook.
                                             </p>
@@ -896,7 +896,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                             {(provider === 'facebook' || provider === 'instagram') && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                             <Lock className="h-3 w-3" />
                                             Security & Webhooks
                                         </h4>
