@@ -32,6 +32,11 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(siteConfig.url),
     alternates: {
       canonical: canonicalUrl,
+      languages: {
+        'es-ES': `${siteConfig.url}/es${pathname.replace(/^\/(es|en)/, '')}`,
+        'en-US': `${siteConfig.url}/en${pathname.replace(/^\/(es|en)/, '')}`,
+        'x-default': `${siteConfig.url}/es${pathname.replace(/^\/(es|en)/, '')}`,
+      },
     },
     title: {
       default: siteConfig.name,
