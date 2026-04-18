@@ -67,7 +67,7 @@ export default async function BlogPage() {
                         <span className="text-teal-400 text-xs font-black tracking-widest uppercase">Blog & Recursos</span>
                     </div>
 
-                    <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6">
+                    <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6 break-words">
                         <span className="block text-white">Insights &</span>
                         <span className="block bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #2dd4bf 0%, #38bdf8 50%, #a78bfa 100%)' }}>Estrategias</span>
                     </h1>

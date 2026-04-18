@@ -39,7 +39,7 @@ export function BlogPostHeader({ title, createdAt, authorName, authorImage, read
             )}
 
             {/* Title */}
-            <h1 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-6xl leading-tight">
+            <h1 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-6xl leading-tight break-words">
                 {title}
             </h1>
 
