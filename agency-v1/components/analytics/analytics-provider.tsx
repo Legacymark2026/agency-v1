@@ -152,22 +152,33 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
     // ── Scroll Depth: 25 / 50 / 75 / 100 % ──────────────────────────────
     useEffect(() => {
         if (consent !== 'granted' || !config.gaPropertyId) return;
-        const milestones = new Set([25, 50, 75, 100]);
-        const fired = new Set<number>();
+        
+        const initScrollDepth = () => {
+            const milestones = new Set([25, 50, 75, 100]);
+            const fired = new Set<number>();
 
-        const onScroll = () => {
-            const docH = document.documentElement.scrollHeight - window.innerHeight;
-            if (docH <= 0) return;
-            const pct = Math.round((window.scrollY / docH) * 100);
-            milestones.forEach(m => {
-                if (pct >= m && !fired.has(m)) {
-                    fired.add(m);
-                    gtagEvent('scroll_depth', { percent_scrolled: m, page_path: pathname });
-                }
-            });
+            const onScroll = () => {
+                const docH = document.documentElement.scrollHeight - window.innerHeight;
+                if (docH <= 0) return;
+                const pct = Math.round((window.scrollY / docH) * 100);
+                milestones.forEach(m => {
+                    if (pct >= m && !fired.has(m)) {
+                        fired.add(m);
+                        gtagEvent('scroll_depth', { percent_scrolled: m, page_path: pathname });
+                    }
+                });
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
+            return () => window.removeEventListener('scroll', onScroll);
         };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+
+        if ('requestIdleCallback' in window) {
+            const idleId = (window as any).requestIdleCallback(initScrollDepth);
+            return () => (window as any).cancelIdleCallback(idleId);
+        } else {
+            const timeoutId = setTimeout(initScrollDepth, 2000);
+            return () => clearTimeout(timeoutId);
+        }
     }, [pathname, consent, config.gaPropertyId]);
 
     // ── Engagement Time: 10s / 30s / 60s / 120s ─────────────────────────
@@ -186,40 +197,50 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
     useEffect(() => {
         if (consent !== 'granted') return;
 
-        const onClick = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
+        const initClickTracking = () => {
+            const onClick = (e: MouseEvent) => {
+                const target = e.target as HTMLElement;
 
-            // ── Link clicks
-            const link = target.closest('a');
-            if (link) {
-                const href = link.href || '';
-                const text = (link.textContent || '').trim().slice(0, 100);
+                // ── Link clicks
+                const link = target.closest('a');
+                if (link) {
+                    const href = link.href || '';
+                    const text = (link.textContent || '').trim().slice(0, 100);
 
-                if (href.includes('wa.me') || href.includes('whatsapp.com')) {
-                    gtagEvent('whatsapp_click', { page_path: pathname, link_text: text });
-                    if (config.fbPixelId && (window as any).fbq) (window as any).fbq('track', 'Contact');
-                } else if (href.startsWith('mailto:')) {
-                    gtagEvent('email_click', { email_address: href.replace('mailto:', ''), page_path: pathname });
-                } else if (href.startsWith('tel:')) {
-                    gtagEvent('phone_call', { phone_number: href.replace('tel:', ''), page_path: pathname });
-                } else if (href && !href.startsWith(window.location.origin) && href.startsWith('http')) {
-                    gtagEvent('click', { link_url: href, link_text: text, outbound: true, page_path: pathname });
+                    if (href.includes('wa.me') || href.includes('whatsapp.com')) {
+                        gtagEvent('whatsapp_click', { page_path: pathname, link_text: text });
+                        if (config.fbPixelId && (window as any).fbq) (window as any).fbq('track', 'Contact');
+                    } else if (href.startsWith('mailto:')) {
+                        gtagEvent('email_click', { email_address: href.replace('mailto:', ''), page_path: pathname });
+                    } else if (href.startsWith('tel:')) {
+                        gtagEvent('phone_call', { phone_number: href.replace('tel:', ''), page_path: pathname });
+                    } else if (href && !href.startsWith(window.location.origin) && href.startsWith('http')) {
+                        gtagEvent('click', { link_url: href, link_text: text, outbound: true, page_path: pathname });
+                    }
+                    return;
                 }
-                return;
-            }
 
-            // ── Button / CTA clicks
-            const btn = target.closest('button, [role="button"]');
-            if (btn) {
-                const text = (btn.textContent || '').trim().slice(0, 100);
-                const id = (btn as HTMLElement).id || undefined;
-                const cls = (btn as HTMLElement).className?.toString().slice(0, 80) || undefined;
-                gtagEvent('cta_click', { button_text: text, button_id: id, button_class: cls, page_path: pathname });
-            }
+                // ── Button / CTA clicks
+                const btn = target.closest('button, [role="button"]');
+                if (btn) {
+                    const text = (btn.textContent || '').trim().slice(0, 100);
+                    const id = (btn as HTMLElement).id || undefined;
+                    const cls = (btn as HTMLElement).className?.toString().slice(0, 80) || undefined;
+                    gtagEvent('cta_click', { button_text: text, button_id: id, button_class: cls, page_path: pathname });
+                }
+            };
+
+            document.addEventListener('click', onClick);
+            return () => document.removeEventListener('click', onClick);
         };
 
-        document.addEventListener('click', onClick);
-        return () => document.removeEventListener('click', onClick);
+        if ('requestIdleCallback' in window) {
+            const idleId = (window as any).requestIdleCallback(initClickTracking);
+            return () => (window as any).cancelIdleCallback(idleId);
+        } else {
+            const timeoutId = setTimeout(initClickTracking, 1500);
+            return () => clearTimeout(timeoutId);
+        }
     }, [pathname, consent, config.fbPixelId]);
 
     // ── Form Tracking: start / submit / error ────────────────────────────

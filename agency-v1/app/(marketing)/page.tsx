@@ -1,21 +1,27 @@
 import { FuturisticHero } from "@/components/sections/futuristic-hero";
-import { StrategicAlliances } from "@/components/sections/strategic-alliances";
-import { BentoServices } from "@/components/sections/bento-services";
-import { OmnichannelShowcase } from "@/components/sections/omnichannel-showcase";
-import { ValueProposition } from "@/components/sections/value-proposition";
-import { CaseStudies } from "@/components/sections/case-studies";
-import { Methodology } from "@/components/sections/methodology";
-import { LatestPosts } from "@/components/sections/latest-posts";
-import { PortfolioPreview } from "@/components/sections/portfolio-preview";
-import { getRecentProjects, getRecentPosts } from "@/lib/data";
-import { getExperts } from "@/actions/experts";
-import { TestimonialSlider } from "@/components/sections/testimonial-slider";
-import { TeamGrid } from "@/components/sections/team-grid";
-import { FaqAccordion } from "@/components/sections/faq-accordion";
-import { Stats } from "@/components/sections/stats";
-import { CTA } from "@/components/sections/cta";
 import { OrganizationSchema, WebSiteSchema, FAQSchema } from "@/components/seo/structured-data";
 import { siteConfig } from "@/lib/site-config";
+import { getRecentProjects, getRecentPosts } from "@/lib/data";
+import { getExperts } from "@/actions/experts";
+import dynamic from "next/dynamic";
+
+// ── OPTIMIZATION: Progressive Hydration ──────────────────
+// Below-the-fold sections are loaded dynamically to prioritize 
+// the FuturisticHero (LCP) and reduce the initial JS execution time.
+
+const StrategicAlliances = dynamic(() => import("@/components/sections/strategic-alliances").then(mod => mod.StrategicAlliances));
+const BentoServices = dynamic(() => import("@/components/sections/bento-services").then(mod => mod.BentoServices));
+const OmnichannelShowcase = dynamic(() => import("@/components/sections/omnichannel-showcase").then(mod => mod.OmnichannelShowcase));
+const ValueProposition = dynamic(() => import("@/components/sections/value-proposition").then(mod => mod.ValueProposition));
+const CaseStudies = dynamic(() => import("@/components/sections/case-studies").then(mod => mod.CaseStudies));
+const Methodology = dynamic(() => import("@/components/sections/methodology").then(mod => mod.Methodology));
+const LatestPosts = dynamic(() => import("@/components/sections/latest-posts").then(mod => mod.LatestPosts));
+const PortfolioPreview = dynamic(() => import("@/components/sections/portfolio-preview").then(mod => mod.PortfolioPreview));
+const TestimonialSlider = dynamic(() => import("@/components/sections/testimonial-slider").then(mod => mod.TestimonialSlider));
+const TeamGrid = dynamic(() => import("@/components/sections/team-grid").then(mod => mod.TeamGrid));
+const FaqAccordion = dynamic(() => import("@/components/sections/faq-accordion").then(mod => mod.FaqAccordion));
+const Stats = dynamic(() => import("@/components/sections/stats").then(mod => mod.Stats));
+const CTA = dynamic(() => import("@/components/sections/cta").then(mod => mod.CTA));
 
 export default async function HomePage() {
     const projects = await getRecentProjects(4);

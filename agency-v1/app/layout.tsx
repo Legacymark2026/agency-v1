@@ -7,18 +7,11 @@ import { AnalyticsProvider as InternalAnalyticsProvider } from "@/modules/analyt
 import { getPublicIntegrations } from "@/actions/settings";
 import { auth } from "@/lib/auth";
 import { Suspense } from "react";
-import { ScrollProgress } from "@/components/ui/scroll-progress";
-import { CustomCursor } from "@/components/ui/custom-cursor";
-import { AmbientBackground } from "@/components/ui/ambient-background";
-import { BackToTop } from "@/components/ui/back-to-top";
-import { CookieConsent } from "@/components/ui/cookie-consent";
-import { JsonLd } from "@/components/seo/json-ld";
-import { CommandMenu } from "@/components/ui/command-menu";
-import { PageTransition } from "@/components/ui/page-transition";
-import { SocialShare } from "@/components/ui/social-share";
-import { ChatWidget } from "@/components/chat/chat-widget";
 import { getLocale } from "next-intl/server";
 import { headers } from "next/headers";
+import dynamic from "next/dynamic";
+
+const DecorativeElements = dynamic(() => import("@/components/layout/decorative-elements").then(mod => mod.DecorativeElements), { ssr: false });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -26,6 +19,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 import { siteConfig } from "@/lib/site-config";
+import { JsonLd } from "@/components/seo/json-ld";
+import { PageTransition } from "@/components/ui/page-transition";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -121,18 +116,11 @@ export default async function RootLayout({
               }} />
             </Suspense>
 
-            <ScrollProgress />
-            <CustomCursor />
-            <AmbientBackground />
             <JsonLd locale={locale} />
-            <CommandMenu />
-            <SocialShare url={siteConfig.url} title={siteConfig.description} />
             <PageTransition>
               {children}
             </PageTransition>
-            <BackToTop />
-            <CookieConsent />
-            <ChatWidget />
+            <DecorativeElements locale={locale} />
           </InternalAnalyticsProvider>
         </Providers>
       </body>
