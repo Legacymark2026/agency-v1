@@ -1,7 +1,7 @@
 {
-    "buildCommand": "prisma generate && prisma migrate deploy && cd apps/web && next build",
+    "buildCommand": "cd apps/web && prisma generate && prisma migrate deploy && next build",
     "devCommand": "cd apps/web && next dev",
-    "installCommand": "npm install",
+    "installCommand": "cd apps/web && npm install",
     "outputDirectory": "apps/web/.next",
     "framework": "nextjs",
     "git": {
