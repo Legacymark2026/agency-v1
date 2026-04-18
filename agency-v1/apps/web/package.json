@@ -157,5 +157,12 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.4",
     "vitest-mock-extended": "^4.0.0"
-  }
+  },
+  "browserslist": [
+    "defaults",
+    "last 2 versions",
+    "not dead",
+    "> 0.2%",
+    "not ie 11"
+  ]
 }

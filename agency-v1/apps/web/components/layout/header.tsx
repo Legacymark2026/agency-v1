@@ -80,9 +80,13 @@ export function Header() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Prevent hydration mismatch by returning a simpler version or null until mounted
+    // Prevent hydration mismatch by returning a simplified skeleton that matches the final layout metrics
     if (!mounted) {
-        return <header className="fixed top-6 left-0 right-0 z-50 h-16" />;
+        return (
+            <header className="fixed top-6 left-0 right-0 z-50 px-4 md:px-8 pointer-events-none">
+                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 rounded-full bg-transparent border border-transparent" />
+            </header>
+        );
     }
 
     return (

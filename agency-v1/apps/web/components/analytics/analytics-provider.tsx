@@ -484,7 +484,7 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
             {config.fbPixelId && (
                 <Script
                     id="fb-pixel-init"
-                    strategy="afterInteractive"
+                    strategy="lazyOnload"
                     dangerouslySetInnerHTML={{
                         __html: `
                             !function(f,b,e,v,n,t,s)
@@ -506,7 +506,7 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
             {config.hotjarId && (
                 <Script
                     id="hotjar-init"
-                    strategy="afterInteractive"
+                    strategy="lazyOnload"
                     dangerouslySetInnerHTML={{
                         __html: `
                             (function(h,o,t,j,a,r){
@@ -526,7 +526,7 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
             {config.tiktokPixelId && (
                 <Script
                     id="tiktok-pixel-init"
-                    strategy="afterInteractive"
+                    strategy="lazyOnload"
                     dangerouslySetInnerHTML={{
                         __html: `
                             !function (w, d, t) {
@@ -543,7 +543,7 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
             {config.linkedinPartnerId && (
                 <Script
                     id="linkedin-insight-tag"
-                    strategy="afterInteractive"
+                    strategy="lazyOnload"
                     dangerouslySetInnerHTML={{
                         __html: `
                             _linkedin_partner_id = "${config.linkedinPartnerId}";

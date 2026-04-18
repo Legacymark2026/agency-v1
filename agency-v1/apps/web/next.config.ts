@@ -24,10 +24,16 @@ const nextConfig: NextConfig = {
   compress: true,
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   experimental: {
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
+      'date-fns',
+      'clsx',
+      'tailwind-merge',
       '@radix-ui/react-accordion',
       '@radix-ui/react-avatar',
       '@radix-ui/react-checkbox',
@@ -44,8 +50,6 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-switch',
       '@radix-ui/react-tabs',
       '@radix-ui/react-tooltip',
-      'date-fns',
-      'lucide-react',
     ],
   },
   async redirects() {
