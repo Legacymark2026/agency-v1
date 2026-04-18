@@ -141,7 +141,7 @@ export default async function BlogPage() {
 
                                 {/* Image */}
                                 <div className="aspect-video w-full bg-slate-800 relative overflow-hidden">
-                                    <Link href={`/blog/${post.slug}`} className="block h-full w-full">
+                                    <Link href={`/${locale}/blog/${post.slug}`} className="block h-full w-full">
                                         <div
                                             className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                                             style={{ backgroundImage: `url(${post.coverImage || 'https://images.unsplash.com/photo-1432821596592-e2c18b781492?q=80&w=2070&auto=format&fit=crop'})` }}
@@ -167,7 +167,7 @@ export default async function BlogPage() {
 
                                     {/* Title */}
                                     <h3 className="mb-3 text-lg font-black text-white group-hover:text-teal-300 transition-colors leading-snug">
-                                        <Link href={`/blog/${post.slug}`}>
+                                        <Link href={`/${locale}/blog/${post.slug}`}>
                                             {post.title}
                                         </Link>
                                     </h3>
@@ -178,7 +178,7 @@ export default async function BlogPage() {
                                     </p>
 
                                     {/* CTA */}
-                                    <Link href={`/blog/${post.slug}`} className="inline-flex items-center gap-2 text-sm font-bold text-teal-400 hover:text-teal-300 transition-colors group/link">
+                                    <Link href={`/${locale}/blog/${post.slug}`} className="inline-flex items-center gap-2 text-sm font-bold text-teal-400 hover:text-teal-300 transition-colors group/link">
                                         <span>Leer artículo</span>
                                         <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                                     </Link>
