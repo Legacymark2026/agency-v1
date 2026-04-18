@@ -197,6 +197,7 @@ export function ChatWidget() {
                                             <button 
                                                 onClick={() => setIsOpen(false)}
                                                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                                aria-label="Cerrar chat"
                                             >
                                                 <X className="h-4 w-4 sm:h-5 sm:w-5" />
                                             </button>
@@ -252,6 +253,7 @@ export function ChatWidget() {
                     whileHover={!isDragging ? { scale: 1.08 } : undefined}
                     whileTap={{ scale: 0.95 }}
                     onClick={toggleChat}
+                    aria-label={isOpen ? "Cerrar ventana de chat" : "Abrir ventana de chat"}
                     className={cn(
                         "rounded-2xl shadow-2xl transition-all duration-300 flex items-center justify-center relative overflow-hidden cursor-grab active:cursor-grabbing",
                         "h-14 w-14 sm:h-16 sm:w-16",
