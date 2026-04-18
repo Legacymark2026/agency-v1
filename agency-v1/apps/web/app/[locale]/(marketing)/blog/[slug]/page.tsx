@@ -218,7 +218,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
                 {/* ── MAIN CONTENT AREA ──────────────────────────────────── */}
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20 relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-12">
 
                         {/* Article Content */}
                         <div className="order-2 lg:order-1">

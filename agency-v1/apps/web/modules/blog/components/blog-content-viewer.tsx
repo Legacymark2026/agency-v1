@@ -14,7 +14,7 @@ export function BlogContentViewer({ content }: BlogContentViewerProps) {
         <div className="relative max-w-full overflow-hidden">
             <div
                 ref={contentRef}
-                className="prose prose-lg max-w-full break-words
+                className="prose prose-lg max-w-full break-words [overflow-wrap:anywhere] hyphens-auto
                     prose-headings:font-black prose-headings:tracking-tight prose-headings:scroll-mt-20
                     prose-headings:text-teal-400
                     prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-6
