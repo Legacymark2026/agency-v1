@@ -33,15 +33,17 @@ function addHeadingIds(html: string): string {
     });
 }
 
+import { siteConfig } from "@/lib/site-config";
+
 // Generate dynamic metadata for SEO
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-    const { slug } = await params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
+    const { slug, locale } = await params;
     const post = await getPostBySlug(slug);
 
     if (!post) return { title: 'Post not found' };
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://legacymark.com';
-    const postUrl = `${baseUrl}/blog/${slug}`;
+    const baseUrl = siteConfig.url;
+    const postUrl = `${baseUrl}/${locale}/blog/${slug}`;
 
     return {
         title: post.metaTitle || post.title,
@@ -57,8 +59,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             modifiedTime: post.updatedAt.toISOString(),
             authors: [post.author?.name || 'LegacyMark'],
             images: post.coverImage ? [{ url: post.coverImage, width: 1200, height: 630, alt: post.imageAlt || post.title }] : [],
-            siteName: 'LegacyMark',
-            locale: 'es_ES',
+            siteName: siteConfig.name,
+            locale: locale === 'en' ? 'en_US' : 'es_ES',
         },
         twitter: {
             card: 'summary_large_image',
@@ -71,8 +73,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = await params;
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
+    const { slug, locale } = await params;
     const post = await getPostBySlug(slug);
 
     if (!post) notFound();
@@ -96,8 +98,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     const readingTime = calculateReadingTime(post.content);
     const processedContent = addHeadingIds(post.content);
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://legacymark.com';
-    const postUrl = `${baseUrl}/blog/${slug}`;
+    const baseUrl = siteConfig.url;
+    const postUrl = `${baseUrl}/${locale}/blog/${slug}`;
 
     return (
         <>

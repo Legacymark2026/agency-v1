@@ -1,8 +1,8 @@
 export const siteConfig = {
     name: "LegacyMark",
     description: "Agencia de marketing performance con foco en ROI. Transformamos datos en crecimiento sostenible.",
-    url: "https://legacymarksas.com",
-    ogImage: "https://legacymark.com/og.jpg",
+    url: "https://legacymark.com",
+    ogImage: "https://legacymark.com/logo.png",
     nit: "902028722-3",
     address: {
         street: "Crr18a 22-21 Villa Linda",
