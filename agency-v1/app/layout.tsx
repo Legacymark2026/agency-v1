@@ -9,9 +9,7 @@ import { auth } from "@/lib/auth";
 import { Suspense } from "react";
 import { getLocale } from "next-intl/server";
 import { headers } from "next/headers";
-import dynamic from "next/dynamic";
-
-const DecorativeElements = dynamic(() => import("@/components/layout/decorative-elements").then(mod => mod.DecorativeElements), { ssr: false });
+import { ClientDecorativeElements } from "@/components/layout/client-decorative-elements";
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -120,7 +118,7 @@ export default async function RootLayout({
             <PageTransition>
               {children}
             </PageTransition>
-            <DecorativeElements locale={locale} />
+            <ClientDecorativeElements locale={locale} />
           </InternalAnalyticsProvider>
         </Providers>
       </body>

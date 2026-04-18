@@ -79,6 +79,10 @@ function SortableTask({ task, onClick, onDelete, onDuplicate, showDetails }: {
     id: task.id, data: { type: "Task", task },
   });
   const [menu, setMenu] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
   const pCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.MEDIUM;
   const PIcon = pCfg.icon;
   const overdue = isOverdue(task.dueDate);
