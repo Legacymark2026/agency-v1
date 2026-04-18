@@ -1,2 +1,0 @@
-components/crm/lead-sources.tsx(135,33): error TS2322: Type '{ children: Element[]; activeIndex: number; activeShape: (props: any) => Element; data: LeadSource[]; cx: string; cy: string; innerRadius: number; outerRadius: number; ... 5 more ...; cornerRadius: number; }' is not assignable to type 'IntrinsicAttributes & PieSvgAttributes & PieProps'.
-  Property 'activeIndex' does not exist on type 'IntrinsicAttributes & PieSvgAttributes & PieProps'.
