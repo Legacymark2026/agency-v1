@@ -1,0 +1,59 @@
+{
+    "apps": [
+        {
+            "name": "legacymark",
+            "script": "node_modules/next/dist/bin/next",
+            "args": "start",
+            "cwd": "/var/www/legacymark",
+            "instances": 4,
+            "exec_mode": "cluster",
+            "env": {
+                "NODE_ENV": "production",
+                "PORT": 3000,
+                "UV_THREADPOOL_SIZE": 16
+            },
+            "error_file": "/var/log/pm2/legacymark-error.log",
+            "out_file": "/var/log/pm2/legacymark-out.log",
+            "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+            "merge_logs": true,
+            "autorestart": true,
+            "max_memory_restart": "3G",
+            "watch": false,
+            "ignore_watch": [
+                "node_modules",
+                ".next",
+                "logs",
+                ".git"
+            ],
+            "max_restarts": 10,
+            "min_uptime": "10s",
+            "kill_timeout": 5000,
+            "listen_timeout": 10000,
+            "shutdown_with_message": false,
+            "vizion": false,
+            "post_update": [
+                "npm install",
+                "npx prisma generate"
+            ],
+            "node_args": [
+                "--max-old-space-size=3072",
+                "--optimize-for-size"
+            ]
+        },
+        {
+            "name": "legacymark-ai-worker",
+            "script": "workers/ai-worker.js",
+            "instances": 2,
+            "exec_mode": "cluster",
+            "env": {
+                "NODE_ENV": "production",
+                "WORKER_TYPE": "AI"
+            },
+            "error_file": "/var/log/pm2/ai-worker-error.log",
+            "out_file": "/var/log/pm2/ai-worker-out.log",
+            "autorestart": true,
+            "max_memory_restart": "2G",
+            "min_uptime": "10s"
+        }
+    ]
+}

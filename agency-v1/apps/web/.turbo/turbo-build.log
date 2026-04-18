@@ -1,0 +1,76 @@
+npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
+
+> web@0.1.0 build
+> prisma generate && prisma db push --accept-data-loss && next build
+
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 2.21s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "legacymark", schema "public" at "187.77.195.9:5432"
+
+Your database is now in sync with your Prisma schema. Done in 4.57s
+
+Running generate... (Use --skip-generate to skip the generators)
+[2K[1A[2K[GRunning generate... - Prisma Client
+[2K[1A[2K[G✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 1
+.03s
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.3 -> 7.7.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.4min
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 23962ms
+  Running TypeScript ...
+Failed to compile.
+
+./actions/cms.ts:269:39
+Type error: Type '{ status?: "archived" | "published" | "draft" | "scheduled"; pdfUrl?: string; slug?: string; client?: string; title?: string; content?: string; description?: string; startDate?: string; endDate?: string; ... 20 more ...; tagNames?: string[]; }' is not assignable to type '(Without<ProjectCreateInput, ProjectUncheckedCreateInput> & ProjectUncheckedCreateInput) | (Without<...> & ProjectCreateInput)'.
+  Type '{ status?: "archived" | "published" | "draft" | "scheduled"; pdfUrl?: string; slug?: string; client?: string; title?: string; content?: string; description?: string; startDate?: string; endDate?: string; ... 20 more ...; tagNames?: string[]; }' is not assignable to type 'Without<ProjectUncheckedCreateInput, ProjectCreateInput> & ProjectCreateInput'.
+    Type '{ status?: "archived" | "published" | "draft" | "scheduled"; pdfUrl?: string; slug?: string; client?: string; title?: string; content?: string; description?: string; startDate?: string; endDate?: string; ... 20 more ...; tagNames?: string[]; }' is not assignable to type 'Without<ProjectUncheckedCreateInput, ProjectCreateInput>'.
+      Types of property 'categoryId' are incompatible.
+        Type 'string' is not assignable to type 'never'.
+
+[0m [90m 267 |[39m
+ [90m 268 |[39m     [36mtry[39m {
+[31m[1m>[22m[39m[90m 269 |[39m         [36mawait[39m prisma[33m.[39mproject[33m.[39mcreate({ data[33m:[39m validated })[33m;[39m
+ [90m     |[39m                                       [31m[1m^[22m[39m
+ [90m 270 |[39m         revalidatePath([32m'/dashboard/projects'[39m)[33m;[39m
+ [90m 271 |[39m         revalidatePath([32m'/portfolio'[39m)[33m;[39m
+ [90m 272 |[39m         revalidatePath([32m`/portfolio/${validated.slug}`[39m[33m,[39m [32m'page'[39m)[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+npm error workspace web@0.1.0
+npm error location C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c prisma generate && prisma db push --accept-data-loss && next build

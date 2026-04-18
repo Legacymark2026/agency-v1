@@ -1,0 +1,18 @@
+app/api/agent/route.ts(15,42): error TS2339: Property 'companies' does not exist on type '{ role: UserRole; companyId?: string | undefined; permissions?: Permission[] | undefined; } & User'.
+app/api/agent/route.ts(32,21): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '(args: any) => Promise<{ success: boolean; message: string; deal: { id: string; title: string; value: number; currency: string; stage: string; probability: number; contactName: string | null; contactEmail: string | null; ... 10 more ...; assignedTo: string | null; }; error?: undefined; } | { ...; }>' is not assignable to type 'undefined'.
+app/api/agent/route.ts(32,37): error TS7006: Parameter 'args' implicitly has an 'any' type.
+app/api/agent/route.ts(37,21): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '(args: any) => Promise<{ success: boolean; action: string; data: { client: string; service: string; totalAmountOriginal: number; paymentPlan: { advance60Percent: number; final40Percent: number; }; status: string; }; }>' is not assignable to type 'undefined'.
+app/api/agent/route.ts(37,37): error TS7006: Parameter 'args' implicitly has an 'any' type.
+app/api/agent/route.ts(42,21): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type '(args: any) => Promise<{ success: boolean; error: string; count?: undefined; deals?: undefined; } | { success: boolean; count: number; deals: { id: string; title: string; value: number; stage: string; }[]; error?: undefined; }>' is not assignable to type 'undefined'.
+app/api/agent/route.ts(42,37): error TS7006: Parameter 'args' implicitly has an 'any' type.
+app/api/agent/route.ts(45,13): error TS2353: Object literal may only specify known properties, and 'maxSteps' does not exist in type 'CallSettings & (Prompt & { model: LanguageModel; tools?: { updateDealStage: Tool<any, any>; createInvoice: Tool<any, any>; searchCRMDeals: Tool<...>; } | undefined; ... 24 more ...; _internal?: { ...; } | undefined; })'.
+app/api/agent/route.ts(48,23): error TS2551: Property 'toDataStreamResponse' does not exist on type 'StreamTextResult<{ updateDealStage: Tool<any, any>; createInvoice: Tool<any, any>; searchCRMDeals: Tool<any, any>; }, Output<string, string, never>>'. Did you mean 'toTextStreamResponse'?
+components/ai/cognitive-agent-chat.tsx(3,25): error TS2307: Cannot find module 'ai/react' or its corresponding type declarations.
+components/ai/cognitive-agent-chat.tsx(74,26): error TS7006: Parameter 'm' implicitly has an 'any' type.
+components/ai/cognitive-agent-chat.tsx(90,39): error TS7006: Parameter 'tool' implicitly has an 'any' type.

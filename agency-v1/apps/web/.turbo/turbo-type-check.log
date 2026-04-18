@@ -1,0 +1,5 @@
+npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
+
+> web@0.1.0 type-check
+> tsc --noEmit
+
