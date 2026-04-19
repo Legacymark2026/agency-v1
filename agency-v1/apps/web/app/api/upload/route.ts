@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { put } from "@vercel/blob";
 import { v4 as uuidv4 } from "uuid";
 import { auth } from "@/lib/auth";
 
-// Extended configuration to handle larger uploads (especially video files)
-// This only applies in Next.js Page Router or specific configs, but we use modern Next.js body limits configuration
+// Extended configuration to handle larger uploads
 export const maxDuration = 120; // 2 minutes for processing larger files
 
 export async function POST(req: NextRequest) {
@@ -32,7 +30,7 @@ export async function POST(req: NextRequest) {
             mimeType = file.type || 'application/octet-stream';
             fileSize = file.size;
         } else {
-            // Raw binary upload (bypasses Next.js FormData parsing issues on large payloads)
+            // Raw binary upload
             buffer = Buffer.from(await req.arrayBuffer());
             if (buffer.length === 0) {
                 return NextResponse.json({ error: "No se encontró el archivo (buffer vacío)" }, { status: 400 });
@@ -45,7 +43,7 @@ export async function POST(req: NextRequest) {
             const expectedSize = parseInt(req.nextUrl.searchParams.get('size') || '0', 10);
             if (expectedSize > 0 && buffer.length !== expectedSize) {
                 console.error(`Upload truncado: Se esperaban ${expectedSize} bytes pero se recibieron ${buffer.length} bytes.`);
-                return NextResponse.json({ error: "Conexión interrumpida o archivo truncado. Sube una a una o mejora la red." }, { status: 400 });
+                return NextResponse.json({ error: "Conexión interrumpida o archivo truncado." }, { status: 400 });
             }
             fileSize = buffer.length;
         }
@@ -53,7 +51,6 @@ export async function POST(req: NextRequest) {
         // Sanitización del nombre del archivo y metadata
         const extension = originalName.split('.').pop()?.toLowerCase() || '';
         
-        // Determinar "assetType" basado en extensión y mime
         let assetType = 'document';
         if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'].includes(extension)) {
             assetType = 'image';
@@ -67,32 +64,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Tipo de archivo no permitido" }, { status: 400 });
         }
 
-        // Crear nombre seguro a prueba de inyecciones
+        // Crear nombre seguro
         const safeSlug = originalName.toLowerCase().replace(/[^a-z0-9.]/g, '-').replace(/-+/g, '-').slice(0, 50);
         const fileName = `${Date.now()}_${uuidv4().split('-')[0]}_${safeSlug}`;
 
-        // Organización de subida por Directorios Anuales/Mensuales para rendimiento
-        const date = new Date();
-        const yearMonthFolder = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const uploadDir = join(process.cwd(), "public", "uploads", yearMonthFolder);
-
-        // Crear directorio si no existe (recursive true)
-        await mkdir(uploadDir, { recursive: true });
-
-        // Escribir en el VPS Hard Drive
-        const filePath = join(uploadDir, fileName);
-        await writeFile(filePath, buffer);
-
-        // Retornar la URL interceptada para evitar problemas de caché estática de Next.js
-        const publicUrl = `/api/serve/${yearMonthFolder}/${fileName}`;
+        // Subir a Vercel Blob
+        const blob = await put(`uploads/${fileName}`, buffer, {
+            access: 'public',
+            contentType: mimeType,
+        });
         
         return NextResponse.json({ 
             success: true, 
-            url: publicUrl,
+            url: blob.url,
             name: originalName,
             size: fileSize,
             mimeType: mimeType,
-            type: assetType, // 'image', 'video', 'document'
+            type: assetType,
             extension: extension
         });
 

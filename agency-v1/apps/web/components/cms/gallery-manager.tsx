@@ -242,10 +242,14 @@ export function GalleryManager({
         }
 
         // Image fallback
+        const displayUrl = image.url.startsWith('http') 
+            ? image.url 
+            : image.url.replace('/uploads/', '/api/serve/');
+
         return (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-                src={image.url.replace('/uploads/', '/api/serve/')}
+                src={displayUrl}
                 alt={image.alt || `Media asset`}
                 className="w-full h-full object-cover rounded-lg"
                 onError={(e) => {
