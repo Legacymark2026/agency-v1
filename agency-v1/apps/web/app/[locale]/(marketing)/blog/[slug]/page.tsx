@@ -124,8 +124,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     { name: post.title, url: postUrl }
                 ]}
             />
-            {post.faqs && post.faqs.length > 0 && (
-                <FAQSchema questions={post.faqs.map((q: any) => ({ question: q.question, answer: q.answer }))} />
+            {Array.isArray(post.faqs) && (post.faqs as any[]).length > 0 && (
+                <FAQSchema questions={(post.faqs as any[]).map((q: any) => ({ question: q.question, answer: q.answer }))} />
             )}
 
             {/* ── NOISE + GLOW (matching home) ─────────────────────────── */}
@@ -237,8 +237,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                             <BlogContentViewer content={processedContent} />
 
                             {/* FAQs Section */}
-                            {post.faqs && post.faqs.length > 0 && (
-                                <BlogFAQ faqs={post.faqs} />
+                            {Array.isArray(post.faqs) && (post.faqs as any[]).length > 0 && (
+                                <BlogFAQ faqs={post.faqs as any[]} />
                             )}
 
                             {/* Tags */}

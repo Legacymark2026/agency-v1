@@ -14,7 +14,7 @@ interface BlogFAQProps {
 }
 
 export function BlogFAQ({ faqs }: BlogFAQProps) {
-    if (!faqs || faqs.length === 0) return null;
+    if (!faqs || !Array.isArray(faqs) || faqs.length === 0) return null;
 
     return (
         <section className="mt-16 py-12 px-6 sm:px-8 rounded-3xl relative overflow-hidden group"

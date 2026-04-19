@@ -38,7 +38,8 @@ const DotGrid = ({ cols = 8, rows = 6 }: { cols?: number; rows?: number }) => (
     </div>
 );
 
-export default async function BlogPage() {
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
     const posts = await getAllPosts();
 
     return (
