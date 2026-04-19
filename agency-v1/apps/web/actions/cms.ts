@@ -41,7 +41,7 @@ export async function createPost(data: PostFormData) {
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     const validated = PostSchema.parse(data);
-    const { categoryIds, tagNames, scheduledDate, ...postData } = validated;
+    const { categoryIds, tagNames, scheduledDate, faqs, ...postData } = validated;
 
     try {
         // Process tags: find existing or create new
@@ -73,6 +73,7 @@ export async function createPost(data: PostFormData) {
                 authorId: session.user.id,
                 tags: tagConnections,
                 categories: categoryConnections,
+                faqs: faqs || [],
             }
         });
         revalidatePath('/dashboard/posts');
@@ -90,7 +91,7 @@ export async function updatePost(id: string, data: PostFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = PostSchema.parse(data);
-    const { categoryIds, tagNames, scheduledDate, ...postData } = validated;
+    const { categoryIds, tagNames, scheduledDate, faqs, ...postData } = validated;
 
     try {
         // Get current post to manage relationships
@@ -133,6 +134,7 @@ export async function updatePost(id: string, data: PostFormData) {
                 scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
                 tags: tagConnections,
                 categories: categoryConnections,
+                faqs: faqs || [],
             }
         });
         revalidatePath('/dashboard/posts');

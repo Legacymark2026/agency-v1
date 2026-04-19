@@ -13,7 +13,8 @@ import {
 import { EngagementBar } from "@/components/blog/blog-engagement";
 import { CommentSection } from "@/components/blog/blog-comments";
 import { NewsletterInline } from "@/components/blog/newsletter";
-import { ArticleSchema, BreadcrumbSchema } from "@/components/seo/structured-data";
+import { ArticleSchema, BreadcrumbSchema, FAQSchema } from "@/components/seo/structured-data";
+import { BlogFAQ } from "@/components/blog/blog-faq";
 import { getPostComments, getCommentCount } from "@/actions/blog";
 import { BlogContentViewer } from "@/components/blog/blog-content-viewer";
 
@@ -123,6 +124,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     { name: post.title, url: postUrl }
                 ]}
             />
+            {post.faqs && post.faqs.length > 0 && (
+                <FAQSchema questions={post.faqs.map((q: any) => ({ question: q.question, answer: q.answer }))} />
+            )}
 
             {/* ── NOISE + GLOW (matching home) ─────────────────────────── */}
             <div className="bg-noise fixed inset-0 z-50 pointer-events-none mix-blend-multiply opacity-[0.015]" />
@@ -231,6 +235,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
                             {/* Main Article Content */}
                             <BlogContentViewer content={processedContent} />
+
+                            {/* FAQs Section */}
+                            {post.faqs && post.faqs.length > 0 && (
+                                <BlogFAQ faqs={post.faqs} />
+                            )}
 
                             {/* Tags */}
                             {post.tags && post.tags.length > 0 && (

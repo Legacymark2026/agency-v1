@@ -529,6 +529,7 @@ model Post {
   views           PostView[]
   author          User        @relation(fields: [authorId], references: [id])
   series          PostSeries? @relation(fields: [seriesId], references: [id])
+  faqs            Json?       @default("[]")
 
   @@index([authorId])
   @@index([seriesId])

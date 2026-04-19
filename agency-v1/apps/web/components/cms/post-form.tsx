@@ -15,6 +15,7 @@ import { ImageUploadPreview } from "./image-upload-preview";
 import { CategorySelector } from "./category-selector";
 import { TagInput } from "./tag-input";
 import { format } from "date-fns";
+import { FAQManager } from "./faq-manager";
 
 // Fix rendimiento: Tiptap (~300KB) se carga de forma lazy.
 // No bloquea el primer render de la página.
@@ -64,6 +65,7 @@ interface PostFormProps {
         scheduledDate?: Date | null;
         categories?: Category[];
         tags?: Tag[];
+        faqs?: any; // JSON field
     };
     availableCategories?: Category[];
     availableTags?: string[];
@@ -90,6 +92,7 @@ export function PostForm({ post, availableCategories = [], availableTags = [] }:
             published: post?.published ?? false,
             categoryIds: post?.categories?.map(c => c.id) || [],
             tagNames: post?.tags?.map(t => t.name) || [],
+            faqs: post?.faqs || [],
         },
     });
 
@@ -203,6 +206,14 @@ export function PostForm({ post, availableCategories = [], availableTags = [] }:
                             <p className="text-xs text-gray-500">
                                 This will be shown in post listings and previews
                             </p>
+                        </div>
+
+                        {/* FAQs Section */}
+                        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <FAQManager 
+                                value={(form.watch("faqs") as any) || []}
+                                onChange={(faqs) => form.setValue("faqs", faqs)}
+                            />
                         </div>
                     </div>
 

@@ -20,6 +20,12 @@ export const PostSchema = z.object({
     // Categorization
     categoryIds: z.array(z.string()).optional(),
     tagNames: z.array(z.string()).optional(),
+
+    // FAQs
+    faqs: z.array(z.object({
+        question: z.string().min(5, "Question is too short"),
+        answer: z.string().min(10, "Answer is too short")
+    })).optional().default([]),
 });
 
 export const ProjectSchema = z.object({
