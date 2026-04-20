@@ -121,8 +121,8 @@ export function GridEditor({ assets, onOrderChange, onRemove, onEdit }: GridEdit
                 </div>
             </div>
 
-            {/* Grid Area */}
-            <div className="w-full max-w-3xl mx-auto z-10">
+            {/* Visualizer Frame */}
+            <div className="w-full mx-auto z-10 flex justify-center">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -132,25 +132,112 @@ export function GridEditor({ assets, onOrderChange, onRemove, onEdit }: GridEdit
                         items={items.map(i => i.id)}
                         strategy={rectSortingStrategy}
                     >
-                        <div 
-                            className={`grid grid-cols-3 gap-2 md:gap-4 transition-all duration-500 mx-auto
-                                ${frame === "instagram" ? "max-w-2xl" : "max-w-md"}`}
-                        >
-                            {items.map((asset) => (
-                                <div 
-                                    key={asset.id} 
-                                    className={`w-full transition-all duration-500 ${
-                                        frame === "instagram" ? "aspect-square" : "aspect-[9/16]"
-                                    }`}
-                                >
-                                    <SortableGridItem
-                                        asset={asset}
-                                        onEdit={onEdit}
-                                        onRemove={onRemove}
-                                    />
+                        {frame === "instagram" ? (
+                            /* INSTAGRAM MOCKUP */
+                            <div className="w-full max-w-sm bg-black border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl relative text-white font-sans ring-4 ring-slate-900">
+                                {/* Top Status Bar */}
+                                <div className="px-6 py-3 flex justify-between items-center text-xs font-semibold">
+                                    <span>20:07</span>
+                                    <div className="flex gap-2 items-center">
+                                        <div className="w-4 h-3 bg-white rounded-sm" />
+                                        <div className="w-4 h-3 bg-white rounded-sm" />
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
+
+                                {/* IG Header */}
+                                <div className="px-4 py-2 flex items-center justify-between border-b border-white/10">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-6 h-6 border-t-2 border-l-2 border-white rounded-sm rotate-[-45deg] translate-x-1" />
+                                        <span className="font-bold text-lg flex items-center gap-1">
+                                            @tu_cuenta <span className="bg-red-500 w-2 h-2 rounded-full inline-block" />
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="w-6 h-6 border-2 border-white rounded-full flex justify-center items-center"><div className="w-2 h-2 bg-white rounded-full" /></div>
+                                        <div className="flex gap-1"><div className="w-1 h-1 bg-white rounded-full" /><div className="w-1 h-1 bg-white rounded-full" /><div className="w-1 h-1 bg-white rounded-full" /></div>
+                                    </div>
+                                </div>
+
+                                {/* IG Profile Info */}
+                                <div className="px-4 py-4 flex gap-6 items-center">
+                                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-fuchsia-600 p-[2px]">
+                                        <div className="w-full h-full bg-slate-900 rounded-full border-2 border-black flex items-center justify-center overflow-hidden">
+                                            <span className="text-2xl">😎</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 flex justify-between text-center">
+                                        <div><div className="font-bold text-lg">{items.length}</div><div className="text-xs text-white/70">Posts</div></div>
+                                        <div><div className="font-bold text-lg">10K</div><div className="text-xs text-white/70">Followers</div></div>
+                                        <div><div className="font-bold text-lg">100</div><div className="text-xs text-white/70">Following</div></div>
+                                    </div>
+                                </div>
+
+                                {/* IG Bio */}
+                                <div className="px-4 pb-4 text-sm space-y-1">
+                                    <div className="font-bold">Tu Agencia / Marca</div>
+                                    <div className="text-white/60 text-xs">Agencia de Marketing</div>
+                                    <p>🚀 Elevando marcas al siguiente nivel.<br/>🎯 Resultados y Performance.</p>
+                                    <a href="#" className="text-blue-400">www.tuagencia.com</a>
+                                </div>
+
+                                {/* IG Buttons */}
+                                <div className="px-4 flex gap-2 pb-4">
+                                    <div className="flex-1 py-1.5 bg-white/10 rounded-lg text-center font-bold text-sm">Siguiendo</div>
+                                    <div className="flex-1 py-1.5 bg-white/10 rounded-lg text-center font-bold text-sm">Mensaje</div>
+                                    <div className="px-3 py-1.5 bg-white/10 rounded-lg text-center font-bold text-sm">⌄</div>
+                                </div>
+
+                                {/* IG Highlights */}
+                                <div className="px-4 flex gap-4 pb-4 overflow-x-auto">
+                                    {[1,2,3,4].map(h => (
+                                        <div key={h} className="flex flex-col items-center gap-1">
+                                            <div className="w-14 h-14 rounded-full border border-white/20 p-1">
+                                                <div className="w-full h-full bg-slate-800 rounded-full" />
+                                            </div>
+                                            <span className="text-[10px]">Destacado</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* IG Tabs */}
+                                <div className="flex border-t border-white/10">
+                                    <div className="flex-1 py-3 flex justify-center border-b-[1px] border-white"><LayoutGrid className="w-5 h-5" /></div>
+                                    <div className="flex-1 py-3 flex justify-center text-white/50"><Smartphone className="w-5 h-5" /></div>
+                                    <div className="flex-1 py-3 flex justify-center text-white/50"><SquareSquare className="w-5 h-5" /></div>
+                                </div>
+
+                                {/* IG GRID */}
+                                <div className="grid grid-cols-3 gap-[1px] bg-black">
+                                    {items.map((asset) => (
+                                        <div key={asset.id} className="w-full aspect-square bg-slate-900 border-none rounded-none">
+                                            <SortableGridItem
+                                                asset={asset}
+                                                onEdit={onEdit}
+                                                onRemove={onRemove}
+                                                isInstagramMock={true}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            /* DEFAULT / TIKTOK GRID */
+                            <div className="grid grid-cols-3 gap-2 md:gap-4 transition-all duration-500 max-w-md">
+                                {items.map((asset) => (
+                                    <div 
+                                        key={asset.id} 
+                                        className="w-full transition-all duration-500 aspect-[9/16]"
+                                    >
+                                        <SortableGridItem
+                                            asset={asset}
+                                            onEdit={onEdit}
+                                            onRemove={onRemove}
+                                            isInstagramMock={false}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </SortableContext>
                 </DndContext>
             </div>

@@ -11,9 +11,10 @@ interface SortableGridItemProps {
     asset: MediaAsset;
     onEdit: (id: string) => void;
     onRemove: (id: string) => void;
+    isInstagramMock?: boolean;
 }
 
-export function SortableGridItem({ asset, onEdit, onRemove }: SortableGridItemProps) {
+export function SortableGridItem({ asset, onEdit, onRemove, isInstagramMock = false }: SortableGridItemProps) {
     const {
         attributes,
         listeners,
@@ -33,7 +34,9 @@ export function SortableGridItem({ asset, onEdit, onRemove }: SortableGridItemPr
         <div
             ref={setNodeRef}
             style={style}
-            className={`relative w-full h-full group rounded-xl overflow-hidden bg-slate-900 border border-slate-800 transition-all ${
+            className={`relative w-full h-full group overflow-hidden bg-slate-900 transition-all ${
+                isInstagramMock ? "rounded-none border-none" : "rounded-xl border border-slate-800"
+            } ${
                 isDragging ? "shadow-2xl shadow-teal-500/20 ring-2 ring-teal-500 scale-105 opacity-90 z-50" : "hover:border-slate-700"
             }`}
         >
