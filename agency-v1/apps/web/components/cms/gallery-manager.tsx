@@ -340,7 +340,7 @@ export function GalleryManager({
                         <GridEditor 
                             assets={images.map((img, i) => ({
                                 id: img.url + '-' + i,
-                                url: img.displayUrl || img.url, // Handle preview if needed
+                                url: img.url, // Stable URL for MediaAsset
                                 type: (img.type === 'video' || img.url.includes('youtube') || img.url.includes('vimeo')) ? 'video' : 'image',
                                 order: i
                             }))}
