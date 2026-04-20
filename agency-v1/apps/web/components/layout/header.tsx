@@ -179,13 +179,13 @@ export function Header() {
                     <div className="h-4 w-px bg-white/10 mx-2" />
                     <LanguageSwitcher />
                     {session ? (
-                        <Link href="/dashboard">
+                        <a href="/dashboard">
                             <Button size="sm" className="rounded-full px-4 lg:px-6 shadow-lg hover:shadow-xl transition-all bg-teal-600 text-slate-950 font-bold font-mono text-xs tracking-widest hover:bg-teal-500 flex items-center gap-2 whitespace-nowrap">
                                 <LayoutDashboard size={14} className="shrink-0" />
                                 <span className="hidden xl:block whitespace-nowrap uppercase">{isAgency ? 'Control' : 'Portal'}</span>
                                 <span className="block xl:hidden whitespace-nowrap">GO</span>
                             </Button>
-                        </Link>
+                        </a>
                     ) : (
                         <Link href="/contacto">
                             <Button size="sm" className="rounded-full px-5 shadow-lg hover:shadow-teal-500/20 transition-all bg-white text-slate-950 font-bold font-mono text-xs tracking-widest hover:bg-teal-400">
@@ -251,12 +251,12 @@ export function Header() {
                                     <LanguageSwitcher />
                                 </div>
                                 {session && (
-                                    <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                                    <a href="/dashboard" onClick={() => setIsOpen(false)}>
                                         <Button className="w-full h-12 rounded-full text-base bg-teal-600 text-white hover:bg-teal-700 flex items-center justify-center gap-2">
                                             <LayoutDashboard size={18} className="shrink-0" />
                                             {isAgency ? 'Panel de Control' : 'Portal Cliente'}
                                         </Button>
-                                    </Link>
+                                    </a>
                                 )}
                                 <Link href="/contacto" onClick={() => setIsOpen(false)}>
                                     <Button className="w-full h-12 rounded-full text-lg bg-white text-slate-950 font-bold font-mono tracking-widest hover:bg-teal-400">

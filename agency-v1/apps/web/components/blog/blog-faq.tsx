@@ -62,10 +62,10 @@ export function BlogFAQ({ faqs }: BlogFAQProps) {
                         
                         {/* CTA Final */}
                         <div className="mt-8 pt-8 border-t border-slate-800 text-center">
-                             <Link href="https://wa.me/573223047353" className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-sm font-bold transition-colors">
+                             <a href="https://wa.me/573223047353" className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-sm font-bold transition-colors">
                                 ¿Necesitas un protocolo a medida? Iniciar Diagnóstico
                                 <ArrowRight size={16} />
-                             </Link>
+                             </a>
                         </div>
                     </div>
                 </div>

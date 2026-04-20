@@ -3,6 +3,7 @@ import { OrganizationSchema, WebSiteSchema, FAQSchema } from "@/components/seo/s
 import { siteConfig } from "@/lib/site-config";
 import { getRecentProjects, getRecentPosts } from "@/lib/data";
 import { getExperts } from "@/actions/experts";
+import { Link } from "@/i18n/navigation";
 import dynamic from "next/dynamic";
 
 // ── OPTIMIZATION: Progressive Hydration ──────────────────
@@ -77,12 +78,12 @@ export default async function HomePage() {
                         <p className="text-slate-400 mb-8 max-w-xl mx-auto">
                             Descarga nuestra guía de 10 páginas y aprende las estrategias que usan las agencies top para convertir visitantes en clientes.
                         </p>
-                        <a 
+                        <Link 
                             href="/recursos/guia-pagina-web"
                             className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-bold px-8 py-4 rounded-xl transition-all hover:scale-105 shadow-lg shadow-teal-500/20"
                         >
                             Obtener Guía Gratis →
-                        </a>
+                        </Link>
                     </div>
                 </section>
             </div>

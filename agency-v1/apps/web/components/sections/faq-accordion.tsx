@@ -2,7 +2,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Terminal, HelpCircle, Cpu, Globe, Shield, Server, UserCheck, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 const PROTOCOLS = [
     {
