@@ -2,7 +2,7 @@
 
 import { Calendar, Clock, Share2, Facebook, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 // ─── BlogPostHeader ──────────────────────────────────────────────────────────
 
@@ -221,7 +221,7 @@ export function RelatedPosts({ posts }: RelatedPostsProps) {
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {posts.map((post) => (
-                    <a
+                    <Link
                         key={post.id}
                         href={`/blog/${post.slug}`}
                         className="group block overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1"
@@ -253,7 +253,7 @@ export function RelatedPosts({ posts }: RelatedPostsProps) {
                                 <p className="text-sm text-slate-500 line-clamp-2">{post.excerpt}</p>
                             )}
                         </div>
-                    </a>
+                    </Link>
                 ))}
             </div>
         </div>

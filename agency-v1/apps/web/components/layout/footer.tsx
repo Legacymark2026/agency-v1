@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import NextImage from "next/image";
 import { siteConfig } from "@/lib/site-config";
 import { useState } from "react";

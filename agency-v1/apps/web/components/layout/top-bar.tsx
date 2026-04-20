@@ -2,7 +2,7 @@
 
 import { Phone, Mail, Clock, Star, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { usePathname } from "next/navigation";
 
 export function TopBar() {

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Search, Grid, List, Eye, Star, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 
 interface Project {

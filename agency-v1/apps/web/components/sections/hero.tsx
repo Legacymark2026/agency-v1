@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ArrowRight, Sparkles, Terminal } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { MagneticButton } from "@/components/ui/magnetic-button";
