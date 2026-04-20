@@ -2,6 +2,8 @@ import { Plug2, CreditCard, BarChart3, MessageSquare, Terminal } from "lucide-re
 import { GoogleIntegrations } from "@/components/settings/google-integrations";
 import { MetaIntegrations } from "@/components/settings/meta-integrations";
 import { HotjarIntegrations } from "@/components/settings/hotjar-integrations";
+import { AhrefsIntegrations } from "@/components/settings/ahrefs-integrations";
+import { TiktokIntegrations } from "@/components/settings/tiktok-integrations";
 import { PayuIntegrations } from "@/components/settings/payu-integrations";
 import { AiModelsIntegrations } from "@/components/settings/ai-models-integrations";
 import { IntegrationsToastHandler } from "@/components/settings/integrations-toast-handler";
@@ -88,6 +90,7 @@ export default function IntegrationsPage() {
                         <Suspense fallback={<div className="h-[400px] animate-pulse bg-slate-800/50 rounded-xl" />}><MetaIntegrations /></Suspense>
                         <Suspense fallback={<div className="h-[400px] animate-pulse bg-slate-800/50 rounded-xl" />}><GoogleIntegrations /></Suspense>
                         <Suspense fallback={<div className="h-[400px] animate-pulse bg-slate-800/50 rounded-xl" />}><HotjarIntegrations /></Suspense>
+                        <Suspense fallback={<div className="h-[400px] animate-pulse bg-slate-800/50 rounded-xl" />}><AhrefsIntegrations /></Suspense>
                     </div>
                     <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Available ones */}

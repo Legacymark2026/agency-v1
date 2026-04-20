@@ -29,6 +29,7 @@ export type IntegrationProvider =
   | 'google-tag-manager'
   | 'google-ads'
   | 'hotjar'
+  | 'ahrefs'
   | 'gemini'
   | 'ai-models';
 
@@ -127,6 +128,11 @@ export interface HotjarConfig {
   siteId?: string;
 }
 
+// Ahrefs Web Analytics
+export interface AhrefsConfig {
+  dataKey?: string;
+}
+
 // AI Models
 export interface AiModelsConfig {
   openAiApiKey?: string;
@@ -152,6 +158,7 @@ export type IntegrationConfigData = Partial<
   GoogleTagManagerConfig &
   GoogleAdsConfig &
   HotjarConfig &
+  AhrefsConfig &
   AiModelsConfig
 >;
 
@@ -179,6 +186,7 @@ const PROVIDER_MIGRATION_MAP: Record<string, string> = {
   'google-tag-manager': 'google-tag-manager',
   'google-ads': 'google-ads',
   'hotjar': 'hotjar',
+  'ahrefs': 'ahrefs',
   'gemini': 'ai-models',
   'ai-models': 'ai-models',
 };

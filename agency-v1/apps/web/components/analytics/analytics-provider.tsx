@@ -9,6 +9,7 @@ type AnalyticsConfig = {
     fbPixelId?: string;
     gtmId?: string;
     hotjarId?: string;
+    ahrefsDataKey?: string;
     tiktokPixelId?: string;
     linkedinPartnerId?: string;
     googleAdsId?: string;
@@ -356,7 +357,7 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
             }
         };
         window.addEventListener('keyup', onKeyUp);
-        return () => window.removeEventListener('keyup', onKeyUp);
+        return () => document.removeEventListener('keyup', onKeyUp);
     }, [pathname, consent]);
 
     // ── Copy Text Tracking ────────────────────────────────────────────────
@@ -478,6 +479,16 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
                         }}
                     />
                 </>
+            )}
+
+            {/* ── AHREFS WEB ANALYTICS (cookie-less, no consent needed) ── */}
+            {config.ahrefsDataKey && (
+                <Script
+                    id="ahrefs-analytics"
+                    src="https://analytics.ahrefs.com/analytics.js"
+                    data-key={config.ahrefsDataKey}
+                    strategy="afterInteractive"
+                />
             )}
 
             {/* ── FACEBOOK PIXEL ── */}

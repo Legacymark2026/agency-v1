@@ -261,6 +261,7 @@ export async function getPublicIntegrations() {
         let fbPixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || "";
         let gtmId = process.env.NEXT_PUBLIC_GTM_ID || "";
         let hotjarId = process.env.NEXT_PUBLIC_HOTJAR_ID || "";
+        let ahrefsDataKey = process.env.NEXT_PUBLIC_AHREFS_DATA_KEY || "";
         let gaPropertyId = process.env.NEXT_PUBLIC_GA_PROPERTY_ID || "";
         // measurementId (G-XXXXXXXX) is what gtag.js needs — different from propertyId
         let gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "";
@@ -305,6 +306,7 @@ export async function getPublicIntegrations() {
             if (conf.provider === 'facebook-pixel' && data?.pixelId) fbPixelId = data.pixelId;
             if (conf.provider === 'google-tag-manager' && data?.containerId) gtmId = data.containerId;
             if (conf.provider === 'hotjar' && data?.siteId) hotjarId = data.siteId;
+            if (conf.provider === 'ahrefs' && data?.dataKey) ahrefsDataKey = data.dataKey;
             if (conf.provider === 'google-analytics') {
                 if (data?.propertyId) gaPropertyId = data.propertyId;
                 if (data?.measurementId) gaMeasurementId = data.measurementId;
@@ -322,7 +324,7 @@ export async function getPublicIntegrations() {
             gaMeasurementId = gaPropertyId;
         }
 
-        const results = { fbPixelId, gtmId, hotjarId, gaPropertyId: gaMeasurementId, tiktokPixelId, linkedinPartnerId, googleAdsId };
+        const results = { fbPixelId, gtmId, hotjarId, ahrefsDataKey, gaPropertyId: gaMeasurementId, tiktokPixelId, linkedinPartnerId, googleAdsId };
 
         if (Object.values(results).some(v => !!v)) {
             // console.log("[Settings] Public Integrations Found:", JSON.stringify(results));
@@ -333,7 +335,7 @@ export async function getPublicIntegrations() {
         return results;
     } catch (error) {
         console.error("[Settings] Error fetching public integrations:", error);
-        return { fbPixelId: "", gtmId: "", hotjarId: "", gaPropertyId: "", tiktokPixelId: "", linkedinPartnerId: "", googleAdsId: "" };
+        return { fbPixelId: "", gtmId: "", hotjarId: "", ahrefsDataKey: "", gaPropertyId: "", tiktokPixelId: "", linkedinPartnerId: "", googleAdsId: "" };
     }
 }
 

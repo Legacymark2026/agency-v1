@@ -102,6 +102,12 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
         brandBorder = 'border-rose-100';
         brandRing = 'focus-visible:ring-rose-500';
         brandGradient = 'bg-gradient-to-r from-rose-50 via-red-50 to-white';
+    } else if (provider === 'ahrefs') {
+        brandColor = 'text-orange-600';
+        brandBg = 'bg-orange-50';
+        brandBorder = 'border-orange-100';
+        brandRing = 'focus-visible:ring-orange-500';
+        brandGradient = 'bg-gradient-to-r from-orange-50 via-amber-50 to-white';
     } else if (isAiModels) {
         brandColor = 'text-violet-600';
         brandBg = 'bg-violet-50';
@@ -482,6 +488,26 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                 placeholder="e.g., 1234567"
                                             />
                                         </div>
+                                    </div>
+                                ) : provider === 'ahrefs' ? (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="dataKey" className="text-xs font-semibold text-gray-700">
+                                            Data Key <span className="text-orange-500 font-bold">(requerido)</span>
+                                        </Label>
+                                        <div className="relative">
+                                            <Key className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                            <Input
+                                                id="dataKey"
+                                                value={formData.dataKey || ''}
+                                                onChange={e => handleChange('dataKey', e.target.value)}
+                                                className={cn("pl-9 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white focus:bg-white font-mono", brandRing)}
+                                                placeholder="e.g., 7l3Vnec/t... viKw"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                                            <Info className="h-3 w-3" />
+                                            Encuéntralo en el código de tu script de Ahrefs en 'data-key=\"...\"'.
+                                        </p>
                                     </div>
                                 ) : provider === 'tiktok-pixel' ? (
                                     <>
