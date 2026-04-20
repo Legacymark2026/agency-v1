@@ -10,6 +10,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { GridEditor, MediaAsset, SocialProfile } from "@/components/portfolio/grid-editor";
 
 // --- ULTRA-PREMIUM, HIGH PERFORMANCE VISUAL FX COMPONENTS ---
 
@@ -142,7 +143,7 @@ const FilterTab = ({ active, onClick, children }: { active: boolean; onClick: ()
     </button>
 );
 
-export function PortfolioClient({ projects, categories }: { projects: any[]; categories: any[] }) {
+export function PortfolioClient({ projects, categories, socialProfiles = [] }: { projects: any[]; categories: any[]; socialProfiles?: SocialProfile[] }) {
     const [filter, setFilter] = useState("All");
     const t = useTranslations("portfolioPage");
 
@@ -193,6 +194,49 @@ export function PortfolioClient({ projects, categories }: { projects: any[]; cat
                         </div>
                     </div>
                 </motion.div>
+            </section>
+
+            {/* SOCIAL MOCKUP VISUALIZER (Public) */}
+            <section className="relative py-16 container mx-auto px-6 z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    className="mb-10"
+                >
+                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-sm border border-teal-900/50 bg-slate-900/60 backdrop-blur-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_8px_#14b8a6]" />
+                        <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-teal-400/80">Preview de Redes Sociales</span>
+                    </div>
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase font-mono mb-3">
+                        Así se ve tu contenido
+                    </h2>
+                    <p className="text-slate-400 text-sm max-w-xl">
+                        Visualiza cómo quedará tu feed en cada plataforma antes de publicar.
+                    </p>
+                </motion.div>
+
+                <GridEditor
+                    assets={projects
+                        .flatMap((p: any) => {
+                            const cover = p.coverImage ? [{ id: p.id + '-cover', url: p.coverImage, type: 'image' as const, order: p.displayOrder * 10 }] : [];
+                            const gallery = (p.gallery || []).map((g: any, gi: number) => ({
+                                id: p.id + '-g-' + gi,
+                                url: typeof g === 'string' ? g : g.url,
+                                type: (typeof g === 'object' && g.type === 'video') ? 'video' as const : 'image' as const,
+                                order: p.displayOrder * 10 + gi + 1,
+                            }));
+                            return [...cover, ...gallery];
+                        })
+                        .filter((a: MediaAsset) => a.url)
+                        .slice(0, 12)
+                    }
+                    profiles={socialProfiles}
+                    onOrderChange={() => {}}
+                    onRemove={() => {}}
+                    onEdit={() => {}}
+                />
             </section>
 
             {/* GALLERY SECTION */}

@@ -2740,3 +2740,23 @@ model ProjectToService {
   @@index([B], map: "_ProjectToService_B_index")
   @@map("_ProjectToService")
 }
+
+// Social profile for dynamic platform mockups
+model SocialProfile {
+  id          String   @id @default(uuid())
+  platform    String   // "instagram" | "tiktok" | "facebook"
+  username    String
+  displayName String   @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  bio         String?
+  website     String?
+  followersCount Int   @default(0) @map("followers_count")
+  followingCount Int   @default(0) @map("following_count")
+  emoji       String?  @default("😎")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([platform])
+  @@map("social_profiles")
+}
