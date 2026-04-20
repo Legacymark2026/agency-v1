@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -125,16 +125,27 @@ export function Header() {
                             onMouseEnter={() => setHoveredLink(link.name)}
                             onMouseLeave={() => setHoveredLink(null)}
                         >
-                            <Link
-                                href={link.href}
-                                className={`flex items-center gap-1 text-[13px] font-bold transition-all duration-300 tracking-tight uppercase font-mono ${isScrolled || isDarkPage
-                                        ? "text-slate-400 hover:text-teal-400"
-                                        : "text-slate-700 hover:text-teal-600"
-                                    }`}
-                            >
-                                {link.name}
-                                {link.submenu && <ChevronDown size={12} className={`transition-transform duration-300 ${hoveredLink === link.name ? 'rotate-180 text-teal-500' : ''}`} />}
-                            </Link>
+                            {link.submenu ? (
+                                <div
+                                    className={`flex cursor-default items-center gap-1 text-[13px] font-bold transition-all duration-300 tracking-tight uppercase font-mono ${isScrolled || isDarkPage
+                                            ? "text-slate-400 hover:text-teal-400"
+                                            : "text-slate-700 hover:text-teal-600"
+                                        }`}
+                                >
+                                    {link.name}
+                                    <ChevronDown size={12} className={`transition-transform duration-300 ${hoveredLink === link.name ? 'rotate-180 text-teal-500' : ''}`} />
+                                </div>
+                            ) : (
+                                <Link
+                                    href={link.href}
+                                    className={`flex items-center gap-1 text-[13px] font-bold transition-all duration-300 tracking-tight uppercase font-mono ${isScrolled || isDarkPage
+                                            ? "text-slate-400 hover:text-teal-400"
+                                            : "text-slate-700 hover:text-teal-600"
+                                        }`}
+                                >
+                                    {link.name}
+                                </Link>
+                            )}
 
                             {/* Dropdown Menu */}
                             <AnimatePresence>

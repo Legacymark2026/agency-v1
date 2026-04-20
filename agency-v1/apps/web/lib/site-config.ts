@@ -16,7 +16,7 @@ export const siteConfig = {
     links: {
         twitter: "https://twitter.com/legacymark",
         github: "https://github.com/legacymark",
-        linkedin: "https://www.linkedin.com/in/Legacy%20Mark%20SAS",
+        linkedin: "https://www.linkedin.com/company/legacy-mark-sas/",
         facebook: "https://www.facebook.com/profile.php?id=61587078672671",
         instagram: "https://www.instagram.com/legacy_mark07",
         whatsapp: "https://wa.me/573223047353",
