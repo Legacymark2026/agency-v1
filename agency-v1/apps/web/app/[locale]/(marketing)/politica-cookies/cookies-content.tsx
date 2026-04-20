@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
-import { Check, ChevronRight, FileText, Globe, Mail, Phone, Shield, Cookie, Settings, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, FileText, Globe, Mail, Phone, Shield, Cookie, Settings, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
