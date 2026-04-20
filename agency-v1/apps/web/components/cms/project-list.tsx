@@ -12,6 +12,8 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { deleteProject, duplicateProject, updateProjectsStatus, reorderProjects } from '@/actions/projects';
+import { ConfirmDialog } from '@/components/ui/slide-over';
+import { Badge } from '@/components/ui/badge';
 import {
     DndContext,
     closestCenter,
@@ -68,7 +70,7 @@ function SortableRow({ project, selectedIds, toggleSelect, statusColors, handleD
     };
 
     return (
-        <tr ref={setNodeRef} style={style} className={`hover:bg-slate-900 transition-colors group ${isDragging ? "bg-slate-900 shadow-md" : ""}`}>
+        <tr ref={setNodeRef} style={style} className={`hover:bg-[#161b22]/40 transition-colors group border-b border-slate-900/50 ${isDragging ? "bg-[#161b22] shadow-2xl z-50 ring-1 ring-teal-500/50" : ""}`}>
             <td className="px-4 py-4">
                 {isReordering ? (
                     <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-400">
@@ -153,29 +155,35 @@ function SortableRow({ project, selectedIds, toggleSelect, statusColors, handleD
                 <div className="flex justify-end gap-1">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-black">
-                                <MoreHorizontal size={16} />
+                            <Button size="icon" variant="ghost" className="h-9 w-9 text-slate-500 hover:text-white hover:bg-slate-800 transition-all rounded-xl">
+                                <MoreHorizontal size={18} />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-[#0d1117] border-slate-800 p-1.5 rounded-xl shadow-2xl">
                             <Link href={`/dashboard/projects/${project.id}`}>
-                                <DropdownMenuItem>
-                                    <Edit className="h-4 w-4 mr-2" /> Edit
+                                <DropdownMenuItem className="rounded-lg text-slate-300 focus:bg-slate-800 focus:text-white cursor-pointer py-2">
+                                    <Edit className="h-4 w-4 mr-2 text-teal-500" /> Editar Detallado
                                 </DropdownMenuItem>
                             </Link>
-                            <DropdownMenuItem onClick={() => handleDuplicate(project.id)}>
-                                <Copy className="h-4 w-4 mr-2" /> Duplicate
+                            <DropdownMenuItem 
+                                onClick={() => handleDuplicate(project.id)}
+                                className="rounded-lg text-slate-300 focus:bg-slate-800 focus:text-white cursor-pointer py-2"
+                            >
+                                <Copy className="h-4 w-4 mr-2 text-blue-500" /> Duplicar Proyecto
                             </DropdownMenuItem>
                             {project.status === 'published' && (
-                                <DropdownMenuItem onClick={() => window.open(`/portfolio/${project.slug}`, '_blank')}>
-                                    <ExternalLink className="h-4 w-4 mr-2" /> View Live
+                                <DropdownMenuItem 
+                                    onClick={() => window.open(`/portfolio/${project.slug}`, '_blank')}
+                                    className="rounded-lg text-slate-300 focus:bg-slate-800 focus:text-white cursor-pointer py-2"
+                                >
+                                    <ExternalLink className="h-4 w-4 mr-2 text-purple-500" /> Ver en Vivo
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                                className="text-red-600 focus:text-red-600"
+                                className="rounded-lg text-red-400 focus:bg-red-500/10 focus:text-red-400 cursor-pointer py-2"
                                 onClick={() => handleDelete(project.id)}
                             >
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                <Trash2 className="h-4 w-4 mr-2" /> Eliminar Permanentemente
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -189,6 +197,8 @@ export function ProjectList({ projects: initialProjects, categories }: ProjectLi
     const router = useRouter();
     const [projects, setProjects] = useState(initialProjects);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmBulkAction, setConfirmBulkAction] = useState<'publish' | 'draft' | 'delete' | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isReordering, setIsReordering] = useState(false);
 
@@ -209,15 +219,13 @@ export function ProjectList({ projects: initialProjects, categories }: ProjectLi
                 const newIndex = items.findIndex((item) => item.id === over?.id);
                 const newItems = arrayMove(items, oldIndex, newIndex);
 
-                // Persist order
                 const updates = newItems.map((item, index) => ({
                     id: item.id,
                     displayOrder: index
                 }));
 
-                // Fire and forget (or handle loading)
                 reorderProjects(updates).then(res => {
-                    if (!res.success) alert("Failed to save order");
+                    if (!res.success) console.error("Failed to save order");
                 });
 
                 return newItems;
@@ -247,44 +255,48 @@ export function ProjectList({ projects: initialProjects, categories }: ProjectLi
         setIsLoading(false);
         if (result.success) {
             router.refresh();
-        } else {
-            alert("Failed to duplicate project");
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this project?")) return;
+        setConfirmDeleteId(id);
+    };
+
+    const confirmSingleDelete = async () => {
+        if (!confirmDeleteId) return;
         setIsLoading(true);
-        const result = await deleteProject(id);
+        const result = await deleteProject(confirmDeleteId);
         setIsLoading(false);
+        setConfirmDeleteId(null);
         if (result.success) {
             router.refresh();
-        } else {
-            alert("Failed to delete project");
         }
     };
 
     const handleBulkAction = async (action: 'publish' | 'draft' | 'delete') => {
-        if (!confirm(`Are you sure you want to ${action} ${selectedIds.length} projects?`)) return;
+        setConfirmBulkAction(action);
+    };
+
+    const confirmBulkExecute = async () => {
+        if (!confirmBulkAction) return;
 
         setIsLoading(true);
         let result;
 
-        if (action === 'delete') {
+        if (confirmBulkAction === 'delete') {
             const promises = selectedIds.map(id => deleteProject(id));
             await Promise.all(promises);
             result = { success: true };
         } else {
-            const status = action === 'publish' ? 'published' : 'draft';
-            result = await updateProjectsStatus(selectedIds, status, action === 'publish');
+            const status = confirmBulkAction === 'publish' ? 'published' : 'draft';
+            result = await updateProjectsStatus(selectedIds, status, confirmBulkAction === 'publish');
         }
 
         setIsLoading(false);
+        setConfirmBulkAction(null);
         if (result?.success) {
             setSelectedIds([]);
             router.refresh();
-        } else {
-            alert("Bulk action failed");
         }
     };
 
@@ -319,33 +331,37 @@ export function ProjectList({ projects: initialProjects, categories }: ProjectLi
 
             {/* Bulk Actions Bar */}
             {selectedIds.length > 0 && !isReordering && (
-                <div className="bg-black text-white p-3 rounded-lg flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-5">
-                    <span className="text-sm font-medium px-2">{selectedIds.length} projects selected</span>
+                <div className="bg-teal-500 text-slate-950 p-4 rounded-2xl flex items-center justify-between shadow-[0_0_50px_rgba(20,184,166,0.3)] animate-in slide-in-from-bottom-8 duration-500 z-50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-slate-950/20 rounded-full flex items-center justify-center font-black text-sm">
+                            {selectedIds.length}
+                        </div>
+                        <span className="text-xs font-black uppercase tracking-widest">proyectos seleccionados</span>
+                    </div>
                     <div className="flex gap-2">
                         <Button
                             size="sm"
-                            variant="secondary"
+                            className="bg-slate-950 text-white hover:bg-slate-900 border-none font-bold text-[10px] uppercase tracking-widest px-4 h-9 rounded-xl transition-all"
                             onClick={() => handleBulkAction('publish')}
                             disabled={isLoading}
                         >
-                            <FileUp className="h-4 w-4 mr-2" /> Publish
+                            <FileUp className="h-4 w-4 mr-2 text-teal-400" /> Publicar
                         </Button>
                         <Button
                             size="sm"
-                            variant="secondary"
+                            className="bg-slate-950 text-white hover:bg-slate-900 border-none font-bold text-[10px] uppercase tracking-widest px-4 h-9 rounded-xl transition-all"
                             onClick={() => handleBulkAction('draft')}
                             disabled={isLoading}
                         >
-                            <Archive className="h-4 w-4 mr-2" /> Draft
+                            <Archive className="h-4 w-4 mr-2 text-yellow-400" /> Borrador
                         </Button>
                         <Button
                             size="sm"
-                            variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            className="bg-red-600 text-white hover:bg-red-700 border-none font-bold text-[10px] uppercase tracking-widest px-4 h-9 rounded-xl transition-all shadow-lg"
                             onClick={() => handleBulkAction('delete')}
                             disabled={isLoading}
                         >
-                            <Trash className="h-4 w-4 mr-2" /> Delete
+                            <Trash className="h-4 w-4 mr-2" /> Eliminar
                         </Button>
                     </div>
                 </div>
@@ -420,6 +436,27 @@ export function ProjectList({ projects: initialProjects, categories }: ProjectLi
                     </table>
                 </DndContext>
             </div>
+
+            {/* Modal Dialogs */}
+            <ConfirmDialog
+                open={!!confirmDeleteId}
+                onCancel={() => setConfirmDeleteId(null)}
+                onConfirm={confirmSingleDelete}
+                title="Eliminar Proyecto"
+                message="¿Estás seguro de que deseas eliminar este proyecto? Esta acción es irreversible y eliminará todos los datos asociados."
+                confirmLabel="Sí, Eliminar"
+                danger
+            />
+
+            <ConfirmDialog
+                open={!!confirmBulkAction}
+                onCancel={() => setConfirmBulkAction(null)}
+                onConfirm={confirmBulkExecute}
+                title={`Acción en Lote: ${confirmBulkAction === 'delete' ? 'Eliminar' : confirmBulkAction === 'publish' ? 'Publicar' : 'Pasar a Borrador'}`}
+                message={`¿Confirmas que deseas aplicar esta acción a los ${selectedIds.length} proyectos seleccionados?`}
+                confirmLabel="Confirmar Acción"
+                danger={confirmBulkAction === 'delete'}
+            />
         </div>
     );
 }

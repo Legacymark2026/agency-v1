@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ChevronDown, Plus, X, Edit2, Trash2, Check } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, Plus, X, Edit2, Trash2, Check, Tag } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/slide-over';
 
 interface Category {
     id: string;
@@ -19,6 +20,9 @@ interface ProjectCategorySelectorProps {
     onDeleteCategory?: (id: string) => Promise<boolean>;
 }
 
+/**
+ * Premium HUD-styled category selector.
+ */
 export function ProjectCategorySelector({
     categories,
     selectedId,
@@ -33,6 +37,7 @@ export function ProjectCategorySelector({
     const [isLoading, setIsLoading] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const selectedCategory = categories.find(c => c.id === selectedId);
 
@@ -50,170 +55,200 @@ export function ProjectCategorySelector({
         setIsOpen(false);
     };
 
+    const handleDelete = async () => {
+        if (!deleteId || !onDeleteCategory) return;
+        const success = await onDeleteCategory(deleteId);
+        if (success) setDeleteId(null);
+    };
+
+    const deleteCategoryName = categories.find(c => c.id === deleteId)?.name;
+
     return (
-        <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
+        <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Tag className="w-3 h-3" />
+                Categoría
             </label>
 
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 transition-colors text-left"
-            >
-                <div className="flex items-center gap-2">
-                    {selectedCategory?.color && (
-                        <span
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: selectedCategory.color }}
-                        />
-                    )}
-                    <span className={selectedCategory ? 'text-gray-900' : 'text-gray-500'}>
-                        {selectedCategory?.name || 'Select category...'}
-                    </span>
-                </div>
-                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <div className="relative">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl hover:border-teal-500/50 transition-all text-left group"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${selectedCategory ? 'bg-teal-500 animate-pulse' : 'bg-slate-700'}`} />
+                        <span className={`text-sm ${selectedCategory ? 'text-slate-100 font-bold' : 'text-slate-500'}`}>
+                            {selectedCategory?.name || 'Seleccionar categoría...'}
+                        </span>
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180 text-teal-400' : 'group-hover:text-slate-300'}`} />
+                </button>
 
-            {isOpen && (
-                <>
-                    <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => {
-                            setIsOpen(false);
-                            setIsCreating(false);
-                        }}
-                    />
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                        {/* Clear selection option */}
-                        <button
-                            type="button"
+                {isOpen && (
+                    <>
+                        <div
+                            className="fixed inset-0 z-20"
                             onClick={() => {
-                                onSelect(null);
                                 setIsOpen(false);
+                                setIsCreating(false);
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-500 hover:bg-gray-50"
-                        >
-                            No category
-                        </button>
-
-                        <div className="border-t border-gray-100" />
-
-                        {/* Category list */}
-                        {categories.map((category) => (
-                            <div key={category.id} className={`flex items-center group hover:bg-gray-50 ${category.id === selectedId ? 'bg-gray-50 font-medium' : ''}`}>
-                                {editingId === category.id ? (
-                                    <div className="flex w-full items-center py-1 px-4 gap-2">
-                                        <input
-                                            type="text"
-                                            value={editName}
-                                            onChange={(e) => setEditName(e.target.value)}
-                                            className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                            autoFocus
-                                            onKeyDown={async (e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    await onUpdateCategory?.(category.id, editName);
-                                                    setEditingId(null);
-                                                }
-                                                if (e.key === 'Escape') setEditingId(null);
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                        <button type="button" onClick={async (e) => { e.stopPropagation(); await onUpdateCategory?.(category.id, editName); setEditingId(null); }} className="text-blue-600 p-1 hover:bg-blue-100 rounded text-xs"><Check className="w-4 h-4" /></button>
-                                        <button type="button" onClick={(e) => { e.stopPropagation(); setEditingId(null); }} className="text-gray-400 p-1 hover:bg-gray-200 rounded text-xs"><X className="w-4 h-4" /></button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                onSelect(category.id);
-                                                setIsOpen(false);
-                                            }}
-                                            className="flex-1 px-4 py-2 text-left text-sm flex items-center gap-2"
-                                        >
-                                            {category.color && (
-                                                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: category.color }} />
-                                            )}
-                                            <span>{category.name}</span>
-                                        </button>
-                                        <div className="hidden group-hover:flex items-center space-x-1 pr-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {onUpdateCategory && (
-                                                <button type="button" onClick={(e) => { e.stopPropagation(); setEditingId(category.id); setEditName(category.name); }} className="p-1 text-slate-400 hover:text-blue-500 rounded"><Edit2 className="w-3 h-3" /></button>
-                                            )}
-                                            {onDeleteCategory && (
-                                                <button type="button" onClick={async (e) => { e.stopPropagation(); if (confirm(`¿Estás seguro de eliminar la categoría "${category.name}"?`)) await onDeleteCategory(category.id); }} className="p-1 text-slate-400 hover:text-red-500 rounded"><Trash2 className="w-3 h-3" /></button>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-
-                        {categories.length === 0 && !isCreating && (
-                            <div className="px-4 py-3 text-sm text-gray-500">
-                                No categories yet
-                            </div>
-                        )}
-
-                        <div className="border-t border-gray-100" />
-
-                        {/* Create new */}
-                        {isCreating ? (
-                            <div className="p-2">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="text"
-                                        value={newCategoryName}
-                                        onChange={(e) => setNewCategoryName(e.target.value)}
-                                        placeholder="Category name"
-                                        className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                                        autoFocus
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                handleCreateNew();
-                                            }
-                                            if (e.key === 'Escape') {
-                                                setIsCreating(false);
-                                                setNewCategoryName('');
-                                            }
-                                        }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleCreateNew}
-                                        disabled={isLoading || !newCategoryName.trim()}
-                                        className="px-3 py-1.5 bg-black text-white text-sm rounded hover:bg-gray-800 disabled:opacity-50"
-                                    >
-                                        Add
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsCreating(false);
-                                            setNewCategoryName('');
-                                        }}
-                                        className="p-1.5 text-gray-400 hover:text-gray-600"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        ) : onCreateNew && (
+                        />
+                        <div className="absolute z-30 w-full mt-2 bg-[#0d1117] border border-slate-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top">
+                            {/* Clear selection */}
                             <button
                                 type="button"
-                                onClick={() => setIsCreating(true)}
-                                className="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                                onClick={() => {
+                                    onSelect(null);
+                                    setIsOpen(false);
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-300 hover:bg-slate-900 transition-colors"
                             >
-                                <Plus className="h-4 w-4" />
-                                Create new category
+                                Sin categoría
                             </button>
-                        )}
-                    </div>
-                </>
-            )}
+
+                            <div className="border-t border-slate-800" />
+
+                            {/* List */}
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                {categories.map((category) => (
+                                    <div 
+                                        key={category.id} 
+                                        className={`group flex items-center transition-colors ${category.id === selectedId ? 'bg-teal-500/10' : 'hover:bg-slate-900'}`}
+                                    >
+                                        {editingId === category.id ? (
+                                            <div className="flex w-full items-center p-2 gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    className="flex-1 px-3 py-1.5 text-sm bg-slate-950 border border-teal-500/50 rounded-lg text-slate-100 focus:outline-none"
+                                                    autoFocus
+                                                    onKeyDown={async (e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            await onUpdateCategory?.(category.id, editName);
+                                                            setEditingId(null);
+                                                        }
+                                                        if (e.key === 'Escape') setEditingId(null);
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <button type="button" onClick={async (e) => { e.stopPropagation(); await onUpdateCategory?.(category.id, editName); setEditingId(null); }} className="p-1.5 bg-teal-500 text-slate-950 rounded-lg hover:bg-teal-400"><Check className="w-4 h-4" /></button>
+                                                <button type="button" onClick={(e) => { e.stopPropagation(); setEditingId(null); }} className="p-1.5 bg-slate-800 text-slate-400 rounded-lg hover:text-white"><X className="w-4 h-4" /></button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        onSelect(category.id);
+                                                        setIsOpen(false);
+                                                    }}
+                                                    className="flex-1 px-4 py-2.5 text-left text-sm flex items-center gap-3"
+                                                >
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${category.id === selectedId ? 'bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.6)]' : 'bg-slate-700'}`} />
+                                                    <span className={category.id === selectedId ? 'text-teal-400 font-bold' : 'text-slate-300'}>
+                                                        {category.name}
+                                                    </span>
+                                                </button>
+                                                <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {onUpdateCategory && (
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={(e) => { e.stopPropagation(); setEditingId(category.id); setEditName(category.name); }} 
+                                                            className="p-1.5 text-slate-500 hover:text-teal-400 hover:bg-slate-800 rounded-lg transition-colors"
+                                                        >
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                    {onDeleteCategory && (
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteId(category.id); }} 
+                                                            className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {categories.length === 0 && !isCreating && (
+                                <div className="px-4 py-6 text-center">
+                                    <p className="text-xs text-slate-600 uppercase font-bold tracking-widest leading-relaxed">Sin categorías</p>
+                                </div>
+                            )}
+
+                            <div className="border-t border-slate-800" />
+
+                            {/* Actions */}
+                            <div className="p-2">
+                                {isCreating ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={newCategoryName}
+                                            onChange={(e) => setNewCategoryName(e.target.value)}
+                                            placeholder="Nombre..."
+                                            className="flex-1 px-3 py-1.5 text-sm bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-teal-500/50"
+                                            autoFocus
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleCreateNew();
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setIsCreating(false);
+                                                    setNewCategoryName('');
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleCreateNew}
+                                            disabled={isLoading || !newCategoryName.trim()}
+                                            className="p-1.5 bg-teal-500 text-slate-950 rounded-lg hover:bg-teal-400 disabled:opacity-50"
+                                        >
+                                            <Check className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setIsCreating(false); setNewCategoryName(''); }}
+                                            className="p-1.5 bg-slate-800 text-slate-400 rounded-lg hover:text-white"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : onCreateNew && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreating(true)}
+                                        className="w-full px-3 py-2 text-left text-xs font-bold text-teal-400 hover:text-teal-300 hover:bg-teal-500/5 rounded-lg flex items-center gap-2 transition-all"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        CREAR NUEVA CATEGORÍA
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            <ConfirmDialog 
+                open={deleteId !== null}
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteId(null)}
+                title="Eliminar categoría"
+                message={`¿Estás seguro de eliminar la categoría "${deleteCategoryName}"? Los proyectos quedarán sin categoría.`}
+                confirmLabel="Eliminar"
+                danger
+            />
         </div>
     );
 }

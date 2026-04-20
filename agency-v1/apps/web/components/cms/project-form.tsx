@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createProject, updateProject, getProjectCategories, getProjectTags, createProjectCategory, updateProjectCategory, deleteProjectCategory } from "@/actions/projects";
 import { ProjectSchema, type ProjectFormData } from "@/lib/schemas";
-import { Loader2, Eye, Save, Send, Calendar, ExternalLink, Globe, Lock, FileText, Image as ImageIcon, Copy } from "lucide-react";
+import { Loader2, Eye, Save, Send, Calendar, ExternalLink, Globe, Lock, FileText, Image as ImageIcon, Copy, Layers, Tag, Code, Video } from "lucide-react";
 import { RichTextEditor } from "./rich-text-editor";
 import { ImageUploadPreview } from "./image-upload-preview";
 import { CharacterCounter } from "./character-counter";
@@ -250,47 +250,55 @@ export function ProjectForm({ project }: ProjectFormProps) {
         <div className="max-w-6xl mx-auto pb-20">
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-10 bg-slate-950/80/80 backdrop-blur-sm py-4 border-b border-slate-800 -mx-4 px-4 md:mx-0 md:px-0">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-slate-100">
-                                {project ? "Edit Project" : "Create New Project"}
-                            </h1>
-                            <Badge variant={currentScore > 80 ? "default" : currentScore > 50 ? "secondary" : "outline"}>
-                                SEO Score: {currentScore}/100
-                            </Badge>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 sticky top-0 z-40 bg-[#0a0f1a]/80 backdrop-blur-xl py-6 border-b border-slate-800 -mx-6 px-6 mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-teal-500/10 rounded-2xl border border-teal-500/20">
+                            <Layers className="w-6 h-6 text-teal-400" />
                         </div>
-                        <p className="text-slate-400 text-sm mt-1">
-                            Showcase your work with a detailed case study
-                        </p>
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-2xl font-black text-white tracking-tight uppercase font-mono">
+                                    {project ? "Editar Proyecto" : "Nuevo Proyecto"}
+                                </h1>
+                                <Badge className="bg-teal-500 text-slate-950 font-bold font-mono">
+                                    SEO: {currentScore}/100
+                                </Badge>
+                            </div>
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-1">
+                                {project ? `ID: ${project.id.slice(0, 8)}...` : "Configuración de caso de estudio"}
+                            </p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-3">
                         {project && (
                             <Button
                                 type="button"
                                 variant="outline"
+                                className="border-slate-800 bg-slate-900/50 hover:bg-slate-800 transition-all text-xs font-bold uppercase tracking-widest px-6"
                                 onClick={() => window.open(`/portfolio/${project.slug}`, '_blank')}
                             >
                                 <Eye className="h-4 w-4 mr-2" />
-                                Preview
+                                Vista Previa
                             </Button>
                         )}
                         <Button
                             type="button"
                             variant="outline"
+                            className="border-slate-800 bg-slate-900/50 hover:bg-slate-800 transition-all text-xs font-bold uppercase tracking-widest px-6"
                             onClick={saveDraft}
                             disabled={loading}
                         >
                             <Save className="h-4 w-4 mr-2" />
-                            Save Draft
+                            Borrador
                         </Button>
                         <Button
                             type="button"
+                            className="bg-teal-500 hover:bg-teal-400 text-slate-950 transition-all font-black text-xs uppercase tracking-[0.2em] px-8 shadow-[0_0_20px_rgba(20,184,166,0.2)]"
                             onClick={publish}
                             disabled={loading}
                         >
                             {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                            Publish
+                            Publicar
                         </Button>
                     </div>
                 </div>
@@ -302,81 +310,93 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 )}
 
                 <Tabs defaultValue="general" className="w-full">
-                    <TabsList className="w-full justify-start bg-slate-900 border border-slate-800 p-1 rounded-lg mb-6 overflow-x-auto">
-                        <TabsTrigger value="general" className="px-4 py-2">General</TabsTrigger>
-                        <TabsTrigger value="content" className="px-4 py-2">Content</TabsTrigger>
-                        <TabsTrigger value="media" className="px-4 py-2">Media</TabsTrigger>
-                        <TabsTrigger value="seo" className="px-4 py-2">SEO & Social</TabsTrigger>
-                        <TabsTrigger value="settings" className="px-4 py-2">Settings</TabsTrigger>
+                    <TabsList className="w-full justify-start bg-[#0d1117] border border-slate-800 p-1.5 rounded-2xl mb-8 overflow-x-auto gap-1">
+                        <TabsTrigger value="general" className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 rounded-xl transition-all">General</TabsTrigger>
+                        <TabsTrigger value="content" className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 rounded-xl transition-all">Contenido</TabsTrigger>
+                        <TabsTrigger value="media" className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 rounded-xl transition-all">Media & Visualizer</TabsTrigger>
+                        <TabsTrigger value="seo" className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 rounded-xl transition-all">SEO & Social</TabsTrigger>
+                        <TabsTrigger value="settings" className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest data-[state=active]:bg-teal-500 data-[state=active]:text-slate-950 rounded-xl transition-all">Ajustes</TabsTrigger>
                     </TabsList>
 
                     {/* GENERAL TAB */}
-                    <TabsContent value="general" className="space-y-6">
+                    <TabsContent value="general" className="space-y-8 outline-none">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="md:col-span-2 space-y-6">
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 space-y-4">
-                                    <h2 className="text-lg font-semibold border-b pb-2">Basic Info</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="md:col-span-2 space-y-8">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <div className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Información Básica</h2>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">Project Title *</label>
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Título del Proyecto *</label>
                                             <Input
                                                 {...form.register("title")}
                                                 onChange={handleTitleChange}
-                                                placeholder="e.g., Brand Redesign for TechCorp"
+                                                placeholder="Ej: Rediseño de marca TechCorp"
+                                                className="bg-slate-950 border-slate-700 h-12 focus:border-teal-500/50"
                                             />
                                             {form.formState.errors.title && (
-                                                <p className="text-sm text-red-500">{form.formState.errors.title.message}</p>
+                                                <p className="text-[10px] font-bold text-red-500 mt-1">{form.formState.errors.title.message}</p>
                                             )}
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">Slug</label>
-                                            <Input {...form.register("slug")} placeholder="project-slug" />
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Ruta (Slug)</label>
+                                            <Input {...form.register("slug")} placeholder="proyecto-slug" className="bg-slate-950 border-slate-700 h-12 font-mono text-xs opacity-60" />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Short Description *</label>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Descripción Corta *</label>
                                         <textarea
                                             {...form.register("description")}
-                                            className="w-full min-h-[100px] p-3 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-black resize-none"
-                                            placeholder="Brief description shown in portfolio grid..."
+                                            className="w-full min-h-[120px] p-4 bg-slate-950 rounded-xl border border-slate-700 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-teal-500/50 transition-all resize-none"
+                                            placeholder="Breve resumen para la cuadrícula del portafolio..."
                                         />
                                         {form.formState.errors.description && (
-                                            <p className="text-sm text-red-500">{form.formState.errors.description.message}</p>
+                                            <p className="text-[10px] font-bold text-red-500 mt-1">{form.formState.errors.description.message}</p>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 space-y-4">
-                                    <h2 className="text-lg font-semibold border-b pb-2">Client Details</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <div className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Detalles del Cliente</h2>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">Client Name</label>
-                                            <Input {...form.register("client")} placeholder="Client Name" />
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Nombre del Cliente</label>
+                                            <Input {...form.register("client")} placeholder="Nombre o Empresa" className="bg-slate-950 border-slate-700 h-11" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">Project URL</label>
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Enlace Externo</label>
                                             <div className="relative">
-                                                <Input {...form.register("projectUrl")} placeholder="https://..." className="pr-10" />
-                                                <ExternalLink className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                                                <Input {...form.register("projectUrl")} placeholder="https://..." className="pr-10 bg-slate-950 border-slate-700 h-11" />
+                                                <ExternalLink className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
                                             </div>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Client Logo URL</label>
-                                        <div className="flex gap-2">
-                                            <Input {...form.register("clientLogo")} placeholder="https://.../logo.png" />
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">URL Logotipo Cliente</label>
+                                        <div className="flex gap-4">
+                                            <Input {...form.register("clientLogo")} placeholder="https://.../logo.png" className="bg-slate-950 border-slate-700 h-11" />
                                             {watchedValues.clientLogo && (
-                                                <img src={watchedValues.clientLogo} alt="Logo" className="h-10 w-10 object-contain bg-slate-900 border rounded" />
+                                                <div className="w-11 h-11 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-center p-2 flex-shrink-0">
+                                                    <img src={watchedValues.clientLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                                                </div>
                                             )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 space-y-4">
-                                    <h2 className="text-lg font-semibold">Categorization</h2>
+                            <div className="space-y-8">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <Tag className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Organización</h2>
+                                    </div>
                                     <Controller
                                         name="categoryId"
                                         control={form.control}
@@ -404,16 +424,19 @@ export function ProjectForm({ project }: ProjectFormProps) {
                                     />
                                 </div>
 
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 space-y-4">
-                                    <h2 className="text-lg font-semibold">Project Dates</h2>
-                                    <div className="space-y-3">
-                                        <div className="space-y-1">
-                                            <label className="text-sm font-medium">Start Date</label>
-                                            <Input type="date" {...form.register("startDate")} />
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <Calendar className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Fechas</h2>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha de Inicio</label>
+                                            <Input type="date" {...form.register("startDate")} className="bg-slate-950 border-slate-700 h-10 [color-scheme:dark]" />
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-sm font-medium">End Date</label>
-                                            <Input type="date" {...form.register("endDate")} />
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Fecha de Fin</label>
+                                            <Input type="date" {...form.register("endDate")} className="bg-slate-950 border-slate-700 h-10 [color-scheme:dark]" />
                                         </div>
                                     </div>
                                 </div>
@@ -422,11 +445,14 @@ export function ProjectForm({ project }: ProjectFormProps) {
                     </TabsContent>
 
                     {/* CONTENT TAB */}
-                    <TabsContent value="content" className="space-y-6">
+                    <TabsContent value="content" className="space-y-8 outline-none">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-6">
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
-                                    <h2 className="text-lg font-semibold mb-4">Case Study Story</h2>
+                            <div className="lg:col-span-2 space-y-8">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <FileText className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Historia del Proyecto (Case Study)</h2>
+                                    </div>
                                     <Controller
                                         name="content"
                                         control={form.control}
@@ -434,30 +460,36 @@ export function ProjectForm({ project }: ProjectFormProps) {
                                             <RichTextEditor
                                                 initialValue={field.value || ""}
                                                 onChange={field.onChange}
-                                                placeholder="Tell the story of this project..."
+                                                placeholder="Cuenta la historia detallada de este proyecto..."
                                             />
                                         )}
                                     />
                                 </div>
 
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
-                                    <h2 className="text-lg font-semibold mb-4">Results & Testimonial</h2>
-                                    <div className="space-y-4">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <div className="w-1.5 h-1.5 bg-teal-500 rounded-full" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Resultados & Testimonio</h2>
+                                    </div>
+                                    <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-medium">Client Testimonial</label>
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Testimonio del Cliente</label>
                                             <textarea
                                                 {...form.register("testimonial")}
-                                                className="w-full min-h-[100px] p-3 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-black resize-none"
-                                                placeholder="What did the client say about the project?"
+                                                className="w-full min-h-[120px] p-4 bg-slate-950 rounded-xl border border-slate-700 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-teal-500/50 transition-all resize-none italic"
+                                                placeholder="¿Qué dijo el cliente sobre el proyecto?..."
                                             />
                                         </div>
-                                        {/* Future: Key Results Builder can go here, for now relying on RichText or custom JSON field in future */}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
+                            <div className="space-y-8">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <Code className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Stack Tecnológico</h2>
+                                    </div>
                                     <Controller
                                         name="techStack"
                                         control={form.control}
@@ -470,7 +502,11 @@ export function ProjectForm({ project }: ProjectFormProps) {
                                     />
                                 </div>
 
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <Globe className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Equipo del Proyecto</h2>
+                                    </div>
                                     <Controller
                                         name="team"
                                         control={form.control}
@@ -487,11 +523,14 @@ export function ProjectForm({ project }: ProjectFormProps) {
                     </TabsContent>
 
                     {/* MEDIA TAB */}
-                    <TabsContent value="media" className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-6">
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
-                                    <h2 className="text-lg font-semibold mb-4">Cover Image</h2>
+                    <TabsContent value="media" className="space-y-8 outline-none">
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                            <div className="lg:col-span-1 space-y-8">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <ImageIcon className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Imagen de Portada</h2>
+                                    </div>
                                     <Controller
                                         name="coverImage"
                                         control={form.control}
@@ -505,32 +544,47 @@ export function ProjectForm({ project }: ProjectFormProps) {
                                         )}
                                     />
                                 </div>
-                                <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
-                                    <h2 className="text-lg font-semibold mb-4">Video Case Study</h2>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Video URL (YouTube/Vimeo)</label>
-                                        <Input {...form.register("videoUrl")} placeholder="https://youtube.com/watch?v=..." />
-                                        <p className="text-xs text-slate-400">Paste a link to embed a video player.</p>
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+                                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                        <Video className="w-4 h-4 text-teal-500" />
+                                        <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Video Case Study</h2>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">URL del Video</label>
+                                            <Input {...form.register("videoUrl")} placeholder="https://youtube.com/..." className="bg-slate-950 border-slate-700 h-10" />
+                                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">YouTube / Vimeo</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800">
-                                <h2 className="text-lg font-semibold mb-4">Project Gallery</h2>
-                                <div className="border-t border-slate-800 pt-4">
-                                    <Controller
-                                        name="gallery"
-                                        control={form.control}
-                                        render={({ field }) => (
-                                            <GalleryManager
-                                                images={field.value?.map((item: any) => {
-                                                    if (typeof item === 'string') return { url: item, alt: '', caption: '' };
-                                                    return item;
-                                                }) || []}
-                                                onChange={(images) => field.onChange(images)}
-                                            />
-                                        )}
-                                    />
+                            <div className="lg:col-span-3">
+                                <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-8">
+                                    <div className="flex items-center justify-between border-b border-slate-800 pb-6">
+                                        <div className="flex items-center gap-3">
+                                            <Layers className="w-5 h-5 text-teal-500" />
+                                            <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Galería & Simulador de Redes</h2>
+                                        </div>
+                                        <Badge className="bg-slate-900 border-slate-800 text-slate-400 font-mono text-[10px]">
+                                            TOTAL: {watchedValues.gallery?.length || 0} ASSETS
+                                        </Badge>
+                                    </div>
+                                    <div className="bg-slate-950/50 rounded-2xl border border-slate-800/50 p-6">
+                                        <Controller
+                                            name="gallery"
+                                            control={form.control}
+                                            render={({ field }) => (
+                                                <GalleryManager
+                                                    images={field.value?.map((item: any) => {
+                                                        if (typeof item === 'string') return { url: item, alt: '', caption: '' };
+                                                        return item;
+                                                    }) || []}
+                                                    onChange={(images) => field.onChange(images)}
+                                                />
+                                            )}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -580,39 +634,42 @@ export function ProjectForm({ project }: ProjectFormProps) {
                     </TabsContent>
 
                     {/* SETTINGS TAB */}
-                    <TabsContent value="settings" className="space-y-6">
+                    <TabsContent value="settings" className="space-y-8 outline-none">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 space-y-6">
-                                <h2 className="text-lg font-semibold border-b pb-2">Visibility & Status</h2>
+                            <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-8">
+                                <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                    <Globe className="w-4 h-4 text-teal-500" />
+                                    <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Visibilidad & Estado</h2>
+                                </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium">Publication Status</label>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Estado de Publicación</label>
                                         <select
                                             {...form.register("status")}
-                                            className="w-full px-3 py-2 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                                            className="w-full h-11 px-4 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-teal-500/50 appearance-none"
                                         >
-                                            <option value="draft">Draft</option>
-                                            <option value="published">Published</option>
-                                            <option value="scheduled">Scheduled</option>
-                                            <option value="archived">Archived</option>
+                                            <option value="draft">Borrador</option>
+                                            <option value="published">Publicado</option>
+                                            <option value="scheduled">Programado</option>
+                                            <option value="archived">Archivado</option>
                                         </select>
                                     </div>
 
                                     {watchedValues.status === "scheduled" && (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium flex items-center gap-2">
+                                        <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                                                 <Calendar className="h-4 w-4" />
-                                                Schedule Date
+                                                Fecha Programada
                                             </label>
-                                            <Input type="datetime-local" {...form.register("scheduledDate")} />
+                                            <Input type="datetime-local" {...form.register("scheduledDate")} className="bg-slate-950 border-slate-700 h-11 [color-scheme:dark]" />
                                         </div>
                                     )}
 
-                                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="space-y-0.5">
-                                            <label className="text-sm font-medium">Featured Project</label>
-                                            <p className="text-xs text-slate-400">Highlight this project on the homepage</p>
+                                    <div className="flex items-center justify-between p-5 bg-slate-950 border border-slate-800 rounded-2xl hover:border-slate-700 transition-colors">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-black text-slate-200 uppercase tracking-widest">Proyecto Destacado</label>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Resaltar en la página de inicio</p>
                                         </div>
                                         <Switch
                                             checked={watchedValues.featured}
@@ -620,36 +677,35 @@ export function ProjectForm({ project }: ProjectFormProps) {
                                         />
                                     </div>
 
-                                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="space-y-0.5">
-                                            <label className="text-sm font-medium flex items-center gap-2">
-                                                <Lock className="h-4 w-4" />
-                                                Private / Password Protected
+                                    <div className="flex items-center justify-between p-5 bg-slate-950 border border-slate-800 rounded-2xl hover:border-slate-700 transition-colors">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-black text-slate-200 uppercase tracking-widest flex items-center gap-2">
+                                                <Lock className="h-3.5 w-3.5" />
+                                                Privado / Protegido
                                             </label>
-                                            <p className="text-xs text-slate-400">Only accessible via direct link or password</p>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Solo accesible vía enlace directo</p>
                                         </div>
                                         <Switch
                                             checked={watchedValues.private}
                                             onCheckedChange={(checked) => form.setValue("private", checked)}
                                         />
                                     </div>
-
-                                    {/* isTemplate UI removed as per schema update */}
-
-                                    {/* relatedProjects UI removed as per schema update */}
                                 </div>
                             </div>
 
-                            <div className="bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-800 space-y-6">
-                                <h2 className="text-lg font-semibold border-b pb-2">Downloads & Assets</h2>
-                                <div className="space-y-4">
+                            <div className="bg-[#0d1117] p-8 rounded-2xl border border-slate-800 shadow-xl space-y-8">
+                                <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                                    <FileText className="w-4 h-4 text-teal-500" />
+                                    <h2 className="text-sm font-black text-slate-100 uppercase tracking-widest">Descargas & Activos</h2>
+                                </div>
+                                <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <FileText className="h-4 w-4" />
-                                            PDF Case Study URL
-                                        </label>
-                                        <Input {...form.register("pdfUrl")} placeholder="https://..." />
-                                        <p className="text-xs text-slate-400">Link to a downloadable PDF version</p>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">URL del Case Study PDF</label>
+                                        <div className="relative">
+                                            <Input {...form.register("pdfUrl")} placeholder="https://..." className="bg-slate-950 border-slate-700 h-11 pr-10" />
+                                            <FileText className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600" />
+                                        </div>
+                                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Enlace a versión descargable</p>
                                     </div>
                                 </div>
                             </div>
@@ -658,24 +714,40 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 </Tabs>
 
                 {/* Footer Actions (Sticky Bottom) */}
-                <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 p-4 -mx-4 md:mx-0 flex justify-between items-center z-10">
-                    <Button type="button" variant="ghost" onClick={() => router.back()}>
-                        Cancel
+                <div className="sticky bottom-4 z-40 bg-[#0d1117] border border-slate-800 p-4 rounded-2xl shadow-2xl flex justify-between items-center animate-in slide-in-from-bottom-4 duration-500">
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="text-slate-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+                        onClick={() => router.back()}
+                    >
+                        Cancelar
                     </Button>
-                    <div className="flex gap-3">
+                    <div className="flex gap-4">
                         {project && (
-                            <div className="text-xs text-slate-500 self-center hidden md:block">
-                                Last edited: {new Date().toLocaleDateString()}
+                            <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest self-center hidden md:block">
+                                Última edición: {new Date().toLocaleDateString('es-ES')}
                             </div>
                         )}
-                        <Button type="button" variant="outline" onClick={saveDraft} disabled={loading}>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-300 transition-all text-xs font-black uppercase tracking-[0.2em] px-6"
+                            onClick={saveDraft} 
+                            disabled={loading}
+                        >
                             <Save className="h-4 w-4 mr-2" />
-                            Save Draft
+                            Borrador
                         </Button>
-                        <Button type="button" onClick={publish} disabled={loading}>
+                        <Button 
+                            type="button" 
+                            className="bg-teal-500 hover:bg-teal-400 text-slate-950 transition-all font-black text-xs uppercase tracking-[0.2em] px-10 shadow-[0_4px_20px_rgba(20,184,166,0.3)]"
+                            onClick={publish} 
+                            disabled={loading}
+                        >
                             {loading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
                             <Send className="h-4 w-4 mr-2" />
-                            Publish
+                            Publicar Ahora
                         </Button>
                     </div>
                 </div>

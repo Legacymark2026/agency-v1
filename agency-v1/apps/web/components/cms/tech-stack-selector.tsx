@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { X, Plus, Code, Check } from 'lucide-react';
+import { X, Plus, Code, Check, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 
 interface TechStackSelectorProps {
     value: string[];
@@ -14,9 +12,12 @@ interface TechStackSelectorProps {
 const COMMON_TECH = [
     "React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js",
     "PostgreSQL", "Prisma", "AWS", "Vercel", "Stripe",
-    "OpenAI", "Python", "Figma", "Docker"
+    "OpenAI", "Python", "Figma", "Docker", "Framer Motion", "Three.js"
 ];
 
+/**
+ * Premium HUD Tech Stack selector.
+ */
 export function TechStackSelector({ value = [], onChange }: TechStackSelectorProps) {
     const [inputValue, setInputValue] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -61,19 +62,22 @@ export function TechStackSelector({ value = [], onChange }: TechStackSelectorPro
 
     return (
         <div className="space-y-3" ref={containerRef}>
-            <label className="text-sm font-medium flex items-center gap-2">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <Code className="h-4 w-4" />
-                Technologies Used
+                Tecnologías & Herramientas
             </label>
 
-            <div className="flex flex-wrap gap-2 min-h-[40px] p-2 bg-white border rounded-md focus-within:ring-2 focus-within:ring-black">
+            <div className="flex flex-wrap gap-2 min-h-[48px] p-2 bg-slate-950 border border-slate-700 rounded-xl focus-within:border-teal-500/50 transition-all">
                 {value.map(tech => (
-                    <Badge key={tech} variant="secondary" className="gap-1 pr-1">
-                        {tech}
+                    <Badge 
+                        key={tech} 
+                        className="bg-teal-500/10 text-teal-400 border-teal-500/20 px-2 py-1 flex items-center gap-1.5 hover:bg-teal-500/20 transition-colors"
+                    >
+                        <span className="text-[10px] font-mono font-bold tracking-wider">{tech}</span>
                         <button
                             type="button"
                             onClick={() => handleRemove(tech)}
-                            className="hover:bg-gray-200 rounded-full p-0.5"
+                            className="hover:text-white transition-colors"
                         >
                             <X className="h-3 w-3" />
                         </button>
@@ -88,26 +92,30 @@ export function TechStackSelector({ value = [], onChange }: TechStackSelectorPro
                     }}
                     onFocus={() => setShowSuggestions(true)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Add technology..."
-                    className="flex-1 bg-transparent outline-none text-sm min-w-[120px]"
+                    placeholder="Escribir tecnología..."
+                    className="flex-1 bg-transparent border-none outline-none text-sm text-slate-200 placeholder:text-slate-600 min-w-[150px] px-2"
                 />
             </div>
 
             {showSuggestions && (
-                <div className="p-3 bg-gray-50 border rounded-md">
-                    <p className="text-xs text-gray-500 mb-2">Common Technologies:</p>
+                <div className="p-4 bg-[#0d1117] border border-slate-800 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200 shadow-xl">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Zap className="w-3 h-3 text-teal-500" />
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Sugerencias frecuentes</p>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {COMMON_TECH.map(tech => (
                             <button
                                 key={tech}
                                 type="button"
                                 onClick={() => toggleTech(tech)}
-                                className={`text-xs px-2 py-1 rounded-md border transition-colors flex items-center gap-1 ${value.includes(tech)
-                                        ? 'bg-black text-white border-black'
-                                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-                                    }`}
+                                className={`text-[11px] font-mono px-3 py-1.5 rounded-lg border transition-all flex items-center gap-2 ${
+                                    value.includes(tech)
+                                        ? 'bg-teal-500 text-slate-950 border-teal-400 font-bold shadow-[0_0_12px_rgba(20,184,166,0.3)]'
+                                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600 hover:text-slate-200'
+                                }`}
                             >
-                                {value.includes(tech) && <Check className="h-3 w-3" />}
+                                {value.includes(tech) ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3 opacity-40" />}
                                 {tech}
                             </button>
                         ))}

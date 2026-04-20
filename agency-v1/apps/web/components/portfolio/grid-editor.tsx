@@ -316,11 +316,31 @@ export function GridEditor({ assets, onOrderChange, onRemove, onEdit, profiles =
         if (over && active.id !== over.id) {
             const oldIndex = items.findIndex((item) => item.id === active.id);
             const newIndex = items.findIndex((item) => item.id === over.id);
-            const reordered = arrayMove(items, oldIndex, newIndex).map((item, index) => ({ ...item, order: index }));
+            
+            const reordered = arrayMove(items, oldIndex, newIndex).map((item, index) => ({ 
+                ...item, 
+                order: index 
+            }));
+            
             setItems(reordered);
-            onOrderChange(reordered);
         }
     };
+
+    // Debounce the notification to the parent
+    useEffect(() => {
+        const hasOrderChanged = items.some((item, index) => {
+            const original = assets.find(a => a.id === item.id);
+            return original && original.order !== index;
+        });
+
+        if (!hasOrderChanged) return;
+
+        const timer = setTimeout(() => {
+            onOrderChange(items);
+        }, 1000); // 1 second debounce
+
+        return () => clearTimeout(timer);
+    }, [items, assets, onOrderChange]);
 
     const getProfile = (platform: string): SocialProfile =>
         profiles.find(p => p.platform === platform) ?? FALLBACK_PROFILES[platform];
