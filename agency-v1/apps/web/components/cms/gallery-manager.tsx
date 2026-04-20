@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { GridEditor, MediaAsset } from '@/components/portfolio/grid-editor';
 import { Plus, X, GripVertical, ImageIcon, Upload, Loader2, FileText, Video, Link as LinkIcon } from 'lucide-react';
 
 export interface GalleryImage {
@@ -331,10 +332,39 @@ export function GalleryManager({
                 </div>
             </div>
 
-            {/* Asset List */}
+            {/* Asset List & Visualizer */}
             {images.length > 0 ? (
-                <div className="space-y-3 mt-6">
-                    {images.map((image, index) => (
+                <div className="space-y-8 mt-6">
+                    {/* Visual Drag and Drop Grid */}
+                    <div className="pt-4 border-t border-slate-800">
+                        <GridEditor 
+                            assets={images.map((img, i) => ({
+                                id: img.url + '-' + i,
+                                url: img.displayUrl || img.url, // Handle preview if needed
+                                type: (img.type === 'video' || img.url.includes('youtube') || img.url.includes('vimeo')) ? 'video' : 'image',
+                                order: i
+                            }))}
+                            onOrderChange={(newOrder) => {
+                                // Match back to GalleryImages using our stable URLs
+                                const remapped: GalleryImage[] = newOrder.map(asset => {
+                                    return images.find(img => img.url === asset.url) || images[0];
+                                });
+                                // Filter out duplicates if any mapping error
+                                onChange(Array.from(new Set(remapped)));
+                            }}
+                            onRemove={(id) => {
+                                const index = images.findIndex((img, i) => (img.url + '-' + i) === id);
+                                if(index > -1) removeImage(index);
+                            }}
+                            onEdit={(id) => {
+                                alert("Ve a la lista inferior para cambiar el enlace, o borra y sube otra imagen.");
+                            }}
+                        />
+                    </div>
+
+                    <div className="space-y-3 border-t border-slate-800 pt-6">
+                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-widest pl-1">Información Detallada</h4>
+                        {images.map((image, index) => (
                         <div
                             key={index}
                             draggable
@@ -405,6 +435,7 @@ export function GalleryManager({
                             </div>
                         </div>
                     ))}
+                    </div>
                 </div>
             ) : (
                 <div className="text-center py-12 border border-slate-800 border-dashed rounded-xl bg-slate-900/20">
