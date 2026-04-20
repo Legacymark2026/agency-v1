@@ -33,8 +33,8 @@ export function SortableGridItem({ asset, onEdit, onRemove }: SortableGridItemPr
         <div
             ref={setNodeRef}
             style={style}
-            className={`relative group rounded-xl overflow-hidden bg-slate-900 border border-slate-800 transition-all ${
-                isDragging ? "shadow-2xl shadow-teal-500/20 ring-2 ring-teal-500 scale-105 opacity-90" : "hover:border-slate-700"
+            className={`relative w-full h-full group rounded-xl overflow-hidden bg-slate-900 border border-slate-800 transition-all ${
+                isDragging ? "shadow-2xl shadow-teal-500/20 ring-2 ring-teal-500 scale-105 opacity-90 z-50" : "hover:border-slate-700"
             }`}
         >
             {/* Media Content */}
