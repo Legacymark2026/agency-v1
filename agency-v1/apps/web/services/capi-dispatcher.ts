@@ -118,13 +118,22 @@ async function _dispatchAsync(
   if (platforms.includes("meta")) {
     tasks.push(
       withRetry(
-        () =>
-          sendMetaCapiEvent(companyId, eventName, userData, {
-            value,
-            currency,
-            eventTime,
-            sourceId,
-          }),
+        async () => {
+          const { prisma } = await import("@/lib/prisma");
+          const config = await prisma.integrationConfig.findUnique({ where: { companyId_provider: { companyId, provider: 'meta-pixel' } } });
+          if (!config || !config.isEnabled) return;
+          const pixelId = (config.config as any)?.pixelId || (config.config as any)?.metaPixelId;
+          const accessToken = (config.config as any)?.accessToken || (config.config as any)?.metaAccessToken;
+          if (!pixelId || !accessToken) return;
+          
+          return sendMetaCapiEvent({
+             pixelId,
+             accessToken,
+             eventName: eventName as any,
+             userData,
+             customData: { value, currency }
+          });
+        },
         "meta",
         context
       )
@@ -135,11 +144,14 @@ async function _dispatchAsync(
     tasks.push(
       withRetry(
         () =>
-          sendTiktokCapiEvent(companyId, eventName, userData, {
-            value,
-            currency,
+          sendTiktokCapiEvent(companyId, {
+            eventName,
             eventTime,
-            sourceId,
+            userData: userData as any,
+            customData: {
+                value,
+                currency,
+            }
           }),
         "tiktok",
         context
@@ -151,10 +163,13 @@ async function _dispatchAsync(
     tasks.push(
       withRetry(
         () =>
-          sendGa4Event(companyId, eventName.toLowerCase(), userData, {
-            value,
-            currency,
-            sourceId,
+          sendGa4Event(companyId, {
+            eventName: eventName.toLowerCase(),
+            userData: userData as any,
+            eventParams: {
+                value,
+                currency,
+            }
           }),
         "ga4",
         context
@@ -164,7 +179,13 @@ async function _dispatchAsync(
 
   if (platforms.includes("linkedin")) {
     tasks.push(
-      withRetry(() => sendLinkedinCapiEvent(companyId, userData, { eventName, value, currency }), "linkedin", context)
+      withRetry(() => sendLinkedinCapiEvent(companyId, {
+          userData: userData as any,
+          conversionInfo: {
+              currencyCode: currency,
+              amount: value
+          }
+      }), "linkedin", context)
     );
   }
 

@@ -29,7 +29,7 @@ export function BillingCard({ subscriptionTier, subscriptionStatus, leadsUsed = 
       if (res.success && typeof res.data !== 'string') {
         window.location.href = res.data.url;
       } else {
-        toast.error(typeof res.error === 'string' ? res.error : "Failed to initiate payment");
+        toast.error(typeof (res as any).error === 'string' ? (res as any).error : "Failed to initiate payment");
       }
     } finally {
       setLoadingCheckout(false);
@@ -43,7 +43,7 @@ export function BillingCard({ subscriptionTier, subscriptionStatus, leadsUsed = 
       if (res.success && typeof res.data !== 'string') {
          window.location.href = res.data.url;
       } else {
-         toast.error(typeof res.error === 'string' ? res.error : "Could not open billing portal");
+         toast.error(typeof (res as any).error === 'string' ? (res as any).error : "Could not open billing portal");
       }
     } finally {
       setLoadingPortal(false);

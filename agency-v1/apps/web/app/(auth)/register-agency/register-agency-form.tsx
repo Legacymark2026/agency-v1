@@ -22,7 +22,7 @@ export function RegisterAgencyForm() {
       const res = await registerAgency(formData);
 
       if (!res.success) {
-        toast.error(res.error || "Error al crear la agencia.");
+        toast.error((res as any).error || "Error al crear la agencia.");
       } else {
         toast.success("¡Agencia creada! Ahora puedes iniciar sesión.");
         router.push(res.data.redirectTo);

@@ -63,9 +63,9 @@ export async function POST(req: Request) {
       }
       case "invoice.payment_failed": {
           const invoice = event.data.object as Stripe.Invoice;
-          if (invoice.subscription) {
+          if ((invoice as any).subscription) {
             await prisma.company.updateMany({
-                where: { stripeSubscriptionId: invoice.subscription as string },
+                where: { stripeSubscriptionId: (invoice as any).subscription as string },
                 data: {
                    subscriptionStatus: "past_due"
                 }

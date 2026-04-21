@@ -77,12 +77,12 @@ export function getTenantPrisma(companyId: string) {
           // para evitar que el request pretenda crear data de otro tenant.
           if (operation === "create" || operation === "createMany") {
              if (operation === "create") {
-                 args.data = { ...args.data, ...tenantWhere };
+                 args.data = { ...(args.data as any), ...tenantWhere } as any;
              } else {
                  if (Array.isArray((args.data as any))) {
-                     args.data = (args.data as any).map((d: any) => ({ ...d, ...tenantWhere }));
+                     args.data = (args.data as any).map((d: any) => ({ ...d, ...tenantWhere })) as any;
                  } else {
-                     args.data = { ...(args.data as any), ...tenantWhere };
+                     args.data = { ...(args.data as any), ...tenantWhere } as any;
                  }
              }
           }

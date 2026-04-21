@@ -3,7 +3,6 @@ import { GoogleIntegrations } from "@/components/settings/google-integrations";
 import { MetaIntegrations } from "@/components/settings/meta-integrations";
 import { HotjarIntegrations } from "@/components/settings/hotjar-integrations";
 import { AhrefsIntegrations } from "@/components/settings/ahrefs-integrations";
-import { TiktokIntegrations } from "@/components/settings/tiktok-integrations";
 import { PayuIntegrations } from "@/components/settings/payu-integrations";
 import { AiModelsIntegrations } from "@/components/settings/ai-models-integrations";
 import { IntegrationsToastHandler } from "@/components/settings/integrations-toast-handler";

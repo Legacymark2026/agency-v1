@@ -11,10 +11,10 @@ const PLATFORMS: { key: SocialProfileData["platform"]; label: string; icon: Reac
     { key: "facebook", label: "Facebook",  icon: <Facebook className="w-4 h-4" />,  color: "from-blue-600 to-blue-400" },
 ];
 
-const DEFAULTS: Record<string, Partial<SocialProfileData>> = {
-    instagram: { followersCount: 0, followingCount: 0, emoji: "😎" },
-    tiktok:    { followersCount: 0, followingCount: 0, emoji: "🎬" },
-    facebook:  { followersCount: 0, followingCount: 0, emoji: "👍" },
+const DEFAULTS: Record<string, Partial<ProfileFormState>> = {
+    instagram: { followersCount: "0", followingCount: "0", emoji: "😎" },
+    tiktok:    { followersCount: "0", followingCount: "0", emoji: "🎬" },
+    facebook:  { followersCount: "0", followingCount: "0", emoji: "👍" },
 };
 
 type ProfileFormState = {

@@ -39,7 +39,7 @@ export default function BillingPage() {
             if (res.success && typeof res.data !== 'string') {
                 window.location.href = res.data.url;
             } else {
-                toast.error(typeof res.error === 'string' ? res.error : "Error procesando el pago.");
+                toast.error(typeof (res as any).error === 'string' ? (res as any).error : "Error procesando el pago.");
             }
         } finally {
             setLoadingCheckout(false);
@@ -53,7 +53,7 @@ export default function BillingPage() {
             if (res.success && typeof res.data !== 'string') {
                 window.location.href = res.data.url;
             } else {
-                toast.error(typeof res.error === 'string' ? res.error : "Error abriendo el portal.");
+                toast.error(typeof (res as any).error === 'string' ? (res as any).error : "Error abriendo el portal.");
             }
         } finally {
             setLoadingPortal(false);

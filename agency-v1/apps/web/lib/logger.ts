@@ -23,7 +23,7 @@
 import type { SeverityLevel } from "@sentry/nextjs";
 
 type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
-type LogContext = Record<string, unknown>;
+type LogContext = any;
 
 const isDev = process.env.NODE_ENV === "development";
 const SERVICE = "legacymark-web";
