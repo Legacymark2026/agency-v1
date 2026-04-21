@@ -266,9 +266,10 @@ export async function createProject(data: ProjectFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = ProjectSchema.parse(data);
+    const { tagNames, ...projectData } = validated;
 
     try {
-        await prisma.project.create({ data: validated });
+        await prisma.project.create({ data: projectData });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
         revalidatePath(`/portfolio/${validated.slug}`, 'page');
@@ -284,13 +285,14 @@ export async function updateProject(id: string, data: ProjectFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = ProjectSchema.parse(data);
+    const { tagNames, ...projectData } = validated;
 
     try {
         const currentProject = await prisma.project.findUnique({ where: { id } });
 
         await prisma.project.update({
             where: { id },
-            data: validated
+            data: projectData
         });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
