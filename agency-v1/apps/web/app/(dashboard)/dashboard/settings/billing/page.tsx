@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CreditCard, Download, Zap, TrendingUp, Users, BarChart3, Receipt, ChevronRight, CheckCircle2 } from "lucide-react";
+import { CreditCard, Download, Zap, TrendingUp, Users, BarChart3, Receipt, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
 import { getUsageStats, getInvoices } from "@/actions/developer";
+import { createCheckoutSession, createPortalSession } from "@/actions/billing";
+import { toast } from "sonner";
 
 const fmt = (n: number) => new Intl.NumberFormat("es-CO").format(Math.round(n));
 const pct = (val: number, limit: number) => Math.min(Math.round((val / limit) * 100), 100);
@@ -27,6 +29,36 @@ export default function BillingPage() {
     const [invoices, setInvoices] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"overview" | "invoices">("overview");
+    const [loadingCheckout, setLoadingCheckout] = useState(false);
+    const [loadingPortal, setLoadingPortal] = useState(false);
+
+    async function handleUpgrade() {
+        setLoadingCheckout(true);
+        try {
+            const res = await createCheckoutSession("price_faketest123", "pro");
+            if (res.success && typeof res.data !== 'string') {
+                window.location.href = res.data.url;
+            } else {
+                toast.error(typeof res.error === 'string' ? res.error : "Error procesando el pago.");
+            }
+        } finally {
+            setLoadingCheckout(false);
+        }
+    }
+
+    async function handlePortal() {
+        setLoadingPortal(true);
+        try {
+            const res = await createPortalSession();
+            if (res.success && typeof res.data !== 'string') {
+                window.location.href = res.data.url;
+            } else {
+                toast.error(typeof res.error === 'string' ? res.error : "Error abriendo el portal.");
+            }
+        } finally {
+            setLoadingPortal(false);
+        }
+    }
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -88,11 +120,19 @@ export default function BillingPage() {
                                     ))}
                                 </div>
                                 <div className="flex gap-3">
-                                    <button className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_12px_rgba(20,184,166,0.3)]">
+                                    <button 
+                                        onClick={handleUpgrade} 
+                                        disabled={loadingCheckout}
+                                        className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg transition-colors shadow-[0_0_12px_rgba(20,184,166,0.3)] flex items-center justify-center">
+                                        {loadingCheckout ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                         Mejorar a Enterprise
                                     </button>
-                                    <button className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 rounded-lg transition-colors">
-                                        Cancelar Plan
+                                    <button 
+                                        onClick={handlePortal}
+                                        disabled={loadingPortal}
+                                        className="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors flex items-center justify-center">
+                                        {loadingPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        Gestionar Portal de Pago
                                     </button>
                                 </div>
                             </div>

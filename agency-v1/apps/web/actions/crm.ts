@@ -358,8 +358,23 @@ export async function createDeal(data: Record<string, unknown>) {
     const authCheck = await checkAuth();
     if (authCheck) return { error: "Unauthorized" };
     const userId = await getUserId();
-    const allowed = rateLimit(`create_deal:${userId}`, 5, 60_000);
+    const allowed = await rateLimit(`create_deal:${userId}`, 5, 60_000);
     if (!allowed) return { error: "Demasiadas peticiones. Espera un momento." };
+
+    // --- SaaS B2B Quota Enforcer ---
+    const { enforceQuota } = await import("@/lib/quotas");
+    const companyId = data.companyId as string;
+    
+    // Obtenemos tier directamente desde la DB (por seguridad vs enviarlo desde el cliente)
+    const company = await prisma.company.findUnique({ where: { id: companyId }, select: { subscriptionTier: true }});
+    if (!company) return { error: "Tenant B2B no localizado." };
+    
+    const quota = await enforceQuota(companyId, "leads", company.subscriptionTier);
+    if (!quota.allowed) {
+        return { error: `Has superado las operaciones permitidas en tu plan ${company.subscriptionTier.toUpperCase()} (${quota.limit}/mes). Ve a Configuración > Facturación para aumentar tus límites.` };
+    }
+    // -------------------------------
+
     try {
         const deal = await prisma.deal.create({
             data: {

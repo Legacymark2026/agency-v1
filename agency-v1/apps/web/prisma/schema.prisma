@@ -847,6 +847,11 @@ model Deal {
   @@index([stage])
   @@index([priority])
   @@index([assignedTo])
+  // Performance indexes for CRM queries
+  @@index([stage, companyId])           // getSalesFunnel, getTopDeals
+  @@index([contactEmail, companyId])    // bidirectional Lead<>Deal sync
+  @@index([expectedClose])              // forecasting queries
+  @@index([value])                      // getTopDeals ORDER BY value
   @@map("deals")
 }
 
@@ -1179,6 +1184,10 @@ model Lead {
   @@index([createdAt])
   @@index([email])
   @@index([status])
+  // Performance indexes for Lead queries
+  @@index([status, companyId])          // getLeads filter + pagination
+  @@index([score])                      // lead scoring UI, ranking
+  @@index([email, companyId])           // checkDuplicateEmail, sync
   @@map("leads")
 }
 

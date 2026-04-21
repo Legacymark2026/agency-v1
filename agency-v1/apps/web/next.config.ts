@@ -6,23 +6,25 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https: http:;
-    style-src 'self' 'unsafe-inline';
+    script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://static.hotjar.com https://script.hotjar.com https://analytics.tiktok.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https: http:;
-    font-src 'self' data: https: http:;
+    font-src 'self' data: https://fonts.gstatic.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'self' https://app.powerbi.com;
     upgrade-insecure-requests;
     connect-src 'self' wss: https: http:;
-    frame-src 'self' https: http:;
+    frame-src 'self' https://www.youtube.com https://player.vimeo.com;
 `.replace(/\n/g, '');
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
-  typescript: { ignoreBuildErrors: true },
+  // CORREGIDO: TypeScript errors deben resolverse, no ignorarse.
+  // Los errores activos están documentados en ts_errors.log — resolver progresivamente.
+  // typescript: { ignoreBuildErrors: true }, ← ELIMINADO
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — NUNCA commitear archivos .env con credenciales
 .env*
+.env.backup
+.env.production.local
 
 # vercel
 .vercel
@@ -40,10 +42,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# B-4 Fix: Logs de build y debug generados en el directorio raíz
-# Nunca deben entrar al repositorio
+# ─── LegacyMark: Debug / Temp files ───────────────────────────────────────────
+# Archivos generados durante desarrollo que NO deben entrar al repo
 build_log*.txt
 build_output*.log
+build4*.log
 build_error*.log
 debug_output*.txt
 lint_results*.txt
@@ -53,12 +56,18 @@ lint_check*.txt
 production_log*.txt
 marketing_lint.txt
 typescript_errors*.log
+ts_errors.log
 verification.log
 demo_output*.txt
 prisma_error.log
 prisma_validate*.log
 debug-whatsapp.log
 
+# Scripts de test en la raíz (deben estar en tests/ o prisma/scripts/)
+test-db.js
+test-*.js
+temp_*.sql
+temp_*.ts
+
+# Uploads locales (producción usa Vercel Blob)
 public/uploads
-.vercel
-.env*.local

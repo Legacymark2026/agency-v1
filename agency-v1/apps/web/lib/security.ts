@@ -17,7 +17,6 @@
  *     if (!hasPermission) throw new ForbiddenError();
  *   }
  */
-"use server";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -97,28 +96,69 @@ export async function verifyPermissionOrFail(
   }
 }
 
+/**
+ * Verifica si el usuario tiene AL MENOS UNO de los permisos dados.
+ * FIX: Usa una sola query con IN en lugar de N queries secuenciales.
+ */
 export async function hasAnyPermission(
   userId: string,
   companyId: string,
   permissions: string[]
 ): Promise<boolean> {
-  for (const perm of permissions) {
-    const has = await verifyPermission(userId, companyId, perm);
-    if (has) return true;
+  if (permissions.length === 0) return false;
+  try {
+    const companyUser = await prisma.companyUser.findFirst({
+      where: { userId, companyId },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              where: { permission: { name: { in: permissions } } },
+              include: { permission: true },
+            },
+          },
+        },
+      },
+    });
+    return (companyUser?.role?.permissions.length ?? 0) > 0;
+  } catch (error) {
+    console.error("[Security] Error in hasAnyPermission:", error);
+    return false;
   }
-  return false;
 }
 
+/**
+ * Verifica si el usuario tiene TODOS los permisos dados.
+ * FIX: Usa una sola query con IN en lugar de N queries secuenciales.
+ */
 export async function hasAllPermissions(
   userId: string,
   companyId: string,
   permissions: string[]
 ): Promise<boolean> {
-  for (const perm of permissions) {
-    const has = await verifyPermission(userId, companyId, perm);
-    if (!has) return false;
+  if (permissions.length === 0) return true;
+  try {
+    const companyUser = await prisma.companyUser.findFirst({
+      where: { userId, companyId },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              where: { permission: { name: { in: permissions } } },
+              include: { permission: true },
+            },
+          },
+        },
+      },
+    });
+    const grantedNames = new Set(
+      companyUser?.role?.permissions.map((p) => p.permission.name) ?? []
+    );
+    return permissions.every((perm) => grantedNames.has(perm));
+  } catch (error) {
+    console.error("[Security] Error in hasAllPermissions:", error);
+    return false;
   }
-  return true;
 }
 
 export async function getUserPermissions(

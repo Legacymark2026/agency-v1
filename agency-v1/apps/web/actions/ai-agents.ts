@@ -69,6 +69,19 @@ export async function upsertAIAgent(data: {
 }) {
     await getSession();
 
+    // --- SaaS B2B AI Quota Enforcer (Limit on Creation) ---
+    if (!data.id) {
+        const company = await prisma.company.findUnique({ where: { id: data.companyId }, select: { subscriptionTier: true } });
+        if (!company) throw new Error("Tenant no definido.");
+        
+        const { enforceQuota } = await import("@/lib/quotas");
+        const quota = await enforceQuota(data.companyId, "ai_agents", company.subscriptionTier);
+        if (!quota.allowed) {
+            return { error: `SaaS Limit: Tu plan comercial ${company.subscriptionTier.toUpperCase()} te permite máximo ${quota.limit} Agente(s). Sube tu plan en Facturación.` };
+        }
+    }
+    // --------------------------------------------------------
+
     const payload = {
         companyId: data.companyId,
         name: data.name,
@@ -233,6 +246,18 @@ export async function invokeAgentAction(
     contactData?: Record<string, any>
 ) {
     const session = await getSession();
+    const companyId = session.user.companyId!;
+
+    // --- SaaS B2B AI Interactions Enforcer (Metered usage) ---
+    const company = await prisma.company.findUnique({ where: { id: companyId }, select: { subscriptionTier: true } });
+    const { enforceQuota } = await import("@/lib/quotas");
+    const quota = await enforceQuota(companyId, "ai_interactions", company?.subscriptionTier || "free");
+
+    if (!quota.allowed) {
+        return { success: false, error: `SaaS Limit Reached: Tienes un límite de ${quota.limit} interacciones (API calls) al mes en el plan actual.` };
+    }
+    // ---------------------------------------------------------
+
     const { runAIAgent } = await import("@/lib/agent-runner");
 
     const result = await runAIAgent({
