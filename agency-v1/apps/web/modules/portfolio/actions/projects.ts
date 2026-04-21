@@ -120,7 +120,7 @@ export async function createProject(data: ProjectFormData) {
                 results: results || [],
                 gallery: gallery || [],
                 categoryId: categoryId || null,
-            }
+            } as any
         });
 
         revalidatePath('/dashboard/projects');
@@ -159,7 +159,7 @@ export async function updateProject(id: string, data: ProjectFormData) {
                 results: results || [],
                 gallery: gallery || [],
                 categoryId: categoryId || null,
-            }
+            } as any
         });
 
         revalidatePath('/dashboard/projects');

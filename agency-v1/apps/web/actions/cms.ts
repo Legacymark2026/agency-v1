@@ -266,10 +266,17 @@ export async function createProject(data: ProjectFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = ProjectSchema.parse(data);
-    const { tagNames, ...projectData } = validated;
+    const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
 
     try {
-        await prisma.project.create({ data: projectData });
+        await prisma.project.create({ 
+            data: {
+                ...projectData,
+                scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+                startDate: startDate ? new Date(startDate) : null,
+                endDate: endDate ? new Date(endDate) : null,
+            } as any
+        });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
         revalidatePath(`/portfolio/${validated.slug}`, 'page');
@@ -285,14 +292,19 @@ export async function updateProject(id: string, data: ProjectFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = ProjectSchema.parse(data);
-    const { tagNames, ...projectData } = validated;
+    const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
 
     try {
         const currentProject = await prisma.project.findUnique({ where: { id } });
 
         await prisma.project.update({
             where: { id },
-            data: projectData
+            data: {
+                ...projectData,
+                scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+                startDate: startDate ? new Date(startDate) : null,
+                endDate: endDate ? new Date(endDate) : null,
+            } as any
         });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
