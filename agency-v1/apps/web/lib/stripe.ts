@@ -20,3 +20,22 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_FALLB
     version: "2.0.0",
   },
 });
+
+
+export async function getStripeSession(companyId: string, amount: number, currency: string, name: string, metadata: any, successUrl: string, cancelUrl: string) {
+  return await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [{
+      price_data: {
+        currency,
+        product_data: { name },
+        unit_amount: Math.round(amount * 100),
+      },
+      quantity: 1,
+    }],
+    mode: 'payment',
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    metadata,
+  });
+}
