@@ -111,7 +111,7 @@ export async function enforceQuota(
 
     return { allowed, limit: maxLimit, remaining: Math.max(0, maxLimit - currentUsage) };
   } catch(error) {
-    logger.error("[Quota] Error verificando cuota", error);
+    logger.error("[Quota] Error verificando cuota", { error: error instanceof Error ? error.message : String(error) });
     // Open-fail
     return { allowed: true, limit: maxLimit };
   }
