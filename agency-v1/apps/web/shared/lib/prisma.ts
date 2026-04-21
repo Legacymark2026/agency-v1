@@ -36,11 +36,15 @@ function createPrismaClient(): PrismaClient {
     // Para serverless: limitar el connection pool para no saturar max_connections.
     // Cuando se active Prisma Accelerate, estas opciones pasan a ser manejadas
     // por el proxy y se pueden eliminar.
-    datasources: {
-      db: {
-        url: process.env.POSTGRES_PRISMA_URL ?? process.env.DATABASE_URL!,
-      },
-    },
+    ...(process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL
+      ? {
+          datasources: {
+            db: {
+              url: process.env.POSTGRES_PRISMA_URL ?? process.env.DATABASE_URL,
+            },
+          },
+        }
+      : {}),
   });
 }
 
