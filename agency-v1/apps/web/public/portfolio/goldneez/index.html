@@ -42,7 +42,7 @@
 
         @media (pointer: fine) { .cursor-active * { cursor: none !important; } }
 
-        html { scroll-behavior: smooth; font-size: 16px; }
+        html { scroll-behavior: smooth; font-size: 16px; scroll-padding-top: 100px; }
         
         @media (max-width: 1400px) { html { font-size: 15px; } }
         @media (max-width: 1200px) { html { font-size: 14px; } }
@@ -79,6 +79,14 @@
             transition: var(--transition);
         }
         nav a:hover { color: var(--amber-goldneez); }
+
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+            transition: var(--transition);
+        }
 
         .hero {
             min-height: 100vh; display: flex; align-items: center; padding: 5rem 10%;
@@ -187,7 +195,22 @@
         }
 
         @media (max-width: 992px) {
-            nav { display: none; }
+            .menu-toggle { display: block; }
+            nav {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 100%;
+                height: 100vh;
+                background: white;
+                flex-direction: column;
+                justify-content: center;
+                gap: 3rem;
+                transition: var(--transition);
+                z-index: 1000;
+            }
+            nav.active { right: 0; }
+            nav a { font-size: 1.2rem; }
             .hero { text-align: center; justify-content: center; }
             .hero-content { max-width: 100%; display: flex; flex-direction: column; align-items: center; }
             .hero-image { display: none; }
@@ -197,7 +220,11 @@
 
         @media (max-width: 768px) {
             html { font-size: 13px; }
-            .hero h1 { font-size: 4rem; }
+            section { padding: 4rem 6%; }
+            .hero { padding: 4rem 6%; }
+            .hero h1 { font-size: clamp(2.5rem, 12vw, 4rem); }
+            .sensory-grid { gap: 2rem; }
+            .process-grid { gap: 1.5rem; }
             .product-card { min-width: 100%; }
             .btn { width: 100%; margin-left: 0; }
             .btn-outline { margin-top: 1rem; }
@@ -218,7 +245,8 @@
 
     <header id="header">
         <a href="#home" class="logo"><img src="logo.png" alt="Goldneez"></a>
-        <nav>
+        <div class="menu-toggle" id="mobile-menu-btn"><i class="fas fa-bars"></i></div>
+        <nav id="main-nav">
             <a href="#productos">Colección</a>
             <a href="#sensory">Perfil</a>
             <a href="#process">Proceso</a>
@@ -245,7 +273,7 @@
         <section id="sensory" class="sensory-section">
             <div class="sensory-grid">
                 <div class="reveal">
-                    <h2 style="font-family: var(--font-display); font-size: 3.5rem; margin-bottom: 1.5rem;">Perfil de Taza <span>Certificado</span></h2>
+                    <h2 style="font-family: var(--font-display); font-size: clamp(2.2rem, 8vw, 3.5rem); margin-bottom: 1.5rem;">Perfil de Taza <span>Certificado</span></h2>
                     <p style="color: var(--text-muted); font-weight: 300; margin-bottom: 3rem;">Nuestro café Excelso se distingue por un equilibrio perfecto. Notas de panela, chocolate y un cuerpo sedoso incomparable.</p>
                     <div class="sensory-bars">
                         <div class="bar-container" style="margin-bottom: 2rem;">
@@ -270,7 +298,7 @@
 
         <section id="process" class="process-section">
             <div class="reveal" style="text-align: center;">
-                <h2 style="font-family: var(--font-display); font-size: 3.5rem;">El Proceso Maestro</h2>
+                <h2 style="font-family: var(--font-display); font-size: clamp(2.2rem, 8vw, 3.5rem);">El Proceso Maestro</h2>
                 <p style="color: var(--text-muted); margin-top: 1rem;">Trazabilidad absoluta desde la finca hasta tu taza.</p>
             </div>
             <div class="process-grid">
@@ -294,7 +322,7 @@
 
         <section id="productos" class="products-section">
             <div class="reveal" style="text-align: center; margin-bottom: 5rem;">
-                <h2 style="font-family: var(--font-display); font-size: 3.5rem;">La Colección</h2>
+                <h2 style="font-family: var(--font-display); font-size: clamp(2.2rem, 8vw, 3.5rem);">La Colección</h2>
             </div>
             <div class="carousel-container">
                 <div class="carousel-track" id="product-track">
@@ -339,7 +367,7 @@
 
         <section class="membership-section reveal" style="background: var(--black-goldneez); color: white; text-align: center;">
             <div style="max-width: 50rem; margin: 0 auto;">
-                <h2 style="font-family: var(--font-display); font-size: 4rem; margin-bottom: 2rem;">Membresía <span>Dorada</span></h2>
+                <h2 style="font-family: var(--font-display); font-size: clamp(2.5rem, 10vw, 4rem); margin-bottom: 2rem;">Membresía <span>Dorada</span></h2>
                 <p style="font-size: 1.2rem; opacity: 0.7; margin-bottom: 4rem;">Suscríbete y recibe tu dosis mensual de Goldneez con beneficios exclusivos.</p>
                 <a href="https://wa.me/573160658659" class="btn btn-primary" style="width: auto; padding: 1.5rem 5rem;">Unirme al Club</a>
             </div>
@@ -448,6 +476,24 @@
         });
         
         setTimeout(updateCarousel, 500);
+
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const nav = document.getElementById('main-nav');
+        const navLinks = document.querySelectorAll('#main-nav a');
+
+        menuBtn.addEventListener('click', () => {
+            nav.classList.toggle('active');
+            menuBtn.querySelector('i').classList.toggle('fa-bars');
+            menuBtn.querySelector('i').classList.toggle('fa-times');
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                nav.classList.remove('active');
+                menuBtn.querySelector('i').classList.add('fa-bars');
+                menuBtn.querySelector('i').classList.remove('fa-times');
+            });
+        });
     </script>
 </body>
 </html>
