@@ -13,13 +13,15 @@
     
     <style>
         :root {
-            --amber-goldneez: #FFBF00;
-            --black-goldneez: #0A0A0A;
+            /* INSTITUTIONAL COLORS */
+            --amber-goldneez: #FFBF00; /* AMBER */
+            --black-goldneez: #000000; /* NEGRO */
             --white-goldneez: #FFFFFF;
-            --gray-goldneez: #F9F9FB;
-            --text-dark: #1D1D1F;
-            --text-muted: #636366;
-            --border-color: #E5E5E7;
+            --gray-goldneez: #E5E5E5;  /* ALUMINIO Light */
+            --border-color: #CCCCCC;   /* ALUMINIO Darker */
+            --text-dark: #000000;
+            --text-muted: #666666;
+            
             --font-main: 'Inter', sans-serif;
             --font-display: 'Playfair Display', serif;
             --transition: all 0.7s cubic-bezier(0.19, 1, 0.22, 1);
@@ -68,7 +70,7 @@
             z-index: 1000; transition: var(--transition);
         }
         header.scrolled {
-            padding: 1rem 5%; background: rgba(255, 255, 255, 0.85);
+            padding: 1rem 5%; background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color);
         }
         .logo img { height: 2.5rem; }
@@ -94,7 +96,7 @@
             position: relative; overflow: hidden;
         }
         .hero-content { max-width: 40rem; z-index: 10; width: 100%; }
-        .hero h1 { font-family: var(--font-display); font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; margin-bottom: 2rem; font-weight: 700; }
+        .hero h1 { font-family: var(--font-display); font-size: clamp(3rem, 8vw, 6.5rem); line-height: 1; margin-bottom: 2rem; font-weight: 700; color: var(--black-goldneez); }
         .hero h1 span { display: block; font-style: italic; font-weight: 400; color: var(--amber-goldneez); }
         .hero p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 3rem; font-weight: 300; max-width: 30rem; }
 
@@ -118,14 +120,15 @@
 
         .sensory-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 5rem; align-items: center; }
         .bar-label { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; }
-        .bar-bg { height: 4px; background: var(--border-color); width: 100%; border-radius: 10px; }
+        .bar-bg { height: 4px; background: var(--gray-goldneez); width: 100%; border-radius: 10px; }
         .bar-fill { height: 100%; background: var(--amber-goldneez); border-radius: 10px; transition: width 1.5s cubic-bezier(0.19, 1, 0.22, 1); width: 0; }
 
+        .process-section { background: var(--gray-goldneez); }
         .process-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 5rem; }
         .process-card { padding: 4rem 2rem; background: var(--white-goldneez); border-radius: 4px; border: 1px solid var(--border-color); transition: var(--transition); }
         .process-card:hover { transform: translateY(-10px); border-color: var(--amber-goldneez); box-shadow: var(--shadow-lg); }
         .process-card svg { width: 3rem; height: 3rem; fill: var(--amber-goldneez); margin-bottom: 2rem; }
-        .process-card h4 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 1rem; }
+        .process-card h4 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 1rem; color: var(--black-goldneez); }
 
         .carousel-container { position: relative; width: 100%; }
         .carousel-track { display: flex; gap: 2rem; transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
@@ -138,7 +141,6 @@
         .product-card img { width: 100%; height: 25rem; object-fit: contain; margin-bottom: 2rem; }
         .price { display: block; font-weight: 800; font-size: 1.4rem; color: var(--amber-goldneez); margin-bottom: 2rem; }
 
-        /* MODAL V2 - PREMIUM & RESPONSIVE */
         .modal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
             display: none; z-index: 5000; align-items: center; justify-content: center; padding: 1.5rem;
@@ -153,18 +155,17 @@
         @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
         .modal-image-side { background: var(--gray-goldneez); display: flex; align-items: center; justify-content: center; padding: 3rem; position: relative; }
-        .modal-image-side::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(255,191,0,0.05) 0%, transparent 70%); }
         .modal-image-side img { width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.1)); z-index: 2; }
 
         .modal-info-side { padding: 4rem; display: flex; flex-direction: column; overflow-y: auto; }
-        .modal-info-side h3 { font-family: var(--font-display); font-size: 2.8rem; margin-bottom: 1rem; line-height: 1.1; }
+        .modal-info-side h3 { font-family: var(--font-display); font-size: 2.8rem; margin-bottom: 1rem; line-height: 1.1; color: var(--black-goldneez); }
         .modal-info-side .modal-subtitle { color: var(--amber-goldneez); font-weight: 800; text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem; margin-bottom: 2rem; }
         .modal-info-side p { color: var(--text-muted); font-size: 1rem; margin-bottom: 2.5rem; font-weight: 300; }
 
         .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 3rem; }
         .stat-item { background: var(--gray-goldneez); padding: 1.2rem; border-radius: 4px; border: 1px solid var(--border-color); }
         .stat-item label { display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 0.4rem; }
-        .stat-item span { display: block; font-weight: 700; font-size: 1.1rem; color: var(--text-dark); }
+        .stat-item span { display: block; font-weight: 700; font-size: 1.1rem; color: var(--black-goldneez); }
 
         .close-modal { position: absolute; top: 1.5rem; right: 1.5rem; width: 3rem; height: 3rem; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); z-index: 100; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: 0.3s; }
         .close-modal:hover { background: var(--amber-goldneez); color: var(--black-goldneez); transform: rotate(90deg); }
@@ -190,7 +191,7 @@
             .hero { padding: 6rem 8%; }
             .product-card { min-width: calc(50% - 1rem); }
             .modal-content { grid-template-columns: 1fr; }
-            .modal-image-side { padding: 2rem; display: none; } /* Hide image side on small screens to save space */
+            .modal-image-side { display: none; }
             .modal-info-side { padding: 3rem 2rem; }
         }
 
@@ -230,11 +231,6 @@
             .btn-outline { margin-top: 1rem; }
             .modal-info-side h3 { font-size: 2.2rem; }
             .modal-stats { grid-template-columns: 1fr; }
-        }
-
-        @media (max-width: 480px) {
-            .hero h1 { font-size: 3.2rem; }
-            .wa-bubble { width: 3.5rem; height: 3.5rem; bottom: 1.5rem; right: 1.5rem; }
         }
     </style>
 </head>
@@ -379,7 +375,6 @@
         <p style="font-size: 0.8rem; opacity: 0.4;">&copy; 2026 Goldneez. Specialty Grade Coffee. Toledo, Santander.</p>
     </footer>
 
-    <!-- MODAL V2 - PREMIUM -->
     <div class="modal" id="product-modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
