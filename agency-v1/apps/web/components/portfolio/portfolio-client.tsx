@@ -205,6 +205,29 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
 
     const displayedProjects = projects.filter(p => filter === "All" || p.category?.slug === filter || p.category?.name === filter);
 
+    const categoryIcons: Record<string, any> = {
+        'web': Monitor,
+        'dev': Code2,
+        'marketing': Zap,
+        'design': PenTool,
+        'seo': Layout,
+        'ai': Brain,
+        'social': Layers,
+        'ecommerce': Box,
+        'development': Terminal
+    };
+
+    const getCategoryIcon = (cat: any) => {
+        const slug = cat.slug?.toLowerCase() || "";
+        const name = cat.name?.toLowerCase() || "";
+        if (slug.includes('web') || name.includes('web')) return Monitor;
+        if (slug.includes('marketing') || name.includes('marketing')) return Zap;
+        if (slug.includes('design') || name.includes('diseño')) return PenTool;
+        if (slug.includes('ecommerce') || name.includes('tienda')) return Box;
+        if (slug.includes('software') || name.includes('desarrollo')) return Code2;
+        return Layers;
+    };
+
     return (
         <main className="bg-slate-950 min-h-screen text-slate-200 selection:bg-teal-500/30 selection:text-teal-200">
             {/* AMBIENT BACKGROUND - Performance optimized */}
@@ -357,15 +380,58 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
                     ))}
                 </div>
 
-                {/* Grid — responsive 1→2→3 cols */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {/* Grid — Categorized or Flat */}
+                <div className="space-y-24">
                     <AnimatePresence mode="popLayout">
-                        {displayedProjects.length > 0 ? displayedProjects.map((project, index) => (
-                            <ProjectCard key={project.id} project={project} index={index} />
-                        )) : (
-                            <div className="col-span-full text-center py-24 text-slate-500 font-mono uppercase tracking-widest">
-                                No projects found for this category.
-                            </div>
+                        {filter === "All" ? (
+                            categories.map((cat: any) => {
+                                const catProjects = projects.filter(p => p.category?.id === cat.id);
+                                if (catProjects.length === 0) return null;
+                                const Icon = getCategoryIcon(cat);
+
+                                return (
+                                    <motion.div
+                                        key={cat.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="relative"
+                                    >
+                                        <div className="flex items-center gap-4 mb-10 group/header">
+                                            <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-teal-500 group-hover/header:border-teal-500/50 group-hover/header:bg-teal-500/10 transition-all duration-500 shadow-lg">
+                                                <Icon size={24} strokeWidth={1.5} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-2xl font-black text-white uppercase tracking-tighter group-hover/header:text-teal-100 transition-colors">
+                                                    {cat.name}
+                                                </h3>
+                                                <div className="h-0.5 w-12 bg-teal-500/40 rounded-full mt-1 group-hover/header:w-24 transition-all duration-500" />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                            {catProjects.map((project, idx) => (
+                                                <ProjectCard key={project.id} project={project} index={idx} />
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                );
+                            })
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                            >
+                                {displayedProjects.length > 0 ? displayedProjects.map((project, index) => (
+                                    <ProjectCard key={project.id} project={project} index={index} />
+                                )) : (
+                                    <div className="col-span-full text-center py-24 text-slate-500 font-mono uppercase tracking-widest">
+                                        No projects found for this category.
+                                    </div>
+                                )}
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
