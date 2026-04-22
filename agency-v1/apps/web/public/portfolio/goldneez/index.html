@@ -16,9 +16,9 @@
             --amber-goldneez: #FFBF00;
             --black-goldneez: #0A0A0A;
             --white-goldneez: #FFFFFF;
-            --gray-goldneez: #F5F5F7;
+            --gray-goldneez: #F9F9FB;
             --text-dark: #1D1D1F;
-            --text-muted: #636366; /* Improved contrast for accessibility */
+            --text-muted: #636366;
             --border-color: #E5E5E7;
             --font-main: 'Inter', sans-serif;
             --font-display: 'Playfair Display', serif;
@@ -27,11 +27,11 @@
             --shadow-lg: 0 25px 50px -12px rgba(0,0,0,0.15);
         }
 
-        /* Noise Texture */
+        /* Noise Texture Overlay */
         body::before {
             content: "";
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            inset: 0;
             background: url("https://grainy-gradients.vercel.app/noise.svg");
             opacity: 0.03;
             pointer-events: none;
@@ -45,17 +45,18 @@
             outline-color: var(--amber-goldneez);
         }
 
-        /* Scroll Progress */
         #scroll-progress {
             position: fixed;
             top: 0; left: 0; height: 3px;
             background: var(--amber-goldneez);
             z-index: 10002;
             width: 0%;
-            transition: width 0.1s ease;
         }
 
-        .cursor-active * { cursor: none !important; }
+        /* Logic to hide cursor on mobile */
+        @media (pointer: fine) {
+            .cursor-active * { cursor: none !important; }
+        }
 
         html { scroll-behavior: smooth; }
 
@@ -77,7 +78,7 @@
             border-radius: 50%;
             z-index: 99999;
             opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease;
+            transition: opacity 0.3s ease;
         }
         .cursor-active #cursor-dot, .cursor-active #cursor-outline { opacity: 1; }
         #cursor-dot { width: 6px; height: 6px; background-color: var(--amber-goldneez); }
@@ -103,10 +104,9 @@
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
         }
 
-        .logo img { height: 40px; transition: var(--transition); }
+        .logo img { height: 40px; }
         nav { display: flex; gap: 40px; align-items: center; }
         nav a { 
             text-decoration: none; color: var(--text-dark); font-size: 0.75rem; 
@@ -137,11 +137,11 @@
         .hero h1 span { display: block; font-style: italic; font-weight: 400; color: var(--amber-goldneez); }
         .hero p {
             font-size: 1.15rem; color: var(--text-muted);
-            margin-bottom: 45px; font-weight: 300; letter-spacing: 0.2px;
+            margin-bottom: 45px; font-weight: 300;
         }
 
         .hero-image {
-            position: absolute; right: 8%; top: 50%;
+            position: absolute; right: 5%; top: 50%;
             transform: translateY(-50%); width: 40%;
             z-index: 5;
         }
@@ -152,259 +152,230 @@
 
         @keyframes floating { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-30px) rotate(3deg); } }
 
-        .brand-seal {
-            position: absolute; bottom: 8%; right: 5%;
-            width: 140px; height: 140px;
-            animation: rotateSeal 30s linear infinite;
-            z-index: 15; opacity: 0.8;
-        }
-        @keyframes rotateSeal { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
         /* Buttons */
         .btn {
             display: inline-flex; align-items: center; justify-content: center;
-            padding: 20px 45px; border-radius: 2px;
-            text-decoration: none; font-weight: 800; font-size: 0.8rem;
+            padding: 18px 40px; border-radius: 2px;
+            text-decoration: none; font-weight: 800; font-size: 0.75rem;
             text-transform: uppercase; letter-spacing: 3px;
             transition: var(--transition); border: none;
-            position: relative; overflow: hidden;
+            cursor: pointer;
         }
         .btn-primary { background: var(--amber-goldneez); color: var(--black-goldneez); }
         .btn-primary:hover { background: var(--black-goldneez); color: var(--white-goldneez); transform: translateY(-5px); }
         .btn-outline { border: 1px solid var(--border-color); color: var(--text-dark); margin-left: 15px; }
         .btn-outline:hover { border-color: var(--amber-goldneez); color: var(--amber-goldneez); }
 
-        /* Products */
-        .products-section { padding: 140px 10%; background: var(--white-goldneez); }
-        .section-title { margin-bottom: 100px; }
-        .section-title h2 { font-family: var(--font-display); font-size: 4rem; font-weight: 400; line-height: 1.1; }
-        .section-title p { color: var(--text-muted); margin-top: 20px; font-size: 1.1rem; }
+        /* Sensory Profile Section */
+        .sensory-section { padding: 120px 10%; background: var(--white-goldneez); }
+        .sensory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .sensory-bars { display: flex; flex-direction: column; gap: 30px; }
+        .bar-container { position: relative; }
+        .bar-label { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .bar-bg { height: 4px; background: var(--border-color); width: 100%; border-radius: 10px; position: relative; }
+        .bar-fill { height: 100%; background: var(--amber-goldneez); border-radius: 10px; transition: width 1.5s cubic-bezier(0.19, 1, 0.22, 1); width: 0; }
 
-        .carousel-track { display: flex; gap: 40px; transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
-        .product-card {
-            min-width: calc(33.333% - 27px);
-            background: var(--white-goldneez);
-            padding: 60px 40px; border-radius: 4px;
-            text-align: center; position: relative;
-            transition: var(--transition); border: 1px solid transparent;
+        /* Process Section */
+        .process-section { padding: 120px 10%; background: var(--gray-goldneez); text-align: center; }
+        .process-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 80px; }
+        .process-card { padding: 50px 30px; background: var(--white-goldneez); border-radius: 4px; transition: var(--transition); }
+        .process-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-lg); }
+        .process-card i { font-size: 2.5rem; color: var(--amber-goldneez); margin-bottom: 25px; }
+        .process-card h4 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 15px; }
+        .process-card p { font-size: 0.95rem; color: var(--text-muted); font-weight: 300; }
+
+        /* Membership Section */
+        .membership-section { 
+            padding: 120px 10%; background: var(--black-goldneez); color: white; 
+            text-align: center; position: relative; overflow: hidden;
         }
-        .product-card:hover { transform: translateY(-20px); border-color: var(--amber-goldneez); box-shadow: var(--shadow-lg); }
-        .product-card img { width: 100%; height: 380px; object-fit: contain; margin-bottom: 40px; transition: var(--transition); }
-        .product-card:hover img { transform: scale(1.08); }
-        
-        .product-card h3 { font-family: var(--font-display); font-size: 2.2rem; margin-bottom: 12px; }
-        .product-card .price { color: var(--amber-goldneez); font-weight: 800; font-size: 1.4rem; margin-bottom: 35px; display: block; }
-        
-        .badge-best {
-            position: absolute; top: 30px; right: -35px;
-            background: var(--amber-goldneez); color: var(--black-goldneez);
-            font-size: 0.65rem; font-weight: 900; padding: 6px 45px;
-            transform: rotate(45deg); letter-spacing: 2px;
+        .membership-section::before {
+            content: ""; position: absolute; top: -50%; left: -20%; width: 100%; height: 200%;
+            background: radial-gradient(circle, rgba(255,191,0,0.1) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        /* Controls */
-        .controls { display: flex; gap: 20px; margin-top: 60px; justify-content: flex-end; }
+        /* Controls Fixed */
+        .controls { display: flex; gap: 15px; margin-top: 50px; justify-content: center; }
         .control-btn { 
-            width: 65px; height: 65px; border-radius: 50%; border: 1px solid var(--border-color);
-            background: transparent; cursor: pointer; transition: var(--transition);
-            display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+            width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--border-color);
+            background: transparent; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; font-size: 1rem;
         }
         .control-btn:hover { background: var(--amber-goldneez); border-color: var(--amber-goldneez); color: var(--black-goldneez); }
+        .control-btn:active { transform: scale(0.9); }
 
-        /* FAQ */
-        .faq-item { border-bottom: 1px solid var(--border-color); padding: 40px 0; }
-        .faq-question { 
-            display: flex; justify-content: space-between; align-items: center; 
-            font-weight: 600; font-size: 1.3rem; cursor: pointer;
+        /* Products Carousel */
+        .products-section { padding: 120px 10%; background: var(--white-goldneez); }
+        .carousel-track { display: flex; gap: 30px; transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); }
+        .product-card {
+            min-width: calc(33.333% - 20px);
+            background: var(--white-goldneez);
+            padding: 50px 30px; border-radius: 4px; border: 1px solid var(--border-color);
+            text-align: center; position: relative; transition: var(--transition);
         }
-        .faq-answer { max-height: 0; overflow: hidden; transition: var(--transition); color: var(--text-muted); font-size: 1.1rem; }
-        .faq-item.active .faq-answer { max-height: 300px; margin-top: 25px; }
+        .product-card:hover { transform: translateY(-10px); border-color: var(--amber-goldneez); }
+        .product-card img { width: 100%; height: 350px; object-fit: contain; margin-bottom: 30px; }
 
-        /* Modal */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-            backdrop-filter: blur(15px); display: none; z-index: 5000;
-            align-items: center; justify-content: center; padding: 20px;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: var(--white-goldneez); width: 100%; max-width: 1000px;
-            padding: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 70px;
-            border-radius: 2px; position: relative;
-            animation: modalSlide 0.8s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-        @keyframes modalSlide { from { opacity: 0; transform: scale(0.9) translateY(40px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        .close-modal { position: absolute; top: 35px; right: 35px; font-size: 2rem; cursor: pointer; opacity: 0.5; transition: 0.3s; }
-        .close-modal:hover { opacity: 1; }
-
-        /* Magnetic Area */
-        .magnetic { display: inline-block; }
-
-        /* WA Bubble */
+        /* WA Bubble Fixed */
         .wa-bubble {
-            position: fixed; bottom: 40px; right: 40px; width: 70px; height: 70px;
+            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
             background: #25D366; color: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-size: 35px;
-            box-shadow: 0 20px 40px rgba(37, 211, 102, 0.4); z-index: 2000;
-            transition: var(--transition);
+            display: flex; align-items: center; justify-content: center; font-size: 30px;
+            box-shadow: 0 10px 30px rgba(37, 211, 102, 0.3); z-index: 5000;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .wa-bubble:hover { transform: scale(1.1) translateY(-10px); }
+        .wa-bubble:hover { transform: scale(1.1) rotate(5deg); }
 
         /* Reveal */
         .reveal { opacity: 0; transform: translateY(40px); transition: var(--transition); }
         .reveal.active { opacity: 1; transform: translateY(0); }
+        .reveal.active .bar-fill { width: var(--target-width); }
 
         @media (max-width: 992px) {
-            .hero { text-align: center; justify-content: center; }
+            .hero { text-align: center; padding-top: 100px; }
             .hero-image { display: none; }
-            .product-card { min-width: 90vw; }
-            .modal-content { grid-template-columns: 1fr; padding: 50px 30px; }
-            header { padding: 20px 8%; }
+            .sensory-grid, .process-grid { grid-template-columns: 1fr; }
+            .product-card { min-width: 85vw; }
             nav { display: none; }
         }
     </style>
 </head>
 <body>
-    <div id="scroll-progress" role="progressbar" aria-label="Progreso de lectura"></div>
+    <div id="scroll-progress"></div>
     <div id="cursor-dot"></div>
     <div id="cursor-outline"></div>
 
-    <header id="header" role="banner">
-        <a href="#home" class="logo" aria-label="Goldneez Inicio">
-            <img src="logo.png" alt="Logo Goldneez">
-        </a>
-        <nav role="navigation" aria-label="Navegación principal">
-            <a href="#productos">Colección</a>
-            <a href="#nosotros">Nosotros</a>
-            <a href="#faq">Ayuda</a>
-            <div class="magnetic">
-                <a href="https://wa.me/573160658659" target="_blank" class="btn btn-primary" style="padding: 14px 35px; font-size: 0.75rem;">Tienda</a>
-            </div>
+    <header id="header">
+        <a href="#home" class="logo"><img src="logo.png" alt="Goldneez"></a>
+        <nav>
+            <a href="#productos">Catálogo</a>
+            <a href="#sensory">Perfil</a>
+            <a href="#process">Proceso</a>
+            <a href="https://wa.me/573160658659" target="_blank" class="btn btn-primary" style="padding: 12px 30px;">Tienda</a>
         </nav>
     </header>
 
-    <main role="main">
+    <main>
         <section class="hero" id="home">
             <div class="hero-content reveal">
-                <span style="text-transform: uppercase; letter-spacing: 6px; font-size: 0.8rem; font-weight: 800; color: var(--amber-goldneez); margin-bottom: 25px; display: block;">Reserva de Especialidad</span>
+                <span style="text-transform: uppercase; letter-spacing: 5px; font-size: 0.75rem; font-weight: 800; color: var(--amber-goldneez); margin-bottom: 20px; display: block;">Reserva de Especialidad</span>
                 <h1>Recuerdos <span>Dorados</span></h1>
-                <p>Procesamos el alma de las montañas de Santander en cada grano. Un café de especialidad con 86+ puntos SCA, cultivado para paladares que exigen trascendencia.</p>
+                <p>El estándar de oro en café colombiano. Un puntaje SCA de 86+ directo desde Toledo hasta tu mesa.</p>
                 <div style="display: flex; gap: 20px;">
-                    <div class="magnetic"><a href="#productos" class="btn btn-primary">Catálogo</a></div>
-                    <div class="magnetic"><a href="#nosotros" class="btn btn-outline">Historia</a></div>
+                    <a href="#productos" class="btn btn-primary">Catálogo</a>
+                    <a href="#sensory" class="btn btn-outline">Experiencia</a>
                 </div>
             </div>
-            <div class="hero-image" aria-hidden="true">
-                <img src="assets/original_bag.jpeg" alt="Empaque de café Goldneez Original">
-                <svg class="brand-seal" viewBox="0 0 100 100">
-                    <path id="sealPath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="transparent"/>
-                    <text font-family="Inter" font-size="8.8" font-weight="800" fill="#FFBF00">
-                        <textPath xlink:href="#sealPath">• ESPECIALIDAD • 1900 MSNM • TOLEDO SANTANDER • SCA 86+</textPath>
-                    </text>
-                </svg>
+            <div class="hero-image">
+                <img src="assets/original_bag.jpeg" alt="Goldneez Original">
             </div>
         </section>
 
-        <section id="productos" class="products-section" aria-labelledby="products-heading">
-            <div class="section-title reveal">
-                <h2 id="products-heading">La Colección Original</h2>
-                <p>Arte líquido en tres presentaciones icónicas.</p>
+        <!-- NEW SECTION 1: Sensory Profile -->
+        <section id="sensory" class="sensory-section">
+            <div class="sensory-grid">
+                <div class="reveal">
+                    <h2 style="font-family: var(--font-display); font-size: 3.5rem; margin-bottom: 25px;">Perfil de Taza <span>Certificado</span></h2>
+                    <p style="color: var(--text-muted); font-weight: 300; margin-bottom: 40px;">Nuestro café Excelso se distingue por un equilibrio perfecto. Notas de panela, chocolate y un cuerpo sedoso que perdura en el paladar.</p>
+                    <div class="sensory-bars">
+                        <div class="bar-container">
+                            <div class="bar-label"><span>Cuerpo</span><span>90%</span></div>
+                            <div class="bar-bg"><div class="bar-fill" style="--target-width: 90%;"></div></div>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-label"><span>Aroma</span><span>95%</span></div>
+                            <div class="bar-bg"><div class="bar-fill" style="--target-width: 95%;"></div></div>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-label"><span>Acidez Cítrica</span><span>75%</span></div>
+                            <div class="bar-bg"><div class="bar-fill" style="--target-width: 75%;"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="reveal" style="text-align: right;">
+                    <img src="https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&q=80&w=1500" alt="Sensory" style="width: 80%; border-radius: 4px; box-shadow: var(--shadow-lg);">
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW SECTION 2: Master Process -->
+        <section id="process" class="process-section">
+            <div class="reveal">
+                <h2 style="font-family: var(--font-display); font-size: 3.5rem;">El Proceso Maestro</h2>
+                <p style="color: var(--text-muted); margin-top: 15px;">Trazabilidad absoluta desde la finca hasta tu taza.</p>
+            </div>
+            <div class="process-grid">
+                <div class="process-card reveal">
+                    <i class="fas fa-seedling"></i>
+                    <h4>Cosecha Selectiva</h4>
+                    <p>Recolección manual de granos en su punto exacto de maduración a 1,900 msnm.</p>
+                </div>
+                <div class="process-card reveal" style="transition-delay: 0.1s;">
+                    <i class="fas fa-fire"></i>
+                    <h4>Tostión de Precisión</h4>
+                    <p>Curva de tostado artesanal que resalta los aceites y aromas naturales del grano.</p>
+                </div>
+                <div class="process-card reveal" style="transition-delay: 0.2s;">
+                    <i class="fas fa-mug-hot"></i>
+                    <h4>Control de Calidad</h4>
+                    <p>Catación certificada SCA para asegurar la excelencia en cada lote que despachamos.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="productos" class="products-section">
+            <div class="reveal" style="text-align: center; margin-bottom: 80px;">
+                <h2 style="font-family: var(--font-display); font-size: 3.5rem;">La Colección</h2>
             </div>
             <div class="carousel-container" style="overflow: hidden;">
                 <div class="carousel-track" id="product-track">
                     <article class="product-card reveal">
-                        <img src="assets/PROTO.png" alt="Café Goldneez Excelso 125 gramos">
-                        <div class="product-rating" aria-label="Calificación 5 de 5 estrellas">
-                            <i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i>
-                        </div>
+                        <img src="assets/PROTO.png" alt="Goldneez 125g">
                         <h3>Excelso 125g</h3>
                         <span class="price">$15.000</span>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-outline btn-detail" data-size="125g" aria-label="Ver detalles de Excelso 125g" style="flex:1; padding: 15px; font-size: 0.7rem;">Info</button>
-                            <a href="https://wa.me/573160658659?text=Hola,%20me%20interesa%20el%20café%20de%20125g" class="btn btn-primary" aria-label="Comprar Excelso 125g" style="flex:2; padding: 15px; font-size: 0.7rem;">Comprar</a>
-                        </div>
+                        <a href="https://wa.me/573160658659" class="btn btn-primary" style="width: 100%;">Comprar</a>
                     </article>
                     <article class="product-card reveal" style="transition-delay: 0.1s;">
-                        <div class="badge-best">PREMIUM</div>
-                        <img src="assets/PROTO.png" alt="Café Goldneez Excelso 500 gramos">
-                        <div class="product-rating" aria-label="Calificación 5 de 5 estrellas">
-                            <i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i>
-                        </div>
+                        <img src="assets/PROTO.png" alt="Goldneez 500g">
                         <h3>Excelso 500g</h3>
                         <span class="price">$46.000</span>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-outline btn-detail" data-size="500g" aria-label="Ver detalles de Excelso 500g" style="flex:1; padding: 15px; font-size: 0.7rem;">Info</button>
-                            <a href="https://wa.me/573160658659?text=Hola,%20me%20interesa%20el%20café%20de%20500g" class="btn btn-primary" aria-label="Comprar Excelso 500g" style="flex:2; padding: 15px; font-size: 0.7rem;">Comprar</a>
-                        </div>
+                        <a href="https://wa.me/573160658659" class="btn btn-primary" style="width: 100%;">Comprar</a>
                     </article>
                     <article class="product-card reveal" style="transition-delay: 0.2s;">
-                        <img src="assets/PROTO.png" alt="Café Goldneez Excelso 1000 gramos">
-                        <div class="product-rating" aria-label="Calificación 5 de 5 estrellas">
-                            <i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i><i class="fas fa-star" aria-hidden="true"></i>
-                        </div>
+                        <img src="assets/PROTO.png" alt="Goldneez 1kg">
                         <h3>Excelso 1kg</h3>
                         <span class="price">$80.000</span>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-outline btn-detail" data-size="1000g" aria-label="Ver detalles de Excelso 1kg" style="flex:1; padding: 15px; font-size: 0.7rem;">Info</button>
-                            <a href="https://wa.me/573160658659?text=Hola,%20me%20interesa%20el%20café%20de%201kg" class="btn btn-primary" aria-label="Comprar Excelso 1kg" style="flex:2; padding: 15px; font-size: 0.7rem;">Comprar</a>
-                        </div>
+                        <a href="https://wa.me/573160658659" class="btn btn-primary" style="width: 100%;">Comprar</a>
                     </article>
                 </div>
             </div>
-            <div class="controls">
-                <button class="control-btn" id="prev-btn" aria-label="Producto anterior"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
-                <button class="control-btn" id="next-btn" aria-label="Siguiente producto"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+            <div class="controls reveal">
+                <button class="control-btn" id="prev-btn" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
+                <button class="control-btn" id="next-btn" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></button>
             </div>
         </section>
 
-        <section id="faq" class="products-section" style="background: var(--gray-goldneez);" aria-labelledby="faq-heading">
-            <div class="section-title reveal">
-                <h2 id="faq-heading">Consultas Frecuentes</h2>
-            </div>
-            <div class="reveal" style="max-width: 900px; margin: 0 auto;">
-                <div class="faq-item">
-                    <div class="faq-question" role="button" aria-expanded="false">Envíos a todo el país <i class="fas fa-plus" aria-hidden="true"></i></div>
-                    <p class="faq-answer">Despachamos desde Girón hacia cualquier destino en Colombia. Tiempos de entrega entre 2 y 4 días hábiles.</p>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question" role="button" aria-expanded="false">Garantía de Origen <i class="fas fa-plus" aria-hidden="true"></i></div>
-                    <p class="faq-answer">Cada bolsa cuenta con trazabilidad directa desde la finca en Toledo, garantizando un puntaje SCA certificado de 86+.</p>
-                </div>
+        <!-- NEW SECTION 3: Golden Membership -->
+        <section class="membership-section">
+            <div class="reveal" style="max-width: 800px; margin: 0 auto;">
+                <h2 style="font-family: var(--font-display); font-size: 4rem; margin-bottom: 30px;">Membresía <span>Dorada</span></h2>
+                <p style="font-size: 1.2rem; opacity: 0.7; margin-bottom: 50px;">Suscríbete y recibe tu dosis mensual de Goldneez con beneficios exclusivos y envíos programados.</p>
+                <a href="https://wa.me/573160658659?text=Quiero%20información%20sobre%20la%20membresía%20dorada" class="btn btn-primary" style="padding: 22px 60px; font-size: 1rem;">Unirme al Club</a>
             </div>
         </section>
     </main>
 
-    <footer role="contentinfo" style="background: var(--black-goldneez); color: white; padding: 120px 10% 60px; text-align: center;">
-        <img src="logo.png" alt="Logo Goldneez" style="height: 55px; filter: brightness(0) invert(1); margin-bottom: 40px;">
-        <p style="opacity: 0.6; max-width: 500px; margin: 0 auto 50px; font-weight: 300;">Elevando el ritual del café a una forma de arte. Girón, Santander, Colombia.</p>
-        <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 50px;">
-            <a href="#" aria-label="Instagram Goldneez" style="color: white; font-size: 1.8rem;"><i class="fab fa-instagram"></i></a>
-            <a href="#" aria-label="Facebook Goldneez" style="color: white; font-size: 1.8rem;"><i class="fab fa-facebook"></i></a>
+    <footer style="background: var(--black-goldneez); color: white; padding: 100px 10% 40px; text-align: center;">
+        <img src="logo.png" alt="Logo" style="height: 50px; filter: brightness(0) invert(1); margin-bottom: 40px;">
+        <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 40px;">
+            <a href="#" style="color: white; font-size: 1.5rem;"><i class="fab fa-instagram"></i></a>
+            <a href="#" style="color: white; font-size: 1.5rem;"><i class="fab fa-facebook"></i></a>
         </div>
-        <p style="font-size: 0.8rem; opacity: 0.3;">&copy; 2026 Goldneez. Specialty Grade Coffee.</p>
+        <p style="font-size: 0.8rem; opacity: 0.4;">&copy; 2026 Goldneez. Specialty Grade Coffee. Girón, Santander.</p>
     </footer>
 
-    <!-- Modal Accessibility -->
-    <div class="modal" id="product-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="modal-content">
-            <span class="close-modal" aria-label="Cerrar ventana">&times;</span>
-            <div style="display: flex; align-items: center; justify-content: center;">
-                <img src="assets/PROTO.png" alt="Vista detallada del producto" style="width: 100%; border-radius: 4px;">
-            </div>
-            <div>
-                <h3 id="modal-title" style="font-family: var(--font-display); font-size: 3rem; margin-bottom: 25px;">Especificaciones</h3>
-                <p id="modal-desc" style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 40px; font-weight: 300;">Notas de cata: Chocolate negro, frutos rojos y un cuerpo sedoso incomparable.</p>
-                <div style="border-top: 1px solid var(--border-color); padding-top: 30px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><strong>Altitud</strong> <span>1,900 msnm</span></div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;"><strong>Variedad</strong> <span>Caturra / Colombia</span></div>
-                    <div style="display: flex; justify-content: space-between;"><strong>Proceso</strong> <span>Lavado Artesanal</span></div>
-                </div>
-                <a href="https://wa.me/573160658659" class="btn btn-primary" style="width: 100%; margin-top: 50px;">Solicitar por WhatsApp</a>
-            </div>
-        </div>
-    </div>
-
-    <a href="https://wa.me/573160658659" class="wa-bubble" target="_blank" aria-label="Chat con Goldneez por WhatsApp"><i class="fab fa-whatsapp"></i></a>
+    <a href="https://wa.me/573160658659" class="wa-bubble" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
 
     <script>
         // Scroll Progress
@@ -415,7 +386,7 @@
             document.getElementById("scroll-progress").style.width = scrolled + "%";
         });
 
-        // Custom Cursor with Physics
+        // Custom Cursor
         const dot = document.getElementById('cursor-dot');
         const outline = document.getElementById('cursor-outline');
         let initialized = false;
@@ -424,24 +395,7 @@
             if (!initialized) { document.body.classList.add('cursor-active'); initialized = true; }
             dot.style.left = e.clientX + 'px';
             dot.style.top = e.clientY + 'px';
-            
-            outline.animate({
-                left: e.clientX + 'px',
-                top: e.clientY + 'px'
-            }, { duration: 600, fill: "forwards" });
-        });
-
-        // Magnetic Effect
-        document.querySelectorAll('.magnetic').forEach(el => {
-            el.addEventListener('mousemove', (e) => {
-                const pos = el.getBoundingClientRect();
-                const x = e.clientX - pos.left - pos.width / 2;
-                const y = e.clientY - pos.top - pos.height / 2;
-                el.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
-            });
-            el.addEventListener('mouseleave', () => {
-                el.style.transform = `translate(0, 0)`;
-            });
+            outline.animate({ left: e.clientX + 'px', top: e.clientY + 'px' }, { duration: 600, fill: "forwards" });
         });
 
         // Reveal Observer
@@ -455,8 +409,8 @@
         let curIdx = 0;
         const updateCarousel = () => {
             const cards = document.querySelectorAll('.product-card');
-            const gap = 40;
-            const cardWidth = cards[0].offsetWidth + gap;
+            if (cards.length === 0) return;
+            const cardWidth = cards[0].offsetWidth + 30;
             const visible = window.innerWidth > 992 ? 3 : 1;
             const max = cards.length - visible;
             if (curIdx > max) curIdx = 0; if (curIdx < 0) curIdx = max;
@@ -465,33 +419,13 @@
         document.getElementById('next-btn').addEventListener('click', () => { curIdx++; updateCarousel(); });
         document.getElementById('prev-btn').addEventListener('click', () => { curIdx--; updateCarousel(); });
         window.addEventListener('resize', updateCarousel);
-
-        // Header Scrolled
+        
+        // Header
         window.addEventListener('scroll', () => {
-            const header = document.getElementById('header');
-            if (window.scrollY > 50) header.classList.add('scrolled');
-            else header.classList.remove('scrolled');
+            const h = document.getElementById('header');
+            if (window.scrollY > 50) h.classList.add('scrolled');
+            else h.classList.remove('scrolled');
         });
-
-        // FAQ
-        document.querySelectorAll('.faq-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const q = item.querySelector('.faq-question');
-                const expanded = q.getAttribute('aria-expanded') === 'true';
-                q.setAttribute('aria-expanded', !expanded);
-                item.classList.toggle('active');
-            });
-        });
-
-        // Modal & Keyboard
-        const modal = document.getElementById('product-modal');
-        document.querySelectorAll('.btn-detail').forEach(btn => {
-            btn.addEventListener('click', () => modal.classList.add('active'));
-        });
-        const closeModal = () => modal.classList.remove('active');
-        document.querySelector('.close-modal').addEventListener('click', closeModal);
-        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-        window.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
     </script>
 </body>
 </html>
