@@ -271,3 +271,28 @@ export async function invokeAgentAction(
 
     return { success: true, ...result };
 }
+
+/**
+ * Retorna un agente de voz configurado para uso público (landing page).
+ */
+export async function getPublicVoiceAgent() {
+    try {
+        const agent = await prisma.aIAgent.findFirst({
+            where: {
+                isActive: true,
+                isInboxAgent: true
+            },
+            select: { id: true, name: true }
+        }) || await prisma.aIAgent.findFirst({
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, name: true }
+        });
+
+        if (!agent) return null;
+        return { success: true, agent };
+    } catch (error) {
+        console.error("Error fetching public voice agent:", error);
+        return null;
+    }
+}

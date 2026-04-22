@@ -188,10 +188,10 @@ export function VoiceWidget({ agentId, agentName = "Agente de Voz", onClose }: P
     };
 
     return (
-        <div className="relative w-80 bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-2xl flex flex-col items-center">
+        <div className="relative w-80 bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center ring-1 ring-white/10 backdrop-blur-xl">
             {onClose && (
-                <button onClick={onClose} className="absolute top-3 right-3 text-slate-500 hover:text-white transition-colors">
-                    <X className="w-4 h-4" />
+                <button onClick={onClose} className="absolute top-3 right-3 p-1.5 bg-slate-800/50 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-all">
+                    <X className="w-3.5 h-3.5" />
                 </button>
             )}
             
