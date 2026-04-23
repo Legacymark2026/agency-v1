@@ -61,18 +61,19 @@ export async function POST(req: Request) {
         console.log(`[Billing] 🔴 Subscription ${subscription.id} canceled. Account frozen to free tier.`);
         break;
       }
-      case "invoice.payment_failed": {
+case "invoice.payment_failed": {
           const invoice = event.data.object as Stripe.Invoice;
-          if ((invoice as any).subscription) {
+          const subId = (invoice as any).subscription_details?.subscription ?? (invoice as any).subscription;
+          if (subId) {
             await prisma.company.updateMany({
-                where: { stripeSubscriptionId: (invoice as any).subscription as string },
+                where: { stripeSubscriptionId: subId as string },
                 data: {
                    subscriptionStatus: "past_due"
                 }
              });
           }
           break;
-      }
+        }
       default:
         console.log(`[Stripe Webhook] Unhandled event type ${event.type}`);
     }

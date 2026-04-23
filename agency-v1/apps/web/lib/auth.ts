@@ -55,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ...authConfig.callbacks,
         async signIn({ user, account }) {
             logger.auth("signIn callback triggered");
-            logger.auth("Provider:", account?.provider);
+            logger.auth("Provider:", { provider: account?.provider });
 
             let ip = "Unknown IP";
             let userAgent = "Unknown Device";
@@ -69,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             // Para providers OAuth, guardar el account en BD
             if (account && account.provider !== "credentials") {
-                logger.auth("Processing OAuth provider:", account.provider);
+                logger.auth("Processing OAuth provider:", { provider: account.provider });
 
                 try {
                     // Buscar usuario existente
@@ -100,7 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 role: UserRole.CLIENT_USER, // = 'client_user'
                             },
                         });
-                        logger.auth("User created:", dbUser.id);
+                        logger.auth("User created:", { userId: dbUser.id });
                     }
 
                     // Verificar si la cuenta OAuth ya existe
@@ -144,7 +144,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     });
 
                 } catch (error) {
-                    logger.error("Error saving OAuth account:", error);
+                    logger.error("Error saving OAuth account:", { error });
                     return false;
                 }
             } else if (account?.provider === "credentials" && user?.id) {
@@ -190,7 +190,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         });
 
                         if (dbAccount?.user) {
-                            logger.auth("JWT: Resolved via linked OAuth account →", dbAccount.user.email);
+                            logger.auth("JWT: Resolved via linked OAuth account →", { email: dbAccount.user.email });
                             // B-2: Cargar companyId y permissions desde CompanyUser
                             const userWithMeta = await prisma.user.findUnique({
                                 where: { id: dbAccount.user.id },
@@ -257,7 +257,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         token.role = fallbackRole as UserRole;
                     }
                 } catch (error) {
-                    logger.error("JWT callback error:", error);
+                    logger.error("JWT callback error:", { error });
                     token.id = user.id;
                 }
             } else {
@@ -298,7 +298,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         }
                     } catch (e) {
                         // Silently fail — keep existing token data
-                        logger.error("JWT role refresh error:", e);
+                        logger.error("JWT role refresh error:", { error: e });
                     }
                 }
             }

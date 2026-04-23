@@ -269,13 +269,15 @@ export async function createProject(data: ProjectFormData) {
     const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
 
     try {
-        await prisma.project.create({ 
+        const { categoryId, ...restData } = projectData;
+        await prisma.project.create({
             data: {
-                ...projectData,
+                ...restData,
                 scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
-            } as any
+                ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+            }
         });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
