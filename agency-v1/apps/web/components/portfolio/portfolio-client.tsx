@@ -39,6 +39,30 @@ function buildProjectAssets(project: any): MediaAsset[] {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Helper: build client-specific SocialProfiles for a project
+// ─────────────────────────────────────────────────────────────
+function buildClientProfiles(project: any): SocialProfile[] {
+    const clientName: string = project.client || "Cliente";
+    const clientLogo: string | null = project.clientLogo || null;
+    // Slug-based username (lowercase, no spaces)
+    const username = clientName.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+
+    const base = {
+        displayName: clientName,
+        username,
+        avatarUrl: clientLogo,
+        followersCount: 0,
+        followingCount: 0,
+    };
+
+    return [
+        { ...base, platform: "instagram" },
+        { ...base, platform: "tiktok" },
+        { ...base, platform: "facebook" },
+    ];
+}
+
+// ─────────────────────────────────────────────────────────────
 // ProjectCard — with inline Grid Visualizer
 // ─────────────────────────────────────────────────────────────
 const ProjectCard = ({
@@ -256,7 +280,7 @@ const ProjectCard = ({
                             </div>
                             <GridEditor
                                 assets={projectAssets}
-                                profiles={socialProfiles}
+                                profiles={buildClientProfiles(project)}
                                 onOrderChange={() => {}}
                                 onRemove={() => {}}
                                 onEdit={() => {}}
