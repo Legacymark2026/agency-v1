@@ -1,5 +1,13 @@
-npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
+npm warn config ignoring workspace config at /app/agency-v1/apps/web/.npmrc
 
 > web@0.1.0 type-check
 > tsc --noEmit
 
+sh: 1: tsc: not found
+npm error Lifecycle script `type-check` failed with error:
+npm error code 127
+npm error path /app/agency-v1/apps/web
+npm error workspace web@0.1.0
+npm error location /app/agency-v1/apps/web
+npm error command failed
+npm error command sh -c tsc --noEmit
