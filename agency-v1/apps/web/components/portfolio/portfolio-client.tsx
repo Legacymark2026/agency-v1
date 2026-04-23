@@ -134,7 +134,7 @@ const ProjectCard = ({
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: (index % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
             viewport={{ once: true, margin: "-40px" }}
-            className={`group relative flex flex-col bg-slate-900/80 border ${accent} rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500`}
+            className={`group relative flex flex-col bg-slate-900/80 border ${accent} rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500`}
         >
             {/* ── Cover Image Area ── */}
             <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-950 flex-shrink-0">
@@ -259,7 +259,6 @@ const ProjectCard = ({
                 )}
             </div>
 
-            {/* ── Inline Grid Visualizer ── */}
             <AnimatePresence>
                 {showVisualizer && hasMedia && (
                     <motion.div
@@ -268,7 +267,8 @@ const ProjectCard = ({
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        className="overflow-hidden border-t border-teal-500/20"
+                        style={{ overflowX: "hidden" }}
+                        className="border-t border-teal-500/20"
                     >
                         <div className="p-4 bg-slate-950/80">
                             {/* Mini section header */}

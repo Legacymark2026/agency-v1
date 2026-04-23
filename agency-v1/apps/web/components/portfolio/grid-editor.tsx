@@ -51,7 +51,9 @@ function ProfileAvatar({ profile, size = 72, ring = true }: { profile: SocialPro
         <div className={`${sizeClass} rounded-full ${ring ? "bg-gradient-to-tr from-yellow-400 via-pink-500 to-fuchsia-600 p-[2.5px]" : "border-2 border-white"} flex-shrink-0`}>
             <div className={`w-full h-full bg-slate-900 rounded-full border-2 border-black flex items-center justify-center overflow-hidden text-2xl`}>
                 {profile.avatarUrl ? (
-                    <Image src={profile.avatarUrl} alt={profile.displayName} fill className="object-cover rounded-full" unoptimized />
+                    <div className="relative w-full h-full">
+                        <Image src={profile.avatarUrl} alt={profile.displayName} fill className="object-cover rounded-full" unoptimized />
+                    </div>
                 ) : (
                     <span>{profile.emoji || "😎"}</span>
                 )}
