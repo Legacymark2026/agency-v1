@@ -1,10 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
     Code2, Layers, Zap, Layout, Database, Terminal, Cpu,
-    Box, Monitor, PenTool, Trophy, Shield, Brain, ArrowUpRight, FolderOpen, Video, FileText, Image as ImageIcon
+    Box, Monitor, PenTool, Trophy, Shield, Brain, ArrowUpRight, FolderOpen, Smartphone, ChevronDown, ChevronUp
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,15 +13,45 @@ import { GridEditor, MediaAsset, SocialProfile } from "@/components/portfolio/gr
 
 // --- ULTRA-PREMIUM, HIGH PERFORMANCE VISUAL FX COMPONENTS ---
 
-const StatsCounter = ({ value, label }: { value: string, label: string }) => (
-    <div className="bg-slate-900/50 backdrop-blur-md rounded-sm p-4 border border-slate-800 hover:border-teal-500/30 transition-all duration-300 group">
-        <div className="text-xs text-teal-500/70 font-mono uppercase tracking-widest mb-2 group-hover:text-teal-400 transition-colors">{label}</div>
-        <div className="text-2xl font-black text-white tracking-tight">{value}</div>
-    </div>
+const CleanTitleEffect = ({ text }: { text: string }) => (
+    <span className="inline-block relative">
+        <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-300 to-teal-500">{text}</span>
+    </span>
 );
 
-// Premium Portfolio Card — well-organized individual card per project
-const ProjectCard = ({ project, index }: { project: any; index: number }) => {
+// ─────────────────────────────────────────────────────────────
+// Helper: build MediaAsset[] from a single project
+// ─────────────────────────────────────────────────────────────
+function buildProjectAssets(project: any): MediaAsset[] {
+    const assets: MediaAsset[] = [];
+    if (project.coverImage) {
+        assets.push({ id: `${project.id}-cover`, url: project.coverImage, type: "image", order: 0 });
+    }
+    (project.gallery || []).forEach((g: any, gi: number) => {
+        assets.push({
+            id: `${project.id}-g-${gi}`,
+            url: typeof g === "string" ? g : g.url,
+            type: typeof g === "object" && g.type === "video" ? "video" : "image",
+            order: gi + 1,
+        });
+    });
+    return assets.filter((a) => a.url);
+}
+
+// ─────────────────────────────────────────────────────────────
+// ProjectCard — with inline Grid Visualizer
+// ─────────────────────────────────────────────────────────────
+const ProjectCard = ({
+    project,
+    index,
+    socialProfiles,
+}: {
+    project: any;
+    index: number;
+    socialProfiles: SocialProfile[];
+}) => {
+    const [showVisualizer, setShowVisualizer] = useState(false);
+
     const gradients = [
         "from-teal-500/20 via-emerald-900/10 to-transparent",
         "from-purple-500/20 via-indigo-900/10 to-transparent",
@@ -50,9 +79,9 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
     const glow = glowColors[idx];
 
     const iconMap: Record<string, any> = {
-        'react': Code2, 'nextjs': Layout, 'database': Database, 'backend': Terminal,
-        'ai': Brain, 'design': PenTool, 'ecommerce': Box, 'security': Shield,
-        'node': Terminal, 'typescript': Code2, 'vue': Layers,
+        react: Code2, nextjs: Layout, database: Database, backend: Terminal,
+        ai: Brain, design: PenTool, ecommerce: Box, security: Shield,
+        node: Terminal, typescript: Code2, vue: Layers,
     };
     const displayStack = (project.techStack || []).slice(0, 5).map((tech: string) => ({
         Icon: iconMap[tech.toLowerCase()] || Cpu,
@@ -67,9 +96,13 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
     let coverAsset = project.coverImage;
     if (!coverAsset && project.gallery && project.gallery.length > 0) {
         const firstGallery = project.gallery[0];
-        coverAsset = typeof firstGallery === 'string' ? firstGallery : firstGallery.url;
+        coverAsset = typeof firstGallery === "string" ? firstGallery : firstGallery.url;
     }
     const galleryCount = (project.gallery || []).length;
+
+    // Assets for this specific project
+    const projectAssets = buildProjectAssets(project);
+    const hasMedia = projectAssets.length > 0;
 
     return (
         <motion.div
@@ -77,7 +110,7 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: (index % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
             viewport={{ once: true, margin: "-40px" }}
-            className={`group relative flex flex-col bg-slate-900/80 border ${accent} rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1`}
+            className={`group relative flex flex-col bg-slate-900/80 border ${accent} rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500`}
         >
             {/* ── Cover Image Area ── */}
             <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-950 flex-shrink-0">
@@ -112,18 +145,18 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
                 {/* Top-right: Status */}
                 <div className="absolute top-3 right-3">
                     <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-widest backdrop-blur-md ${
-                        project.status === 'published'
-                            ? 'bg-teal-500/20 border border-teal-500/40 text-teal-400'
-                            : 'bg-slate-800/80 border border-slate-700 text-slate-400'
+                        project.status === "published"
+                            ? "bg-teal-500/20 border border-teal-500/40 text-teal-400"
+                            : "bg-slate-800/80 border border-slate-700 text-slate-400"
                     }`}>
-                        {project.status === 'published' ? '● Live' : project.status}
+                        {project.status === "published" ? "● Live" : project.status}
                     </span>
                 </div>
 
                 {/* Bottom-right: Gallery count */}
                 {galleryCount > 0 && (
                     <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-md bg-slate-950/80 border border-slate-700/80 text-[10px] text-slate-400 backdrop-blur-md font-mono">
-                        <ImageIcon size={10} />
+                        <Monitor size={10} />
                         {galleryCount}
                     </div>
                 )}
@@ -184,7 +217,54 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
                         Ver proyecto <ArrowUpRight size={13} />
                     </Link>
                 </div>
+
+                {/* ── "Ver en Redes" Toggle Button ── */}
+                {hasMedia && (
+                    <button
+                        onClick={() => setShowVisualizer((v) => !v)}
+                        className={`relative z-30 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 border ${
+                            showVisualizer
+                                ? "bg-teal-500/15 border-teal-500/50 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.15)]"
+                                : "bg-slate-800/60 border-slate-700 text-slate-400 hover:border-teal-500/40 hover:text-teal-300 hover:bg-teal-500/10"
+                        }`}
+                    >
+                        <Smartphone size={13} />
+                        {showVisualizer ? "Ocultar preview" : "Ver en Redes"}
+                        {showVisualizer ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                    </button>
+                )}
             </div>
+
+            {/* ── Inline Grid Visualizer ── */}
+            <AnimatePresence>
+                {showVisualizer && hasMedia && (
+                    <motion.div
+                        key="visualizer"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        className="overflow-hidden border-t border-teal-500/20"
+                    >
+                        <div className="p-4 bg-slate-950/80">
+                            {/* Mini section header */}
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-1 h-5 rounded-full bg-teal-500 shadow-[0_0_8px_#14b8a6]" />
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-teal-400/80">
+                                    Preview de Redes Sociales
+                                </span>
+                            </div>
+                            <GridEditor
+                                assets={projectAssets}
+                                profiles={socialProfiles}
+                                onOrderChange={() => {}}
+                                onRemove={() => {}}
+                                onEdit={() => {}}
+                            />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Ambient glow on hover */}
             <div className={`absolute inset-0 bg-gradient-to-br ${glow} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-xl`} />
@@ -192,45 +272,37 @@ const ProjectCard = ({ project, index }: { project: any; index: number }) => {
     );
 };
 
-const CleanTitleEffect = ({ text }: { text: string }) => (
-    <span className="inline-block relative">
-        <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-300 to-teal-500">{text}</span>
-    </span>
-);
 
-
-export function PortfolioClient({ projects, categories, socialProfiles = [] }: { projects: any[]; categories: any[]; socialProfiles?: SocialProfile[] }) {
+export function PortfolioClient({
+    projects,
+    categories,
+    socialProfiles = [],
+}: {
+    projects: any[];
+    categories: any[];
+    socialProfiles?: SocialProfile[];
+}) {
     const [filter, setFilter] = useState("All");
     const t = useTranslations("portfolioPage");
 
-    const displayedProjects = projects.filter(p => filter === "All" || p.category?.slug === filter || p.category?.name === filter);
-
-    const categoryIcons: Record<string, any> = {
-        'web': Monitor,
-        'dev': Code2,
-        'marketing': Zap,
-        'design': PenTool,
-        'seo': Layout,
-        'ai': Brain,
-        'social': Layers,
-        'ecommerce': Box,
-        'development': Terminal
-    };
+    const displayedProjects = projects.filter(
+        (p) => filter === "All" || p.category?.slug === filter || p.category?.name === filter
+    );
 
     const getCategoryIcon = (cat: any) => {
         const slug = cat.slug?.toLowerCase() || "";
         const name = cat.name?.toLowerCase() || "";
-        if (slug.includes('web') || name.includes('web')) return Monitor;
-        if (slug.includes('marketing') || name.includes('marketing')) return Zap;
-        if (slug.includes('design') || name.includes('diseño')) return PenTool;
-        if (slug.includes('ecommerce') || name.includes('tienda')) return Box;
-        if (slug.includes('software') || name.includes('desarrollo')) return Code2;
+        if (slug.includes("web") || name.includes("web")) return Monitor;
+        if (slug.includes("marketing") || name.includes("marketing")) return Zap;
+        if (slug.includes("design") || name.includes("diseño")) return PenTool;
+        if (slug.includes("ecommerce") || name.includes("tienda")) return Box;
+        if (slug.includes("software") || name.includes("desarrollo")) return Code2;
         return Layers;
     };
 
     return (
         <main className="bg-slate-950 min-h-screen text-slate-200 selection:bg-teal-500/30 selection:text-teal-200">
-            {/* AMBIENT BACKGROUND - Performance optimized */}
+            {/* AMBIENT BACKGROUND */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
                 <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120%] h-[800px] bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.05)_0%,transparent_60%)]" />
                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] mix-blend-screen" />
@@ -247,75 +319,32 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
                     <div className="inline-flex items-center gap-2 mb-10 px-4 py-2 rounded-sm border border-teal-900/50 bg-slate-900/60 backdrop-blur-sm shadow-sm">
                         <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_8px_#14b8a6]" />
                         <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-teal-400/80">
-                            {t('hero.badge')}
+                            {t("hero.badge")}
                         </span>
                     </div>
 
                     <h1 className="text-6xl md:text-8xl lg:text-[9rem] font-black text-white leading-[0.85] tracking-tighter mb-10 uppercase">
-                        {t('hero.scramble')}<br />
-                        <CleanTitleEffect text={t('hero.titleHighlight')} />
+                        {t("hero.scramble")}<br />
+                        <CleanTitleEffect text={t("hero.titleHighlight")} />
                     </h1>
 
                     <div className="flex flex-col md:flex-row gap-12 items-start opacity-0 animate-[fade-in_1s_ease-out_0.3s_forwards]">
                         <p className="text-lg md:text-xl text-slate-400 max-w-xl font-light font-mono uppercase tracking-widest leading-relaxed border-l-2 border-teal-500/50 pl-6">
-                            {t('hero.desc')}
+                            {t("hero.desc")}
                         </p>
 
                         <div className="flex gap-8">
                             <div className="text-left md:text-center">
-                                <div className="text-3xl font-black text-white">{projects.length > 0 ? projects.length : t('hero.stats.s1.val')}</div>
-                                <div className="text-xs font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t('hero.stats.s1.label')}</div>
+                                <div className="text-3xl font-black text-white">{projects.length > 0 ? projects.length : t("hero.stats.s1.val")}</div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t("hero.stats.s1.label")}</div>
                             </div>
                             <div className="text-left md:text-center">
-                                <div className="text-3xl font-black text-white">{t('hero.stats.s2.val')}</div>
-                                <div className="text-xs font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t('hero.stats.s2.label')}</div>
+                                <div className="text-3xl font-black text-white">{t("hero.stats.s2.val")}</div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-teal-500/70 mt-1">{t("hero.stats.s2.label")}</div>
                             </div>
                         </div>
                     </div>
                 </motion.div>
-            </section>
-
-            {/* SOCIAL MOCKUP VISUALIZER (Public) */}
-            <section className="relative py-16 container mx-auto px-6 z-10">
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                    className="mb-10"
-                >
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-sm border border-teal-900/50 bg-slate-900/60 backdrop-blur-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse shadow-[0_0_8px_#14b8a6]" />
-                        <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-teal-400/80">Preview de Redes Sociales</span>
-                    </div>
-                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase font-mono mb-3">
-                        Así se ve tu contenido
-                    </h2>
-                    <p className="text-slate-400 text-sm max-w-xl">
-                        Visualiza cómo quedará tu feed en cada plataforma antes de publicar.
-                    </p>
-                </motion.div>
-
-                <GridEditor
-                    assets={projects
-                        .flatMap((p: any) => {
-                            const cover = p.coverImage ? [{ id: p.id + '-cover', url: p.coverImage, type: 'image' as const, order: p.displayOrder * 10 }] : [];
-                            const gallery = (p.gallery || []).map((g: any, gi: number) => ({
-                                id: p.id + '-g-' + gi,
-                                url: typeof g === 'string' ? g : g.url,
-                                type: (typeof g === 'object' && g.type === 'video') ? 'video' as const : 'image' as const,
-                                order: p.displayOrder * 10 + gi + 1,
-                            }));
-                            return [...cover, ...gallery];
-                        })
-                        .filter((a: MediaAsset) => a.url)
-                        .slice(0, 12)
-                    }
-                    profiles={socialProfiles}
-                    onOrderChange={() => {}}
-                    onRemove={() => {}}
-                    onEdit={() => {}}
-                />
             </section>
 
             {/* GALLERY SECTION */}
@@ -363,14 +392,14 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
                                 : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-300"
                         }`}
                     >
-                        {t('filters.all')}
+                        {t("filters.all")}
                     </button>
                     {categories.map((c: any) => (
                         <button
                             key={c.id}
                             onClick={() => setFilter(c.name)}
                             className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 border ${
-                                (filter === c.name || filter === c.slug)
+                                filter === c.name || filter === c.slug
                                     ? "bg-teal-500/15 border-teal-500/50 text-teal-300 shadow-[0_0_20px_rgba(20,184,166,0.15)]"
                                     : "bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-300"
                             }`}
@@ -380,12 +409,12 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
                     ))}
                 </div>
 
-                {/* Grid — Categorized or Flat */}
+                {/* Grid */}
                 <div className="space-y-24">
                     <AnimatePresence mode="popLayout">
                         {filter === "All" ? (
                             categories.map((cat: any) => {
-                                const catProjects = projects.filter(p => p.category?.id === cat.id);
+                                const catProjects = projects.filter((p) => p.category?.id === cat.id);
                                 if (catProjects.length === 0) return null;
                                 const Icon = getCategoryIcon(cat);
 
@@ -411,7 +440,12 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                             {catProjects.map((project, idx) => (
-                                                <ProjectCard key={project.id} project={project} index={idx} />
+                                                <ProjectCard
+                                                    key={project.id}
+                                                    project={project}
+                                                    index={idx}
+                                                    socialProfiles={socialProfiles}
+                                                />
                                             ))}
                                         </div>
                                     </motion.div>
@@ -425,7 +459,12 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
                                 className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
                             >
                                 {displayedProjects.length > 0 ? displayedProjects.map((project, index) => (
-                                    <ProjectCard key={project.id} project={project} index={index} />
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                        index={index}
+                                        socialProfiles={socialProfiles}
+                                    />
                                 )) : (
                                     <div className="col-span-full text-center py-24 text-slate-500 font-mono uppercase tracking-widest">
                                         No projects found for this category.
@@ -438,11 +477,11 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
 
                 {/* Load More / Request Custom */}
                 <div className="mt-20 text-center">
-                    <p className="font-mono text-teal-500/60 text-xs tracking-widest uppercase mb-6">{t('gallery.end')}</p>
+                    <p className="font-mono text-teal-500/60 text-xs tracking-widest uppercase mb-6">{t("gallery.end")}</p>
                     <Link href="/contacto">
                         <Button variant="outline" className="h-16 px-10 border-slate-700 bg-slate-900/50 text-slate-300 uppercase tracking-widest text-xs font-bold hover:border-teal-500 hover:text-teal-400 transition-all rounded-sm backdrop-blur-sm group">
                             <FolderOpen className="mr-3 w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
-                            {t('gallery.req')}
+                            {t("gallery.req")}
                         </Button>
                     </Link>
                 </div>
@@ -459,14 +498,14 @@ export function PortfolioClient({ projects, categories, socialProfiles = [] }: {
                             <Trophy size={28} className="text-teal-400" strokeWidth={1.5} />
                         </div>
                         <h2 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter uppercase font-mono">
-                            {t('cta.title')} <span className="text-teal-400">{t('cta.titleBr')}</span>
+                            {t("cta.title")} <span className="text-teal-400">{t("cta.titleBr")}</span>
                         </h2>
                     </div>
 
                     <div className="flex justify-center gap-6">
                         <Link href="/contacto">
                             <Button className="h-16 px-12 bg-teal-500 hover:bg-teal-400 text-slate-950 text-sm font-bold uppercase tracking-widest rounded-sm transition-all shadow-[0_0_30px_rgba(20,184,166,0.3)] hover:shadow-[0_0_50px_rgba(20,184,166,0.5)]">
-                                {t('cta.btn')}
+                                {t("cta.btn")}
                             </Button>
                         </Link>
                     </div>
