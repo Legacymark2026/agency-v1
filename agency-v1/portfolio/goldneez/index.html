@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Goldneez - Café de origen premium. La esencia dorada de Colombia en cada taza.">
+    <title>Goldneez | Café de Especialidad Premium</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Exact Institutional Palette */
+            --amber-goldneez: #FFBF00; 
+            --black-goldneez: #000000;
+            --aluminum-goldneez: #CCCCCC;
+            
+            /* UI Palette derived from Brand */
+            --bg-white: #FFFFFF;
+            --bg-off-white: #FAFAFA;
+            --bg-soft: #F2F2F2;
+            --text-main: #000000;
+            --text-secondary: #333333;
+            --text-muted: #666666;
+            --border-color: rgba(0, 0, 0, 0.08);
+            
+            /* Typography */
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'Inter', sans-serif;
+            
+            /* Shadows & Glassmorphism */
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-md: 0 10px 30px rgba(0,0,0,0.05);
+            --shadow-lg: 0 20px 50px rgba(0,0,0,0.08);
+            --shadow-glow: 0 0 20px rgba(255, 191, 0, 0.3);
+            
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-blur: blur(16px);
+            
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Reset and Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-body); color: var(--text-main);
+            background-color: var(--bg-white); line-height: 1.7;
+            overflow-x: hidden; -webkit-font-smoothing: antialiased;
+        }
+
+        /* Preloader & Cursor */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-white); display: flex; justify-content: center; align-items: center;
+            z-index: 10000; transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        #preloader img { width: 80px; animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
+
+        .custom-cursor {
+            width: 8px; height: 8px; background: var(--amber-goldneez); border-radius: 50%;
+            position: fixed; pointer-events: none; z-index: 9999; transition: transform 0.1s ease;
+        }
+        .custom-cursor-outline {
+            width: 32px; height: 32px; border: 1.5px solid var(--amber-goldneez); border-radius: 50%;
+            position: fixed; pointer-events: none; z-index: 9998; transition: transform 0.15s ease-out;
+        }
+        @media (max-width: 992px) {
+            .custom-cursor, .custom-cursor-outline { display: none !important; }
+        }
+
+        /* Utilities */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+        .section-padding { padding: 100px 0; }
+        .reveal { opacity: 0; transform: translateY(30px); transition: var(--transition); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* Header & Nav */
+        header {
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            background: transparent; transition: var(--transition); padding: 25px 0;
+        }
+        header.scrolled {
+            padding: 15px 0; background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+        }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; }
+        .logo img { height: 40px; transition: var(--transition); }
+        
+        nav ul { display: flex; gap: 40px; list-style: none; }
+        nav a {
+            text-decoration: none; color: var(--text-main); font-size: 0.85rem;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px;
+            transition: var(--transition); position: relative;
+        }
+        nav a::after {
+            content: ''; position: absolute; bottom: -5px; left: 0;
+            width: 0; height: 2px; background: var(--amber-goldneez); transition: var(--transition);
+        }
+        nav a:hover { color: var(--amber-goldneez); }
+        nav a:hover::after { width: 100%; }
+
+        .nav-actions { display: flex; align-items: center; gap: 20px; }
+        .social-header { display: flex; gap: 15px; margin-right: 15px; }
+        .social-header a { color: var(--text-main); font-size: 1.1rem; transition: var(--transition); }
+        .social-header a:hover { color: var(--amber-goldneez); transform: translateY(-2px); }
+        
+        .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: var(--text-main); z-index: 1001; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; justify-content: center; align-items: center;
+            padding: 16px 36px; border-radius: 4px; text-decoration: none;
+            font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; transition: var(--transition); border: none; cursor: pointer;
+        }
+        .btn-primary { background-color: var(--amber-goldneez); color: var(--black-goldneez); }
+        .btn-primary:hover { background-color: var(--black-goldneez); color: var(--bg-white); box-shadow: var(--shadow-glow); transform: translateY(-3px); }
+        .btn-outline { background: transparent; color: var(--black-goldneez); border: 1.5px solid var(--black-goldneez); }
+        .btn-outline:hover { background: var(--black-goldneez); color: var(--bg-white); transform: translateY(-3px); }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; background-color: var(--bg-off-white);
+            position: relative; overflow: hidden; padding-top: 80px;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 80% 50%, rgba(255, 191, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .hero-content { flex: 1; z-index: 2; max-width: 600px; }
+        .badge {
+            display: inline-block; padding: 6px 16px; background: var(--bg-white);
+            border: 1px solid var(--border-color); border-radius: 100px; font-size: 0.75rem;
+            font-weight: 700; letter-spacing: 2px; color: var(--black-goldneez);
+            text-transform: uppercase; margin-bottom: 25px; box-shadow: var(--shadow-sm);
+        }
+        .hero h1 { font-family: var(--font-display); font-size: clamp(3rem, 6vw, 5.5rem); line-height: 1.1; margin-bottom: 25px; font-weight: 400; }
+        .hero p { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 40px; font-weight: 300; line-height: 1.8; }
+        .hero-actions { display: flex; gap: 15px; flex-wrap: wrap; }
+        
+        .hero-image {
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            width: 50%; z-index: 1; display: flex; justify-content: flex-end;
+        }
+        .hero-image img {
+            width: 85%; height: auto; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.15));
+            clip-path: circle(48% at 50% 50%); animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
+
+        /* Trust Bar */
+        .trust-bar { padding: 50px 0; background: var(--bg-white); border-bottom: 1px solid var(--border-color); }
+        .trust-grid { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .trust-item { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
+        .trust-item i { color: var(--amber-goldneez); font-size: 1.3rem; }
+
+        /* Section Headers */
+        .section-header { text-align: center; margin-bottom: 70px; }
+        .section-header h2 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 400; margin-bottom: 15px; color: var(--black-goldneez); }
+        .section-header p { color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-weight: 300; font-size: 1.1rem; }
+
+        /* Products Section */
+        .products { background-color: var(--bg-off-white); }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+        .product-card {
+            background: var(--bg-white); border: 1px solid var(--border-color); padding: 50px 40px;
+            text-align: center; transition: var(--transition); border-radius: 8px; position: relative;
+            overflow: hidden;
+        }
+        .product-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--amber-goldneez); transform: scaleX(0); transition: var(--transition); transform-origin: left;
+        }
+        .product-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-lg); border-color: transparent; }
+        .product-card:hover::before { transform: scaleX(1); }
+        .product-card img {
+            height: 300px; width: auto; margin-bottom: 30px; transition: var(--transition);
+            clip-path: circle(45% at 50% 50%); filter: drop-shadow(0 10px 20px rgba(0,0,0,0.05));
+        }
+        .product-card:hover img { transform: scale(1.08); }
+        .product-card h3 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 5px; color: var(--black-goldneez); }
+        .product-card .price { font-size: 1.4rem; color: var(--amber-goldneez); font-weight: 700; margin-bottom: 25px; display: block; }
+
+        /* Footer */
+        footer { padding: 100px 0 40px; background: var(--bg-white); border-top: 1px solid var(--border-color); }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; margin-bottom: 60px; }
+        .footer-brand p { margin-top: 20px; color: var(--text-secondary); font-size: 0.95rem; max-width: 300px; font-weight: 300; }
+        .footer-links h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; color: var(--black-goldneez); font-weight: 700; }
+        .footer-links ul { list-style: none; }
+        .footer-links li { margin-bottom: 15px; }
+        .footer-links a { text-decoration: none; color: var(--text-secondary); font-size: 0.95rem; transition: var(--transition); }
+        .footer-links a:hover { color: var(--amber-goldneez); padding-left: 5px; }
+        .footer-bottom {
+            padding-top: 30px; border-top: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap; gap: 15px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+            .hero-image { width: 45%; }
+            .hero-content { max-width: 50%; }
+            .hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+        }
+
+        @media (max-width: 992px) {
+            .nav-container .nav-menu {
+                position: fixed; top: 0; right: -100%; width: 100%; height: 100vh;
+                background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+                display: flex; flex-direction: column; justify-content: center; align-items: center;
+                gap: 30px; transition: var(--transition); z-index: 1000;
+            }
+            .nav-container .nav-menu.active { right: 0; }
+            nav ul { flex-direction: column; text-align: center; gap: 25px; }
+            nav a { font-size: 1.2rem; }
+            .nav-actions { flex-direction: column; }
+            .menu-toggle { display: block; }
+            
+            .hero { min-height: auto; padding: 150px 0 100px; text-align: center; }
+            .hero-image { display: none; }
+            .hero-content { max-width: 100%; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
+            .hero-actions { justify-content: center; }
+            
+            .trust-grid { flex-direction: column; text-align: center; gap: 30px; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .section-padding { padding: 70px 0; }
+            .hero-actions { flex-direction: column; width: 100%; }
+            .hero-actions .btn { width: 100%; margin-left: 0 !important; }
+            .footer-grid { grid-template-columns: 1fr; text-align: center; }
+            .footer-brand p { margin: 20px auto; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <img src="logo.png" alt="Goldneez Loading" onerror="this.src='https://placehold.co/100x100?text=Goldneez'">
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor"></div>
+    <div class="custom-cursor-outline"></div>
+
+    <header id="header">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <img src="logo.png" alt="Goldneez Logo" onerror="this.src='https://placehold.co/150x45?text=Goldneez'">
+            </a>
+            
+            <div class="nav-menu" id="nav-menu">
+                <nav>
+                    <ul>
+                        <li><a href="#productos" class="nav-link">Catálogo</a></li>
+                        <li><a href="#nosotros" class="nav-link">Historia</a></li>
+                        <li><a href="#contacto" class="nav-link">Contacto</a></li>
+                    </ul>
+                </nav>
+                <div class="nav-actions">
+                    <div class="social-header">
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                    <a href="#productos" class="btn btn-primary nav-link" style="padding: 12px 28px;">Tienda</a>
+                </div>
+            </div>
+
+            <div class="menu-toggle" id="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-content reveal">
+                <span class="badge">Cosecha 2026</span>
+                <h1>El Estándar de Oro<br><span style="color: var(--amber-goldneez); font-style: italic;">del Café Colombiano.</span></h1>
+                <p>Cultivado en las cumbres de Toledo, Norte de Santander. Una joya líquida de 86+ puntos SCA para los paladares más exigentes.</p>
+                <div class="hero-actions">
+                    <a href="#productos" class="btn btn-primary">Comprar Original</a>
+                    <a href="#nosotros" class="btn btn-outline">Nuestra Historia</a>
+                </div>
+            </div>
+            <div class="hero-image" id="parallax-bg">
+                <img src="assets/original_bag.jpeg" alt="Goldneez Original" onerror="this.src='https://placehold.co/400x500?text=Coffee+Bag'">
+            </div>
+        </section>
+
+        <div class="trust-bar reveal">
+            <div class="container trust-grid">
+                <div class="trust-item"><i class="fas fa-mountain"></i> 1,900m Altura</div>
+                <div class="trust-item"><i class="fas fa-certificate"></i> +86 Puntos SCA</div>
+                <div class="trust-item"><i class="fas fa-check-circle"></i> Origen Verificado</div>
+                <div class="trust-item"><i class="fas fa-shipping-fast"></i> Envío Premium</div>
+            </div>
+        </div>
+
+        <section id="productos" class="products section-padding">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>La Colección Original</h2>
+                    <p>Descubre el sabor auténtico de Goldneez en sus diferentes variedades y presentaciones. Elaborado con pasión en cada tueste.</p>
+                </div>
+                <div class="products-grid">
+                    <div class="product-card reveal">
+                        <img src="assets/original_bag.png" alt="Coffee Excelso" onerror="this.src='https://placehold.co/300x400?text=Excelso'">
+                        <h3>Coffee Excelso</h3>
+                        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Origen: Toledo | Variedad: Castilla</p>
+                        <span class="price">$32.00 USD</span>
+                        <a href="#" class="btn btn-primary" style="width: 100%;">Añadir al Carrito</a>
+                    </div>
+                    <div class="product-card reveal" style="transition-delay: 0.15s;">
+                        <img src="assets/original_bag.png" alt="Reserva Especial" style="filter: contrast(1.15) brightness(0.9);" onerror="this.src='https://placehold.co/300x400?text=Reserva'">
+                        <h3>Reserva Especial</h3>
+                        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Edición Limitada 400G</p>
+                        <span class="price">$45.00 USD</span>
+                        <a href="#" class="btn btn-primary" style="width: 100%;">Añadir al Carrito</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <img src="logo.png" alt="Goldneez" style="height: 45px;" onerror="this.src='https://placehold.co/150x45?text=Goldneez'">
+                    <p>Redefiniendo el lujo cafetero colombiano. Calidad, origen y elegancia en cada grano.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Navegación</h4>
+                    <ul>
+                        <li><a href="#productos">Tienda</a></li>
+                        <li><a href="#nosotros">Historia</a></li>
+                        <li><a href="#contacto">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacidad</a></li>
+                        <li><a href="#">Términos de Servicio</a></li>
+                        <li><a href="#">Política de Envíos</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Síganos</h4>
+                    <div style="display: flex; gap: 15px; font-size: 1.4rem;">
+                        <a href="#" style="color: var(--black-goldneez);"><i class="fab fa-instagram"></i></a>
+                        <a href="#" style="color: var(--black-goldneez);"><i class="fab fa-whatsapp"></i></a>
+                        <a href="#" style="color: var(--black-goldneez);"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Goldneez. Todos los derechos reservados.</p>
+                <p>Carrera 18 N°79 - 47, Bogotá, Colombia</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Preloader
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                preloader.style.opacity = '0';
+                preloader.style.visibility = 'hidden';
+            }, 600);
+        });
+
+        // Cursor
+        const cursor = document.querySelector('.custom-cursor');
+        const follower = document.querySelector('.custom-cursor-outline');
+        window.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            setTimeout(() => {
+                follower.style.left = e.clientX - 15 + 'px';
+                follower.style.top = e.clientY - 15 + 'px';
+            }, 80);
+        });
+
+        // Parallax Effect
+        const parallaxBg = document.getElementById('parallax-bg');
+        window.addEventListener('mousemove', (e) => {
+            if (window.innerWidth > 992 && parallaxBg) {
+                const x = (window.innerWidth / 2 - e.pageX) / 50;
+                const y = (window.innerHeight / 2 - e.pageY) / 50;
+                parallaxBg.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`;
+            }
+        });
+
+        // Reveal Animations
+        const reveals = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: "0px 0px -50px 0px" });
+        reveals.forEach(r => observer.observe(r));
+
+        // Header Scroll
+        const header = document.getElementById('header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 30) header.classList.add('scrolled');
+            else header.classList.remove('scrolled');
+        });
+
+        // Mobile Menu Toggle
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const navMenu = document.getElementById('nav-menu');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const menuIcon = menuBtn.querySelector('i');
+
+        menuBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+            if(navMenu.classList.contains('active')) {
+                menuIcon.classList.remove('fa-bars');
+                menuIcon.classList.add('fa-times');
+            } else {
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            }
+        });
+
+        // Close menu on link click
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('active');
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            });
+        });
+    </script>
+</body>
+</html>
