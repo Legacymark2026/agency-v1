@@ -246,6 +246,42 @@
             transform: translateY(-2px);
         }
 
+        /* WhatsApp Bubble */
+        .whatsapp-bubble {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: #25d366;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 999;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .whatsapp-bubble:hover {
+            transform: scale(1.1);
+            background-color: #128c7e;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .whatsapp-bubble {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+        }
+
         .menu-toggle {
             display: none;
             font-size: 1.5rem;
@@ -866,8 +902,11 @@
                     </ul>
                 </nav>
                 <div class="nav-actions">
-                    <div class="social-header"><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i
-                                class="fab fa-whatsapp"></i></a></div>
+                    <div class="social-header">
+                        <a href="https://www.instagram.com/goldneez/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank"><i class="fab fa-facebook"></i></a>
+                        <a href="https://wa.me/573145629141" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                    </div>
                     <a href="#productos" class="btn btn-primary" style="padding: 10px 28px;">Tienda</a>
                 </div>
             </div>
@@ -1048,9 +1087,11 @@
                 </div>
                 <div class="footer-links">
                     <h4>Síganos</h4>
-                    <div style="display: flex; gap: 18px; font-size: 1.4rem;"><a href="#"><i
-                                class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-whatsapp"></i></a><a
-                            href="#"><i class="fab fa-tiktok"></i></a></div>
+                    <div style="display: flex; gap: 15px; font-size: 1.4rem;">
+                        <a href="https://www.instagram.com/goldneez/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank"><i class="fab fa-facebook"></i></a>
+                        <a href="https://wa.me/573145629141" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                    </div>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -1060,16 +1101,97 @@
         </div>
     </footer>
 
+    <!-- WhatsApp Button -->
+    <a href="https://wa.me/573145629141" class="whatsapp-bubble" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
     <script>
-        window.addEventListener('load', () => { const preloader = document.getElementById('preloader'); setTimeout(() => { preloader.style.opacity = '0'; preloader.style.visibility = 'hidden'; }, 500); });
-        const cursor = document.querySelector('.custom-cursor'), follower = document.querySelector('.custom-cursor-outline');
-        if (cursor && follower) { window.addEventListener('mousemove', (e) => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; setTimeout(() => { follower.style.left = e.clientX - 21 + 'px'; follower.style.top = e.clientY - 21 + 'px'; }, 60); }); }
+        // Preloader
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                preloader.style.opacity = '0';
+                preloader.style.visibility = 'hidden';
+            }, 600);
+        });
+
+        // Cursor (solo desktop)
+        if (window.innerWidth > 1024) {
+            const cursor = document.querySelector('.custom-cursor');
+            const follower = document.querySelector('.custom-cursor-outline');
+            window.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+                follower.style.left = e.clientX + 'px';
+                follower.style.top = e.clientY + 'px';
+            });
+        }
+
+        // Parallax Effect
         const parallaxBg = document.getElementById('parallax-bg');
-        window.addEventListener('mousemove', (e) => { if (window.innerWidth > 992 && parallaxBg) { const x = (window.innerWidth / 2 - e.pageX) / 55; const y = (window.innerHeight / 2 - e.pageY) / 55; parallaxBg.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`; } });
-        const reveals = document.querySelectorAll('.reveal'); const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('active'); observer.unobserve(entry.target); } }); }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }); reveals.forEach(r => observer.observe(r));
-        const header = document.getElementById('header'); window.addEventListener('scroll', () => { if (window.scrollY > 30) header.classList.add('scrolled'); else header.classList.remove('scrolled'); });
-        const menuBtn = document.getElementById('mobile-menu-btn'), navMenu = document.getElementById('nav-menu'); menuBtn.addEventListener('click', () => { navMenu.classList.toggle('active'); const icon = menuBtn.querySelector('i'); icon.classList.toggle('fa-bars'); icon.classList.toggle('fa-times'); });
-        document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', () => { navMenu.classList.remove('active'); const icon = menuBtn.querySelector('i'); icon.classList.add('fa-bars'); icon.classList.remove('fa-times'); }));
+        window.addEventListener('mousemove', (e) => {
+            if (window.innerWidth > 992 && parallaxBg) {
+                const x = (window.innerWidth / 2 - e.pageX) / 50;
+                const y = (window.innerHeight / 2 - e.pageY) / 50;
+                parallaxBg.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`;
+            }
+        });
+
+        // Reveal Animations
+        const reveals = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        reveals.forEach(r => observer.observe(r));
+
+        // Header Scroll
+        const header = document.getElementById('header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 30) header.classList.add('scrolled');
+            else header.classList.remove('scrolled');
+        });
+
+        // Mobile Menu Toggle Fix
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const navMenu = document.getElementById('nav-menu');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const menuIcon = menuBtn.querySelector('i');
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navMenu.classList.toggle('active');
+            if (navMenu.classList.contains('active')) {
+                menuIcon.classList.remove('fa-bars');
+                menuIcon.classList.add('fa-times');
+            } else {
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            }
+        });
+
+        // Close menu on link click
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('active');
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (navMenu.classList.contains('active') && !navMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+                navMenu.classList.remove('active');
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            }
+        });
     </script>
 </body>
 
