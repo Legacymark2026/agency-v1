@@ -282,6 +282,132 @@
             }
         }
 
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-white);
+            width: 100%;
+            max-width: 800px;
+            border-radius: 24px;
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            transform: translateY(40px);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            color: var(--black-goldneez);
+            background: rgba(255, 255, 255, 0.8);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--amber-goldneez);
+        }
+
+        .modal-image {
+            background: var(--bg-off-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .modal-image img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.1));
+        }
+
+        .modal-info {
+            padding: 50px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .modal-info h2 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-info .modal-price {
+            font-size: 1.6rem;
+            color: var(--amber-goldneez);
+            font-weight: 800;
+            margin-bottom: 25px;
+        }
+
+        .modal-info ul {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .modal-info li {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-info li i {
+            color: var(--amber-goldneez);
+            width: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                grid-template-columns: 1fr;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            .modal-info {
+                padding: 30px 25px;
+            }
+        }
+
         .menu-toggle {
             display: none;
             font-size: 1.5rem;
@@ -907,7 +1033,7 @@
                         <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank"><i class="fab fa-facebook"></i></a>
                         <a href="https://wa.me/573145629141" target="_blank"><i class="fab fa-whatsapp"></i></a>
                     </div>
-                    <a href="#productos" class="btn btn-primary" style="padding: 10px 28px;">Tienda</a>
+                    <a href="https://wa.me/573145629141" target="_blank" class="btn btn-primary" style="padding: 10px 28px;">Tienda</a>
                 </div>
             </div>
             <div class="menu-toggle" id="mobile-menu-btn"><i class="fas fa-bars"></i></div>
@@ -923,7 +1049,7 @@
                 <p>Cultivado en las cumbres de Toledo, Norte de Santander. Una joya líquida de 86+ puntos SCA para los
                     paladares más exigentes.</p>
                 <div class="hero-actions">
-                    <a href="#productos" class="btn btn-primary">Comprar Original</a>
+                    <a href="https://wa.me/573145629141" target="_blank" class="btn btn-primary">Comprar Original</a>
                     <a href="#filosofia" class="btn btn-outline">Nuestra Historia</a>
                 </div>
             </div>
@@ -978,7 +1104,10 @@
                         <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">Origen: Toledo |
                             Variedad: Castilla</p>
                         <span class="price">$32.00 USD</span>
-                        <a href="#" class="btn btn-primary" style="width: 100%;">Añadir al Carrito</a>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary open-modal" data-product="excelso" style="flex: 1; padding: 12px;">Detalles</button>
+                            <a href="https://wa.me/573145629141" target="_blank" class="btn btn-outline" style="flex: 1; padding: 12px;"><i class="fab fa-whatsapp"></i></a>
+                        </div>
                     </div>
                     <div class="product-card reveal" style="transition-delay: 0.1s;">
                         <img src="assets/original_bag.png" alt="Reserva Especial">
@@ -986,7 +1115,10 @@
                         <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">Edición Limitada
                             400G</p>
                         <span class="price">$45.00 USD</span>
-                        <a href="#" class="btn btn-primary" style="width: 100%;">Añadir al Carrito</a>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary open-modal" data-product="reserva" style="flex: 1; padding: 12px;">Detalles</button>
+                            <a href="https://wa.me/573145629141" target="_blank" class="btn btn-outline" style="flex: 1; padding: 12px;"><i class="fab fa-whatsapp"></i></a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1102,11 +1234,96 @@
     </footer>
 
     <!-- WhatsApp Button -->
-    <a href="https://wa.me/573145629141" class="whatsapp-bubble" target="_blank">
-        <i class="fab fa-whatsapp"></i>
-    </a>
+    <a href="https://wa.me/573145629141" class="whatsapp-bubble" ta    <!-- Modal de Producto -->
+    <div class="modal" id="product-modal">
+        <div class="modal-content">
+            <div class="modal-close" id="modal-close"><i class="fas fa-times"></i></div>
+            <div class="modal-image">
+                <img src="" id="modal-img" alt="Producto">
+            </div>
+            <div class="modal-info">
+                <h2 id="modal-title">Título</h2>
+                <div class="modal-price" id="modal-price">$0.00</div>
+                <ul id="modal-features">
+                    <!-- Dinámico -->
+                </ul>
+                <a href="https://wa.me/573145629141" target="_blank" class="btn btn-primary" style="width: 100%;">Solicitar por WhatsApp</a>
+            </div>
+        </div>
+    </div>
 
     <script>
+        // Datos de productos
+        const productsData = {
+            excelso: {
+                title: "Coffee Excelso",
+                price: "$32.00 USD",
+                image: "assets/original_bag.png",
+                features: [
+                    "100% Granos Arábica Selección",
+                    "Origen: Toledo, Norte de Santander",
+                    "Variedad: Castillo y Colombia",
+                    "Proceso: Lavado tradicional",
+                    "Notas: Chocolate, Nuez y Dulce de Leche",
+                    "Altura: 1,850 - 1,900 msnm"
+                ]
+            },
+            reserva: {
+                title: "Reserva Especial",
+                price: "$45.00 USD",
+                image: "assets/original_bag.png",
+                features: [
+                    "Micro-lote de Edición Limitada",
+                    "Fermentación Natural 72h",
+                    "Puntaje SCA: 87.5 puntos",
+                    "Cuerpo cremoso y complejo",
+                    "Notas: Frutos Rojos, Vainilla y Caramelo",
+                    "Altura: 1,920 msnm"
+                ]
+            }
+        };
+
+        // Modal Logic
+        const modal = document.getElementById('product-modal');
+        const closeModal = document.getElementById('modal-close');
+        const openButtons = document.querySelectorAll('.open-modal');
+
+        openButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const productId = btn.getAttribute('data-product');
+                const data = productsData[productId];
+
+                document.getElementById('modal-title').innerText = data.title;
+                document.getElementById('modal-price').innerText = data.price;
+                document.getElementById('modal-img').src = data.image;
+
+                const featuresList = document.getElementById('modal-features');
+                featuresList.innerHTML = '';
+                data.features.forEach(f => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fas fa-check"></i> ${f}`;
+                    featuresList.appendChild(li);
+                });
+
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        const closeFunc = () => {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }, 400);
+        };
+
+        closeModal.addEventListener('click', closeFunc);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeFunc();
+        });
+
         // Preloader
         window.addEventListener('load', () => {
             const preloader = document.getElementById('preloader');
@@ -1190,6 +1407,11 @@
                 navMenu.classList.remove('active');
                 menuIcon.classList.remove('fa-times');
                 menuIcon.classList.add('fa-bars');
+            }
+        });
+    </script>
+</body>
+</html>-bars');
             }
         });
     </script>
