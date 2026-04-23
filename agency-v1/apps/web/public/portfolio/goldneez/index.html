@@ -1,284 +1,877 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Goldneez - Café de origen premium. La esencia dorada de Colombia en cada taza.">
-    <title>Goldneez | Café de Especialidad Premium</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description"
+        content="Goldneez - Café de origen premium. La esencia dorada de Colombia en cada taza. 86+ puntos SCA.">
+    <title>Goldneez | Café de Especialidad Premium — La Esencia Dorada</title>
+
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+
     <style>
         :root {
-            /* Exact Institutional Palette */
-            --amber-goldneez: #FFBF00; 
+            /* Exact Institutional Palette - NO CAMBIADOS */
+            --amber-goldneez: #FFBF00;
             --black-goldneez: #000000;
             --aluminum-goldneez: #CCCCCC;
-            
-            /* UI Palette derived from Brand */
+
+            /* UI Palette refined */
             --bg-white: #FFFFFF;
             --bg-off-white: #FAFAFA;
-            --bg-soft: #F2F2F2;
+            --bg-soft: #F5F5F5;
             --text-main: #000000;
-            --text-secondary: #333333;
-            --text-muted: #666666;
+            --text-secondary: #1A1A1A;
+            --text-muted: #555555;
             --border-color: rgba(0, 0, 0, 0.08);
-            
+            --border-gold: rgba(255, 191, 0, 0.25);
+
             /* Typography */
             --font-display: 'Playfair Display', serif;
             --font-body: 'Inter', sans-serif;
-            
-            /* Shadows & Glassmorphism */
-            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            --shadow-md: 0 10px 30px rgba(0,0,0,0.05);
-            --shadow-lg: 0 20px 50px rgba(0,0,0,0.08);
-            --shadow-glow: 0 0 20px rgba(255, 191, 0, 0.3);
-            
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-blur: blur(16px);
-            
-            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+            /* Shadows & Effects */
+            --shadow-sm: 0 5px 20px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 15px 35px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            --shadow-glow: 0 0 25px rgba(255, 191, 0, 0.2);
+            --shadow-gold-hover: 0 20px 35px -10px rgba(255, 191, 0, 0.25);
+
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-blur: blur(12px);
+
+            --transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
-        /* Reset and Base */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: var(--font-body); color: var(--text-main);
-            background-color: var(--bg-white); line-height: 1.7;
-            overflow-x: hidden; -webkit-font-smoothing: antialiased;
+            font-family: var(--font-body);
+            color: var(--text-main);
+            background-color: var(--bg-white);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Preloader & Cursor */
+        /* Modern cursor (solo desktop) */
+        @media (min-width: 1024px) {
+
+            .custom-cursor,
+            .custom-cursor-outline {
+                pointer-events: none;
+                position: fixed;
+                z-index: 9999;
+                border-radius: 50%;
+                transition: transform 0.2s ease;
+            }
+
+            .custom-cursor {
+                width: 6px;
+                height: 6px;
+                background: var(--amber-goldneez);
+                transform: translate(-50%, -50%);
+            }
+
+            .custom-cursor-outline {
+                width: 42px;
+                height: 42px;
+                border: 1.5px solid var(--amber-goldneez);
+                background: rgba(255, 191, 0, 0.06);
+                transform: translate(-50%, -50%);
+                transition: transform 0.25s, width 0.2s, height 0.2s;
+            }
+        }
+
+        /* Preloader */
         #preloader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-white); display: flex; justify-content: center; align-items: center;
-            z-index: 10000; transition: opacity 0.6s ease, visibility 0.6s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
         }
-        #preloader img { width: 80px; animation: pulse 1.5s infinite ease-in-out; }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.6; } 50% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.6; } }
 
-        .custom-cursor {
-            width: 8px; height: 8px; background: var(--amber-goldneez); border-radius: 50%;
-            position: fixed; pointer-events: none; z-index: 9999; transition: transform 0.1s ease;
+        #preloader img {
+            width: 70px;
+            animation: pulse 1.4s infinite ease-in-out;
         }
-        .custom-cursor-outline {
-            width: 32px; height: 32px; border: 1.5px solid var(--amber-goldneez); border-radius: 50%;
-            position: fixed; pointer-events: none; z-index: 9998; transition: transform 0.15s ease-out;
-        }
-        @media (max-width: 992px) {
-            .custom-cursor, .custom-cursor-outline { display: none !important; }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0.9);
+                opacity: 0.6;
+            }
         }
 
         /* Utilities */
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
-        .section-padding { padding: 100px 0; }
-        .reveal { opacity: 0; transform: translateY(30px); transition: var(--transition); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
 
-        /* Header & Nav */
+        .section-padding {
+            padding: 100px 0;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(35px);
+            transition: var(--transition);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Header Glassmorphism */
         header {
-            position: fixed; top: 0; width: 100%; z-index: 1000;
-            background: transparent; transition: var(--transition); padding: 25px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: transparent;
+            transition: var(--transition);
+            padding: 24px 0;
         }
+
         header.scrolled {
-            padding: 15px 0; background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-            border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm);
+            padding: 12px 0;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
         }
-        .nav-container { display: flex; justify-content: space-between; align-items: center; }
-        .logo img { height: 40px; transition: var(--transition); }
-        
-        nav ul { display: flex; gap: 40px; list-style: none; }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 42px;
+            transition: var(--transition);
+        }
+
+        nav ul {
+            display: flex;
+            gap: 42px;
+            list-style: none;
+        }
+
         nav a {
-            text-decoration: none; color: var(--text-main); font-size: 0.85rem;
-            font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px;
-            transition: var(--transition); position: relative;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.6px;
+            transition: var(--transition);
+            position: relative;
         }
+
         nav a::after {
-            content: ''; position: absolute; bottom: -5px; left: 0;
-            width: 0; height: 2px; background: var(--amber-goldneez); transition: var(--transition);
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--amber-goldneez);
+            transition: var(--transition);
         }
-        nav a:hover { color: var(--amber-goldneez); }
-        nav a:hover::after { width: 100%; }
 
-        .nav-actions { display: flex; align-items: center; gap: 20px; }
-        .social-header { display: flex; gap: 15px; margin-right: 15px; }
-        .social-header a { color: var(--text-main); font-size: 1.1rem; transition: var(--transition); }
-        .social-header a:hover { color: var(--amber-goldneez); transform: translateY(-2px); }
-        
-        .menu-toggle { display: none; font-size: 1.5rem; cursor: pointer; color: var(--text-main); z-index: 1001; }
+        nav a:hover {
+            color: var(--amber-goldneez);
+        }
 
-        /* Buttons */
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .social-header {
+            display: flex;
+            gap: 16px;
+        }
+
+        .social-header a {
+            color: var(--text-main);
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .social-header a:hover {
+            color: var(--amber-goldneez);
+            transform: translateY(-2px);
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-main);
+            z-index: 1001;
+        }
+
+        /* Buttons Modern */
         .btn {
-            display: inline-flex; justify-content: center; align-items: center;
-            padding: 16px 36px; border-radius: 4px; text-decoration: none;
-            font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 2px; transition: var(--transition); border: none; cursor: pointer;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 14px 32px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+            gap: 8px;
         }
-        .btn-primary { background-color: var(--amber-goldneez); color: var(--black-goldneez); }
-        .btn-primary:hover { background-color: var(--black-goldneez); color: var(--bg-white); box-shadow: var(--shadow-glow); transform: translateY(-3px); }
-        .btn-outline { background: transparent; color: var(--black-goldneez); border: 1.5px solid var(--black-goldneez); }
-        .btn-outline:hover { background: var(--black-goldneez); color: var(--bg-white); transform: translateY(-3px); }
 
-        /* Hero Section */
-        .hero {
-            min-height: 100vh; display: flex; align-items: center; background-color: var(--bg-off-white);
-            position: relative; overflow: hidden; padding-top: 80px;
+        .btn-primary {
+            background-color: var(--amber-goldneez);
+            color: var(--black-goldneez);
         }
+
+        .btn-primary:hover {
+            background-color: var(--black-goldneez);
+            color: var(--bg-white);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-4px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--black-goldneez);
+            border: 1.5px solid var(--black-goldneez);
+        }
+
+        .btn-outline:hover {
+            background: var(--black-goldneez);
+            color: var(--bg-white);
+            transform: translateY(-4px);
+        }
+
+        /* Hero Section - Elevated */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FCF9F0 100%);
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
         .hero::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 80% 50%, rgba(255, 191, 0, 0.05) 0%, transparent 50%);
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 70% 40%, rgba(255, 191, 0, 0.06) 0%, transparent 60%);
             pointer-events: none;
         }
-        .hero-content { flex: 1; z-index: 2; max-width: 600px; }
-        .badge {
-            display: inline-block; padding: 6px 16px; background: var(--bg-white);
-            border: 1px solid var(--border-color); border-radius: 100px; font-size: 0.75rem;
-            font-weight: 700; letter-spacing: 2px; color: var(--black-goldneez);
-            text-transform: uppercase; margin-bottom: 25px; box-shadow: var(--shadow-sm);
-        }
-        .hero h1 { font-family: var(--font-display); font-size: clamp(3rem, 6vw, 5.5rem); line-height: 1.1; margin-bottom: 25px; font-weight: 400; }
-        .hero p { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 40px; font-weight: 300; line-height: 1.8; }
-        .hero-actions { display: flex; gap: 15px; flex-wrap: wrap; }
-        
-        .hero-image {
-            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-            width: 50%; z-index: 1; display: flex; justify-content: flex-end;
-        }
-        .hero-image img {
-            width: 85%; height: auto; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.15));
-            clip-path: circle(48% at 50% 50%); animation: float 6s ease-in-out infinite;
-        }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0px); } }
 
-        /* Trust Bar */
-        .trust-bar { padding: 50px 0; background: var(--bg-white); border-bottom: 1px solid var(--border-color); }
-        .trust-grid { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
-        .trust-item { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); }
-        .trust-item i { color: var(--amber-goldneez); font-size: 1.3rem; }
+        .hero-content {
+            flex: 1;
+            z-index: 2;
+            max-width: 600px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 18px;
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--black-goldneez);
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .hero h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 6vw, 5.5rem);
+            line-height: 1.1;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .hero p {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            margin-bottom: 42px;
+            font-weight: 400;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .hero-image {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48%;
+            z-index: 1;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .hero-image img {
+            width: 82%;
+            height: auto;
+            filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.12));
+            clip-path: circle(48% at 50% 50%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        /* Trust Bar Premium */
+        .trust-bar {
+            padding: 48px 0;
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .trust-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .trust-item i {
+            color: var(--amber-goldneez);
+            font-size: 1.3rem;
+        }
 
         /* Section Headers */
-        .section-header { text-align: center; margin-bottom: 70px; }
-        .section-header h2 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 400; margin-bottom: 15px; color: var(--black-goldneez); }
-        .section-header p { color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-weight: 300; font-size: 1.1rem; }
+        .section-header {
+            text-align: center;
+            margin-bottom: 70px;
+        }
 
-        /* Products Section */
-        .products { background-color: var(--bg-off-white); }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+        .section-header h2 {
+            font-family: var(--font-display);
+            font-size: clamp(2.3rem, 5vw, 3.5rem);
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--black-goldneez);
+            letter-spacing: -0.02em;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 620px;
+            margin: 0 auto;
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        /* Products Grid mejorado */
+        .products {
+            background-color: var(--bg-off-white);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+
         .product-card {
-            background: var(--bg-white); border: 1px solid var(--border-color); padding: 50px 40px;
-            text-align: center; transition: var(--transition); border-radius: 8px; position: relative;
+            background: var(--bg-white);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
             overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
         }
+
         .product-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--amber-goldneez); transform: scaleX(0); transition: var(--transition); transform-origin: left;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--amber-goldneez);
+            transform: scaleX(0);
+            transition: var(--transition);
+            transform-origin: left;
         }
-        .product-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-lg); border-color: transparent; }
-        .product-card:hover::before { transform: scaleX(1); }
+
+        .product-card:hover {
+            transform: translateY(-12px);
+            box-shadow: var(--shadow-lg);
+            border-color: transparent;
+        }
+
+        .product-card:hover::before {
+            transform: scaleX(1);
+        }
+
         .product-card img {
-            height: 300px; width: auto; margin-bottom: 30px; transition: var(--transition);
-            clip-path: circle(45% at 50% 50%); filter: drop-shadow(0 10px 20px rgba(0,0,0,0.05));
+            height: 280px;
+            width: auto;
+            margin-bottom: 28px;
+            transition: var(--transition);
+            clip-path: circle(44% at 50% 50%);
+            filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.06));
         }
-        .product-card:hover img { transform: scale(1.08); }
-        .product-card h3 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 5px; color: var(--black-goldneez); }
-        .product-card .price { font-size: 1.4rem; color: var(--amber-goldneez); font-weight: 700; margin-bottom: 25px; display: block; }
+
+        .product-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .product-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            margin-bottom: 6px;
+            color: var(--black-goldneez);
+        }
+
+        .product-card .price {
+            font-size: 1.5rem;
+            color: var(--amber-goldneez);
+            font-weight: 800;
+            margin: 18px 0 24px;
+            display: block;
+        }
+
+        /* --- NUEVAS SECCIONES ESTRATÉGICAS --- */
+
+        /* 1. Sección "Misión & Filosofía" (Storytelling Premium) */
+        .philosophy {
+            background: var(--bg-white);
+            position: relative;
+        }
+
+        .philosophy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .philosophy-text h3 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            margin-bottom: 24px;
+            color: var(--black-goldneez);
+        }
+
+        .philosophy-text .gold-quote {
+            font-size: 1.2rem;
+            font-style: italic;
+            border-left: 3px solid var(--amber-goldneez);
+            padding-left: 28px;
+            margin: 32px 0;
+            color: #2c2c2c;
+        }
+
+        .stat-badge {
+            display: flex;
+            gap: 32px;
+            margin-top: 32px;
+        }
+
+        .stat-badge div {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--amber-goldneez);
+            font-family: var(--font-display);
+        }
+
+        /* 2. Sección "Beneficios sensoriales" */
+        .sensory {
+            background-color: var(--bg-soft);
+        }
+
+        .sensory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .sensory-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 28px;
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+
+        .sensory-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--amber-goldneez);
+        }
+
+        .sensory-card i {
+            font-size: 2.4rem;
+            color: var(--amber-goldneez);
+            margin-bottom: 20px;
+        }
+
+        .sensory-card h4 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+        }
+
+        /* 3. Sección "Cata & Experiencia" (evento/exclusividad) */
+        .experience {
+            background: var(--black-goldneez);
+            color: white;
+        }
+
+        .experience .section-header h2,
+        .experience .section-header p {
+            color: white;
+        }
+
+        .experience-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+        }
+
+        .experience-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            padding: 32px;
+            border-radius: 28px;
+            border: 1px solid rgba(255, 191, 0, 0.3);
+        }
+
+        .experience-card i {
+            font-size: 2rem;
+            color: var(--amber-goldneez);
+            margin-bottom: 20px;
+        }
+
+        .btn-gold-outline {
+            background: transparent;
+            border: 1.5px solid var(--amber-goldneez);
+            color: var(--amber-goldneez);
+            padding: 12px 28px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .btn-gold-outline:hover {
+            background: var(--amber-goldneez);
+            color: var(--black-goldneez);
+        }
+
+        /* 4. Sección "Revista / Prensa" */
+        .press {
+            background: var(--bg-white);
+        }
+
+        .press-logos {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .press-logos span {
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .press-quote {
+            max-width: 700px;
+            margin: 50px auto 0;
+            text-align: center;
+            font-style: italic;
+            font-size: 1.1rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 40px;
+        }
 
         /* Footer */
-        footer { padding: 100px 0 40px; background: var(--bg-white); border-top: 1px solid var(--border-color); }
-        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 50px; margin-bottom: 60px; }
-        .footer-brand p { margin-top: 20px; color: var(--text-secondary); font-size: 0.95rem; max-width: 300px; font-weight: 300; }
-        .footer-links h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; color: var(--black-goldneez); font-weight: 700; }
-        .footer-links ul { list-style: none; }
-        .footer-links li { margin-bottom: 15px; }
-        .footer-links a { text-decoration: none; color: var(--text-secondary); font-size: 0.95rem; transition: var(--transition); }
-        .footer-links a:hover { color: var(--amber-goldneez); padding-left: 5px; }
-        .footer-bottom {
-            padding-top: 30px; border-top: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap; gap: 15px;
+        footer {
+            padding: 90px 0 40px;
+            background: var(--bg-white);
+            border-top: 1px solid var(--border-color);
         }
 
-        /* Mobile Responsiveness */
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 50px;
+            margin-bottom: 60px;
+        }
+
+        .footer-brand p {
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        .footer-links h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+            font-weight: 700;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--amber-goldneez);
+            padding-left: 5px;
+        }
+
+        .footer-bottom {
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
         @media (max-width: 1024px) {
-            .hero-image { width: 45%; }
-            .hero-content { max-width: 50%; }
-            .hero h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+            .hero-image {
+                width: 45%;
+            }
+
+            .hero-content {
+                max-width: 50%;
+            }
+
+            .philosophy-grid,
+            .experience-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sensory-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            }
         }
 
         @media (max-width: 992px) {
             .nav-container .nav-menu {
-                position: fixed; top: 0; right: -100%; width: 100%; height: 100vh;
-                background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-                display: flex; flex-direction: column; justify-content: center; align-items: center;
-                gap: 30px; transition: var(--transition); z-index: 1000;
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 80%;
+                height: 100vh;
+                background: var(--glass-bg);
+                backdrop-filter: var(--glass-blur);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 30px;
+                transition: var(--transition);
+                z-index: 1000;
             }
-            .nav-container .nav-menu.active { right: 0; }
-            nav ul { flex-direction: column; text-align: center; gap: 25px; }
-            nav a { font-size: 1.2rem; }
-            .nav-actions { flex-direction: column; }
-            .menu-toggle { display: block; }
-            
-            .hero { min-height: auto; padding: 150px 0 100px; text-align: center; }
-            .hero-image { display: none; }
-            .hero-content { max-width: 100%; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
-            .hero-actions { justify-content: center; }
-            
-            .trust-grid { flex-direction: column; text-align: center; gap: 30px; }
-            .footer-grid { grid-template-columns: 1fr 1fr; }
+
+            .nav-container .nav-menu.active {
+                right: 0;
+            }
+
+            nav ul {
+                flex-direction: column;
+                text-align: center;
+                gap: 25px;
+            }
+
+            .nav-actions {
+                flex-direction: column;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .hero {
+                min-height: auto;
+                padding: 140px 0 90px;
+                text-align: center;
+            }
+
+            .hero-image {
+                display: none;
+            }
+
+            .hero-content {
+                max-width: 100%;
+                margin: 0 auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
         @media (max-width: 768px) {
-            .section-padding { padding: 70px 0; }
-            .hero-actions { flex-direction: column; width: 100%; }
-            .hero-actions .btn { width: 100%; margin-left: 0 !important; }
-            .footer-grid { grid-template-columns: 1fr; text-align: center; }
-            .footer-brand p { margin: 20px auto; }
-            .footer-bottom { flex-direction: column; text-align: center; }
+            .section-padding {
+                padding: 70px 0;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .footer-brand p {
+                margin: 20px auto;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <!-- Preloader -->
     <div id="preloader">
-        <img src="logo.png" alt="Goldneez Loading" onerror="this.src='https://placehold.co/100x100?text=Goldneez'">
+        <img src="logo.png" alt="Goldneez Loading">
     </div>
 
-    <!-- Custom Cursor -->
     <div class="custom-cursor"></div>
     <div class="custom-cursor-outline"></div>
 
     <header id="header">
         <div class="container nav-container">
-            <a href="#" class="logo">
-                <img src="logo.png" alt="Goldneez Logo" onerror="this.src='https://placehold.co/150x45?text=Goldneez'">
-            </a>
-            
+            <a href="#" class="logo"><img src="logo.png" alt="Goldneez Logo"></a>
             <div class="nav-menu" id="nav-menu">
                 <nav>
                     <ul>
                         <li><a href="#productos" class="nav-link">Catálogo</a></li>
-                        <li><a href="#nosotros" class="nav-link">Historia</a></li>
+                        <li><a href="#filosofia" class="nav-link">Filosofía</a></li>
+                        <li><a href="#experiencia" class="nav-link">Experiencia</a></li>
                         <li><a href="#contacto" class="nav-link">Contacto</a></li>
                     </ul>
                 </nav>
                 <div class="nav-actions">
-                    <div class="social-header">
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-whatsapp"></i></a>
-                    </div>
-                    <a href="#productos" class="btn btn-primary nav-link" style="padding: 12px 28px;">Tienda</a>
+                    <div class="social-header"><a href="#"><i class="fab fa-instagram"></i></a><a href="#"><i
+                                class="fab fa-whatsapp"></i></a></div>
+                    <a href="#productos" class="btn btn-primary" style="padding: 10px 28px;">Tienda</a>
                 </div>
             </div>
-
-            <div class="menu-toggle" id="mobile-menu-btn">
-                <i class="fas fa-bars"></i>
-            </div>
+            <div class="menu-toggle" id="mobile-menu-btn"><i class="fas fa-bars"></i></div>
         </div>
     </header>
 
@@ -286,15 +879,17 @@
         <section class="hero">
             <div class="container hero-content reveal">
                 <span class="badge">Cosecha 2026</span>
-                <h1>El Estándar de Oro<br><span style="color: var(--amber-goldneez); font-style: italic;">del Café Colombiano.</span></h1>
-                <p>Cultivado en las cumbres de Toledo, Norte de Santander. Una joya líquida de 86+ puntos SCA para los paladares más exigentes.</p>
+                <h1>El Estándar de Oro<br><span style="color: var(--amber-goldneez); font-style: italic;">del Café
+                        Colombiano.</span></h1>
+                <p>Cultivado en las cumbres de Toledo, Norte de Santander. Una joya líquida de 86+ puntos SCA para los
+                    paladares más exigentes.</p>
                 <div class="hero-actions">
                     <a href="#productos" class="btn btn-primary">Comprar Original</a>
-                    <a href="#nosotros" class="btn btn-outline">Nuestra Historia</a>
+                    <a href="#filosofia" class="btn btn-outline">Nuestra Historia</a>
                 </div>
             </div>
             <div class="hero-image" id="parallax-bg">
-                <img src="assets/original_bag.jpeg" alt="Goldneez Original" onerror="this.src='https://placehold.co/400x500?text=Coffee+Bag'">
+                <img src="assets/original_bag.jpeg" alt="Goldneez Original">
             </div>
         </section>
 
@@ -307,62 +902,155 @@
             </div>
         </div>
 
+        <!-- SECCIÓN 1: FILOSOFÍA Y PROPÓSITO (NUEVA) -->
+        <section id="filosofia" class="section-padding philosophy">
+            <div class="container philosophy-grid">
+                <div class="philosophy-text reveal">
+                    <span class="badge">Legado</span>
+                    <h3>Más que café: un pacto con la tierra</h3>
+                    <p>Goldneez nace del respeto por los ciclos naturales y el saber ancestral de los caficultores de
+                        Norte de Santander. Cada grano refleja un proceso de fermentación controlada y secado al sol.
+                    </p>
+                    <div class="gold-quote">“Buscamos que cada taza cuente una historia de excelencia, justicia y
+                        pasión.”</div>
+                    <div class="stat-badge">
+                        <div><span class="stat-number">15+</span><br>Familias productoras</div>
+                        <div><span class="stat-number">100%</span><br>Trazable</div>
+                    </div>
+                </div>
+                <div class="philosophy-image reveal">
+                    <img src="assets/original_bag.png" alt="Goldneez Finca"
+                        style="width:100%; border-radius:32px; box-shadow:var(--shadow-md);">
+                </div>
+            </div>
+        </section>
+
         <section id="productos" class="products section-padding">
             <div class="container">
                 <div class="section-header reveal">
                     <h2>La Colección Original</h2>
-                    <p>Descubre el sabor auténtico de Goldneez en sus diferentes variedades y presentaciones. Elaborado con pasión en cada tueste.</p>
+                    <p>Descubre el sabor auténtico de Goldneez en sus diferentes variedades y presentaciones. Elaborado
+                        con pasión en cada tueste.</p>
                 </div>
                 <div class="products-grid">
                     <div class="product-card reveal">
-                        <img src="assets/original_bag.png" alt="Coffee Excelso" onerror="this.src='https://placehold.co/300x400?text=Excelso'">
+                        <img src="assets/original_bag.png" alt="Coffee Excelso">
                         <h3>Coffee Excelso</h3>
-                        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Origen: Toledo | Variedad: Castilla</p>
+                        <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">Origen: Toledo |
+                            Variedad: Castilla</p>
                         <span class="price">$32.00 USD</span>
                         <a href="#" class="btn btn-primary" style="width: 100%;">Añadir al Carrito</a>
                     </div>
-                    <div class="product-card reveal" style="transition-delay: 0.15s;">
-                        <img src="assets/original_bag.png" alt="Reserva Especial" style="filter: contrast(1.15) brightness(0.9);" onerror="this.src='https://placehold.co/300x400?text=Reserva'">
+                    <div class="product-card reveal" style="transition-delay: 0.1s;">
+                        <img src="assets/original_bag.png" alt="Reserva Especial">
                         <h3>Reserva Especial</h3>
-                        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Edición Limitada 400G</p>
+                        <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">Edición Limitada
+                            400G</p>
                         <span class="price">$45.00 USD</span>
                         <a href="#" class="btn btn-primary" style="width: 100%;">Añadir al Carrito</a>
                     </div>
                 </div>
             </div>
         </section>
+
+        <!-- SECCIÓN 2: BENEFICIOS SENSORIALES (NUEVA) -->
+        <section class="sensory section-padding">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>Una experiencia en cada sorbo</h2>
+                    <p>Perfil sensorial premiado, balance y cuerpo excepcional.</p>
+                </div>
+                <div class="sensory-grid">
+                    <div class="sensory-card reveal"><i class="fas fa-chart-line"></i>
+                        <h4>Acidez brillante</h4>
+                        <p>Notas cítricas y frutos rojos, acidez jugosa característica de los microlotes.</p>
+                    </div>
+                    <div class="sensory-card reveal"><i class="fas fa-cookie-bite"></i>
+                        <h4>Dulce caramelo</h4>
+                        <p>Finalización sedosa con recuerdos a panela y chocolate amargo.</p>
+                    </div>
+                    <div class="sensory-card reveal"><i class="fas fa-wine-bottle"></i>
+                        <h4>Aroma floral</h4>
+                        <p>Fragancia a jazmín y miel, intensidad aromática única.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: CATA Y MASTERCLASS (NUEVA) -->
+        <section id="experiencia" class="experience section-padding">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>La Cata Goldneez</h2>
+                    <p>Eventos exclusivos para verdaderos amantes del café de especialidad.</p>
+                </div>
+                <div class="experience-grid">
+                    <div class="experience-card reveal">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>Masterclass Presencial</h3>
+                        <p>Vive una sesión de cata guiada por baristas certificados. Aprende sobre origen, tueste y
+                            notas de cata.</p>
+                        <a href="#" class="btn-gold-outline">Próxima fecha →</a>
+                    </div>
+                    <div class="experience-card reveal">
+                        <i class="fas fa-trophy"></i>
+                        <h3>Club de Suscripción</h3>
+                        <p>Acceso a lotes exclusivos, envío mensual y beneficios únicos como descuentos en experiencias.
+                        </p>
+                        <a href="#" class="btn-gold-outline">Suscríbete →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 4: PRENSA Y RECONOCIMIENTOS (NUEVA) -->
+        <section class="press section-padding">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>Reconocimiento Internacional</h2>
+                    <p>Goldneez ha sido destacado por los paladares más exigentes del mundo.</p>
+                </div>
+                <div class="press-logos reveal">
+                    <span>REVISTA CAFÉ & GASTRONOMÍA</span>
+                    <span>SCA DAILY</span>
+                    <span>THE COFFEE GUIDE</span>
+                    <span>FESTIVAL DEL CAFÉ 2025</span>
+                </div>
+                <div class="press-quote reveal">
+                    <i class="fas fa-quote-left" style="color: var(--amber-goldneez); margin-right: 10px;"></i> Goldneez
+                    redefine el lujo cafetero colombiano con su perfil limpio y elegante.
+                </div>
+            </div>
+        </section>
     </main>
 
-    <footer>
+    <footer id="contacto">
         <div class="container">
             <div class="footer-grid">
-                <div class="footer-brand">
-                    <img src="logo.png" alt="Goldneez" style="height: 45px;" onerror="this.src='https://placehold.co/150x45?text=Goldneez'">
+                <div class="footer-brand"><img src="logo.png" alt="Goldneez" style="height: 45px;">
                     <p>Redefiniendo el lujo cafetero colombiano. Calidad, origen y elegancia en cada grano.</p>
                 </div>
                 <div class="footer-links">
                     <h4>Navegación</h4>
                     <ul>
                         <li><a href="#productos">Tienda</a></li>
-                        <li><a href="#nosotros">Historia</a></li>
-                        <li><a href="#contacto">Contacto</a></li>
+                        <li><a href="#filosofia">Historia</a></li>
+                        <li><a href="#experiencia">Experiencia</a></li>
                     </ul>
                 </div>
                 <div class="footer-links">
                     <h4>Legal</h4>
                     <ul>
                         <li><a href="#">Privacidad</a></li>
-                        <li><a href="#">Términos de Servicio</a></li>
-                        <li><a href="#">Política de Envíos</a></li>
+                        <li><a href="#">Términos</a></li>
+                        <li><a href="#">Envíos</a></li>
                     </ul>
                 </div>
                 <div class="footer-links">
                     <h4>Síganos</h4>
-                    <div style="display: flex; gap: 15px; font-size: 1.4rem;">
-                        <a href="#" style="color: var(--black-goldneez);"><i class="fab fa-instagram"></i></a>
-                        <a href="#" style="color: var(--black-goldneez);"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#" style="color: var(--black-goldneez);"><i class="fab fa-tiktok"></i></a>
-                    </div>
+                    <div style="display: flex; gap: 18px; font-size: 1.4rem;"><a href="#"><i
+                                class="fab fa-instagram"></i></a><a href="#"><i class="fab fa-whatsapp"></i></a><a
+                            href="#"><i class="fab fa-tiktok"></i></a></div>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -373,81 +1061,16 @@
     </footer>
 
     <script>
-        // Preloader
-        window.addEventListener('load', () => {
-            const preloader = document.getElementById('preloader');
-            setTimeout(() => {
-                preloader.style.opacity = '0';
-                preloader.style.visibility = 'hidden';
-            }, 600);
-        });
-
-        // Cursor
-        const cursor = document.querySelector('.custom-cursor');
-        const follower = document.querySelector('.custom-cursor-outline');
-        window.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-            setTimeout(() => {
-                follower.style.left = e.clientX - 15 + 'px';
-                follower.style.top = e.clientY - 15 + 'px';
-            }, 80);
-        });
-
-        // Parallax Effect
+        window.addEventListener('load', () => { const preloader = document.getElementById('preloader'); setTimeout(() => { preloader.style.opacity = '0'; preloader.style.visibility = 'hidden'; }, 500); });
+        const cursor = document.querySelector('.custom-cursor'), follower = document.querySelector('.custom-cursor-outline');
+        if (cursor && follower) { window.addEventListener('mousemove', (e) => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; setTimeout(() => { follower.style.left = e.clientX - 21 + 'px'; follower.style.top = e.clientY - 21 + 'px'; }, 60); }); }
         const parallaxBg = document.getElementById('parallax-bg');
-        window.addEventListener('mousemove', (e) => {
-            if (window.innerWidth > 992 && parallaxBg) {
-                const x = (window.innerWidth / 2 - e.pageX) / 50;
-                const y = (window.innerHeight / 2 - e.pageY) / 50;
-                parallaxBg.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`;
-            }
-        });
-
-        // Reveal Animations
-        const reveals = document.querySelectorAll('.reveal');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.15, rootMargin: "0px 0px -50px 0px" });
-        reveals.forEach(r => observer.observe(r));
-
-        // Header Scroll
-        const header = document.getElementById('header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 30) header.classList.add('scrolled');
-            else header.classList.remove('scrolled');
-        });
-
-        // Mobile Menu Toggle
-        const menuBtn = document.getElementById('mobile-menu-btn');
-        const navMenu = document.getElementById('nav-menu');
-        const navLinks = document.querySelectorAll('.nav-link');
-        const menuIcon = menuBtn.querySelector('i');
-
-        menuBtn.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
-            if(navMenu.classList.contains('active')) {
-                menuIcon.classList.remove('fa-bars');
-                menuIcon.classList.add('fa-times');
-            } else {
-                menuIcon.classList.remove('fa-times');
-                menuIcon.classList.add('fa-bars');
-            }
-        });
-
-        // Close menu on link click
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                navMenu.classList.remove('active');
-                menuIcon.classList.remove('fa-times');
-                menuIcon.classList.add('fa-bars');
-            });
-        });
+        window.addEventListener('mousemove', (e) => { if (window.innerWidth > 992 && parallaxBg) { const x = (window.innerWidth / 2 - e.pageX) / 55; const y = (window.innerHeight / 2 - e.pageY) / 55; parallaxBg.style.transform = `translate(${x}px, ${y}px) translateY(-50%)`; } });
+        const reveals = document.querySelectorAll('.reveal'); const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('active'); observer.unobserve(entry.target); } }); }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }); reveals.forEach(r => observer.observe(r));
+        const header = document.getElementById('header'); window.addEventListener('scroll', () => { if (window.scrollY > 30) header.classList.add('scrolled'); else header.classList.remove('scrolled'); });
+        const menuBtn = document.getElementById('mobile-menu-btn'), navMenu = document.getElementById('nav-menu'); menuBtn.addEventListener('click', () => { navMenu.classList.toggle('active'); const icon = menuBtn.querySelector('i'); icon.classList.toggle('fa-bars'); icon.classList.toggle('fa-times'); });
+        document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', () => { navMenu.classList.remove('active'); const icon = menuBtn.querySelector('i'); icon.classList.add('fa-bars'); icon.classList.remove('fa-times'); }));
     </script>
 </body>
+
 </html>
