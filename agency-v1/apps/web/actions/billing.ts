@@ -10,9 +10,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-import { createPaymentSession, PaymentGateway, BillingCycle, getPriceIdForTier } from "@/lib/payment-gateway";
+import { createPaymentSession, getPriceIdForTier } from "@/lib/payment-gateway";
+import type { PaymentGateway, BillingCycle } from "@/lib/payment-gateway";
 import { fail, ok, ActionResult } from "@/types/actions";
-import { getPSEBankList, PSEBank } from "@/lib/pse";
+import { getPSEBankList } from "@/lib/pse";
+import type { PSEBank } from "@/lib/pse";
 
 export type { PaymentGateway, BillingCycle };
 
