@@ -17,7 +17,8 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*", ".env.local", ".env.production"],
-      "outputs": [".next/**/*", "!.next/cache/**/*", "dist/**/*", "build/**/*"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"],
+      "cache": true
     },
     "dev": {
       "cache": false,
@@ -25,13 +26,16 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "cache": true
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "cache": true
     },
     "type-check": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "cache": true
     }
   }
 }

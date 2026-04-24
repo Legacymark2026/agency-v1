@@ -20,6 +20,7 @@ const cspHeader = `
 `.replace(/\n/g, '');
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   poweredByHeader: false,
   compress: true,
   // CORREGIDO: TypeScript errors deben resolverse, no ignorarse.

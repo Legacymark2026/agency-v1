@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { createCheckoutSession, createPortalSession } from "@/actions/billing";
+import { createPaymentSessionWithGateway, getPSEBanks, createBillingPortalSession as createBillingPortalSessionFn, getAvailableGateways } from "@/actions/billing";
+import { isSuccess as isSuccessResult } from "@/types/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CreditCard, ExternalLink, Zap } from "lucide-react";
+import { Loader2, CreditCard, ExternalLink, Zap, Wallet, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BillingCardProps {
   subscriptionTier: string;
@@ -14,22 +16,55 @@ interface BillingCardProps {
   leadsLimit?: number;
 }
 
+type Gateway = "stripe" | "paypal" | "pse";
+
 export function BillingCard({ subscriptionTier, subscriptionStatus, leadsUsed = 0, leadsLimit = 100 }: BillingCardProps) {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [selectedGateway, setSelectedGateway] = useState<Gateway>("stripe");
+  const [selectedBank, setSelectedBank] = useState<string>("");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [availableGateways, setAvailableGateways] = useState<Gateway[]>(["stripe"]);
+  const [bankList, setBankList] = useState<Array<{ code: string; name: string }>>([]);
 
   const isFree = subscriptionTier === "free";
   const percentage = Math.min(100, Math.round((leadsUsed / (leadsLimit || 1)) * 100));
 
+  async function loadGateways() {
+    try {
+      const gateways = await getAvailableGateways();
+      setAvailableGateways(gateways as Gateway[]);
+      
+      if (gateways.includes("pse")) {
+        const bankRes = await getPSEBanks();
+        if (bankRes.success) {
+          setBankList(bankRes.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading gateways:", error);
+    }
+  }
+
+  if (isFree && availableGateways.length === 1) {
+    loadGateways();
+  }
+
   async function handleUpgrade() {
     setLoadingCheckout(true);
     try {
-      // Usar priceId real aquí (reemplaza 'price_xxxx' con tu Price ID de Stripe)
-      const res = await createCheckoutSession("price_faketest123", "pro");
-      if (res.success && typeof res.data !== 'string') {
+      const res = await createPaymentSessionWithGateway(
+        selectedGateway,
+        "pro",
+        billingCycle,
+        selectedGateway === "pse" ? selectedBank : undefined
+      );
+      
+      if (!isSuccessResult(res)) {
+        const errorMsg = res.error || "Failed to initiate payment";
+        toast.error(errorMsg);
+      } else if (res.data.url) {
         window.location.href = res.data.url;
-      } else {
-        toast.error(!res.success && typeof (res as any).message === 'string' ? (res as any).message : "Failed to initiate payment");
       }
     } finally {
       setLoadingCheckout(false);
@@ -39,11 +74,11 @@ export function BillingCard({ subscriptionTier, subscriptionStatus, leadsUsed = 
   async function handlePortal() {
     setLoadingPortal(true);
     try {
-      const res = await createPortalSession();
-      if (res.success && typeof res.data !== 'string') {
-         window.location.href = res.data.url;
+      const res = await createBillingPortalSessionFn();
+      if (isSuccessResult(res)) {
+        window.location.href = res.data.url;
       } else {
-         toast.error(!res.success && typeof (res as any).message === 'string' ? (res as any).message : "Could not open billing portal");
+        toast.error(res.error || "Could not open billing portal");
       }
     } finally {
       setLoadingPortal(false);
@@ -92,6 +127,100 @@ export function BillingCard({ subscriptionTier, subscriptionStatus, leadsUsed = 
              )}
           </div>
         </div>
+
+        {isFree && (
+          <div className="space-y-4 p-4 bg-slate-950/30 rounded-xl border border-slate-800">
+            <h4 className="text-sm font-medium text-slate-300">Selecciona tu método de pago</h4>
+            
+            {/* Gateway Selection */}
+            <div className="grid grid-cols-3 gap-3">
+              {availableGateways.includes("stripe") && (
+                <button
+                  onClick={() => setSelectedGateway("stripe")}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    selectedGateway === "stripe" 
+                      ? "border-teal-500 bg-teal-500/10" 
+                      : "border-slate-700 hover:border-slate-600"
+                  }`}
+                >
+                  <CreditCard className="h-5 w-5 text-slate-400 mb-1" />
+                  <span className="text-sm font-medium text-slate-200">Tarjeta</span>
+                  <p className="text-xs text-slate-500">Stripe</p>
+                </button>
+              )}
+              
+              {availableGateways.includes("paypal") && (
+                <button
+                  onClick={() => setSelectedGateway("paypal")}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    selectedGateway === "paypal" 
+                      ? "border-teal-500 bg-teal-500/10" 
+                      : "border-slate-700 hover:border-slate-600"
+                  }`}
+                >
+                  <Wallet className="h-5 w-5 text-slate-400 mb-1" />
+                  <span className="text-sm font-medium text-slate-200">PayPal</span>
+                  <p className="text-xs text-slate-500">One-click</p>
+                </button>
+              )}
+              
+              {availableGateways.includes("pse") && (
+                <button
+                  onClick={() => setSelectedGateway("pse")}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    selectedGateway === "pse" 
+                      ? "border-teal-500 bg-teal-500/10" 
+                      : "border-slate-700 hover:border-slate-600"
+                  }`}
+                >
+                  <Building2 className="h-5 w-5 text-slate-400 mb-1" />
+                  <span className="text-sm font-medium text-slate-200">PSE</span>
+                  <p className="text-xs text-slate-500">Colombia</p>
+                </button>
+              )}
+            </div>
+
+            {/* Billing Cycle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setBillingCycle("monthly")}
+                className={`flex-1 p-2 rounded-lg border text-sm transition-all ${
+                   billingCycle === "monthly"
+                     ? "border-teal-500 bg-teal-500/10 text-teal-400"
+                     : "border-slate-700 text-slate-400 hover:border-slate-600"
+                }`}
+              >
+                Mensual
+              </button>
+              <button
+                onClick={() => setBillingCycle("yearly")}
+                className={`flex-1 p-2 rounded-lg border text-sm transition-all ${
+                   billingCycle === "yearly"
+                     ? "border-teal-500 bg-teal-500/10 text-teal-400"
+                     : "border-slate-700 text-slate-400 hover:border-slate-600"
+                }`}
+              >
+                Anual (20% dto)
+              </button>
+            </div>
+
+            {/* Bank Selection for PSE */}
+            {selectedGateway === "pse" && bankList.length > 0 && (
+              <Select value={selectedBank} onValueChange={setSelectedBank}>
+                <SelectTrigger className="bg-slate-800 border-slate-700">
+                  <SelectValue placeholder="Selecciona tu banco" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bankList.map((bank) => (
+                    <SelectItem key={bank.code} value={bank.code}>
+                      {bank.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        )}
 
         {/* Quota Progress */}
         <div className="space-y-3">

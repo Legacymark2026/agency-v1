@@ -9,6 +9,13 @@ export const authConfig: NextAuthConfig = {
     secret: authSecret,
     debug: true,
     trustHost: true,
+    
+    // SESSION HARDENING - Security Best Practices
+    session: {
+        strategy: "jwt",
+        maxAge: 30 * 60, // 30 minutes in seconds
+    },
+    
     pages: {
         signIn: "/auth/login",
         error: "/auth/error",

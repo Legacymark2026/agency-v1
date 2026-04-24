@@ -51,7 +51,8 @@ export class WhatsAppProvider implements ChannelProvider {
                     // Si la URL empieza con nuestro proxy /api/media/whatsapp/, extraemos el ID para enviarlo como Media ID
                     let mediaId: string | null = null;
                     if (attachment.url.includes('/api/media/whatsapp/')) {
-                        mediaId = attachment.url.split('/').pop();
+                        const part = attachment.url.split('/').pop();
+                        mediaId = part || null;
                     }
 
                     if (mediaId) {

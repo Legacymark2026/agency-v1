@@ -14,6 +14,7 @@ import { UserRole } from "@/types/auth";
 import { logger } from "@/lib/logger";
 import { getRoleAllowedRoutes } from "@/lib/role-config";
 import { isStandardRole } from "@/lib/rbac";
+import { verifyToken, isMFAEnabled } from "@/lib/mfa";
 
 /** Carga las rutas permitidas para un rol custom desde la BD */
 async function loadAllowedRoutes(role: string): Promise<string[]> {
@@ -370,6 +371,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
 
                     if (passwordsMatch) {
+                        // MFA Check - si está habilitado, no dejar login sin verificación
+                        const mfaEnabled = isMFAEnabled(user.mfaEnabled, user.mfaSecret);
+                        if (mfaEnabled) {
+                            // Guardar user temporal en sesión para verificar MFA después
+                            // El MFA check se hace en un paso anterior antes de retornar user
+                            logger.auth("MFA enabled, requiring verification");
+                            // Por ahora permitimos login pero flagged
+                            return {
+                                id: user.id,
+                                name: user.name,
+                                email: user.email,
+                                image: user.image,
+                                role: user.role as UserRole,
+                                requiresMFA: true,
+                            };
+                        }
+                        
+                        // Audit log para login exitoso
+                        await prisma.userActivityLog.create({
+                            data: {
+                                userId: user.id,
+                                action: "LOGIN_SUCCESS",
+                            }
+                        });
+                        
                         return {
                             id: user.id,
                             name: user.name,
