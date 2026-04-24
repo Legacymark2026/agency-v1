@@ -266,17 +266,29 @@ export async function createProject(data: ProjectFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = ProjectSchema.parse(data);
-    const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
+    const {
+        title,
+        slug,
+        description,
+        tagNames,
+        scheduledDate,
+        startDate,
+        endDate,
+        categoryId,
+        ...restData
+    } = validated;
 
     try {
-        const { categoryId, ...restData } = projectData;
         await prisma.project.create({
             data: {
+                title,
+                slug,
+                description,
                 ...restData,
                 scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
-                ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+                categoryId: categoryId || null,
             }
         });
         revalidatePath('/dashboard/projects');
@@ -294,7 +306,14 @@ export async function updateProject(id: string, data: ProjectFormData) {
     if (!session?.user) throw new Error("Unauthorized");
 
     const validated = ProjectSchema.parse(data);
-    const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
+    const {
+        tagNames,
+        scheduledDate,
+        startDate,
+        endDate,
+        categoryId,
+        ...projectData
+    } = validated;
 
     try {
         const currentProject = await prisma.project.findUnique({ where: { id } });
@@ -306,7 +325,8 @@ export async function updateProject(id: string, data: ProjectFormData) {
                 scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
-            } as any
+                categoryId: categoryId || null,
+            }
         });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
