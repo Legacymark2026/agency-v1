@@ -4,16 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="description"
-        content="Goldneez - Café de origen premium. La esencia dorada de Colombia en cada taza. 86+ puntos SCA.">
+    <meta name="description" content="Goldneez - Café de origen premium. La esencia dorada de Colombia en cada taza. 86+ puntos SCA.">
     <title>Goldneez | Café de Especialidad Premium — La Esencia Dorada</title>
+
+    <!-- Open Graph / WhatsApp / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Goldneez | Café de Especialidad Premium">
+    <meta property="og:description" content="86+ puntos SCA. Cultivado en las cumbres de Toledo, Norte de Santander. La esencia dorada del café colombiano.">
+    <meta property="og:image" content="logo.png">
+    <meta property="og:locale" content="es_CO">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Goldneez | Café de Especialidad Premium">
+    <meta name="twitter:description" content="86+ puntos SCA. La esencia dorada del café colombiano.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
 
     <!-- Google Fonts & FontAwesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <style>
@@ -1007,6 +1017,150 @@
                 margin: 20px auto;
             }
         }
+
+        /* Product Card Helpers */
+        .product-origin {
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .product-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .product-actions .btn {
+            flex: 1;
+            padding: 12px;
+        }
+        .badge-limited {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--amber-goldneez);
+            color: var(--black-goldneez);
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 100px;
+        }
+
+        /* ─── Testimonios ─── */
+        .testimonials {
+            background: var(--bg-soft);
+        }
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 28px;
+        }
+        .testimonial-card {
+            background: var(--bg-white);
+            border-radius: 20px;
+            padding: 32px 28px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .testimonial-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+        .stars {
+            color: var(--amber-goldneez);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+        }
+        .testimonial-card blockquote {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .testimonial-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--amber-goldneez), #e6a800);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--black-goldneez);
+            flex-shrink: 0;
+        }
+        .testimonial-author-info strong {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .testimonial-author-info span {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── Cómo Comprar ─── */
+        .how-to-buy {
+            background: var(--bg-white);
+        }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            position: relative;
+        }
+        .steps-grid::before {
+            content: '';
+            position: absolute;
+            top: 36px;
+            left: 16%;
+            width: 68%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--amber-goldneez), transparent);
+        }
+        .step-card {
+            text-align: center;
+            padding: 32px 24px;
+        }
+        .step-number {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: var(--amber-goldneez);
+            color: var(--black-goldneez);
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 20px rgba(255, 191, 0, 0.3);
+        }
+        .step-card h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .step-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        @media (max-width: 768px) {
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+            .steps-grid::before { display: none; }
+        }
     </style>
 </head>
 
@@ -1033,11 +1187,11 @@
                 </nav>
                 <div class="nav-actions">
                     <div class="social-header">
-                        <a href="https://www.instagram.com/goldneez/" target="_blank"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank"><i class="fab fa-facebook-f"></i></a>
-                        <a href="https://wa.me/573160658659" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/goldneez/" target="_blank" rel="noopener noreferrer" aria-label="Instagram de Goldneez"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank" rel="noopener noreferrer" aria-label="Facebook de Goldneez"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://wa.me/573160658659" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de Goldneez"><i class="fab fa-whatsapp"></i></a>
                     </div>
-                    <a href="https://wa.me/573160658659" target="_blank" class="btn btn-primary" style="padding: 10px 28px;">Tienda</a>
+                    <a href="https://wa.me/573160658659" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 10px 28px;">Tienda</a>
                 </div>
             </div>
             <div class="menu-toggle" id="mobile-menu-btn"><i class="fas fa-bars"></i></div>
@@ -1053,12 +1207,12 @@
                 <p>Cultivado en las cumbres de Toledo, Norte de Santander. Una joya líquida de 86+ puntos SCA para los
                     paladares más exigentes.</p>
                 <div class="hero-actions">
-                    <a href="https://wa.me/573160658659" target="_blank" class="btn btn-primary">Comprar Original</a>
+                    <a href="https://wa.me/573160658659" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Comprar Original</a>
                     <a href="#filosofia" class="btn btn-outline">Nuestra Historia</a>
                 </div>
             </div>
             <div class="hero-image" id="parallax-bg">
-                <img src="assets/original_bag.jpeg" alt="Goldneez Original">
+                <img src="assets/original_bag.jpeg" alt="Goldneez Original" width="560" height="600">
             </div>
         </section>
 
@@ -1088,7 +1242,7 @@
                     </div>
                 </div>
                 <div class="philosophy-image reveal">
-                    <img src="assets/CAFE_FINCA.png" alt="Goldneez Finca"
+                    <img src="assets/CAFE_FINCA.png" alt="Goldneez Finca" loading="lazy" width="580" height="420"
                         style="width:100%; border-radius:32px; box-shadow:var(--shadow-md);">
                 </div>
             </div>
@@ -1103,25 +1257,34 @@
                 </div>
                 <div class="products-grid">
                     <div class="product-card reveal">
-                        <img src="assets/original_bag.jpeg" alt="Coffee Excelso">
+                        <img src="assets/molido.png" alt="Coffee Excelso — Goldneez" loading="lazy" width="280" height="280">
                         <h3>Coffee Excelso</h3>
-                        <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">Origen: Toledo |
-                            Variedad: Castilla</p>
+                        <p class="product-origin">Origen: Toledo | Variedad: Castilla</p>
                         <span class="price">$32.00 USD</span>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-primary open-modal" data-product="excelso" style="flex: 1; padding: 12px;">Detalles</button>
-                            <a href="https://wa.me/573160658659" target="_blank" class="btn btn-outline" style="flex: 1; padding: 12px;"><i class="fab fa-whatsapp"></i></a>
+                        <div class="product-actions">
+                            <button class="btn btn-primary open-modal" data-product="excelso">Detalles</button>
+                            <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20información%20sobre%20el%20Coffee%20Excelso" target="_blank" rel="noopener noreferrer" class="btn btn-outline" aria-label="Pedir Excelso por WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
                     <div class="product-card reveal" style="transition-delay: 0.1s;">
-                        <img src="assets/original_bag.jpeg" alt="Reserva Especial">
+                        <span class="badge-limited">Edición Limitada</span>
+                        <img src="assets/PROTO.png" alt="Reserva Especial — Goldneez" loading="lazy" width="280" height="280">
                         <h3>Reserva Especial</h3>
-                        <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">Edición Limitada
-                            400G</p>
+                        <p class="product-origin">Micro-lote · 400G · SCA 87.5</p>
                         <span class="price">$45.00 USD</span>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-primary open-modal" data-product="reserva" style="flex: 1; padding: 12px;">Detalles</button>
-                            <a href="https://wa.me/573160658659" target="_blank" class="btn btn-outline" style="flex: 1; padding: 12px;"><i class="fab fa-whatsapp"></i></a>
+                        <div class="product-actions">
+                            <button class="btn btn-primary open-modal" data-product="reserva">Detalles</button>
+                            <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20información%20sobre%20la%20Reserva%20Especial" target="_blank" rel="noopener noreferrer" class="btn btn-outline" aria-label="Pedir Reserva Especial por WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </div>
+                    <div class="product-card reveal" style="transition-delay: 0.2s;">
+                        <img src="assets/tostado.png" alt="Tostado Artesanal — Goldneez" loading="lazy" width="280" height="280">
+                        <h3>Tostado Artesanal</h3>
+                        <p class="product-origin">Tueste Medio · Proceso Natural</p>
+                        <span class="price">$38.00 USD</span>
+                        <div class="product-actions">
+                            <button class="btn btn-primary open-modal" data-product="tostado">Detalles</button>
+                            <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20información%20sobre%20el%20Tostado%20Artesanal" target="_blank" rel="noopener noreferrer" class="btn btn-outline" aria-label="Pedir Tostado Artesanal por WhatsApp"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
                 </div>
@@ -1163,16 +1326,14 @@
                     <div class="experience-card reveal">
                         <i class="fas fa-calendar-alt"></i>
                         <h3>Masterclass Presencial</h3>
-                        <p>Vive una sesión de cata guiada por baristas certificados. Aprende sobre origen, tueste y
-                            notas de cata.</p>
-                        <a href="#" class="btn-gold-outline">Próxima fecha →</a>
+                        <p>Vive una sesión de cata guiada por baristas certificados. Aprende sobre origen, tueste y notas de cata.</p>
+                        <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20información%20sobre%20la%20próxima%20Masterclass" target="_blank" rel="noopener noreferrer" class="btn-gold-outline">Consultar fecha →</a>
                     </div>
                     <div class="experience-card reveal">
                         <i class="fas fa-trophy"></i>
                         <h3>Club de Suscripción</h3>
-                        <p>Acceso a lotes exclusivos, envío mensual y beneficios únicos como descuentos en experiencias.
-                        </p>
-                        <a href="#" class="btn-gold-outline">Suscríbete →</a>
+                        <p>Acceso a lotes exclusivos, envío mensual y beneficios únicos como descuentos en experiencias.</p>
+                        <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20unirme%20al%20Club%20de%20Suscripción%20Goldneez" target="_blank" rel="noopener noreferrer" class="btn-gold-outline">Unirme al club →</a>
                     </div>
                 </div>
             </div>
@@ -1189,7 +1350,7 @@
                     <div class="sensory-card reveal" style="border: 2px solid var(--amber-goldneez);">
                         <i class="fa-solid fa-truck-fast" style="color: var(--amber-goldneez);"></i>
                         <h4>Envío Gratis +$50</h4>
-                        <p>Recibe tu café premium en包装 elegante sin costo adicional en pedidos superiores a $50 USD.</p>
+                        <p>Recibe tu café premium en empaque elegante sin costo adicional en pedidos superiores a $50 USD.</p>
                     </div>
                     <div class="sensory-card reveal" style="border: 2px solid var(--amber-goldneez); transition-delay: 0.1s;">
                         <i class="fa-solid fa-heart" style="color: var(--amber-goldneez);"></i>
@@ -1210,6 +1371,83 @@
                 <div class="press-quote reveal" style="border: none; margin-top: 60px; padding-top: 0;">
                     <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20mi%2010%25%20OFF%20en%20mi%20primera%20compra%20de%20Goldneez" target="_blank" class="btn btn-primary" style="font-size: 1rem; padding: 18px 45px;">
                         <i class="fab fa-whatsapp" style="font-size: 1.3rem;"></i> Quiero Mi 10% OFF Ahora
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: TESTIMONIOS -->
+        <section class="testimonials section-padding">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>Lo Que Dicen Nuestros Clientes</h2>
+                    <p>Experiencias reales de personas que ya descubrieron la diferencia Goldneez.</p>
+                </div>
+                <div class="testimonials-grid">
+                    <div class="testimonial-card reveal">
+                        <div class="stars">★★★★★</div>
+                        <blockquote>"El mejor café que he probado en años. Las notas de chocolate y caramelo son exactamente lo que describen. Ya voy por mi tercera bolsa."</blockquote>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">CA</div>
+                            <div class="testimonial-author-info">
+                                <strong>Carlos Andrade</strong>
+                                <span>Bogotá, Colombia</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card reveal" style="transition-delay: 0.1s;">
+                        <div class="stars">★★★★★</div>
+                        <blockquote>"La Reserva Especial es increíble. Se nota que es un producto artesanal con carácter. La fermentación natural le da un perfil único."</blockquote>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">ML</div>
+                            <div class="testimonial-author-info">
+                                <strong>María López</strong>
+                                <span>Medellín, Colombia</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card reveal" style="transition-delay: 0.2s;">
+                        <div class="stars">★★★★★</div>
+                        <blockquote>"Pedí el Coffee Excelso para regalar y quedaron encantados. El empaque es elegante y el café es de primera. Definitivamente lo recomiendo."</blockquote>
+                        <div class="testimonial-author">
+                            <div class="testimonial-avatar">JR</div>
+                            <div class="testimonial-author-info">
+                                <strong>Jorge Ramírez</strong>
+                                <span>Cali, Colombia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN: CÓMO COMPRAR -->
+        <section class="how-to-buy section-padding">
+            <div class="container">
+                <div class="section-header reveal">
+                    <h2>¿Cómo Comprar?</h2>
+                    <p>Simple, rápido y directo. Tu café premium a un mensaje de distancia.</p>
+                </div>
+                <div class="steps-grid">
+                    <div class="step-card reveal">
+                        <div class="step-number">1</div>
+                        <h4>Elige tu Café</h4>
+                        <p>Explora nuestro catálogo y selecciona la variedad que más te llame la atención.</p>
+                    </div>
+                    <div class="step-card reveal" style="transition-delay: 0.15s;">
+                        <div class="step-number">2</div>
+                        <h4>Escríbenos</h4>
+                        <p>Contáctanos por WhatsApp con tu selección. Te atendemos en minutos.</p>
+                    </div>
+                    <div class="step-card reveal" style="transition-delay: 0.3s;">
+                        <div class="step-number">3</div>
+                        <h4>Recíbelo en Casa</h4>
+                        <p>Procesamos tu pedido y lo enviamos fresco, tostado máximo 7 días antes.</p>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 56px;" class="reveal">
+                    <a href="https://wa.me/573160658659?text=Hola%2C%20quiero%20hacer%20un%20pedido%20de%20Goldneez" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 1rem; padding: 18px 48px;">
+                        <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i>&nbsp; Hacer Mi Pedido Ahora
                     </a>
                 </div>
             </div>
@@ -1241,9 +1479,9 @@
                 <div class="footer-links">
                     <h4>Síganos</h4>
                     <div style="display: flex; gap: 15px; font-size: 1.4rem;">
-                        <a href="https://www.instagram.com/goldneez/" target="_blank" style="color: var(--black-goldneez);"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank" style="color: var(--black-goldneez);"><i class="fab fa-facebook-f"></i></a>
-                        <a href="https://wa.me/573160658659" target="_blank" style="color: var(--black-goldneez);"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/goldneez/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Goldneez" style="color: var(--black-goldneez);"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/p/Goldneez-61557734744442/" target="_blank" rel="noopener noreferrer" aria-label="Facebook Goldneez" style="color: var(--black-goldneez);"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://wa.me/573160658659" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Goldneez" style="color: var(--black-goldneez);"><i class="fab fa-whatsapp"></i></a>
                     </div>
                 </div>
             </div>
@@ -1278,12 +1516,13 @@
     </div>
 
     <script>
-        // Datos de productos
+        // ─── Datos de productos ───
         const productsData = {
             excelso: {
                 title: "Coffee Excelso",
                 price: "$32.00 USD",
-                image: "assets/original_bag.jpeg",
+                image: "assets/molido.png",
+                whatsapp: "https://wa.me/573160658659?text=Hola%2C%20quiero%20el%20Coffee%20Excelso",
                 features: [
                     "100% Granos Arábica Selección",
                     "Origen: Toledo, Norte de Santander",
@@ -1296,7 +1535,8 @@
             reserva: {
                 title: "Reserva Especial",
                 price: "$45.00 USD",
-                image: "assets/original_bag.jpeg",
+                image: "assets/PROTO.png",
+                whatsapp: "https://wa.me/573160658659?text=Hola%2C%20quiero%20la%20Reserva%20Especial",
                 features: [
                     "Micro-lote de Edición Limitada",
                     "Fermentación Natural 72h",
@@ -1305,13 +1545,28 @@
                     "Notas: Frutos Rojos, Vainilla y Caramelo",
                     "Altura: 1,920 msnm"
                 ]
+            },
+            tostado: {
+                title: "Tostado Artesanal",
+                price: "$38.00 USD",
+                image: "assets/tostado.png",
+                whatsapp: "https://wa.me/573160658659?text=Hola%2C%20quiero%20el%20Tostado%20Artesanal",
+                features: [
+                    "Tueste medio artesanal en tambor",
+                    "Proceso Natural — Secado al sol",
+                    "Variedad: Bourbon y Typica",
+                    "Notas: Fruta madura, miel y especias",
+                    "Ideal para V60, Chemex y AeroPress",
+                    "Altura: 1,800 - 1,870 msnm"
+                ]
             }
         };
 
-        // Modal Logic
+        // ─── Modal Logic ───
         const modal = document.getElementById('product-modal');
         const closeModal = document.getElementById('modal-close');
         const openButtons = document.querySelectorAll('.open-modal');
+        const modalWaBtn = modal.querySelector('.btn.btn-primary');
 
         openButtons.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1321,6 +1576,7 @@
                 document.getElementById('modal-title').innerText = data.title;
                 document.getElementById('modal-price').innerText = data.price;
                 document.getElementById('modal-img').src = data.image;
+                if (modalWaBtn) modalWaBtn.href = data.whatsapp;
 
                 const featuresList = document.getElementById('modal-features');
                 featuresList.innerHTML = '';
@@ -1345,9 +1601,9 @@
         };
 
         closeModal.addEventListener('click', closeFunc);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeFunc();
-        });
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeFunc(); });
+        // Escape key closes modal
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('active')) closeFunc(); });
 
         // Preloader
         window.addEventListener('load', () => {
@@ -1358,21 +1614,19 @@
             }, 600);
         });
 
-        // Cursor (solo desktop)
-        if (window.innerWidth > 1024) {
-            const cursor = document.querySelector('.custom-cursor');
-            const follower = document.querySelector('.custom-cursor-outline');
-            window.addEventListener('mousemove', (e) => {
+        // ─── Consolidated mousemove (cursor + parallax) ───
+        const isDesktop = window.innerWidth > 1024;
+        const cursor = isDesktop ? document.querySelector('.custom-cursor') : null;
+        const follower = isDesktop ? document.querySelector('.custom-cursor-outline') : null;
+        const parallaxBg = document.getElementById('parallax-bg');
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDesktop && cursor) {
                 cursor.style.left = e.clientX + 'px';
                 cursor.style.top = e.clientY + 'px';
                 follower.style.left = e.clientX + 'px';
                 follower.style.top = e.clientY + 'px';
-            });
-        }
-
-        // Parallax Effect
-        const parallaxBg = document.getElementById('parallax-bg');
-        window.addEventListener('mousemove', (e) => {
+            }
             if (window.innerWidth > 992 && parallaxBg) {
                 const x = (window.innerWidth / 2 - e.pageX) / 50;
                 const y = (window.innerHeight / 2 - e.pageY) / 50;
