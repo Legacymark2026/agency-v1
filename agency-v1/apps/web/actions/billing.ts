@@ -58,6 +58,11 @@ export async function createStripeCheckoutSession(
 
     if (!company) return fail("Compañía no encontrada.", 404);
 
+    // ── BYPASS: La agencia dueña del sistema no paga subscripción ─────────────
+    if (process.env.MASTER_TENANT_ID && company.id === process.env.MASTER_TENANT_ID) {
+      return fail("La cuenta maestra no requiere subscripción de Stripe.", 403);
+    }
+
     let customerId = company.stripeCustomerId;
 
     if (!customerId) {
@@ -247,4 +252,9 @@ export async function createBillingPortalSession(): Promise<ActionResult<{ url: 
   }
 }
 
-export { createStripeCheckoutSession as createCheckoutSession, createBillingPortalSession as createPortalSession };
+// ── API Surface canónica ─────────────────────────────────────────────────────
+// Los aliases se mantienen por compatibilidad con imports existentes.
+export {
+  createStripeCheckoutSession as createCheckoutSession,
+  createBillingPortalSession as createPortalSession,
+};

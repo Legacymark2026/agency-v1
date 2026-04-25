@@ -35,11 +35,14 @@ export default function BillingPage() {
     async function handleUpgrade() {
         setLoadingCheckout(true);
         try {
-            const res = await createCheckoutSession("price_faketest123", "pro");
-            if (res.success && typeof res.data !== 'string') {
-                window.location.href = res.data.url;
+            // Usa la variable de entorno del Price ID real (mensual por defecto)
+            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY
+                || "price_not_configured";
+            const res = await createCheckoutSession(priceId, "pro");
+            if (res.success) {
+                window.location.href = (res.data as { url: string }).url;
             } else {
-                toast.error(!res.success && typeof (res as any).message === 'string' ? (res as any).message : "Error procesando el pago.");
+                toast.error(!res.success ? res.error : "Error procesando el pago.");
             }
         } finally {
             setLoadingCheckout(false);
@@ -50,10 +53,10 @@ export default function BillingPage() {
         setLoadingPortal(true);
         try {
             const res = await createPortalSession();
-            if (res.success && typeof res.data !== 'string') {
-                window.location.href = res.data.url;
+            if (res.success) {
+                window.location.href = (res.data as { url: string }).url;
             } else {
-                toast.error(!res.success && typeof (res as any).message === 'string' ? (res as any).message : "Error abriendo el portal.");
+                toast.error(!res.success ? res.error : "Error abriendo el portal.");
             }
         } finally {
             setLoadingPortal(false);
@@ -104,10 +107,23 @@ export default function BillingPage() {
                             <div className="relative z-10">
                                 <div className="flex items-start justify-between mb-4">
                                     <div>
-                                        <span className="text-xs font-mono font-bold px-2 py-1 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30">PRO PLAN ACTIVO</span>
+                                        {/* Plan badge dinámico desde la DB */}
+                                        <span className={`text-xs font-mono font-bold px-2 py-1 rounded-full border ${
+                                            usage?.plan === 'agency'
+                                                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                                : usage?.plan === 'free'
+                                                ? 'bg-slate-700/50 text-slate-400 border-slate-600'
+                                                : 'bg-teal-500/20 text-teal-400 border-teal-500/30'
+                                        }`}>
+                                            {usage?.plan ? `${usage.plan.toUpperCase()} PLAN` : 'CARGANDO...'}
+                                            {usage?.subscriptionStatus === 'active' ? ' ACTIVO' : usage?.subscriptionStatus === 'past_due' ? ' - PAGO PENDIENTE' : ''}
+                                        </span>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-3xl font-black text-white">$49<span className="text-base font-medium text-slate-400">/mes</span></div>
+                                        <div className="text-3xl font-black text-white">
+                                            {usage?.plan === 'agency' ? '$99' : usage?.plan === 'pro' ? '$49' : '$0'}
+                                            <span className="text-base font-medium text-slate-400">/mes</span>
+                                        </div>
                                         <p className="text-xs text-slate-500 mt-1">Próximo cobro: {fmtDate(nextBillingDate)}</p>
                                     </div>
                                 </div>

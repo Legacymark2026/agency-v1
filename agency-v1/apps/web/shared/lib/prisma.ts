@@ -28,22 +28,29 @@ declare global {
 }
 
 function createPrismaClient(): PrismaClient {
+  const dbUrl = process.env.POSTGRES_PRISMA_URL ?? process.env.DATABASE_URL;
+
+  // En serverless (Vercel), limitar el pool a 1 conexión por función evita
+  // saturar max_connections de PostgreSQL. El parámetro se agrega dinámicamente
+  // solo si la URL no es de Prisma Accelerate (que ya gestiona el pool por su cuenta).
+  let connectionUrl = dbUrl;
+  if (
+    dbUrl &&
+    !dbUrl.startsWith("prisma://") && // Prisma Accelerate gestiona su propio pool
+    process.env.NODE_ENV === "production" &&
+    !dbUrl.includes("connection_limit")
+  ) {
+    const separator = dbUrl.includes("?") ? "&" : "?";
+    connectionUrl = `${dbUrl}${separator}connection_limit=1&pool_timeout=20`;
+  }
+
   return new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "warn", "error"]
         : ["error"],
-    // Para serverless: limitar el connection pool para no saturar max_connections.
-    // Cuando se active Prisma Accelerate, estas opciones pasan a ser manejadas
-    // por el proxy y se pueden eliminar.
-    ...(process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL
-      ? {
-          datasources: {
-            db: {
-              url: process.env.POSTGRES_PRISMA_URL ?? process.env.DATABASE_URL,
-            },
-          },
-        }
+    ...(connectionUrl
+      ? { datasources: { db: { url: connectionUrl } } }
       : {}),
   });
 }

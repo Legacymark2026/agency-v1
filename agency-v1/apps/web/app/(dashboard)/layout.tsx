@@ -32,10 +32,19 @@ export default async function DashboardLayout({
     if (!session?.user) redirect("/auth/login");
 
     let role = (session.user.role as UserRole) || UserRole.GUEST;
-    const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true }
-    });
+
+    // ─ Paralelizar las 2 queries independientes de DB ──────────────────────
+    const [dbUser, companyUser] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { role: true }
+        }),
+        prisma.companyUser.findFirst({
+            where: { userId: session.user.id },
+            select: { permissions: true, companyId: true, company: { select: { defaultCompanySettings: true } } },
+        }),
+    ]);
+
     if (dbUser?.role) role = dbUser.role as UserRole;
     if (role === UserRole.GUEST) redirect("/dashboard/unauthorized");
 
@@ -43,11 +52,6 @@ export default async function DashboardLayout({
     let userPermissions: string[] = [];
     let customRoleName: string | undefined;
     let roleAllowedRoutes: string[] = [];
-
-    const companyUser = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { permissions: true, companyId: true, company: { select: { defaultCompanySettings: true } } },
-    });
 
     if (companyUser) {
         userPermissions = (companyUser.permissions as string[]) ?? [];

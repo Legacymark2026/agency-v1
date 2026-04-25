@@ -2,18 +2,17 @@
 
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-
 import { auth } from '@/lib/auth';
-
 import { PostSchema, ProjectSchema, PostFormData, ProjectFormData } from '@/lib/schemas';
+import { ok, fail, type ActionResult } from '@/types/actions';
 
 // --- Post Actions ---
 
 export async function getPosts() {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return fail('Unauthorized', 401);
 
-    return prisma.post.findMany({
+    const posts = await prisma.post.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
             author: { select: { name: true, email: true } },
@@ -21,30 +20,28 @@ export async function getPosts() {
             tags: true
         }
     });
+    return ok(posts);
 }
 
 export async function getPost(id: string) {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return fail('Unauthorized', 401);
 
-    return prisma.post.findUnique({
+    const post = await prisma.post.findUnique({
         where: { id },
-        include: {
-            categories: true,
-            tags: true
-        }
+        include: { categories: true, tags: true }
     });
+    return ok(post);
 }
 
-export async function createPost(data: PostFormData) {
+export async function createPost(data: PostFormData): Promise<ActionResult<{ id: string }>> {
     const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    if (!session?.user?.id) return fail('Unauthorized', 401);
 
     const validated = PostSchema.parse(data);
     const { categoryIds, tagNames, scheduledDate, faqs, ...postData } = validated;
 
     try {
-        // Process tags: find existing or create new
         const tagConnections = tagNames?.length ? {
             connectOrCreate: tagNames.map(name => ({
                 where: { name },
@@ -52,12 +49,11 @@ export async function createPost(data: PostFormData) {
             }))
         } : undefined;
 
-        // Process categories
         const categoryConnections = categoryIds?.length ? {
             connect: categoryIds.map(id => ({ id }))
         } : undefined;
 
-        await prisma.post.create({
+        const post = await prisma.post.create({
             data: {
                 title: postData.title,
                 slug: postData.slug,
@@ -77,12 +73,12 @@ export async function createPost(data: PostFormData) {
             }
         });
         revalidatePath('/dashboard/posts');
-        revalidatePath('/blog'); // Revalidate blog index list
-        revalidatePath(`/blog/${postData.slug}`, 'page'); // Revalidate specific post page 
-        return { success: true };
+        revalidatePath('/blog');
+        revalidatePath(`/blog/${postData.slug}`, 'page');
+        return ok({ id: post.id });
     } catch (error) {
-        console.error("Failed to create post:", error);
-        return { success: false, error: "Failed to create post. Slug might be taken." };
+        console.error('Failed to create post:', error);
+        return fail('No se pudo crear el post. El slug puede estar ocupado.', 409);
     }
 }
 
@@ -150,17 +146,17 @@ export async function updatePost(id: string, data: PostFormData) {
     }
 }
 
-export async function deletePost(id: string) {
+export async function deletePost(id: string): Promise<ActionResult<void>> {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return fail('Unauthorized', 401);
 
     try {
         await prisma.post.delete({ where: { id } });
         revalidatePath('/dashboard/posts');
-        return { success: true };
+        return ok(undefined);
     } catch (error) {
         console.error(error);
-        return { success: false, error: "Failed to delete post" };
+        return fail('No se pudo eliminar el post', 500);
     }
 }
 
@@ -219,17 +215,17 @@ export async function updateCategory(id: string, data: { name: string, slug: str
     }
 }
 
-export async function deleteCategory(id: string) {
+export async function deleteCategory(id: string): Promise<ActionResult<void>> {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return fail('Unauthorized', 401);
 
     try {
         await prisma.category.delete({ where: { id } });
         revalidatePath('/dashboard/posts/categories');
-        return { success: true };
+        return ok(undefined);
     } catch (error) {
-        console.error("Failed to delete category:", error);
-        return { success: false, error: "Failed to delete category. Ensure no posts are linked to it." };
+        console.error('Failed to delete category:', error);
+        return fail('No se pudo eliminar la categoría. Asegúrate de que no tenga posts vinculados.', 409);
     }
 }
 
@@ -261,16 +257,16 @@ export async function getProject(id: string) {
     return prisma.project.findUnique({ where: { id } });
 }
 
-export async function createProject(data: ProjectFormData) {
+export async function createProject(data: ProjectFormData): Promise<ActionResult<{ id: string }>> {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return fail('Unauthorized', 401);
 
     const validated = ProjectSchema.parse(data);
     const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
 
     try {
         const { categoryId, ...restData } = projectData;
-        await prisma.project.create({
+        const project = await prisma.project.create({
             data: {
                 ...restData,
                 scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
@@ -282,10 +278,10 @@ export async function createProject(data: ProjectFormData) {
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
         revalidatePath(`/portfolio/${validated.slug}`, 'page');
-        return { success: true };
+        return ok({ id: project.id });
     } catch (error) {
         console.error(error);
-        return { success: false, error: "Failed to create project" };
+        return fail('No se pudo crear el proyecto', 500);
     }
 }
 
@@ -321,16 +317,16 @@ export async function updateProject(id: string, data: ProjectFormData) {
     }
 }
 
-export async function deleteProject(id: string) {
+export async function deleteProject(id: string): Promise<ActionResult<void>> {
     const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) return fail('Unauthorized', 401);
 
     try {
         await prisma.project.delete({ where: { id } });
         revalidatePath('/dashboard/projects');
-        return { success: true };
+        return ok(undefined);
     } catch (error) {
         console.error(error);
-        return { success: false, error: "Failed to delete project" };
+        return fail('No se pudo eliminar el proyecto', 500);
     }
 }

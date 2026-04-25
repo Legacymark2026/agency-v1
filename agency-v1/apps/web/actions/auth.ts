@@ -8,6 +8,7 @@ import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
 import { randomBytes } from "crypto";
 import { sendEmail } from "@/lib/email";
+import { rateLimit } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
     firstName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -17,6 +18,12 @@ const registerSchema = z.object({
 });
 
 export async function registerUser(formData: z.infer<typeof registerSchema>) {
+    // Rate limit: máx 5 registros por IP/email por hora
+    const isAllowed = await rateLimit(`register:${formData.email}`, 5, 60 * 60 * 1000);
+    if (!isAllowed) {
+        return { error: "Demasiados intentos de registro. Espera 1 hora e inténtalo de nuevo." };
+    }
+
     const validatedFields = registerSchema.safeParse(formData);
 
     if (!validatedFields.success) {
@@ -60,8 +67,15 @@ export async function registerUser(formData: z.infer<typeof registerSchema>) {
 }
 
 export async function loginUser(prevState: string | undefined, formData: FormData) {
+    const email = formData.get("email") as string;
+
+    // Rate limit: máx 10 intentos de login por email en 5 minutos
+    const isAllowed = await rateLimit(`login:${email}`, 10, 5 * 60 * 1000);
+    if (!isAllowed) {
+        return "Demasiados intentos de acceso. Espera 5 minutos e inténtalo de nuevo.";
+    }
+
     try {
-        const email = formData.get("email") as string;
         const user = await prisma.user.findUnique({ where: { email } });
         const redirectTo = user?.role === UserRole.EXTERNAL_CLIENT ? '/dashboard/client' : '/dashboard';
 
@@ -101,12 +115,16 @@ export async function requestPasswordReset(
     formData: FormData
 ): Promise<{ success?: boolean; error?: string }> {
     const parsed = requestResetSchema.safeParse({ email: formData.get("email") });
-
-    if (!parsed.success) {
-        return { error: "Por favor ingresa un email válido." };
-    }
+    if (!parsed.success) return { error: "Por favor ingresa un email válido." };
 
     const { email } = parsed.data;
+
+    // Rate limit: máx 3 solicitudes de reset por email por hora
+    const isAllowed = await rateLimit(`password_reset:${email}`, 3, 60 * 60 * 1000);
+    if (!isAllowed) {
+        // Devolvemos success=true para no revelar que el email existe (anti-enumeration)
+        return { success: true };
+    }
 
     try {
         const user = await prisma.user.findUnique({ where: { email } });

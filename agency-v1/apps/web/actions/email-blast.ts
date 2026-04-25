@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { enforceQuota } from '@/lib/quotas';
 
 import { Resend } from 'resend';
 
@@ -52,6 +53,31 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
     const session = await auth();
     if (!session?.user?.id) throw new Error('No autenticado');
     const companyId = await getCompanyId();
+
+    // ── Verificar cuota de emails del plan ────────────────────────────────
+    const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { subscriptionTier: true },
+    });
+    const tier = company?.subscriptionTier || 'free';
+
+    // Verificar cuota de campañas (número de blasts)
+    const campaignQuota = await enforceQuota(companyId, 'campaigns', tier);
+    if (!campaignQuota.allowed) {
+        throw new Error(
+            `Límite de campañas alcanzado para el plan ${tier.toUpperCase()}. ` +
+            `Límite: ${campaignQuota.limit}. Mejora tu plan para continuar.`
+        );
+    }
+
+    // Verificar cuota de emails del mes
+    const emailQuota = await enforceQuota(companyId, 'emails_per_month', tier);
+    if (!emailQuota.allowed) {
+        throw new Error(
+            `Límite de emails mensuales alcanzado (${emailQuota.limit.toLocaleString()} emails/${tier} plan). ` +
+            `El contador se resetea el 1ro del próximo mes.`
+        );
+    }
 
     const blast = await prisma.emailBlast.create({
         data: {

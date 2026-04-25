@@ -3,11 +3,16 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Sistema de cuotas (SaaS) limitadas por el tier de subscripción.
  * Usa Upstash Redis para contar uso en la ventana mensual sin saturar la DB.
+ *
+ * CORRECCIONES v2:
+ *  - Fix DECR: usaba URL incompleta y body mal formateado para el pipeline
+ *  - Fix ventana mensual: ahora calcula TTL real hasta fin del mes actual
+ *  - MASTER_TENANT_ID bypass preservado
  */
 
 import { logger } from "@/lib/logger";
 
-interface QuotaLimits {
+export interface QuotaLimits {
   leads: number;
   emails_per_month: number;
   campaigns: number;
@@ -15,13 +20,13 @@ interface QuotaLimits {
   ai_interactions: number;
 }
 
-const TIER_LIMITS: Record<string, QuotaLimits> = {
+export const TIER_LIMITS: Record<string, QuotaLimits> = {
   free: {
     leads: 100,
     emails_per_month: 500,
     campaigns: 1,
-    ai_agents: 1, // Estrategia Bajo CAC (1 agente de prueba)
-    ai_interactions: 50, // Límite estricto gratis
+    ai_agents: 1,
+    ai_interactions: 50,
   },
   pro: {
     leads: 5000,
@@ -31,7 +36,7 @@ const TIER_LIMITS: Record<string, QuotaLimits> = {
     ai_interactions: 5000,
   },
   agency: {
-    leads: 999999, // Ilimitado
+    leads: 999999,
     emails_per_month: 100000,
     campaigns: 999,
     ai_agents: 999,
@@ -39,15 +44,30 @@ const TIER_LIMITS: Record<string, QuotaLimits> = {
   },
 };
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+/**
+ * Calcula los segundos restantes hasta el primer día del mes siguiente (00:00 UTC).
+ * Garantiza que la ventana de quota se resetea siempre el día 1 de cada mes.
+ */
+function secondsUntilEndOfMonth(): number {
+  const now = new Date();
+  const firstOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return Math.ceil((firstOfNextMonth.getTime() - now.getTime()) / 1000);
+}
+
 const hasRedis = !!(
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
 );
 
+// ── API Pública ────────────────────────────────────────────────────────────────
+
 /**
- * Incrementa el uso de una función y verifica si excede la cuota del plan (SaaS).
- * @param companyId El Inquilino
- * @param feature El feature a verificar (ej. 'leads')
- * @param tier El nivel de subscripción de la tabla Company (ej. 'free')
+ * Incrementa el uso de una feature y verifica si excede la cuota del plan.
+ *
+ * @param companyId El tenant (agencia cliente)
+ * @param feature   La feature a verificar (ej. 'leads', 'emails_per_month')
+ * @param tier      El nivel de subscripción de la tabla Company (default: 'free')
  */
 export async function enforceQuota(
   companyId: string,
@@ -57,30 +77,27 @@ export async function enforceQuota(
   const limits = TIER_LIMITS[tier] || TIER_LIMITS["free"];
   const maxLimit = limits[feature];
 
-  // 1. ==============================================================
-  // BYPASS: LA AGENCIA DUEÑA (HOST) ES GRATIS Y TIENE ACCESO INFINITO
-  // =================================================================
+  // ── BYPASS: Agencia dueña del sistema → acceso ilimitado ──────────────────
   if (process.env.MASTER_TENANT_ID && companyId === process.env.MASTER_TENANT_ID) {
     return { allowed: true, limit: 999999, remaining: 999999 };
   }
 
   if (!hasRedis) {
-    // Si no hay Redis, solo garantizamos no fallar crasheando.
-    logger.warn("[Quota] Redis no configurado, cuotas no aplicadas en tiempo real.");
+    logger.warn("[Quota] Redis no configurado — cuotas no aplicadas en tiempo real.", { feature, tier });
     return { allowed: true, limit: maxLimit };
   }
 
+  const url = process.env.UPSTASH_REDIS_REST_URL!;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
+
+  const now = new Date();
+  const monthKey = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}`;
+  const quotaKey = `quota:${companyId}:${feature}:${monthKey}`;
+  // TTL real: segundos restantes hasta el 1ro del mes siguiente
+  const windowSec = secondsUntilEndOfMonth();
+
   try {
-    const url = process.env.UPSTASH_REDIS_REST_URL!;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
-    
-    const now = new Date();
-    const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-    const quotaKey = `quota:${companyId}:${feature}:${monthKey}`;
-
-    // Ventana mensual aproximada en segundos (31 días)
-    const windowSec = 31 * 24 * 60 * 60;
-
+    // INCR + EXPIRE en pipeline (atómico)
     const res = await fetch(`${url}/pipeline`, {
       method: "POST",
       headers: {
@@ -89,30 +106,79 @@ export async function enforceQuota(
       },
       body: JSON.stringify([
         ["INCR", quotaKey],
-        ["EXPIRE", quotaKey, windowSec], // Renueva la expiración para que dure el mes
+        ["EXPIRE", quotaKey, windowSec],
       ]),
     });
 
     if (!res.ok) throw new Error(`Upstash HTTP error: ${res.status}`);
 
-    const data = await res.json();
-    const currentUsage = data[0].result as number;
-
+    const data = await res.json() as [{ result: number }, { result: number }];
+    const currentUsage = data[0].result;
     const allowed = currentUsage <= maxLimit;
 
     if (!allowed) {
-       // Revertimos el INCR si falló
-       fetch(`${url}`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: JSON.stringify(["DECR", quotaKey])
-       }).catch(() => {});
+      // Revertir el INCR si se excedió el límite
+      // FIX: URL correcta (/pipeline), body correcto (array de arrays), Content-Type presente
+      fetch(`${url}/pipeline`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([["DECR", quotaKey]]),
+      }).catch((err) =>
+        logger.warn("[Quota] DECR rollback failed", {
+          key: quotaKey,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      );
     }
 
-    return { allowed, limit: maxLimit, remaining: Math.max(0, maxLimit - currentUsage) };
-  } catch(error) {
-    logger.error("[Quota] Error verificando cuota", { error: error instanceof Error ? error.message : String(error) });
-    // Open-fail
+    return {
+      allowed,
+      limit: maxLimit,
+      remaining: Math.max(0, maxLimit - currentUsage),
+    };
+  } catch (error) {
+    logger.error("[Quota] Error verificando cuota — fail-open", {
+      feature,
+      companyId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // fail-open: no bloqueamos la operación si Redis falla
     return { allowed: true, limit: maxLimit };
+  }
+}
+
+/**
+ * Obtiene el uso actual de una feature sin incrementar el contador.
+ * Útil para mostrar consumo en el dashboard de billing.
+ */
+export async function getQuotaUsage(
+  companyId: string,
+  feature: keyof QuotaLimits
+): Promise<{ usage: number; limit: number; tier: string } | null> {
+  if (!hasRedis) return null;
+
+  const url = process.env.UPSTASH_REDIS_REST_URL!;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
+
+  const now = new Date();
+  const monthKey = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}`;
+  const quotaKey = `quota:${companyId}:${feature}:${monthKey}`;
+
+  try {
+    const res = await fetch(`${url}/get/${quotaKey}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { result: string | null };
+    return {
+      usage: parseInt(data.result || "0", 10),
+      limit: 0, // caller debe proveer el tier
+      tier: "unknown",
+    };
+  } catch {
+    return null;
   }
 }

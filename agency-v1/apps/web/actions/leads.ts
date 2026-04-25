@@ -11,6 +11,7 @@ import { auth } from "@/lib/auth";
 import { Permission, ROLE_PERMISSIONS, UserRole } from "@/types/auth";
 import { dispatchConversion } from "@/lib/services/conversions/dispatcher";
 import { createLocalNotification } from "./notifications";
+import { enforceQuota } from "@/lib/quotas";
 
 const CRM_VBO_STAGES: Record<string, { event: string, value: number }> = {
   NEW: { event: 'Lead', value: 0 },
@@ -141,6 +142,20 @@ export interface CreateLeadInput {
  */
 export async function createLead(input: CreateLeadInput) {
     try {
+        // ─ Verificar cuota de leads del plan ────────────────────────────────
+        const company = await prisma.company.findUnique({
+            where: { id: input.companyId },
+            select: { subscriptionTier: true },
+        });
+        const tier = company?.subscriptionTier || 'free';
+        const leadQuota = await enforceQuota(input.companyId, 'leads', tier);
+        if (!leadQuota.allowed) {
+            return {
+                success: false,
+                error: `Límite de leads alcanzado para el plan ${tier.toUpperCase()} (máx. ${leadQuota.limit.toLocaleString()}). Mejora tu plan para continuar.`,
+            };
+        }
+
         // Build UTM params object
         const utmParams: UTMParams = {
             utm_source: input.utmSource,
@@ -626,6 +641,20 @@ export interface CreateCampaignInput {
  */
 export async function createCampaign(input: CreateCampaignInput) {
     try {
+        // ─ Verificar cuota de campañas del plan ───────────────────────────
+        const company = await prisma.company.findUnique({
+            where: { id: input.companyId },
+            select: { subscriptionTier: true },
+        });
+        const tier = company?.subscriptionTier || 'free';
+        const campaignQuota = await enforceQuota(input.companyId, 'campaigns', tier);
+        if (!campaignQuota.allowed) {
+            return {
+                success: false,
+                error: `Límite de campañas alcanzado para el plan ${tier.toUpperCase()} (máx. ${campaignQuota.limit}). Mejora tu plan para continuar.`,
+            };
+        }
+
         const campaign = await prisma.campaign.create({
             data: {
                 name: input.name,
