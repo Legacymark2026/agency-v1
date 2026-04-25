@@ -112,10 +112,38 @@ export class FacebookProvider implements ChannelProvider {
                         const senderPsid = webhookEvent.sender.id;
                         const pageId = entry.id;
 
+                        let mediaUrl = undefined;
+                        let mediaType = undefined;
+                        let bodyContent = webhookEvent.message.text || '';
+
+                        if (webhookEvent.message.attachments && webhookEvent.message.attachments.length > 0) {
+                            const attachment = webhookEvent.message.attachments[0];
+                            mediaUrl = attachment.payload?.url;
+
+                            if (attachment.type === 'audio') {
+                                mediaType = 'AUDIO';
+                                if (!bodyContent) bodyContent = '🎤 Nota de Voz';
+                            } else if (attachment.type === 'image') {
+                                mediaType = 'IMAGE';
+                                if (!bodyContent) bodyContent = '📷 Imagen';
+                            } else if (attachment.type === 'video') {
+                                mediaType = 'VIDEO';
+                                if (!bodyContent) bodyContent = '🎥 Video';
+                            } else if (attachment.type === 'file') {
+                                mediaType = 'DOCUMENT';
+                                if (!bodyContent) bodyContent = '📄 Archivo';
+                            } else {
+                                mediaType = attachment.type.toUpperCase();
+                                if (!bodyContent) bodyContent = `[${attachment.type}]`;
+                            }
+                        }
+
+                        if (!bodyContent) bodyContent = "[Attachment]";
+
                         return {
                             channel: this.channel,
                             externalId: webhookEvent.message.mid,
-                            content: webhookEvent.message.text || "[Attachment]",
+                            content: bodyContent,
                             sender: {
                                 id: senderPsid,
                                 name: "Facebook User",
@@ -123,7 +151,9 @@ export class FacebookProvider implements ChannelProvider {
                             },
                             metadata: {
                                 pageId: pageId,
-                                messageId: webhookEvent.message.mid
+                                messageId: webhookEvent.message.mid,
+                                mediaUrl: mediaUrl,
+                                mediaType: mediaType
                             }
                         };
                     }

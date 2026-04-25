@@ -118,7 +118,8 @@ async function processIncomingMessage(
     messageId: string,
     messageText: string,
     timestamp: number,
-    channel: 'MESSENGER' | 'INSTAGRAM'
+    channel: 'MESSENGER' | 'INSTAGRAM',
+    attachments: Array<Record<string, any>> = []
 ) {
     try {
         console.log(`[Meta Webhook] Incoming ${channel} message from sender ${senderId} on page ${pageId}`);
@@ -181,7 +182,35 @@ async function processIncomingMessage(
             where: { companyId, leadId: lead.id, channel }
         });
 
-        const preview = messageText?.substring(0, 80) || '[Media]';
+        let mediaUrl = undefined;
+        let mediaType = undefined;
+        let finalMessageText = messageText || '';
+
+        if (attachments && attachments.length > 0) {
+            const attachment = attachments[0];
+            mediaUrl = attachment.payload?.url;
+
+            if (attachment.type === 'audio') {
+                mediaType = 'AUDIO';
+                if (!finalMessageText) finalMessageText = '🎤 Nota de Voz';
+            } else if (attachment.type === 'image') {
+                mediaType = 'IMAGE';
+                if (!finalMessageText) finalMessageText = '📷 Imagen';
+            } else if (attachment.type === 'video') {
+                mediaType = 'VIDEO';
+                if (!finalMessageText) finalMessageText = '🎥 Video';
+            } else if (attachment.type === 'file') {
+                mediaType = 'DOCUMENT';
+                if (!finalMessageText) finalMessageText = '📄 Archivo';
+            } else {
+                mediaType = attachment.type?.toUpperCase();
+                if (!finalMessageText) finalMessageText = `[${attachment.type}]`;
+            }
+        }
+
+        if (!finalMessageText) finalMessageText = '[Media]';
+
+        const preview = finalMessageText?.substring(0, 80);
         const msgTime = new Date(timestamp * 1000);
 
         if (!conversation) {
@@ -233,11 +262,14 @@ async function processIncomingMessage(
         await prisma.message.create({
             data: {
                 conversationId: conversation.id,
-                content: messageText || '[Media]',
+                content: finalMessageText,
                 direction: 'INBOUND',
                 status: 'RECEIVED',
                 senderId: lead.id,
                 createdAt: msgTime,
+                externalId: messageId,
+                mediaUrl: mediaUrl,
+                mediaType: mediaType,
                 metadata: { platformMessageId: messageId, pageId }
             }
         });
@@ -329,7 +361,8 @@ export async function POST(req: NextRequest) {
                     (message.mid as string) || `tmp-${Date.now()}`,
                     (message.text as string) || '',
                     timestamp ?? Math.floor(Date.now() / 1000),
-                    object === 'instagram' ? 'INSTAGRAM' : 'MESSENGER'
+                    object === 'instagram' ? 'INSTAGRAM' : 'MESSENGER',
+                    (message.attachments as Array<Record<string, any>>) || []
                 );
             }
 
@@ -355,7 +388,8 @@ export async function POST(req: NextRequest) {
                         (message.mid as string) || `tmp-${Date.now()}`,
                         (message.text as string) || '',
                         timestamp ?? Math.floor(Date.now() / 1000),
-                        'INSTAGRAM'
+                        'INSTAGRAM',
+                        (message.attachments as Array<Record<string, any>>) || []
                     );
                 }
 

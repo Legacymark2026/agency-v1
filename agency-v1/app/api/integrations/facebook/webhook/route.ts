@@ -333,21 +333,46 @@ async function handleIncomingMessage(event: any, pageId: string) {
         console.log(`[Meta Webhook] Created new conversation for ${platform}`);
     }
 
-    // 4. Create Message
-    const messageContent = message.text || '[Media/Attachment]';
-    
-    // Check if message already exists to avoid duplicates
+    // 4. Process Attachments & Content
+    let mediaUrl = undefined;
+    let mediaType = undefined;
+    let messageContent = message.text || '';
+
+    if (message.attachments && message.attachments.length > 0) {
+        const attachment = message.attachments[0];
+        mediaUrl = attachment.payload?.url;
+
+        if (attachment.type === 'audio') {
+            mediaType = 'AUDIO';
+            if (!messageContent) messageContent = '🎤 Nota de Voz';
+        } else if (attachment.type === 'image') {
+            mediaType = 'IMAGE';
+            if (!messageContent) messageContent = '📷 Imagen';
+        } else if (attachment.type === 'video') {
+            mediaType = 'VIDEO';
+            if (!messageContent) messageContent = '🎥 Video';
+        } else if (attachment.type === 'file') {
+            mediaType = 'DOCUMENT';
+            if (!messageContent) messageContent = '📄 Archivo';
+        } else {
+            mediaType = attachment.type.toUpperCase();
+            if (!messageContent) messageContent = `[${attachment.type}]`;
+        }
+    }
+
+    if (!messageContent) {
+        messageContent = '[Media/Attachment]';
+    }
+
+    // Check if message already exists to avoid duplicates by MID
     const msgTimestamp = timestamp ? new Date(timestamp) : new Date();
     const validMsgTimestamp = isNaN(msgTimestamp.getTime()) ? new Date() : msgTimestamp;
+    const messageId = message.mid || `tmp-${Date.now()}`;
 
     const existingMessage = await prisma.message.findFirst({
         where: {
             conversationId: conversation.id,
-            content: messageContent,
-            createdAt: {
-                gte: new Date(validMsgTimestamp.getTime() - 5000),
-                lte: new Date(validMsgTimestamp.getTime() + 5000)
-            }
+            externalId: messageId,
         }
     });
 
@@ -359,6 +384,9 @@ async function handleIncomingMessage(event: any, pageId: string) {
                 direction: 'INBOUND',
                 status: 'DELIVERED',
                 senderId: lead.id,
+                externalId: messageId,
+                mediaUrl: mediaUrl,
+                mediaType: mediaType,
                 createdAt: validMsgTimestamp
             }
         });
