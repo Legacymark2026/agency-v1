@@ -38,7 +38,7 @@ import {
     TrendingUp, Globe, Monitor, BarChart3, Target, Gauge,
     Calendar, MapPin, Activity, Filter, ArrowRight,
     DollarSign, FlaskConical, Search, Share2, Zap,
-    LayoutDashboard, MousePointerClick, Eye
+    LayoutDashboard, MousePointerClick, Eye, Trophy
 } from "lucide-react";
 import {
     getTrafficData, getTrafficSources, getConversionFunnel, getChannelPerformance,
