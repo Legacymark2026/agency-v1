@@ -11,15 +11,17 @@ export default async function EditPostPage({ params }: PageProps) {
     const { id } = await params;
 
     // Fetch post and form options concurrently
-    const [post, categories, tags] = await Promise.all([
+    const [postResult, categories, tags] = await Promise.all([
         getPost(id),
         getCategoriesForForm(),
         getTagsForForm(),
     ]);
 
-    if (!post) {
+    if (!postResult.success || !postResult.data) {
         notFound();
     }
+
+    const post = postResult.data;
 
     const availableTags = tags.map((t) => t.name);
 
