@@ -149,7 +149,7 @@ export async function createPaymentSessionWithGateway(
     };
     
     const amount = PRICES[tier] ?? PRICES["pro"];
-    const currency = process.env.BILLING_CURRENCY || "COP";
+    const currency = (process.env.BILLING_CURRENCY || "COP") as "COP" | "USD" | "EUR";
 
     if (gateway === "stripe") {
       let priceId = getPriceIdForTier(tier, billingCycle);

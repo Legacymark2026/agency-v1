@@ -13,6 +13,9 @@
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN"
   ],
+  "passThroughEnv": [
+    "SENTRY_AUTH_TOKEN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
