@@ -137,7 +137,7 @@ function buildContext(
  *   if ('error' in ctx) return ctx;
  * }
  */
-export function authErrorToResponse(err: unknown): { error: string; status?: number } {
+export async function authErrorToResponse(err: unknown): Promise<{ error: string; status?: number }> {
   if (err instanceof UnauthorizedError) return { error: err.message, status: 401 };
   if (err instanceof ForbiddenError) return { error: err.message, status: 403 };
   throw err; // Re-lanzar errores no relacionados con auth

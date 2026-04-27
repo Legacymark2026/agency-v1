@@ -85,7 +85,7 @@ export interface TenantKpiSnapshot {
  * Cache por companyId con TTL de 5 minutos.
  * Tag: `bi:${companyId}` — permite invalidación granular al ganar un deal.
  */
-export function getTenantBISnapshot(companyId: string): Promise<TenantKpiSnapshot> {
+export async function getTenantBISnapshot(companyId: string): Promise<TenantKpiSnapshot> {
   if (!companyId) throw new Error('companyId requerido para BI snapshot');
 
   // Crear cache con tag específico por tenant
