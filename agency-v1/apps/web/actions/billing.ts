@@ -142,13 +142,14 @@ export async function createPaymentSessionWithGateway(
     const baseDomain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const tier = tierName.toLowerCase();
 
+    // 5.3: Precios desde variables de entorno (configurables sin re-deploy)
     const PRICES: Record<string, number> = {
-      "pro": 2900000,
-      "agency": 9900000,
+      "pro": parseInt(process.env.PRICE_PRO_COP || "2900000", 10),
+      "agency": parseInt(process.env.PRICE_AGENCY_COP || "9900000", 10),
     };
     
-    const amount = PRICES[tier] || PRICES["pro"];
-    const currency = "COP";
+    const amount = PRICES[tier] ?? PRICES["pro"];
+    const currency = process.env.BILLING_CURRENCY || "COP";
 
     if (gateway === "stripe") {
       let priceId = getPriceIdForTier(tier, billingCycle);

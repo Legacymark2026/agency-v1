@@ -57,6 +57,8 @@ production_log*.txt
 marketing_lint.txt
 typescript_errors*.log
 ts_errors.log
+ts_errors*.log
+*.errors.log
 verification.log
 demo_output*.txt
 prisma_error.log

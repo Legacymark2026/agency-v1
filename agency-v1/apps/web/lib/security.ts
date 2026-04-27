@@ -22,10 +22,70 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { ForbiddenError, UnauthorizedError } from "./errors";
+import { logger } from "@/lib/logger";
 
 export interface PermissionCheckOptions {
   resourceType?: string;
   resourceId?: string;
+}
+
+// ── Permission Cache (2.2) ────────────────────────────────────────────────────
+// Cache de permisos en Redis con TTL de 60s para reducir queries DB en dashboards
+const PERM_CACHE_TTL_SEC = 60;
+
+async function getCachedPermissions(
+  userId: string,
+  companyId: string
+): Promise<string[] | null> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  try {
+    const key = `perms:${userId}:${companyId}`;
+    const res = await fetch(`${url}/get/${key}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { result: string | null };
+    if (!data.result) return null;
+    return JSON.parse(data.result) as string[];
+  } catch {
+    return null;
+  }
+}
+
+async function setCachedPermissions(
+  userId: string,
+  companyId: string,
+  permissions: string[]
+): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  try {
+    const key = `perms:${userId}:${companyId}`;
+    await fetch(`${url}/set/${key}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: JSON.stringify(permissions), ex: PERM_CACHE_TTL_SEC }),
+    });
+  } catch (err) {
+    logger.warn('[Security] Failed to set permission cache', { error: String(err) });
+  }
+}
+
+/** Invalida la cache de permisos para un usuario (llamar después de cambiar roles). */
+export async function invalidatePermissionCache(
+  userId: string,
+  companyId: string
+): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  try {
+    const key = `perms:${userId}:${companyId}`;
+    await fetch(`${url}/del/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+  } catch { /* non-fatal */ }
 }
 
 export async function verifyPermission(
@@ -165,6 +225,10 @@ export async function getUserPermissions(
   userId: string,
   companyId: string
 ): Promise<string[]> {
+  // 2.2: Check cache first
+  const cached = await getCachedPermissions(userId, companyId);
+  if (cached) return cached;
+
   try {
     const companyUser = await prisma.companyUser.findFirst({
       where: { userId, companyId },
@@ -179,9 +243,12 @@ export async function getUserPermissions(
       },
     });
 
-    return (
-      companyUser?.role?.permissions.map((p) => p.permission.name) || []
-    );
+    const permissions = companyUser?.role?.permissions.map((p) => p.permission.name) || [];
+
+    // Cache the result
+    await setCachedPermissions(userId, companyId, permissions);
+
+    return permissions;
   } catch (error) {
     console.error("[Security] Error getting user permissions:", error);
     return [];

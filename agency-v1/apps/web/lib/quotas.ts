@@ -153,12 +153,35 @@ export async function enforceQuota(
 /**
  * Obtiene el uso actual de una feature sin incrementar el contador.
  * Útil para mostrar consumo en el dashboard de billing.
+ *
+ * FIX (5.2): Ahora acepta tier param o lo consulta desde DB para devolver limit correcto.
  */
 export async function getQuotaUsage(
   companyId: string,
-  feature: keyof QuotaLimits
+  feature: keyof QuotaLimits,
+  tier?: string
 ): Promise<{ usage: number; limit: number; tier: string } | null> {
-  if (!hasRedis) return null;
+  // 5.2: Resolver el tier si no se pasa (consulta DB liviana)
+  let resolvedTier = tier;
+  if (!resolvedTier) {
+    try {
+      const { PrismaClient } = await import("@prisma/client");
+      const prismaLocal = new PrismaClient();
+      const company = await prismaLocal.company.findUnique({
+        where: { id: companyId },
+        select: { subscriptionTier: true },
+      });
+      await prismaLocal.$disconnect();
+      resolvedTier = company?.subscriptionTier || "free";
+    } catch {
+      resolvedTier = "free";
+    }
+  }
+
+  const limits = TIER_LIMITS[resolvedTier] || TIER_LIMITS["free"];
+  const maxLimit = limits[feature];
+
+  if (!hasRedis) return { usage: 0, limit: maxLimit, tier: resolvedTier };
 
   const url = process.env.UPSTASH_REDIS_REST_URL!;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
@@ -171,14 +194,14 @@ export async function getQuotaUsage(
     const res = await fetch(`${url}/get/${quotaKey}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { usage: 0, limit: maxLimit, tier: resolvedTier };
     const data = await res.json() as { result: string | null };
     return {
       usage: parseInt(data.result || "0", 10),
-      limit: 0, // caller debe proveer el tier
-      tier: "unknown",
+      limit: maxLimit,
+      tier: resolvedTier,
     };
   } catch {
-    return null;
+    return { usage: 0, limit: maxLimit, tier: resolvedTier };
   }
 }

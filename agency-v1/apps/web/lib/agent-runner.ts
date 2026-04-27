@@ -85,13 +85,22 @@ function injectCRMVariables(prompt: string, contactData: Record<string, any>): s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. RAG CONTEXT BUILDER
+// 2. RAG CONTEXT BUILDER (4.3 — Smart chunking con límite por tokens estimados)
 // ─────────────────────────────────────────────────────────────────────────────
 function buildRagContext(knowledgeBases: { name: string; content: string }[]): string {
     if (!knowledgeBases.length) return "";
-    const chunks = knowledgeBases.map(kb =>
-        `=== BASE DE CONOCIMIENTO: ${kb.name} ===\n${kb.content.slice(0, 3000)}`
-    ).join("\n\n");
+    // 4.3: Distribuir budget de tokens entre KBs (estimado: 1 token ≈ 4 chars)
+    // Budget total: ~6000 tokens para el contexto RAG → ~24000 chars
+    const TOTAL_BUDGET_CHARS = 24_000;
+    const budgetPerKb = Math.floor(TOTAL_BUDGET_CHARS / knowledgeBases.length);
+    
+    const chunks = knowledgeBases.map(kb => {
+        // Truncar en el último párrafo completo para no cortar a mitad de idea
+        let content = kb.content.slice(0, budgetPerKb);
+        const lastParagraph = content.lastIndexOf('\n\n');
+        if (lastParagraph > budgetPerKb * 0.8) content = content.slice(0, lastParagraph);
+        return `=== BASE DE CONOCIMIENTO: ${kb.name} ===\n${content}`;
+    }).join("\n\n");
     return chunks;
 }
 
@@ -146,6 +155,69 @@ function applyStyleFilter(text: string): string {
     }
 
     return result.trim();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4.1 — CIRCUIT BREAKER para Gemini API
+// Evita cascadas de fallos cuando la API de Gemini está en mal estado.
+// ─────────────────────────────────────────────────────────────────────────────
+const CB_ERROR_THRESHOLD = 5;    // abrir circuito tras 5 errores consecutivos
+const CB_WINDOW_SEC = 60;        // ventana de 60 segundos
+const CB_OPEN_DURATION_SEC = 120; // mantén abierto 2 minutos antes de reintentar
+
+async function isCircuitOpen(companyId: string): Promise<boolean> {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return false; // sin Redis, no hay circuit breaker
+    try {
+        const key = `cb:gemini:${companyId}`;
+        const res = await fetch(`${url}/get/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json() as { result: string | null };
+        if (data.result === 'OPEN') return true;
+        const errorCount = parseInt(data.result || '0', 10);
+        return errorCount >= CB_ERROR_THRESHOLD;
+    } catch {
+        return false; // fail-open si Redis no disponible
+    }
+}
+
+async function recordGeminiError(companyId: string): Promise<void> {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return;
+    try {
+        const key = `cb:gemini:${companyId}`;
+        // Incrementar contador y establecer TTL si es el primer error
+        await fetch(`${url}/pipeline`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify([['INCR', key], ['EXPIRE', key, CB_WINDOW_SEC]]),
+        });
+        // Si superamos el threshold, marcar como OPEN con duráción más larga
+        await fetch(`${url}/get/${key}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json() as Promise<{ result: string | null }>)
+            .then(async d => {
+                if (parseInt(d.result || '0', 10) >= CB_ERROR_THRESHOLD) {
+                    await fetch(`${url}/set/${key}`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ value: 'OPEN', ex: CB_OPEN_DURATION_SEC }),
+                    });
+                    console.warn(`[CIRCUIT BREAKER] Gemini API circuit OPEN for companyId: ${companyId}`);
+                }
+            })
+            .catch(() => {});
+    } catch { /* non-fatal */ }
+}
+
+async function resetCircuitBreaker(companyId: string): Promise<void> {
+    const url = process.env.UPSTASH_REDIS_REST_URL;
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+    if (!url || !token) return;
+    try {
+        const key = `cb:gemini:${companyId}`;
+        await fetch(`${url}/del/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+    } catch { /* non-fatal */ }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -257,6 +329,17 @@ export async function runAIAgent({
         };
     }
 
+    // 4.1: Circuit Breaker — verificar estado antes de llamar a Gemini
+    const circuitOpen = await isCircuitOpen(companyId);
+    if (circuitOpen) {
+        console.warn(`[AGENT RUNNER] Circuit breaker OPEN for ${companyId} — skipping Gemini call.`);
+        return {
+            agentName: agent.name,
+            result: "El asistente no está disponible temporalmente. Por favor intenta en unos minutos.",
+            suspended: false,
+        };
+    }
+
     // 5. Guardrails — Temperature and Token Clamping
     let temperature = agent.temperature;
     let maxTokens = agent.maxTokens;
@@ -306,19 +389,27 @@ export async function runAIAgent({
         ]
     });
 
-    const chat = model.startChat({ history });
-    const geminiResult = await chat.sendMessage(userMessage);
-    const rawResponse = geminiResult.response.text();
-    const tokensUsed = geminiResult.response.usageMetadata?.totalTokenCount;
+    let rawResponse: string;
+    let tokensUsed: number | undefined;
+    try {
+        const chat = model.startChat({ history });
+        const geminiResult = await chat.sendMessage(userMessage);
+        rawResponse = geminiResult.response.text();
+        tokensUsed = geminiResult.response.usageMetadata?.totalTokenCount;
+        // 4.1: Éxito — resetear circuit breaker si estaba acumulando errores
+        await resetCircuitBreaker(companyId);
+    } catch (geminiError) {
+        // 4.1: Registrar error y potencialmente abrir el circuit breaker
+        await recordGeminiError(companyId);
+        throw geminiError; // Re-lanzar para que el caller maneje
+    }
 
     // 10. Style Filter (Human Mimicry)
     const finalResponse = agent.filterRoboticLists ? applyStyleFilter(rawResponse) : rawResponse;
 
-    // 11. Simulated Typing Latency
-    if (agent.simulateLatency) {
-        const delay = Math.min(Math.round(finalResponse.length / 50) * 1000, 6000);
-        await new Promise(resolve => setTimeout(resolve, delay));
-    }
+    // 4.2: Latencia simulada ELIMINADA del servidor.
+    // La UI debe implementar el efecto de "typing" en el cliente con un hook useTypingEffect.
+    // Mantener la latencia en el servidor bloqueaba el hilo de Node.js hasta 6 segundos.
 
     const latencyMs = Date.now() - startTime;
 

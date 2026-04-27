@@ -3,6 +3,7 @@ import NextAuth from "next-auth";
 import { authConfig } from "@/auth.config";
 import createIntlMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
+import { guardDebugRoute } from "@/lib/debug-guard";
 
 // Crear middleware de next-intl
 const intlMiddleware = createIntlMiddleware(routing);
@@ -13,6 +14,10 @@ const { auth } = NextAuth(authConfig);
 // Combinar ambos middlewares
 export default auth(function middleware(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
+
+    // 6.2: Bloquear rutas de debug en producción
+    const debugBlock = guardDebugRoute(req);
+    if (debugBlock) return debugBlock;
 
     // Preparar headers para inyectar la ruta (para SEO/Canónicas)
     const requestHeaders = new Headers(req.headers);

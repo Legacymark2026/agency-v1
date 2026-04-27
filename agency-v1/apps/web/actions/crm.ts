@@ -9,12 +9,18 @@ import { sendMetaCapiEvent } from "@/lib/meta-capi";
 import { sendTiktokCapiEvent } from "@/lib/tiktok-capi";
 import { sendGa4Event } from "@/lib/ga4-mp";
 import { sendLinkedinCapiEvent } from "@/lib/linkedin-capi";
+import { getAuthContext, authErrorToResponse } from "@/lib/auth-context";
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
+/**
+ * @deprecated Usar getAuthContext() para validación completa con companyId y estado de empresa.
+ * Mantenido para compatibilidad con acciones que aún no han sido migradas.
+ */
 async function checkAuth() {
     const session = await auth();
     if (!session?.user) return { error: "Unauthorized" };
+    if (!session.user.companyId) return { error: "No company associated" };
     return null;
 }
 
@@ -64,6 +70,9 @@ export async function getCRMStats() {
 }
 
 export async function getSalesFunnel() {
+    // 3.4: defense-in-depth — auth check en funciones de lectura
+    const authCheck = await checkAuth();
+    if (authCheck) return [];
     const stages = ["NEW", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON"] as const;
     try {
         const grouped = await prisma.deal.groupBy({
@@ -79,6 +88,9 @@ export async function getSalesFunnel() {
 }
 
 export async function getRecentActivity() {
+    // 3.4: defense-in-depth — auth check en funciones de lectura
+    const authCheck = await checkAuth();
+    if (authCheck) return [];
     try {
         const [recentLeads, recentDeals] = await Promise.all([
             prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { id: true, name: true, status: true, createdAt: true } }),
@@ -98,6 +110,9 @@ export async function getRecentActivity() {
 }
 
 export async function getTopDeals() {
+    // 3.4: defense-in-depth — auth check en funciones de lectura
+    const authCheck = await checkAuth();
+    if (authCheck) return [];
     try {
         return await prisma.deal.findMany({
             where: { stage: { notIn: ["WON", "LOST"] } },
@@ -121,56 +136,144 @@ export async function getHighPerformanceStats() {
         const lastMonthStart = startOfMonth(subDays(today, 30));
         const lastMonthEnd = endOfMonth(subDays(today, 30));
 
-        const [wonDealsCount, lostDealsCount, wonDealsData, stagnantDealsCount, leadSources, lostReasons, currentPipeline, lastMonthPipeline, recentActivitiesCount, leaderboardData] = await Promise.all([
+        // 2.3: Definir ventana de forecast UNA sola vez
+        const forecastMonths = [
+            { start: startOfMonth(today),                   end: endOfMonth(today),                   name: format(today, "MMM") },
+            { start: startOfMonth(subDays(today, -30)),     end: endOfMonth(subDays(today, -30)),     name: format(subDays(today, -30), "MMM") },
+            { start: startOfMonth(subDays(today, -60)),     end: endOfMonth(subDays(today, -60)),     name: format(subDays(today, -60), "MMM") },
+        ];
+        const forecastWindowStart = forecastMonths[0].start;
+        const forecastWindowEnd   = forecastMonths[forecastMonths.length - 1].end;
+
+        // 2.3: TODAS las queries en un único Promise.all — sin waterfalls
+        const [
+            wonDealsCount,
+            lostDealsCount,
+            wonDealsData,
+            stagnantDealsCount,
+            leadSources,
+            lostReasons,
+            currentPipeline,
+            lastMonthPipeline,
+            recentActivitiesCount,
+            // 2.3: groupBy en DB → elimina el findMany(user)+assignedDeals (N+1 pattern)
+            leaderboardRaw,
+            // 2.3: UNA sola query para los 3 meses de forecast en lugar de 3 queries secuenciales
+            allForecastDeals,
+        ] = await Promise.all([
             prisma.deal.count({ where: { stage: "WON" } }),
             prisma.deal.count({ where: { stage: "LOST" } }),
-            prisma.deal.findMany({ where: { stage: "WON" }, select: { createdAt: true, updatedAt: true, value: true } }),
-            prisma.deal.count({ where: { stage: { notIn: ["WON", "LOST"] }, updatedAt: { lt: thirtyDaysAgo } } }),
-            prisma.lead.groupBy({ by: ["source"], _count: { source: true }, orderBy: { _count: { source: "desc" } }, take: 5 }),
-            prisma.deal.groupBy({ by: ["lostReason"], where: { stage: "LOST", lostReason: { not: null } }, _count: { lostReason: true }, orderBy: { _count: { lostReason: "desc" } } }),
-            prisma.deal.aggregate({ _sum: { value: true }, where: { createdAt: { gte: startOfMonth(today) } } }),
-            prisma.deal.aggregate({ _sum: { value: true }, where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd } } }),
+            // Necesitamos createdAt+updatedAt para calcular avgDaysToClose
+            prisma.deal.findMany({
+                where: { stage: "WON" },
+                select: { createdAt: true, updatedAt: true, value: true },
+            }),
+            prisma.deal.count({
+                where: { stage: { notIn: ["WON", "LOST"] }, updatedAt: { lt: thirtyDaysAgo } },
+            }),
+            prisma.lead.groupBy({
+                by: ["source"],
+                _count: { source: true },
+                orderBy: { _count: { source: "desc" } },
+                take: 5,
+            }),
+            prisma.deal.groupBy({
+                by: ["lostReason"],
+                where: { stage: "LOST", lostReason: { not: null } },
+                _count: { lostReason: true },
+                orderBy: { _count: { lostReason: "desc" } },
+            }),
+            prisma.deal.aggregate({
+                _sum: { value: true },
+                where: { createdAt: { gte: startOfMonth(today) } },
+            }),
+            prisma.deal.aggregate({
+                _sum: { value: true },
+                where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd } },
+            }),
             prisma.cRMActivity.count({ where: { createdAt: { gte: subDays(today, 7) } } }),
-            prisma.user.findMany({ where: { assignedDeals: { some: { stage: "WON" } } }, select: { name: true, assignedDeals: { where: { stage: "WON" }, select: { value: true } } } }),
+
+            // 2.3: groupBy assignedTo + _sum value → UNA query en lugar de N (una por usuario)
+            // Reemplaza: prisma.user.findMany({ include: { assignedDeals } }) — era un N+1
+            prisma.deal.groupBy({
+                by: ["assignedTo"],
+                where: {
+                    stage: "WON",
+                    assignedTo: { not: null },
+                },
+                _sum: { value: true },
+                orderBy: { _sum: { value: "desc" } },
+                take: 5,
+            }),
+
+            // 2.3: UNA sola query para el forecast completo (era 3 queries paralelas)
+            // Filtramos en memoria por mes — DB round-trip: 3 → 1
+            prisma.deal.findMany({
+                where: {
+                    stage: { notIn: ["WON", "LOST"] },
+                    expectedClose: { gte: forecastWindowStart, lte: forecastWindowEnd },
+                },
+                select: { value: true, probability: true, expectedClose: true },
+            }),
         ]);
 
-        const next3Months = [
-            { start: startOfMonth(today), end: endOfMonth(today), name: format(today, "MMM") },
-            { start: startOfMonth(subDays(today, -30)), end: endOfMonth(subDays(today, -30)), name: format(subDays(today, -30), "MMM") },
-            { start: startOfMonth(subDays(today, -60)), end: endOfMonth(subDays(today, -60)), name: format(subDays(today, -60), "MMM") },
-        ];
+        // 2.3: Enriquecer leaderboard con nombres de usuario en UNA query JOIN
+        const assignedUserIds = leaderboardRaw
+            .map((r) => r.assignedTo)
+            .filter((id): id is string => !!id);
 
-        const forecastData = await Promise.all(
-            next3Months.map(async (month) => {
-                const deals = await prisma.deal.findMany({ where: { stage: { notIn: ["WON", "LOST"] }, expectedClose: { gte: month.start, lte: month.end } }, select: { value: true, probability: true } });
-                const weighted = deals.reduce((acc, d) => acc + d.value * (d.probability / 100), 0);
-                const total = deals.reduce((acc, d) => acc + d.value, 0);
-                return { name: month.name, weighted: Math.round(weighted), total: Math.round(total) };
-            })
-        );
+        const userNames = assignedUserIds.length > 0
+            ? await prisma.user.findMany({
+                where: { id: { in: assignedUserIds } },
+                select: { id: true, name: true },
+              })
+            : [];
+        const nameMap = new Map(userNames.map((u) => [u.id, u.name]));
 
-        const forecastValue = forecastData.reduce((acc, d) => acc + d.weighted, 0);
-        const currentVal = currentPipeline._sum.value || 0;
-        const lastVal = lastMonthPipeline._sum.value || 0;
-        const momGrowth = lastVal === 0 ? 100 : ((currentVal - lastVal) / lastVal) * 100;
-        const totalDays = wonDealsData.reduce((acc, deal) => { const diff = Math.abs(deal.updatedAt.getTime() - deal.createdAt.getTime()); return acc + Math.ceil(diff / 86400000); }, 0);
-        const avgDaysToClose = wonDealsData.length > 0 ? Math.round(totalDays / wonDealsData.length) : 0;
-        const wonValue = wonDealsData.reduce((acc, deal) => acc + deal.value, 0);
-        const monthlyTarget = parseInt(process.env.MONTHLY_SALES_TARGET ?? "50000", 10);
-        const goalProgress = (wonValue / monthlyTarget) * 100;
-        const rankedLeaderboard = leaderboardData
-            .map((user) => ({ name: user.name || "Unknown", wonValue: user.assignedDeals.reduce((sum, deal) => sum + (deal.value || 0), 0) }))
-            .sort((a, b) => b.wonValue - a.wonValue)
-            .slice(0, 5);
+        const rankedLeaderboard = leaderboardRaw.map((r) => ({
+            name: nameMap.get(r.assignedTo!) || r.assignedTo || "Sin asignar",
+            wonValue: r._sum.value || 0,
+        }));
+
+        // 2.3: Forecast calculado en memoria (1 DB query → 3 buckets in-memory)
+        const forecastData = forecastMonths.map((month) => {
+            const monthDeals = allForecastDeals.filter((d) => {
+                const ec = d.expectedClose;
+                return ec && ec >= month.start && ec <= month.end;
+            });
+            const weighted = monthDeals.reduce((acc, d) => acc + d.value * (d.probability / 100), 0);
+            const total    = monthDeals.reduce((acc, d) => acc + d.value, 0);
+            return { name: month.name, weighted: Math.round(weighted), total: Math.round(total) };
+        });
+
+        const forecastValue   = forecastData.reduce((acc, d) => acc + d.weighted, 0);
+        const currentVal      = currentPipeline._sum.value || 0;
+        const lastVal         = lastMonthPipeline._sum.value || 0;
+        const momGrowth       = lastVal === 0 ? 100 : ((currentVal - lastVal) / lastVal) * 100;
+        const totalDays       = wonDealsData.reduce((acc, deal) => {
+            const diff = Math.abs(deal.updatedAt.getTime() - deal.createdAt.getTime());
+            return acc + Math.ceil(diff / 86400000);
+        }, 0);
+        const avgDaysToClose  = wonDealsData.length > 0 ? Math.round(totalDays / wonDealsData.length) : 0;
+        const wonValue        = wonDealsData.reduce((acc, deal) => acc + deal.value, 0);
+        const monthlyTarget   = parseInt(process.env.MONTHLY_SALES_TARGET ?? "50000", 10);
+        const goalProgress    = (wonValue / monthlyTarget) * 100;
 
         return {
-            forecastValue: Math.round(forecastValue), forecastData,
-            leadSources: leadSources.map((ls) => ({ name: ls.source, value: ls._count.source })),
-            lostReasons: lostReasons.map((lr) => ({ reason: lr.lostReason || "Other", count: lr._count.lostReason })),
-            stagnantDealsCount, momGrowth: Math.round(momGrowth), avgDaysToClose,
-            wonValue: Math.round(wonValue), monthlyTarget, goalProgress: Math.min(100, Math.round(goalProgress)),
+            forecastValue: Math.round(forecastValue),
+            forecastData,
+            leadSources:   leadSources.map((ls) => ({ name: ls.source, value: ls._count.source })),
+            lostReasons:   lostReasons.map((lr) => ({ reason: lr.lostReason || "Other", count: lr._count.lostReason })),
+            stagnantDealsCount,
+            momGrowth:     Math.round(momGrowth),
+            avgDaysToClose,
+            wonValue:      Math.round(wonValue),
+            monthlyTarget,
+            goalProgress:  Math.min(100, Math.round(goalProgress)),
             activityIntensity: recentActivitiesCount,
-            winRate: wonDealsCount + lostDealsCount > 0 ? Math.round((wonDealsCount / (wonDealsCount + lostDealsCount)) * 100) : 0,
+            winRate: wonDealsCount + lostDealsCount > 0
+                ? Math.round((wonDealsCount / (wonDealsCount + lostDealsCount)) * 100)
+                : 0,
             leaderboard: rankedLeaderboard,
         };
     } catch (error) {
@@ -178,6 +281,7 @@ export async function getHighPerformanceStats() {
         return { error: "Failed to load high performance stats" };
     }
 }
+
 
 // ─── DEAL ACTIONS ─────────────────────────────────────────────────────────────
 
@@ -290,29 +394,40 @@ export async function updateDealStage(dealId: string, stage: string) {
                     fbc: lead?.fbc,
                     fbp: lead?.fbp,
                 };
+
+                // 2.1: Pre-batch all integrationConfigs in ONE query (was 4 separate queries)
+                const activeIntegrations = await prisma.integrationConfig.findMany({
+                    where: {
+                        companyId,
+                        isEnabled: true,
+                        provider: { in: ['facebook', 'facebook-pixel', 'tiktok', 'google', 'google-analytics', 'linkedin'] },
+                    },
+                    select: { provider: true, config: true },
+                });
+                const integrationMap = new Map(activeIntegrations.map(i => [i.provider, i.config]));
                 
                 if (stage === "WON") {
-                    await triggerMetaCapi(companyId, 'Purchase', userData, { value: deal.value, currency: 'USD', contentName: deal.title });
+                    await triggerMetaCapi(companyId, 'Purchase', userData, { value: deal.value, currency: 'USD', contentName: deal.title }, integrationMap);
                     await triggerTiktokCapi(companyId, 'Purchase', userData, { value: deal.value, currency: 'USD', contentName: deal.title });
                     await triggerGoogleCapi(companyId, 'purchase', userData, { value: deal.value, currency: 'USD', transaction_id: deal.id });
                     await triggerLinkedinCapi(companyId, userData, { amount: deal.value, currencyCode: 'USD' });
                 } else if (stage === "CONTACTED") {
-                    await triggerMetaCapi(companyId, 'Contact', userData, { method: 'CRM_MANUAL' });
+                    await triggerMetaCapi(companyId, 'Contact', userData, { method: 'CRM_MANUAL' }, integrationMap);
                     await triggerTiktokCapi(companyId, 'Contact', userData, { contentName: 'Deal Contacted' });
                     await triggerGoogleCapi(companyId, 'contact_lead', userData, { lead_status: 'CONTACTED' });
                     await triggerLinkedinCapi(companyId, userData, { amount: 10, currencyCode: 'USD' });
                 } else if (stage === "QUALIFIED") {
-                    await triggerMetaCapi(companyId, 'Lead', userData, { leadType: 'B2B/CRM' });
+                    await triggerMetaCapi(companyId, 'Lead', userData, { leadType: 'B2B/CRM' }, integrationMap);
                     await triggerTiktokCapi(companyId, 'QualifiedLead', userData, { contentName: 'Deal Qualified' });
                     await triggerGoogleCapi(companyId, 'qualify_lead', userData, { lead_status: 'QUALIFIED' });
                     await triggerLinkedinCapi(companyId, userData, { amount: 50, currencyCode: 'USD' });
                 } else if (stage === "PROPOSAL") {
-                    await triggerMetaCapi(companyId, 'StartTrial', userData, { leadType: 'B2B/CRM' });
+                    await triggerMetaCapi(companyId, 'StartTrial', userData, { leadType: 'B2B/CRM' }, integrationMap);
                     await triggerTiktokCapi(companyId, 'SubmitForm', userData, { contentName: 'Proposal Sent' });
                     await triggerGoogleCapi(companyId, 'begin_checkout', userData, { value: deal.value });
                     await triggerLinkedinCapi(companyId, userData, { amount: 150, currencyCode: 'USD' });
                 } else if (stage === "NEGOTIATION") {
-                    await triggerMetaCapi(companyId, 'CustomizeProduct', userData, { leadType: 'B2B/CRM' });
+                    await triggerMetaCapi(companyId, 'CustomizeProduct', userData, { leadType: 'B2B/CRM' }, integrationMap);
                     await triggerTiktokCapi(companyId, 'AddToCart', userData, { contentName: 'Negotiating' });
                     await triggerGoogleCapi(companyId, 'add_shipping_info', userData, { value: deal.value });
                     await triggerLinkedinCapi(companyId, userData, { amount: 300, currencyCode: 'USD' });
@@ -640,10 +755,16 @@ export async function updateLead(id: string, data: Record<string, unknown>) {
 }
 
 export async function bulkUpdateLeads(ids: string[], data: Record<string, unknown>) {
-    const authCheck = await checkAuth();
-    if (authCheck) return { error: "Unauthorized" };
+    // 1.4: Validar scope de tenant — los ids DEBEN pertenecer al companyId del usuario
+    const ctx = await getAuthContext().catch(authErrorToResponse);
+    if ('error' in ctx) return ctx;
+    const { companyId } = ctx;
     try {
-        await prisma.lead.updateMany({ where: { id: { in: ids } }, data: { ...data, updatedAt: new Date() } });
+        // Inyectar companyId en el where para prevenir cross-tenant updates
+        await prisma.lead.updateMany({
+            where: { id: { in: ids }, companyId },
+            data: { ...data, updatedAt: new Date() },
+        });
         revalidatePath("/dashboard/admin/crm/leads");
         return { success: true, count: ids.length };
     } catch (error) {
@@ -697,6 +818,21 @@ export async function createLead(data: {
     formData?: Record<string, unknown>;
     pipelineStage?: string; // Stage of the deal in the pipeline (e.g., QUALIFIED, PROPOSAL)
 }) {
+    // 3.3: Auth check + quota check en createLead (anteriormente ausentes)
+    const authCheck = await checkAuth();
+    if (authCheck) return { error: "Unauthorized" };
+    const userId = await getUserId();
+    const allowed = await rateLimit(`create_lead:${userId}`, 20, 60_000);
+    if (!allowed) return { error: "Demasiadas peticiones. Espera un momento." };
+
+    const { enforceQuota } = await import("@/lib/quotas");
+    const company = await prisma.company.findUnique({ where: { id: data.companyId }, select: { subscriptionTier: true } });
+    if (!company) return { error: "Tenant no localizado." };
+    const quota = await enforceQuota(data.companyId, "leads", company.subscriptionTier);
+    if (!quota.allowed) {
+        return { error: `Has superado el límite de leads en tu plan ${company.subscriptionTier.toUpperCase()} (${quota.limit}/mes). Ve a Configuración > Facturación para aumentar tus límites.` };
+    }
+
     try {
         // Map pipelineStage → lead status
         const leadStatusMap: Record<string, string> = {
@@ -893,23 +1029,23 @@ export async function createCustomObjectDefinition(data: { name: string; label?:
 
 // ─── PRIVATE HELPERS ──────────────────────────────────────────────────────────
 
-async function triggerMetaCapi(companyId: string, eventName: any, userData: any, customData: any) {
+async function triggerMetaCapi(companyId: string, eventName: any, userData: any, customData: any, integrationMap?: Map<string, any>) {
     try {
-        // En la UI, el token de CAPI se guarda bajo 'facebook-pixel'
-        const configRecord = await prisma.integrationConfig.findFirst({
-            where: { 
-                companyId, 
-                provider: { in: ['facebook', 'facebook-pixel'] }, 
-                isEnabled: true 
-            }
-        });
+        // 2.1: Usar integrationMap pre-cargado si está disponible; si no, hacer query individual (fallback)
+        let config: any;
+        if (integrationMap) {
+            config = integrationMap.get('facebook') || integrationMap.get('facebook-pixel');
+        } else {
+            const configRecord = await prisma.integrationConfig.findFirst({
+                where: { companyId, provider: { in: ['facebook', 'facebook-pixel'] }, isEnabled: true }
+            });
+            config = configRecord?.config;
+        }
 
-        if (!configRecord) return;
+        if (!config) return;
 
-        const config = configRecord.config as any;
-        // La UI ahora guarda el token como 'capiToken', agregamos soporte para ambos por compatibilidad
-        const pixelId = config.pixelId;
-        const accessToken = config.capiToken || config.accessToken;
+        const pixelId = (config as any).pixelId;
+        const accessToken = (config as any).capiToken || (config as any).accessToken;
 
         if (pixelId && accessToken) {
             await sendMetaCapiEvent({

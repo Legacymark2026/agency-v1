@@ -31,6 +31,8 @@ import { SearchTermsCloud } from "@/modules/analytics/components/search-terms-cl
 import { BrowserOsStats } from "@/modules/analytics/components/browser-os-stats";
 import { SocialMediaMetrics } from "@/modules/analytics/components/social-media-metrics";
 import { EngagementRadar } from "@/modules/analytics/components/engagement-radar";
+import { TenantBIWrapper } from "@/modules/analytics/components/tenant-bi-wrapper";
+import { BIDashboardSkeleton } from "@/modules/analytics/components/bi-section-skeleton";
 import Link from "next/link";
 import {
     TrendingUp, Globe, Monitor, BarChart3, Target, Gauge,
@@ -77,6 +79,7 @@ function SectionHeader({ icon: Icon, label, sub }: { icon: any; label: string; s
 
 // ─── Tab Nav (server-compatible via searchParams) ────────────────────────────
 const TABS = [
+    { id: "crm-bi", label: "CRM BI", icon: Trophy },
     { id: "resumen", label: "Resumen", icon: LayoutDashboard },
     { id: "trafico", label: "Tráfico", icon: Globe },
     { id: "conversiones", label: "Conversiones", icon: Target },
@@ -109,37 +112,44 @@ export default async function AnalyticsPage({
 }: {
     searchParams: Promise<{ tab?: string }>;
 }) {
-    const { tab = "resumen" } = await searchParams;
-    const activeTab = TABS.find(t => t.id === tab)?.id ?? "resumen";
+    const { tab = "crm-bi" } = await searchParams;
+    const activeTab = TABS.find(t => t.id === tab)?.id ?? "crm-bi";
 
-    // Fetch all data in parallel
-    const [
-        trafficData, trafficSources, funnelData, seoData,
-        deviceData, geoData, topPagesData, browserOsData,
-        activeUsers, revenueData, attributionData, pageSpeedData,
-        heatmapData, sessionDurationData, goalsData, insightsData,
-        searchTermsData, socialMetricsData, engagementData,
-    ] = await Promise.all([
-        getTrafficData(7),
-        getTrafficSources(30),
-        getConversionFunnel(),
-        getChannelPerformance(6),
-        getDeviceStats(30),
-        getGeoStats(30),
-        getTopPages(10, 30),
-        getBrowserOsStats(30),
-        getRealtimeUsers(),
-        getRevenueStats(),
-        getChannelAttribution(),
-        getPageSpeedMetrics(),
-        getActivityHeatmap(),
-        getSessionDurationDistribution(),
-        getGoalsProgress(),
-        getQuickInsights(),
-        getSearchTerms(),
-        getSocialMetrics(),
-        getEngagementMetrics(),
-    ]);
+    // Fetch all data in parallel ONLY IF NOT IN CRM-BI TAB (Performance Optimization Nivel 3A)
+    // En la pestaña CRM BI, los datos cargan vía Suspense (Streaming SSR) sin bloquear la página.
+    let trafficData, trafficSources, funnelData, seoData, deviceData, geoData, topPagesData, browserOsData;
+    let activeUsers = 0, revenueData, attributionData, pageSpeedData, heatmapData, sessionDurationData;
+    let goalsData, insightsData, searchTermsData, socialMetricsData, engagementData;
+
+    if (activeTab !== "crm-bi") {
+        [
+            trafficData, trafficSources, funnelData, seoData,
+            deviceData, geoData, topPagesData, browserOsData,
+            activeUsers, revenueData, attributionData, pageSpeedData,
+            heatmapData, sessionDurationData, goalsData, insightsData,
+            searchTermsData, socialMetricsData, engagementData,
+        ] = await Promise.all([
+            getTrafficData(7),
+            getTrafficSources(30),
+            getConversionFunnel(),
+            getChannelPerformance(6),
+            getDeviceStats(30),
+            getGeoStats(30),
+            getTopPages(10, 30),
+            getBrowserOsStats(30),
+            getRealtimeUsers(),
+            getRevenueStats(),
+            getChannelAttribution(),
+            getPageSpeedMetrics(),
+            getActivityHeatmap(),
+            getSessionDurationDistribution(),
+            getGoalsProgress(),
+            getQuickInsights(),
+            getSearchTerms(),
+            getSocialMetrics(),
+            getEngagementMetrics(),
+        ]);
+    }
 
     return (
         <div className="ds-page space-y-6">
@@ -184,6 +194,17 @@ export default async function AnalyticsPage({
                 {/* Tab navigation */}
                 <TabNav active={activeTab} />
             </div>
+
+            {/* ══════════════════════════════════════════════════════════════
+                TAB: CRM BI (Nivel 3A/3B: Multi-tenant + Streaming SSR)
+            ══════════════════════════════════════════════════════════════ */}
+            {activeTab === "crm-bi" && (
+                <div className="relative z-10">
+                    <Suspense fallback={<BIDashboardSkeleton />}>
+                        <TenantBIWrapper />
+                    </Suspense>
+                </div>
+            )}
 
             {/* ══════════════════════════════════════════════════════════════
                 TAB: RESUMEN

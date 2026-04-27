@@ -15,7 +15,7 @@ const cspHeader = `
     form-action 'self';
     frame-ancestors 'self' https://app.powerbi.com;
     upgrade-insecure-requests;
-    connect-src 'self' wss: https: http:;
+    connect-src 'self' wss://legacymarksas.com wss://www.legacymarksas.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://graph.facebook.com https://*.upstash.io https://res.cloudinary.com https://sentry.io https://*.sentry.io https://o4504.ingest.sentry.io https://analytics.tiktok.com https://api.linkedin.com;
     frame-src 'self' https://www.youtube.com https://player.vimeo.com;
 `.replace(/\n/g, '');
 
