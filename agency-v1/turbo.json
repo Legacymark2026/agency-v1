@@ -11,9 +11,7 @@
     "TIKTOK_ACCESS_TOKEN",
     "BLOB_READ_WRITE_TOKEN",
     "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN"
-  ],
-  "passThroughEnv": [
+    "UPSTASH_REDIS_REST_TOKEN",
     "SENTRY_AUTH_TOKEN"
   ],
   "tasks": {
