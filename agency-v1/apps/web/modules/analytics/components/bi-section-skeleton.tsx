@@ -13,11 +13,11 @@
 
 // ── Shimmer base ──────────────────────────────────────────────────────────────
 
-function Shimmer({ className = "" }: { className?: string }) {
+function Shimmer({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <div
       className={`rounded-sm bg-slate-800/60 animate-pulse ${className}`}
-      style={{ background: "linear-gradient(90deg, rgba(30,41,59,0.6) 25%, rgba(51,65,85,0.4) 50%, rgba(30,41,59,0.6) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }}
+      style={{ background: "linear-gradient(90deg, rgba(30,41,59,0.6) 25%, rgba(51,65,85,0.4) 50%, rgba(30,41,59,0.6) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite", ...style }}
     />
   );
 }

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Plus, Edit, Trash2, FileText, MessageCircle } from "lucide-react";
 
 export default async function PostsPage() {
-    const posts = await getPosts();
+    const postsResult = await getPosts();
+    const posts = postsResult.success && postsResult.data ? postsResult.data : [];
     const session = await auth();
     const companyId = session?.user?.companyId || '';
     const commentsData = await getAllComments(companyId, { limit: 1 });
