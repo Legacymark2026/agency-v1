@@ -159,20 +159,60 @@ async function executeAction(actionType: ActionType, payload: {
             break;
 
         case "NOTIFY_ASSIGNEE":
-        case "NOTIFY_ADMIN":
-            // En un sistema real, aquí se enviaría un email/push notification.
-            // Por ahora se crea una actividad CRM como notificación interna.
-            if (deal.assignedTo || actionType === "NOTIFY_ADMIN") {
+        case "NOTIFY_ADMIN": {
+            const assignedUser = deal.assignedUser;
+            const recipientEmail = assignedUser?.email;
+            const message = payload.message ?? `El deal "${deal.title}" (${deal.stage}) requiere tu atención. Lleva más de ${deal.stagnantDays ?? 'X'} días sin actividad.`;
+
+            // 1. Send real email if recipient has an email
+            if (recipientEmail) {
+                const { sendEmail } = await import("@/lib/email");
+                await sendEmail({
+                    to: recipientEmail,
+                    subject: `⚠️ Alerta CRM: Deal "${deal.title}" requiere acción`,
+                    html: `
+                        <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+                            <h2 style="color:#0f172a;margin-bottom:8px;">⚠️ Alerta de Automatización</h2>
+                            <p style="color:#475569;">${message}</p>
+                            <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                                <tr><td style="padding:8px;background:#f8fafc;font-weight:600;">Deal</td><td style="padding:8px;">${deal.title}</td></tr>
+                                <tr><td style="padding:8px;background:#f8fafc;font-weight:600;">Etapa</td><td style="padding:8px;">${deal.stage}</td></tr>
+                                <tr><td style="padding:8px;background:#f8fafc;font-weight:600;">Valor</td><td style="padding:8px;">$${deal.value ?? 0}</td></tr>
+                            </table>
+                            <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/crm" style="background:#0ea5e9;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;">Ver en CRM →</a>
+                        </div>
+                    `,
+                    companyId: deal.companyId,
+                });
+            }
+
+            // 2. In-app notification
+            const notifyUserId = deal.assignedTo;
+            if (notifyUserId) {
+                await prisma.notification.create({
+                    data: {
+                        userId: notifyUserId,
+                        companyId: deal.companyId,
+                        title: `⚠️ Alerta: Deal "${deal.title}"`,
+                        message,
+                        type: "AUTOMATION_ALERT",
+                    },
+                }).catch(() => {}); // non-fatal if notification table missing
+            }
+
+            // 3. CRM activity log
+            if (deal.assignedTo) {
                 await prisma.cRMActivity.create({
                     data: {
                         dealId: deal.id,
-                        userId: deal.assignedTo ?? deal.id, // fallback
+                        userId: deal.assignedTo,
                         type: "AUTOMATION_ALERT",
-                        content: payload.message ?? `Alerta automática: El deal "${deal.title}" requiere acción.`,
+                        content: message,
                     },
                 });
             }
             break;
+        }
 
         case "SEND_WEBHOOK":
             if (payload.webhookUrl) {

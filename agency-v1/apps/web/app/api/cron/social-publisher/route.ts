@@ -13,15 +13,39 @@ export async function GET(req: Request) {
 
         const now = new Date();
 
-        // 1. Encontrar todos los posts SCHEDULED que ya pasaron su fecha
+        // Only publish posts that are explicitly APPROVED (or don't require approval)
+        // NEVER publish PENDING posts automatically — governance must be respected
         const postsToPublish = await prisma.socialPost.findMany({
             where: {
                 status: 'SCHEDULED',
                 scheduledAt: { lte: now },
-                // Gobernanza: solo publicar si no fue rechazado explícitamente y al menos está pendiente/aprobado
-                approvalStatus: { in: ['PENDING', 'APPROVED'] } 
-            }
+                approvalStatus: 'APPROVED',  // ← strict: APPROVED only
+            },
+            take: 50,
         });
+
+        // Separately warn about expired PENDING posts (notify author)
+        const expiredPending = await prisma.socialPost.findMany({
+            where: {
+                status: 'SCHEDULED',
+                scheduledAt: { lte: now },
+                approvalStatus: 'PENDING',
+            },
+            select: { id: true, authorId: true, companyId: true, content: true, scheduledAt: true },
+        });
+
+        for (const post of expiredPending) {
+            // Create an in-app notification so the author knows approval is needed
+            await prisma.notification.create({
+                data: {
+                    userId: post.authorId,
+                    companyId: post.companyId,
+                    title: '⚠️ Post vencido esperando aprobación',
+                    message: `Un post programado para ${post.scheduledAt?.toLocaleDateString('es-CO')} aún no ha sido aprobado y no fue publicado.`,
+                    type: 'SOCIAL_POST_PENDING_EXPIRED',
+                },
+            }).catch(() => {}); // non-fatal
+        }
 
         if (postsToPublish.length === 0) {
             return NextResponse.json({ success: true, message: 'No posts to publish.' });

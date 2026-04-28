@@ -665,15 +665,16 @@ model Workflow {
 }
 
 model WorkflowExecution {
-  id          String    @id @default(uuid())
-  status      String
-  logs        Json?
-  workflowId  String    @map("workflow_id")
-  startedAt   DateTime  @default(now()) @map("started_at")
-  completedAt DateTime? @map("completed_at")
-  currentStep Int       @default(0) @map("current_step")
-  resumeAt    DateTime? @map("resume_at")
-  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  id               String    @id @default(uuid())
+  status           String    // RUNNING | SUCCESS | FAILED | WAITING
+  logs             Json?
+  workflowId       String    @map("workflow_id")
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  currentStep      Int       @default(0) @map("current_step")
+  resumeAt         DateTime? @map("resume_at")
+  contextSnapshot  Json?     @map("context_snapshot") // Persisted DAG context for WAIT node resume
+  workflow         Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([workflowId])
   @@index([status])
@@ -1680,6 +1681,8 @@ model EmailBlast {
   totalRecipients Int                   @default(0) @map("total_recipients")
   sent            Int                   @default(0)
   failed          Int                   @default(0)
+  opens           Int                   @default(0)
+  clicks          Int                   @default(0)
   companyId       String                @map("company_id")
   createdById     String                @map("created_by_id")
   scheduledAt     DateTime?             @map("scheduled_at")

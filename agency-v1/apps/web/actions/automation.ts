@@ -2,9 +2,165 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { sendEmail, replaceVariables } from "@/lib/email";
-// import { generateAIResponse } from "@/lib/ai";
-// import { sendSlackMessage, makeHttpRequest, sendSMS, sendWhatsApp } from "@/lib/integrations";
+import { sendEmail } from "@/lib/email";
+import Handlebars from "handlebars";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Defers a workflow resumption via Upstash QStash (no blocking) */
+async function scheduleWaitResume(executionId: string, fromNodeId: string, delayMs: number) {
+    const qstashUrl = process.env.QSTASH_URL;
+    const qstashToken = process.env.QSTASH_TOKEN;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://legacymarksas.com";
+
+    if (!qstashUrl || !qstashToken) {
+        // Dev fallback — synchronous fast-forward for short waits only
+        if (delayMs < 10_000) await new Promise(r => setTimeout(r, delayMs));
+        return;
+    }
+
+    const delaySeconds = Math.ceil(delayMs / 1000);
+    await fetch(`${qstashUrl}/v2/publish/${appUrl}/api/automation/resume`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${qstashToken}`,
+            "Content-Type": "application/json",
+            [`Upstash-Delay`]: `${delaySeconds}s`,
+        },
+        body: JSON.stringify({ executionId, fromNodeId }),
+    });
+}
+
+/** Executes a real action node against live services */
+async function executeRealAction(
+    actionType: string,
+    config: Record<string, any>,
+    context: Record<string, any>,
+    companyId: string
+): Promise<string> {
+    switch (actionType) {
+        case "SEND_EMAIL": {
+            const to = context[config.toVariable || "email"] || config.to;
+            if (!to) return "SKIPPED: no recipient email in context";
+
+            let html = config.htmlBody || config.body || "<p>Email automático</p>";
+            let subject = config.subject || "Mensaje de LegacyMark";
+
+            // Render Handlebars if template detected
+            if (html.includes("{{")) {
+                try {
+                    html = Handlebars.compile(html)(context);
+                    subject = Handlebars.compile(subject)(context);
+                } catch { /* use raw if template fails */ }
+            }
+
+            const result = await sendEmail({ to, subject, html, companyId });
+            return result.success ? `EMAIL_SENT to ${to}` : `EMAIL_FAILED: ${result.error}`;
+        }
+
+        case "UPDATE_DEAL": {
+            const dealId = context.__dealId || config.dealId;
+            if (!dealId) return "SKIPPED: no dealId in context";
+            await prisma.deal.update({
+                where: { id: dealId },
+                data: {
+                    ...(config.stage ? { stage: config.stage } : {}),
+                    ...(config.priority ? { priority: config.priority } : {}),
+                    lastActivity: new Date(),
+                },
+            });
+            return `DEAL_UPDATED: ${dealId}`;
+        }
+
+        case "CREATE_TASK": {
+            const assignedTo = context.__assignedTo || config.assignedTo;
+            if (!assignedTo) return "SKIPPED: no assignedTo";
+            await prisma.task.create({
+                data: {
+                    title: Handlebars.compile(config.title || "Tarea automática")(context),
+                    description: config.description || null,
+                    priority: config.priority || "MEDIUM",
+                    assignedTo: assignedTo,
+                    createdBy: assignedTo, // system-generated task; use assignee as creator
+                    companyId,
+                },
+            });
+            return `TASK_CREATED`;
+        }
+
+        case "ADD_TAG": {
+            const dealId = context.__dealId || config.dealId;
+            if (!dealId || !config.tag) return "SKIPPED";
+            const deal = await prisma.deal.findUnique({ where: { id: dealId }, select: { tags: true } });
+            const tags: string[] = (deal?.tags as string[]) ?? [];
+            if (!tags.includes(config.tag)) {
+                await prisma.deal.update({ where: { id: dealId }, data: { tags: [...tags, config.tag] } });
+            }
+            return `TAG_ADDED: ${config.tag}`;
+        }
+
+        case "SEND_NOTIFICATION": {
+            const userId = context.__assignedTo || config.userId;
+            if (!userId) return "SKIPPED: no userId";
+            await prisma.notification.create({
+                data: {
+                    userId,
+                    companyId,
+                    title: Handlebars.compile(config.title || "Notificación automática")(context),
+                    message: Handlebars.compile(config.message || "")(context),
+                    type: "AUTOMATION",
+                },
+            });
+            return `NOTIFICATION_SENT to ${userId}`;
+        }
+
+        case "HTTP": {
+            if (!config.url) return "SKIPPED: no url";
+            const res = await fetch(config.url, {
+                method: config.method || "POST",
+                headers: { "Content-Type": "application/json", ...(config.headers || {}) },
+                body: JSON.stringify({ ...context, ...config.body }),
+                signal: AbortSignal.timeout(10_000),
+            });
+            return `HTTP_${res.status}: ${config.url}`;
+        }
+
+        case "SEND_WHATSAPP": {
+            const phone = context[config.phoneVariable || "phone"] || config.phone;
+            if (!phone) return "SKIPPED: no phone";
+            try {
+                // Dynamic import — WhatsApp service may not be available in all envs
+                const waService = await import("@/lib/whatsapp-service");
+                const sendFn = (waService as any).sendWhatsAppMessage || (waService as any).sendMessage;
+                if (!sendFn) return "SKIPPED: whatsapp send function not found";
+                const message = Handlebars.compile(config.message || "Hola")(context);
+                await sendFn(phone, message);
+                return `WHATSAPP_SENT to ${phone}`;
+            } catch (e: any) {
+                return `WHATSAPP_ERROR: ${e.message}`;
+            }
+        }
+
+        case "AI_AGENT": {
+            if (!config.agentId) return "SKIPPED: no agentId";
+            const { runAIAgent } = await import("@/lib/agent-runner");
+            const result = await runAIAgent({
+                agentId: config.agentId,
+                companyId,
+                userMessage: Handlebars.compile(config.prompt || "Analiza este contexto")(context),
+                contactData: context,
+            });
+            // Inject AI response into context for downstream nodes
+            context.__aiResponse = result.result;
+            return `AI_AGENT_RAN: ${result.agentName} (${result.tokensUsed ?? "?"} tokens)`;
+        }
+
+        default:
+            return `UNKNOWN_ACTION: ${actionType}`;
+    }
+}
 
 export async function getRecentExecutions(companyId: string) {
     try {
@@ -149,139 +305,171 @@ export async function triggerWorkflow(triggerType: string, triggerData: any) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function executeWorkflow(workflowId: string, triggerData: any) {
-    console.log(`[DAG Engine] Executing ${workflowId}`, triggerData);
+export async function executeWorkflow(workflowId: string, triggerData: any, resumeFromNodeId?: string) {
+    console.log(`[DAG Engine] Executing ${workflowId}`, resumeFromNodeId ? `resuming from ${resumeFromNodeId}` : 'fresh start');
 
+    const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
+    if (!workflow) throw new Error("Workflow not found");
+
+    // Upsert execution — if resuming use the existing one
     const execution = await prisma.workflowExecution.create({
-        data: { workflowId, status: 'PENDING', logs: [] }
+        data: { workflowId, status: 'RUNNING', logs: [] }
     });
 
     try {
-        const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
-        if (!workflow) throw new Error("Workflow not found");
-
         const stepsData = workflow.steps as any;
         const logs: any[] = [];
-        
-        // --- LEGACY ARRAY EXECUTOR (Backward Compatibility) ---
+
+        // ── LEGACY ARRAY EXECUTOR ──────────────────────────────────────────────
         if (Array.isArray(stepsData)) {
-            let skipped = false;
             for (let i = 0; i < stepsData.length; i++) {
-                if (skipped) break;
                 const step = stepsData[i];
                 const logEntry = { stepIndex: i, type: step.type, timestamp: new Date(), status: 'PENDING', details: '' };
                 try {
-                    // Logic is abstracted for brevity, logging only here since legacy is deprecated
-                    if (step.type === 'WAIT') await new Promise(r => setTimeout(r, (step.delay || 0)*1000));
+                    const details = await executeRealAction(step.type, step.config || step, triggerData, workflow.companyId);
                     logEntry.status = 'SUCCESS';
-                    logEntry.details = `Legacy Step Executed: ${step.type}`;
-                } catch(err: any) {
+                    logEntry.details = details;
+                } catch (err: any) {
                     logEntry.status = 'ERROR';
                     logEntry.details = err.message;
                 }
                 logs.push(logEntry);
             }
-        } 
-        // --- NATIVE DAG MULTI-BRANCH EXECUTOR (Ultra-Professional) ---
-        else if (stepsData && stepsData.nodes && stepsData.edges) {
+        }
+        // ── NATIVE DAG MULTI-BRANCH EXECUTOR ──────────────────────────────────
+        else if (stepsData?.nodes && stepsData?.edges) {
             const nodes: any[] = stepsData.nodes;
             const edges: any[] = stepsData.edges;
             const nodesMap = new Map<string, any>(nodes.map(n => [n.id, n]));
-            
-            // Shared Execution Context (equivalent to Zapier memory payload)
-            const context = { ...triggerData };
-            
-            // Find root trigger
-            const triggerNode = nodes.find(n => n.type === 'triggerNode');
-            if (triggerNode) {
-                // Recursive Traversal Function
-                const traverseNode = async (nodeId: string, depth = 0): Promise<void> => {
-                    if (depth > 50) throw new Error("Max recursion depth exceeded. Possible infinite loop.");
-                    
-                    const node = nodesMap.get(nodeId);
-                    if (!node) return;
-                    
-                    const logEntry = { nodeId: node.id, type: node.type, timestamp: new Date(), status: 'PENDING', details: '' };
-                    let conditionResult: boolean | null = null;
-                    
-                    try {
-                        // 1. NODE EXECUTION LOGIC
-                        if (node.type === 'actionNode') {
-                            const config = node.data;
-                            logEntry.details = `Action Executed (Mock Email: ${config.subject})`;
-                            // Context mutation could go here
-                        } 
-                        else if (node.type === 'crmActionNode') {
-                            const config = node.data;
-                            logEntry.details = `CRM Action Executed (${config.actionType})`;
-                        } 
-                        else if (node.type === 'conditionNode') {
-                            const variable = node.data.variable || 'email';
-                            const targetVal = node.data.conditionValue || node.data.value;
-                            const actualVal = context[variable];
-                            
-                            // Real evaluation (contains logic)
-                            conditionResult = String(actualVal || '').toLowerCase().includes(String(targetVal || '').toLowerCase());
-                            logEntry.details = `Condition Evaluated: ${variable} contains ${targetVal} => ${conditionResult ? 'TRUE' : 'FALSE'}`;
-                        }
-                        else if (node.type === 'waitNode') {
-                            // Convert to ms
-                            let ms = parseInt(node.data.delayValue || '1') * 1000;
-                            if (node.data.delayUnit === 'm') ms *= 60;
-                            if (node.data.delayUnit === 'h') ms *= 3600;
-                            if (node.data.delayUnit === 'd') ms *= 86400;
-                            logEntry.details = `Deferred state execution for ${ms}ms...`;
-                            // Simulated fast-forward for testing purposes
-                            if (ms < 10000) await new Promise(r => setTimeout(r, ms));
-                        }
-                        
-                        logEntry.status = 'SUCCESS';
-                    } catch (err: any) {
-                        logEntry.status = 'ERROR';
-                        logEntry.details = err.message;
-                    }
-                    
-                    logs.push(logEntry);
-                    
-                    // Stop traversal if this node errored out entirely
-                    if (logEntry.status === 'ERROR') return;
-                    
-                    // 2. EDGE BRANCHING (Find Next Steps)
-                    const outgoingEdges = edges.filter(e => e.source === nodeId);
-                    
-                    // 3. PARALLEL OR CONDITIONAL SCHEDULING
-                    const nextTasks: Promise<void>[] = [];
-                    
-                    if (node.type === 'conditionNode' && conditionResult !== null) {
-                        // Pick only the edge matching the condition result
-                        const targetHandle = conditionResult ? 'true' : 'false';
-                        const matchingEdge = outgoingEdges.find(e => e.sourceHandle === targetHandle);
-                        if (matchingEdge) {
-                            nextTasks.push(traverseNode(matchingEdge.target, depth + 1));
-                        }
-                    } else {
-                        // Parallel multi-branching (Promise.all)
-                        for (const edge of outgoingEdges) {
-                            nextTasks.push(traverseNode(edge.target, depth + 1));
-                        }
-                    }
-                    
-                    await Promise.all(nextTasks);
+
+            // Shared mutable context — all nodes read & write here
+            const context: Record<string, any> = { ...triggerData };
+
+            const visitedNodes = new Set<string>(); // cycle guard
+
+            const traverseNode = async (nodeId: string, depth = 0): Promise<void> => {
+                if (depth > 50) throw new Error("Max recursion depth exceeded.");
+                if (visitedNodes.has(nodeId)) return; // already processed (shared branch)
+                visitedNodes.add(nodeId);
+
+                const node = nodesMap.get(nodeId);
+                if (!node) return;
+
+                // Skip nodes before the resume checkpoint
+                if (resumeFromNodeId && nodeId !== resumeFromNodeId && !visitedNodes.has(resumeFromNodeId)) return;
+
+                const logEntry: any = {
+                    nodeId: node.id, type: node.type,
+                    timestamp: new Date().toISOString(),
+                    status: 'RUNNING', details: ''
                 };
-                
-                await traverseNode(triggerNode.id);
-            }
+                let conditionResult: boolean | null = null;
+
+                try {
+                    // ── triggerNode: just pass through ─────────────────────────
+                    if (node.type === 'triggerNode') {
+                        logEntry.details = `Trigger: ${node.data?.label || node.data?.triggerType || 'START'}`;
+                    }
+                    // ── actionNode + crmActionNode ─────────────────────────────
+                    else if (node.type === 'actionNode' || node.type === 'crmActionNode') {
+                        const actionType = node.data?.actionType || node.data?.type || 'SEND_EMAIL';
+                        logEntry.details = await executeRealAction(actionType, node.data || {}, context, workflow.companyId);
+                    }
+                    // ── conditionNode ──────────────────────────────────────────
+                    else if (node.type === 'conditionNode') {
+                        const variable = node.data?.variable || 'email';
+                        const operator = node.data?.operator || 'contains';
+                        const targetVal = String(node.data?.conditionValue || node.data?.value || '');
+                        const actualVal = String(context[variable] || '');
+
+                        switch (operator) {
+                            case 'equals':     conditionResult = actualVal.toLowerCase() === targetVal.toLowerCase(); break;
+                            case 'not_equals': conditionResult = actualVal.toLowerCase() !== targetVal.toLowerCase(); break;
+                            case 'gt':         conditionResult = parseFloat(actualVal) > parseFloat(targetVal); break;
+                            case 'lt':         conditionResult = parseFloat(actualVal) < parseFloat(targetVal); break;
+                            case 'contains':   conditionResult = actualVal.toLowerCase().includes(targetVal.toLowerCase()); break;
+                            default:           conditionResult = actualVal.toLowerCase().includes(targetVal.toLowerCase());
+                        }
+                        logEntry.details = `IF ${variable} ${operator} '${targetVal}' → ${conditionResult ? 'TRUE ✓' : 'FALSE ✗'}`;
+                    }
+                    // ── waitNode — defer via QStash for long delays ─────────────
+                    else if (node.type === 'waitNode') {
+                        let ms = parseInt(node.data?.delayValue || '1') * 1000;
+                        if (node.data?.delayUnit === 'm') ms *= 60;
+                        if (node.data?.delayUnit === 'h') ms *= 3600;
+                        if (node.data?.delayUnit === 'd') ms *= 86400;
+
+                        if (ms < 15_000) {
+                            // Short waits (< 15s): synchronous — safe for serverless
+                            await new Promise(r => setTimeout(r, ms));
+                            logEntry.details = `Waited ${ms}ms synchronously`;
+                        } else {
+                            // Long waits: checkpoint + QStash deferred resume
+                            await prisma.workflowExecution.update({
+                                where: { id: execution.id },
+                                data: {
+                                    status: 'WAITING',
+                                    resumeAt: new Date(Date.now() + ms),
+                                    logs: [...logs, { ...logEntry, status: 'WAITING', details: `Scheduled resume in ${ms}ms` }] as any,
+                                },
+                            });
+
+                            // Schedule QStash to resume after delay
+                            const outEdges = edges.filter(e => e.source === nodeId);
+                            for (const edge of outEdges) {
+                                await scheduleWaitResume(execution.id, edge.target, ms);
+                            }
+
+                            logEntry.details = `WAIT deferred ${ms}ms — QStash scheduled`;
+                            logs.push({ ...logEntry, status: 'WAITING' });
+                            return; // stop current traversal here; QStash will resume
+                        }
+                    }
+
+                    logEntry.status = 'SUCCESS';
+                } catch (err: any) {
+                    logEntry.status = 'ERROR';
+                    logEntry.details = err.message;
+                    console.error(`[DAG Engine] Node ${nodeId} error:`, err);
+                }
+
+                logs.push(logEntry);
+                if (logEntry.status === 'ERROR') return; // halt branch on error
+
+                // ── Edge routing ───────────────────────────────────────────────
+                const outgoingEdges = edges.filter(e => e.source === nodeId);
+                const nextTasks: Promise<void>[] = [];
+
+                if (node.type === 'conditionNode' && conditionResult !== null) {
+                    const targetHandle = conditionResult ? 'true' : 'false';
+                    const match = outgoingEdges.find(e => e.sourceHandle === targetHandle);
+                    if (match) nextTasks.push(traverseNode(match.target, depth + 1));
+                } else {
+                    for (const edge of outgoingEdges) {
+                        nextTasks.push(traverseNode(edge.target, depth + 1));
+                    }
+                }
+
+                await Promise.all(nextTasks);
+            };
+
+            const startNode = resumeFromNodeId
+                ? nodesMap.get(resumeFromNodeId)
+                : nodes.find(n => n.type === 'triggerNode');
+
+            if (startNode) await traverseNode(startNode.id);
         }
 
         await prisma.workflowExecution.update({
             where: { id: execution.id },
-            data: { status: 'SUCCESS', completedAt: new Date(), logs: logs as any }
+            data: { status: 'SUCCESS', completedAt: new Date(), logs: logs as any },
         });
 
     } catch (error: any) {
+        console.error(`[DAG Engine] Workflow ${workflowId} failed:`, error);
         await prisma.workflowExecution.update({
             where: { id: execution.id },
-            data: { status: 'FAILED', logs: [{ error: error.message }] }
+            data: { status: 'FAILED', completedAt: new Date(), logs: [{ error: error.message, ts: new Date().toISOString() }] as any },
         });
     }
 }
@@ -333,12 +521,24 @@ export async function saveWorkflow(companyId: string, data: any) {
     }
 }
 
-export async function getLatestWorkflow() {
+export async function getLatestWorkflow(companyId?: string) {
     const session = await auth();
     if (!session?.user?.id) return null;
 
+    // Resolve companyId from session if not provided — prevents cross-tenant leak
+    let resolvedCompanyId = companyId;
+    if (!resolvedCompanyId) {
+        const cu = await prisma.companyUser.findFirst({
+            where: { userId: session.user.id },
+            select: { companyId: true },
+        });
+        resolvedCompanyId = cu?.companyId;
+    }
+    if (!resolvedCompanyId) return null;
+
     try {
         return await prisma.workflow.findFirst({
+            where: { companyId: resolvedCompanyId },
             orderBy: { createdAt: 'desc' },
         });
     } catch (e) {

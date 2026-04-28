@@ -16,7 +16,9 @@ export interface SequenceStep {
     type: "EMAIL" | "TASK" | "WHATSAPP";
     subject?: string;
     body: string;
+    content?: string; // alias for body — both accepted
     taskTitle?: string;
+    message?: string; // for WHATSAPP steps
 }
 
 // ─── CRUD SECUENCIAS ──────────────────────────────────────────────────────────
@@ -145,17 +147,55 @@ export async function processEmailSequences(companyId: string) {
         }
 
         try {
-            // Aquí iría la lógica real de envío de email (usando el configured email provider)
-            // Por ahora registra la actividad en CRM + log
-            if (step.type === "EMAIL" && enrollment.deal.assignedTo) {
-                await prisma.cRMActivity.create({
-                    data: {
-                        dealId: enrollment.dealId,
-                        userId: enrollment.deal.assignedTo,
-                        type: "SEQUENCE_EMAIL",
-                        content: `[Secuencia Auto] ${step.subject ?? "Email Automático"} → ${enrollment.deal.contactEmail ?? "contacto"}`,
-                    },
-                });
+            if (step.type === "EMAIL") {
+                const to = enrollment.deal.contactEmail;
+
+                if (to) {
+                    // Build email HTML from step configuration
+                    const subject = step.subject || "Seguimiento automático";
+                    const bodyTemplate = step.body || step.content || `<p>Hola ${enrollment.deal.contactName || ""},</p><p>${step.subject || "Te contactamos de LegacyMark."}</p>`;
+
+                    // Render Handlebars variables
+                    let html = bodyTemplate;
+                    let renderedSubject = subject;
+                    try {
+                        const Handlebars = (await import("handlebars")).default;
+                        const ctx = {
+                            name: enrollment.deal.contactName || "",
+                            email: to,
+                            deal_title: enrollment.deal.title || "",
+                            deal_value: enrollment.deal.value?.toString() || "",
+                            stage: enrollment.deal.stage || "",
+                        };
+                        html = Handlebars.compile(bodyTemplate)(ctx);
+                        renderedSubject = Handlebars.compile(subject)(ctx);
+                    } catch { /* use raw on template error */ }
+
+                    // Send via lib/email (handles per-company Resend key)
+                    const { sendEmail } = await import("@/lib/email");
+                    const sendResult = await sendEmail({
+                        to,
+                        subject: renderedSubject,
+                        html,
+                        companyId: enrollment.sequence.companyId,
+                    });
+
+                    if (!sendResult.success) {
+                        throw new Error(`Email send failed: ${JSON.stringify(sendResult.error)}`);
+                    }
+                }
+
+                // Audit trail — log the activity regardless
+                if (enrollment.deal.assignedTo) {
+                    await prisma.cRMActivity.create({
+                        data: {
+                            dealId: enrollment.dealId,
+                            userId: enrollment.deal.assignedTo,
+                            type: "SEQUENCE_EMAIL",
+                            content: `[Secuencia] "${step.subject ?? "Email Automático"}" enviado a ${to ?? "contacto"}`,
+                        },
+                    });
+                }
             }
 
             // Avanzar al siguiente paso

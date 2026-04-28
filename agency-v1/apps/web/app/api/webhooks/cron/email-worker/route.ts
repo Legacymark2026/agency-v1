@@ -3,20 +3,42 @@ import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import Handlebars from 'handlebars';
 
+export const maxDuration = 300; // 5 min — process large batches
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://legacymarksas.com';
+
 async function getResend(companyId: string) {
     let key = process.env.RESEND_API_KEY;
     try {
-        const { prisma } = await import("@/lib/prisma");
         const integration = await prisma.integrationConfig.findFirst({
             where: { companyId, provider: "RESEND", isEnabled: true }
         });
-        if (integration && integration.config && typeof integration.config === "object") {
+        if (integration?.config && typeof integration.config === "object") {
             const config = integration.config as { apiKey?: string };
             if (config.apiKey) key = config.apiKey;
         }
     } catch(e) {}
-
     return new Resend(key || "dummy_key");
+}
+
+/** Injects open pixel and wraps links for click tracking */
+function injectTracking(html: string, blastId: string, email: string): string {
+    const encoded = encodeURIComponent(email);
+
+    // Wrap all <a href="..."> links
+    const tracked = html.replace(
+        /<a\s+([^>]*?)href="([^"]+)"([^>]*)>/gi,
+        (_, pre, url, post) => {
+            // Skip unsubscribe and tracking links
+            if (url.includes('/unsubscribe') || url.includes('/api/track')) return _;
+            const trackUrl = `${BASE_URL}/api/track/click?r=${encodeURIComponent(url)}&b=${blastId}&e=${encoded}`;
+            return `<a ${pre}href="${trackUrl}"${post}>`;
+        }
+    );
+
+    // Append open pixel before </body>
+    const pixel = `<img src="${BASE_URL}/api/track/open?b=${blastId}&e=${encoded}" width="1" height="1" alt="" style="display:block;" />`;
+    return tracked.replace(/<\/body>/i, `${pixel}</body>`) || tracked + pixel;
 }
 
 export async function POST(request: Request) {
@@ -120,11 +142,12 @@ export async function POST(request: Request) {
 
                 try {
                     const resend = await getResend(blast.companyId);
+                    const trackedHtml = injectTracking(finalHtml, blast.id, r.email);
                     const result = await resend.emails.send({
                         from: `${blast.fromName} <${blast.fromEmail}>`,
                         to: r.email,
                         subject: finalSubj,
-                        html: finalHtml,
+                        html: trackedHtml,
                     });
 
                     if (result.data?.id) {
