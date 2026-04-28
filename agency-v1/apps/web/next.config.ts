@@ -56,10 +56,71 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // ── Canonical domain: strip www ───────────────────────────────────────
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.legacymarksas.com' }],
         destination: 'https://legacymarksas.com/:path*',
+        permanent: true,
+      },
+      // ── Force HTTPS (HTTP → HTTPS) ────────────────────────────────────────
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'http://legacymarksas.com' }],
+        destination: 'https://legacymarksas.com/:path*',
+        permanent: true,
+      },
+      // ── Locale-less marketing routes → /es (default locale) ──────────────
+      {
+        source: '/portfolio',
+        destination: '/es/portfolio',
+        permanent: true,
+      },
+      {
+        source: '/servicios',
+        destination: '/es/servicios',
+        permanent: true,
+      },
+      {
+        source: '/blog',
+        destination: '/es/blog',
+        permanent: true,
+      },
+      {
+        source: '/blog/:slug',
+        destination: '/es/blog/:slug',
+        permanent: true,
+      },
+      {
+        source: '/contacto',
+        destination: '/es/contacto',
+        permanent: true,
+      },
+      {
+        source: '/nosotros',
+        destination: '/es/nosotros',
+        permanent: true,
+      },
+      {
+        source: '/soluciones/:path*',
+        destination: '/es/soluciones/:path*',
+        permanent: true,
+      },
+      // ── RSS aliases ───────────────────────────────────────────────────────
+      // /rss.xml and /feed.xml → /rss (our canonical RSS route)
+      {
+        source: '/rss.xml',
+        destination: '/rss',
+        permanent: true,
+      },
+      {
+        source: '/feed.xml',
+        destination: '/rss',
+        permanent: true,
+      },
+      {
+        source: '/feed',
+        destination: '/rss',
         permanent: true,
       },
     ];
