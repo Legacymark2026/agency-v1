@@ -346,10 +346,39 @@ export async function runAIAgent({
     if (agent.enforceTempClamp) temperature = Math.min(0.5, Math.max(0.2, temperature));
     if (agent.enforceTokenLimit) maxTokens = Math.min(maxTokens, 400);
 
-    // 6. Build RAG Context
-    const ragContext = buildRagContext(agent.knowledgeBases);
+    // 6. Build RAG Context (Semantic Search with pgvector)
+    let ragContext = "";
+    try {
+        const apiKey = await getGeminiKey(companyId);
+        const { generateEmbedding } = await import("./embeddings");
+        const queryVector = await generateEmbedding(userMessage, apiKey);
+        
+        const vectorString = `[${queryVector.join(',')}]`;
+        
+        // pgvector cosine similarity search
+        const relevantKBs = await prisma.$queryRaw<Array<{ name: string, content: string }>>`
+            SELECT name, content 
+            FROM knowledge_bases 
+            WHERE company_id = ${companyId} 
+              AND is_active = true 
+              AND embedding IS NOT NULL
+            ORDER BY embedding <=> ${vectorString}::vector
+            LIMIT 3;
+        `;
+        
+        if (relevantKBs && relevantKBs.length > 0) {
+            ragContext = relevantKBs.map(kb => `=== BASE DE CONOCIMIENTO: ${kb.name} ===\n${kb.content}`).join("\n\n");
+        } else {
+            // Fallback for legacy documents without embeddings
+            ragContext = buildRagContext(agent.knowledgeBases);
+        }
+    } catch (e) {
+        console.error("[AGENT RUNNER] Semantic RAG failed, falling back to legacy matching:", e);
+        ragContext = buildRagContext(agent.knowledgeBases);
+    }
+
     const ragInstruction = agent.strictRagMode && ragContext
-        ? `\n\n⚠️ REGLA CRÍTICA: Solo puedes responder con información de los documentos de la Base de Conocimiento. Si la respuesta no está en esos documentos, debes decir: "Esta consulta supera mi alcance y la derivaré a un especialista." NUNCA inventes información.\n`
+        ? `\n\n⚠️ REGLA CRÍTICA: Solo puedes responder con información de los documentos de la Base de Conocimiento proporcionada. Si la respuesta no está en esos documentos, debes decir: "Esta consulta supera mi alcance y la derivaré a un especialista." NUNCA inventes información.\n`
         : "";
 
     // 7. CRM Variable Injection

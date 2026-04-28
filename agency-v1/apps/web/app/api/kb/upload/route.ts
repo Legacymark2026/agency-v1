@@ -5,6 +5,7 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { writeFile, unlink } from "fs/promises";
 import path from "path";
 import os from "os";
+import { generateEmbedding } from "@/lib/embeddings";
 
 export async function POST(req: NextRequest) {
     try {
@@ -76,8 +77,22 @@ export async function POST(req: NextRequest) {
             try { await unlink(tempFilePath); } catch (e) { console.error("Could not delete tmp file", e); }
         }
 
+        // Vectorize content
+        let vectorEmbedding: number[] | null = null;
+        try {
+            const apiKey = process.env.GEMINI_API_KEY;
+            const textToEmbed = description ? `${name}\n\n${description}` : name;
+            if (apiKey) {
+                vectorEmbedding = await generateEmbedding(textToEmbed, apiKey);
+            }
+        } catch (e) {
+            console.error("Could not generate embedding for KB item", e);
+        }
+
         // Save to Database
         let kb;
+        const finalContent = `[Contenido Multimedia Adjunto. URI: ${fileUri}]`;
+
         if (kbId) {
             kb = await prisma.knowledgeBase.update({
                 where: { id: kbId },
@@ -87,21 +102,24 @@ export async function POST(req: NextRequest) {
                     sourceType,
                     mimeType,
                     fileUri,
-                    content: `[Contenido Multimedia Adjunto. URI: ${fileUri}]`,
+                    content: finalContent,
                 }
             });
+            if (vectorEmbedding) {
+                // Update embedding with raw SQL since Prisma doesn't directly map array to vector in update() easily
+                await prisma.$executeRaw`UPDATE knowledge_bases SET embedding = ${vectorEmbedding}::vector WHERE id = ${kbId}`;
+            }
         } else {
-            kb = await prisma.knowledgeBase.create({
-                data: {
-                    companyId: companyUser.companyId,
-                    name,
-                    description,
-                    sourceType,
-                    mimeType,
-                    fileUri,
-                    content: `[Contenido Multimedia Adjunto. URI: ${fileUri}]`,
-                }
-            });
+            // Cannot insert `Unsupported` type directly in Prisma's `create`, must use raw SQL.
+            const newKbId = require("crypto").randomUUID();
+            await prisma.$executeRaw`
+                INSERT INTO knowledge_bases (id, company_id, name, description, source_type, mime_type, file_uri, content, is_active, created_at, updated_at)
+                VALUES (${newKbId}, ${companyUser.companyId}, ${name}, ${description}, ${sourceType}, ${mimeType}, ${fileUri}, ${finalContent}, true, NOW(), NOW())
+            `;
+            if (vectorEmbedding) {
+                await prisma.$executeRaw`UPDATE knowledge_bases SET embedding = ${vectorEmbedding}::vector WHERE id = ${newKbId}`;
+            }
+            kb = await prisma.knowledgeBase.findUnique({ where: { id: newKbId } });
         }
 
         return NextResponse.json({ success: true, kb });
