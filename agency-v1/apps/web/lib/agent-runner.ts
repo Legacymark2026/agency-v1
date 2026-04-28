@@ -358,21 +358,45 @@ export async function runAIAgent({
         contactData
     );
 
-    // 8. Conversation History
+    // 8. Conversation History (Intelligent Token-Aware Sliding Window)
     const history: { role: "user" | "model", parts: { text: string }[] }[] = [];
     if (inlineHistory.length > 0) {
         history.push(...inlineHistory);
     } else if (conversationId) {
+        // Fetch up to 100 recent messages, but we will filter based on token budget
         const prevMessages = await prisma.agentMessage.findMany({
-            where: { conversationId }, orderBy: { createdAt: "asc" }, take: 20
+            where: { conversationId }, orderBy: { createdAt: "desc" }, take: 100
         });
+        
+        let estimatedTokens = 0;
+        const MAX_HISTORY_TOKENS = 8000;
+        const selectedMessages = [];
+
         for (const m of prevMessages) {
+            const tokens = m.tokensUsed || Math.ceil(m.content.length / 4);
+            if (estimatedTokens + tokens > MAX_HISTORY_TOKENS && selectedMessages.length > 0) {
+                break; // Window full
+            }
+            estimatedTokens += tokens;
+            selectedMessages.push(m);
+        }
+
+        // Reverse to chronological order for the model
+        selectedMessages.reverse();
+
+        for (const m of selectedMessages) {
             history.push({
                 role: m.role === "assistant" ? "model" : "user",
                 parts: [{ text: m.content }]
             });
         }
     }
+
+    const { getToolDeclarations, executeTools } = await import("./agent-tools");
+    const enabledToolNames = Array.isArray(agent.enabledTools) ? (agent.enabledTools as string[]) : [];
+    const toolDeclarations = getToolDeclarations(enabledToolNames);
+    
+    const tools = toolDeclarations.length > 0 ? [{ functionDeclarations: toolDeclarations }] : undefined;
 
     // 9. Invoke Gemini SDK
     const apiKey = await getGeminiKey(companyId);
@@ -386,14 +410,29 @@ export async function runAIAgent({
         safetySettings: [
             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
             { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        ]
+        ],
+        tools
     });
 
-    let rawResponse: string;
+    let rawResponse: string = "";
     let tokensUsed: number | undefined;
+    let toolsUsed: any[] = [];
     try {
         const chat = model.startChat({ history });
-        const geminiResult = await chat.sendMessage(userMessage);
+        let geminiResult = await chat.sendMessage(userMessage);
+
+        // Handle Tool Calling
+        let functionCalls = geminiResult.response.functionCalls();
+        if (functionCalls && functionCalls.length > 0) {
+            console.log(`[AGENT RUNNER] Tool calls detected: ${functionCalls.map(c => c.name).join(", ")}`);
+            const functionResponses = await executeTools(functionCalls, companyId, contactData);
+            
+            // Send the function execution results back to the model
+            geminiResult = await chat.sendMessage(functionResponses);
+            
+            toolsUsed = functionCalls.map(c => ({ name: c.name, args: c.args }));
+        }
+
         rawResponse = geminiResult.response.text();
         tokensUsed = geminiResult.response.usageMetadata?.totalTokenCount;
         // 4.1: Éxito — resetear circuit breaker si estaba acumulando errores

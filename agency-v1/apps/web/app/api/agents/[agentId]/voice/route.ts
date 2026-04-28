@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -29,6 +27,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ age
         const arrayBuffer = await audioFile.arrayBuffer();
         const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
+        // Use per-company API key
+        let apiKey = process.env.GEMINI_API_KEY;
+        try {
+            const integration = await prisma.integrationConfig.findFirst({
+                where: { companyId: agent.companyId, provider: "GEMINI", isEnabled: true },
+            });
+            if (integration?.config && typeof integration.config === "object") {
+                const cfg = integration.config as { apiKey?: string };
+                if (cfg.apiKey) apiKey = cfg.apiKey;
+            }
+        } catch { /* use global key */ }
+
+        if (!apiKey) {
+            return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 503 });
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
         const prompt = `

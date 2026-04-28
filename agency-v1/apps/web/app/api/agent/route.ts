@@ -8,10 +8,21 @@ export async function POST(req: Request) {
         const { messages, roleType } = await req.json();
 
         const session = await auth();
-        const companyId = (session?.user as any)?.companyId || session?.user?.id;
-
-        if (!session?.user || !companyId) {
+        if (!session?.user?.id) {
             return new Response(JSON.stringify({ error: "Unauthorized." }), { status: 401 });
+        }
+
+        let companyId = (session.user as any).companyId;
+        if (!companyId) {
+            const { prisma } = await import("@/lib/prisma");
+            const companyUser = await prisma.companyUser.findFirst({
+                where: { userId: session.user.id }
+            });
+            companyId = companyUser?.companyId;
+        }
+
+        if (!companyId) {
+            return new Response(JSON.stringify({ error: "No company associated with user." }), { status: 403 });
         }
 
         // El motor ahora resuelve el API de Gemini de forma puramente dinámica usando companyId en agent-runner.ts
