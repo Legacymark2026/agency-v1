@@ -180,6 +180,8 @@ async function handlePost(
             // Analyze the incoming message with Gemini
             const analysis = await analyzeIncomingMessage(inboundMessage.content);
 
+            const priority = (analysis.sentiment === 'URGENT' || analysis.sentiment === 'NEGATIVE') ? 'URGENT' : 'MEDIUM';
+
             // Update conversation state with AI sentiment/topic
             await prisma.conversation.update({
                 where: { id: conversation.id },
@@ -189,9 +191,12 @@ async function handlePost(
                     lastMessagePreview: inboundMessage.content.substring(0, 100),
                     status: conversation.status === 'ARCHIVED' ? 'OPEN' : conversation.status,
                     sentiment: analysis.sentiment,
-                    topic: analysis.topic
+                    topic: analysis.topic,
+                    priority: priority
                 }
             });
+            // Attach analysis to block scope variable for dispatch logic
+            conversation.sentiment = analysis.sentiment;
         }
 
         // 4. Link Lead to Conversation if not already linked
@@ -248,14 +253,38 @@ async function handlePost(
             }
         });
 
-        // 6. Dispatch OmniChannel AI Agent in background for ALL channels
-        try {
-            const { triggerOmnichannelAgent } = await import('@/lib/services/ai-inbox');
-            triggerOmnichannelAgent(conversation.id, validCompanyId).catch(err =>
-                console.error(`[Webhook:${channel}] Error triggering AI Agent:`, err)
-            );
-        } catch (agentErr) {
-            console.warn(`[Webhook:${channel}] AI Agent import failed:`, agentErr);
+        // 6. Triage & Dispatch (P2-2 & P2-1)
+        if (conversation.sentiment === 'NEGATIVE' || conversation.sentiment === 'URGENT') {
+             // Assign to the first available admin if unassigned, and pause the bot by skipping the trigger
+             const admin = await prisma.user.findFirst({ where: { companies: { some: { companyId: validCompanyId } }, role: 'admin' } });
+             if (admin && !conversation.assignedTo) {
+                 await prisma.conversation.update({ where: { id: conversation.id }, data: { assignedTo: admin.id } });
+                 
+                 // Notify admin via Local Notification
+                 const { createLocalNotification } = await import("@/actions/notifications");
+                 createLocalNotification({ 
+                     companyId: validCompanyId, 
+                     userId: admin.id, 
+                     type: 'LEAD_ACTIVITY', 
+                     title: `Triage: Cliente Frustrado/Urgente`, 
+                     message: inboundMessage.content.substring(0, 100), 
+                     link: `/dashboard/inbox?conversation=${conversation.id}` 
+                 }).catch(console.error);
+             }
+             
+             // P2-1: Pre-compute copilot draft since bot is paused and human is needed
+             const { draftCopilotReply } = await import('@/lib/services/ai-inbox');
+             draftCopilotReply(conversation.id).catch(console.error);
+        } else {
+             // Dispatch OmniChannel AI Agent in background for standard messages
+             try {
+                 const { triggerOmnichannelAgent } = await import('@/lib/services/ai-inbox');
+                 triggerOmnichannelAgent(conversation.id, validCompanyId).catch(err =>
+                     console.error(`[Webhook:${channel}] Error triggering AI Agent:`, err)
+                 );
+             } catch (agentErr) {
+                 console.warn(`[Webhook:${channel}] AI Agent import failed:`, agentErr);
+             }
         }
 
         return NextResponse.json({ success: true });

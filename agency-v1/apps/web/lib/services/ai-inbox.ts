@@ -116,7 +116,19 @@ export async function draftCopilotReply(conversationId: string): Promise<string>
             generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
         });
         
-        return result.response.text().trim();
+        const generatedDraft = result.response.text().trim();
+
+        // P2-1: Save draft into conversation metadata for instantaneous UI retrieval
+        const metadata = (activeConversation.metadata as any) || {};
+        metadata.copilotDraft = generatedDraft;
+        metadata.copilotDraftTimestamp = new Date().toISOString();
+        
+        await db.conversation.update({
+            where: { id: conversationId },
+            data: { metadata }
+        });
+
+        return generatedDraft;
     } catch (error) {
         console.error("[draftCopilotReply] Error:", error);
         return "Lo siento, ha ocurrido un error al generar la sugerencia. Verifica tus configuraciones de API.";
@@ -167,13 +179,6 @@ export async function triggerOmnichannelAgent(conversationId: string, companyId:
 
         if (!activeConversation) return { success: false, reason: "NO_CONVERSATION" };
 
-        let kbContext = "";
-        // @ts-ignore Prisma JSON typing
-        if (agent.knowledgeBases && agent.knowledgeBases.length > 0) {
-             // @ts-ignore
-             kbContext = agent.knowledgeBases.map((kb: any) => `Documento: ${kb.name}\n${kb.content}`).join("\n\n");
-        }
-
         const config = await db.integrationConfig.findFirst({
             where: { companyId, provider: "gemini" },
             select: { config: true },
@@ -181,6 +186,38 @@ export async function triggerOmnichannelAgent(conversationId: string, companyId:
 
         const apiKey = (config?.config as any)?.apiKey ?? process.env.GEMINI_API_KEY;
         if (!apiKey) return { success: false, reason: "NO_API_KEY" };
+
+        let kbContext = "";
+        try {
+            const latestMsg = activeConversation.messages[0]?.content || "";
+            if (latestMsg && agent.knowledgeBases && agent.knowledgeBases.length > 0) {
+                const { generateEmbedding } = await import("@/lib/embeddings");
+                const queryVector = await generateEmbedding(latestMsg, apiKey);
+                const vectorString = `[${queryVector.join(',')}]`;
+                
+                const relevantKBs = await db.$queryRaw<Array<{ name: string, content: string }>>`
+                    SELECT name, content 
+                    FROM knowledge_bases 
+                    WHERE company_id = ${companyId} 
+                      AND is_active = true 
+                      AND embedding IS NOT NULL
+                    ORDER BY embedding <=> ${vectorString}::vector
+                    LIMIT 3;
+                `;
+                
+                if (relevantKBs && relevantKBs.length > 0) {
+                    kbContext = relevantKBs.map(kb => `Documento: ${kb.name}\n${kb.content}`).join("\n\n");
+                } else {
+                     // Fallback
+                     kbContext = agent.knowledgeBases.map((kb: any) => `Documento: ${kb.name}\n${kb.content}`).join("\n\n");
+                }
+            }
+        } catch (e) {
+            console.error("[OmnichannelAgent] Semantic RAG failed, using legacy:", e);
+            if (agent.knowledgeBases && agent.knowledgeBases.length > 0) {
+                 kbContext = agent.knowledgeBases.map((kb: any) => `Documento: ${kb.name}\n${kb.content}`).join("\n\n");
+            }
+        }
 
         const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ 
             model: agent.llmModel || "gemini-2.0-flash",
@@ -222,7 +259,46 @@ export async function triggerOmnichannelAgent(conversationId: string, companyId:
         });
 
         // 4. Send the new message and enter the Tool Execution Loop
-        let chatResult = await chat.sendMessage([{ text: latestMessage.content || '[Media]' }]);
+        const latestParts: any[] = [{ text: latestMessage.content || '[Media]' }];
+
+        // Multimodal handling for WhatsApp audio (P1-2 fix)
+        if (latestMessage.mediaUrl && latestMessage.mediaUrl.includes('/api/media/whatsapp/')) {
+            const mediaId = latestMessage.mediaUrl.split('/').pop();
+            if (mediaId) {
+                try {
+                    const { getSystemIntegrationConfig } = await import("@/lib/integration-config-service");
+                    let apiToken = process.env.WHATSAPP_API_TOKEN || '';
+                    const waConfig = await getSystemIntegrationConfig('whatsapp');
+                    if (waConfig?.accessToken) apiToken = waConfig.accessToken;
+
+                    if (apiToken) {
+                        const metaRes = await fetch(`https://graph.facebook.com/v19.0/${mediaId}`, { headers: { 'Authorization': `Bearer ${apiToken}` } });
+                        const metaData = await metaRes.json();
+                        if (metaData.url) {
+                            const mediaRes = await fetch(metaData.url, { headers: { 'Authorization': `Bearer ${apiToken}` } });
+                            if (mediaRes.ok) {
+                                const buffer = await mediaRes.arrayBuffer();
+                                const base64Data = Buffer.from(buffer).toString('base64');
+                                const mimeType = mediaRes.headers.get("Content-Type") || latestMessage.mediaType || 'audio/ogg';
+                                
+                                latestParts.push({
+                                    inlineData: {
+                                        data: base64Data,
+                                        mimeType: mimeType
+                                    }
+                                });
+                                // Provide explicit instruction to the model
+                                latestParts[0].text += "\n[Nota del Sistema: Tienes acceso nativo a este audio de WhatsApp. Escúchalo y responde al cliente según lo que dice.]";
+                            }
+                        }
+                    }
+                } catch (audioErr) {
+                    console.error("[OmnichannelAgent] Failed to fetch and parse multimodal audio:", audioErr);
+                }
+            }
+        }
+
+        let chatResult = await chat.sendMessage(latestParts);
         let response = chatResult.response;
         
         // Extract function call safely from parts if helpers are missing in types

@@ -228,6 +228,20 @@ export async function sendMessage(conversationId: string, content: string, userI
                 return { success: false, error: "Falta configuración de la página o ID del destinatario en la metadata del Lead." };
             }
         } else if (conversation && conversation.channel === 'WHATSAPP') {
+            // P0-2: Check WhatsApp 24h Window Rule
+            const lastInboundMsg = await db.message.findFirst({
+                where: { conversationId, direction: 'INBOUND' },
+                orderBy: { createdAt: 'desc' }
+            });
+            
+            if (lastInboundMsg) {
+                const hoursSinceLastMessage = (Date.now() - lastInboundMsg.createdAt.getTime()) / (1000 * 60 * 60);
+                if (hoursSinceLastMessage >= 24) {
+                    await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
+                    return { success: false, error: "Regla de 24h de WhatsApp: Meta restringe el envío de mensajes estándar tras 24 horas. Debes usar una Plantilla pre-aprobada (Template)." };
+                }
+            }
+
             const { automationHub } = await import("@/lib/integrations/providers");
             const waProvider = automationHub.get('WHATSAPP');
             if (waProvider) {

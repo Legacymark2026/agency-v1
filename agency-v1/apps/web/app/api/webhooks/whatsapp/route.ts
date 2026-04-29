@@ -49,21 +49,25 @@ export async function POST(request: NextRequest) {
              }
 
              if (companyId) {
-                 let lead = await db.lead.findFirst({
-                     where: { companyId, phone: msg.sender.id }
-                 });
-
-                 if (!lead) {
-                     // Auto-create lead
-                     const { createLead } = await import("@/modules/leads/actions/leads");
-                     const res = await createLead({
-                         companyId,
+                 // Auto-create lead with UPSERT to avoid race conditions (P0-1 fix)
+                 const guestEmail = `${msg.sender.id}@wa.guest`;
+                 const lead = await db.lead.upsert({
+                     where: {
+                         companyId_email: {
+                             companyId: companyId,
+                             email: guestEmail
+                         }
+                     },
+                     update: {}, // If it exists, do not modify (prevent overriding names)
+                     create: {
+                         companyId: companyId,
                          name: msg.sender.name || "WhatsApp Client",
-                         email: `${msg.sender.id}@wa.guest`,
+                         email: guestEmail,
                          phone: msg.sender.id,
-                     });
-                     if(res.success && res.data) lead = res.data;
-                 }
+                         source: "WHATSAPP",
+                         status: "NEW"
+                     }
+                 });
 
                  if (lead) {
                      const convRes = await createConversation(companyId, lead.id, 'WHATSAPP');
