@@ -59,6 +59,7 @@ export interface WorkflowStep {
     config: Record<string, unknown>;
     nextId?: string;
     branches?: BranchConfig[];
+    compensate?: { type: StepType; config: Record<string, unknown> };
 }
 
 export interface ExecutionContext {
@@ -182,42 +183,69 @@ async function executeStepChain(
     let currentId: string | undefined = startStepId;
     let safetyCounter = 0;
 
-    while (currentId && safetyCounter < 50) {
-        safetyCounter++;
-        const step = stepMap.get(currentId);
-        if (!step) {
-            console.warn(`[WorkflowExecutor] Step ${currentId} not found — halting.`);
-            break;
-        }
+    try {
+        while (currentId && safetyCounter < 50) {
+            safetyCounter++;
+            const step = stepMap.get(currentId);
+            if (!step) {
+                console.warn(`[WorkflowExecutor] Step ${currentId} not found — halting.`);
+                break;
+            }
 
-        const result = await executeStep(step, context);
+            const result = await executeStep(step, context);
 
-        context.stepHistory.push({
-            stepId: step.id,
-            result: result.output,
-            executedAt: new Date().toISOString(),
-        });
-
-        if (result.suspended) {
-            // Persist snapshot and halt — will be resumed externally
-            await prisma.workflowExecution.update({
-                where: { id: context.executionId },
-                data: {
-                    status: "WAITING",
-                    currentStep: steps.indexOf(step),
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    contextSnapshot: context as any,
-                    resumeAt: result.resumeAt,
-                },
+            context.stepHistory.push({
+                stepId: step.id,
+                result: result.output,
+                executedAt: new Date().toISOString(),
             });
-            return { suspended: true };
-        }
 
-        if (result.error) {
-            throw new Error(`Step ${step.id} (${step.type}) failed: ${result.error}`);
-        }
+            if (result.suspended) {
+                // Persist snapshot and halt — will be resumed externally
+                await prisma.workflowExecution.update({
+                    where: { id: context.executionId },
+                    data: {
+                        status: "WAITING",
+                        currentStep: steps.indexOf(step),
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        contextSnapshot: context as any,
+                        resumeAt: result.resumeAt,
+                    },
+                });
+                return { suspended: true };
+            }
 
-        currentId = result.nextId ?? step.nextId;
+            if (result.error) {
+                throw new Error(`Step ${step.id} (${step.type}) failed: ${result.error}`);
+            }
+
+            currentId = result.nextId ?? step.nextId;
+        }
+    } catch (chainError) {
+        // ── SAGA ROLLBACK (Compensating Transactions) ──
+        console.error(`[WorkflowExecutor] Execution failed. Initiating Saga Rollback...`, chainError);
+        // Traverse history in reverse order
+        for (let i = context.stepHistory.length - 1; i >= 0; i--) {
+            const hist = context.stepHistory[i];
+            const originalStep = stepMap.get(hist.stepId);
+            if (originalStep?.compensate) {
+                console.log(`[WorkflowExecutor] Compensating step ${originalStep.id}...`);
+                try {
+                    const compStep: WorkflowStep = {
+                        id: `${originalStep.id}-undo`,
+                        type: originalStep.compensate.type,
+                        config: originalStep.compensate.config,
+                    };
+                    // Execute compensate step with the same context
+                    await executeStep(compStep, context);
+                } catch (compErr) {
+                    // Compensations shouldn't crash the whole rollback process, but log heavily
+                    console.error(`[WorkflowExecutor] Compensation for step ${originalStep.id} FAILED:`, compErr);
+                }
+            }
+        }
+        // Re-throw to mark execution as FAILED
+        throw chainError;
     }
 
     return { suspended: false };
@@ -342,10 +370,11 @@ async function executeNotify(step: WorkflowStep, context: ExecutionContext): Pro
 
 // ── WEBHOOK — Outbound HTTP POST ──────────────────────────────────────────────
 async function executeWebhook(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    const { webhookUrl, secret, bodyTemplate } = step.config as {
+    const { webhookUrl, secret, bodyTemplate, continueOnError } = step.config as {
         webhookUrl?: string;
         secret?: string;
         bodyTemplate?: string;
+        continueOnError?: boolean;
     };
 
     if (!webhookUrl) return { error: "WEBHOOK step missing 'webhookUrl'" };
@@ -362,9 +391,19 @@ async function executeWebhook(step: WorkflowStep, context: ExecutionContext): Pr
             body,
             signal: AbortSignal.timeout(10_000),
         });
+        
+        // P2-B Silent Fail Protection
+        if (!res.ok && !continueOnError) {
+            return { error: `Webhook responded with HTTP ${res.status}: ${res.statusText}` };
+        }
+        
         return { output: { status: res.status, ok: res.ok } };
     } catch (e: unknown) {
-        return { error: e instanceof Error ? e.message : String(e) };
+        if (!continueOnError) {
+            return { error: e instanceof Error ? e.message : String(e) };
+        }
+        // If continueOnError is true, return the error in the output object instead of failing the step
+        return { output: { error: e instanceof Error ? e.message : String(e), ok: false } };
     }
 }
 

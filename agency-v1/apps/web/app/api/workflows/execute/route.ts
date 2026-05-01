@@ -57,6 +57,26 @@ export async function POST(req: NextRequest) {
         if (!workflowId) {
             return NextResponse.json({ error: "workflowId is required" }, { status: 400 });
         }
+        
+        // ── Idempotency Check ────────────────────────────────────────────────
+        const idempotencyKey = req.headers.get("x-idempotency-key");
+        if (idempotencyKey) {
+            // Buscamos si ya existe una ejecución para este flujo y empresa con la misma llave
+            const existing = await prisma.$queryRaw<{id: string}[]>`
+                SELECT id FROM workflow_executions 
+                WHERE workflow_id = ${workflowId} 
+                AND context_snapshot->'triggerData'->>'_idempotencyKey' = ${idempotencyKey}
+                LIMIT 1
+            `;
+            if (existing && existing.length > 0) {
+                console.log(`[Workflows API] Idempotency hit for key ${idempotencyKey}. Ignoring duplicate.`);
+                return NextResponse.json({
+                    success: true,
+                    message: "Execution ignored due to idempotency key",
+                    executionId: existing[0].id
+                });
+            }
+        }
 
         // ── Verify workflow belongs to company ───────────────────────────────
         const workflow = await prisma.workflow.findFirst({
@@ -71,26 +91,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `Workflow "${workflow.name}" is inactive` }, { status: 400 });
         }
 
-        // ── Execute ───────────────────────────────────────────────────────────
-        const result = await runWorkflow(workflowId, {
+        // ── Execute Asynchronously (Non-blocking) ─────────────────────────────
+        const enrichedTriggerData = {
             ...triggerData,
             _companyId: companyId,
             _triggeredAt: new Date().toISOString(),
             _triggeredVia: "api",
+            ...(idempotencyKey ? { _idempotencyKey: idempotencyKey } : {})
+        };
+        
+        // Fire and forget (Asynchronous execution to unblock the Event Loop)
+        // En entornos serverless estables, se sugiere usar inQueues o Vercel waitUntil.
+        runWorkflow(workflowId, enrichedTriggerData).catch(e => {
+            console.error("[Workflows API] Background execution failed:", e);
         });
-
-        if (!result.success) {
-            return NextResponse.json(
-                { error: result.error, executionId: result.executionId },
-                { status: 500 }
-            );
-        }
 
         return NextResponse.json({
             success: true,
-            executionId: result.executionId,
+            message: "Workflow execution queued asynchronously",
             workflow: { id: workflow.id, name: workflow.name },
-        });
+        }, { status: 202 });
 
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
