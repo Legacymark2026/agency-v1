@@ -131,100 +131,72 @@ async function handlePost(
         
         const validCompanyId = companyId;
 
-        // 3. Find or Create Lead
-        let lead = await prisma.lead.findFirst({
+        // 3. Find or Create Lead (Atomic Upsert to prevent Race Conditions)
+        const placeholderEmail = `${channel.toLowerCase()}_${inboundMessage.sender.id}@placeholder.com`;
+
+        const lead = await prisma.lead.upsert({
             where: {
-                OR: [
-                    { phone: inboundMessage.sender.id },
-                    { email: `${channel.toLowerCase()}_${inboundMessage.sender.id}@placeholder.com` }
-                ],
-                companyId: validCompanyId
-            }
-        });
-
-        if (!lead) {
-            // Create a new lead for this user with a safer, channel-specific placeholder
-            const placeholderEmail = `${channel.toLowerCase()}_${inboundMessage.sender.id}@placeholder.com`;
-
-            const result = await createLead({
+                companyId_email: {
+                    companyId: validCompanyId,
+                    email: placeholderEmail
+                }
+            },
+            update: {
+                // If it exists, ensure we have the phone number if available
+                ...(channel === 'WHATSAPP' || channel === 'SMS' ? { phone: inboundMessage.sender.id } : {})
+            },
+            create: {
                 email: placeholderEmail,
                 companyId: validCompanyId,
                 name: inboundMessage.sender.name || `${channel} User`,
                 phone: channel === 'WHATSAPP' || channel === 'SMS' ? inboundMessage.sender.id : undefined,
+                source: channel.toLowerCase(),
                 utmSource: channel.toLowerCase(),
                 tags: [`${channel.toLowerCase()}-inbound`]
-            });
-
-            if (result.success && result.data) {
-                lead = result.data as any;
-            } else {
-                console.error("Failed to create lead from Webhook:", result.error);
-                // Continue without linking lead? Or fail? 
-                // We will proceed to save the message but leadId will be null
-            }
-        }
-
-        // 4. Find or Create Conversation
-        // For WhatsApp/SMS, the platformId is the phone number (sender.id)
-        // For Messenger/Instagram, it's the PSID (sender.id)
-        const conversationPlatformId = inboundMessage.sender.id;
-
-        let conversation = await prisma.conversation.findFirst({
-            where: {
-                platformId: conversationPlatformId,
-                channel: channel,
-                companyId: validCompanyId
             }
         });
 
-        if (!conversation) {
-            const analysis = await analyzeIncomingMessage(inboundMessage.content);
-            conversation = await prisma.conversation.create({
-                data: {
-                    channel: channel,
+        // 4. Find or Create Conversation (Atomic Upsert)
+        const conversationPlatformId = inboundMessage.sender.id;
+        const analysis = await analyzeIncomingMessage(inboundMessage.content);
+        const priority = (analysis.sentiment === 'URGENT' || analysis.sentiment === 'NEGATIVE') ? 'URGENT' : 'MEDIUM';
+
+        // Using upsert with the platformId_channel unique constraint
+        let conversation = await prisma.conversation.upsert({
+            where: {
+                platformId_channel: {
                     platformId: conversationPlatformId,
-                    companyId: validCompanyId,
-                    leadId: lead?.id,
-                    status: 'OPEN',
-                    unreadCount: 1,
-                    lastMessageAt: new Date(),
-                    lastMessagePreview: inboundMessage.content.substring(0, 100),
-                    sentiment: analysis.sentiment,
-                    topic: analysis.topic,
-                    metadata: inboundMessage.metadata ? JSON.parse(JSON.stringify(inboundMessage.metadata)) : undefined
+                    channel: channel
                 }
-            });
-        } else {
-            // Analyze the incoming message with Gemini
-            const analysis = await analyzeIncomingMessage(inboundMessage.content);
-
-            const priority = (analysis.sentiment === 'URGENT' || analysis.sentiment === 'NEGATIVE') ? 'URGENT' : 'MEDIUM';
-
-            // Update conversation state with AI sentiment/topic
-            await prisma.conversation.update({
-                where: { id: conversation.id },
-                data: {
-                    unreadCount: { increment: 1 },
-                    lastMessageAt: new Date(),
-                    lastMessagePreview: inboundMessage.content.substring(0, 100),
-                    status: conversation.status === 'ARCHIVED' ? 'OPEN' : conversation.status,
-                    sentiment: analysis.sentiment,
-                    topic: analysis.topic,
-                    priority: priority
-                }
-            });
-            // Attach analysis to block scope variable for dispatch logic
-            conversation.sentiment = analysis.sentiment;
-        }
-
-        // 4. Link Lead to Conversation if not already linked
-        if (lead && !conversation.leadId) {
-            await prisma.conversation.update({
-                where: { id: conversation.id },
-                data: { leadId: lead.id }
-            });
-            conversation.leadId = lead.id; // Update local object
-        }
+            },
+            update: {
+                unreadCount: { increment: 1 },
+                lastMessageAt: new Date(),
+                lastMessagePreview: inboundMessage.content.substring(0, 100),
+                status: 'OPEN', // Re-open if archived
+                sentiment: analysis.sentiment,
+                topic: analysis.topic,
+                priority: priority,
+                leadId: lead.id // Ensure lead is linked
+            },
+            create: {
+                channel: channel,
+                platformId: conversationPlatformId,
+                companyId: validCompanyId,
+                leadId: lead.id,
+                status: 'OPEN',
+                unreadCount: 1,
+                lastMessageAt: new Date(),
+                lastMessagePreview: inboundMessage.content.substring(0, 100),
+                sentiment: analysis.sentiment,
+                topic: analysis.topic,
+                priority: priority,
+                metadata: inboundMessage.metadata ? JSON.parse(JSON.stringify(inboundMessage.metadata)) : undefined
+            }
+        });
+        
+        // Attach sentiment for the agent trigger below
+        conversation.sentiment = analysis.sentiment;
 
         // 5. Create Message — deduplicate by externalId, persist media
         const existingMsg = await prisma.message.findFirst({

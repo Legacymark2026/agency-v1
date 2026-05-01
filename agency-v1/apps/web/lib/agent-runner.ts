@@ -444,26 +444,46 @@ export async function runAIAgent({
     });
 
     let rawResponse: string = "";
-    let tokensUsed: number | undefined;
+    let tokensUsed: number | undefined = 0;
     let toolsUsed: any[] = [];
     try {
         const chat = model.startChat({ history });
         let geminiResult = await chat.sendMessage(userMessage);
 
-        // Handle Tool Calling
-        let functionCalls = geminiResult.response.functionCalls();
-        if (functionCalls && functionCalls.length > 0) {
-            console.log(`[AGENT RUNNER] Tool calls detected: ${functionCalls.map(c => c.name).join(", ")}`);
-            const functionResponses = await executeTools(functionCalls, companyId, contactData);
+        // ── ReAct Loop (Reasoning + Acting) ──
+        let iterations = 0;
+        const MAX_ITERATIONS = 5;
+
+        while (iterations < MAX_ITERATIONS) {
+            iterations++;
+            let functionCalls = geminiResult.response.functionCalls();
             
-            // Send the function execution results back to the model
-            geminiResult = await chat.sendMessage(functionResponses);
-            
-            toolsUsed = functionCalls.map(c => ({ name: c.name, args: c.args }));
+            // Accumulate tokens
+            tokensUsed = (tokensUsed || 0) + (geminiResult.response.usageMetadata?.totalTokenCount || 0);
+
+            if (functionCalls && functionCalls.length > 0) {
+                console.log(`[AGENT RUNNER] Turn ${iterations} - Tool calls detected: ${functionCalls.map(c => c.name).join(", ")}`);
+                
+                // Execute tools
+                const functionResponses = await executeTools(functionCalls, companyId, contactData);
+                
+                // Track tools used for debugging/logging
+                toolsUsed.push(...functionCalls.map(c => ({ name: c.name, args: c.args })));
+                
+                // Send results back to the model (Triggers the next reasoning step)
+                geminiResult = await chat.sendMessage(functionResponses);
+            } else {
+                // No more tool calls, AI has formulated a final text response
+                break;
+            }
+        }
+
+        if (iterations >= MAX_ITERATIONS) {
+            console.warn(`[AGENT RUNNER] ⚠️ Reached max tool calling iterations (${MAX_ITERATIONS}). Halting loop to prevent infinite recursion.`);
         }
 
         rawResponse = geminiResult.response.text();
-        tokensUsed = geminiResult.response.usageMetadata?.totalTokenCount;
+        
         // 4.1: Éxito — resetear circuit breaker si estaba acumulando errores
         await resetCircuitBreaker(companyId);
     } catch (geminiError) {

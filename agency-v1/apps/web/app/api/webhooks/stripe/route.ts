@@ -111,19 +111,30 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
 
-      // ── Pago inicial completado (checkout) ────────────────────────────────
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "subscription" && session.client_reference_id) {
           const companyId = session.client_reference_id;
           const tierName = session.metadata?.tierName || "pro";
+          const subId = session.subscription as string;
+
+          // ── DB-Level Idempotency check for fail-open scenarios ──
+          const company = await prisma.company.findUnique({
+            where: { id: companyId },
+            select: { stripeSubscriptionId: true }
+          });
+
+          if (company?.stripeSubscriptionId === subId) {
+            logger.info(`[Billing] Company ${companyId} already has subscription ${subId}. Ignoring duplicate checkout event.`);
+            break;
+          }
 
           await prisma.company.update({
             where: { id: companyId },
             data: {
               subscriptionStatus: "active",
               subscriptionTier: tierName.toLowerCase(),
-              stripeSubscriptionId: session.subscription as string,
+              stripeSubscriptionId: subId,
             },
           });
           logger.info(`[Billing] 🟢 Company ${companyId} upgraded to ${tierName} via checkout`);
