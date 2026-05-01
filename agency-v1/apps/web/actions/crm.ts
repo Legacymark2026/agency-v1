@@ -9,6 +9,7 @@ import { sendMetaCapiEvent } from "@/lib/meta-capi";
 import { sendTiktokCapiEvent } from "@/lib/tiktok-capi";
 import { sendGa4Event } from "@/lib/ga4-mp";
 import { sendLinkedinCapiEvent } from "@/lib/linkedin-capi";
+import { triggerWorkflow } from "@/actions/automation";
 import { getAuthContext, authErrorToResponse } from "@/lib/auth-context";
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
@@ -434,6 +435,19 @@ export async function updateDealStage(dealId: string, stage: string) {
                 }
             }
         }
+
+        // ─── AUTOMATION ENGINE: Dispara workflows de tipo DEAL_STAGE_CHANGED ─
+        triggerWorkflow('DEAL_STAGE_CHANGED', {
+            stage,
+            dealId: deal.id,
+            dealTitle: deal.title,
+            dealValue: deal.value,
+            companyName: deal.companyId,
+            contactEmail: deal.contactEmail,
+            contactName: deal.contactName,
+            assignedTo: deal.assignedTo,
+        }).catch(e => console.error('[AutoEngine] DEAL_STAGE_CHANGED trigger failed:', e));
+        // ─────────────────────────────────────────────────────────────────────
 
         revalidatePath("/dashboard/admin/crm");
         return { success: true };

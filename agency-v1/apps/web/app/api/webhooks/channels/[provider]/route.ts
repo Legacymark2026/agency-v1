@@ -5,6 +5,7 @@ import { ChannelType } from "@/types/inbox";
 import { prisma } from "@/lib/prisma";
 import { createLead } from "@/modules/leads/actions/leads";
 import { analyzeIncomingMessage } from "@/lib/services/ai-inbox";
+import { triggerWorkflow } from "@/actions/automation";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // P1-B: In-Memory Company Resolution Cache
@@ -242,6 +243,24 @@ async function handlePost(
                 status: 'DELIVERED',
             }
         });
+
+        // ─── AUTOMATION ENGINE: Dispara workflows por canal ───────────────────────────
+        const workflowTriggerType = channel === 'WHATSAPP' ? 'WHATSAPP_TRIGGER'
+            : channel === 'INSTAGRAM' ? 'INSTAGRAM_TRIGGER'
+            : 'WEBHOOK_LISTENER';
+
+        triggerWorkflow(workflowTriggerType, {
+            channel,
+            content: inboundMessage.content,
+            sender: inboundMessage.sender.id,
+            senderName: inboundMessage.sender.name,
+            leadId: lead.id,
+            conversationId: conversation.id,
+            sentiment: analysis.sentiment,
+            topic: analysis.topic,
+            companyId: validCompanyId,
+        }).catch(e => console.error(`[AutoEngine] ${workflowTriggerType} trigger failed:`, e));
+        // ─────────────────────────────────────────────────────────────────────────
 
         // 6. Triage & Dispatch (P2-2 & P2-1)
         if (conversation.sentiment === 'NEGATIVE' || conversation.sentiment === 'URGENT') {
