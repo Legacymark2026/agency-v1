@@ -146,15 +146,55 @@ async function executeRealAction(
         case "AI_AGENT": {
             if (!config.agentId) return "SKIPPED: no agentId";
             const { runAIAgent } = await import("@/lib/agent-runner");
+            // Acepta `prompt`, `promptContext` (del seed) o usa el contexto completo
+            const userPrompt = config.prompt || config.promptContext || "Analiza este contexto";
+            const messageTemplate = config.messageTemplate
+                ? Handlebars.compile(config.messageTemplate)(context)
+                : JSON.stringify(context);
             const result = await runAIAgent({
                 agentId: config.agentId,
                 companyId,
-                userMessage: Handlebars.compile(config.prompt || "Analiza este contexto")(context),
+                userMessage: `${userPrompt}\n\nContexto: ${messageTemplate}`,
                 contactData: context,
             });
             // Inject AI response into context for downstream nodes
             context.__aiResponse = result.result;
+            context.ai_response = result.result; // compatibility with executor format
             return `AI_AGENT_RAN: ${result.agentName} (${result.tokensUsed ?? "?"} tokens)`;
+        }
+
+        case "DB_WRITE": {
+            // ── LLM GATEKEEPER: valida la operación antes de ejecutar ────────
+            const allowedModels = ["lead", "conversation", "deal", "task", "message", "notification"];
+            const model = (config.model || "").toLowerCase();
+            const operation = config.operation || "";
+
+            if (!allowedModels.includes(model)) {
+                return `DB_WRITE_BLOCKED: Model '${model}' no está en la lista permitida (${allowedModels.join(", ")})`;
+            }
+            if (operation === "delete" && !config.where) {
+                return `DB_WRITE_BLOCKED: DELETE sin cláusula WHERE está prohibido por el Gatekeeper`;
+            }
+
+            // Ejecutar escritura segura
+            try {
+                const client = (prisma as any)[model];
+                if (!client) return `DB_WRITE_BLOCKED: Prisma model '${model}' no existe`;
+
+                let result: any;
+                const data = { ...(config.data || {}), companyId };
+                const where = config.where || {};
+
+                if (operation === "create") result = await client.create({ data });
+                else if (operation === "update") result = await client.update({ where, data: config.data });
+                else if (operation === "upsert") result = await client.upsert({ where, create: data, update: config.data });
+                else if (operation === "delete") result = await client.delete({ where });
+                else return `DB_WRITE_ERROR: Operación '${operation}' desconocida`;
+
+                return `DB_WRITE_SUCCESS: ${operation} on ${model} (id: ${(result as any)?.id ?? 'N/A'})`;
+            } catch (e: any) {
+                return `DB_WRITE_ERROR: ${e.message}`;
+            }
         }
 
         default:
@@ -278,19 +318,23 @@ export async function triggerWorkflow(triggerType: string, triggerData: any) {
 
     const results = [];
     for (const wf of workflows) {
-        // Trigger specific checks (e.g. check stage for DEAL_STAGE_CHANGED)
-        if (triggerType === 'DEAL_STAGE_CHANGED' && wf.triggerConfig) {
-            const config = wf.triggerConfig as any;
-            if (config.targetStage && config.targetStage !== triggerData.stage) {
-                continue; // Skip if stage doesn't match
-            }
+        const config = (wf.triggerConfig ?? {}) as any;
+
+        // ── DEAL_STAGE_CHANGED: filtrar por etapa exacta ──────────────────────
+        if (triggerType === 'DEAL_STAGE_CHANGED') {
+            // Seeds usan `stage`, builder visual usa `targetStage` → aceptar ambos
+            const requiredStage = config.stage || config.targetStage;
+            if (requiredStage && requiredStage !== triggerData.stage) continue;
         }
 
-        if (triggerType === 'FORM_SUBMISSION' && wf.triggerConfig) {
-            const config = wf.triggerConfig as any;
-            if (config.formSource && config.formSource !== triggerData.source) {
-                continue; // Saltar si el flujo escucha un formulario específico y no es este
-            }
+        // ── FORM_SUBMISSION: filtrar por fuente de formulario ─────────────────
+        if (triggerType === 'FORM_SUBMISSION') {
+            if (config.formSource && config.formSource !== triggerData.source) continue;
+        }
+
+        // ── WHATSAPP_TRIGGER / INSTAGRAM_TRIGGER: filtrar por canal si aplica ─
+        if (triggerType === 'WHATSAPP_TRIGGER' || triggerType === 'INSTAGRAM_TRIGGER') {
+            if (config.channel && config.channel !== 'all' && config.channel !== triggerData.channel) continue;
         }
 
         try {
@@ -471,6 +515,35 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
             where: { id: execution.id },
             data: { status: 'FAILED', completedAt: new Date(), logs: [{ error: error.message, ts: new Date().toISOString() }] as any },
         });
+
+        // ── AUTO-ALERT: Notificar admins sobre fallo ─────────────────────────
+        try {
+            const wf = await prisma.workflow.findUnique({ where: { id: workflowId }, select: { name: true, companyId: true } });
+            if (wf) {
+                const admins = await prisma.companyUser.findMany({
+                    where: { 
+                        companyId: wf.companyId, 
+                        OR: [{ roleName: "admin" }, { roleName: "owner" }] 
+                    },
+                    select: { userId: true }
+                });
+                if (admins.length > 0) {
+                    await prisma.notification.createMany({
+                        data: admins.map(a => ({
+                            userId: a.userId,
+                            companyId: wf.companyId,
+                            title: `⚠️ Workflow Fallido: ${wf.name}`,
+                            message: `Error: ${error.message?.substring(0, 200)}. Revisa Automatización → Ejecuciones.`,
+                            type: "WORKFLOW",
+                            isRead: false,
+                        }))
+                    });
+                }
+            }
+        } catch (alertErr) {
+            console.error("[AutoAlert] Failed to send failure notification:", alertErr);
+        }
+        // ─────────────────────────────────────────────────────────────────────
     }
 }
 

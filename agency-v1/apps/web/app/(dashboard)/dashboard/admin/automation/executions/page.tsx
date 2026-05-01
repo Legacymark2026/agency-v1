@@ -14,6 +14,7 @@ export default async function ExecutionsPage() {
         include: {
             workflow: {
                 select: {
+                    id: true,
                     name: true
                 }
             }
