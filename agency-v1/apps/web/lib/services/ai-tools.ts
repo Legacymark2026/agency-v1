@@ -263,7 +263,25 @@ export async function executeAgentTool(companyId: string, name: string, args: an
             }
 
             case "web_search": {
-                return { success: false, error: "Módulo de búsqueda web en mantenimiento temporal." };
+                // Delegate to OpenClaw Gateway Sandbox for execution
+                try {
+                    const gatewayUrl = process.env.OPENCLAW_GATEWAY_URL || "http://localhost:18789";
+                    const res = await fetch(`${gatewayUrl}/api/v1/tools/execute`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-openclaw-secret": process.env.OPENCLAW_GATEWAY_SECRET || ""
+                        },
+                        body: JSON.stringify({ tool: "browser", args })
+                    });
+                    if (res.ok) {
+                        return await res.json();
+                    } else {
+                        return { success: false, error: `OpenClaw Sandbox error: ${res.statusText}` };
+                    }
+                } catch (e: any) {
+                    return { success: false, error: `Failed to delegate to OpenClaw: ${e.message}` };
+                }
             }
 
             default:

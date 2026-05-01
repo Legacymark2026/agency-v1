@@ -31,6 +31,7 @@ import { WhatsAppProvider } from "./whatsapp";
 import { TwitterProvider } from "./twitter";
 import { LinkedInProvider } from "./linkedin";
 import { YouTubeProvider } from "./youtube";
+import { OpenClawProvider } from "./openclaw";
 
 export const automationHub = new ChannelProviderRegistry();
 
@@ -41,4 +42,5 @@ automationHub.register(new WhatsAppProvider());
 automationHub.register(new TwitterProvider());
 automationHub.register(new LinkedInProvider());
 automationHub.register(new YouTubeProvider());
+automationHub.register(new OpenClawProvider());
 

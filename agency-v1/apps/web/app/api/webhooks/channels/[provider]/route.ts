@@ -6,6 +6,46 @@ import { prisma } from "@/lib/prisma";
 import { createLead } from "@/modules/leads/actions/leads";
 import { analyzeIncomingMessage } from "@/lib/services/ai-inbox";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// P1-B: In-Memory Company Resolution Cache
+// Evita un findMany + JS filter en cada mensaje entrante.
+// TTL: 5 minutos — balance entre consistencia y performance.
+// ─────────────────────────────────────────────────────────────────────────────
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
+const companyCache = new Map<string, { companyId: string; expiresAt: number }>();
+
+async function resolveCompanyId(recipientId: string | undefined, channel: string): Promise<string | null> {
+    // Fast-path: no recipientId → skip cache, fall through to default company
+    if (recipientId) {
+        const cacheKey = `${channel}:${recipientId}`;
+        const cached = companyCache.get(cacheKey);
+
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.companyId;
+        }
+
+        // Cache miss — query DB
+        const integrations = await prisma.integrationConfig.findMany({
+            where: { provider: channel, isEnabled: true },
+            select: { companyId: true, config: true },
+        });
+
+        const match = integrations.find((int) => {
+            const configStr = JSON.stringify(int.config);
+            return configStr.includes(String(recipientId));
+        });
+
+        if (match) {
+            companyCache.set(cacheKey, { companyId: match.companyId, expiresAt: Date.now() + CACHE_TTL_MS });
+            return match.companyId;
+        }
+    }
+
+    // Fallback: first company (single-tenant / dev)
+    const defaultCompany = await prisma.company.findFirst({ select: { id: true } });
+    return defaultCompany?.id ?? null;
+}
+
 // Map URL param to ChannelType
 const getChannelFromProvider = (provider: string): ChannelType | null => {
     switch (provider.toLowerCase()) {
@@ -79,32 +119,10 @@ async function handlePost(
             return NextResponse.json({ message: "Ignored event" });
         }
 
-        // 2. Resolve Company (Multi-Tenant Support)
-        // Extract the recipient identity (e.g., WhatsApp Phone Number ID or Facebook Page ID) from metadata
+        // 2. Resolve Company (Multi-Tenant Support) — P1-B cached
         const recipientId = inboundMessage.metadata?.recipientId || inboundMessage.metadata?.phoneNumberId || inboundMessage.metadata?.pageId as string | undefined;
-        let companyId: string | null = null;
-        
-        if (recipientId) {
-            // Check IntegrationConfigs for a matching recipient
-            // Since `config` is JSON, we do a raw/contains query or fetch and filter
-            const integrations = await prisma.integrationConfig.findMany({
-                where: { provider: channel, isEnabled: true },
-                select: { companyId: true, config: true }
-            });
-            
-            const match = integrations.find(int => {
-                const configStr = JSON.stringify(int.config);
-                return configStr.includes(String(recipientId));
-            });
-            
-            if (match) companyId = match.companyId;
-        }
+        const companyId = await resolveCompanyId(recipientId as string | undefined, channel);
 
-        // Fallback for single-tenant / local dev
-        if (!companyId) {
-            const defaultCompany = await prisma.company.findFirst();
-            if (defaultCompany) companyId = defaultCompany.id;
-        }
 
         if (!companyId) {
             console.error(`[Webhook:${channel}] No company resolved for recipient ${recipientId}`);

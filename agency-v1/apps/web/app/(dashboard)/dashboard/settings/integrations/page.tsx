@@ -17,6 +17,7 @@ const NEW_INTEGRATIONS = {
         { key: "MAILCHIMP", name: "Mailchimp", desc: "Sincroniza listas de email marketing y audiencias", logo: "🐒", fields: [{ label: "API Key", placeholder: "xxxxxx-us1" }, { label: "Audience ID", placeholder: "ID de tu lista" }] },
     ],
     communication: [
+        { key: "OPENCLAW", name: "OpenClaw Gateway", desc: "Gateway unificado omnicanal: conecta Telegram, Discord, Slack y más de 20 canales en un solo endpoint.", logo: "🦀", fields: [{ label: "Gateway URL", placeholder: "http://localhost:18789" }, { label: "Webhook Secret", placeholder: "Tu clave secreta compartida" }] },
         { key: "TWILIO", name: "Twilio SMS/Voice", desc: "Mensajes SMS y llamadas de voz programáticas", logo: "📱", fields: [{ label: "Account SID", placeholder: "ACxxxxxx" }, { label: "Auth Token", placeholder: "Tu auth token de Twilio" }] },
         { key: "SLACK", name: "Slack", desc: "Notificaciones y alertas directamente a canales de Slack", logo: "💬", fields: [{ label: "Bot Token", placeholder: "xoxb-..." }, { label: "Channel ID", placeholder: "#general" }] },
         { key: "RESEND", name: "Resend", desc: "Transactional email de alta entregabilidad", logo: "✉️", fields: [{ label: "API Key", placeholder: "re_..." }] },
