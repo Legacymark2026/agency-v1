@@ -16,7 +16,7 @@ import ReactFlow, {
     Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Loader2, Save, Play, ChevronLeft, LayoutGrid, Undo2, Redo2, Check, FileDown } from 'lucide-react';
+import { Loader2, Play, ChevronLeft, LayoutGrid, Undo2, Redo2, Check, FileDown, FlaskConical, History, RotateCcw, X, Terminal, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -27,6 +27,7 @@ import Sidebar from '../../../../../../components/automation/Sidebar';
 import { nodeTypes } from '../../../../../../components/automation/CustomNodes';
 import NodeConfigPanel from '../../../../../../components/automation/NodeConfigPanel';
 import { saveUserWorkflow, getLatestWorkflow, getWorkflowById } from '@/actions/automation';
+import { saveWorkflowVersion, getWorkflowVersions, rollbackWorkflowToVersion } from '@/actions/workflow-versions';
 
 const initialNodes = [
     {
@@ -89,6 +90,19 @@ function AutomationBuilder() {
     const [workflowId, setWorkflowId] = useState<string | null>(null);
     const [workflowName, setWorkflowName] = useState('New Workflow');
     const [isSimulating, setIsSimulating] = useState(false);
+
+    // Test Mode State
+    const [isTestPanelOpen, setIsTestPanelOpen] = useState(false);
+    const [testPayload, setTestPayload] = useState('{\n  "email": "cliente@empresa.com",\n  "name": "Juan García",\n  "phone": "+573001234567",\n  "companyName": "Empresa XYZ",\n  "leadScore": 85,\n  "stage": "PROPOSAL",\n  "tier": "VIP"\n}');
+    const [testLogs, setTestLogs] = useState<any[]>([]);
+    const [isRunningTest, setIsRunningTest] = useState(false);
+    const [testDuration, setTestDuration] = useState<number | null>(null);
+
+    // Version History State
+    const [isVersionsPanelOpen, setIsVersionsPanelOpen] = useState(false);
+    const [versions, setVersions] = useState<any[]>([]);
+    const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+    const [isRollingBack, setIsRollingBack] = useState(false);
 
     // History for Undo/Redo
     const [history, setHistory] = useState<{ nodes: Node[], edges: Edge[] }[]>([]);
@@ -460,34 +474,27 @@ function AutomationBuilder() {
         return steps;
     };
 
-    // --- Save & Test Logic ---
+    // --- Save (with auto-versioning) ---
     const handleSave = async (isActive: boolean) => {
         setIsSaving(true);
-        // Validation check for unconnected nodes (aside from trigger)
         const connectedIds = new Set(edges.flatMap(e => [e.source, e.target]));
         const isolated = nodes.filter(n => n.type !== 'triggerNode' && !connectedIds.has(n.id));
         if (isolated.length > 0) {
-            toast.warning(`Advertencia: Hay ${isolated.length} nodos desconectados.`, { duration: 4000 });
+            toast.warning(`Advertencia: ${isolated.length} nodos desconectados.`, { duration: 4000 });
         }
-
         try {
+            // Auto-snapshot before publishing
+            if (workflowId && isActive) {
+                await saveWorkflowVersion(workflowId, isActive ? 'Publicado' : 'Borrador');
+            }
             const steps = { nodes, edges };
             const triggerNode = nodes.find(n => n.type === 'triggerNode');
             const triggerType = triggerNode?.data?.triggerType || 'FORM_SUBMISSION';
             const triggerConfig = { ...triggerNode?.data };
             delete triggerConfig.label;
-
-            const result = await saveUserWorkflow({
-                id: workflowId,
-                name: workflowName,
-                triggerType: triggerType,
-                triggerConfig: triggerConfig,
-                steps: steps,
-                isActive: isActive
-            });
-
+            const result = await saveUserWorkflow({ id: workflowId, name: workflowName, triggerType, triggerConfig, steps, isActive });
             if (result.success) {
-                toast.success(isActive ? 'Flujo Activo Guardado!' : 'Borrador Guardado!');
+                toast.success(isActive ? '✅ Flujo Activo!' : '📄 Borrador Guardado!');
             } else {
                 toast.error(result.error || 'Failed to save');
             }
@@ -497,22 +504,36 @@ function AutomationBuilder() {
         setIsSaving(false);
     };
 
-    const handleTestRun = () => {
-        setIsSimulating(true);
-        toast.info("Iniciando simulación del flujo...");
+    // --- Real Test Mode ---
+    const handleTestRun = async () => {
+        if (!workflowId) { toast.error('Guarda el workflow primero.'); return; }
+        let payload: any = {};
+        try { payload = JSON.parse(testPayload); } catch { toast.error('JSON inválido en el payload'); return; }
+        setIsRunningTest(true); setTestLogs([]); setTestDuration(null); setIsTestPanelOpen(true);
+        try {
+            const res = await fetch('/api/automation/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflowId, testPayload: payload }) });
+            const data = await res.json();
+            if (data.success) { setTestLogs(data.logs || []); setTestDuration(data.durationMs); toast.success(`✅ ${data.nodesExecuted} nodos ejecutados en ${data.durationMs}ms`); }
+            else { toast.error(data.error || 'Test fallido'); }
+        } catch (e: any) { toast.error('Error: ' + e.message); }
+        finally { setIsRunningTest(false); }
+    };
 
-        let step = 0;
-        const interval = setInterval(() => {
-            if (step >= nodes.length) {
-                clearInterval(interval);
-                setIsSimulating(false);
-                toast.success("Simulación completada con éxito");
-                return;
-            }
-            // Flash node or show progress
-            toast.success(`Ejecutando nodo: ${nodes[step].data.label || nodes[step].type}`);
-            step++;
-        }, 1500);
+    // --- Version History ---
+    const handleOpenVersions = async () => {
+        if (!workflowId) { toast.error('Guarda el workflow primero.'); return; }
+        setIsVersionsPanelOpen(true); setIsLoadingVersions(true);
+        const res = await getWorkflowVersions(workflowId);
+        if (res.success) setVersions(res.versions || []);
+        setIsLoadingVersions(false);
+    };
+    const handleRollback = async (v: number) => {
+        if (!workflowId || !confirm(`¿Revertir a v${v}?`)) return;
+        setIsRollingBack(true);
+        const res = await rollbackWorkflowToVersion(workflowId, v);
+        if (res.success) { toast.success(`Revertido a v${v}`); setIsVersionsPanelOpen(false); }
+        else toast.error(res.error || 'Error al revertir');
+        setIsRollingBack(false);
     };
 
     return (
@@ -556,23 +577,17 @@ function AutomationBuilder() {
                         </Button>
                     </div>
 
-                    <Button variant="outline" className="gap-2 text-teal-300 bg-slate-800 shadow-sm border-slate-600 hover:bg-slate-700 hover:border-teal-500" onClick={handleTestRun} disabled={isSimulating}>
-                        <Play size={16} className="text-teal-400" />
-                        {isSimulating ? "Simulando..." : "Simular Flujo"}
+                    <Button variant="outline" className="gap-2 text-violet-300 bg-slate-800 border-slate-600 hover:bg-violet-900/30 hover:border-violet-500" onClick={() => setIsTestPanelOpen(p => !p)} title="Probar con payload real">
+                        <FlaskConical size={15} className="text-violet-400" />
+                        {isRunningTest ? <Loader2 size={14} className="animate-spin" /> : 'Probar'}
                     </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => handleSave(false)}
-                        disabled={isSaving}
-                        className="gap-2 text-slate-300 border-slate-600 hover:bg-slate-700 bg-slate-800"
-                    >
-                        <FileDown size={16} /> Guardar Borrador
+                    <Button variant="outline" className="gap-2 text-amber-300 bg-slate-800 border-slate-600 hover:bg-amber-900/30 hover:border-amber-500" onClick={handleOpenVersions} title="Historial de versiones">
+                        <History size={15} className="text-amber-400" /> Versiones
                     </Button>
-                    <Button
-                        onClick={() => handleSave(true)}
-                        disabled={isSaving}
-                        className="gap-2 bg-teal-500 text-white hover:bg-teal-400 shadow-lg shadow-teal-900/40 font-semibold"
-                    >
+                    <Button variant="outline" onClick={() => handleSave(false)} disabled={isSaving} className="gap-2 text-slate-300 border-slate-600 hover:bg-slate-700 bg-slate-800">
+                        <FileDown size={16} /> Borrador
+                    </Button>
+                    <Button onClick={() => handleSave(true)} disabled={isSaving} className="gap-2 bg-teal-500 text-white hover:bg-teal-400 shadow-lg shadow-teal-900/40 font-semibold">
                         {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                         Publicar y Activar
                     </Button>
@@ -619,11 +634,77 @@ function AutomationBuilder() {
                     </ReactFlow>
 
                     {selectedNode && (
-                        <NodeConfigPanel
-                            selectedNode={selectedNode}
-                            onChange={onNodeDataChange}
-                            onClose={() => setSelectedNode(null)}
-                        />
+                        <NodeConfigPanel selectedNode={selectedNode} onChange={onNodeDataChange} onClose={() => setSelectedNode(null)} />
+                    )}
+
+                    {/* ── TEST MODE PANEL ─────────────────────────────────── */}
+                    {isTestPanelOpen && (
+                        <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'380px', background:'#0b0f19', borderLeft:'1px solid rgba(139,92,246,0.3)', zIndex:30, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                            <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(139,92,246,0.2)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                                    <FlaskConical size={16} style={{ color:'#a78bfa' }} />
+                                    <span style={{ color:'#e2e8f0', fontWeight:700, fontSize:'14px' }}>Test Mode</span>
+                                    {testDuration !== null && <span style={{ fontSize:'10px', color:'#64748b', fontFamily:'monospace' }}>{testDuration}ms</span>}
+                                </div>
+                                <button onClick={() => setIsTestPanelOpen(false)} style={{ color:'#475569', background:'none', border:'none', cursor:'pointer' }}><X size={16}/></button>
+                            </div>
+                            <div style={{ padding:'12px 14px', borderBottom:'1px solid rgba(30,41,59,0.8)' }}>
+                                <p style={{ color:'#64748b', fontSize:'11px', marginBottom:'6px', fontFamily:'monospace' }}>PAYLOAD JSON</p>
+                                <textarea value={testPayload} onChange={e => setTestPayload(e.target.value)}
+                                    style={{ width:'100%', height:'160px', background:'#0f172a', border:'1px solid rgba(139,92,246,0.3)', borderRadius:'8px', color:'#a5f3fc', fontFamily:'monospace', fontSize:'11px', padding:'10px', resize:'vertical' }} />
+                                <button onClick={handleTestRun} disabled={isRunningTest}
+                                    style={{ marginTop:'8px', width:'100%', padding:'8px', background: isRunningTest ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.8)', color:'white', border:'none', borderRadius:'7px', cursor:'pointer', fontWeight:700, fontSize:'13px', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}>
+                                    {isRunningTest ? <><Loader2 size={14} className="animate-spin"/> Ejecutando...</> : <><Play size={14}/> Ejecutar Test</>}
+                                </button>
+                            </div>
+                            <div style={{ flex:1, overflow:'auto', padding:'10px 14px', display:'flex', flexDirection:'column', gap:'6px' }}>
+                                {testLogs.length === 0 && !isRunningTest && <p style={{ color:'#334155', fontFamily:'monospace', fontSize:'11px', textAlign:'center', marginTop:'20px' }}>Los resultados aparecerán aquí</p>}
+                                {testLogs.map((log, i) => {
+                                    const isErr = log.status === 'ERROR';
+                                    return (
+                                        <div key={i} style={{ padding:'8px 10px', borderRadius:'7px', background: isErr ? 'rgba(248,113,113,0.06)' : 'rgba(15,23,42,0.8)', border:`1px solid ${isErr ? 'rgba(248,113,113,0.3)' : 'rgba(30,41,59,0.9)'}` }}>
+                                            <div style={{ display:'flex', gap:'6px', alignItems:'center', marginBottom:'3px' }}>
+                                                <span style={{ fontSize:'10px', fontWeight:800, color: isErr ? '#f87171' : log.dryRun ? '#fb923c' : '#34d399', fontFamily:'monospace' }}>{log.nodeType || log.label}</span>
+                                                <span style={{ fontSize:'9px', padding:'1px 5px', borderRadius:'99px', color: isErr ? '#f87171' : '#34d399', background: isErr ? 'rgba(248,113,113,0.1)' : 'rgba(52,211,153,0.1)' }}>{log.status}</span>
+                                                {log.dryRun && <span style={{ fontSize:'9px', color:'#fb923c', fontFamily:'monospace' }}>DRY-RUN</span>}
+                                            </div>
+                                            <p style={{ fontSize:'10px', color:'#64748b', fontFamily:'monospace', lineHeight:'1.5' }}>{log.details}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── VERSIONS PANEL ──────────────────────────────────── */}
+                    {isVersionsPanelOpen && (
+                        <div style={{ position:'absolute', right:0, top:0, bottom:0, width:'360px', background:'#0b0f19', borderLeft:'1px solid rgba(251,146,60,0.3)', zIndex:31, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                            <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(251,146,60,0.2)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                                    <History size={16} style={{ color:'#fb923c' }} />
+                                    <span style={{ color:'#e2e8f0', fontWeight:700, fontSize:'14px' }}>Historial de Versiones</span>
+                                </div>
+                                <button onClick={() => setIsVersionsPanelOpen(false)} style={{ color:'#475569', background:'none', border:'none', cursor:'pointer' }}><X size={16}/></button>
+                            </div>
+                            <div style={{ flex:1, overflow:'auto', padding:'10px 14px', display:'flex', flexDirection:'column', gap:'6px' }}>
+                                {isLoadingVersions && <div style={{ textAlign:'center', padding:'20px' }}><Loader2 className="animate-spin" size={20} style={{ color:'#fb923c' }} /></div>}
+                                {!isLoadingVersions && versions.length === 0 && <p style={{ color:'#334155', fontFamily:'monospace', fontSize:'11px', textAlign:'center', marginTop:'20px' }}>Sin versiones guardadas. Publica el workflow para crear la primera.</p>}
+                                {versions.map((v) => (
+                                    <div key={v.version} style={{ padding:'10px 12px', borderRadius:'8px', background:'rgba(15,23,42,0.8)', border:'1px solid rgba(30,41,59,0.9)' }}>
+                                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'4px' }}>
+                                            <span style={{ color:'#fb923c', fontWeight:800, fontFamily:'monospace', fontSize:'12px' }}>v{v.version}</span>
+                                            <button onClick={() => handleRollback(v.version)} disabled={isRollingBack}
+                                                style={{ display:'flex', alignItems:'center', gap:'4px', padding:'3px 9px', background:'rgba(251,146,60,0.1)', border:'1px solid rgba(251,146,60,0.3)', borderRadius:'6px', color:'#fb923c', fontSize:'10px', fontWeight:700, cursor:'pointer' }}>
+                                                <RotateCcw size={10}/> Revertir
+                                            </button>
+                                        </div>
+                                        <p style={{ fontSize:'11px', color:'#e2e8f0', marginBottom:'3px' }}>{v.name}</p>
+                                        <p style={{ fontSize:'10px', color:'#64748b', fontFamily:'monospace' }}>{v.changeNote}</p>
+                                        <p style={{ fontSize:'10px', color:'#334155', fontFamily:'monospace', marginTop:'3px' }}><Clock size={9} style={{ display:'inline', marginRight:'3px' }}/>{new Date(v.savedAt).toLocaleString('es-CO')}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>

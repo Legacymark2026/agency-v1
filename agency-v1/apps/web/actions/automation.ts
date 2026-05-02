@@ -297,7 +297,7 @@ export type StepType =
     "CREATE_TASK" | "UPDATE_DEAL" | "SEND_NOTIFICATION" |
     "SWITCH" | "LOOP" | "ADD_TAG" | "REMOVE_TAG" | "ASSIGN_USER" |
     "VOICE_TRANSCRIBER" | "KNOWLEDGE_RAG" | "DATA_EXTRACTOR" | "RUN_CODE" | "FIND_RECORD" | "CALENDAR_EVENT" | "AI_AGENT" |
-    "EMAIL" | "WAIT" | "LOG" | "CONDITION";
+    "EMAIL" | "WAIT" | "LOG" | "CONDITION" | "DB_WRITE" | "SEND_EMAIL" | "SEND_WHATSAPP";
 
 export type Step = {
     type: StepType;
@@ -469,6 +469,81 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
                             return; // stop current traversal here; QStash will resume
                         }
                     }
+                    // ── switchNode — N-way branching with value/contains matching ──
+                    else if (node.type === 'switchNode') {
+                        const variable = node.data?.variable || 'status';
+                        const actualVal = String(context[variable] || '');
+                        const branches: any[] = node.data?.branches || [];
+
+                        // Find matching branch: try strict equality first, then contains
+                        const matchedBranch = branches.find((b: any) => {
+                            const bVal = String(b.value || '');
+                            const matchMode = b.matchMode || 'equals';
+                            if (matchMode === 'contains') return actualVal.toLowerCase().includes(bVal.toLowerCase());
+                            if (matchMode === 'startsWith') return actualVal.toLowerCase().startsWith(bVal.toLowerCase());
+                            return actualVal.toLowerCase() === bVal.toLowerCase(); // default: equals
+                        });
+
+                        // Store branch id in logEntry for edge routing
+                        (logEntry as any).__switchBranch = matchedBranch?.id || 'default';
+                        logEntry.details = `SWITCH "${variable}" (="${actualVal}") → Branch: "${matchedBranch?.label || 'default (no match)'}"` ;
+
+                        logs.push({ ...logEntry, status: 'SUCCESS' });
+
+                        // Route only to the matched branch's edge
+                        const outEdges = edges.filter(e => e.source === nodeId);
+                        const matchEdge = matchedBranch
+                            ? outEdges.find(e => e.sourceHandle === matchedBranch.id)
+                            : outEdges.find(e => e.sourceHandle === 'default') || outEdges[0];
+
+                        if (matchEdge) await traverseNode(matchEdge.target, depth + 1);
+                        return; // routing handled here
+                    }
+                    // ── loopNode — isolated context per iteration ──────────────
+                    else if (node.type === 'loopNode') {
+                        const iterVar = node.data?.iterableVariable || 'items';
+                        const rawArr = context[iterVar];
+                        const arr: any[] = Array.isArray(rawArr) ? rawArr : [];
+
+                        logEntry.details = `LOOP "${iterVar}" — ${arr.length} items`;
+                        logs.push({ ...logEntry, status: 'SUCCESS' });
+
+                        const outEdges = edges.filter(e => e.source === nodeId);
+                        const nextItemEdge = outEdges.find(e => e.sourceHandle === 'loop' || e.sourceHandle === 'next');
+                        const doneEdge = outEdges.find(e => e.sourceHandle === 'done');
+
+                        // ── Execute body for each item with isolated context ──
+                        for (let i = 0; i < arr.length; i++) {
+                            const iterContext = {
+                                ...context,         // inherit parent context
+                                item: arr[i],       // current item
+                                __loopIndex: i,
+                                __loopTotal: arr.length,
+                            };
+
+                            // Temporarily swap context for this iteration
+                            Object.assign(context, iterContext);
+
+                            if (nextItemEdge) {
+                                const iterVisited = new Set<string>();
+                                const iterTraverse = async (nid: string, d = 0): Promise<void> => {
+                                    if (d > 20 || iterVisited.has(nid) || nid === nodeId) return;
+                                    iterVisited.add(nid);
+                                    await traverseNode(nid, d);
+                                };
+                                await iterTraverse(nextItemEdge.target, depth + 1);
+                            }
+                        }
+
+                        // Restore non-item context keys
+                        delete context.item;
+                        delete context.__loopIndex;
+                        delete context.__loopTotal;
+
+                        // Execute DONE path
+                        if (doneEdge) await traverseNode(doneEdge.target, depth + 1);
+                        return; // routing handled inside
+                    }
 
                     logEntry.status = 'SUCCESS';
                 } catch (err: any) {
@@ -488,7 +563,8 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
                     const targetHandle = conditionResult ? 'true' : 'false';
                     const match = outgoingEdges.find(e => e.sourceHandle === targetHandle);
                     if (match) nextTasks.push(traverseNode(match.target, depth + 1));
-                } else {
+                } else if (node.type !== 'switchNode' && node.type !== 'loopNode') {
+                    // switchNode and loopNode handle their own routing above
                     for (const edge of outgoingEdges) {
                         nextTasks.push(traverseNode(edge.target, depth + 1));
                     }

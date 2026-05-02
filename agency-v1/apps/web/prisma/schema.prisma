@@ -656,6 +656,7 @@ model Workflow {
   triggerType   String              @map("trigger_type")
   triggerConfig Json                @map("trigger_config")
   steps         Json
+  versions      Json?               @default("[]")
   companyId     String              @map("company_id")
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
