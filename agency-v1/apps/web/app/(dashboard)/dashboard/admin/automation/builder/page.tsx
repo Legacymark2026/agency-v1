@@ -243,7 +243,26 @@ function AutomationBuilder() {
         let yPos = 50;
         const xPos = 400;
 
-        // 1. Trigger Node
+        // Check for native DAG format first
+        if (workflow.steps && !Array.isArray(workflow.steps) && workflow.steps.nodes && workflow.steps.edges) {
+            // Keep the triggerNode data up to date with the DB record
+            const updatedNodes = (workflow.steps.nodes as Node[]).map(node => {
+                if (node.type === 'triggerNode') {
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            triggerType: workflow.triggerType,
+                            ...(workflow.triggerConfig as any)
+                        }
+                    };
+                }
+                return node;
+            });
+            return { nodes: updatedNodes, edges: workflow.steps.edges as Edge[] };
+        }
+
+        // 1. Legacy Trigger Node
         const triggerId = 'start';
         newNodes.push({
             id: triggerId,
@@ -259,8 +278,8 @@ function AutomationBuilder() {
         yPos += 180;
         let previousNodeId = triggerId;
 
-        // 2. Steps
-        const steps = workflow.steps as any[];
+        // 2. Legacy Steps Array
+        const steps = workflow.steps as any;
         if (Array.isArray(steps)) {
             steps.forEach((step, index) => {
                 const stepId = `step_${index}`;
