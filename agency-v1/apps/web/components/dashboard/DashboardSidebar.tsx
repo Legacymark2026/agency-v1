@@ -15,12 +15,12 @@ import { NotificationBell } from "./notification-bell";
 import { SidebarClientContent } from "./sidebar-client-content";
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; code?: string; }
-interface NavGroup { title: string; code: string; accent?: string; items: NavItem[]; }
+interface NavGroup { title: string; code: string; accent?: string; icon?: React.ReactNode; items: NavItem[]; }
 
 const NAV_GROUPS: NavGroup[] = [
     {
         title: "Portal del Cliente", code: "CLIENT_PORTAL",
-        accent: "teal",
+        accent: "teal", icon: <Briefcase size={20} />,
         items: [
             { href: "/dashboard/client", label: "Mi Resumen", icon: <LayoutDashboard size={14} />, code: "C_OVW" },
             { href: "/dashboard/client/proposals", label: "Mis Propuestas", icon: <FileText size={14} />, code: "C_QOT" },
@@ -28,7 +28,7 @@ const NAV_GROUPS: NavGroup[] = [
         ],
     },
     {
-        title: "Panel General", code: "SYS_CORE",
+        title: "Panel General", code: "SYS_CORE", icon: <LayoutDashboard size={20} />,
         items: [
             { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={14} />, code: "OVW" },
             { href: "/dashboard/kanban", label: "Gestión Operativa", icon: <Trello size={14} />, code: "KBN" },
@@ -39,7 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
     },
     {
         title: "Marketing Hub", code: "MKT_SYS",
-        accent: "teal",
+        accent: "teal", icon: <Target size={20} />,
         items: [
             { href: "/dashboard/admin/marketing", label: "CMO Dashboard", icon: <BarChart2 size={14} />, code: "CMO" },
             { href: "/dashboard/admin/marketing/campaigns", label: "Campañas (Live)", icon: <Target size={14} />, code: "LIV" },
@@ -55,7 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
     },
     {
         title: "CRM & Ventas", code: "CRM_CORE",
-        accent: "amber",
+        accent: "amber", icon: <TrendingUp size={20} />,
         items: [
             { href: "/dashboard/admin/crm", label: "CRM Overview", icon: <TrendingUp size={14} />, code: "OVW" },
             { href: "/dashboard/admin/crm/leads", label: "Leads", icon: <Users size={14} />, code: "LDS" },
@@ -73,7 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
         ],
     },
     {
-        title: "Contenido & Web", code: "CNT_MGR",
+        title: "Contenido & Web", code: "CNT_MGR", icon: <BookOpen size={20} />,
         items: [
             { href: "/dashboard/posts", label: "Blog", icon: <BookOpen size={14} />, code: "BLG" },
             { href: "/dashboard/posts/comments", label: "Comentarios", icon: <MessageSquare size={14} />, code: "CMT" },
@@ -84,7 +84,7 @@ const NAV_GROUPS: NavGroup[] = [
     },
     {
         title: "Administración", code: "ADMIN_SYS",
-        accent: "violet",
+        accent: "violet", icon: <Settings size={20} />,
         items: [
             { href: "/dashboard/users", label: "Usuarios", icon: <Users size={14} />, code: "USR" },
             { href: "/dashboard/admin/team", label: "Equipo", icon: <UserCog size={14} />, code: "TEAM" },
@@ -96,7 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
     },
     {
         title: "IA & Automations", code: "AI_CORE",
-        accent: "cyan",
+        accent: "cyan", icon: <Bot size={20} />,
         items: [
             { href: "/dashboard/settings/agents", label: "Agentes IA", icon: <Bot size={14} />, code: "AGT" },
             { href: "/dashboard/admin/ai-insights", label: "AI Insights", icon: <Zap size={14} />, code: "INS" },
@@ -117,7 +117,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ role, name, email, image, accessibleRoutes, badge }: DashboardSidebarProps) {
     return (
         <aside
-            className="flex flex-col h-full shrink-0 relative transition-all duration-300 ease-in-out"
+            className="flex flex-row h-full shrink-0 relative transition-all duration-300 ease-in-out"
             style={{
                 background: 'rgba(2,6,23,0.97)',
                 borderRight: '1px solid rgba(30,41,59,0.6)',
