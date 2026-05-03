@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Palette, Moon, Sun, Monitor, Zap, AlignJustify, Type, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
-import { useUIStore } from "@/lib/stores/ui-store";
+import { useUIStore, AccentColor, Density, FontType } from "@/lib/stores/ui-store";
 
 const THEMES = [
     { key: "dark", label: "HUD Dark", desc: "Slate-950 background, teal accents", icon: <Moon className="w-4 h-4" />, preview: "bg-slate-950 border-teal-500/40" },
@@ -110,7 +110,7 @@ export default function AppearancePage() {
             <SectionCard title="Color de Acento" icon={<Palette className="w-4 h-4 text-slate-400" />}>
                 <div className="flex flex-wrap gap-3">
                     {ACCENT_COLORS.map(c => (
-                        <button key={c.key} onClick={() => setAccent(c.key)} className="group flex flex-col items-center gap-2">
+                        <button key={c.key} onClick={() => setAccent(c.key as AccentColor)} className="group flex flex-col items-center gap-2">
                             <div className={`w-9 h-9 rounded-xl ${c.bg} transition-all group-hover:scale-110 ${accent === c.key ? "ring-2 ring-offset-2 ring-offset-slate-900 " + c.ring : ""}`}>
                                 {accent === c.key && <div className="w-full h-full flex items-center justify-center"><Check className="w-4 h-4 text-white" /></div>}
                             </div>
@@ -124,7 +124,7 @@ export default function AppearancePage() {
             <SectionCard title="Densidad de la UI" icon={<AlignJustify className="w-4 h-4 text-slate-400" />}>
                 <div className="grid grid-cols-3 gap-3">
                     {DENSITIES.map(d => (
-                        <button key={d.key} onClick={() => setDensity(d.key)}
+                        <button key={d.key} onClick={() => setDensity(d.key as Density)}
                             className={`p-4 rounded-xl border text-left transition-all ${density === d.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
                             <div className="flex items-center gap-2 mb-2">
                                 <div className={`flex flex-col gap-0.5 ${d.key === "compact" ? "gap-0.5" : d.key === "comfortable" ? "gap-2" : "gap-1"}`}>
@@ -143,7 +143,7 @@ export default function AppearancePage() {
             <SectionCard title="Tipografía" icon={<Type className="w-4 h-4 text-slate-400" />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {FONTS.map(f => (
-                        <button key={f.key} onClick={() => setFont(f.key)}
+                        <button key={f.key} onClick={() => setFont(f.key as FontType)}
                             className={`p-4 rounded-xl border text-left transition-all ${font === f.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-2xl font-bold text-slate-200">Aa</span>
