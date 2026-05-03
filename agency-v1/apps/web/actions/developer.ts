@@ -109,16 +109,21 @@ export async function rotateApiKey(id: string) {
         // Revoke old
         await prisma.apiKey.update({ where: { id }, data: { isActive: false } });
 
-        // Create new with same name
+        // Create new with same name and same scopes
         const rawKey = `lm_live_${randomBytes(32).toString("hex")}`;
         const keyHash = createHash("sha256").update(rawKey).digest("hex");
+        const prefix = rawKey.substring(0, 12);
 
         await prisma.apiKey.create({
             data: {
                 name: existing.name,
                 keyHash,
+                prefix,
+                scopes: (existing.scopes as string[]) || [], // FIX #5: preservar scopes originales
+                expiresAt: existing.expiresAt, // Preservar expiración también
                 companyId: existing.companyId,
                 userId: session.user.id!,
+                createdBy: session.user.id!,
             },
         });
 

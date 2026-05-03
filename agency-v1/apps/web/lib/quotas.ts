@@ -161,17 +161,16 @@ export async function getQuotaUsage(
   feature: keyof QuotaLimits,
   tier?: string
 ): Promise<{ usage: number; limit: number; tier: string } | null> {
-  // 5.2: Resolver el tier si no se pasa (consulta DB liviana)
+  // FIX #6: Usar el singleton de prisma en vez de crear una nueva instancia
+  // La instanciación repetida de PrismaClient agota el connection pool bajo carga
   let resolvedTier = tier;
   if (!resolvedTier) {
     try {
-      const { PrismaClient } = await import("@prisma/client");
-      const prismaLocal = new PrismaClient();
-      const company = await prismaLocal.company.findUnique({
+      const { prisma } = await import("@/lib/prisma");
+      const company = await prisma.company.findUnique({
         where: { id: companyId },
         select: { subscriptionTier: true },
       });
-      await prismaLocal.$disconnect();
       resolvedTier = company?.subscriptionTier || "free";
     } catch {
       resolvedTier = "free";

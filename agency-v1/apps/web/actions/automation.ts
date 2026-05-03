@@ -172,8 +172,8 @@ async function executeRealAction(
             if (!allowedModels.includes(model)) {
                 return `DB_WRITE_BLOCKED: Model '${model}' no está en la lista permitida (${allowedModels.join(", ")})`;
             }
-            if (operation === "delete" && !config.where) {
-                return `DB_WRITE_BLOCKED: DELETE sin cláusula WHERE está prohibido por el Gatekeeper`;
+            if ((operation === "delete" || operation === "update") && !config.where) {
+                return `DB_WRITE_BLOCKED: ${operation.toUpperCase()} sin cláusula WHERE está prohibido por el Gatekeeper`;
             }
 
             // Ejecutar escritura segura
@@ -183,7 +183,10 @@ async function executeRealAction(
 
                 let result: any;
                 const data = { ...(config.data || {}), companyId };
-                const where = config.where || {};
+                // ── FIX #3: Siempre incluir companyId en where para operaciones de mutación
+                // Esto previene acceso cross-tenant (un workflow de empresa A no puede
+                // modificar registros de empresa B aunque el agente lo intente)
+                const where = { ...(config.where || {}), companyId };
 
                 if (operation === "create") result = await client.create({ data });
                 else if (operation === "update") result = await client.update({ where, data: config.data });
@@ -355,10 +358,33 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
     const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
     if (!workflow) throw new Error("Workflow not found");
 
-    // Upsert execution — if resuming use the existing one
-    const execution = await prisma.workflowExecution.create({
-        data: { workflowId, status: 'RUNNING', logs: [] }
-    });
+    // ── FIX #1: Resume — reusar el execution existente en WAITING en vez de crear uno nuevo ──
+    let execution: { id: string };
+    if (resumeFromNodeId) {
+        // Buscar el execution existente en estado WAITING para este workflow
+        const existingExecution = await prisma.workflowExecution.findFirst({
+            where: { workflowId, status: 'WAITING' },
+            orderBy: { startedAt: 'desc' }
+        });
+        if (existingExecution) {
+            // Reusar el existente — actualizar a RUNNING
+            execution = await prisma.workflowExecution.update({
+                where: { id: existingExecution.id },
+                data: { status: 'RUNNING' }
+            });
+            console.log(`[DAG Engine] Resuming existing execution ${execution.id} from node ${resumeFromNodeId}`);
+        } else {
+            // No hay execution en WAITING — crear uno nuevo (edge case)
+            execution = await prisma.workflowExecution.create({
+                data: { workflowId, status: 'RUNNING', logs: [] }
+            });
+        }
+    } else {
+        // Ejecución fresca — crear siempre un nuevo execution
+        execution = await prisma.workflowExecution.create({
+            data: { workflowId, status: 'RUNNING', logs: [] }
+        });
+    }
 
     try {
         const stepsData = workflow.steps as any;

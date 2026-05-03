@@ -6,26 +6,102 @@
  *
  * POST /api/automation/resume
  * Body: { executionId: string, fromNodeId?: string }
- * Auth: Upstash-Signature header (HMAC-SHA256)
+ * Auth: Upstash-Signature header (HMAC-SHA256) — validado con Web Crypto API
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { executeWorkflow } from "@/actions/automation";
 
+// ── FIX #2: Validación HMAC real de QStash usando Web Crypto API ─────────────
+// El header `upstash-signature` contiene un JWT firmado con QSTASH_CURRENT_SIGNING_KEY.
+// Soporta rotación de claves (QSTASH_NEXT_SIGNING_KEY) sin downtime.
+async function verifyQStashSignature(req: NextRequest, rawBody: string): Promise<boolean> {
+    const isDev = process.env.NODE_ENV !== "production";
+    if (isDev) return true; // Bypass en desarrollo local
+
+    const signature = req.headers.get("upstash-signature");
+    if (!signature) {
+        console.error("[QStash] Header upstash-signature ausente");
+        return false;
+    }
+
+    const signingKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+    const nextSigningKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+
+    if (!signingKey) {
+        console.error("[QStash] QSTASH_CURRENT_SIGNING_KEY no configurada — rechazando request");
+        return false;
+    }
+
+    // Intentar verificar con la clave actual, luego con la siguiente (rotación)
+    const keysToTry = [signingKey, nextSigningKey].filter(Boolean) as string[];
+
+    for (const key of keysToTry) {
+        try {
+            // El token es un JWT: header.payload.signature (base64url)
+            const parts = signature.split(".");
+            if (parts.length !== 3) continue;
+
+            const [headerB64, payloadB64] = parts;
+            const signingInput = `${headerB64}.${payloadB64}`;
+
+            const encoder = new TextEncoder();
+            const cryptoKey = await crypto.subtle.importKey(
+                "raw",
+                encoder.encode(key),
+                { name: "HMAC", hash: "SHA-256" },
+                false,
+                ["verify"]
+            );
+
+            // Decodificar la firma del JWT (base64url → ArrayBuffer)
+            const sigB64 = parts[2].replace(/-/g, "+").replace(/_/g, "/");
+            const padding = "=".repeat((4 - (sigB64.length % 4)) % 4);
+            const sigBuffer = Uint8Array.from(atob(sigB64 + padding), c => c.charCodeAt(0));
+
+            const isValid = await crypto.subtle.verify(
+                "HMAC",
+                cryptoKey,
+                sigBuffer,
+                encoder.encode(signingInput)
+            );
+
+            if (isValid) {
+                // Verificar claims del payload JWT: exp (expiración)
+                const payloadDecoded = atob(
+                    payloadB64.replace(/-/g, "+").replace(/_/g, "/") +
+                    "=".repeat((4 - (payloadB64.length % 4)) % 4)
+                );
+                const payloadJson = JSON.parse(payloadDecoded);
+                const now = Math.floor(Date.now() / 1000);
+
+                if (payloadJson.exp && payloadJson.exp < now) {
+                    console.warn("[QStash] Token expirado — intentando siguiente clave");
+                    continue;
+                }
+                return true; // ✅ Firma válida
+            }
+        } catch (e) {
+            console.error("[QStash] Error verificando firma:", e);
+        }
+    }
+
+    return false; // ❌ Ninguna clave pudo verificar la firma
+}
+
 export async function POST(req: NextRequest) {
     try {
-        // ── Verify QStash signature (prod) or allow dev bypass ──────────────
-        const signature = req.headers.get("upstash-signature");
-        const isDev = process.env.NODE_ENV !== "production";
+        // Leer el cuerpo como texto primero (necesario para validar HMAC)
+        const rawBody = await req.text();
 
-        if (!isDev && !signature) {
-            return NextResponse.json({ error: "Missing QStash signature" }, { status: 401 });
+        // ── Verificación de firma QStash ──────────────────────────────────────
+        const isValidSignature = await verifyQStashSignature(req, rawBody);
+        if (!isValidSignature) {
+            console.error("[QStash Resume] Firma inválida — request rechazado");
+            return NextResponse.json({ error: "Invalid QStash signature" }, { status: 401 });
         }
 
-        // TODO: Validate HMAC signature against QSTASH_SIGNING_KEY for production
-        // For now, trust the header presence in prod and skip in dev
-
-        const body = await req.json() as { executionId: string; fromNodeId?: string };
+        const body = JSON.parse(rawBody) as { executionId: string; fromNodeId?: string };
         const { executionId, fromNodeId } = body;
 
         if (!executionId) {
@@ -48,17 +124,11 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // ── Mark as RUNNING and resume ───────────────────────────────────────
-        await prisma.workflowExecution.update({
-            where: { id: executionId },
-            data: { status: "RUNNING" }
-        });
-
-        // Resume from the next node after the WAIT
+        // ── Resume ────────────────────────────────────────────────────────────
+        // NOTA: executeWorkflow detecta automáticamente el execution WAITING
+        // y lo reusa en vez de crear uno nuevo (FIX #1 en automation.ts)
         executeWorkflow(execution.workflowId, {}, fromNodeId).catch(async (err) => {
             console.error(`[QStash Resume] Execution ${executionId} failed on resume:`, err);
-
-            // Auto-alert: crear notificación para todos los admins
             await notifyAdminsOnFailure(execution.workflow.companyId, execution.workflow.name, err.message);
         });
 
@@ -74,9 +144,9 @@ export async function POST(req: NextRequest) {
 async function notifyAdminsOnFailure(companyId: string, workflowName: string, errorMsg: string) {
     try {
         const admins = await prisma.companyUser.findMany({
-            where: { 
-                companyId, 
-                OR: [{ roleName: "admin" }, { roleName: "owner" }] 
+            where: {
+                companyId,
+                OR: [{ roleName: "admin" }, { roleName: "owner" }]
             },
             select: { userId: true }
         });

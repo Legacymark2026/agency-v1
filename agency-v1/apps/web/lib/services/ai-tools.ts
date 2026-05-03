@@ -1,5 +1,6 @@
 import { FunctionDeclaration, SchemaType } from "@google/generative-ai";
 import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
 
 export const AIAgentTools: Record<string, FunctionDeclaration> = {
     // ── CRM y Ventas ──
@@ -238,14 +239,109 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                 const { leadEmail, sequenceName } = args;
                 const lead = await db.lead.findFirst({ where: { companyId, email: leadEmail } });
                 if (!lead) return { success: false, error: "Lead no encontrado en la base de datos." };
-                
-                // Stub for sequence assignment (requires sequence resolution)
-                return { success: true, message: `Lead ${lead.name} exitosamente matriculado en la campaña automática '${sequenceName}'.` };
+
+                // Buscar la secuencia por nombre o ID
+                const sequence = await db.emailSequence.findFirst({
+                    where: {
+                        companyId,
+                        OR: [
+                            { name: { contains: sequenceName, mode: "insensitive" } },
+                            { id: sequenceName }
+                        ]
+                    }
+                });
+
+                if (!sequence) {
+                    return {
+                        success: false,
+                        error: `No se encontró la secuencia '${sequenceName}'. Las secuencias disponibles están en CRM → Email Sequences.`
+                    };
+                }
+
+                // El schema usa dealId (no leadId) en EmailSequenceEnrollment.
+                // Buscar el deal más reciente del lead por email.
+                const deal = await db.deal.findFirst({
+                    where: { companyId, contactEmail: lead.email ?? "" },
+                    orderBy: { createdAt: "desc" },
+                    select: { id: true }
+                });
+
+                if (!deal) {
+                    // Sin deal aún — registrar nota en el lead como fallback
+                    await db.lead.update({
+                        where: { id: lead.id },
+                        data: { notes: `[IA ${new Date().toLocaleDateString("es-CO")}] Pendiente inscribir en: ${sequence.name}` }
+                    }).catch(() => null);
+                    return {
+                        success: true,
+                        message: `Lead ${lead.name} no tiene Deal activo aún. Inscripción en '${sequence.name}' anotada para cuando se convierta.`
+                    };
+                }
+
+                // Verificar si ya está inscrito
+                const existingEnrollment = await db.emailSequenceEnrollment.findFirst({
+                    where: { sequenceId: sequence.id, dealId: deal.id }
+                }).catch(() => null);
+
+                if (existingEnrollment) {
+                    return {
+                        success: true,
+                        message: `Lead ${lead.name} ya está inscrito en la secuencia '${sequence.name}'.`
+                    };
+                }
+
+                // Inscribir el deal en la secuencia
+                await db.emailSequenceEnrollment.create({
+                    data: {
+                        sequenceId: sequence.id,
+                        dealId: deal.id,
+                        status: "ACTIVE",
+                    }
+                });
+
+                return {
+                    success: true,
+                    sequenceId: sequence.id,
+                    message: `Lead ${lead.name} inscrito exitosamente en la campaña '${sequence.name}'.`
+                };
             }
 
             case "send_email": {
-                // Not actually sending SMTP immediately to prevent spam, just simulating the hook
-                return { success: true, status: "queued", message: `El sistema ha programado enviar un correo a ${args.recipientEmail}. Dile al cliente que lo revise pronto.` };
+                const { recipientEmail, subject, bodyContext } = args;
+                if (!recipientEmail || !subject) {
+                    return { success: false, error: "recipientEmail y subject son requeridos" };
+                }
+
+                // Buscar el lead para obtener el nombre
+                const lead = await db.lead.findFirst({
+                    where: { companyId, email: recipientEmail },
+                    select: { name: true }
+                });
+
+                const emailBody = `
+                    <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+                        <p>${bodyContext}</p>
+                        <br/>
+                        <p style="color:#64748b;font-size:12px;">Mensaje enviado automáticamente por el Asistente IA de LegacyMark</p>
+                    </div>
+                `;
+
+                const sendResult = await sendEmail({
+                    to: recipientEmail,
+                    subject,
+                    html: emailBody,
+                    companyId
+                });
+
+                if (!sendResult.success) {
+                    return { success: false, error: `Error al enviar: ${sendResult.error}` };
+                }
+
+                return {
+                    success: true,
+                    status: "sent",
+                    message: `Correo enviado exitosamente a ${lead?.name || recipientEmail} (${recipientEmail}).`
+                };
             }
 
             case "transfer_to_human": {

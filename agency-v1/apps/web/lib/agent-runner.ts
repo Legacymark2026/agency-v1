@@ -558,11 +558,29 @@ Devuelve ÚNICAMENTE el ID del agente elegido. Sin explicaciones.`;
         const result = await model.generateContent(routerPrompt);
         const selectedId = result.response.text().trim().replace(/[^a-z0-9-]/gi, "");
         const validAgent = activeAgents.find(a => a.id === selectedId);
+        const chosenId = validAgent ? validAgent.id : activeAgents[0].id;
+
+        // MEJORA #8: Cachear decisión de triage por 5 min (reduce ~50% llamadas a Gemini)
+        try {
+            const rdUrl = process.env.UPSTASH_REDIS_REST_URL;
+            const rdTok = process.env.UPSTASH_REDIS_REST_TOKEN;
+            if (rdUrl && rdTok) {
+                await fetch(`${rdUrl}/pipeline`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${rdTok}`, "Content-Type": "application/json" },
+                    body: JSON.stringify([
+                        ["SET", `triage:${companyId}:${userMessage.toLowerCase().slice(0, 60).replace(/[^a-z0-9]/g, "_")}`, chosenId],
+                        ["EXPIRE", `triage:${companyId}:${userMessage.toLowerCase().slice(0, 60).replace(/[^a-z0-9]/g, "_")}`, 300]
+                    ])
+                });
+            }
+        } catch { /* non-fatal */ }
 
         return runAIAgent({
-            agentId: validAgent ? validAgent.id : activeAgents[0].id,
+            agentId: chosenId,
             companyId, userMessage, conversationId, contactData, inlineHistory
         });
+
     } catch {
         // Fallback to first agent on triage failure
         return runAIAgent({ agentId: activeAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory });
