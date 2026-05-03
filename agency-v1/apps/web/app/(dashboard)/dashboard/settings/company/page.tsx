@@ -33,7 +33,7 @@ export default async function SettingsCompanyPage() {
             </section>
 
             <section className="space-y-4 pt-4">
-                <CustomDomainSettings />
+                <CustomDomainSettings initialData={companyData} />
             </section>
         </div>
     );

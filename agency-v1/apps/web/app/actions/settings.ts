@@ -196,17 +196,33 @@ export async function updateWhiteLabeling(settings: any) {
         if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
 
         const companyUser = await prisma.companyUser.findFirst({
-            where: { userId: session.user.id }
+            where: { userId: session.user.id },
+            include: { company: true }
         });
 
-        if (!companyUser) return { success: false, error: 'No company found' };
+        if (!companyUser?.company) return { success: false, error: 'No company found' };
+
+        const existingWhiteLabeling = companyUser.company.whiteLabeling as any || {};
+
+        const newWhiteLabeling = { ...existingWhiteLabeling };
+        if (settings.primaryColor !== undefined) {
+            newWhiteLabeling.primaryColor = settings.primaryColor;
+        }
+        if (settings.domain !== undefined) {
+            newWhiteLabeling.domain = settings.domain;
+        }
+
+        const dataToUpdate: any = {
+            whiteLabeling: newWhiteLabeling
+        };
+
+        if (settings.logoUrl !== undefined) {
+            dataToUpdate.logoUrl = settings.logoUrl;
+        }
 
         await prisma.company.update({
             where: { id: companyUser.companyId },
-            data: {
-                logoUrl: settings.logoUrl,
-                whiteLabeling: { primaryColor: settings.primaryColor }
-            }
+            data: dataToUpdate
         });
 
         revalidatePath('/dashboard/settings/company');
@@ -214,4 +230,8 @@ export async function updateWhiteLabeling(settings: any) {
     } catch (error: any) {
         return { success: false, error: error.message || 'Failed to update white labeling' };
     }
+}
+
+export async function updateCustomDomain(domain: string) {
+    return updateWhiteLabeling({ domain });
 }

@@ -33,14 +33,14 @@ export function DefaultCompanySettings({ initialData }: { initialData?: any }) {
     };
 
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm overflow-hidden mt-6">
+            <div className="p-6 border-b border-slate-800/60 flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <Globe className="w-5 h-5 text-indigo-500" />
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Globe className="w-5 h-5 text-indigo-400" />
                         Configuración Regional Pordefecto
                     </h3>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                         Establece las preferencias predeterminadas que aplicarán para los nuevos miembros del equipo globalmente.
                     </p>
                 </div>
@@ -52,13 +52,13 @@ export function DefaultCompanySettings({ initialData }: { initialData?: any }) {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 gap-y-10">
                 {/* Moneda */}
                 <div className="space-y-3">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <label className="text-sm font-semibold text-white flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-slate-400" /> Moneda Base
                     </label>
                     <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                        className="w-full text-sm rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                     >
                         <option value="USD">USD ($) - Dólar Estadounidense</option>
                         <option value="EUR">EUR (€) - Euro</option>
@@ -69,13 +69,13 @@ export function DefaultCompanySettings({ initialData }: { initialData?: any }) {
 
                 {/* Zona Horaria */}
                 <div className="space-y-3">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <label className="text-sm font-semibold text-white flex items-center gap-2">
                         <Map className="w-4 h-4 text-slate-400" /> Zona Horaria Central
                     </label>
                     <select
                         value={timezone}
                         onChange={(e) => setTimezone(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                        className="w-full text-sm rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                     >
                         <option value="America/Bogota">(GMT-05:00) Bogotá, Lima, Quito</option>
                         <option value="America/Mexico_City">(GMT-06:00) Ciudad de México</option>
@@ -86,13 +86,13 @@ export function DefaultCompanySettings({ initialData }: { initialData?: any }) {
 
                 {/* Formato de Fecha */}
                 <div className="space-y-3">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <label className="text-sm font-semibold text-white flex items-center gap-2">
                         <Clock className="w-4 h-4 text-slate-400" /> Formato de Fecha
                     </label>
                     <select
                         value={dateFormat}
                         onChange={(e) => setDateFormat(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                        className="w-full text-sm rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                     >
                         <option value="DD/MM/YYYY">DD/MM/YYYY (Ej: 31/12/2026)</option>
                         <option value="MM/DD/YYYY">MM/DD/YYYY (Ej: 12/31/2026)</option>
@@ -102,13 +102,13 @@ export function DefaultCompanySettings({ initialData }: { initialData?: any }) {
 
                 {/* Idioma por defecto */}
                 <div className="space-y-3">
-                    <label className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <label className="text-sm font-semibold text-white flex items-center gap-2">
                         <Hash className="w-4 h-4 text-slate-400" /> Idioma del Workspace
                     </label>
                     <select
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-300 p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                        className="w-full text-sm rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                     >
                         <option value="es">Español (América Latina)</option>
                         <option value="en">English (US)</option>
