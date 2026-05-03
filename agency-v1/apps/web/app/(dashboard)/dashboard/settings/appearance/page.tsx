@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Palette, Moon, Sun, Monitor, Zap, AlignJustify, Type, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { useUIStore } from "@/lib/stores/ui-store";
 
 const THEMES = [
     { key: "dark", label: "HUD Dark", desc: "Slate-950 background, teal accents", icon: <Moon className="w-4 h-4" />, preview: "bg-slate-950 border-teal-500/40" },
@@ -45,13 +47,24 @@ function SectionCard({ title, icon, children }: { title: string; icon: React.Rea
 }
 
 export default function AppearancePage() {
-    const [theme, setTheme] = useState("dark");
-    const [density, setDensity] = useState("normal");
-    const [accent, setAccent] = useState("teal");
-    const [font, setFont] = useState("inter");
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [animationsEnabled, setAnimationsEnabled] = useState(true);
+    const { theme, setTheme } = useTheme();
+    const { 
+        accent, setAccent, 
+        density, setDensity, 
+        font, setFont, 
+        sidebarCollapsed, setSidebarCollapsed, 
+        animationsEnabled, setAnimationsEnabled 
+    } = useUIStore();
+    
+    const [mounted, setMounted] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Prevent hydration mismatch
+    if (!mounted) return null;
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -76,7 +89,7 @@ export default function AppearancePage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {THEMES.map(t => (
                         <button key={t.key} onClick={() => setTheme(t.key)}
-                            className={`relative p-4 rounded-xl border text-left transition-all ${theme === t.key ? "border-teal-500/50 bg-teal-500/5 ring-1 ring-teal-500/20" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
+                            className={`relative p-4 rounded-xl border text-left transition-all ${theme === t.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
                             {/* Preview */}
                             <div className={`h-16 rounded-lg ${t.preview} border mb-3 flex items-center justify-center`}>
                                 <div className={`text-2xl ${t.key === "light" ? "text-slate-700" : "text-white"}`}>{t.icon}</div>
@@ -86,7 +99,7 @@ export default function AppearancePage() {
                                     <p className="text-sm font-semibold text-slate-200">{t.label}</p>
                                     <p className="text-xs text-slate-500 mt-0.5">{t.desc}</p>
                                 </div>
-                                {theme === t.key && <Check className="w-4 h-4 text-teal-400 shrink-0" />}
+                                {theme === t.key && <Check className="w-4 h-4 text-[var(--ds-teal-bright)] shrink-0" />}
                             </div>
                         </button>
                     ))}
@@ -112,12 +125,12 @@ export default function AppearancePage() {
                 <div className="grid grid-cols-3 gap-3">
                     {DENSITIES.map(d => (
                         <button key={d.key} onClick={() => setDensity(d.key)}
-                            className={`p-4 rounded-xl border text-left transition-all ${density === d.key ? "border-teal-500/50 bg-teal-500/5 ring-1 ring-teal-500/20" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
+                            className={`p-4 rounded-xl border text-left transition-all ${density === d.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
                             <div className="flex items-center gap-2 mb-2">
                                 <div className={`flex flex-col gap-0.5 ${d.key === "compact" ? "gap-0.5" : d.key === "comfortable" ? "gap-2" : "gap-1"}`}>
                                     {[1, 2, 3].map(i => <div key={i} className="h-0.5 w-6 bg-slate-500 rounded-full" />)}
                                 </div>
-                                {density === d.key && <Check className="w-3.5 h-3.5 text-teal-400 ml-auto" />}
+                                {density === d.key && <Check className="w-3.5 h-3.5 text-[var(--ds-teal-bright)] ml-auto" />}
                             </div>
                             <p className="text-sm font-semibold text-slate-200">{d.label}</p>
                             <p className="text-xs text-slate-500 mt-0.5">{d.desc}</p>
@@ -131,10 +144,10 @@ export default function AppearancePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {FONTS.map(f => (
                         <button key={f.key} onClick={() => setFont(f.key)}
-                            className={`p-4 rounded-xl border text-left transition-all ${font === f.key ? "border-teal-500/50 bg-teal-500/5 ring-1 ring-teal-500/20" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
+                            className={`p-4 rounded-xl border text-left transition-all ${font === f.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-2xl font-bold text-slate-200">Aa</span>
-                                {font === f.key && <Check className="w-3.5 h-3.5 text-teal-400" />}
+                                {font === f.key && <Check className="w-3.5 h-3.5 text-[var(--ds-teal-bright)]" />}
                             </div>
                             <p className="text-xs font-semibold text-slate-300">{f.label}</p>
                             <p className="text-xs text-slate-600">{f.preview}</p>
@@ -156,7 +169,7 @@ export default function AppearancePage() {
                                 <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
                             </div>
                             <button onClick={() => opt.set(!opt.val)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${opt.val ? "bg-teal-600" : "bg-slate-700"}`}>
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${opt.val ? "bg-[var(--ds-teal-md)]" : "bg-slate-700"}`}>
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${opt.val ? "translate-x-6" : "translate-x-1"}`} />
                             </button>
                         </div>
@@ -167,7 +180,7 @@ export default function AppearancePage() {
             {/* Save */}
             <div className="flex justify-end">
                 <button onClick={handleSave} disabled={isSaving}
-                    className="px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl text-sm transition-colors shadow-[0_0_15px_rgba(20,184,166,0.3)] disabled:opacity-50">
+                    className="px-6 py-3 bg-[var(--ds-teal-md)] hover:brightness-110 text-white font-semibold rounded-xl text-sm transition-all shadow-[var(--ds-shadow-teal)] disabled:opacity-50">
                     {isSaving ? "Guardando..." : "Guardar Preferencias"}
                 </button>
             </div>
