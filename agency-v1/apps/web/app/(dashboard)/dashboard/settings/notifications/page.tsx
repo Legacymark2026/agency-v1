@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Bell, Mail, MessageSquare, Zap, Slack, Check, Loader2, Save } from "lucide-react";
-import { getNotificationPreferences, updateNotificationPreference, getNotificationEvents } from "@/actions/developer";
+import { getNotificationPreferences, updateNotificationPreference, getNotificationEvents, getChannelConfigs, updateChannelConfig } from "@/actions/developer";
 import { toast } from "sonner";
 
 const CHANNELS = [
@@ -53,11 +53,56 @@ function MatrixCell({ event, channel, pref, onUpdate }: {
     );
 }
 
+function ChannelConfig({ cfg, initialValue }: { cfg: any, initialValue: string }) {
+    const [value, setValue] = useState(initialValue);
+    const [saving, setSaving] = useState(false);
+
+    const handleSave = async () => {
+        setSaving(true);
+        const res = await updateChannelConfig(cfg.ch, value);
+        setSaving(false);
+        if (res.success) {
+            toast.success(`${cfg.title} guardada exitosamente`);
+        } else {
+            toast.error(`No se pudo guardar la configuración de ${cfg.ch}`);
+        }
+    };
+
+    return (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-white mb-3">
+                {cfg.icon} {cfg.title}
+            </h3>
+            {cfg.fields.map((f: any) => (
+                <div key={f.label}>
+                    <label className="text-xs text-slate-500 block mb-1">{f.label}</label>
+                    <input
+                        type={f.type}
+                        placeholder={f.placeholder}
+                        value={value}
+                        onChange={e => setValue(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
+                    />
+                </div>
+            ))}
+            <button 
+                onClick={handleSave} 
+                disabled={saving}
+                className="mt-3 w-full px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} 
+                {saving ? "Guardando..." : "Guardar configuración"}
+            </button>
+        </div>
+    );
+}
+
 export default function NotificationsPage() {
     const [matrix, setMatrix] = useState<Record<string, Record<string, { enabled: boolean; digest: string }>>>({});
     const [events, setEvents] = useState<{ key: string; label: string; group: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [configs, setConfigs] = useState<Record<string, string>>({});
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -66,6 +111,18 @@ export default function NotificationsPage() {
             setMatrix(res.data as any);
             setEvents(res.events as any);
         }
+        
+        const cfgRes = await getChannelConfigs();
+        if (cfgRes.success) {
+            const cfgMap: Record<string, string> = {};
+            for (const c of cfgRes.data) {
+                const target = c.config ? (c.config as any).target : "";
+                if (c.provider === "EMAIL_NOTIFICATIONS") cfgMap["EMAIL"] = target;
+                if (c.provider === "SLACK_NOTIFICATIONS") cfgMap["SLACK"] = target;
+            }
+            setConfigs(cfgMap);
+        }
+        
         setIsLoading(false);
     }, []);
 
@@ -201,24 +258,7 @@ export default function NotificationsPage() {
                         fields: [{ label: "Webhook URL de Slack", placeholder: "https://hooks.slack.com/...", type: "url" }],
                     },
                 ].map(cfg => (
-                    <div key={cfg.ch} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-                        <h3 className="flex items-center gap-2 text-sm font-semibold text-white mb-3">
-                            {cfg.icon} {cfg.title}
-                        </h3>
-                        {cfg.fields.map(f => (
-                            <div key={f.label}>
-                                <label className="text-xs text-slate-500 block mb-1">{f.label}</label>
-                                <input
-                                    type={f.type}
-                                    placeholder={f.placeholder}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
-                                />
-                            </div>
-                        ))}
-                        <button className="mt-3 w-full px-3 py-2 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors flex items-center justify-center gap-2">
-                            <Save className="w-3 h-3" /> Guardar configuración
-                        </button>
-                    </div>
+                    <ChannelConfig key={cfg.ch} cfg={cfg} initialValue={configs[cfg.ch] || ""} />
                 ))}
             </div>
         </div>

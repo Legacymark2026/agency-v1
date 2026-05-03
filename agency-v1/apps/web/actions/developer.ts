@@ -873,3 +873,37 @@ export async function saveCronSecret(secret: string, isEnabled: boolean) {
     }
 }
 
+
+export async function getChannelConfigs() {
+    try {
+        const session = await auth();
+        if (!session?.user?.id || !session?.user?.companyId) return { success: false, data: [] };
+        
+        const configs = await prisma.integrationConfig.findMany({
+            where: { companyId: session.user.companyId, provider: { in: ['EMAIL_NOTIFICATIONS', 'SLACK_NOTIFICATIONS'] } }
+        });
+        
+        return { success: true, data: configs };
+    } catch (e) {
+        return { success: false, data: [] };
+    }
+}
+
+export async function updateChannelConfig(channel: string, value: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id || !session?.user?.companyId) return { success: false, error: 'Unauthorized' };
+        
+        const provider = channel === 'EMAIL' ? 'EMAIL_NOTIFICATIONS' : 'SLACK_NOTIFICATIONS';
+        
+        await prisma.integrationConfig.upsert({
+            where: { companyId_provider: { companyId: session.user.companyId, provider } },
+            update: { config: { target: value }, isEnabled: true },
+            create: { companyId: session.user.companyId, provider, config: { target: value }, isEnabled: true }
+        });
+        
+        return { success: true };
+    } catch (e) {
+        return { success: false };
+    }
+}
