@@ -9,6 +9,8 @@ import { AuthError } from "next-auth";
 import { randomBytes } from "crypto";
 import { sendEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
+import { verifyToken } from "@/lib/mfa";
+import { auth as getAuth } from "@/lib/auth";
 
 const registerSchema = z.object({
     firstName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -388,4 +390,44 @@ export async function changePassword(
         console.error("[CHANGE PASSWORD] Error:", error);
         return { error: "Error interno. Por favor intenta de nuevo." };
     }
+}
+
+// ─── MFA VERIFICATION ────────────────────────────────────────────────────────
+
+const verifyMfaSchema = z.object({
+    code: z.string().min(6).max(6),
+});
+
+export async function verifyMfaAction(code: string): Promise<{ success?: boolean; error?: string }> {
+    const session = await getAuth();
+    if (!session?.user?.email) {
+        return { error: "No autenticado" };
+    }
+
+    const parsed = verifyMfaSchema.safeParse({ code });
+    if (!parsed.success) {
+        return { error: "Código inválido" };
+    }
+
+    // Rate limit: max 5 intentos por email cada 15 min
+    const isAllowed = await rateLimit(`mfa_verify:${session.user.email}`, 5, 15 * 60 * 1000);
+    if (!isAllowed) {
+        return { error: "Demasiados intentos. Espera 15 minutos." };
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { mfaSecret: true, mfaEnabled: true },
+    });
+
+    if (!user || !user.mfaEnabled || !user.mfaSecret) {
+        return { error: "2FA no configurado" };
+    }
+
+    const isValid = verifyToken(code, user.mfaSecret);
+    if (!isValid) {
+        return { error: "El código es incorrecto o ha expirado" };
+    }
+
+    return { success: true };
 }

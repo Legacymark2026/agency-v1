@@ -70,6 +70,23 @@ export const authConfig: NextAuthConfig = {
                 return NextResponse.redirect(loginUrl);
             }
 
+            // ── MFA Verification ────────────────────────────────────────
+            const mfaVerified = (auth?.user as any)?.mfaVerified;
+            // Si el usuario requiere MFA y no está verificado
+            if (mfaVerified === false) {
+                // Permitimos acceso a /auth/mfa-verify o logout
+                if (pathname.startsWith('/auth/mfa-verify') || pathname.startsWith('/api/auth/signout')) {
+                    return true;
+                }
+                // Redirigir a verificar MFA
+                const mfaUrl = new URL('/auth/mfa-verify', nextUrl.origin);
+                return NextResponse.redirect(mfaUrl);
+            } else if (pathname.startsWith('/auth/mfa-verify')) {
+                // Si ya verificó, no necesita estar en mfa-verify
+                const dashUrl = new URL('/dashboard', nextUrl.origin);
+                return NextResponse.redirect(dashUrl);
+            }
+
             // Protección de rutas del dashboard
             if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
                 const role = (auth?.user?.role as string) || 'guest';
