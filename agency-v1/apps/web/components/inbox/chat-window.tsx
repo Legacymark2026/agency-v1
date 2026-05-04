@@ -504,7 +504,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             }));
 
             // Call Server Action
-            const result = await sendMessage_Advanced(conversation.id, content, isPrivateNote ? 'INTERNAL' : 'OUTBOUND', null, advancedAttachments);
+            const result = await sendMessage_Advanced(conversation.id, content, advancedAttachments, { direction: isPrivateNote ? 'INTERNAL' : 'OUTBOUND' });
             if (result && result.success === false) {
                 toast.error((result as any).error);
                 setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, status: 'FAILED' } : m));
