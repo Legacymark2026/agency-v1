@@ -274,6 +274,5 @@ export async function createBillingPortalSession(): Promise<ActionResult<{ url: 
 // ── API Surface canónica ─────────────────────────────────────────────────────
 // Los aliases se mantienen por compatibilidad con imports existentes.
 export {
-  createStripeCheckoutSession as createCheckoutSession,
   createBillingPortalSession as createPortalSession,
 };

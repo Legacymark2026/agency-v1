@@ -60,7 +60,7 @@ export default async function SubscriptionPage() {
 
           <PlanSelector
             currentPlanId={currentPlanId as any}
-            isAuthenticated={!!user}
+            isAuthenticated={!!session?.user}
           />
         </div>
       </section>
