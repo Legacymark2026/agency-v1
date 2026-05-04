@@ -59,7 +59,7 @@ export async function generateCreativeBrief(description: string, platforms: stri
     const platformList = platforms.join(", ");
 
     const { text } = await generateText({
-        model: google("gemini-2.0-flash"),
+        model: google("gemini-2.0-flash") as any,
         prompt: `You are a senior creative director at a performance marketing agency.
 
 A client says: "${description}"
