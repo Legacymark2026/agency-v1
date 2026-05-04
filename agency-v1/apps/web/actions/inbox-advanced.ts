@@ -263,7 +263,8 @@ export async function generateAuditReport_Advanced(
 export async function createMessageDraft_Advanced(
   conversationId: string,
   content: string,
-  companyId: string
+  currentUserId: string,
+  status: string = "DRAFT"
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -288,14 +289,14 @@ export async function createMessageDraft_Advanced(
         messageId: "", // Placeholder - se asigna cuando se envia
         content,
         version: 1,
-        status: "DRAFT",
+        status: status,
         createdBy: session.user.id,
       },
     });
 
     await logAuditEvent("draft_created", {
       conversationId,
-      companyId,
+      companyId: conversation.companyId,
       userId: session.user.id,
       resourceType: "draft",
       resourceId: draft.id,
