@@ -52,5 +52,8 @@ prisma_error.log
 prisma_validate*.log
 debug-whatsapp.log
 
+# credentials
+google-credentials.json
+
 # old archive
 .logs_archive/
