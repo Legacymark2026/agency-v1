@@ -1,10 +1,10 @@
 /**
  * lib/logger.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * Logger estructurado con niveles formales para el sistema LegacyMark.
+ * Logger estructurado con Winston para el sistema LegacyMark.
  *
  * COMPORTAMIENTO:
- * - Development: salida legible por humanos en consola con colores implícitos
+ * - Development: salida legible por humanos en consola con colores
  * - Production: JSON estructurado para ingestión en plataformas (Datadog, Loki)
  *   Los errores y fatales también se reportan a Sentry automáticamente.
  *
@@ -20,6 +20,7 @@
  *   logger.error("[CAPI] Fallo al enviar evento", { error: err.message, platform: "meta" });
  */
 
+import winston from "winston";
 import type { SeverityLevel } from "@sentry/nextjs";
 
 type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
@@ -28,26 +29,37 @@ type LogContext = any;
 const isDev = process.env.NODE_ENV === "development";
 const SERVICE = "legacymark-web";
 
+// Configurar Winston
+const logger = winston.createLogger({
+  level: isDev ? "debug" : "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    isDev
+      ? winston.format.combine(
+          winston.format.colorize(),
+          winston.format.printf(({ timestamp, level, message, ...meta }) => {
+            return `${timestamp} [${level}]: ${message} ${Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""}`;
+          })
+        )
+      : winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console(),
+  ],
+});
+
 // Niveles que siempre se emiten (incluso en producción)
 const ALWAYS_LOG: LogLevel[] = ["warn", "error", "fatal"];
 
 // ── Núcleo de logging ──────────────────────────────────────────────────────────
 
 function emit(level: LogLevel, message: string, context?: LogContext): void {
-  // En desarrollo: formato legible
-  if (isDev) {
-    const prefix = `[${level.toUpperCase()}]`;
-    if (level === "error" || level === "fatal") {
-      console.error(prefix, message, context ?? "");
-    } else if (level === "warn") {
-      console.warn(prefix, message, context ?? "");
-    } else {
-      console.log(prefix, message, context ?? "");
-    }
-    return;
-  }
+  logger.log(level, message, context);
+}
 
-  // En producción: solo loggear niveles relevantes
+// ── API pública ───────────────────────────────────────────────────────────────
+
+export { logger };
   if (!ALWAYS_LOG.includes(level)) return;
 
   const entry = {

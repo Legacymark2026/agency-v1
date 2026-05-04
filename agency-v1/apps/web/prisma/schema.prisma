@@ -82,6 +82,7 @@ model User {
 
   @@index([role])
   @@index([email])
+  @@index([globalRole])
   @@map("users")
 }
 

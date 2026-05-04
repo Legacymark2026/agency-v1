@@ -19,6 +19,11 @@ process.env.MASTER_TENANT_ID = "master-tenant-id";
 // Re-import after setting env vars
 const { enforceQuota, getQuotaUsage, TIER_LIMITS } = await import("@/lib/quotas");
 
+// ── Setup ─────────────────────────────────────────────────────────────────────
+beforeEach(() => {
+  mockFetch.mockClear();
+});
+
 describe("TIER_LIMITS", () => {
   it("debe tener todos los tiers definidos", () => {
     expect(TIER_LIMITS).toHaveProperty("free");
@@ -98,17 +103,10 @@ describe("enforceQuota — pro tier", () => {
 
 describe("getQuotaUsage", () => {
   it("debe devolver uso actual con limit y tier correctos", async () => {
-    mockFetch
-      // Mock DB call para obtener tier
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ subscriptionTier: "pro" }),
-      })
-      // Mock Redis GET
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ result: "250" }),
-      });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ result: "250" }),
+    });
 
     const result = await getQuotaUsage("company-3", "leads", "pro");
     expect(result).not.toBeNull();

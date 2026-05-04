@@ -22,6 +22,7 @@ vi.mock("@/lib/stripe", () => ({ stripe: mockStripe }));
 const mockUpdate = vi.fn().mockResolvedValue({ count: 1 });
 const mockUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
 const mockFindFirst = vi.fn().mockResolvedValue(null);
+const mockFindUnique = vi.fn().mockResolvedValue(null);
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -29,6 +30,7 @@ vi.mock("@/lib/prisma", () => ({
       update: mockUpdate,
       updateMany: mockUpdateMany,
       findFirst: mockFindFirst,
+      findUnique: mockFindUnique,
     },
   },
 }));
