@@ -1500,6 +1500,7 @@ model InboxAuditLog {
   createdAt       DateTime @default(now()) @map("created_at")
   company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  conversation    Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([companyId])
