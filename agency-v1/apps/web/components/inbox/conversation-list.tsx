@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Search, Filter, SlidersHorizontal, Plus, X, Send, RefreshCw } from 'lucide-react';
@@ -16,6 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { User, Users, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { syncMetaConversations } from '@/actions/inbox';
+import { SlaBadge } from './sla-badge';
+import { useInboxSocket } from '@/hooks/use-inbox-socket';
 
 // Mock types for props - replace with actual types later
 interface Conversation {
@@ -34,6 +36,17 @@ interface Conversation {
     tags?: any;
     sentiment?: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'URGENT' | null;
     topic?: string | null;
+    slaConfig?: {
+        status: string;
+        firstResponseMinutes: number;
+        resolutionMinutes: number;
+        firstResponseAt?: Date | string | null;
+        resolvedAt?: Date | string | null;
+        breachedAt?: Date | string | null;
+        createdAt: Date | string;
+        pausedMinutes?: number;
+    } | null;
+    companyId?: string;
 }
 
 export function ConversationList({ conversations, currentUser }: { conversations: Conversation[], currentUser?: any }) {
@@ -70,14 +83,8 @@ export function ConversationList({ conversations, currentUser }: { conversations
         setIsSyncing(false);
     };
 
-    // Real-time Polling & Time Update (Phase 1 Improvement)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            router.refresh();
-            setCurrentTime(new Date());
-        }, 5000); // Poll every 5 seconds
-        return () => clearInterval(interval);
-    }, [router]);
+    // Real-time via socket (falls back to 5s polling automatically)
+    useInboxSocket({ companyId: conversations[0]?.companyId });
 
     // Filter logic
     const filteredConversations = conversations.filter(convo => {
@@ -240,9 +247,12 @@ export function ConversationList({ conversations, currentUser }: { conversations
                             const lastMsgDate = convo.lastMessageAt ? new Date(convo.lastMessageAt) : new Date();
                             const isValidDate = !isNaN(lastMsgDate.getTime());
                             
-                            // SLA Logic: Over 15 mins, open, has unread? Let's just say if unread and > 15 mins
-                            const isSlaBreached = convo.unreadCount > 0 && isValidDate &&
-                                (currentTime.getTime() - lastMsgDate.getTime()) > 15 * 60 * 1000;
+                            // SLA: use real DB status if available, fallback to local heuristic
+                            const slaConfig = (convo as any).slaConfig;
+                            const isSlaBreached = slaConfig
+                                ? (slaConfig.status === 'BREACHED' || slaConfig.status === 'CRITICAL')
+                                : (convo.unreadCount > 0 && isValidDate &&
+                                    (currentTime.getTime() - lastMsgDate.getTime()) > 15 * 60 * 1000);
 
                             const getSentimentColor = (s: string | null | undefined) => {
                                 if (s === 'URGENT' || s === 'NEGATIVE') return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
@@ -299,10 +309,14 @@ export function ConversationList({ conversations, currentUser }: { conversations
                                                           URGENT
                                                       </span>
                                                   )}
+                                                  {/* Real SLA badge */}
+                                                  {slaConfig && (
+                                                      <SlaBadge sla={slaConfig} compact />
+                                                  )}
                                                 </div>
 
                                                 {convo.unreadCount > 0 && (
-                                                    <span style={{ padding: "1px 6px", borderRadius: "99px", fontSize: "10px", fontWeight: 800, background: "rgba(13,148,136,0.2)", color: "#2dd4bf", border: "1px solid rgba(13,148,136,0.3)", fontFamily: "monospace", flexShrink: 0 }}>
+                                                    <span style={{ padding: '1px 6px', borderRadius: '99px', fontSize: '10px', fontWeight: 800, background: 'rgba(13,148,136,0.2)', color: '#2dd4bf', border: '1px solid rgba(13,148,136,0.3)', fontFamily: 'monospace', flexShrink: 0 }}>
                                                         {convo.unreadCount}
                                                     </span>
                                                 )}

@@ -66,6 +66,7 @@ model User {
   proposals               Proposal[]
   readingList             ReadingListItem[]
   resourcePermissions     ResourcePermission[]
+  inboxAuditLogs          InboxAuditLog[]
   salesGoals              SalesGoal[]               @relation("UserSalesGoals")
   sessions                Session[]
   socialPostComments      SocialPostComment[]
@@ -280,6 +281,7 @@ model Company {
   experiments             Experiment[]
   financialAccounts       FinancialAccount[]
   inboxMacros             InboxMacro[]
+  inboxAuditLogs          InboxAuditLog[]
   integrationConfigs      IntegrationConfig[]
   integrationLogs         IntegrationLog[]
   invoices                Invoice[]
@@ -1383,6 +1385,10 @@ model Conversation {
   company            Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   lead               Lead?     @relation(fields: [leadId], references: [id])
   messages           Message[]
+  slaConfig          ConversationSLA?
+  drafts             MessageDraft[]
+  auditLogs          InboxAuditLog[]
+  tagAssignments     InboxTagAssignment[]
 
   @@unique([platformId, channel])
   @@index([companyId])
@@ -1404,14 +1410,143 @@ model Message {
   mediaType      String?      @map("media_type")
   externalId     String?      @map("external_id")
   metadata       Json?        @default("{}")
+  inReplyToId    String?      @map("in_reply_to_id")
   createdAt      DateTime     @default(now()) @map("created_at")
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attachments    MessageAttachment[]
+  drafts         MessageDraft[]
 
   @@unique([externalId, conversationId])
   @@index([conversationId])
   @@index([createdAt])
+  @@index([inReplyToId])
   @@map("messages")
 }
+
+// ── Email Threading Support ────────────────────────────────────────────────────
+model MessageAttachment {
+  id          String   @id @default(uuid())
+  messageId   String   @map("message_id")
+  fileName    String   @map("file_name")
+  mediaUrl    String   @map("media_url")
+  mediaType   String   @map("media_type")
+  fileSize    Int      @map("file_size")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("message_attachments")
+}
+
+// ── Draft Versioning & Approval ────────────────────────────────────────────────
+model MessageDraft {
+  id             String    @id @default(uuid())
+  messageId      String?   @map("message_id")   // nullable: draft may exist before message is sent
+  conversationId String    @map("conversation_id")
+  content        String
+  version        Int       @default(1)
+  status         String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED
+  createdBy      String    @map("created_by")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  approvedBy     String?   @map("approved_by")
+  approvedAt     DateTime? @map("approved_at")
+  message        Message?  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([conversationId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("message_drafts")
+}
+
+// ── SLA & Response Time Tracking ───────────────────────────────────────────────
+model ConversationSLA {
+  id                     String    @id @default(uuid())
+  conversationId         String    @unique @map("conversation_id")
+  firstResponseMinutes   Int       @map("first_response_minutes")
+  resolutionMinutes      Int       @map("resolution_minutes")
+  status                 String    @default("OPEN") // OPEN, MET, BREACHED, PAUSED
+  firstResponseAt        DateTime? @map("first_response_at")
+  resolvedAt             DateTime? @map("resolved_at")
+  breachedAt             DateTime? @map("breached_at")
+  warningNotifiedAt      DateTime? @map("warning_notified_at")
+  pausedAt               DateTime? @map("paused_at")
+  pausedMinutes          Int       @default(0) @map("paused_minutes")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  conversation           Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([status])
+  @@index([breachedAt])
+  @@map("conversation_slas")
+}
+
+// ── Audit Logging for Compliance ───────────────────────────────────────────────
+model InboxAuditLog {
+  id              String   @id @default(uuid())
+  conversationId  String?  @map("conversation_id")
+  companyId       String   @map("company_id")
+  userId          String?  @map("user_id")
+  action          String   // message_sent, status_changed, assigned_to, macro_executed, tag_added, tag_removed
+  resourceType    String   @map("resource_type") // conversation, message, macro
+  resourceId      String   @map("resource_id")
+  oldValue        Json?    @map("old_value")
+  newValue        Json?    @map("new_value")
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+  metadata        Json?    @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
+  @@map("inbox_audit_logs")
+}
+
+// ── Tags History & Audit ──────────────────────────────────────────────────────
+model InboxTagAssignment {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  tagName        String   @map("tag_name")
+  assignedBy     String   @map("assigned_by")
+  assignedAt     DateTime @default(now()) @map("assigned_at")
+  removedBy      String?  @map("removed_by")
+  removedAt      DateTime? @map("removed_at")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, tagName, removedAt]) // Allow same tag re-added
+  @@index([conversationId])
+  @@index([tagName])
+  @@index([assignedAt])
+  @@map("inbox_tag_assignments")
+}
+
+// ── RBAC for Macros ───────────────────────────────────────────────────────────
+model InboxMacroPermission {
+  id       String  @id @default(uuid())
+  macroId  String  @map("macro_id")
+  roleId   String  @map("role_id")
+  canExecute Boolean  @default(true) @map("can_execute")
+  
+  @@unique([macroId, roleId])
+  @@index([macroId])
+  @@index([roleId])
+  @@map("inbox_macro_permissions")
+}
+
+// ── Conversation Extension for SLA & Threading ──────────────────────────────────
+// Adding fields to Conversation model (add to existing Conversation definition)
+// slaConfig: ConversationSLA relation
+// threads: MessageDraft[] relation
+// auditLogs: InboxAuditLog[] relation
+// tagAssignments: InboxTagAssignment[] relation
 
 model AnalyticsEvent {
   id          String           @id @default(uuid())

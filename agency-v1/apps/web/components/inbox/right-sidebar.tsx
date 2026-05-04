@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
     User, MapPin, Mail, Phone, Tag, Clock,
-    CreditCard, TrendingUp, AlertCircle, Plus, X, Link, DollarSign, CheckCircle, Copy, Sparkles, Bot, Send
+    CreditCard, TrendingUp, AlertCircle, Plus, X, Link, DollarSign, CheckCircle, Copy, Sparkles, Bot, Send, ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { executeMacro } from '@/actions/inbox';
 import { getInboxMacros } from '@/actions/inbox-macros';
 import { convertLeadToDeal } from '@/modules/leads/actions/leads';
+import { addTagToConversation_Advanced, removeTagFromConversation_Advanced } from '@/actions/inbox-advanced';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,6 +21,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from 'framer-motion';
+import { SlaBadge } from './sla-badge';
+import { AuditTimeline } from './audit-timeline';
 
 // Dark HUD tokens
 const D = {
@@ -187,7 +190,11 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 {['Ventas', 'Soporte VIP', 'Dudas', 'URGENTE'].filter(t => !activeTags.includes(t)).map(tag => (
-                                    <DropdownMenuItem key={tag} onClick={() => { setActiveTags(prev => [...prev, tag]); toast.success(`Etiqueta: ${tag}`); }}>{tag}</DropdownMenuItem>
+                                    <DropdownMenuItem key={tag} onClick={async () => {
+                                        const res = await addTagToConversation_Advanced(conversation.id, tag) as any;
+                                        if (res?.success) { setActiveTags(prev => [...prev, tag]); toast.success(`Etiqueta: ${tag}`); }
+                                        else toast.error(res?.error || 'Error');
+                                    }}>{tag}</DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -196,7 +203,11 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                         {activeTags.length > 0 ? activeTags.map((tag, i) => (
                             <span key={i} style={{ display: "flex", alignItems: "center", gap: "4px", padding: "2px 8px", background: "rgba(244,63,94,0.12)", border: "1px solid rgba(244,63,94,0.3)", borderRadius: "99px", fontSize: "10px", fontWeight: 700, color: "#fb7185", fontFamily: D.mono }}>
                                 {tag}
-                                <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fb7185", padding: 0, display: "flex" }} onClick={() => { setActiveTags(p => p.filter(t => t !== tag)); }}>
+                                <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fb7185", padding: 0, display: "flex" }} onClick={async () => {
+                                    const res = await removeTagFromConversation_Advanced(conversation.id, tag) as any;
+                                    if (res?.success) setActiveTags(p => p.filter(t => t !== tag));
+                                    else toast.error(res?.error || 'Error');
+                                }}>
                                     <X size={9} />
                                 </button>
                             </span>
@@ -211,7 +222,11 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start">
                                 {['Ventas', 'Soporte VIP', 'Dudas', 'URGENTE'].filter(t => !activeTags.includes(t)).map(tag => (
-                                    <DropdownMenuItem key={tag} onClick={() => { setActiveTags(prev => [...prev, tag]); toast.success(`Etiqueta: ${tag}`); }}>{tag}</DropdownMenuItem>
+                                    <DropdownMenuItem key={tag} onClick={async () => {
+                                        const res = await addTagToConversation_Advanced(conversation.id, tag) as any;
+                                        if (res?.success) { setActiveTags(prev => [...prev, tag]); toast.success(`Etiqueta: ${tag}`); }
+                                        else toast.error(res?.error || 'Error');
+                                    }}>{tag}</DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -233,13 +248,24 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                 <p style={{ fontSize: "9px", color: D.textDim, marginTop: "6px", textAlign: "right", fontFamily: D.mono }}>Based on recent activity</p>
             </div>
 
-            {/* Tabs */}
+            {/* SLA Quick View (below Lead Score) */}
+            {conversation.slaConfig && (
+                <div style={{ padding: "14px", borderBottom: `1px solid ${D.border}` }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.14em", color: D.textDim, fontFamily: D.mono, display: "block", marginBottom: "8px" }}>SLA Status</span>
+                    <SlaBadge sla={conversation.slaConfig} />
+                </div>
+            )}
+
+            {/* Tabs: 6 tabs now including Audit */}
             <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-                <TabsList style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", borderRadius: 0, borderBottom: `1px solid ${D.border}`, background: D.bg, padding: 0, height: "38px", flexShrink: 0 }}>
-                    {['details', 'activity', 'notes', 'macros', 'copilot'].map(tab => (
-                        <TabsTrigger key={tab} value={tab} style={{ borderRadius: 0, fontSize: "10px", fontFamily: D.mono, fontWeight: 700, textTransform: "capitalize", padding: "0 4px" }}
+                <TabsList style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr", borderRadius: 0, borderBottom: `1px solid ${D.border}`, background: D.bg, padding: 0, height: "38px", flexShrink: 0 }}>
+                    {['details', 'sla', 'audit', 'notes', 'macros', 'copilot'].map(tab => (
+                        <TabsTrigger key={tab} value={tab} style={{ borderRadius: 0, fontSize: "9px", fontFamily: D.mono, fontWeight: 700, textTransform: "capitalize", padding: "0 2px" }}
                             className="data-[state=active]:border-b-2 data-[state=active]:border-teal-500 data-[state=active]:text-teal-400 data-[state=inactive]:text-slate-600 data-[state=inactive]:bg-transparent h-full">
-                            {tab === 'activity' ? 'Journey' : tab === 'copilot' ? <span className="flex items-center gap-1 text-indigo-400"><Sparkles size={10} /> Copilot</span> : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {tab === 'copilot' ? <span className="flex items-center gap-1 text-indigo-400"><Sparkles size={9} />AI</span>
+                             : tab === 'sla' ? <span className="flex items-center gap-1 text-amber-400"><Clock size={9} />SLA</span>
+                             : tab === 'audit' ? <span className="flex items-center gap-1 text-purple-400"><ShieldCheck size={9} />Audit</span>
+                             : tab.charAt(0).toUpperCase() + tab.slice(1)}
                         </TabsTrigger>
                     ))}
                 </TabsList>
@@ -354,6 +380,37 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                     </div>
                 </TabsContent>
 
+                {/* ── SLA Tab ────────────────────────────────────────── */}
+                <TabsContent value="sla" style={{ padding: '14px', margin: 0 }}>
+                    {conversation.slaConfig ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <SlaBadge sla={conversation.slaConfig} />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                {[
+                                    { label: 'First Response Target', val: `${conversation.slaConfig.firstResponseMinutes}m` },
+                                    { label: 'Resolution Target', val: `${conversation.slaConfig.resolutionMinutes}m` },
+                                    { label: 'First Response', val: conversation.slaConfig.firstResponseAt ? new Date(conversation.slaConfig.firstResponseAt).toLocaleTimeString() : 'Pending' },
+                                    { label: 'Resolved At', val: conversation.slaConfig.resolvedAt ? new Date(conversation.slaConfig.resolvedAt).toLocaleTimeString() : 'Open' },
+                                ].map(({ label, val }) => (
+                                    <div key={label} style={{ background: D.card, padding: '8px', borderRadius: '8px', border: `1px solid ${D.border}` }}>
+                                        <span style={{ fontSize: '9px', color: D.textDim, display: 'block', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: D.mono }}>{label}</span>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: D.textMuted, fontFamily: D.mono }}>{val}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <p style={{ textAlign: 'center', padding: '24px', fontSize: '11px', color: D.textDim, fontFamily: D.mono, fontStyle: 'italic' }}>
+                            No SLA configured for this conversation.
+                        </p>
+                    )}
+                </TabsContent>
+
+                {/* ── Audit Tab ──────────────────────────────────────── */}
+                <TabsContent value="audit" style={{ margin: 0 }}>
+                    <AuditTimeline conversationId={conversation.id} />
+                </TabsContent>
+
                 <TabsContent value="notes" style={{ padding: "14px", display: "flex", flexDirection: "column", height: "400px" }}>
                     <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
                         {savedNotes.length > 0 ? savedNotes.map((note, idx) => (
@@ -380,6 +437,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                         </button>
                     </div>
                 </TabsContent>
+
 
                 <TabsContent value="macros" style={{ padding: "14px", display: "flex", flexDirection: "column", gap: "10px", margin: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>

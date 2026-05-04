@@ -76,7 +76,6 @@ export async function getConversations({
                             id: true,
                             name: true,
                             email: true,
-                            // image: true, // Field does not exist on Lead model
                         }
                     },
                     assignee: {
@@ -84,6 +83,18 @@ export async function getConversations({
                             id: true,
                             name: true,
                             image: true
+                        }
+                    },
+                    slaConfig: {
+                        select: {
+                            status: true,
+                            firstResponseMinutes: true,
+                            resolutionMinutes: true,
+                            firstResponseAt: true,
+                            resolvedAt: true,
+                            breachedAt: true,
+                            createdAt: true,
+                            pausedMinutes: true,
                         }
                     },
                     _count: {
@@ -131,6 +142,16 @@ export async function getMessages(conversationId: string) {
                 mediaUrl: true,
                 mediaType: true,
                 metadata: true,
+                inReplyToId: true,
+                attachments: {
+                    select: {
+                        id: true,
+                        fileName: true,
+                        mediaUrl: true,
+                        mediaType: true,
+                        fileSize: true,
+                    }
+                },
                 conversation: {
                     select: {
                         channel: true,

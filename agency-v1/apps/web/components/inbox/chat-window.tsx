@@ -4,12 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import {
     Send, Paperclip, Smile, Image as ImageIcon,
     Phone, Video, MoreHorizontal, Check, CheckCheck,
-    Reply, Forward, Trash2, Copy, Clock, Sparkles, Download, Timer, Volume2, X
+    Reply, Forward, Trash2, Copy, Clock, Sparkles, Download, Timer, Volume2, X, GitMerge, MessageSquareMore
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { sendMessage, updateConversationStatus, draftCopilotServerAction, updateLeadStatusFromInbox, deleteConversation, deleteMessage } from '@/actions/inbox';
+import { sendMessage_Advanced } from '@/actions/inbox-advanced';
 import { ChannelIcon } from './channel-icon';
 import {
     DropdownMenu,
@@ -24,6 +25,8 @@ import { Mic, CheckCircle2, Maximize2, Minimize2, MonitorUp, UserPlus, MicOff, V
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
+import { MergeModal } from './merge-modal';
+import { DraftComposer } from './draft-composer';
 
 function AudioPlayer({ durationText, audioSrc, isMe }: { durationText: string, audioSrc?: string, isMe?: boolean }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -125,6 +128,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     const [isTyping, setIsTyping] = useState(false); // Simulated typing state
     const [isPrivateNote, setIsPrivateNote] = useState(false); // Internal Private Notes Toggle
     const isAdmin = true; // Simulate Admin check for deletion
+    const [showMergeModal, setShowMergeModal] = useState(false);
 
     const [showBackgroundAlert, setShowBackgroundAlert] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -466,6 +470,13 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 }
             }
 
+            const optimisticAttachments = uploadedAttachments.map((a, idx) => ({
+                id: 'temp-a-' + Math.random(),
+                fileName: pendingFiles[idx] instanceof File ? (pendingFiles[idx] as File).name : 'attachment',
+                mediaUrl: a.url,
+                mediaType: a.type
+            }));
+
             const optimisticMsg = {
                 id: 'temp-' + Date.now(),
                 content: content,
@@ -473,7 +484,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 status: 'SENT',
                 createdAt: new Date(),
                 senderId: currentUserId,
-                mediaUrl: uploadedAttachments.length > 0 ? uploadedAttachments[0].url : null,
+                attachments: optimisticAttachments,
             };
 
             setMessages((prev: any) => [...prev, optimisticMsg]);
@@ -484,10 +495,18 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             setPendingFiles([]); // Clear pending files
             if (textareaRef.current) textareaRef.current.style.height = '44px'; // Reset height
 
+            // Format for advanced action
+            const advancedAttachments = uploadedAttachments.map((a, idx) => ({
+                fileName: pendingFiles[idx] instanceof File ? (pendingFiles[idx] as File).name : 'attachment',
+                mediaUrl: a.url,
+                mediaType: a.type,
+                fileSize: pendingFiles[idx] instanceof File ? (pendingFiles[idx] as File).size : 0
+            }));
+
             // Call Server Action
-            const result = await sendMessage(conversation.id, content, currentUserId, uploadedAttachments);
+            const result = await sendMessage_Advanced(conversation.id, content, isPrivateNote ? 'INTERNAL' : 'OUTBOUND', null, advancedAttachments);
             if (result && result.success === false) {
-                toast.error(result.error);
+                toast.error((result as any).error);
                 setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, status: 'FAILED' } : m));
             } else {
                 setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, status: 'SENT' } : m));
@@ -593,6 +612,9 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                             <DropdownMenuItem onClick={() => updateConversationStatus(conversation.id, 'SNOOZED')}>Snooze Conversation</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2 text-teal-600 focus:text-teal-600" onClick={() => toast.success('Transcript exported as PDF')}>
                                 <Download size={14} /> Export Transcript
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2 text-purple-500 focus:text-purple-500" onClick={() => setShowMergeModal(true)}>
+                                <GitMerge size={14} /> Merge Conversation
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-amber-600 focus:text-amber-600" onClick={() => toast.warning('Conversation marked as spam')}>Mark as Spam</DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { updateConversationStatus(conversation.id, 'CLOSED'); handleCloseDeal(); }}>Close Conversation</DropdownMenuItem>
@@ -871,125 +893,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
                 </div>
 
-                <AnimatePresence initial={false}>
-                    {messages.map((msg: any) => {
-                        const isMe = msg.direction === 'OUTBOUND';
-                        return (
-                            <motion.div
-                                key={msg.id}
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                transition={{ duration: 0.2 }}
-                                className={cn(
-                                    "flex w-full group",
-                                    isMe ? "justify-end" : "justify-start"
-                                )}
-                            >
-                                <div className={cn(
-                                    "flex flex-col gap-1 max-w-[85%] md:max-w-[70%]",
-                                    isMe ? "items-end" : "items-start"
-                                )}>
-                                    {!isMe && (
-                                        <span className="text-xs text-gray-500 ml-1 mb-0.5 font-medium">{conversation.lead?.name?.split(' ')[0]}</span>
-                                    )}
-
-                                    <div className={cn(
-                                        "px-4 py-3 text-sm relative group transition-all duration-300",
-                                        isMe
-                                            ? "rounded-2xl rounded-br-sm border"
-                                            : "rounded-2xl rounded-bl-sm border"
-                                    )}
-                                        style={isMe
-                                            ? { 
-                                                background: "linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(13, 148, 136, 0.05))", 
-                                                borderColor: "rgba(45, 212, 191, 0.25)",
-                                                backdropFilter: "blur(8px)",
-                                                boxShadow: "0 4px 15px -3px rgba(13, 148, 136, 0.15)"
-                                              }
-                                            : { 
-                                                background: "rgba(15, 23, 42, 0.8)", 
-                                                borderColor: "rgba(255, 255, 255, 0.05)", 
-                                                color: "#cbd5e1",
-                                                backdropFilter: "blur(16px)",
-                                                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-                                              }
-                                        }>
-                                        {(msg.mediaType === 'AUDIO' || 
-                                          msg.content?.toLowerCase().includes('nota de voz') || 
-                                          msg.mediaUrl?.toLowerCase().endsWith('.webm') || 
-                                          msg.mediaUrl?.toLowerCase().endsWith('.ogg') || 
-                                          msg.mediaUrl?.toLowerCase().endsWith('.mp4') || 
-                                          msg.mediaUrl?.toLowerCase().endsWith('.m4a') ||
-                                          msg.mediaUrl?.toLowerCase().includes('/video/upload/')) ? (
-                                            <AudioPlayer
-                                                durationText={msg.content?.split('(')[1]?.replace(')', '') || '0:00'}
-                                                audioSrc={msg.mediaUrl || ''}
-                                                isMe={isMe}
-                                            />
-                                        ) : msg.mediaType === 'IMAGE' && msg.mediaUrl ? (
-                                            <img src={msg.mediaUrl} alt="Media" className="rounded-lg max-w-full max-h-60 object-cover" />
-                                        ) : (
-                                            <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                                        )}
-
-                                        <div className={cn(
-                                            "text-xs mt-1.5 flex items-center gap-1.5 opacity-80",
-                                            isMe ? "justify-end text-blue-100" : "justify-start text-gray-400"
-                                        )}>
-                                            {format(new Date(msg.createdAt), 'h:mm a')}
-                                            {isMe && (
-                                                <span>
-                                                    {msg.status === 'READ' ? <CheckCheck size={13} className="text-blue-200" /> : <Check size={13} />}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Action Hover (Reply/Delete) */}
-                                        <div className={cn(
-                                            "absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1",
-                                            isMe ? "-left-16" : "-right-16"
-                                        )}>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-white shadow-sm hover:bg-gray-50 border border-gray-100 text-gray-500">
-                                                <Reply size={12} />
-                                            </Button>
-                                            {isAdmin && (
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-white shadow-sm hover:bg-red-50 hover:text-red-500 border border-gray-100 text-gray-500" onClick={async () => {
-                                                    const originalMsgs = [...messages];
-                                                    setMessages((prev: any) => prev.filter((m: any) => m.id !== msg.id));
-                                                    const res = await deleteMessage(msg.id);
-                                                    if (!res.success) {
-                                                        setMessages(originalMsgs); // rollback
-                                                        toast.error("Error al eliminar mensaje");
-                                                    } else {
-                                                        toast.success("Mensaje eliminado");
-                                                    }
-                                                }}>
-                                                    <Trash2 size={12} />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                    {/* Typing Indicator */}
-                    {isTyping && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="flex justify-start w-full"
-                        >
-                            <div style={{ background: "rgba(15,23,42,0.9)", border: "1px solid rgba(30,41,59,0.9)", padding: "10px 14px", borderRadius: "16px 16px 16px 2px", display: "flex", alignItems: "center", gap: "5px" }}>
-                                <span style={{ width: "6px", height: "6px", background: "#334155", borderRadius: "50", display: "inline-block", animation: "bounce 1s infinite" }} />
-                                <span style={{ width: "6px", height: "6px", background: "#334155", borderRadius: "50%", display: "inline-block", animation: "bounce 1s 0.15s infinite" }} />
-                                <span style={{ width: "6px", height: "6px", background: "#334155", borderRadius: "50%", display: "inline-block", animation: "bounce 1s 0.3s infinite" }} />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <ThreadView messages={messages} currentUserId={currentUserId} />
                 <div style={{ height: "60px" }} />
                 <div ref={scrollRef} />
             </div>
@@ -1186,6 +1090,16 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 </div>
             </div>
 
+            {/* ── Draft Composer ─────────────────────────────────────── */}
+            <DraftComposer
+                conversationId={conversation.id}
+                currentUserId={currentUserId}
+                userRole="admin" /* Using admin to allow all approval features in this phase */
+                onDraftApproved={(content) => {
+                    setNewItem(content);
+                }}
+            />
+
             {/* Send Later Modal Simulation */}
             {showSendLaterModal && (
                 <div style={{ position: "absolute", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
@@ -1222,6 +1136,17 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         </div>
                     </div>
                 </div>
+            {/* ── Merge Modal ─────────────────────────────────────── */}
+            {showMergeModal && (
+                <MergeModal
+                    primaryConversation={conversation}
+                    companyId={conversation.companyId || ''}
+                    onClose={() => setShowMergeModal(false)}
+                    onSuccess={() => {
+                        setShowMergeModal(false);
+                        window.location.href = '/dashboard/inbox';
+                    }}
+                />
             )}
         </div>
     );
