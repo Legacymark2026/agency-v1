@@ -36,9 +36,9 @@ export function PlanSelector({
     try {
       const result = await createCheckoutSession(planId, isYearly)
 
-      if (result?.url) {
-        window.location.href = result.url
-      } else if (result?.error) {
+      if (result?.success && result.data) {
+        window.location.href = result.data.url
+      } else if (result && !result.success && result.error) {
         console.error('Error:', result.error)
       }
     } catch (error) {

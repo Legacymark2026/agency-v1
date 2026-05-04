@@ -79,7 +79,7 @@ export function PlanCard({
           <Button
             onClick={() => onSelect(plan.id)}
             disabled={isLoading}
-            variant={plan.highlighted ? 'default' : 'outline'}
+            variant={plan.highlighted ? 'primary' : 'outline'}
             className="w-full"
           >
             {isLoading

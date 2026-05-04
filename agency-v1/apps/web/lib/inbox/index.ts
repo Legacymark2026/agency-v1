@@ -23,4 +23,4 @@ export * from "./webhooks";
 export * from "./merge";
 
 // Server Actions
-export * from "../actions/inbox-advanced";
+export * from "@/actions/inbox-advanced";

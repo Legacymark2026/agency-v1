@@ -315,7 +315,8 @@ export async function createMessageDraft_Advanced(
 
 export async function approveDraft_Advanced(
   draftId: string,
-  companyId: string
+  currentUserId: string,
+  status: string = "APPROVED"
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -335,7 +336,7 @@ export async function approveDraft_Advanced(
     if (!hasAccess) throw new Error("Access denied");
 
     // Verificar permisos de approval
-    const userRole = await getUserRole(session.user.id, companyId);
+    const userRole = await getUserRole(session.user.id, draft.conversation.companyId);
     if (!["admin", "super_admin", "content_manager"].includes(userRole)) {
       throw new Error("User cannot approve drafts");
     }
@@ -343,7 +344,7 @@ export async function approveDraft_Advanced(
     const approval = await prisma.messageDraft.update({
       where: { id: draftId },
       data: {
-        status: "APPROVED",
+        status: status,
         approvedBy: session.user.id,
         approvedAt: new Date(),
       },
@@ -351,13 +352,13 @@ export async function approveDraft_Advanced(
 
     await logAuditEvent("draft_approved", {
       conversationId: draft.conversationId,
-      companyId,
+      companyId: draft.conversation.companyId,
       userId: session.user.id,
       resourceType: "draft",
       resourceId: draftId,
     });
 
-    return approval;
+    return { success: true, ...approval };
   } catch (error) {
     logger.error("[Inbox Advanced] Error approving draft", {
       draftId,

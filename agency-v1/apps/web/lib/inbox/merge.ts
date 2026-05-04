@@ -64,8 +64,8 @@ export async function mergeConversations(
 
     // Merge metadata
     const mergedMetadata = {
-      ...primary.metadata,
-      ...secondary.metadata,
+      ...((primary.metadata as any) || {}),
+      ...((secondary.metadata as any) || {}),
       merged_from: secondaryId,
       merged_at: new Date().toISOString(),
     };
