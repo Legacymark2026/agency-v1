@@ -16,6 +16,24 @@ import { getPSEBankList, PSEBank } from "@/lib/pse";
 
 export type { PaymentGateway, BillingCycle };
 
+export async function createCheckoutSession(
+  planId: string,
+  isYearly: boolean
+): Promise<ActionResult<{ url: string }>> {
+  const cycle = isYearly ? 'yearly' : 'monthly';
+  
+  const priceId = getPriceIdForTier(planId, cycle);
+  
+  if (!priceId) {
+    if (planId === 'free') {
+      return ok({ url: '/dashboard/settings/billing' });
+    }
+    return fail('Plan no válido o price ID no configurado.', 400);
+  }
+
+  return createStripeCheckoutSession(priceId, planId);
+}
+
 export async function getAvailableGateways(): Promise<string[]> {
   const gateways: string[] = ["stripe"];
   
@@ -102,8 +120,8 @@ export async function createStripeCheckoutSession(
         companyId: company.id,
         tierName: tierName
       },
-      success_url: `${baseDomain}/dashboard/admin/settings?billing_success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseDomain}/dashboard/admin/settings?billing_canceled=true`,
+      success_url: `${baseDomain}/suscripcion/exito?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseDomain}/suscripcion/cancelado`,
     });
 
     if (!checkoutSession.url) {
@@ -180,8 +198,8 @@ export async function createPaymentSessionWithGateway(
         description: `LegacyMark ${tierName} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
         tierName,
         billingCycle,
-        successUrl: `${baseDomain}/dashboard/admin/settings?billing_success=true`,
-        cancelUrl: `${baseDomain}/dashboard/admin/settings?billing_canceled=true`,
+        successUrl: `${baseDomain}/suscripcion/exito`,
+        cancelUrl: `${baseDomain}/suscripcion/cancelado`,
       });
 
       if (!result.success || !result.url) {
@@ -208,8 +226,8 @@ export async function createPaymentSessionWithGateway(
         description: `LegacyMark ${tierName}`,
         tierName,
         bankCode,
-        successUrl: `${baseDomain}/dashboard/admin/settings?billing_success=true`,
-        cancelUrl: `${baseDomain}/dashboard/admin/settings?billing_canceled=true`,
+        successUrl: `${baseDomain}/suscripcion/exito`,
+        cancelUrl: `${baseDomain}/suscripcion/cancelado`,
       });
 
       if (!result.success || !result.url) {

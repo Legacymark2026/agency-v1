@@ -14,7 +14,7 @@ import { UserRole } from "@/types/auth";
 import { usePathname } from "next/navigation";
 import { GlobalSearch } from "@/components/search/global-search";
 
-const DARK_BG_PAGES = ["/", "/flyering", "/contacto", "/blog", "/nosotros", "/metodologia", "/portfolio", "/vip", "/tarifario"];
+const DARK_BG_PAGES = ["/", "/flyering", "/contacto", "/blog", "/nosotros", "/metodologia", "/portfolio", "/vip", "/tarifario", "/suscripcion"];
 
 interface NavLink {
     name: string;
@@ -64,6 +64,7 @@ export function Header() {
             submenu: [
                 { name: t("methodology"), href: "/metodologia" },
                 { name: "Tarifario", href: "/tarifario" },
+                { name: "Planes", href: "/suscripcion" },
                 { name: t("blog"), href: "/blog" },
             ]
         },
