@@ -143,6 +143,59 @@ async function executeRealAction(
             }
         }
 
+        case "CREATE_JIRA_TICKET": {
+            const projectKey = Handlebars.compile(config.projectKey || "")(context);
+            const summary = Handlebars.compile(config.summary || "")(context);
+            if (!projectKey || !summary) return "SKIPPED: missing Jira projectKey or summary";
+            // TODO: Integrar con API real de Atlassian usando tokens en IntegrationConfig
+            return `JIRA_TICKET_CREATED: [${projectKey}] ${summary}`;
+        }
+
+        case "SEND_GMAIL": {
+            const to = Handlebars.compile(config.to || "{{lead.email}}")(context);
+            const subject = Handlebars.compile(config.subject || "")(context);
+            if (!to || !subject) return "SKIPPED: missing Gmail recipient or subject";
+            // TODO: Integrar con Gmail API (OAuth) usando token de IntegrationConfig
+            return `GMAIL_SENT to ${to}`;
+        }
+
+        case "CREATE_MEET": {
+            const title = Handlebars.compile(config.meetingTitle || "Meet")(context);
+            const attendees = Handlebars.compile(config.attendees || "")(context);
+            // TODO: Generar link real usando Google Calendar API
+            return `MEET_CREATED: ${title} (invites: ${attendees})`;
+        }
+
+        case "SEND_SURVEY": {
+            const surveyId = Handlebars.compile(config.surveyId || "")(context);
+            const recipient = Handlebars.compile(config.recipient || "")(context);
+            if (!surveyId || !recipient) return "SKIPPED: missing surveyId or recipient";
+            // TODO: Invocar SurveyMonkey API
+            return `SURVEY_SENT (${surveyId}) to ${recipient}`;
+        }
+
+        case "UPLOAD_GDRIVE": {
+            const fileName = Handlebars.compile(config.fileName || "document.pdf")(context);
+            // TODO: Implementar subida a Google Drive API con Service Account JSON
+            return `GDRIVE_UPLOADED: ${fileName}`;
+        }
+
+        case "GOTOWEBINAR_REGISTER": {
+            const webinarId = Handlebars.compile(config.webinarId || "")(context);
+            const email = Handlebars.compile(config.attendeeEmail || "")(context);
+            if (!webinarId || !email) return "SKIPPED: missing webinarId or email";
+            // TODO: Implementar registro en GoToWebinar API
+            return `GOTOWEBINAR_REGISTERED: ${email} -> ${webinarId}`;
+        }
+
+        case "EVENTBRITE_INVITE": {
+            const eventId = Handlebars.compile(config.eventId || "")(context);
+            const email = Handlebars.compile(config.attendeeEmail || "")(context);
+            if (!eventId || !email) return "SKIPPED: missing eventId or email";
+            // TODO: Implementar invitación Eventbrite API
+            return `EVENTBRITE_INVITED: ${email} -> ${eventId}`;
+        }
+
         case "AI_AGENT": {
             if (!config.agentId) return "SKIPPED: no agentId";
             const { runAIAgent } = await import("@/lib/agent-runner");

@@ -129,24 +129,92 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
             </>);
         }
 
-        // EMAIL
+        // ACTION NODES (Email, Gmail, Meet, Survey, Drive, Jira, Webinar, Eventbrite)
         if (type === 'actionNode') {
-            return (<>
-                <Section title="Básico" icon={<Zap size={12}/>} color="blue">
-                    <Field label="Asunto"><Input value={data.subject||''} onChange={e=>h('subject',e.target.value)} placeholder="Hola {{lead.name}}!"/></Field>
-                    <Field label="Template"><Select value={data.templateId||'blank'} onValueChange={v=>h('templateId',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="blank">HTML Libre</SelectItem><SelectItem value="welcome">Bienvenida</SelectItem><SelectItem value="followup">Seguimiento</SelectItem><SelectItem value="newsletter">Newsletter</SelectItem></SelectContent></Select></Field>
-                    <Field label="Cuerpo del Email"><Textarea value={data.body||''} onChange={e=>h('body',e.target.value)} placeholder="Hola {{lead.name}}, ..." className="h-28 font-mono text-xs"/></Field>
-                    <Field label="📎 Adjuntar Archivo (PDF URL)" hint="Pega el enlace directo a tu PDF o súbelo al gestor primero"><Input type="url" value={data.pdfAttachmentUrl||''} onChange={e=>h('pdfAttachmentUrl',e.target.value)} placeholder="https://legacymark.com/files/catalogo.pdf" className="text-teal-900 bg-teal-50/50 border-teal-200"/></Field>
-                </Section>
-                <Section title="Avanzado" icon={<Settings2 size={12}/>} color="gray" defaultOpen={false}>
-                    <Field label="De (From Name)"><Input value={data.fromName||''} onChange={e=>h('fromName',e.target.value)} placeholder="Equipo LegacyMark"/></Field>
-                    <Field label="De (From Email)"><Input value={data.fromEmail||''} onChange={e=>h('fromEmail',e.target.value)} placeholder="noreply@legacymark.com"/></Field>
-                    <Field label="CC"><Input value={data.cc||''} onChange={e=>h('cc',e.target.value)} placeholder="manager@empresa.com"/></Field>
-                    <Field label="Reply-To"><Input value={data.replyTo||''} onChange={e=>h('replyTo',e.target.value)} placeholder="{{lead.email}}"/></Field>
-                    <div className="flex items-center gap-2"><Switch checked={!!data.trackOpen} onCheckedChange={v=>h('trackOpen',v)} id="sw-track"/><Label htmlFor="sw-track" className="text-xs">Rastrear aperturas</Label></div>
-                    <Field label="Reintentos si falla"><Input type="number" value={data.retries||3} onChange={e=>h('retries',e.target.value)}/></Field>
-                </Section>
-            </>);
+            const a = data.actionType || 'SEND_EMAIL';
+            
+            if (a === 'SEND_EMAIL') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Asunto"><Input value={data.subject||''} onChange={e=>h('subject',e.target.value)} placeholder="Hola {{lead.name}}!"/></Field>
+                        <Field label="Template"><Select value={data.templateId||'blank'} onValueChange={v=>h('templateId',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="blank">HTML Libre</SelectItem><SelectItem value="welcome">Bienvenida</SelectItem><SelectItem value="followup">Seguimiento</SelectItem><SelectItem value="newsletter">Newsletter</SelectItem></SelectContent></Select></Field>
+                        <Field label="Cuerpo del Email"><Textarea value={data.body||''} onChange={e=>h('body',e.target.value)} placeholder="Hola {{lead.name}}, ..." className="h-28 font-mono text-xs"/></Field>
+                        <Field label="📎 Adjuntar Archivo (PDF URL)" hint="Pega el enlace directo a tu PDF o súbelo al gestor primero"><Input type="url" value={data.pdfAttachmentUrl||''} onChange={e=>h('pdfAttachmentUrl',e.target.value)} placeholder="https://legacymark.com/files/catalogo.pdf" className="text-teal-900 bg-teal-50/50 border-teal-200"/></Field>
+                    </Section>
+                    <Section title="Avanzado" icon={<Settings2 size={12}/>} color="gray" defaultOpen={false}>
+                        <Field label="De (From Name)"><Input value={data.fromName||''} onChange={e=>h('fromName',e.target.value)} placeholder="Equipo LegacyMark"/></Field>
+                        <Field label="De (From Email)"><Input value={data.fromEmail||''} onChange={e=>h('fromEmail',e.target.value)} placeholder="noreply@legacymark.com"/></Field>
+                        <Field label="CC"><Input value={data.cc||''} onChange={e=>h('cc',e.target.value)} placeholder="manager@empresa.com"/></Field>
+                        <Field label="Reply-To"><Input value={data.replyTo||''} onChange={e=>h('replyTo',e.target.value)} placeholder="{{lead.email}}"/></Field>
+                        <div className="flex items-center gap-2"><Switch checked={!!data.trackOpen} onCheckedChange={v=>h('trackOpen',v)} id="sw-track"/><Label htmlFor="sw-track" className="text-xs">Rastrear aperturas</Label></div>
+                        <Field label="Reintentos si falla"><Input type="number" value={data.retries||3} onChange={e=>h('retries',e.target.value)}/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'CREATE_JIRA_TICKET') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Project Key"><Input value={data.projectKey||''} onChange={e=>h('projectKey',e.target.value)} placeholder="PROJ"/></Field>
+                        <Field label="Issue Type"><Select value={data.issueType||'Task'} onValueChange={v=>h('issueType',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Task">Task</SelectItem><SelectItem value="Bug">Bug</SelectItem><SelectItem value="Story">Story</SelectItem></SelectContent></Select></Field>
+                        <Field label="Resumen (Summary)"><Input value={data.summary||''} onChange={e=>h('summary',e.target.value)} placeholder="Nuevo lead: {{lead.name}}"/></Field>
+                    </Section>
+                    <Section title="Avanzado" icon={<Settings2 size={12}/>} color="gray" defaultOpen={false}>
+                        <Field label="Descripción"><Textarea value={data.description||''} onChange={e=>h('description',e.target.value)} className="h-20" placeholder="Detalles del ticket..."/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'SEND_GMAIL') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Para (To)"><Input value={data.to||'{{lead.email}}'} onChange={e=>h('to',e.target.value)} placeholder="ejemplo@correo.com o {{lead.email}}"/></Field>
+                        <Field label="Asunto"><Input value={data.subject||''} onChange={e=>h('subject',e.target.value)} placeholder="Asunto del correo"/></Field>
+                        <Field label="Cuerpo del correo"><Textarea value={data.body||''} onChange={e=>h('body',e.target.value)} className="h-28" placeholder="Escribe el mensaje..."/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'CREATE_MEET') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Título de Reunión"><Input value={data.meetingTitle||''} onChange={e=>h('meetingTitle',e.target.value)} placeholder="Reunión con {{lead.name}}"/></Field>
+                        <Field label="Fecha y Hora (ISO)"><Input value={data.startTime||''} onChange={e=>h('startTime',e.target.value)} placeholder="{{trigger.date}} o 2025-10-10T10:00:00Z"/></Field>
+                        <Field label="Participantes (Emails)"><Input value={data.attendees||'{{lead.email}}'} onChange={e=>h('attendees',e.target.value)} placeholder="email1, email2..."/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'SEND_SURVEY') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Survey ID (SurveyMonkey)"><Input value={data.surveyId||''} onChange={e=>h('surveyId',e.target.value)} placeholder="123456789"/></Field>
+                        <Field label="Email Destino"><Input value={data.recipient||'{{lead.email}}'} onChange={e=>h('recipient',e.target.value)} placeholder="{{lead.email}}"/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'UPLOAD_GDRIVE') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Folder ID (Opcional)"><Input value={data.folderId||''} onChange={e=>h('folderId',e.target.value)} placeholder="Dejar vacío para raíz"/></Field>
+                        <Field label="Nombre del Archivo"><Input value={data.fileName||''} onChange={e=>h('fileName',e.target.value)} placeholder="Reporte_{{lead.name}}.pdf"/></Field>
+                        <Field label="Contenido/URL"><Input value={data.fileContent||''} onChange={e=>h('fileContent',e.target.value)} placeholder="URL del documento o texto"/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'GOTOWEBINAR_REGISTER') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Webinar ID"><Input value={data.webinarId||''} onChange={e=>h('webinarId',e.target.value)} placeholder="ID del Webinar"/></Field>
+                        <Field label="Email del Asistente"><Input value={data.attendeeEmail||'{{lead.email}}'} onChange={e=>h('attendeeEmail',e.target.value)}/></Field>
+                        <Field label="Nombre del Asistente"><Input value={data.attendeeName||'{{lead.name}}'} onChange={e=>h('attendeeName',e.target.value)}/></Field>
+                    </Section>
+                </>);
+            }
+            if (a === 'EVENTBRITE_INVITE') {
+                return (<>
+                    <Section title="Básico" icon={<Zap size={12}/>} color="blue">
+                        <Field label="Event ID"><Input value={data.eventId||''} onChange={e=>h('eventId',e.target.value)} placeholder="ID del Evento"/></Field>
+                        <Field label="Email del Invitado"><Input value={data.attendeeEmail||'{{lead.email}}'} onChange={e=>h('attendeeEmail',e.target.value)}/></Field>
+                    </Section>
+                </>);
+            }
         }
 
         // WHATSAPP / SMS

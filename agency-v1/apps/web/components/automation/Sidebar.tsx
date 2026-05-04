@@ -134,6 +134,12 @@ export default function Sidebar() {
                         label="Añadir Etiqueta"
                         color="bg-emerald-950/40 border-emerald-700/80 text-emerald-50"
                     />
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Create Jira Ticket', { actionType: 'CREATE_JIRA_TICKET' })}
+                        icon={<Briefcase size={16} className="text-blue-400" />}
+                        label="Crear Ticket Jira"
+                        color="bg-blue-950/40 border-blue-700/80 text-blue-50"
+                    />
                 </Section>
 
                 {/* Communication Section */}
@@ -180,7 +186,24 @@ export default function Sidebar() {
                         label="Enviar SMS"
                         color="bg-sky-950/40 border-sky-700/80 text-sky-50"
                     />
-
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Send Gmail', { actionType: 'SEND_GMAIL' })}
+                        icon={<Mail size={16} className="text-red-400" />}
+                        label="Enviar Gmail"
+                        color="bg-red-950/40 border-red-700/80 text-red-50"
+                    />
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Create Meet', { actionType: 'CREATE_MEET' })}
+                        icon={<CalendarPlus size={16} className="text-green-400" />}
+                        label="Crear Google Meet"
+                        color="bg-green-950/40 border-green-700/80 text-green-50"
+                    />
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Send Survey', { actionType: 'SEND_SURVEY' })}
+                        icon={<FileText size={16} className="text-emerald-400" />}
+                        label="Enviar Encuesta"
+                        color="bg-emerald-950/40 border-emerald-700/80 text-emerald-50"
+                    />
                 </Section>
 
                 {/* Logic Section */}
@@ -233,6 +256,12 @@ export default function Sidebar() {
                         label="Enriquecer Lead Data"
                         color="bg-emerald-950/40 border-emerald-700/80 text-emerald-50"
                     />
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Upload to Drive', { actionType: 'UPLOAD_GDRIVE' })}
+                        icon={<Database size={16} className="text-blue-400" />}
+                        label="Subir a Google Drive"
+                        color="bg-blue-950/40 border-blue-700/80 text-blue-50"
+                    />
                 </Section>
 
                 {/* Advanced AI & Code Section */}
@@ -272,6 +301,22 @@ export default function Sidebar() {
                         icon={<CalendarPlus size={16} className="text-rose-400" />}
                         label="Agendar Cita"
                         color="bg-rose-950/40 border-rose-700/80 text-rose-50"
+                    />
+                </Section>
+
+                {/* Events Section */}
+                <Section title="Eventos y Webinars" description="Gestión de asistentes">
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Register GoToWebinar', { actionType: 'GOTOWEBINAR_REGISTER' })}
+                        icon={<Users size={16} className="text-indigo-400" />}
+                        label="Registrar GoToWebinar"
+                        color="bg-indigo-950/40 border-indigo-700/80 text-indigo-50"
+                    />
+                    <DraggableItem
+                        onDragStart={(e) => onDragStart(e, 'actionNode', 'Invite Eventbrite', { actionType: 'EVENTBRITE_INVITE' })}
+                        icon={<CheckCircle size={16} className="text-orange-400" />}
+                        label="Invitar Eventbrite"
+                        color="bg-orange-950/40 border-orange-700/80 text-orange-50"
                     />
                 </Section>
             </div>
