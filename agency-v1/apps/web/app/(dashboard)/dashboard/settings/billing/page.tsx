@@ -35,10 +35,7 @@ export default function BillingPage() {
     async function handleUpgrade() {
         setLoadingCheckout(true);
         try {
-            // Usa la variable de entorno del Price ID real (mensual por defecto)
-            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_MONTHLY
-                || "price_not_configured";
-            const res = await createCheckoutSession(priceId, "pro");
+            const res = await createCheckoutSession("pro", false);
             if (res.success) {
                 window.location.href = (res.data as { url: string }).url;
             } else {
