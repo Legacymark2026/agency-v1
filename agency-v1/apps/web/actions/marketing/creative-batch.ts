@@ -54,12 +54,12 @@ export async function generateBatchVariations(params: {
  */
 export async function generateCreativeBrief(description: string, platforms: string[]) {
     const { generateText } = await import("ai");
-    const { google } = await import("@ai-sdk/google");
+    const { geminiFlashModel } = await import("@/lib/ai-provider");
 
     const platformList = platforms.join(", ");
 
     const { text } = await generateText({
-        model: google("gemini-2.0-flash") as any,
+        model: geminiFlashModel as any,
         prompt: `You are a senior creative director at a performance marketing agency.
 
 A client says: "${description}"

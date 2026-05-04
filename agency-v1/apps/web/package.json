@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^1.0.0",
+    "@ai-sdk/google-vertex": "^4.0.119",
     "@ai-sdk/openai": "^1.0.0",
     "@auth/prisma-adapter": "^2.11.1",
     "@dnd-kit/core": "^6.3.1",
