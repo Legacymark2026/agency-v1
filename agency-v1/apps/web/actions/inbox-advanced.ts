@@ -1,3 +1,4 @@
+"use server";
 /**
  * actions/inbox-advanced.ts
  * ─────────────────────────────────────────────────────────────────────────────
@@ -16,7 +17,6 @@
  * - Tag History (P1 #10)
  */
 
-"use server";
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -55,7 +55,6 @@ import { emitSocketEvent } from "@/lib/inbox/socket";
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function getConversationThreads_Advanced(conversationId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -82,7 +81,6 @@ export async function getConversationThreads_Advanced(conversationId: string) {
   }
 }
 
-"use server";
 export async function getMessageThread_Advanced(messageId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -113,7 +111,6 @@ export async function getMessageThread_Advanced(messageId: string) {
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function initializeSLA_Advanced(
   conversationId: string,
   companyId: string
@@ -143,7 +140,6 @@ export async function initializeSLA_Advanced(
   }
 }
 
-"use server";
 export async function getSLAStatus_Advanced(conversationId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -173,7 +169,6 @@ export async function getSLAStatus_Advanced(conversationId: string) {
   }
 }
 
-"use server";
 export async function getBreachedSLAs_Advanced(companyId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -199,7 +194,6 @@ export async function getBreachedSLAs_Advanced(companyId: string) {
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function getAuditTrail_Advanced(
   conversationId: string,
   limit: number = 100
@@ -231,7 +225,6 @@ export async function getAuditTrail_Advanced(
   }
 }
 
-"use server";
 export async function generateAuditReport_Advanced(
   companyId: string,
   startDate: Date,
@@ -267,7 +260,6 @@ export async function generateAuditReport_Advanced(
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function createMessageDraft_Advanced(
   conversationId: string,
   content: string,
@@ -320,7 +312,6 @@ export async function createMessageDraft_Advanced(
   }
 }
 
-"use server";
 export async function approveDraft_Advanced(
   draftId: string,
   companyId: string
@@ -375,7 +366,6 @@ export async function approveDraft_Advanced(
   }
 }
 
-"use server";
 export async function getDraftHistory_Advanced(conversationId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -417,7 +407,6 @@ export async function getDraftHistory_Advanced(conversationId: string) {
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function renderMacroTemplate_Advanced(
   conversationId: string,
   template: string,
@@ -476,7 +465,6 @@ export async function renderMacroTemplate_Advanced(
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function mergeConversations_Advanced(
   primaryId: string,
   secondaryId: string,
@@ -513,7 +501,6 @@ export async function mergeConversations_Advanced(
   }
 }
 
-"use server";
 export async function findDuplicateConversations_Advanced(
   leadId: string,
   channel: string,
@@ -598,7 +585,6 @@ async function auditEventHelper(
   });
 }
 
-"use server";
 export async function sendMessage_Advanced(
   conversationId: string,
   content: string | null,
@@ -703,7 +689,6 @@ export async function sendMessage_Advanced(
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function addTagToConversation_Advanced(
   conversationId: string,
   tagName: string
@@ -761,7 +746,6 @@ export async function addTagToConversation_Advanced(
   }
 }
 
-"use server";
 export async function removeTagFromConversation_Advanced(
   conversationId: string,
   tagName: string
@@ -812,7 +796,6 @@ export async function removeTagFromConversation_Advanced(
   }
 }
 
-"use server";
 export async function getTagHistory_Advanced(conversationId: string) {
   const session = await auth();
   if (!session?.user?.id) return [];
@@ -844,7 +827,6 @@ export async function getTagHistory_Advanced(conversationId: string) {
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-"use server";
 export async function approveOrRejectDraft_Advanced(
   draftId: string,
   approverId: string,
@@ -897,5 +879,6 @@ export async function approveOrRejectDraft_Advanced(
     return { success: false, error: error instanceof Error ? error.message : "Failed" };
   }
 }
+
 
 

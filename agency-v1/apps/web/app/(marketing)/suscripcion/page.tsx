@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import { siteConfig } from '@/lib/site-config'
 import { PlanSelector } from '@/components/subscription/plan-selector'
-import { getCurrentUser } from '@/actions/auth'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -27,8 +28,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SubscriptionPage() {
-  const user = await getCurrentUser()
-  const currentPlanId = user?.company?.subscriptionTier || 'free'
+  const session = await auth()
+  let currentPlanId = 'free'
+
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { companies: { include: { company: true } } },
+    })
+
+    if (user?.companies?.[0]?.company?.subscriptionTier) {
+      currentPlanId = user.companies[0].company.subscriptionTier
+    }
+  }
 
   return (
     <main className="relative bg-slate-950 text-white min-h-screen">

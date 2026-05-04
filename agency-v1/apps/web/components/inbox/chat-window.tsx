@@ -1136,6 +1136,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         </div>
                     </div>
                 </div>
+            )}
             {/* ── Merge Modal ─────────────────────────────────────── */}
             {showMergeModal && (
                 <MergeModal

@@ -30,7 +30,7 @@ const isDev = process.env.NODE_ENV === "development";
 const SERVICE = "legacymark-web";
 
 // Configurar Winston
-const logger = winston.createLogger({
+const winstonLogger = winston.createLogger({
   level: isDev ? "debug" : "info",
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -48,33 +48,12 @@ const logger = winston.createLogger({
   ],
 });
 
-// Niveles que siempre se emiten (incluso en producción)
-const ALWAYS_LOG: LogLevel[] = ["warn", "error", "fatal"];
-
-// ── Núcleo de logging ──────────────────────────────────────────────────────────
-
 function emit(level: LogLevel, message: string, context?: LogContext): void {
-  logger.log(level, message, context);
-}
+  // Siempre loguear a winston
+  winstonLogger.log(level === "fatal" ? "error" : level, message, context);
 
-// ── API pública ───────────────────────────────────────────────────────────────
-
-export { logger };
-  if (!ALWAYS_LOG.includes(level)) return;
-
-  const entry = {
-    level,
-    message,
-    service: SERVICE,
-    environment: process.env.NODE_ENV,
-    timestamp: new Date().toISOString(),
-    ...context,
-  };
-
+  // Si es un nivel de error, también mandar a Sentry
   if (level === "error" || level === "fatal") {
-    console.error(JSON.stringify(entry));
-
-    // Reportar a Sentry de forma lazy para no romper si no está configurado
     void (async () => {
       try {
         const Sentry = await import("@sentry/nextjs");
@@ -88,33 +67,14 @@ export { logger };
         // Sentry no disponible — ignorar silenciosamente
       }
     })();
-  } else {
-    console.warn(JSON.stringify(entry));
   }
 }
 
-// ── API Pública ────────────────────────────────────────────────────────────────
-
 export const logger = {
-  /** Solo visible en development. Usar para debugging durante dev. */
   debug: (message: string, context?: LogContext) => emit("debug", message, context),
-
-  /** Información general del sistema. Solo visible en development. */
   info: (message: string, context?: LogContext) => emit("info", message, context),
-
-  /** Advertencias no fatales. Visible en todos los entornos. */
   warn: (message: string, context?: LogContext) => emit("warn", message, context),
-
-  /** Error recuperable. Reportado a Sentry en producción. */
   error: (message: string, context?: LogContext) => emit("error", message, context),
-
-  /** Error no recuperable. Reportado a Sentry como fatal. */
   fatal: (message: string, context?: LogContext) => emit("fatal", message, context),
-
-  /**
-   * Helper para auth — compatible con el patrón existente de [AUTH] prefix.
-   * @deprecated Usar logger.debug("[AUTH] mensaje") directamente.
-   */
-  auth: (message: string, context?: LogContext) =>
-    emit("debug", `[AUTH] ${message}`, context),
+  auth: (message: string, context?: LogContext) => emit("debug", `[AUTH] ${message}`, context),
 } as const;
