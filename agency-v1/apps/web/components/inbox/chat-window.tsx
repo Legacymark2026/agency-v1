@@ -23,6 +23,7 @@ import { QuickReplies } from './quick-replies';
 import { useInboxShortcuts } from '@/hooks/use-inbox-shortcuts';
 import { Mic, CheckCircle2, Maximize2, Minimize2, MonitorUp, UserPlus, MicOff, VideoOff, Play, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThreadView } from './thread-view';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { MergeModal } from './merge-modal';
