@@ -6,7 +6,7 @@ import { google } from "@ai-sdk/google";
 export async function generateSocialCopy(prompt: string) {
     try {
         const { text } = await generateText({
-            model: google("gemini-1.5-pro"),
+            model: google("gemini-1.5-pro") as any,
             system: `You are an expert social media manager. The user will provide a topic or base prompt. Your task is to generate three distinct versions of the copy tailored for Facebook, LinkedIn, and TikTok. 
             
 Requirements:
