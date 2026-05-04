@@ -26,7 +26,8 @@ export type InboxAuditAction =
   | "thread_merged"
   | "sla_breached"
   | "draft_created"
-  | "draft_approved";
+  | "draft_approved"
+  | "draft_rejected";
 
 /**
  * Registra un evento de auditoría

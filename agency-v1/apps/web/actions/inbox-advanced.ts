@@ -19,7 +19,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import {
   initializeSLA,
@@ -149,15 +149,14 @@ export async function getSLAStatus_Advanced(conversationId: string) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   try {
-    const sla = await prisma.conversationSLA.findUnique({
-      where: { conversationId },
-    });
+    const conversation = await prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!conversation) return null;
 
+    const sla = await prisma.conversationSLA.findUnique({ where: { conversationId } });
     if (!sla) return null;
 
     const hasAccess = await checkConversationAccess(
-      (await prisma.conversation.findUnique({ where: { id: conversationId } }))
-        ?.companyId,
+      conversation.companyId,
       session.user.id
     );
     if (!hasAccess) throw new Error("Access denied");
@@ -572,7 +571,7 @@ async function getUserRole(userId: string, companyId: string): Promise<string> {
     where: { userId, companyId },
   });
 
-  return membership?.role || "member";
+  return membership?.roleName || "member";
 }
 
 async function auditEventHelper(
@@ -637,7 +636,7 @@ export async function sendMessage_Advanced(
         messageId: message.id,
         fileName: a.fileName,
         mediaUrl: a.mediaUrl,
-        mediaType: a.mediaType || null,
+        mediaType: a.mediaType || "image/jpeg",
         fileSize: a.fileSize || 0,
       }));
 
@@ -741,7 +740,6 @@ export async function addTagToConversation_Advanced(
           conversationId,
           tagName,
           assignedBy: session.user.id,
-          companyId: conversation.companyId,
         },
       }),
     ]);
@@ -847,7 +845,7 @@ export async function getTagHistory_Advanced(conversationId: string) {
  */
 
 "use server";
-export async function approveDraft_Advanced(
+export async function approveOrRejectDraft_Advanced(
   draftId: string,
   approverId: string,
   decision: "APPROVED" | "REJECTED"
@@ -900,68 +898,4 @@ export async function approveDraft_Advanced(
   }
 }
 
-/**
- * ═══════════════════════════════════════════════════════════════════════════
- * CONVERSATION MERGE — UI-callable wrappers
- * ═══════════════════════════════════════════════════════════════════════════
- */
 
-"use server";
-export async function findDuplicateConversations_Advanced(
-  excludeId: string,
-  channel: string,
-  companyId: string
-) {
-  const session = await auth();
-  if (!session?.user?.id) return [];
-
-  try {
-    const hasAccess = await checkCompanyAccess(companyId, session.user.id);
-    if (!hasAccess) return [];
-
-    // Find the excludeId's lead to search for duplicates under the same lead
-    const conv = await prisma.conversation.findUnique({
-      where: { id: excludeId },
-      select: { leadId: true },
-    });
-
-    if (!conv?.leadId) return [];
-
-    const dupes = await findDuplicateConversations(conv.leadId, channel, companyId);
-    // Exclude the primary conversation itself
-    return dupes.filter((d: any) => d.id !== excludeId);
-  } catch (error) {
-    logger.error("[Inbox Advanced] Error finding duplicates", { excludeId, error });
-    return [];
-  }
-}
-
-"use server";
-export async function mergeConversations_Advanced(
-  primaryId: string,
-  secondaryId: string,
-  companyId: string
-) {
-  const session = await auth();
-  if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-
-  try {
-    const hasAccess = await checkCompanyAccess(companyId, session.user.id);
-    if (!hasAccess) return { success: false, error: "Access denied" };
-
-    await mergeConversations(primaryId, secondaryId, companyId, session.user.id);
-    return { success: true };
-  } catch (error) {
-    logger.error("[Inbox Advanced] Error merging conversations", { primaryId, secondaryId, error });
-    return { success: false, error: error instanceof Error ? error.message : "Failed to merge" };
-  }
-}
-
-// ── Helper: getUserRole (if not already defined elsewhere in this file) ────
-async function getUserRole(userId: string, companyId: string): Promise<string> {
-  const cu = await prisma.companyUser.findFirst({
-    where: { userId, companyId },
-    select: { role: true },
-  });
-  return (cu as any)?.role ?? "agent";
-}
