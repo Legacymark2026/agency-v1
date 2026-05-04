@@ -9,6 +9,7 @@ import { GlobalTimer } from "@/components/operations/global-timer";
 import { SidebarController } from "@/components/dashboard/sidebar-controller";
 import { isStandardRole, canAccessRoute, PERMISSION_ROUTE_MAP } from "@/lib/rbac";
 import { canCustomRoleAccess } from "@/lib/role-config";
+import { OnboardingWizard } from "@/components/onboarding/wizard";
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export default async function DashboardLayout({
         }),
         prisma.companyUser.findFirst({
             where: { userId: session.user.id },
-            select: { permissions: true, companyId: true, company: { select: { defaultCompanySettings: true } } },
+            select: { permissions: true, companyId: true, company: { select: { defaultCompanySettings: true, onboardingCompleted: true } } },
         }),
     ]);
 
@@ -53,12 +54,19 @@ export default async function DashboardLayout({
     let customRoleName: string | undefined;
     let roleAllowedRoutes: string[] = [];
 
+    let showOnboarding = false;
+
     if (companyUser) {
         userPermissions = (companyUser.permissions as string[]) ?? [];
         const settings = (companyUser.company?.defaultCompanySettings as any) || {};
         const customRoles = settings.customRoles || [];
         const matched = customRoles.find((r: any) => r.id === role);
         if (matched) customRoleName = matched.name;
+        
+        // Determinar si debemos mostrar el wizard
+        if (companyUser.company && companyUser.company.onboardingCompleted === false) {
+            showOnboarding = true;
+        }
     }
 
     if (!isStandardRole(role)) {
@@ -164,6 +172,9 @@ export default async function DashboardLayout({
 
                 {/* Global Operations Timer */}
                 <GlobalTimer />
+
+                {/* Onboarding Fricción Cero */}
+                <OnboardingWizard initialShow={showOnboarding} />
             </div>
         </SidebarController>
     );

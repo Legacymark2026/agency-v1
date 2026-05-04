@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createLead } from "@/modules/leads/actions/leads";
 import { analyzeIncomingMessage } from "@/lib/services/ai-inbox";
 import { triggerWorkflow } from "@/actions/automation";
+import { rateLimit } from "@/lib/rate-limit";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // P1-B: In-Memory Company Resolution Cache
@@ -25,7 +26,26 @@ async function resolveCompanyId(recipientId: string | undefined, channel: string
             return cached.companyId;
         }
 
-        // Cache miss — query DB
+        // Check WhatsAppIntegration if channel is WHATSAPP
+        if (channel === 'WHATSAPP') {
+            const waIntegration = await prisma.whatsAppIntegration.findFirst({
+                where: { 
+                    OR: [
+                        { phoneNumberId: String(recipientId) },
+                        { phoneNumber: String(recipientId) }
+                    ],
+                    status: 'active'
+                },
+                select: { companyId: true }
+            });
+
+            if (waIntegration) {
+                companyCache.set(cacheKey, { companyId: waIntegration.companyId, expiresAt: Date.now() + CACHE_TTL_MS });
+                return waIntegration.companyId;
+            }
+        }
+
+        // Cache miss — query DB (IntegrationConfig fallback)
         const integrations = await prisma.integrationConfig.findMany({
             where: { provider: channel, isEnabled: true },
             select: { companyId: true, config: true },
@@ -106,7 +126,18 @@ async function handlePost(
     }
 
     try {
-        // 0. Verify Signature (Security)
+        // 0. Global IP Rate Limiting (Anti-Spam Volumétrico)
+        // Límite generoso: 500 requests por minuto por IP
+        const ip = req.headers.get("x-forwarded-for") || "unknown";
+        if (ip !== "unknown") {
+            const isGlobalAllowed = await rateLimit(`global_webhook:${ip}`, 500, 60_000);
+            if (!isGlobalAllowed) {
+                console.error(`[AntiSpam] Global IP limit exceeded for IP: ${ip}`);
+                return new NextResponse("Too Many Requests", { status: 429 });
+            }
+        }
+
+        // 1. Verify Signature (Security)
         const isVerified = await channelProvider.verifySignature(req);
         if (!isVerified) {
             console.error(`[Webhook:${channel}] Invalid Signature`);
@@ -120,8 +151,19 @@ async function handlePost(
             return NextResponse.json({ message: "Ignored event" });
         }
 
-        // 2. Resolve Company (Multi-Tenant Support) — P1-B cached
+        // 3. Resolve Company (Multi-Tenant Support) — P1-B cached
         const recipientId = inboundMessage.metadata?.recipientId || inboundMessage.metadata?.phoneNumberId || inboundMessage.metadata?.pageId as string | undefined;
+        
+        // 4. Recipient Rate Limiting (Anti-Spam Dirigido)
+        // Protege la cuota del cliente si alguien bombardea su número. 100 requests por minuto.
+        if (recipientId) {
+            const isRecipientAllowed = await rateLimit(`webhook_recipient:${channel}:${recipientId}`, 100, 60_000);
+            if (!isRecipientAllowed) {
+                console.error(`[AntiSpam] Recipient limit exceeded for ${channel}:${recipientId}`);
+                return new NextResponse("Too Many Requests", { status: 429 });
+            }
+        }
+
         const companyId = await resolveCompanyId(recipientId as string | undefined, channel);
 
 

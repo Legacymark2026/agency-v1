@@ -396,7 +396,7 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
                 const step = stepsData[i];
                 const logEntry = { stepIndex: i, type: step.type, timestamp: new Date(), status: 'PENDING', details: '' };
                 try {
-                    const details = await executeRealAction(step.type, step.config || step, triggerData, workflow.companyId);
+                    const details = await executeRealAction(step.type, step.config || step, triggerData, workflow.companyId || "");
                     logEntry.status = 'SUCCESS';
                     logEntry.details = details;
                 } catch (err: any) {
@@ -443,7 +443,7 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
                     // ── actionNode + crmActionNode ─────────────────────────────
                     else if (node.type === 'actionNode' || node.type === 'crmActionNode') {
                         const actionType = node.data?.actionType || node.data?.type || 'SEND_EMAIL';
-                        logEntry.details = await executeRealAction(actionType, node.data || {}, context, workflow.companyId);
+                        logEntry.details = await executeRealAction(actionType, node.data || {}, context, workflow.companyId || "");
                     }
                     // ── conditionNode ──────────────────────────────────────────
                     else if (node.type === 'conditionNode') {
@@ -621,7 +621,7 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
         // ── AUTO-ALERT: Notificar admins sobre fallo ─────────────────────────
         try {
             const wf = await prisma.workflow.findUnique({ where: { id: workflowId }, select: { name: true, companyId: true } });
-            if (wf) {
+            if (wf && wf.companyId) {
                 const admins = await prisma.companyUser.findMany({
                     where: { 
                         companyId: wf.companyId, 
@@ -633,7 +633,7 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
                     await prisma.notification.createMany({
                         data: admins.map(a => ({
                             userId: a.userId,
-                            companyId: wf.companyId,
+                            companyId: wf.companyId!,
                             title: `⚠️ Workflow Fallido: ${wf.name}`,
                             message: `Error: ${error.message?.substring(0, 200)}. Revisa Automatización → Ejecuciones.`,
                             type: "WORKFLOW",

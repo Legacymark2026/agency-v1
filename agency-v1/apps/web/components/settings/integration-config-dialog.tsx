@@ -32,6 +32,7 @@ import {
     Bot
 } from "lucide-react";
 import { getIntegrationConfig, updateIntegrationConfig, IntegrationConfigData } from "@/actions/integration-config";
+import { connectWhatsApp } from "@/actions/integrations";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -169,7 +170,18 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                 throw new Error("No hay datos para guardar");
             }
             
-            await updateIntegrationConfig(provider as any, cleanData as any);
+            if (provider === 'whatsapp') {
+                const res = await connectWhatsApp({
+                    wabaId: cleanData.wabaId || '',
+                    phoneNumberId: cleanData.phoneNumberId || '',
+                    phoneNumber: cleanData.phoneNumber || '',
+                    accessToken: cleanData.accessToken || ''
+                });
+                if (!res.success) throw new Error(res.error || "Error al conectar WhatsApp");
+            } else {
+                await updateIntegrationConfig(provider as any, cleanData as any);
+            }
+            
             setSuccess(true);
             toast.success(`${title} configuration saved successfully`);
             
@@ -771,6 +783,36 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     onChange={e => handleChange('phoneNumberId', e.target.value)}
                                                     className={cn("pl-9 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white focus:bg-white", brandRing)}
                                                     placeholder="e.g., 1083921..."
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="wabaId" className="text-xs font-semibold text-gray-700">
+                                                WhatsApp Business Account (WABA) ID
+                                            </Label>
+                                            <div className="relative">
+                                                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    id="wabaId"
+                                                    value={formData.wabaId || ''}
+                                                    onChange={e => handleChange('wabaId', e.target.value)}
+                                                    className={cn("pl-9 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white focus:bg-white", brandRing)}
+                                                    placeholder="e.g., 1083921..."
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="phoneNumber" className="text-xs font-semibold text-gray-700">
+                                                Phone Number (Display)
+                                            </Label>
+                                            <div className="relative">
+                                                <Smartphone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    id="phoneNumber"
+                                                    value={formData.phoneNumber || ''}
+                                                    onChange={e => handleChange('phoneNumber', e.target.value)}
+                                                    className={cn("pl-9 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white focus:bg-white", brandRing)}
+                                                    placeholder="+1234567890"
                                                 />
                                             </div>
                                         </div>

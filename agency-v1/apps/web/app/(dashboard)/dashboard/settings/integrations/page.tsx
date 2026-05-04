@@ -9,6 +9,7 @@ import { IntegrationsToastHandler } from "@/components/settings/integrations-toa
 import { IntegrationsHealthSummary } from "@/components/settings/integrations-health-summary";
 import { NewIntegrationCard } from "@/components/settings/new-integration-card";
 import { AudienceSyncButton } from "@/components/settings/audience-sync-button";
+import { EmailDomainCard } from "@/components/settings/email-domain-card";
 import { Suspense } from "react";
 
 const NEW_INTEGRATIONS = {
@@ -112,6 +113,7 @@ export default function IntegrationsPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <EmailDomainCard />
                         {NEW_INTEGRATIONS.communication.map(integration => (
                             <NewIntegrationCard key={integration.key} integration={integration} />
                         ))}

@@ -72,7 +72,8 @@ const hasRedis = !!(
 export async function enforceQuota(
   companyId: string,
   feature: keyof QuotaLimits,
-  tier: string = "free"
+  tier: string = "free",
+  subscriptionStatus?: string
 ): Promise<{ allowed: boolean; limit: number; remaining?: number }> {
   const limits = TIER_LIMITS[tier] || TIER_LIMITS["free"];
   const maxLimit = limits[feature];
@@ -80,6 +81,26 @@ export async function enforceQuota(
   // ── BYPASS: Agencia dueña del sistema → acceso ilimitado ──────────────────
   if (process.env.MASTER_TENANT_ID && companyId === process.env.MASTER_TENANT_ID) {
     return { allowed: true, limit: 999999, remaining: 999999 };
+  }
+
+  // Verificar status de suscripción (Soft-block)
+  let status = subscriptionStatus;
+  if (!status) {
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: { subscriptionStatus: true }
+      });
+      status = company?.subscriptionStatus || "active";
+    } catch {
+      status = "active";
+    }
+  }
+
+  if (status === "past_due" || status === "canceled") {
+    logger.warn(`[Quota] Company ${companyId} status is ${status}. Denying access to ${feature}`);
+    return { allowed: false, limit: maxLimit, remaining: 0 };
   }
 
   if (!hasRedis) {

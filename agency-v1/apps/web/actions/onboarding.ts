@@ -97,3 +97,66 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     return fail("No se pudo aprovisionar la agencia. Contacta a soporte.", 500);
   }
 }
+
+import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+
+export async function checkOnboardingStatus() {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, onboardingCompleted: true }; // Si no hay company, se asume completado para no bloquear
+
+    try {
+        const company = await prisma.company.findUnique({
+            where: { id: session.user.companyId },
+            select: { onboardingCompleted: true }
+        });
+
+        return { success: true, onboardingCompleted: company?.onboardingCompleted ?? true };
+    } catch (e) {
+        return { success: false, onboardingCompleted: true };
+    }
+}
+
+export async function completeOnboardingAndCloneTemplates() {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+    
+    const companyId = session.user.companyId;
+
+    try {
+        const templates = await prisma.workflow.findMany({
+            where: { isTemplate: true, companyId: null }
+        });
+
+        for (const template of templates) {
+            const existing = await prisma.workflow.findFirst({
+                where: { companyId, name: template.name }
+            });
+
+            if (!existing) {
+                await prisma.workflow.create({
+                    data: {
+                        name: template.name,
+                        description: template.description,
+                        triggerType: template.triggerType,
+                        triggerConfig: template.triggerConfig ?? {},
+                        steps: template.steps ?? [],
+                        isActive: false, 
+                        companyId: companyId
+                    }
+                });
+            }
+        }
+
+        await prisma.company.update({
+            where: { id: companyId },
+            data: { onboardingCompleted: true }
+        });
+
+        revalidatePath('/', 'layout');
+        return { success: true };
+    } catch (e: any) {
+        console.error("Error in completeOnboarding:", e);
+        return { success: false, error: e.message };
+    }
+}

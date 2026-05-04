@@ -96,7 +96,7 @@ export async function runWorkflow(
     const context: ExecutionContext = {
         workflowId,
         executionId: execution.id,
-        companyId: workflow.companyId,
+        companyId: workflow.companyId || "",
         triggerData,
         variables: { ...triggerData },
         stepHistory: [],

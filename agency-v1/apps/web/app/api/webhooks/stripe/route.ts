@@ -205,6 +205,26 @@ export async function POST(req: Request) {
         break;
       }
 
+      // ── Generación de factura → inyectar uso (Metered Billing) ─────────────
+      case "invoice.created": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = (invoice as any).subscription;
+        if (subId && invoice.status === "draft") {
+          const company = await prisma.company.findFirst({
+            where: { stripeSubscriptionId: subId as string },
+            select: { id: true }
+          });
+          
+          if (company) {
+            // Reportar uso acumulado a Stripe ANTES de que se cobre la factura
+            const { reportUsageToStripe } = await import("@/lib/billing/usage");
+            await reportUsageToStripe(company.id);
+            logger.info(`[Billing] 📊 Usage reported for invoice ${invoice.id}`);
+          }
+        }
+        break;
+      }
+
       // ── Renovación automática pagada → reactivar ──────────────────────────
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;

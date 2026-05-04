@@ -36,7 +36,7 @@ export async function GET(
 
         // Verify company access
         const cu = await prisma.companyUser.findFirst({
-            where: { userId: session.user.id, companyId: execution.workflow.companyId },
+            where: { userId: session.user.id, companyId: execution.workflow.companyId || "" },
         });
         if (!cu) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -85,7 +85,7 @@ export async function DELETE(
 
         // Verify company access
         const cu = await prisma.companyUser.findFirst({
-            where: { userId: session.user.id, companyId: execution.workflow.companyId },
+            where: { userId: session.user.id, companyId: execution.workflow.companyId || "" },
         });
         if (!cu) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });

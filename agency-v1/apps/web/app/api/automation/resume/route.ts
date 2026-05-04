@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         // y lo reusa en vez de crear uno nuevo (FIX #1 en automation.ts)
         executeWorkflow(execution.workflowId, {}, fromNodeId).catch(async (err) => {
             console.error(`[QStash Resume] Execution ${executionId} failed on resume:`, err);
-            await notifyAdminsOnFailure(execution.workflow.companyId, execution.workflow.name, err.message);
+            await notifyAdminsOnFailure(execution.workflow.companyId!, execution.workflow.name, err.message);
         });
 
         return NextResponse.json({ success: true, message: `Execution ${executionId} resumed.` });

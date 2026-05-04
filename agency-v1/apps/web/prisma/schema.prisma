@@ -242,6 +242,7 @@ model Company {
   website                 String?
   subscriptionTier        String                    @default("free") @map("subscription_tier")
   subscriptionStatus      String                    @default("active") @map("subscription_status")
+  onboardingCompleted     Boolean                   @default(false) @map("onboarding_completed")
   createdAt               DateTime                  @default(now()) @map("created_at")
   defaultCompanySettings  Json?                     @map("default_settings")
   passwordPolicy          Json?                     @map("password_policy")
@@ -249,6 +250,8 @@ model Company {
   stripeSubscriptionId    String?                   @map("stripe_subscription_id")
   whiteLabeling           Json?                     @map("white_labeling")
   customObjectDefinitions CustomObjectDefinition[]
+  whatsappIntegrations    WhatsAppIntegration[]
+  emailDomainVerifications EmailDomainVerification[]
   abTests                 ABTest[]
   adSpends                AdSpend[]
   agentConfig             AgentConfig?
@@ -657,11 +660,13 @@ model Workflow {
   triggerConfig Json                @map("trigger_config")
   steps         Json
   versions      Json?               @default("[]")
-  companyId     String              @map("company_id")
+  isTemplate    Boolean             @default(false) @map("is_template")
+  category      String?             @map("category")
+  companyId     String?             @map("company_id")
   createdAt     DateTime            @default(now()) @map("created_at")
   updatedAt     DateTime            @updatedAt @map("updated_at")
   executions    WorkflowExecution[]
-  company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company       Company?            @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("workflows")
@@ -2642,14 +2647,16 @@ model NotificationPreference {
 }
 
 model UsageLog {
-  id         String   @id @default(uuid())
-  companyId  String   @map("company_id")
-  metric     String
-  value      Float
-  recordedAt DateTime @default(now()) @map("recorded_at")
-  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  companyId      String   @map("company_id")
+  metric         String   // "AI_MESSAGE", "WHATSAPP_MSG", etc.
+  value          Float
+  stripeReported Boolean  @default(false) @map("stripe_reported")
+  recordedAt     DateTime @default(now()) @map("recorded_at")
+  
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@index([companyId, metric])
+  @@index([companyId, metric, stripeReported])
   @@index([companyId, recordedAt])
   @@map("usage_logs")
 }
@@ -2775,4 +2782,40 @@ model SocialProfile {
 
   @@unique([platform])
   @@map("social_profiles")
+}
+
+model WhatsAppIntegration {
+  id              String   @id @default(uuid())
+  companyId       String   @map("company_id")
+  wabaId          String   @map("waba_id")
+  phoneNumberId   String   @map("phone_number_id")
+  phoneNumber     String   @map("phone_number")
+  accessToken     String   @map("access_token")
+  status          String   @default("pending") // pending, active, disconnected
+  webhookVerified Boolean  @default(false) @map("webhook_verified")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([phoneNumberId])
+  @@unique([phoneNumber])
+  @@index([companyId])
+  @@map("whatsapp_integrations")
+}
+
+model EmailDomainVerification {
+  id              String   @id @default(uuid())
+  companyId       String   @map("company_id")
+  domain          String
+  status          String   @default("pending") // pending, verified, failed
+  dnsRecords      Json?    @map("dns_records") // To store TXT/DKIM records needed
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([domain])
+  @@index([companyId])
+  @@map("email_domain_verifications")
 }

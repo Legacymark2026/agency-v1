@@ -115,3 +115,73 @@ export async function saveIntegration(provider: string, config: any) {
     revalidatePath('/dashboard/settings/integrations');
     return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WhatsApp & Email Domains Actions (Fase 2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function connectWhatsApp(data: { wabaId: string; phoneNumberId: string; phoneNumber: string; accessToken: string }) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+
+    try {
+        await prisma.whatsAppIntegration.upsert({
+            where: { phoneNumberId: data.phoneNumberId },
+            update: {
+                companyId: session.user.companyId,
+                wabaId: data.wabaId,
+                phoneNumber: data.phoneNumber,
+                accessToken: data.accessToken,
+                status: 'active'
+            },
+            create: {
+                companyId: session.user.companyId,
+                wabaId: data.wabaId,
+                phoneNumberId: data.phoneNumberId,
+                phoneNumber: data.phoneNumber,
+                accessToken: data.accessToken,
+                status: 'active'
+            }
+        });
+
+        revalidatePath('/dashboard/settings/integrations');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function createEmailDomainVerification(domain: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const existing = await prisma.emailDomainVerification.findUnique({ where: { domain } });
+        if (existing && existing.companyId !== session.user.companyId) {
+            return { success: false, error: "Este dominio ya está en uso por otra empresa." };
+        }
+
+        // Mocking DNS records that the user should add. 
+        // In a real scenario, this would call Resend/AWS SES API.
+        const mockDnsRecords = [
+            { type: 'TXT', host: `_resend.${domain}`, value: 'resend-k123abc' },
+            { type: 'TXT', host: domain, value: 'v=spf1 include:resend.com ~all' }
+        ];
+
+        await prisma.emailDomainVerification.upsert({
+            where: { domain },
+            update: { dnsRecords: mockDnsRecords, status: 'pending' },
+            create: {
+                companyId: session.user.companyId,
+                domain,
+                dnsRecords: mockDnsRecords,
+                status: 'pending'
+            }
+        });
+
+        revalidatePath('/dashboard/settings/integrations');
+        return { success: true, records: mockDnsRecords };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
