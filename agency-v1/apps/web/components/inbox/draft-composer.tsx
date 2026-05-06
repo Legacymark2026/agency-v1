@@ -39,7 +39,7 @@ export function DraftComposer({ conversationId, currentUserId, userRole = 'agent
     if (!content.trim()) return;
     setIsSaving(true);
     try {
-      const res = await createMessageDraft_Advanced(conversationId, content, currentUserId) as any;
+      const res = await createMessageDraft_Advanced(conversationId, content) as any;
       if (res?.success && res?.data) {
         const newDraft: Draft = { id: res.data.id, content: res.data.content, status: res.data.status, version: res.data.version, createdAt: res.data.createdAt };
         setDrafts(prev => [newDraft, ...prev]);
@@ -55,7 +55,7 @@ export function DraftComposer({ conversationId, currentUserId, userRole = 'agent
     if (!content.trim()) { toast.error('Write something first'); return; }
     setIsSubmitting(true);
     try {
-      const res = await createMessageDraft_Advanced(conversationId, content, currentUserId, 'PENDING_APPROVAL') as any;
+      const res = await createMessageDraft_Advanced(conversationId, content, 'PENDING_APPROVAL') as any;
       if (res?.success && res?.data) {
         const newDraft: Draft = { id: res.data.id, content: res.data.content, status: 'PENDING_APPROVAL', version: res.data.version, createdAt: res.data.createdAt };
         setDrafts(prev => [newDraft, ...prev]);
@@ -71,7 +71,7 @@ export function DraftComposer({ conversationId, currentUserId, userRole = 'agent
   const handleApprove = async (draft: Draft) => {
     setApprovingId(draft.id);
     try {
-      const res = await approveDraft_Advanced(draft.id, currentUserId, 'APPROVED') as any;
+      const res = await approveDraft_Advanced(draft.id, 'APPROVED') as any;
       if (res?.success) {
         setDrafts(prev => prev.map(d => d.id === draft.id ? { ...d, status: 'APPROVED' } : d));
         toast.success('Draft approved');
@@ -85,7 +85,7 @@ export function DraftComposer({ conversationId, currentUserId, userRole = 'agent
   const handleReject = async (draft: Draft) => {
     setApprovingId(draft.id);
     try {
-      const res = await approveDraft_Advanced(draft.id, currentUserId, 'REJECTED') as any;
+      const res = await approveDraft_Advanced(draft.id, 'REJECTED') as any;
       if (res?.success) {
         setDrafts(prev => prev.filter(d => d.id !== draft.id));
         toast.info('Draft rejected');

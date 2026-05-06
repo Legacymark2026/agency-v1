@@ -9,7 +9,7 @@ import { ChannelIcon } from './channel-icon';
 
 const D = { bg: 'rgba(8,12,20,0.98)', card: 'rgba(15,23,42,0.8)', border: 'rgba(30,41,59,0.8)', textPrimary: '#cbd5e1', textMuted: '#475569', textDim: '#334155', teal: '#2dd4bf', tealBg: 'rgba(13,148,136,0.12)', tealBorder: 'rgba(13,148,136,0.3)', mono: 'monospace' };
 
-interface Conversation { id: string; channel: string; status: string; lastMessageAt: Date | string; lastMessagePreview?: string | null; lead?: { name?: string | null } | null; }
+interface Conversation { id: string; channel: string; status: string; lastMessageAt: Date | string; lastMessagePreview?: string | null; lead?: { id: string; name?: string | null } | null; }
 
 interface MergeModalProps {
   primaryConversation: Conversation;
