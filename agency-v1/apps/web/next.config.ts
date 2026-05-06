@@ -6,7 +6,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://static.hotjar.com https://script.hotjar.com https://analytics.tiktok.com https://analytics.ahrefs.com https://vercel.live;
+    script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://static.hotjar.com https://script.hotjar.com https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://vercel.live;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
     img-src 'self' blob: data: https: http: https://vercel.live;
     font-src 'self' data: https://fonts.gstatic.com;
@@ -15,7 +15,7 @@ const cspHeader = `
     form-action 'self' https://*.stripe.com https://*.facebook.com https://*.hubspot.com;
     frame-ancestors 'self' https://app.powerbi.com;
     upgrade-insecure-requests;
-    connect-src 'self' wss://legacymarksas.com wss://www.legacymarksas.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://graph.facebook.com https://*.upstash.io https://res.cloudinary.com https://sentry.io https://*.sentry.io https://o4504.ingest.sentry.io https://analytics.tiktok.com https://analytics.ahrefs.com https://*.tiktokw.us https://vercel.live https://api.linkedin.com;
+    connect-src 'self' wss://legacymarksas.com wss://www.legacymarksas.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://graph.facebook.com https://*.upstash.io https://res.cloudinary.com https://sentry.io https://*.sentry.io https://o4504.ingest.sentry.io https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://*.tiktokw.us https://vercel.live https://api.linkedin.com;
     frame-src 'self' https://www.youtube.com https://player.vimeo.com https://vercel.live;
 `.replace(/\n/g, '');
 

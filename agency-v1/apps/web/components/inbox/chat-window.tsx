@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
     Send, Paperclip, Smile, Image as ImageIcon,
     Phone, Video, MoreHorizontal, Check, CheckCheck,
-    Reply, Forward, Trash2, Copy, Clock, Sparkles, Download, Timer, Volume2, X, GitMerge, MessageSquareMore
+    Reply, Forward, Trash2, Copy, Clock, Sparkles, Download, Timer, Volume2, X, GitMerge, MessageSquareMore, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -137,6 +137,8 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     const [isRecording, setIsRecording] = useState(false); // Visual state for Voice Note
     const [isTyping, setIsTyping] = useState(false); // Simulated typing state
     const [isPrivateNote, setIsPrivateNote] = useState(false); // Internal Private Notes Toggle
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showSearch, setShowSearch] = useState(false);
     const isAdmin = userRole === 'admin' || userRole === 'super_admin';
     const [showMergeModal, setShowMergeModal] = useState(false);
 
@@ -602,6 +604,14 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
 
                     <div style={{ width: "1px", height: "20px", background: "rgba(30,41,59,0.8)", margin: "0 4px" }} />
 
+                    <button 
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: "8px", color: showSearch ? "#2dd4bf" : "#334155", display: "flex", transition: "all 0.2s" }} 
+                        onClick={() => { setShowSearch(!showSearch); if(!showSearch) setSearchQuery(''); }}
+                    >
+                        <Search size={17} />
+                    </button>
+                    <div style={{ width: "1px", height: "20px", background: "rgba(30,41,59,0.8)", margin: "0 4px" }} />
+
                     <button style={{ background: "none", border: "none", cursor: "pointer", padding: "6px", borderRadius: "8px", color: "#334155", display: "flex" }} onClick={() => setActiveCall('audio')}>
                         <Phone size={17} />
                     </button>
@@ -649,6 +659,43 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     </DropdownMenu>
                 </div>
             </div>
+
+            {/* Search Bar - Expandable */}
+            <AnimatePresence>
+                {showSearch && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800/80 px-5 py-2 overflow-hidden z-10"
+                    >
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                            <input
+                                autoFocus
+                                placeholder="Buscar en la conversación..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg py-1.5 pl-9 pr-8 text-xs text-slate-200 outline-none focus:ring-1 ring-teal-500/30 transition-all"
+                            />
+                            {searchQuery && (
+                                <button 
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+                        {searchQuery && (
+                            <div className="mt-1.5 px-1 text-[10px] text-slate-500 font-mono flex justify-between items-center uppercase tracking-tighter">
+                                <span>Filtrando: "{searchQuery}"</span>
+                                <span className="text-teal-500/70 font-bold">{messages.filter((m: any) => m.content?.toLowerCase().includes(searchQuery.toLowerCase())).length} Resultados</span>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Floating Background Notification Bubble */}
             <AnimatePresence>
@@ -903,7 +950,10 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
                 </div>
 
-                <ThreadView messages={messages} currentUserId={currentUserId} />
+                <ThreadView 
+                    messages={messages.filter((m: any) => !searchQuery || m.content?.toLowerCase().includes(searchQuery.toLowerCase()))} 
+                    currentUserId={currentUserId} 
+                />
                 <div style={{ height: "60px" }} />
                 <div ref={scrollRef} />
             </div>

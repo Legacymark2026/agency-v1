@@ -69,6 +69,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
 
     // ── Analítica ─────────────────────────────────────────
     "/dashboard/analytics": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/admin/ai-insights": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN],
 
     // ── Contenido / Blog ──────────────────────────────────
     "/dashboard/posts": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_USER],
@@ -261,8 +262,8 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "projects.create", routes: ["/dashboard/projects"] },
     { perm: "projects.manage", routes: ["/dashboard/projects"] },
     // Analítica
-    { perm: "analytics.view", routes: ["/dashboard/analytics"] },
-    { perm: "analytics.reports", routes: ["/dashboard/analytics"] },
+    { perm: "analytics.view", routes: ["/dashboard/analytics", "/dashboard/admin/ai-insights"] },
+    { perm: "analytics.reports", routes: ["/dashboard/analytics", "/dashboard/admin/ai-insights"] },
     { perm: "analytics.export", routes: ["/dashboard/analytics"] },
     // Assets
     { perm: "assets.upload", routes: ["/dashboard/posts"] },

@@ -1,9 +1,8 @@
 'use client'; 
 
-
 import { useState } from 'react';
 import {
-    Zap, User
+    Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +34,6 @@ export function SimulationPanel({ companyId = "default-company-id" }: { companyI
     const handleSimulate = async () => {
         setLoading(true);
         try {
-
             const result = await simulateIncomingMessage({
                 channel,
                 senderName,
@@ -98,80 +96,44 @@ export function SimulationPanel({ companyId = "default-company-id" }: { companyI
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Sender Name</label>
-                            <div className="relative">
-                                <User className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                                <Input
-                                    value={senderName}
-                                    onChange={(e) => setSenderName(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Handle / ID</label>
-                            <Input
-                                value={senderHandle}
-                                onChange={(e) => setSenderHandle(e.target.value)}
-                                placeholder="+1234567890 or @username"
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Sender Name</label>
+                        <Input 
+                            value={senderName} 
+                            onChange={(e) => setSenderName(e.target.value)}
+                            placeholder="Jane Doe"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Sender Handle (Phone/Email/Username)</label>
+                        <Input 
+                            value={senderHandle} 
+                            onChange={(e) => setSenderHandle(e.target.value)}
+                            placeholder="+15550123456"
+                        />
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Message Content</label>
-                        <textarea
+                        <textarea 
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Type the message content here..."
                         />
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center w-full">
-                    <Button
-                        variant="ghost"
-                        size="sm"
+                <div className="flex justify-end gap-3 mt-4">
+                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button 
+                        onClick={handleSimulate} 
                         disabled={loading}
-                        onClick={async () => {
-                            setLoading(true);
-                            try {
-                                // Seed Instagram
-                                await simulateIncomingMessage({
-                                    channel: 'INSTAGRAM',
-                                    senderName: 'Sofia Trendy',
-                                    senderHandle: '@sofia_style',
-                                    content: 'Do you have this in blue? 👗',
-                                    companyId
-                                });
-                                // Seed Messenger
-                                await simulateIncomingMessage({
-                                    channel: 'MESSENGER',
-                                    senderName: 'Mark Zuckerberg',
-                                    senderHandle: 'mark.zuck',
-                                    content: 'Is this the real metaverse? 👋',
-                                    companyId
-                                });
-                                toast.success("Seeded sample chats!");
-                                setOpen(false);
-                            } catch (e) {
-                                toast.error("Failed to seed data");
-                            } finally {
-                                setLoading(false);
-                            }
-                        }}
-                        className="text-xs text-gray-400 hover:text-indigo-600"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
-                        + Seed Sample Data
+                        {loading ? "Simulating..." : "Send Test Message"}
                     </Button>
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSimulate} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                            {loading ? 'Simulating...' : 'Inject Message'}
-                        </Button>
-                    </div>
                 </div>
             </DialogContent>
         </Dialog>

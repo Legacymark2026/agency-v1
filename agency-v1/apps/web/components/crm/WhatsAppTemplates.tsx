@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { MessageSquare, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +37,9 @@ export function WhatsAppTemplatesModal({ open, onOpenChange, contactPhone, conta
                     <DialogTitle className="flex items-center gap-2 text-emerald-600 font-bold">
                         <MessageSquare className="w-5 h-5" /> Enviar WhatsApp
                     </DialogTitle>
+                    <DialogDescription className="text-slate-500 text-xs mt-1">
+                        Selecciona una plantilla predefinida para enviar a {contactName || 'tu contacto'}.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                     <p className="text-sm font-medium text-slate-700">Selecciona Plantilla</p>

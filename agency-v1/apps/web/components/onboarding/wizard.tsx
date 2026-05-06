@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, MessageSquare, Mail, Bot, ArrowRight, Zap } from "lucide-react";
 import { completeOnboardingAndCloneTemplates } from "@/actions/onboarding";
@@ -49,6 +49,15 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl [&>button]:hidden">
+                <div className="sr-only">
+                    <DialogHeader>
+                        <DialogTitle>Onboarding Wizard</DialogTitle>
+                        <DialogDescription>
+                            Guía de configuración inicial para activar canales de WhatsApp, Email y Agentes de IA.
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
+
                 <div className="absolute top-0 left-0 w-full h-1 bg-slate-900">
                     <div 
                         className="h-full bg-gradient-to-r from-teal-500 to-indigo-500 transition-all duration-500" 
