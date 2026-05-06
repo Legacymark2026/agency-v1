@@ -5,6 +5,7 @@ import { HotjarIntegrations } from "@/components/settings/hotjar-integrations";
 import { AhrefsIntegrations } from "@/components/settings/ahrefs-integrations";
 import { PayuIntegrations } from "@/components/settings/payu-integrations";
 import { AiModelsIntegrations } from "@/components/settings/ai-models-integrations";
+import { VideoAssetsIntegrations } from "@/components/settings/video-assets-integrations";
 import { IntegrationsToastHandler } from "@/components/settings/integrations-toast-handler";
 import { IntegrationsHealthSummary } from "@/components/settings/integrations-health-summary";
 import { NewIntegrationCard } from "@/components/settings/new-integration-card";
@@ -141,6 +142,7 @@ export default function IntegrationsPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Configured ones */}
                         <Suspense fallback={<div className="h-[400px] animate-pulse bg-slate-800/50 rounded-xl" />}><AiModelsIntegrations /></Suspense>
+                        <Suspense fallback={<div className="h-[400px] animate-pulse bg-slate-800/50 rounded-xl" />}><VideoAssetsIntegrations /></Suspense>
                     </div>
                     <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Available ones */}

@@ -3,7 +3,15 @@
  * Sistema de créditos por empresa
  */
 
-import { prisma } from '@/lib/prisma';
+import { getDatabase } from '../db-client';
+
+function getDb() {
+  const db = getDatabase();
+  if (!db) {
+    throw new Error('Database not initialized. Call initDatabase() from the main app first.');
+  }
+  return db;
+}
 
 export interface CreditInfo {
   companyId: string;
@@ -31,7 +39,8 @@ export class CreditManager {
    * Obtiene el balance de créditos de una empresa
    */
   static async getBalance(companyId: string): Promise<CreditInfo> {
-    const config = await prisma.integrationConfig.findUnique({
+    const db = getDb();
+    const config = await db.integrationConfig.findUnique({
       where: { companyId_provider: { companyId, provider: 'credits' } }
     });
 
@@ -74,8 +83,9 @@ export class CreditManager {
     }
 
     try {
+      const db = getDb();
       // Obtener config actual
-      const config = await prisma.integrationConfig.findUnique({
+      const config = await db.integrationConfig.findUnique({
         where: { companyId_provider: { companyId, provider: 'credits' } }
       });
 
@@ -83,7 +93,7 @@ export class CreditManager {
       const newUsed = currentUsed + amount;
 
       // Actualizar
-      await prisma.integrationConfig.upsert({
+      await db.integrationConfig.upsert({
         where: {
           companyId_provider: { companyId, provider: 'credits' }
         },
@@ -118,14 +128,15 @@ export class CreditManager {
     paymentId?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const config = await prisma.integrationConfig.findUnique({
+      const db = getDb();
+      const config = await db.integrationConfig.findUnique({
         where: { companyId_provider: { companyId, provider: 'credits' } }
       });
 
       const currentCredits = (config?.config as any)?.credits || 0;
       const newCredits = currentCredits + amount;
 
-      await prisma.integrationConfig.upsert({
+      await db.integrationConfig.upsert({
         where: {
           companyId_provider: { companyId, provider: 'credits' }
         },
