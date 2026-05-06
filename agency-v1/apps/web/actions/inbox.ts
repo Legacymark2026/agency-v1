@@ -190,10 +190,16 @@ export async function markConversationAsRead(conversationId: string) {
     }
 }
 
+export interface SendTemplate {
+    name: string;
+    language: string;
+    components?: any[];
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function sendMessage(conversationId: string, content: string, userId: string, attachments: any[] = []) {
+export async function sendMessage(conversationId: string, content: string, userId: string, attachments: any[] = [], template?: SendTemplate) {
     try {
-        if (!content && (!attachments || attachments.length === 0)) {
+        if (!content && (!attachments || attachments.length === 0) && !template) {
             return { success: false, error: "Message content or attachment required" };
         }
 
@@ -259,23 +265,43 @@ export async function sendMessage(conversationId: string, content: string, userI
                 return { success: false, error: "Falta configuración de la página o ID del destinatario en la metadata del Lead." };
             }
         } else if (conversation && conversation.channel === 'WHATSAPP') {
-            // P0-2: Check WhatsApp 24h Window Rule
-            const lastInboundMsg = await db.message.findFirst({
-                where: { conversationId, direction: 'INBOUND' },
-                orderBy: { createdAt: 'desc' }
-            });
-            
-            if (lastInboundMsg) {
-                const hoursSinceLastMessage = (Date.now() - lastInboundMsg.createdAt.getTime()) / (1000 * 60 * 60);
-                if (hoursSinceLastMessage >= 24) {
-                    await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
-                    return { success: false, error: "Regla de 24h de WhatsApp: Meta restringe el envío de mensajes estándar tras 24 horas. Debes usar una Plantilla pre-aprobada (Template)." };
+            // P0-2: Check WhatsApp 24h Window Rule — bypass if a template is provided.
+            // Templates are the only path Meta allows past the 24h window.
+            if (!template) {
+                const lastInboundMsg = await db.message.findFirst({
+                    where: { conversationId, direction: 'INBOUND' },
+                    orderBy: { createdAt: 'desc' }
+                });
+
+                if (lastInboundMsg) {
+                    const hoursSinceLastMessage = (Date.now() - lastInboundMsg.createdAt.getTime()) / (1000 * 60 * 60);
+                    if (hoursSinceLastMessage >= 24) {
+                        await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
+                        return {
+                            success: false,
+                            error: "Ventana de 24h de WhatsApp expirada. Para reanudar el contacto debes enviar una Plantilla pre-aprobada (HSM). Usa el selector de plantillas o pasa { template: { name, language, components } } a sendMessage.",
+                            requiresTemplate: true,
+                        };
+                    }
                 }
             }
 
             const { automationHub } = await import("@/lib/integrations/providers");
             const waProvider = automationHub.get('WHATSAPP');
             if (waProvider) {
+                if (template) {
+                    const tplResult = await waProvider.sendMessage({
+                        conversationId: conversation.platformId || conversation.lead?.phone || '',
+                        content: content || `[Template:${template.name}]`,
+                        template,
+                    });
+                    if (tplResult && tplResult.success === false) {
+                        await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
+                        return { success: false, error: "WhatsApp Template falló: " + (typeof tplResult.error === 'string' ? tplResult.error : JSON.stringify(tplResult.error)) };
+                    }
+                    revalidatePath(`/dashboard/inbox`);
+                    return { success: true, data: message };
+                }
                 const audioAttachment = attachments.find((a: any) => a.type === 'AUDIO');
                 let waResult;
                 if (audioAttachment) {
@@ -383,18 +409,29 @@ export async function updateLeadStatusFromInbox(conversationId: string, newStatu
 
 export async function createConversation(companyId: string, leadId: string, channel: string) {
     try {
-        // Check if exists
+        // Match any existing conversation in this (company, lead, channel) tuple,
+        // including ARCHIVED/CLOSED ones. Reopen rather than create a duplicate
+        // that would race against [platformId, channel] unique or the inbound
+        // webhook's upsert.
         const existing = await db.conversation.findFirst({
-            where: {
-                companyId,
-                leadId,
-                channel,
-                status: { not: 'ARCHIVED' }
-            }
+            where: { companyId, leadId, channel },
+            orderBy: { lastMessageAt: 'desc' },
         });
 
         if (existing) {
-            return { success: true, data: existing, isNew: false };
+            if (existing.status === 'OPEN') {
+                return { success: true, data: existing, isNew: false };
+            }
+            const reopened = await db.conversation.update({
+                where: { id: existing.id },
+                data: {
+                    status: 'OPEN',
+                    lastMessageAt: new Date(),
+                    lastMessagePreview: 'Conversation reopened',
+                },
+            });
+            revalidatePath(`/dashboard/inbox`);
+            return { success: true, data: reopened, isNew: false };
         }
 
         const conversation = await db.conversation.create({
