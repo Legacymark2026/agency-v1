@@ -16,21 +16,24 @@ export async function POST(req: NextRequest) {
         const conversation = await prisma.conversation.findUnique({
             where: { id: conversationId },
             include: {
-                lead: {
-                    include: {
-                        deal: {
-                            include: {
-                                proposals: { orderBy: { createdAt: 'desc' }, take: 1 }
-                            }
-                        }
-                    }
-                },
+                lead: true,
                 messages: {
                     orderBy: { createdAt: 'desc' },
-                    take: 10 // Last 10 messages for context
+                    take: 10,
                 }
-            } as any
-        }) as any;
+            }
+        });
+
+        // Fetch deal and proposal separately to avoid unsupported nested include depth
+        let deal: any = null;
+        let proposal: any = null;
+        if ((conversation?.lead as any)?.convertedToDealId) {
+            deal = await prisma.deal.findUnique({
+                where: { id: (conversation!.lead as any).convertedToDealId },
+                include: { proposals: { orderBy: { createdAt: 'desc' }, take: 1 } }
+            });
+            proposal = (deal as any)?.proposals?.[0] ?? null;
+        }
 
         if (!conversation) return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
 
@@ -48,9 +51,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Prepare Prompt
-        const lead = conversation.lead;
-        const deal = lead?.deal;
-        const proposal = deal?.proposals?.[0];
+        const lead = conversation?.lead;
         
         // Reverse messages to chronological order
         const chatHistory = conversation.messages.reverse().map((m: any) => 

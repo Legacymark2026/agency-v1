@@ -30,7 +30,7 @@ export function MergeModal({ primaryConversation, companyId, onClose, onSuccess 
       try {
         if (!primaryConversation.lead) { setIsLoading(false); return; }
         const result = await findDuplicateConversations_Advanced(
-          primaryConversation.id, primaryConversation.channel, companyId
+          primaryConversation.lead!.id, primaryConversation.channel, companyId
         );
         setDuplicates(Array.isArray(result) ? result as Conversation[] : []);
       } catch { /* silent */ } finally { setIsLoading(false); }

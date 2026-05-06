@@ -263,7 +263,6 @@ export async function generateAuditReport_Advanced(
 export async function createMessageDraft_Advanced(
   conversationId: string,
   content: string,
-  currentUserId: string,
   status: string = "DRAFT"
 ) {
   const session = await auth();
@@ -286,7 +285,7 @@ export async function createMessageDraft_Advanced(
     const draft = await prisma.messageDraft.create({
       data: {
         conversationId,
-        messageId: "", // Placeholder - se asigna cuando se envia
+        messageId: null, // Se asigna cuando el draft se convierte en mensaje enviado
         content,
         version: 1,
         status: status,
@@ -315,7 +314,6 @@ export async function createMessageDraft_Advanced(
 
 export async function approveDraft_Advanced(
   draftId: string,
-  currentUserId: string,
   status: string = "APPROVED"
 ) {
   const session = await auth();

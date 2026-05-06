@@ -220,7 +220,7 @@ export async function sendMessage(conversationId: string, content: string, userI
             include: { lead: true }
         });
 
-        if (conversation && (conversation.channel === 'FACEBOOK' || conversation.channel === 'MESSENGER' || conversation.channel === 'INSTAGRAM') && conversation.metadata) {
+        if (conversation && (conversation.channel === 'MESSENGER' || conversation.channel === 'INSTAGRAM') && conversation.metadata) {
 
             // Dynamic Import to avoid cycle
             const { MetaService } = await import("@/lib/services/meta-sync");
@@ -448,7 +448,7 @@ export async function logLeadContact(leadId: string, channel: string) {
 
         if (!conversation) {
             let platformId = undefined;
-            if (channel === 'WHATSAPP' || channel === 'PHONE' || channel === 'SMS') platformId = lead.phone;
+            if (channel === 'WHATSAPP' || channel === 'SMS') platformId = lead.phone;
             if (channel === 'EMAIL') platformId = lead.email;
 
             conversation = await db.conversation.create({

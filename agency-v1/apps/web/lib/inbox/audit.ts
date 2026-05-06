@@ -12,7 +12,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import type { User } from "@prisma/client";
 
 export type InboxAuditAction =
   | "message_sent"

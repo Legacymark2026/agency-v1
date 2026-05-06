@@ -10,6 +10,7 @@
  * - Timeout handling
  */
 
+import crypto from "crypto";
 import { logger } from "@/lib/logger";
 
 export interface WebhookPayload {
@@ -154,8 +155,6 @@ export async function sendWebhook(
 function generateSignature(payload: string): string {
   // En producción, usar secret de la company
   const secret = process.env.WEBHOOK_SECRET || "dev-secret";
-  const crypto = require("crypto");
-
   return crypto
     .createHmac("sha256", secret)
     .update(payload)
@@ -170,8 +169,6 @@ export function verifyWebhookSignature(
   signature: string,
   secret: string
 ): boolean {
-  const crypto = require("crypto");
-
   const expected = crypto
     .createHmac("sha256", secret)
     .update(payload)
@@ -188,15 +185,26 @@ export async function logWebhookDelivery(
   result: Awaited<ReturnType<typeof sendWebhook>>
 ) {
   try {
-    const { prisma } = await import("@/lib/prisma");
-
-    // Buscar webhook en ResourcePermission o crear collection específica
     logger.info("[Webhook] Delivery logged", {
       webhookId,
       success: result.success,
       statusCode: result.statusCode,
       attempts: result.attempts,
+      error: result.error,
     });
+
+    // TODO: Persistir en una tabla WebhookDeliveryLog cuando se cree el modelo Prisma.
+    // Ejemplo:
+    // await prisma.webhookDeliveryLog.create({
+    //   data: {
+    //     webhookId,
+    //     success: result.success,
+    //     statusCode: result.statusCode ?? null,
+    //     attempts: result.attempts,
+    //     error: result.error ?? null,
+    //     deliveredAt: new Date(),
+    //   },
+    // });
   } catch (error) {
     logger.error("[Webhook] Error logging delivery", {
       webhookId,

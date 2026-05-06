@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { sendMessage, getConversations, getMessages, updateConversationStatus, getLeadDetails } from '../actions/inbox';
+import { sendMessage, getConversations, getMessages, updateConversationStatus, getLeadDetails } from '../../actions/inbox';
 
 const prisma = new PrismaClient();
 
@@ -84,7 +84,7 @@ async function runTest() {
         data: {
             leadId: lead.id,
             companyId: lead.companyId,
-            channel: 'WEB_CHAT',
+            channel: 'EMAIL',
             status: 'OPEN',
             lastMessageAt: new Date(),
             unreadCount: 1,

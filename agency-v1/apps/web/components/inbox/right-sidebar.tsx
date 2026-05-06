@@ -52,6 +52,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
     const tempBg = leadScore > 70 ? 'rgba(248,113,113,0.12)' : leadScore > 40 ? 'rgba(251,191,36,0.12)' : 'rgba(96,165,250,0.12)';
 
     const [isConverted, setIsConverted] = useState(false);
+    const [convertedDealId, setConvertedDealId] = useState<string | null>(lead.convertedToDealId || null);
     const [linkCopied, setLinkCopied] = useState(false);
     const [noteDraft, setNoteDraft] = useState('');
     const [savedNotes, setSavedNotes] = useState<string[]>(lead.notes ? [lead.notes] : []);
@@ -133,8 +134,8 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                     <a href={`/dashboard/admin/crm/leads/${lead.id}`} target="_blank" style={{ textDecoration: "none", padding: "5px 12px", borderRadius: "99px", fontSize: "11px", fontWeight: 700, border: `1px solid ${D.tealBorder}`, background: D.tealBg, color: D.teal, cursor: "pointer", fontFamily: D.mono, display: "flex", alignItems: "center", gap: "5px" }}>
                         <User size={10} /> Profile
                     </a>
-                    {lead.convertedToDealId ? (
-                        <a href={`/dashboard/admin/crm/deals/${lead.convertedToDealId}`} target="_blank" style={{ textDecoration: "none", padding: "5px 12px", borderRadius: "99px", fontSize: "11px", fontWeight: 700, border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.1)", color: "#10b981", cursor: "pointer", fontFamily: D.mono, display: "flex", alignItems: "center", gap: "5px" }}>
+                    {convertedDealId ? (
+                        <a href={`/dashboard/admin/crm/deals/${convertedDealId}`} target="_blank" style={{ textDecoration: "none", padding: "5px 12px", borderRadius: "99px", fontSize: "11px", fontWeight: 700, border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.1)", color: "#10b981", cursor: "pointer", fontFamily: D.mono, display: "flex", alignItems: "center", gap: "5px" }}>
                             <CreditCard size={10} /> Deal
                         </a>
                     ) : (
@@ -174,8 +175,9 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-56 z-50">
-                            <DropdownMenuItem onClick={() => toast.success('Asignado a: Sarah Connor')}>Sarah Connor</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.success('Asignado a: John Doe')}>John Doe</DropdownMenuItem>
+                            <div className="px-2 py-1.5 text-xs text-slate-400 font-mono">
+                                La asignación de agentes requiere integración con el backend.
+                            </div>
                             <DropdownMenuItem className="text-red-600" onClick={() => toast.info('Desasignado')}><X size={12} /> Desasignar</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -321,7 +323,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                         <div style={{ background: "rgba(16,185,129,0.06)", padding: "10px", borderRadius: "10px", border: "1px solid rgba(16,185,129,0.2)" }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                                 <span style={{ fontSize: "11px", fontWeight: 600, color: "#10b981", fontFamily: D.mono }}>LTV</span>
-                                <span style={{ fontSize: "14px", fontWeight: 800, color: "#34d399", fontFamily: D.mono }}>${(lead.score * 12.5 || 0).toLocaleString()}</span>
+                                <span style={{ fontSize: "14px", fontWeight: 800, color: "#34d399", fontFamily: D.mono }}>{lead.totalPurchaseValue != null ? `$${Number(lead.totalPurchaseValue).toLocaleString()}` : 'N/A'}</span>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                 <span style={{ fontSize: "10px", color: "#10b981", fontFamily: D.mono }}>Total Orders</span>
@@ -603,7 +605,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                                 if (result.success) {
                                     toast.success('Deal Created in Pipeline!');
                                     setShowDealModal(false);
-                                    lead.convertedToDealId = result.data?.id; // optimistic
+                                    setConvertedDealId(result.data?.id ?? null);
                                 } else {
                                     toast.error(result.error || 'Failed to create Deal');
                                 }

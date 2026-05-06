@@ -22,5 +22,6 @@ export * from "./webhooks";
 // Conversation Merge
 export * from "./merge";
 
-// Server Actions
-export * from "@/actions/inbox-advanced";
+// NOTE: Server actions (inbox-advanced) are intentionally NOT re-exported here
+// to avoid circular dependencies (lib/inbox/* ← inbox-advanced ← lib/inbox/index).
+// Import directly from '@/actions/inbox-advanced' where needed.;

@@ -245,7 +245,17 @@ export async function getSLAWarning(
       where: { conversationId },
     });
 
-    if (!sla || sla.resolvedAt || sla.breachedAt) {
+    if (!sla) {
+      return null;
+    }
+
+    // Conversation resolved before breach → SLA was met
+    if (sla.resolvedAt && !sla.breachedAt) {
+      return { status: "OK", percentage: 100 };
+    }
+
+    // Explicitly breached
+    if (sla.breachedAt) {
       return { status: "BREACHED", percentage: 100 };
     }
 

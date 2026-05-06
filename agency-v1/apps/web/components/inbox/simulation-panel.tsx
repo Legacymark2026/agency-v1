@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -67,9 +67,9 @@ export function SimulationPanel({ companyId = "default-company-id" }: { companyI
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Channel Simulation (Dev Tools)</DialogTitle>
-                    <p className="text-sm text-gray-500">
+                    <DialogDescription className="text-sm text-gray-500">
                         Trigger a fake incoming message to test the Inbox data flow without external API keys.
-                    </p>
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">

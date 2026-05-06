@@ -63,42 +63,20 @@ export function InboxCommandMenu() {
                             No se encontraron resultados para "{searchQuery}"
                         </Command.Empty>
 
-                        <Command.Group heading="Chats Recientes" className="px-2 text-xs font-semibold text-slate-500 py-2">
-                            <Command.Item
-                                onSelect={() => navigateToConversation('1')}
-                                className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-slate-50 aria-selected:bg-blue-50 aria-selected:text-blue-700 transition-colors group"
-                            >
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center text-indigo-700 font-bold text-xs ring-1 ring-indigo-100">
-                                    MS
+                        {searchQuery.length === 0 && (
+                            <Command.Group heading="Chats Recientes" className="px-2 text-xs font-semibold text-slate-500 py-2">
+                                <div className="px-3 py-3 text-xs text-slate-400 text-center">
+                                    Escribe para buscar conversaciones...
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-900 group-aria-selected:text-blue-700">María Sánchez</p>
-                                    <p className="text-xs text-slate-500 truncate group-aria-selected:text-blue-500">¿Me puedes dar info sobre el plan Pro?</p>
-                                </div>
-                                <span className="text-xs text-slate-400">Hace 5m</span>
-                            </Command.Item>
-
-                            <Command.Item
-                                onSelect={() => navigateToConversation('2')}
-                                className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-slate-50 aria-selected:bg-blue-50 aria-selected:text-blue-700 transition-colors group"
-                            >
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-100 to-white flex items-center justify-center text-green-700 font-bold text-xs ring-1 ring-green-100">
-                                    CD
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-900 group-aria-selected:text-blue-700">Carlos Díaz</p>
-                                    <p className="text-xs text-slate-500 truncate group-aria-selected:text-blue-500">Ya les envié el pago.</p>
-                                </div>
-                                <span className="text-xs text-slate-400">Hace 1h</span>
-                            </Command.Item>
-                        </Command.Group>
+                            </Command.Group>
+                        )}
 
                         <Command.Group heading="Filtros y Vistas" className="px-2 text-xs font-semibold text-slate-500 py-2">
-                            <Command.Item onSelect={() => { }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 text-sm text-slate-700">
+                            <Command.Item onSelect={() => { setOpen(false); router.push('/dashboard/inbox?folder=mine'); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 text-sm text-slate-700">
                                 <MessageSquare className="w-4 h-4 text-slate-400" />
                                 Ir a <strong>Mis Chats</strong>
                             </Command.Item>
-                            <Command.Item onSelect={() => { }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 text-sm text-slate-700">
+                            <Command.Item onSelect={() => { setOpen(false); router.push('/dashboard/inbox?folder=unassigned'); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 text-sm text-slate-700">
                                 <User className="w-4 h-4 text-slate-400" />
                                 Chats <strong>Sin Asignar</strong>
                             </Command.Item>

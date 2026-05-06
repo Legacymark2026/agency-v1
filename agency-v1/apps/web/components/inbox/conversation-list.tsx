@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Search, Filter, SlidersHorizontal, Plus, X, Send, RefreshCw } from 'lucide-react';
@@ -58,6 +58,12 @@ export function ConversationList({ conversations, currentUser }: { conversations
     const activeId = params?.conversationId;
     const [currentTime, setCurrentTime] = useState(new Date());
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Keep currentTime fresh so SLA heuristics remain accurate across long sessions
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(new Date()), 60_000);
+        return () => clearInterval(interval);
+    }, []);
     const [activeTab, setActiveTab] = useState('all'); // all, mine, unassigned
     const [statusFilter, setStatusFilter] = useState<'OPEN' | 'CLOSED' | 'ALL'>('OPEN');
     const [selectionMode, setSelectionMode] = useState(false);

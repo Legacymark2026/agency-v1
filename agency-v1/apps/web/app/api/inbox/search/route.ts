@@ -46,13 +46,13 @@ export async function GET(req: NextRequest) {
         c.channel,
         l.name as "leadName",
         l.id as "leadId",
-        ts_rank(to_tsvector('english', coalesce(m.content, '')), plainto_tsquery('english', ${q})) as rank
+        ts_rank(to_tsvector('spanish', coalesce(m.content, '')), plainto_tsquery('spanish', ${q})) as rank
       FROM messages m
       JOIN conversations c ON m.conversation_id = c.id
       LEFT JOIN leads l ON c.lead_id = l.id
       WHERE c.company_id = ${companyId}
         AND m.content IS NOT NULL
-        AND to_tsvector('english', coalesce(m.content, '')) @@ plainto_tsquery('english', ${q})
+        AND to_tsvector('spanish', coalesce(m.content, '')) @@ plainto_tsquery('spanish', ${q})
       ORDER BY rank DESC, m.created_at DESC
       LIMIT 50;
     `;

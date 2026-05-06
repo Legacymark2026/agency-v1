@@ -113,7 +113,7 @@ function AudioPlayer({ durationText, audioSrc, isMe }: { durationText: string, a
     );
 }
 
-export function ChatWindow({ conversation, messages: initialMessages, currentUserId }: any) {
+export function ChatWindow({ conversation, messages: initialMessages, currentUserId, userRole }: any) {
     const [messages, setMessages] = useState(initialMessages);
 
     // Update messages when server component re-fetches (e.g. from RealtimeRefresher)
@@ -128,7 +128,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     const [isRecording, setIsRecording] = useState(false); // Visual state for Voice Note
     const [isTyping, setIsTyping] = useState(false); // Simulated typing state
     const [isPrivateNote, setIsPrivateNote] = useState(false); // Internal Private Notes Toggle
-    const isAdmin = true; // Simulate Admin check for deletion
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin';
     const [showMergeModal, setShowMergeModal] = useState(false);
 
     const [showBackgroundAlert, setShowBackgroundAlert] = useState(false);
@@ -911,8 +911,10 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         multiple
                         onChange={(e) => {
                             if (e.target.files) {
-                                const newFiles = Array.from(e.target.files).map(f => ({ name: f.name, type: f.type }));
+                                const newFiles = Array.from(e.target.files);
                                 setPendingFiles(prev => [...prev, ...newFiles]);
+                                // Reset input so the same file can be re-selected
+                                e.target.value = '';
                             }
                         }}
                     />

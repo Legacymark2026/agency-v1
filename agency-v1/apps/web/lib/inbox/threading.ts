@@ -161,7 +161,6 @@ export async function getConversationThreads(conversationId: string) {
 
     // Identificar root messages (sin inReplyToId)
     const threads: any[] = [];
-    const messageMap = new Map(messages.map(m => [m.id, m]));
 
     for (const msg of messages) {
       if (!msg.inReplyToId) {
@@ -205,7 +204,7 @@ export function getThreadVisibility(thread: any, expandedIds: Set<string>): any 
     isExpanded: expandedIds.has(thread.rootId),
     replyCount: countReplies(thread.replies),
     lastReply: getLastReply(thread.replies),
-    replies: thread.isExpanded ? thread.replies : [],
+    replies: expandedIds.has(thread.rootId) ? thread.replies : [],
   };
 }
 

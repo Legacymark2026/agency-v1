@@ -41,8 +41,7 @@ export function useInboxSync({
         try {
             const res = await getMessages(id);
             if (res.success && res.data) {
-                // @ts-ignore - mismatch between action return and strict type for now
-                setActiveMessages(res.data);
+                setActiveMessages(res.data as unknown as Message[]);
 
                 // Also update the local conversation read status
                 setConversations(prev => prev.map(c =>
@@ -63,8 +62,7 @@ export function useInboxSync({
             if (res.success && res.data) {
                 // Merge strategies could be complex, for now we replace the top list
                 // Real-world app would merge/dedupe based on IDs and timestamps
-                // @ts-ignore
-                setConversations(res.data);
+                setConversations(res.data as unknown as Conversation[]);
             }
         } catch (error) {
             console.error("Failed to sync conversations", error);
@@ -78,8 +76,7 @@ export function useInboxSync({
         try {
             const res = await getMessages(currentId);
             if (res.success && res.data) {
-                // @ts-ignore
-                setActiveMessages(res.data);
+                setActiveMessages(res.data as unknown as Message[]);
             }
         } catch (error) {
             console.error("Failed to sync messages", error);

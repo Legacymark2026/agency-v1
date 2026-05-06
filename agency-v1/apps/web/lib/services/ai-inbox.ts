@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { db } from '@/lib/db';
+import { AIAgentTools, executeAgentTool } from './ai-tools';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 
 export interface InboxAnalysisResult {
   sentiment: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'URGENT';
@@ -150,8 +151,6 @@ function fallbackAnalysis(message: string): InboxAnalysisResult {
 
   return { sentiment, topic };
 }
-
-import { AIAgentTools, executeAgentTool } from './ai-tools';
 
 /**
  * Hook to automatically reply to a message using the assigned Inbox Copilot Agent.
