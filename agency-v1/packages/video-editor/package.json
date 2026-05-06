@@ -1,0 +1,19 @@
+{
+  "name": "@agency/video-editor",
+  "version": "1.0.0",
+  "description": "AI Video Editor Module - Cinematic Product Showcase System",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc",
+    "lint": "eslint src --ext .ts"
+  },
+  "keywords": ["video", "editor", "ai", "post-production", "cinematic"],
+  "author": "Agency Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

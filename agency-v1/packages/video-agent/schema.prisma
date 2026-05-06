@@ -1,0 +1,208 @@
+// Schema para modelos de Video Editor Agent - The Editing Nexus + Asset Scout
+// Agregar a tu schema.prisma existente
+
+model VideoProject {
+  id              String   @id @default(cuid())
+  companyId       String
+  name            String
+  description     String?
+  clips           Json     @default("[]")
+  audioUrl        String?
+  voiceover       String?
+  outputFormat    String   @default("9:16")
+  platform        String   @default("reels")
+  style           String   @default("cinematic")
+  duration        Int      @default(20)
+  hookDuration    Int      @default(3)
+  status          String   @default("draft")
+  
+  // Resultados de los agentes
+  timeline        Json?
+  colorGrade      Json?
+  textOverlays    Json     @default("[]")
+  manualOverrides Json     @default("[]")
+  
+  // Metadata avanzada
+  metadata        Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  versions        EditVersion[]
+  externalAssets  ExternalAsset[]
+  synthesisAudits SynthesisAudit[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model EditVersion {
+  id          String   @id @default(cuid())
+  projectId   String
+  version     String   // A, B, C
+  name        String
+  description String
+  timeline    Json
+  thumbnail   String?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  project     VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model AgentExecution {
+  id          String   @id @default(cuid())
+  projectId   String
+  agentName   String   // logos, croma, phonos, graphos
+  status      String   // running, completed, failed
+  inputData   Json?
+  outputData  Json?
+  error       String?
+  duration    Int      // ms
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([projectId])
+  @@index([agentName])
+}
+
+model EditorCommand {
+  id          String   @id @default(cuid())
+  projectId   String
+  userId      String?
+  rawCommand  String   // Comando original
+  parsedCommand Json?  // Comando parseado
+  agentName   String
+  action      String?
+  parameters  Json?
+  status      String   // pending, executed, failed
+  result      Json?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([agentName])
+}
+
+model AudioConfig {
+  id          String   @id @default(cuid())
+  projectId   String
+  masterLufs  Float    @default(-14)
+  layers      Json     // AudioLayer[]
+  ducking     Json     // AudioDucking[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model ExportConfig {
+  id          String   @id @default(cuid())
+  projectId   String
+  format      String   // mp4, mov, webm
+  resolution  String   // 1080x1920, 1920x1080, etc.
+  codec       String   // h264, h265, vp9
+  audioBitrate Int     @default(192)
+  frameRate   Int      @default(30)
+  status      String   // pending, exporting, completed, failed
+  downloadUrl String?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([projectId])
+}
+
+// ─────────────────────────────────────────────
+// ASSET SCOUT - MODELOS NUEVOS
+// ─────────────────────────────────────────────
+
+model ExternalAsset {
+  id            String   @id @default(cuid())
+  projectId     String
+  sourceType    String   // 'ai_generated' | 'stock' | 'uploaded'
+  sourceApi     String   // 'midjourney' | 'pexels' | 'elevenlabs' | etc.
+  sourceUrl     String?
+  localUrl      String?
+  thumbnailUrl String?
+  prompt        String?
+  duration      Float?   // Para videos
+  width         Int?
+  height        Int?
+  status        String   // pending, generating, downloading, ready, applied, failed
+  cost          Float?   // Costo en créditos
+  metadata      Json?
+  
+  createdAt     DateTime @default(now())
+  appliedAt     DateTime?
+  
+  project       VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sourceApi])
+}
+
+model SynthesisAudit {
+  id            String   @id @default(cuid())
+  projectId     String
+  status        String   // pending, in_progress, completed
+  
+  // Análisis
+  scriptLength  Int?
+  timelineDuration Float?
+  missingDuration Float?
+  
+  // Huecos detectados
+  gaps          Json     // Array de TimelineGap
+  
+  // Propuestas
+  proposals     Json     // Array de AssetProposal
+  
+  // Resultados
+  appliedAssets Json?    // IDs de assets aplicados
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  project       VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  companyId   String
+  provider    String   // 'openai' | 'midjourney' | 'pexels' | 'elevenlabs' | 'suno' | 'adobe_stock'
+  apiKey      String   // En producción: encriptado
+  isActive    Boolean  @default(true)
+  quotaUsed   Int      @default(0)
+  quotaLimit  Int      @default(1000)
+  lastUsed    DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([companyId, provider])
+  @@index([companyId])
+}
+
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  companyId   String
+  projectId   String?
+  action      String   // 'generate_image' | 'search_stock' | 'generate_voice' | etc.
+  amount      Int      // Créditos usados
+  cost        Float    // Costo real en USD
+  provider    String?
+  status      String   // pending, completed, refunded
+  createdAt   DateTime @default(now())
+  
+  @@index([companyId])
+  @@index([projectId])
+}
+
+// Configuración de créditos por empresa (usando integrationConfig)
+ // Provider: 'credits'
+ // config: { credits: number, usedCredits: number }

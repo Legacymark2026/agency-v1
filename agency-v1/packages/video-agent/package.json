@@ -1,0 +1,18 @@
+{
+  "name": "@agency/video-agent",
+  "version": "1.0.0",
+  "description": "Autonomous Video Editor Agent with Hybrid Control",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
