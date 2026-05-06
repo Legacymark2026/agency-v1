@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { sendMessage, updateConversationStatus, draftCopilotServerAction, updateLeadStatusFromInbox, deleteConversation, deleteMessage } from '@/actions/inbox';
+import { sendMessage, updateConversationStatus, draftCopilotServerAction, updateLeadStatusFromInbox, deleteConversation, deleteMessage, markConversationAsRead } from '@/actions/inbox';
 import { sendMessage_Advanced } from '@/actions/inbox-advanced';
 import { ChannelIcon } from './channel-icon';
 import {
@@ -116,10 +116,19 @@ function AudioPlayer({ durationText, audioSrc, isMe }: { durationText: string, a
 export function ChatWindow({ conversation, messages: initialMessages, currentUserId, userRole }: any) {
     const [messages, setMessages] = useState(initialMessages);
 
-    // Update messages when server component re-fetches (e.g. from RealtimeRefresher)
     useEffect(() => {
         setMessages(initialMessages);
     }, [initialMessages]);
+
+    // Mark as read once per opened thread. Re-runs only when the user
+    // navigates to a different conversation, not on every router.refresh,
+    // so unread counts incremented by inbound webhooks aren't clobbered.
+    useEffect(() => {
+        if (!conversation?.id) return;
+        markConversationAsRead(conversation.id).catch(err =>
+            console.error("Failed to mark conversation as read", err)
+        );
+    }, [conversation?.id]);
     const [newItem, setNewItem] = useState('');
     const [isSending, setIsSending] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);

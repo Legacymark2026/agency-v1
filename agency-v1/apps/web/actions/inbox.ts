@@ -167,16 +167,26 @@ export async function getMessages(conversationId: string) {
             }
         });
 
-        // Mark as read when fetching
-        await db.conversation.update({
-            where: { id: conversationId },
-            data: { unreadCount: 0 }
-        });
-
         return { success: true, data: messages };
     } catch (error) {
         console.error("Error fetching messages:", error);
         return { success: false, error: "Failed to fetch messages" };
+    }
+}
+
+// Explicit read-marker. Called when the user *opens* a conversation,
+// not as a side-effect of any polling read of getMessages — which used to
+// race against incrementing webhooks and lose unread counts.
+export async function markConversationAsRead(conversationId: string) {
+    try {
+        await db.conversation.update({
+            where: { id: conversationId },
+            data: { unreadCount: 0 }
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Error marking conversation as read:", error);
+        return { success: false, error: "Failed to mark as read" };
     }
 }
 

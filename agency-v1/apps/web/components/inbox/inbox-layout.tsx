@@ -14,7 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { InboxCommandMenu } from "@/components/inbox/inbox-command-menu";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from 'next/navigation';
-import { RealtimeRefresher } from '@/components/inbox/realtime-refresher';
 
 interface InboxLayoutProps {
     children: React.ReactNode;
@@ -49,8 +48,6 @@ export function InboxLayout({ children, conversationList, leadProfile, currentUs
                 background: "rgba(11,15,25,0.95)",
                 borderTop: "1px solid rgba(30,41,59,0.8)",
             }}>
-                <RealtimeRefresher intervalMs={6000} />
-
                 {/* Panel 1: Folders & Filters (Left) */}
                 <div style={{
                     display: "none",

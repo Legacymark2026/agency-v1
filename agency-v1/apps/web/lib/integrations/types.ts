@@ -11,12 +11,19 @@ export interface Attachment {
     size?: number;
 }
 
+export interface OutboundTemplate {
+    name: string;
+    language: string; // e.g. "es", "en_US"
+    components?: any[]; // Meta template components (header/body/buttons params)
+}
+
 export interface OutboundMessage {
     conversationId: string;
     content: string;
     attachments?: Attachment[];
     replyToId?: string;
     pageId?: string; // Optional: Context for multi-page/number setups
+    template?: OutboundTemplate; // WhatsApp pre-approved template (24h window override)
 }
 
 export interface InboundMessage {

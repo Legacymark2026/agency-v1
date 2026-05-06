@@ -15,11 +15,16 @@ interface UseInboxSocketOptions {
  * Inbox real-time hook.
  *
  * Strategy:
- *  1. If NEXT_PUBLIC_ENABLE_WEBSOCKET=true AND socket.io-client is available → connect to Socket.IO
- *  2. Otherwise fall back to a 5-second router.refresh() poll (same as before, but cleaner)
- *
- * This lets us ship real-time now without breaking serverless/Vercel deployments.
+ *  1. If NEXT_PUBLIC_ENABLE_WEBSOCKET=true AND socket.io-client connects → use Socket.IO.
+ *     The server *must* run a custom HTTP server (`lib/inbox/socket.ts`) to emit events.
+ *     In Vercel/serverless this isn't the case, so the hook auto-degrades to polling
+ *     after one failed handshake instead of waiting forever.
+ *  2. Otherwise → 8-second router.refresh() poll. This is the SOLE refresher in the
+ *     inbox now (`RealtimeRefresher` was removed and `useInboxSync` no longer polls)
+ *     to prevent triple parallel refreshes that fought each other for state.
  */
+const POLL_INTERVAL_MS = 8_000;
+
 export function useInboxSocket({ companyId, conversationId, onEvent }: UseInboxSocketOptions = {}) {
   const router = useRouter();
   const socketRef = useRef<any>(null);
@@ -27,62 +32,71 @@ export function useInboxSocket({ companyId, conversationId, onEvent }: UseInboxS
   const enableWs = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'true';
 
   const handleEvent = useCallback((event: InboxEvent, data: any) => {
-    // Refresh Next.js Server Components
     router.refresh();
-    // Notify parent component
     if (onEvent) onEvent(event, data);
   }, [router, onEvent]);
 
   useEffect(() => {
     if (!companyId) return;
 
-    if (enableWs) {
-      // ── Socket.IO path ────────────────────────────────────────────────
-      let mounted = true;
+    const startPolling = () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      pollingRef.current = setInterval(() => {
+        router.refresh();
+      }, POLL_INTERVAL_MS);
+    };
 
-      import('socket.io-client').then(({ io }) => {
-        if (!mounted) return;
-
-        const socket = io({
-          path: '/api/socketio',
-          transports: ['websocket', 'polling'],
-          reconnectionAttempts: 5,
-          reconnectionDelay: 2000,
-        });
-
-        socket.on('connect', () => {
-          socket.emit('join', { companyId, conversationId });
-        });
-
-        socket.on('message.created', (data: any) => handleEvent('message.created', data));
-        socket.on('conversation.updated', (data: any) => handleEvent('conversation.updated', data));
-        socket.on('sla.breached', (data: any) => handleEvent('sla.breached', data));
-
-        socketRef.current = socket;
-      }).catch(() => {
-        // socket.io-client not installed → fall through to polling
-        startPolling();
-      });
-
-      return () => {
-        mounted = false;
-        socketRef.current?.disconnect();
-        socketRef.current = null;
-      };
-    } else {
-      // ── Polling fallback ──────────────────────────────────────────────
+    if (!enableWs) {
       startPolling();
       return () => {
         if (pollingRef.current) clearInterval(pollingRef.current);
       };
     }
 
-    function startPolling() {
+    let mounted = true;
+    let degraded = false;
+
+    import('socket.io-client').then(({ io }) => {
+      if (!mounted) return;
+
+      const socket = io({
+        path: '/api/socketio',
+        transports: ['websocket', 'polling'],
+        reconnectionAttempts: 2,
+        reconnectionDelay: 2000,
+        timeout: 5000,
+      });
+
+      const degradeToPolling = (reason: string) => {
+        if (degraded) return;
+        degraded = true;
+        console.warn(`[useInboxSocket] WS unavailable (${reason}); falling back to polling.`);
+        socket.disconnect();
+        socketRef.current = null;
+        startPolling();
+      };
+
+      socket.on('connect', () => {
+        socket.emit('join', { companyId, conversationId });
+      });
+      socket.on('connect_error', (err: any) => degradeToPolling(err?.message || 'connect_error'));
+      socket.on('reconnect_failed', () => degradeToPolling('reconnect_failed'));
+
+      socket.on('message.created', (data: any) => handleEvent('message.created', data));
+      socket.on('conversation.updated', (data: any) => handleEvent('conversation.updated', data));
+      socket.on('sla.breached', (data: any) => handleEvent('sla.breached', data));
+
+      socketRef.current = socket;
+    }).catch(() => {
+      startPolling();
+    });
+
+    return () => {
+      mounted = false;
+      socketRef.current?.disconnect();
+      socketRef.current = null;
       if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = setInterval(() => {
-        router.refresh();
-      }, 5_000);
-    }
+    };
   }, [companyId, conversationId, enableWs, handleEvent, router]);
 
   return {

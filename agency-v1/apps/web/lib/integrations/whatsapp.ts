@@ -44,8 +44,21 @@ export class WhatsAppProvider implements ChannelProvider {
                 text: { body: message.content }
             };
 
+            // Pre-approved template (only valid path past 24h window)
+            if (message.template) {
+                requestBody = {
+                    messaging_product: "whatsapp",
+                    to: message.conversationId,
+                    type: "template",
+                    template: {
+                        name: message.template.name,
+                        language: { code: message.template.language },
+                        ...(message.template.components ? { components: message.template.components } : {}),
+                    },
+                };
+            }
             // Support sending media/audio attachments
-            if (message.attachments && message.attachments.length > 0) {
+            else if (message.attachments && message.attachments.length > 0) {
                 const attachment = message.attachments[0];
                 if ((attachment.type as string).toUpperCase() === 'AUDIO') {
                     // Si la URL empieza con nuestro proxy /api/media/whatsapp/, extraemos el ID para enviarlo como Media ID
@@ -103,7 +116,11 @@ export class WhatsAppProvider implements ChannelProvider {
         if (config?.appSecret) appSecret = config.appSecret;
 
         if (!appSecret) {
-            console.warn("[WhatsAppProvider] WHATSAPP_APP_SECRET not set. Skipping verification (UNSAFE).");
+            if (process.env.NODE_ENV === 'production') {
+                console.error("[WhatsAppProvider] WHATSAPP_APP_SECRET missing in production — rejecting webhook.");
+                return false;
+            }
+            console.warn("[WhatsAppProvider] WHATSAPP_APP_SECRET not set. Skipping verification (DEV ONLY).");
             return true;
         }
 

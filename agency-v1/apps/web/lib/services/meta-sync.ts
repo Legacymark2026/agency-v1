@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { createLead } from "@/modules/leads/actions/leads";
 import { getMetaAppConfig, getFacebookPageConfig } from "@/actions/integration-config";
 
 export const MetaService = {
@@ -361,143 +360,92 @@ export const MetaSyncService = {
                 // 4. Find or Create Lead/Conversation in our DB
                 const messages = await MetaService.getConversationMessages(conv.id, pageAccessToken);
 
-                if (messages.length > 0) {
-                    const lastMessage = messages[messages.length - 1]; // Newest
+                if (messages.length === 0) continue;
 
-                    // Determine sender (Lead)
-                    // Logic: If message 'from' is NOT the page, it's the lead
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const leadData = messages.find((m: any) => m.from.id !== page.id)?.from;
+                const lastMessage = messages[messages.length - 1];
+                const leadData = messages.find((m: any) => m.from.id !== page.id)?.from;
+                if (!leadData) continue;
 
-                    if (leadData) {
-                        // Find or Create Lead
-                        let lead = await prisma.lead.findFirst({
-                            where: {
-                                companyId,
-                                // For social, we might store the scoped ID in a social_id field, 
-                                // but for now using a "fake" email based on ID if not exists
-                                email: `${conv.platform === 'INSTAGRAM' ? 'ig' : 'fb'}-${leadData.id}@social.user`
-                            }
-                        });
+                const placeholderEmail = `${conv.platform === 'INSTAGRAM' ? 'ig' : 'fb'}-${leadData.id}@social.user`;
 
-                        if (!lead) {
-                            const result = await createLead({
-                                companyId,
-                                name: leadData.username || leadData.name || 'Social User',
-                                email: `${conv.platform === 'INSTAGRAM' ? 'ig' : 'fb'}-${leadData.id}@social.user`,
-                                utmSource: conv.platform,
-                                tags: [`${conv.platform.toLowerCase()}-inbound`]
-                            });
+                // Atomic upsert for Lead — uses [companyId, email] unique constraint
+                const lead = await prisma.lead.upsert({
+                    where: { companyId_email: { companyId, email: placeholderEmail } },
+                    update: {},
+                    create: {
+                        companyId,
+                        email: placeholderEmail,
+                        name: leadData.username || leadData.name || 'Social User',
+                        source: conv.platform,
+                        utmSource: conv.platform,
+                        tags: [`${conv.platform.toLowerCase()}-inbound`],
+                        status: 'NEW',
+                    },
+                });
 
-                            if (result.success && result.data) {
-                                lead = result.data as any;
-                            } else {
-                                console.error("[MetaSync] Could not use createLead, falling back to manual prisma insertion:", result.error);
-                                lead = await prisma.lead.create({
-                                    data: {
-                                        companyId,
-                                        name: leadData.username || leadData.name || 'Social User',
-                                        email: `${conv.platform === 'INSTAGRAM' ? 'ig' : 'fb'}-${leadData.id}@social.user`,
-                                        source: conv.platform,
-                                        status: 'NEW'
-                                    }
-                                });
-                            }
-                        }
+                // Atomic upsert for Conversation — uses [platformId, channel] unique constraint
+                // platformId is the Meta thread/conversation id (conv.id), stable across syncs.
+                const dbConv = await prisma.conversation.upsert({
+                    where: { platformId_channel: { platformId: conv.id, channel: conv.platform } },
+                    update: {
+                        status: 'OPEN',
+                        lastMessageAt: new Date(lastMessage.created_time),
+                        lastMessagePreview: lastMessage.message || '[Media]',
+                        leadId: lead.id,
+                        metadata: { pageId: page.id, recipientId: leadData.id },
+                    },
+                    create: {
+                        companyId,
+                        leadId: lead.id,
+                        channel: conv.platform,
+                        platformId: conv.id,
+                        status: 'OPEN',
+                        lastMessageAt: new Date(lastMessage.created_time),
+                        lastMessagePreview: lastMessage.message || '[Media]',
+                        metadata: { pageId: page.id, recipientId: leadData.id },
+                    },
+                });
 
-                        // Find or Create Conversation
-                        let dbConv = await prisma.conversation.findFirst({
-                            where: {
-                                companyId,
-                                leadId: lead!.id,
-                                channel: conv.platform
-                            }
-                        });
+                // Sync messages atomically per conversation. Deduplication uses
+                // the [externalId, conversationId] unique constraint shared with
+                // the inbound webhook (route.ts), so the two paths cannot create
+                // duplicates of the same message.
+                let createdInThisBatch = 0;
+                let hasNewInbound = false;
 
-                        if (!dbConv) {
-                            dbConv = await prisma.conversation.create({
+                await prisma.$transaction(async tx => {
+                    for (const msg of messages) {
+                        const isOutbound = msg.from.id === page.id;
+                        try {
+                            await tx.message.create({
                                 data: {
-                                    companyId,
-                                    leadId: lead!.id,
-                                    channel: conv.platform,
-                                    status: 'OPEN',
-                                    lastMessageAt: new Date(lastMessage.created_time),
-                                    lastMessagePreview: lastMessage.message || '[Media]',
-                                    metadata: {
-                                        pageId: page.id,
-                                        recipientId: leadData.id
-                                    }
-                                }
+                                    conversationId: dbConv.id,
+                                    externalId: msg.id,
+                                    content: msg.message || '[Media]',
+                                    direction: isOutbound ? 'OUTBOUND' : 'INBOUND',
+                                    status: 'SENT',
+                                    senderId: isOutbound ? userId : lead.id,
+                                    createdAt: new Date(msg.created_time),
+                                    metadata: { platformMessageId: msg.id, pageId: page.id },
+                                },
                             });
-                        } else {
-                            // FIX #5: Update lastMessageAt, lastMessagePreview AND metadata for existing conversations
-                            await prisma.conversation.update({
-                                where: { id: dbConv.id },
-                                data: {
-                                    status: 'OPEN',
-                                    lastMessageAt: new Date(lastMessage.created_time),
-                                    lastMessagePreview: lastMessage.message || '[Media]',
-                                    metadata: {
-                                        pageId: page.id,
-                                        recipientId: leadData.id
-                                    }
-                                }
-                            });
-                        }
-
-                        // Sync Messages
-                        let hasNewInbound = false;
-                        for (const msg of messages) {
-                            // FIX #9: Deduplicate using platformMessageId stored in metadata
-                            // This is far more reliable than a timestamp comparison
-                            const existingByMsgId = await prisma.message.findFirst({
-                                where: {
-                                    conversationId: dbConv!.id,
-                                    metadata: { path: ['platformMessageId'], equals: msg.id }
-                                }
-                            });
-
-                            // Fallback: also check content+time for messages created before this fix
-                            const existingByContent = !existingByMsgId
-                                ? await prisma.message.findFirst({
-                                    where: {
-                                        conversationId: dbConv!.id,
-                                        content: msg.message || '[Media]',
-                                        createdAt: new Date(msg.created_time)
-                                    }
-                                })
-                                : null;
-
-                            const exists = existingByMsgId || existingByContent;
-
-                            if (!exists) {
-                                const isOutbound = msg.from.id === page.id;
-                                await prisma.message.create({
-                                    data: {
-                                        conversationId: dbConv!.id,
-                                        content: msg.message || '[Media]',
-                                        direction: isOutbound ? 'OUTBOUND' : 'INBOUND',
-                                        status: 'SENT',
-                                        senderId: isOutbound ? userId : lead!.id,
-                                        createdAt: new Date(msg.created_time),
-                                        // FIX #9: Store platformMessageId for future deduplication
-                                        metadata: { platformMessageId: msg.id, pageId: page.id }
-                                    }
-                                });
-                                totalMessages++;
-                                if (!isOutbound) hasNewInbound = true;
-                            }
-                        }
-                        totalConversations++;
-
-                        // Trigger Omnichannel AI Agent if there are new messages from the Lead
-                        if (hasNewInbound) {
-                            const { triggerOmnichannelAgent } = await import("@/lib/services/ai-inbox");
-                            triggerOmnichannelAgent(dbConv!.id, companyId).catch(err => 
-                                console.error("[MetaSync] AI Background Dispatch failed:", err)
-                            );
+                            createdInThisBatch++;
+                            if (!isOutbound) hasNewInbound = true;
+                        } catch (e: any) {
+                            // P2002 = unique constraint violation → already synced, skip
+                            if (e?.code !== 'P2002') throw e;
                         }
                     }
+                });
+
+                totalMessages += createdInThisBatch;
+                totalConversations++;
+
+                if (hasNewInbound) {
+                    const { triggerOmnichannelAgent } = await import("@/lib/services/ai-inbox");
+                    triggerOmnichannelAgent(dbConv.id, companyId).catch(err =>
+                        console.error("[MetaSync] AI Background Dispatch failed:", err)
+                    );
                 }
             }
         }

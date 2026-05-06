@@ -3,6 +3,7 @@ import { ChannelType, ProcessingResult } from "@/types/inbox";
 import { ChannelProvider, OutboundMessage, InboundMessage, Attachment } from "./types";
 import { MetaService } from "@/lib/meta-service";
 import crypto from "crypto";
+import { getSystemIntegrationConfig } from "@/lib/integration-config-service";
 
 export class InstagramProvider implements ChannelProvider {
     channel: ChannelType = 'INSTAGRAM';
@@ -15,14 +16,24 @@ export class InstagramProvider implements ChannelProvider {
     async sendMessage(message: OutboundMessage): Promise<ProcessingResult> {
         console.log(`[InstagramProvider] Sending message to ${message.conversationId}`);
 
-        if (!this.pageAccessToken) {
+        let tokenToUse = this.pageAccessToken;
+        const config = await getSystemIntegrationConfig('instagram') as any;
+        if (config?.accessToken) tokenToUse = config.accessToken;
+        // Fall back to facebook config: IG Messaging uses the linked FB Page token
+        if (!tokenToUse) {
+            const fbConfig = await getSystemIntegrationConfig('facebook') as any;
+            if (fbConfig?.manualPageToken) tokenToUse = fbConfig.manualPageToken;
+            else if (fbConfig?.accessToken) tokenToUse = fbConfig.accessToken;
+        }
+
+        if (!tokenToUse) {
             return { success: false, error: "No Page Access Token available" };
         }
 
         try {
             // Instagram Messaging uses the same Graph API endpoint structure as Messenger
             // but the conversation/recipient ID is an IGSID (Instagram Scoped ID).
-            const result = await MetaService.sendTextMessage(this.pageAccessToken, message.conversationId, message.content);
+            const result = await MetaService.sendTextMessage(tokenToUse, message.conversationId, message.content);
             return { success: true, messageId: result.message_id };
         } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
             console.error("Instagram Send Error:", error);
@@ -32,10 +43,23 @@ export class InstagramProvider implements ChannelProvider {
 
     async verifySignature(request: Request): Promise<boolean> {
         const signature = request.headers.get("x-hub-signature-256");
-        const appSecret = process.env.META_APP_SECRET;
+        let appSecret = process.env.META_APP_SECRET;
+
+        const config = await getSystemIntegrationConfig('instagram') as any;
+        if (config?.appSecret) {
+            appSecret = config.appSecret;
+        } else {
+            // Fallback to the parent Meta app's secret if IG-specific isn't set
+            const fbConfig = await getSystemIntegrationConfig('facebook') as any;
+            if (fbConfig?.appSecret) appSecret = fbConfig.appSecret;
+        }
 
         if (!appSecret) {
-            console.warn("[InstagramProvider] META_APP_SECRET not set. Skipping verification (UNSAFE).");
+            if (process.env.NODE_ENV === 'production') {
+                console.error("[InstagramProvider] META_APP_SECRET missing in production — rejecting webhook.");
+                return false;
+            }
+            console.warn("[InstagramProvider] META_APP_SECRET not set. Skipping verification (DEV ONLY).");
             return true;
         }
 
@@ -62,11 +86,18 @@ export class InstagramProvider implements ChannelProvider {
     }
 
     async validateWebhook(request: Request): Promise<boolean> {
-        // Reuse Meta verification logic
         const url = new URL(request.url);
         const mode = url.searchParams.get("hub.mode");
         const token = url.searchParams.get("hub.verify_token");
-        const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
+        let verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
+
+        const config = await getSystemIntegrationConfig('instagram') as any;
+        if (config?.verifyToken) {
+            verifyToken = config.verifyToken;
+        } else {
+            const fbConfig = await getSystemIntegrationConfig('facebook') as any;
+            if (fbConfig?.verifyToken) verifyToken = fbConfig.verifyToken;
+        }
 
         return mode === "subscribe" && token === verifyToken;
     }

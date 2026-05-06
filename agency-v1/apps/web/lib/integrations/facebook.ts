@@ -64,10 +64,12 @@ export class FacebookProvider implements ChannelProvider {
             appSecret = config.appSecret;
         }
 
-        // In dev mode, if no secret is set, we might want to bypass or warn.
-        // For "ultra-professional" mode, we enforce it if the header is present.
         if (!appSecret) {
-            console.warn("[FacebookProvider] META_APP_SECRET not set in ENV or DB. Skipping verification (UNSAFE).");
+            if (process.env.NODE_ENV === 'production') {
+                console.error("[FacebookProvider] META_APP_SECRET missing in production — rejecting webhook.");
+                return false;
+            }
+            console.warn("[FacebookProvider] META_APP_SECRET not set. Skipping verification (DEV ONLY).");
             return true;
         }
 
