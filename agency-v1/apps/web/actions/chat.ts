@@ -30,45 +30,65 @@ export async function initializeChat(data: {
         if (!company) throw new Error("No default company found");
         const companyId = company.id;
 
-        // 1. Find or Create Lead
-        let lead = await prisma.lead.findFirst({
-            where: { email: email },
+        // 1. Find existing conversation by platformId/channel (Unique identifier for the session)
+        let conversation = await prisma.conversation.findFirst({
+            where: {
+                platformId: visitorId,
+                channel: "WEB_CHAT",
+            },
+            include: { lead: true }
         });
 
-        if (!lead) {
-            // Create new lead with nested conversation and message
-            const newLead = await prisma.lead.create({
-                data: {
-                    name,
-                    email,
-                    source: "WEB_CHAT",
-                    status: "NEW",
-                    companyId,
-                    conversations: {
-                        create: {
-                            channel: "WEB_CHAT",
-                            platformId: visitorId,
-                            status: "OPEN",
-                            unreadCount: 1,
-                            companyId,
-                            messages: {
-                                create: {
-                                    content: message,
-                                    direction: "INBOUND",
-                                    status: "SENT",
-                                    type: "TEXT"
-                                }
-                            }
-                        }
+        let lead;
+        if (conversation?.lead) {
+            // Re-use lead linked to this session
+            lead = conversation.lead;
+            
+            // Update name/email if provided and lead is missing them
+            if ((!lead.name && name) || (!lead.email && email)) {
+                lead = await prisma.lead.update({
+                    where: { id: lead.id },
+                    data: { 
+                        name: lead.name || name,
+                        email: lead.email || email
                     }
-                },
-                include: { conversations: true }
+                });
+            }
+        } else {
+            // 2. No conversation found or not linked to a lead. Try to find lead by email.
+            lead = await prisma.lead.findFirst({
+                where: { email: email },
             });
 
-            const newConversation = newLead.conversations[0];
-            safeRevalidate("/dashboard/inbox");
+            if (!lead) {
+                // 3. Create new lead
+                lead = await prisma.lead.create({
+                    data: {
+                        name,
+                        email,
+                        source: "WEB_CHAT",
+                        status: "NEW",
+                        companyId,
+                    }
+                });
+            }
+        }
 
-            // Crear notificación
+        // 4. Create or Update Conversation
+        if (!conversation) {
+            conversation = await prisma.conversation.create({
+                data: {
+                    channel: "WEB_CHAT",
+                    platformId: visitorId,
+                    leadId: lead.id,
+                    status: "OPEN",
+                    unreadCount: 1,
+                    companyId,
+                },
+                include: { lead: true },
+            });
+
+            // Notify admins only for COMPLETELY NEW conversations
             try {
                 const admins = await prisma.user.findMany({
                     where: {
@@ -87,9 +107,9 @@ export async function initializeChat(data: {
                         companyId,
                         userId: admin.id,
                         type: 'NEW_MESSAGE',
-                        title: `Nuevo chat de ${name}`,
+                        title: `Nuevo chat de ${name || lead.name || email}`,
                         message: message.substring(0, 100),
-                        link: `/dashboard/inbox?conversation=${newConversation.id}`
+                        link: `/dashboard/inbox?conversation=${conversation!.id}`
                     })
                 );
 
@@ -97,59 +117,22 @@ export async function initializeChat(data: {
             } catch (notifError) {
                 console.error("[chat] Failed to create notification:", notifError);
             }
-
-            return {
-                success: true,
-                conversationId: newConversation.id,
-                visitorId: visitorId
-            };
         } else {
-            // Lead exists, update name if missing
-            if (!lead.name && name) {
-                await prisma.lead.update({
-                    where: { id: lead.id },
-                    data: { name },
-                });
-            }
-        }
-
-        // 2. Create or Reuse Conversation (for existing lead)
-        // Try to find conversation by platformId and channel (unique pair)
-        let conversation = await prisma.conversation.findFirst({
-            where: {
-                platformId: visitorId,
-                channel: "WEB_CHAT",
-            },
-        });
-
-        if (!conversation) {
-            conversation = await prisma.conversation.create({
-                data: {
-                    channel: "WEB_CHAT",
-                    platformId: visitorId,
-                    leadId: lead.id,
-                    status: "OPEN",
-                    unreadCount: 1,
-                    companyId,
-                },
-            });
-        } else {
-            // Re-open if closed or just update leadId if it changed (unlikely)
-            await prisma.conversation.update({
+            // Re-open and link to lead if needed
+            conversation = await prisma.conversation.update({
                 where: { id: conversation.id },
                 data: {
                     status: "OPEN",
                     leadId: lead.id,
                     unreadCount: { increment: 1 }
-                }
+                },
+                include: { lead: true },
             });
         }
 
-        // 3. Create Initial Message 
-        // (Only if we didn't just create the conversation via nested write, 
-        // OR if we reused an existing conversation)
-        // Wait, the nested create above was ONLY for new Lead. 
-        // Here we are in the "Lead exists" branch.
+        if (!conversation) throw new Error("Conversation should exist after if/else");
+
+        // 5. Create the initial message
         await prisma.message.create({
             data: {
                 conversationId: conversation.id,
@@ -166,11 +149,11 @@ export async function initializeChat(data: {
             conversationId: conversation.id,
             visitorId: visitorId
         };
-
     } catch (error) {
         console.error("Error initializing chat:", error);
         return { success: false, error: "Failed to start chat" };
     }
+
 }
 
 // Send Message (Ongoing)
