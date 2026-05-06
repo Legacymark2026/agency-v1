@@ -72,9 +72,13 @@ export async function initializeChat(data: {
             try {
                 const admins = await prisma.user.findMany({
                     where: {
-                        companyId,
-                        role: { in: ['super_admin', 'admin', 'content_manager'] }
-                    } as any,
+                        companies: {
+                            some: {
+                                companyId,
+                                roleName: { in: ['super_admin', 'admin', 'content_manager'] }
+                            }
+                        }
+                    },
                     select: { id: true }
                 });
 
@@ -109,13 +113,12 @@ export async function initializeChat(data: {
             }
         }
 
-        // 2. Create Conversation (for existing lead)
-        // Try to find open conversation first
+        // 2. Create or Reuse Conversation (for existing lead)
+        // Try to find conversation by platformId and channel (unique pair)
         let conversation = await prisma.conversation.findFirst({
             where: {
-                leadId: lead.id,
+                platformId: visitorId,
                 channel: "WEB_CHAT",
-                status: "OPEN",
             },
         });
 
@@ -129,6 +132,16 @@ export async function initializeChat(data: {
                     unreadCount: 1,
                     companyId,
                 },
+            });
+        } else {
+            // Re-open if closed or just update leadId if it changed (unlikely)
+            await prisma.conversation.update({
+                where: { id: conversation.id },
+                data: {
+                    status: "OPEN",
+                    leadId: lead.id,
+                    unreadCount: { increment: 1 }
+                }
             });
         }
 
