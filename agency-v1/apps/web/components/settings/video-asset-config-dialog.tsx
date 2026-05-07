@@ -7,11 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  testVideoAssetConnection, 
-  saveVideoAssetConfig, 
-  VideoAssetConfig 
-} from "@/actions/integrations/video-assets";
+import { testVideoAssetConnection, saveVideoAssetConfig } from "@/actions/integrations/video-assets";
+import type { VideoAssetConfig } from "@/actions/integrations/video-assets-types";
 import { toast } from "sonner";
 
 interface ProviderConfig {
