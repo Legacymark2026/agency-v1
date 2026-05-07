@@ -280,7 +280,7 @@ export async function importSkillFromTemplate(templateId: string, companyId: str
 }
 
 export async function deleteSkillTemplate(id: string) {
-    const { session } = await getSession();
+    const session = await getSession();
     
     const template = await prisma.skillTemplate.findUnique({ where: { id } });
     if (!template) throw new Error("Template no encontrado.");
