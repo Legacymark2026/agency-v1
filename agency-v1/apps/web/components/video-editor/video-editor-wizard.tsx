@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Save,
-  FolderOpen
+  FolderOpen,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProjectConfigPanel } from './project-config-panel';
@@ -40,7 +41,7 @@ import type {
   ClipAnalysis,
   RenderOutput
 } from '@/actions/video-editor';
-import { createVideoProject } from '@/actions/video-editor';
+import { createVideoProject, getVideoProject, updateVideoProject } from '@/actions/video-editor';
 
 const STEPS = [
   { id: 1, name: 'Config', icon: Settings, label: 'Configuración' },
@@ -72,6 +73,32 @@ export function VideoEditorWizard({ projectId, onSave }: VideoEditorWizardProps)
   const [qualityPassed, setQualityPassed] = useState(false);
   const [qualityIssues, setQualityIssues] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load project if projectId is provided
+  useEffect(() => {
+    if (projectId) {
+      setIsLoading(true);
+      getVideoProject(projectId)
+        .then(project => {
+          if (project) {
+            setConfig(project.config as Partial<ProjectConfig>);
+            setClips(project.clips as Clip[] || []);
+            setAudioTracks(project.audioTracks as AudioTrack[] || []);
+            setTextOverlays(project.textOverlays as TextOverlay[] || []);
+            setColorGrades(project.colorGrades as ColorGrade[] || []);
+            setSpeedRamps(project.speedRamps as SpeedRamp[] || []);
+            setTimeline(project.timeline as Timeline || null);
+            if (project.qualityCheck) {
+              setQualityPassed(project.qualityCheck.passed);
+              setQualityIssues(project.qualityCheck.issues || []);
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [projectId]);
 
   const canProceed = () => {
     switch (currentStep) {
@@ -103,7 +130,10 @@ export function VideoEditorWizard({ projectId, onSave }: VideoEditorWizardProps)
         qualityCheck: { passed: qualityPassed, issues: qualityIssues }
       };
       
-      if (onSave) {
+      if (projectId) {
+        // Update existing project
+        await updateVideoProject(projectId, projectData as any);
+      } else if (onSave) {
         onSave(projectData);
       } else {
         await createVideoProject(projectData as ProjectConfig);
@@ -199,6 +229,17 @@ export function VideoEditorWizard({ projectId, onSave }: VideoEditorWizardProps)
   };
 
   const currentStepInfo = STEPS.find(s => s.id === currentStep);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-teal-400 animate-spin mx-auto mb-4" />
+          <p className="text-slate-400">Cargando proyecto...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
