@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { KnowledgeBaseManager } from "@/components/settings/knowledge-base-manager";
 import { AgentSpecializations } from "@/components/settings/agent-specializations";
 import { AgentSkillsManager } from "@/components/settings/agent-skills-manager";
