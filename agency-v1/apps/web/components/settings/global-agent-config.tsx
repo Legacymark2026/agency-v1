@@ -23,7 +23,7 @@ interface Preset {
     id: string;
     name: string;
     description: string | null;
-    config: Record<string, any>;
+    config: any;
     isDefault: boolean;
     isGlobal: boolean;
     specializationId: string | null;
