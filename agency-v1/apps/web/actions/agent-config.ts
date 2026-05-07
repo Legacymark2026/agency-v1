@@ -20,12 +20,9 @@ async function checkAdminAccess(companyId: string) {
     
     if (!companyUser) throw new Error("No tienes acceso a esta empresa.");
     
-    const userRole = await prisma.companyRole.findFirst({
-        where: { companyUserId: companyUser.id },
-        include: { role: true }
-    });
+    const userRoleName = companyUser.roleName?.toUpperCase() || "MEMBER";
     
-    if (!userRole || !["ADMIN", "OWNER", "MANAGER"].includes(userRole.role.name.toUpperCase())) {
+    if (!["ADMIN", "OWNER", "MANAGER"].includes(userRoleName)) {
         throw new Error("Solo administradores pueden gestionar configuraciones de agentes.");
     }
     
@@ -295,12 +292,9 @@ export async function deleteSkillTemplate(id: string) {
         
         if (!companyUser) throw new Error("No tienes acceso.");
         
-        const userRole = await prisma.companyRole.findFirst({
-            where: { companyUserId: companyUser.id },
-            include: { role: true }
-        });
+        const userRoleName = companyUser.roleName?.toUpperCase() || "MEMBER";
         
-        if (!userRole || !["ADMIN", "OWNER"].includes(userRole.role.name.toUpperCase())) {
+        if (!["ADMIN", "OWNER"].includes(userRoleName)) {
             throw new Error("Solo el propietario puede eliminar este template.");
         }
     }
