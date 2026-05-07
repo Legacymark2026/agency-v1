@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Type, AlignCenter, AlignStart, AlignEnd, Trash2, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Type, AlignCenter, AlignStartVertical, AlignEndVertical, Trash2, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TextOverlay } from '@/actions/video-editor';
 
@@ -19,9 +19,9 @@ interface TextOverlaysEditorProps {
 }
 
 const POSITIONS = [
-  { value: 'top', label: 'Superior', icon: AlignStart },
+  { value: 'top', label: 'Superior', icon: AlignStartVertical },
   { value: 'center', label: 'Centro', icon: AlignCenter },
-  { value: 'bottom', label: 'Inferior', icon: AlignEnd },
+  { value: 'bottom', label: 'Inferior', icon: AlignEndVertical },
 ] as const;
 
 const ANIMATIONS = [
