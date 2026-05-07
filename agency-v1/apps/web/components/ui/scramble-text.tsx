@@ -14,10 +14,15 @@ interface ScrambleTextProps {
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
 
 export const ScrambleText = ({ text, className, reveal = true, speed = 50, delay = 0 }: ScrambleTextProps) => {
-    const [displayText, setDisplayText] = useState(reveal ? "" : text);
+    const [displayText, setDisplayText] = useState(text);
     const [isScrambling, setIsScrambling] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
     const ref = useRef<HTMLSpanElement>(null);
     const isInView = useInView(ref, { once: true });
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const startScramble = React.useCallback(async () => {
         if (isScrambling) return;
@@ -53,10 +58,11 @@ export const ScrambleText = ({ text, className, reveal = true, speed = 50, delay
     }, [isScrambling, delay, text, speed]);
 
     useEffect(() => {
-        if (reveal && isInView) {
+        if (isMounted && reveal && isInView) {
+            setDisplayText("");
             startScramble();
         }
-    }, [reveal, isInView, startScramble]);
+    }, [isMounted, reveal, isInView, startScramble]);
 
     return (
         <span ref={ref} className={className} onMouseEnter={!reveal ? startScramble : undefined}>

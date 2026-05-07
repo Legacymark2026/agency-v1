@@ -50,14 +50,34 @@ export function SearchTermsCloud({ data = [] }: SearchTermsCloudProps) {
         return 'text-gray-600 hover:text-gray-700';
     };
 
-    const [shuffledTerms, setShuffledTerms] = useState(displayData);
+    const [shuffledTerms, setShuffledTerms] = useState<typeof displayData>([]);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const timer = setTimeout(() => {
             setShuffledTerms([...displayData].sort(() => Math.random() - 0.5));
-        }, 0);
+        }, 100);
         return () => clearTimeout(timer);
     }, [displayData]);
+
+    // Don't render until mounted to avoid hydration mismatch
+    if (!isMounted) {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                        <Search className="h-4 w-4 text-violet-600" />
+                        Términos de Búsqueda
+                    </h3>
+                    <span className="text-xs text-gray-500">Top {displayData.length} este mes</span>
+                </div>
+                <div className="h-32 flex items-center justify-center">
+                    <span className="text-gray-400">Cargando...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">

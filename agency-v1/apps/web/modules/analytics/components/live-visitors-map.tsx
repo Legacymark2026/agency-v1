@@ -30,8 +30,10 @@ const countries = [
 export function LiveVisitorsMap({ initialCount = 0 }: LiveVisitorsMapProps) {
     const [visitors, setVisitors] = useState<Visitor[]>([]);
     const [totalLive, setTotalLive] = useState(initialCount);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const timer = setTimeout(() => {
             // Add initial visitors
             const initial = countries.slice(0, 5).map((c, i) => ({
@@ -80,6 +82,9 @@ export function LiveVisitorsMap({ initialCount = 0 }: LiveVisitorsMapProps) {
         };
     }, [initialCount]);
 
+    // Don't render visitor dots until mounted to avoid hydration mismatch
+    const shouldShowVisitors = isMounted && visitors.length > 0;
+
     return (
         <div className="relative">
             {/* Header */}
@@ -108,8 +113,8 @@ export function LiveVisitorsMap({ initialCount = 0 }: LiveVisitorsMapProps) {
                     <line x1="50" y1="10" x2="50" y2="90" stroke="#64748b" strokeWidth="0.3" />
                 </svg>
 
-                {/* Visitor dots */}
-                {visitors.map((visitor) => (
+                {/* Visitor dots - only render after mounted */}
+                {shouldShowVisitors && visitors.map((visitor) => (
                     <div
                         key={visitor.id}
                         className="absolute transform -translate-x-1/2 -translate-y-1/2 group"

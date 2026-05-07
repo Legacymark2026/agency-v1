@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   compress: true,
+  productionBrowserSourceMaps: true,
   // CORREGIDO: TypeScript errors deben resolverse, no ignorarse.
   // Los errores activos están documentados en ts_errors.log — resolver progresivamente.
   // typescript: { ignoreBuildErrors: true }, ← ELIMINADO
@@ -137,6 +138,7 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Content-Security-Policy', value: cspHeader },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
         ]
       }
     ];
