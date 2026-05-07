@@ -9,6 +9,28 @@ import { cn } from "@/lib/utils";
 
 // Subcomponents
 
+function SectionCard({ id, title, icon, children }: { id: string, title: string, icon: React.ReactNode, children: React.ReactNode }) {
+    return (
+        <motion.div
+            id={id}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-8 hover:shadow-md transition-shadow duration-300"
+        >
+            <div className="flex items-center gap-4 mb-6 border-b border-gray-100 dark:border-slate-800 pb-4">
+                <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                    {icon}
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h2>
+            </div>
+            <div className="text-gray-600 dark:text-gray-300">
+                {children}
+            </div>
+        </motion.div>
+    )
+}
+
 function ServiceItem({ title, desc }: { title: string, desc: string }) {
     return (
         <div className="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-700">
