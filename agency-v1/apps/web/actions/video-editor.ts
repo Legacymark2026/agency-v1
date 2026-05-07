@@ -185,7 +185,7 @@ export async function updateVideoProject(id: string, data: Partial<VideoProject>
     data: {
       ...data,
       updatedAt: new Date()
-    }
+    } as any
   });
 
   return project as any;
