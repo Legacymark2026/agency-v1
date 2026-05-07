@@ -17,11 +17,13 @@ export const ScrambleText = ({ text, className, reveal = true, speed = 50, delay
     const [displayText, setDisplayText] = useState(text);
     const [isScrambling, setIsScrambling] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
     const ref = useRef<HTMLSpanElement>(null);
-    const isInView = useInView(ref, { once: true });
+    const isInView = useInView(ref, { once: true, margin: "-50px" });
 
     useEffect(() => {
-        setIsMounted(true);
+        const timer = setTimeout(() => setIsMounted(true), 100);
+        return () => clearTimeout(timer);
     }, []);
 
     const startScramble = React.useCallback(async () => {
@@ -58,11 +60,12 @@ export const ScrambleText = ({ text, className, reveal = true, speed = 50, delay
     }, [isScrambling, delay, text, speed]);
 
     useEffect(() => {
-        if (isMounted && reveal && isInView) {
+        if (isMounted && reveal && isInView && !hasStarted) {
+            setHasStarted(true);
             setDisplayText("");
-            startScramble();
+            setTimeout(() => startScramble(), 50);
         }
-    }, [isMounted, reveal, isInView, startScramble]);
+    }, [isMounted, reveal, isInView, hasStarted]);
 
     return (
         <span ref={ref} className={className} onMouseEnter={!reveal ? startScramble : undefined}>
