@@ -48,7 +48,7 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
           duration: bodyDuration,
           type: 'body',
           transitions: bodyClips.map(() => 'cut'),
-          speedRamping: true
+          speedRamp: { start: 100, end: 100, duration: 0 }
         },
         climax: {
           clips: rewardClips,
