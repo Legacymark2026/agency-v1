@@ -306,6 +306,7 @@ model Company {
   usageLogs               UsageLog[]
   webhooks                Webhook[]
   workflows               Workflow[]
+  videoEditorProjects     VideoEditorProject[]
 
   @@map("companies")
 }
@@ -2955,4 +2956,27 @@ model EmailDomainVerification {
   @@unique([domain])
   @@index([companyId])
   @@map("email_domain_verifications")
+}
+
+// Video Editor Project
+model VideoEditorProject {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  name        String
+  config      Json     // ProjectConfig
+  clips       Json     // Clip[]
+  audioTracks Json     // AudioTrack[]
+  textOverlays Json    // TextOverlay[]
+  colorGrades Json     // ColorGrade[]
+  speedRamps  Json     // SpeedRamp[]
+  soundLayers Json     // SoundLayer[]
+  timeline    Json?    // Timeline
+  qualityCheck Json?   // { passed, issues }
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("video_editor_projects")
 }

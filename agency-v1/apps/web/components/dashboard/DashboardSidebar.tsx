@@ -103,6 +103,13 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/experts", label: "Expert Network", icon: <Users size={14} />, code: "XPN" },
         ],
     },
+    {
+        title: "Herramientas", code: "TOOLS",
+        accent: "orange", icon: <Wand2 size={20} />,
+        items: [
+            { href: "/dashboard/tools/video-editor", label: "Video Editor IA", icon: <Wand2 size={14} />, code: "VED" },
+        ],
+    },
 ];
 
 interface DashboardSidebarProps {
