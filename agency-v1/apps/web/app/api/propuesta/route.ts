@@ -84,7 +84,7 @@ export async function GET() {
 <!-- SLIDE 1: Título -->
 <div class="slide-container" style="justify-content: center; align-items: center; text-align: center;">
     <div style="margin-bottom: 40px;">
-        <img src="https://legacymarksas.com/logo.png" alt="LegacyMark" style="height: 120px; object-fit: contain; margin-bottom: 20px; filter: brightness(0) invert(1);">
+        <img src="https://legacymarksas.com/favicon.ico" alt="LegacyMark" style="height: 120px; object-fit: contain; margin-bottom: 20px; filter: brightness(0) invert(1);">
         <h1 style="font-size: 80px; margin-bottom: 10px;">DE CERO A <span>RADAR</span></h1>
         <p style="font-size: 32px; font-weight: 600; color: #10b981;">Haciendo Sonar su Software SGI en Colombia</p>
     </div>
@@ -296,7 +296,7 @@ export async function GET() {
 
 <!-- SLIDE 10: Cierre -->
 <div class="slide-container" style="justify-content: center; align-items: center; text-align: center;">
-    <img src="https://legacymarksas.com/logo.png" alt="LegacyMark" style="height: 100px; object-fit: contain; margin-bottom: 30px; filter: brightness(0) invert(1);">
+    <img src="https://legacymarksas.com/favicon.ico" alt="LegacyMark" style="height: 100px; object-fit: contain; margin-bottom: 30px; filter: brightness(0) invert(1);">
     <h2 style="font-size: 60px; margin-bottom: 20px;">¿Empezamos a <span>sonar?</span></h2>
     <p style="font-size: 24px; margin-bottom: 50px;">Estamos listos para ejecutar este plan acelerado y posicionar su SGI.</p>
     <div style="background: #0f172a; padding: 30px; border-radius: 10px; border: 1px solid #10b981; max-width: 600px;">

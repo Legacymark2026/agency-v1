@@ -7,7 +7,7 @@ import { AnalyticsProvider as InternalAnalyticsProvider } from "@/modules/analyt
 import { getPublicIntegrations } from "@/actions/settings";
 import { auth } from "@/lib/auth";
 import { Suspense } from "react";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { ClientDecorativeElements } from "@/components/layout/client-decorative-elements";
 
@@ -22,6 +22,7 @@ import { PageTransition } from "@/components/ui/page-transition";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: "home.metadata" });
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
   const openGraphLocale = locale === 'en' ? 'en_US' : 'es_ES';
@@ -39,10 +40,10 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     title: {
-      default: siteConfig.name,
+      default: t("title"),
       template: `%s | ${siteConfig.name}`,
     },
-    description: siteConfig.description,
+    description: t("description"),
     keywords: siteConfig.keywords,
     authors: siteConfig.authors,
     creator: siteConfig.creator,
@@ -50,8 +51,8 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       locale: openGraphLocale,
       url: canonicalUrl,
-      title: siteConfig.name,
-      description: siteConfig.description,
+      title: t("title"),
+      description: t("description"),
       siteName: siteConfig.name,
       images: [
         {
@@ -64,15 +65,18 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: siteConfig.name,
-      description: siteConfig.description,
+      title: t("title"),
+      description: t("description"),
       images: [siteConfig.ogImage],
       creator: "@legacymark",
     },
     icons: {
-      icon: "/favicon.ico?v=2",
-      shortcut: "/favicon-16x16.png?v=2",
-      apple: "/apple-touch-icon.png?v=2",
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/favicon.ico?v=3", sizes: "any" },
+      ],
+      shortcut: "/favicon.ico",
+      apple: "/apple-touch-icon.png",
     },
     manifest: "/site.webmanifest",
     verification: {

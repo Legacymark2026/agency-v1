@@ -60,7 +60,7 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                     {/* Logo */}
                     <Link href="/" className="flex items-center justify-center w-full group relative mb-2" title="Ir al Inicio">
                         <div className="relative h-8 w-8 transition-opacity group-hover:opacity-80">
-                            <Image src="/logo.png" alt="LegacyMark" fill className="object-contain" priority style={{ filter: 'brightness(0) invert(1)' }} />
+                            <Image src="/favicon.ico" alt="LegacyMark" fill className="object-contain" priority style={{ filter: 'brightness(0) invert(1)' }} />
                         </div>
                     </Link>
 

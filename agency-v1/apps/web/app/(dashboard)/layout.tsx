@@ -10,8 +10,20 @@ import { SidebarController } from "@/components/dashboard/sidebar-controller";
 import { isStandardRole, canAccessRoute, PERMISSION_ROUTE_MAP } from "@/lib/rbac";
 import { canCustomRoleAccess } from "@/lib/role-config";
 import { OnboardingWizard } from "@/components/onboarding/wizard";
+import { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+    const locale = await getLocale();
+    const t = await getTranslations({ locale, namespace: "dashboard.metadata" });
+
+    return {
+        title: t("title"),
+        description: t("description"),
+    };
+}
 
 function resolveBadge(role: string, customRoleName?: string) {
     const standardRoles = ['super_admin', 'admin', 'content_manager', 'client_admin', 'client_user', 'external_client', 'guest'];

@@ -44,7 +44,7 @@ export default async function CookiesPolicyPage() {
             "name": "LegacyMark BIC S.A.S",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://legacymarksas.com/logo.png"
+                "url": "https://legacymarksas.com/favicon.ico"
             }
         },
         "datePublished": "2026-02-12T08:00:00+00:00",

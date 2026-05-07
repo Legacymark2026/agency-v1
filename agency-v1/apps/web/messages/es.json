@@ -53,6 +53,12 @@
     "subscribeSuccess": "¡Suscrito! Pronto recibirás nuestro contenido.",
     "subscribeLoading": "..."
   },
+  "dashboard": {
+    "metadata": {
+      "title": "Panel de Control | LegacyMark Command Center",
+      "description": "Accede a tus métricas estratégicas, gestión operativa e insights de IA en tiempo real."
+    }
+  },
   "home": {
     "metadata": {
       "title": "Agencia de Marketing Digital y Desarrollo Web | LegacyMark",

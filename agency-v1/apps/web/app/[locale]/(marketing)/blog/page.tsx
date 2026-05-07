@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             description: "Contenido de alto nivel para escalar tu negocio.",
             url: `${siteConfig.url}/${locale}/blog`,
             siteName: siteConfig.name,
-            images: [{ url: `${siteConfig.url}/logo.png` }],
+            images: [{ url: `${siteConfig.url}/favicon.ico` }],
             locale: locale === 'en' ? 'en_US' : 'es_ES',
             type: 'website',
         },

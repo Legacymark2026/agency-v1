@@ -37,7 +37,7 @@ export function ArticleSchema({
             "name": "LegacyMark",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://legacymark.com/logo.png"
+                "url": "https://legacymark.com/favicon.ico"
             }
         },
         "datePublished": publishedDate,

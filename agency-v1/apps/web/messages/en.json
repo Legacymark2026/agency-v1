@@ -53,6 +53,12 @@
     "subscribeSuccess": "Subscribed! You will receive our content soon.",
     "subscribeLoading": "..."
   },
+  "dashboard": {
+    "metadata": {
+      "title": "Dashboard | LegacyMark Command Center",
+      "description": "Access your strategic metrics, operational management, and real-time AI insights."
+    }
+  },
   "home": {
     "metadata": {
       "title": "Digital Marketing & Web Development Agency | LegacyMark",

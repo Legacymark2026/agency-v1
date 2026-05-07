@@ -104,10 +104,10 @@ export default function MfaVerifyPage() {
 
             <div className="flex-1 flex flex-col justify-center items-center px-6 lg:px-16 relative z-10">
                 
-                <div className="mb-12 relative w-[240px] h-[60px]">
+                <div className="mb-12 relative w-20 h-20">
                     <Link href="/">
                         <Image
-                            src="/logo.png"
+                            src="/favicon.ico"
                             alt="LegacyMark"
                             fill
                             className="object-contain"

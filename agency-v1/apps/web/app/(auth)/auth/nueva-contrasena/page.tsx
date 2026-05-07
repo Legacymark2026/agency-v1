@@ -83,8 +83,8 @@ export default function NuevaContrasenaPage() {
                 className="relative w-full max-w-[420px] z-10"
             >
                 <div className="flex justify-center mb-8">
-                    <Link href="/" className="relative w-[180px] h-[44px] hover:scale-105 transition-transform inline-block">
-                        <Image src="/logo.png" alt="LegacyMark" fill className="object-contain" priority />
+                    <Link href="/" className="relative w-16 h-16 hover:scale-110 transition-transform inline-block">
+                        <Image src="/favicon.ico" alt="LegacyMark" fill className="object-contain" priority />
                     </Link>
                 </div>
                 {children}

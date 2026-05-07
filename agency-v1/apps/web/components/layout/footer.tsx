@@ -134,13 +134,13 @@ export function Footer() {
                     <div className="lg:col-span-4 space-y-6">
                         {/* ── 9. Logo with hover glow ── */}
                         <Link href="/" className="group block w-fit">
-                            <div className="relative h-16 w-[220px] transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(20,184,166,0.4)]">
+                            <div className="relative h-12 w-12 transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(20,184,166,0.4)]">
                                 <NextImage
-                                    src="/logo.png"
+                                    src="/favicon.ico"
                                     alt="LegacyMark"
                                     fill
                                     className="object-contain brightness-0 invert"
-                                    sizes="220px"
+                                    sizes="48px"
                                     priority
                                 />
                             </div>

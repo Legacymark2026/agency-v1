@@ -10,7 +10,7 @@ export function JsonLd({ locale }: { locale: string }) {
         "@type": ["Organization", "MarketingAgency", "WebDevelopment"],
         "name": siteConfig.name,
         "url": siteConfig.url,
-        "logo": `${siteConfig.url}/logo.png`,
+        "logo": `${siteConfig.url}/favicon.ico`,
         "description": siteConfig.description,
         "foundingDate": "2023",
         "sameAs": [

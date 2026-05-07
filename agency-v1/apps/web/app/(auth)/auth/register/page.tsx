@@ -61,9 +61,9 @@ export default function RegisterPage() {
             {/* Lado izquierdo — Branding */}
             <div className="hidden lg:flex flex-col flex-1 px-16 py-12 relative z-10">
                 <div className="flex-1">
-                    <Link href="/" className="inline-block relative w-[420px] h-[105px] hover:scale-105 transition-transform">
+                    <Link href="/" className="inline-block relative w-24 h-24 hover:scale-105 transition-transform">
                         <Image
-                            src="/logo.png"
+                            src="/favicon.ico"
                             alt="LegacyMark"
                             fill
                             className="object-contain"
@@ -97,10 +97,10 @@ export default function RegisterPage() {
             {/* Lado derecho — Formulario */}
             <div className="flex-1 flex flex-col justify-center items-center px-6 lg:px-16 relative z-10 bg-black/20 lg:bg-transparent backdrop-blur-3xl lg:backdrop-blur-none py-10">
                 {/* Logo móvil */}
-                <div className="lg:hidden mb-8 relative w-[320px] h-[80px]">
+                <div className="lg:hidden mb-8 relative w-20 h-20">
                     <Link href="/">
                         <Image
-                            src="/logo.png"
+                            src="/favicon.ico"
                             alt="LegacyMark"
                             fill
                             className="object-contain"

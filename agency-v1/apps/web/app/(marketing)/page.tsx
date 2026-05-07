@@ -34,7 +34,7 @@ export default async function HomePage() {
             <OrganizationSchema
                 name={siteConfig.name}
                 url={siteConfig.url}
-                logo={`${siteConfig.url}/logo.png`}
+                logo={`${siteConfig.url}/favicon.ico`}
                 sameAs={[
                     siteConfig.links.linkedin,
                     siteConfig.links.facebook,
