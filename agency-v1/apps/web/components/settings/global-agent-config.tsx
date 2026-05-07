@@ -265,7 +265,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                         </Badge>
                                     </div>
                                 ))}
-                                {config?.specializations?.length > 6 && (
+                                {Boolean(config?.specializations?.length && config.specializations.length > 6) && (
                                     <p className="text-xs text-slate-500 text-center">
                                         +{config?.specializations?.length! - 6} más
                                     </p>
@@ -288,7 +288,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                         </Badge>
                                     </div>
                                 ))}
-                                {config?.skills?.length > 6 && (
+                                {Boolean(config?.skills?.length && config.skills.length > 6) && (
                                     <p className="text-xs text-slate-500 text-center">
                                         +{config?.skills?.length! - 6} más
                                     </p>
