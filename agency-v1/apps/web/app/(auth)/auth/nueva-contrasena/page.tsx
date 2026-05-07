@@ -62,7 +62,14 @@ export default function NuevaContrasenaPage() {
         }
     }, [state?.success, router]);
 
-    const pageShell = (children: React.ReactNode) => (
+    const pageShell = (children: React.ReactNode) => {
+        const [year, setYear] = useState<number | null>(null);
+
+        useEffect(() => {
+            setYear(new Date().getFullYear());
+        }, []);
+
+        return (
         <div className="min-h-screen w-full flex items-center justify-center bg-[#0B0F19] text-white relative overflow-hidden p-4">
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 blur-[120px] rounded-full" />
@@ -82,11 +89,11 @@ export default function NuevaContrasenaPage() {
                 </div>
                 {children}
                 <p className="text-center mt-6 text-xs text-slate-700">
-                    © {new Date().getFullYear()} LegacyMark · Todos los derechos reservados
+                    © {year ?? new Date().getFullYear()} LegacyMark · Todos los derechos reservados
                 </p>
             </motion.div>
         </div>
-    );
+    )};
 
     // Token inválido
     if (!token) {

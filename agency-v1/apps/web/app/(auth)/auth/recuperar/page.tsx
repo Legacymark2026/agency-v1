@@ -27,6 +27,11 @@ function SubmitButton() {
 
 export default function RecuperarContrasenaPage() {
     const [state, dispatch] = useActionState(requestPasswordReset, undefined);
+    const [year, setYear] = useState<number | null>(null);
+
+    useEffect(() => {
+        setYear(new Date().getFullYear());
+    }, []);
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-[#0B0F19] text-white relative overflow-hidden p-4">
@@ -150,7 +155,7 @@ export default function RecuperarContrasenaPage() {
                 </div>
 
                 <p className="text-center mt-6 text-xs text-slate-700">
-                    © {new Date().getFullYear()} LegacyMark · Todos los derechos reservados
+                    © {year ?? new Date().getFullYear()} LegacyMark · Todos los derechos reservados
                 </p>
             </motion.div>
         </div>

@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function TermsPage() {
+    const [year, setYear] = useState<number | null>(null);
+
+    useEffect(() => {
+        setYear(new Date().getFullYear());
+    }, []);
     const { scrollYProgress } = useScroll();
     const scaleX = useSpring(scrollYProgress, {
         stiffness: 100,
@@ -240,7 +245,7 @@ export default function TermsPage() {
                         </div>
 
                         <div className="text-center text-sm text-gray-500 pt-8 border-t border-gray-200">
-                            <p>LegacyMark BIC S.A.S &copy; {new Date().getFullYear()}</p>
+                            <p>LegacyMark BIC S.A.S &copy; {year ?? new Date().getFullYear()}</p>
                         </div>
 
                     </div>

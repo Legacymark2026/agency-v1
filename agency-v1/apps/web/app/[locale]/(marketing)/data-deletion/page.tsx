@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
     Shield, 
@@ -23,6 +23,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 export default function DataDeletionPage() {
+    const [year, setYear] = useState<number | null>(null);
+
+    useEffect(() => {
+        setYear(new Date().getFullYear());
+    }, []);
+
     const steps = [
         {
             icon: <Mail className="w-6 h-6" />,
@@ -230,7 +236,7 @@ export default function DataDeletionPage() {
                 <footer className="border-t border-white/5 py-12 bg-slate-950 relative overflow-hidden">
                     <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0">
                         <div className="text-sm text-slate-500 font-mono">
-                            © {new Date().getFullYear()} LEGACYMARK SAS. ALL RIGHTS RESERVED.
+                            © {year ?? new Date().getFullYear()} LEGACYMARK SAS. ALL RIGHTS RESERVED.
                         </div>
                         <div className="flex items-center gap-8 text-xs font-bold uppercase tracking-widest text-slate-400">
                             <Link href="/politica-privacidad" className="hover:text-teal-500 transition-colors">Privacy</Link>

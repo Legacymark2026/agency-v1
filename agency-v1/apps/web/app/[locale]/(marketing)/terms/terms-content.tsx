@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { ArrowLeft, Check, ChevronRight, Globe, Scale, DollarSign, ShieldAlert, Ban, Info, Mail } from "lucide-react";
 import Link from "next/link";
@@ -8,7 +8,20 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // Subcomponents
-function SectionCard({ id, title, icon, children }: { id: string, title: string, icon: React.ReactNode, children: React.ReactNode }) {
+
+function TermsContent() {
+    const { scrollYProgress } = useScroll();
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    });
+    const [year, setYear] = useState<number | null>(null);
+
+    useEffect(() => {
+        setYear(new Date().getFullYear());
+    }, []);
+
     return (
         <motion.div
             id={id}
@@ -290,7 +303,7 @@ export function TermsContent() {
                         </div>
 
                         <div className="text-center text-sm text-gray-500 pt-8 border-t border-gray-200 dark:border-slate-800">
-                            <p>LegacyMark BIC S.A.S &copy; {new Date().getFullYear()}</p>
+                            <p>LegacyMark BIC S.A.S &copy; {year ?? new Date().getFullYear()}</p>
                         </div>
 
                     </div>

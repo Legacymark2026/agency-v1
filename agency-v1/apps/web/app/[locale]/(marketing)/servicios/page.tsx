@@ -82,12 +82,16 @@ const Counter = ({ value, label, prefix = "", suffix = "" }: { value: number, la
 
 // 3. Floating Data Particles
 const FloatingParticle = ({ delay = 0, xRange = 100, yRange = 100, size = 10, color = "bg-teal-500" }: { delay?: number, xRange?: number, yRange?: number, size?: number, color?: string }) => {
-    const [duration, setDuration] = useState(15);
+    const [duration, setDuration] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        const timeout = setTimeout(() => setDuration(Math.random() * 10 + 10), 0);
+        setIsMounted(true);
+        const timeout = setTimeout(() => setDuration(Math.random() * 10 + 10), 100);
         return () => clearTimeout(timeout);
     }, []);
+
+    if (!isMounted) return null;
 
     return (
         <motion.div
