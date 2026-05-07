@@ -267,7 +267,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                 ))}
                                 {config?.specializations?.length > 6 && (
                                     <p className="text-xs text-slate-500 text-center">
-                                        +{config.specializations.length - 6} más
+                                        +{config?.specializations?.length! - 6} más
                                     </p>
                                 )}
                             </div>
@@ -290,7 +290,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                 ))}
                                 {config?.skills?.length > 6 && (
                                     <p className="text-xs text-slate-500 text-center">
-                                        +{config.skills.length - 6} más
+                                        +{config?.skills?.length! - 6} más
                                     </p>
                                 )}
                             </div>
