@@ -28,18 +28,25 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SubscriptionPage() {
-  const session = await auth()
+  let session;
   let currentPlanId = 'free'
 
-  if (session?.user?.id) {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { companies: { include: { company: true } } },
-    })
+  try {
+    session = await auth()
+    
+    if (session?.user?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: { companies: { include: { company: true } } },
+      })
 
-    if (user?.companies?.[0]?.company?.subscriptionTier) {
-      currentPlanId = user.companies[0].company.subscriptionTier
+      if (user?.companies?.[0]?.company?.subscriptionTier) {
+        currentPlanId = user.companies[0].company.subscriptionTier
+      }
     }
+  } catch (error) {
+    console.error('Error in SubscriptionPage:', error)
+    // Continue with default values if auth fails
   }
 
   return (

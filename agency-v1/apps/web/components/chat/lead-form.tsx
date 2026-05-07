@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface LeadFormProps {
     onChatStarted: (conversationId: string, visitorId: string) => void;
+    companyId?: string;
 }
 
 const TEAM_AVATARS = [
@@ -163,7 +164,7 @@ function ReasonDropdown({
     );
 }
 
-export function LeadForm({ onChatStarted }: LeadFormProps) {
+export function LeadForm({ onChatStarted, companyId }: LeadFormProps) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [reason, setReason] = useState("");
@@ -192,7 +193,7 @@ export function LeadForm({ onChatStarted }: LeadFormProps) {
             : message;
 
         try {
-            const result = await initializeChat({ name, email, message: fullMessage, visitorId });
+            const result = await initializeChat({ name, email, message: fullMessage, visitorId, companyId });
             if (result.success && result.conversationId) {
                 onChatStarted(result.conversationId, visitorId);
             } else {

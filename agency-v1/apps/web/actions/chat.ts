@@ -21,14 +21,18 @@ export async function initializeChat(data: {
     email: string;
     message: string;
     visitorId: string; // From localStorage
+    companyId?: string;
 }) {
-    const { name, email, message, visitorId } = data;
+    const { name, email, message, visitorId, companyId: providedCompanyId } = data;
 
     try {
-        // 0. Get Default Company (for single-tenant setup)
-        const company = await prisma.company.findFirst();
-        if (!company) throw new Error("No default company found");
-        const companyId = company.id;
+        // 0. Get Company
+        let companyId = providedCompanyId;
+        if (!companyId) {
+            const company = await prisma.company.findFirst();
+            if (!company) throw new Error("No default company found");
+            companyId = company.id;
+        }
 
         // 1. Find existing conversation by platformId/channel (Unique identifier for the session)
         let conversation = await prisma.conversation.findFirst({

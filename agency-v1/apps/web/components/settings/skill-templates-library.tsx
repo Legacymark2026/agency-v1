@@ -23,7 +23,7 @@ interface Template {
     description: string | null;
     category: string;
     content: any;
-    parameters: Record<string, any>;
+    parameters: any;
     isGlobal: boolean;
     isPremium: boolean;
     tags: string[];

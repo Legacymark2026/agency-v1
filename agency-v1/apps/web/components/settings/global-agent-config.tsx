@@ -191,7 +191,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                             <Layers className="w-5 h-5 text-teal-500" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{config?.stats.totalSpecializations}</p>
+                            <p className="text-2xl font-bold text-white">{config?.stats?.totalSpecializations ?? 0}</p>
                             <p className="text-sm text-slate-400">Especializaciones</p>
                         </div>
                     </div>
@@ -202,7 +202,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                             <Cpu className="w-5 h-5 text-purple-500" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{config?.stats.totalSkills}</p>
+                            <p className="text-2xl font-bold text-white">{config?.stats?.totalSkills ?? 0}</p>
                             <p className="text-sm text-slate-400">Habilidades</p>
                         </div>
                     </div>
@@ -213,7 +213,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                             <Database className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{config?.stats.totalPresets}</p>
+                            <p className="text-2xl font-bold text-white">{config?.stats?.totalPresets ?? 0}</p>
                             <p className="text-sm text-slate-400">Presets</p>
                         </div>
                     </div>
@@ -224,7 +224,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                             <Settings className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-white">{config?.stats.totalTemplates}</p>
+                            <p className="text-2xl font-bold text-white">{config?.stats?.totalTemplates ?? 0}</p>
                             <p className="text-sm text-slate-400">Templates</p>
                         </div>
                     </div>
@@ -254,7 +254,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                 Especializaciones Activas
                             </h3>
                             <div className="space-y-2">
-                                {config?.specializations.slice(0, 6).map(spec => (
+                                {config?.specializations?.slice(0, 6).map(spec => (
                                     <div key={spec.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50">
                                         <div className="flex items-center gap-2">
                                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: spec.color }} />
@@ -265,9 +265,9 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                         </Badge>
                                     </div>
                                 ))}
-                                {Boolean(config?.specializations?.length && config.specializations.length > 6) && (
+                                {Boolean((config?.specializations?.length ?? 0) > 6) && (
                                     <p className="text-xs text-slate-500 text-center">
-                                        +{config?.specializations?.length! - 6} más
+                                        +{(config?.specializations?.length ?? 0) - 6} más
                                     </p>
                                 )}
                             </div>
@@ -280,7 +280,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                 Habilidades Recientes
                             </h3>
                             <div className="space-y-2">
-                                {config?.skills.slice(0, 6).map(skill => (
+                                {config?.skills?.slice(0, 6).map(skill => (
                                     <div key={skill.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50">
                                         <span className="text-sm text-slate-300">{skill.name}</span>
                                         <Badge variant="outline" className="text-xs border-slate-700">
@@ -288,9 +288,9 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                         </Badge>
                                     </div>
                                 ))}
-                                {Boolean(config?.skills?.length && config.skills.length > 6) && (
+                                {Boolean((config?.skills?.length ?? 0) > 6) && (
                                     <p className="text-xs text-slate-500 text-center">
-                                        +{config?.skills?.length! - 6} más
+                                        +{(config?.skills?.length ?? 0) - 6} más
                                     </p>
                                 )}
                             </div>
@@ -332,7 +332,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                                                     className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-white"
                                                 >
                                                     <option value="">Ninguna</option>
-                                                    {config?.specializations.map(spec => (
+                                                    {config?.specializations?.map(spec => (
                                                         <option key={spec.id} value={spec.id}>{spec.name}</option>
                                                     ))}
                                                 </select>
@@ -397,7 +397,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                     </div>
 
                     <div className="grid gap-3">
-                        {config?.presets.map(preset => (
+                        {config?.presets?.map(preset => (
                             <div
                                 key={preset.id}
                                 className="rounded-lg border border-slate-800 bg-slate-900/50 p-4"
@@ -452,7 +452,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                             </div>
                         ))}
 
-                        {config?.presets.length === 0 && (
+                        {(config?.presets?.length ?? 0) === 0 && (
                             <div className="text-center py-8 text-slate-500">
                                 <Database className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                 <p>No hay presets configurados</p>
@@ -508,7 +508,7 @@ export function GlobalAgentConfig({ companyId, readonly = false }: Props) {
                             <div className="flex items-center justify-between p-2 rounded bg-slate-800/50">
                                 <span className="text-slate-300">Especializaciones del Sistema</span>
                                 <Badge className="bg-teal-500/20 text-teal-400">
-                                    {config?.specializations.filter(s => s.isSystem).length} activas
+                                    {config?.specializations?.filter(s => s.isSystem).length ?? 0} activas
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between p-2 rounded bg-slate-800/50">

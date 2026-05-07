@@ -42,12 +42,14 @@ export default auth(function middleware(req: NextRequest) {
                     : []),
             ];
             const origin = req.headers.get('Origin') || '';
-            if (ALLOWED_ORIGINS.includes(origin)) {
-                response.headers.set('Access-Control-Allow-Origin', origin);
+            const isExternalWebhook = pathname === "/api/webhooks/external";
+
+            if (ALLOWED_ORIGINS.includes(origin) || isExternalWebhook) {
+                response.headers.set('Access-Control-Allow-Origin', origin || '*');
                 response.headers.set('Vary', 'Origin');
             }
             response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-            response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-device-id');
+            response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-device-id, x-api-key');
         }
 
         return response;
