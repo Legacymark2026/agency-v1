@@ -33,7 +33,7 @@ interface Skill {
     name: string;
     description: string | null;
     category: string;
-    parameters: Record<string, any> | null;
+    parameters: any;
     isActive: boolean;
     priority: number;
     specializationId: string;
