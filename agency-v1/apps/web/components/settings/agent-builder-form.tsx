@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { upsertAIAgent } from "@/actions/ai-agents";
 import {
@@ -11,6 +11,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { KnowledgeBaseManager } from "@/components/settings/knowledge-base-manager";
+import { AgentSpecializations } from "@/components/settings/agent-specializations";
+import { AgentSkillsManager } from "@/components/settings/agent-skills-manager";
+import { SkillTemplatesLibrary } from "@/components/settings/skill-templates-library";
 
 // ── CRM Variable Tokens ─────────────────────────────────────────────────────
 const CRM_TOKENS = [
@@ -119,6 +122,11 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
     // ── RAG
     const initKbIds = initialData?.knowledgeBases?.map((kb: any) => kb.id) || [];
     const [selectedKbIds, setSelectedKbIds] = useState<string[]>(initKbIds);
+
+    // ── Multi-Specialization Framework
+    const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+    const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+    const [showSkillsTab, setShowSkillsTab] = useState(false);
     const [strictRagMode, setStrictRagMode] = useState(initialData?.strictRagMode ?? false);
 
     // ── Human-in-the-Loop
@@ -329,6 +337,75 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             hint="El agente NO puede responder fuera del contexto de los documentos. Si no sabe, escala."
                             value={strictRagMode} onChange={setStrictRagMode}
                         />
+                    </Section>
+
+                    {/* Multi-Specialization Framework */}
+                    <Section icon={Brain} title="Especializaciones y Habilidades" color="text-teal-400">
+                        <div className="mb-6">
+                            <p className="text-xs text-slate-400 mb-4">
+                                Configura las especializaciones del agente y sus habilidades específicas. 
+                                Esto permite un marco de configuración multi-especializado donde cada agente puede 
+                                tener criterios, parámetros y habilidades propios.
+                            </p>
+                        </div>
+                        
+                        <AgentSpecializations 
+                            companyId={companyId}
+                            selectedSpecializations={selectedSpecializations}
+                            onSpecializationsChange={setSelectedSpecializations}
+                        />
+
+                        {selectedSpecializations.length > 0 && (
+                            <div className="mt-6 pt-4 border-t border-slate-800">
+                                <Button 
+                                    type="button"
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setShowSkillsTab(!showSkillsTab)}
+                                    className="border-slate-700"
+                                >
+                                    <Brain className="w-4 h-4 mr-2" />
+                                    {showSkillsTab ? "Ocultar" : "Mostrar"} Habilidades
+                                </Button>
+                                
+                                {showSkillsTab && (
+                                    <div className="mt-4">
+                                        <AgentSkillsManager 
+                                            companyId={companyId}
+                                            selectedSpecializations={selectedSpecializations}
+                                            selectedSkills={selectedSkills}
+                                            onSkillsChange={setSelectedSkills}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="mt-6 pt-4 border-t border-slate-800">
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm" className="border-slate-700">
+                                        <Database className="w-4 h-4 mr-2" />
+                                        Biblioteca de Templates
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-slate-950 border-slate-800">
+                                    <DialogHeader>
+                                        <DialogTitle>Biblioteca de Habilidades Profesionales</DialogTitle>
+                                        <DialogDescription>
+                                            Importa habilidades profesionales predefinidas o crea las tuyas propias
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <SkillTemplatesLibrary 
+                                        companyId={companyId}
+                                        onImportSuccess={(skill) => {
+                                            setSelectedSkills(prev => [...prev, skill.id]);
+                                            toast.success(`Habilidad "${skill.name}" importada`);
+                                        }}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </Section>
 
                     {/* Human-in-the-Loop */}

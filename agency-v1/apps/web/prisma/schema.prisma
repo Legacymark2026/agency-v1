@@ -307,6 +307,10 @@ model Company {
   webhooks                Webhook[]
   workflows               Workflow[]
   videoEditorProjects     VideoEditorProject[]
+  agentSpecializations    AgentSpecialization[]
+  agentSkills             AgentSkill[]
+  skillTemplates          SkillTemplate[]
+  agentConfigurationPresets AgentConfigurationPreset[]
 
   @@map("companies")
 }
@@ -2129,12 +2133,111 @@ model AIAgent {
   updatedAt                 DateTime            @updatedAt @map("updated_at")
   knowledgeBases            KnowledgeBase[]
   conversations             AgentConversation[]
+  agentSkills               AgentSkill[]
   company                   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([isActive])
   @@index([companyId, isActive])
   @@map("ai_agents")
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENT MULTI-SPECIALIZATION FRAMEWORK
+// ══════════════════════════════════════════════════════════════
+
+model AgentSpecialization {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   @default("GENERAL") // SALES, SUPPORT, MARKETING, OPERATIONS, CUSTOM
+  icon        String?
+  color       String   @default("#0d9488")
+  isSystem    Boolean  @default(false) @map("is_system") // System defaults cannot be deleted
+  isActive    Boolean  @default(true) @map("is_active")
+  order       Int      @default(0)
+  companyId   String?  @map("company_id") // Null for global/system specializations
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  skills      AgentSkill[]
+  presets     AgentConfigurationPreset[]
+  company     Company?   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([category])
+  @@index([isActive])
+  @@map("agent_specializations")
+}
+
+model AgentSkill {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  category        String   @default("GENERAL") // COMMUNICATION, ANALYSIS, AUTOMATION, NEGOTIATION, etc.
+  parameters      Json     @default("{}") // Dynamic parameters for this skill
+  isActive        Boolean  @default(true) @map("is_active")
+  priority        Int      @default(0) // Order of execution
+  specializationId String  @map("specialization_id")
+  agentId         String?  @map("agent_id") // Null = available for any agent
+  companyId       String   @map("company_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  specialization  AgentSpecialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+  agent           AIAgent?            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([specializationId])
+  @@index([agentId])
+  @@index([companyId])
+  @@index([isActive])
+  @@map("agent_skills")
+}
+
+model SkillTemplate {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  category        String   @default("GENERAL")
+  content         Json     // Skill configuration content
+  parameters      Json     @default("{}") // Default parameters
+  isGlobal        Boolean  @default(false) @map("is_global") // Available to all companies
+  isPremium       Boolean  @default(false) @map("is_premium") // Requires specific subscription
+  tags            String[] @default([])
+  downloads       Int      @default(0) @map("downloads")
+  companyId       String?  @map("company_id") // Creator company (null = system)
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([isGlobal])
+  @@index([category])
+  @@index([companyId])
+  @@map("skill_templates")
+}
+
+model AgentConfigurationPreset {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  config          Json     // Full agent configuration preset
+  specializationId String?  @map("specialization_id")
+  isDefault       Boolean  @default(false) @map("is_default")
+  isGlobal        Boolean  @default(false) @map("is_global")
+  companyId       String?  @map("company_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  specialization  AgentSpecialization? @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+  company         Company?   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([specializationId])
+  @@index([companyId])
+  @@index([isGlobal])
+  @@map("agent_configuration_presets")
 }
 
 model KanbanProject {
