@@ -349,7 +349,7 @@ function buildBodySegment(clips: Clip[], analysis: Map<string, ClipAnalysis>, co
     duration: Math.max(processClips.length * rhythm, 6),
     type: 'body',
     transitions: processClips.map(() => 'cut'),
-    speedRamping: true
+    speedRamp: { start: 100, end: 100, duration: 0 }
   };
 }
 
