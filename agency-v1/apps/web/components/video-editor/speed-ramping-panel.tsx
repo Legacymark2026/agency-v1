@@ -146,7 +146,7 @@ export function SpeedRampingPanel({ clips, speedRamps, onSpeedRampsChange }: Spe
                 </Badge>
               </div>
               <Slider
-                value={[clipRamp.startSpeed]}
+                value={[clipRamp.startSpeed ?? 100]}
                 onValueChange={([val]) => updateSpeedRamp(selectedClip.id, { startSpeed: val })}
                 min={25}
                 max={200}
@@ -169,7 +169,7 @@ export function SpeedRampingPanel({ clips, speedRamps, onSpeedRampsChange }: Spe
                 </Badge>
               </div>
               <Slider
-                value={[clipRamp.endSpeed]}
+                value={[clipRamp.endSpeed ?? 100]}
                 onValueChange={([val]) => updateSpeedRamp(selectedClip.id, { endSpeed: val })}
                 min={25}
                 max={200}
