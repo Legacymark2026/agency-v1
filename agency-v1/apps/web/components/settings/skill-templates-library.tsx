@@ -29,7 +29,9 @@ interface Template {
     tags: string[];
     downloads: number;
     companyId: string | null;
-    createdAt: string;
+    createdAt: Date | string;
+    updatedAt?: Date | string;
+    createdBy?: string | null;
 }
 
 interface Props {
