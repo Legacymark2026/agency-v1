@@ -1,0 +1,53 @@
+npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
+
+> web@0.1.0 build
+> prisma generate && next build
+
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 1.82s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.5min
+  Running next.config.js provided runAfterProductionCompile ...
+✓ Completed runAfterProductionCompile in 9.0s
+  Running TypeScript ...
+Failed to type check.
+
+./components/settings/skill-templates-library.tsx:70:26
+Type error: Argument of type '{ id: string; companyId: string | null; name: string; createdAt: Date; updatedAt: Date; content: JsonValue; category: string; createdBy: string | null; description: string | null; ... 4 more ...; downloads: number; }[]' is not assignable to parameter of type 'SetStateAction<Template[]>'.
+  Type '{ id: string; companyId: string | null; name: string; createdAt: Date; updatedAt: Date; content: JsonValue; category: string; createdBy: string | null; description: string | null; ... 4 more ...; downloads: number; }[]' is not assignable to type 'Template[]'.
+    Type '{ id: string; companyId: string | null; name: string; createdAt: Date; updatedAt: Date; content: JsonValue; category: string; createdBy: string | null; description: string | null; ... 4 more ...; downloads: number; }' is not assignable to type 'Template'.
+      Types of property 'createdAt' are incompatible.
+        Type 'Date' is not assignable to type 'string'.
+
+  [90m68 |[0m         [36mtry[0m {
+  [90m69 |[0m             [36mconst[0m data = [36mawait[0m getSkillTemplates(companyId);
+[31m[1m>[0m [90m70 |[0m             setTemplates(data);
+  [90m   |[0m                          [31m[1m^[0m
+  [90m71 |[0m         } [36mcatch[0m (error) {
+  [90m72 |[0m             console.error([32m"Error loading templates:"[0m, error);
+  [90m73 |[0m             toast.error([32m"Error al cargar templates"[0m);
+Next.js build worker exited with code: 1 and signal: null
+npm error Lifecycle script `build` failed with error:
+npm error code 1
+npm error path C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+npm error workspace web@0.1.0
+npm error location C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c prisma generate && next build

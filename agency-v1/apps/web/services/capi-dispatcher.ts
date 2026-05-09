@@ -1,42 +1,44 @@
 /**
  * services/capi-dispatcher.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * Servicio centralizado de dispatching S2S (Server-to-Server) para todas
- * las plataformas de conversión: Meta CAPI, TikTok CAPI, GA4, LinkedIn CAPI.
+ * Thin wrapper / compatibility shim.
  *
- * PROBLEMA RESUELTO:
- * Antes, cada stage change en crm.ts llamaba directamente a:
- *   await triggerMetaCapi(...)
- *   await triggerTiktokCapi(...)
- *   await triggerGoogleCapi(...)
- *   await triggerLinkedinCapi(...)
- * ...de forma SÍNCRONA, bloqueando la respuesta al usuario ~400-800ms extra.
+ * MIGRATION NOTE (2026-05-09):
+ *   The canonical dispatcher is now `lib/services/conversions/dispatcher.ts`.
+ *   That file handles all 4 platforms (Meta, Google, TikTok, LinkedIn) with:
+ *     ✅ external_id (SHA-256 leadId)
+ *     ✅ dynamic action_source (website vs system_generated)
+ *     ✅ ttp cookie support for TikTok
+ *     ✅ multi-conversionId for LinkedIn
+ *     ✅ correct deduplication event_id for Meta
  *
- * AHORA:
- * - Un solo punto de entrada: `dispatchConversionEvent()`
- * - Ejecución ASÍNCRONA y NO BLOQUEANTE (fire-and-forget con error logging)
- * - Retry 1 vez por plataforma en caso de fallo de red
- * - Compatible con leads.ts y crm.ts
+ *   This file re-exports `dispatchConversion` as `dispatchConversionEvent` so
+ *   any existing callers that use the old signature keep working without
+ *   needing an immediate mass-rename across the codebase.
  *
- * USO en Server Actions:
+ * USAGE (unchanged API for existing callers):
  *   dispatchConversionEvent({
  *     eventName: "Purchase",
  *     value: deal.value,
  *     currency: "USD",
- *     userData: { email: deal.contactEmail, name: deal.contactName },
- *   }, companyId); // sin await — no bloquea la respuesta
+ *     userData: { email: "...", fbclid: "...", ... },
+ *     sourceId: deal.id,
+ *   }, companyId);
  *
  * @module services/capi-dispatcher
  */
 
+import { dispatchConversion, type ConversionEvent } from "@/lib/services/conversions/dispatcher";
 import { logger } from "@/lib/logger";
-import { sendMetaCapiEvent } from "@/lib/meta-capi";
-import { sendTiktokCapiEvent } from "@/lib/tiktok-capi";
-import { sendGa4Event } from "@/lib/ga4-mp";
-import { sendLinkedinCapiEvent } from "@/lib/linkedin-capi";
 
-// ── Tipos ──────────────────────────────────────────────────────────────────────
+// ── Re-export canonical types ──────────────────────────────────────────────────
 
+export type { ConversionEvent };
+
+/**
+ * Legacy payload shape used by older callers (crm.ts, etc.).
+ * Maps to the canonical ConversionEvent expected by lib/services/conversions/dispatcher.ts.
+ */
 export interface ConversionPayload {
   /** Nombre del evento según la nomenclatura Meta: "Purchase", "Lead", "CompleteRegistration", etc. */
   eventName: string;
@@ -58,165 +60,57 @@ export interface ConversionPayload {
     fbclid?: string | null;
     gclid?: string | null;
     ttclid?: string | null;
+    ttp?: string | null;
     li_fat_id?: string | null;
   };
   /** ID del lead o deal que origina el evento (para deduplicación) */
   sourceId?: string;
   /** Timestamp Unix en segundos (default: now) */
   eventTime?: number;
-  /** Plataformas a notificar. Por defecto notifica a todas. */
+  /** Plataformas a notificar. Ignorado en el dispatcher canónico (siempre notifica a todas las activas). */
   platforms?: Array<"meta" | "tiktok" | "ga4" | "linkedin">;
 }
 
-// ── Dispatcher Core ────────────────────────────────────────────────────────────
+// ── Dispatcher shim ────────────────────────────────────────────────────────────
 
 /**
- * Despacha un evento de conversión a todas las plataformas S2S configuradas.
- * SIEMPRE debe llamarse sin `await` para no bloquear la respuesta al usuario.
+ * @deprecated Use `dispatchConversion` from `@/lib/services/conversions/dispatcher` directly.
  *
- * @returns Promise<void> — ignorable (fire and forget)
- *
- * @example
- *   // En updateDealStage, después del update de Prisma:
- *   dispatchConversionEvent({ eventName: "Purchase", value: deal.value, userData: {...} }, companyId);
- *   return { success: true }; // ← respuesta inmediata al usuario
+ * Compatibility wrapper that maps the old ConversionPayload shape to the
+ * canonical ConversionEvent and delegates to the primary dispatcher.
+ * Fire-and-forget: ALWAYS call without `await`.
  */
 export function dispatchConversionEvent(
   payload: ConversionPayload,
   companyId: string
 ): void {
-  // Fire-and-forget: iniciamos la Promise pero no esperamos
-  _dispatchAsync(payload, companyId).catch((err) => {
-    logger.error("[CAPI Dispatcher] Error inesperado en dispatching", {
-      error: err instanceof Error ? err.message : String(err),
+  const canonicalEvent: ConversionEvent = {
+    leadId:    payload.sourceId || `anon_${Date.now()}`,
+    eventName: payload.eventName,
+    value:     payload.value    ?? 0,
+    currency:  payload.currency ?? "USD",
+    timestamp: payload.eventTime ? payload.eventTime * 1000 : Date.now(),
+    userData: {
+      email:     payload.userData?.email,
+      phone:     payload.userData?.phone,
+      firstName: payload.userData?.firstName || (payload.userData?.name ? payload.userData.name.split(" ")[0] : undefined),
+      lastName:  payload.userData?.lastName  || (payload.userData?.name ? payload.userData.name.split(" ").slice(1).join(" ") : undefined),
+      ip:        payload.userData?.ipAddress,
+      userAgent: payload.userData?.userAgent,
+      fbc:       payload.userData?.fbc,
+      fbp:       payload.userData?.fbp,
+      fbclid:    payload.userData?.fbclid,
+      gclid:     payload.userData?.gclid,
+      ttclid:    payload.userData?.ttclid,
+      li_fat_id: payload.userData?.li_fat_id,
+    },
+  };
+
+  dispatchConversion(canonicalEvent, companyId).catch((err) => {
+    logger.error("[CAPI Shim] Error inesperado en dispatching", {
+      error:     err instanceof Error ? err.message : String(err),
       eventName: payload.eventName,
       companyId,
     });
   });
-}
-
-// ── Implementación Interna ─────────────────────────────────────────────────────
-
-async function _dispatchAsync(
-  payload: ConversionPayload,
-  companyId: string
-): Promise<void> {
-  const {
-    eventName,
-    value,
-    currency = "USD",
-    userData = {},
-    sourceId,
-    eventTime = Math.floor(Date.now() / 1000),
-    platforms = ["meta", "tiktok", "ga4", "linkedin"],
-  } = payload;
-
-  const context = { eventName, companyId, sourceId, value };
-
-  const tasks: Promise<void>[] = [];
-
-  if (platforms.includes("meta")) {
-    tasks.push(
-      withRetry(
-        async () => {
-          const { prisma } = await import("@/lib/prisma");
-          const config = await prisma.integrationConfig.findUnique({ where: { companyId_provider: { companyId, provider: 'meta-pixel' } } });
-          if (!config || !config.isEnabled) return;
-          const pixelId = (config.config as any)?.pixelId || (config.config as any)?.metaPixelId;
-          const accessToken = (config.config as any)?.accessToken || (config.config as any)?.metaAccessToken;
-          if (!pixelId || !accessToken) return;
-          
-          return sendMetaCapiEvent({
-             pixelId,
-             accessToken,
-             eventName: eventName as any,
-             userData,
-             customData: { value, currency }
-          });
-        },
-        "meta",
-        context
-      )
-    );
-  }
-
-  if (platforms.includes("tiktok")) {
-    tasks.push(
-      withRetry(
-        () =>
-          sendTiktokCapiEvent(companyId, {
-            eventName,
-            eventTime,
-            userData: userData as any,
-            customData: {
-                value,
-                currency,
-            }
-          }),
-        "tiktok",
-        context
-      )
-    );
-  }
-
-  if (platforms.includes("ga4")) {
-    tasks.push(
-      withRetry(
-        () =>
-          sendGa4Event(companyId, {
-            eventName: eventName.toLowerCase(),
-            userData: userData as any,
-            eventParams: {
-                value,
-                currency,
-            }
-          }),
-        "ga4",
-        context
-      )
-    );
-  }
-
-  if (platforms.includes("linkedin")) {
-    tasks.push(
-      withRetry(() => sendLinkedinCapiEvent(companyId, {
-          userData: userData as any,
-          conversionInfo: {
-              currencyCode: currency,
-              amount: value
-          }
-      }), "linkedin", context)
-    );
-  }
-
-  // Ejecutar todas las plataformas en paralelo — si una falla, las demás continúan
-  await Promise.allSettled(tasks);
-}
-
-// ── Retry Helper ───────────────────────────────────────────────────────────────
-
-async function withRetry(
-  fn: () => Promise<unknown>,
-  platform: string,
-  context: Record<string, unknown>,
-  maxRetries = 1
-): Promise<void> {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      await fn();
-      logger.debug(`[CAPI] ${platform} event dispatched`, context);
-      return;
-    } catch (err) {
-      if (attempt === maxRetries) {
-        logger.error(`[CAPI] ${platform} failed after ${maxRetries + 1} attempts`, {
-          ...context,
-          platform,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      } else {
-        logger.warn(`[CAPI] ${platform} attempt ${attempt + 1} failed, retrying...`, { platform });
-        await new Promise((r) => setTimeout(r, 200 * (attempt + 1)));
-      }
-    }
-  }
 }

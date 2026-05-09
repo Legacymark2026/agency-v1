@@ -28,6 +28,7 @@
     "generate:secrets": "node scripts/utils/generate-secrets.js"
   },
   "dependencies": {
+    "@agency/video-editor": "workspace:*",
     "@ai-sdk/google": "^1.0.0",
     "@ai-sdk/google-vertex": "^4.0.119",
     "@ai-sdk/openai": "^1.0.0",

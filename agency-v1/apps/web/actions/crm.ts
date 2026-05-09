@@ -5,12 +5,10 @@ import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { rateLimit } from "@/lib/rate-limit";
-import { sendMetaCapiEvent } from "@/lib/meta-capi";
-import { sendTiktokCapiEvent } from "@/lib/tiktok-capi";
 import { sendGa4Event } from "@/lib/ga4-mp";
-import { sendLinkedinCapiEvent } from "@/lib/linkedin-capi";
 import { triggerWorkflow } from "@/actions/automation";
 import { getAuthContext, authErrorToResponse } from "@/lib/auth-context";
+import { dispatchConversion } from "@/lib/services/conversions/dispatcher";
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 
@@ -380,59 +378,55 @@ export async function updateDealStage(dealId: string, stage: string) {
         // FASE 7: Broad Audience Training (S2S) FOR ALL DEAL STAGES
         const companyId = deal.companyId;
         if (companyId) {
-            const lead = await prisma.lead.findFirst({ where: { convertedToDealId: dealId } });
-            
-            // Ultra-Professional Architecture Note: Fallback to Deal's innate contact data
-            // if no CRM Lead is formally attached (e.g. manually created Pipeline deals)
-            const targetEmail = lead?.email || deal.contactEmail;
-            
-            if (targetEmail) {
-                const userData = {
-                    email: targetEmail,
-                    phone: lead?.phone || undefined,
-                    firstName: lead?.name?.split(' ')[0] || deal.contactName?.split(' ')[0],
-                    lastName: lead?.name?.split(' ').slice(1).join(' ') || deal.contactName?.split(' ').slice(1).join(' '),
-                    fbc: lead?.fbc,
-                    fbp: lead?.fbp,
-                };
+            const lead = await prisma.lead.findFirst({
+                where: { convertedToDealId: dealId },
+                select: { id: true, email: true, phone: true, name: true, ipAddress: true, userAgent: true, fbclid: true, fbc: true, fbp: true, gclid: true, ttclid: true, li_fat_id: true }
+            });
 
-                // 2.1: Pre-batch all integrationConfigs in ONE query (was 4 separate queries)
-                const activeIntegrations = await prisma.integrationConfig.findMany({
-                    where: {
-                        companyId,
-                        isEnabled: true,
-                        provider: { in: ['facebook', 'facebook-pixel', 'tiktok', 'google', 'google-analytics', 'linkedin'] },
-                    },
-                    select: { provider: true, config: true },
+            const targetEmail = lead?.email || deal.contactEmail;
+            const leadId      = lead?.id    || `deal_${dealId}`;
+
+            // Stage → event name map
+            const stageToCAPIEvent: Record<string, string> = {
+                WON:         'Purchase',
+                CONTACTED:   'Contact',
+                QUALIFIED:   'QualifiedLead',
+                PROPOSAL:    'Contact',
+                NEGOTIATION: 'CustomizeProduct',
+            };
+            const stageToValue: Record<string, number> = {
+                WON:         deal.value,
+                CONTACTED:   10,
+                QUALIFIED:   50,
+                PROPOSAL:    150,
+                NEGOTIATION: 300,
+            };
+
+            const capiEvent = stageToCAPIEvent[stage];
+            if (capiEvent && targetEmail) {
+                const stageValue = stageToValue[stage] ?? 0;
+                // Fire-and-forget via canonical dispatcher
+                // Inherits: external_id, action_source, ttp, event_id, LinkedIn multi-conversionId
+                triggerCRMConversion({
+                    leadId,
+                    eventName: capiEvent,
+                    value:     stageValue,
+                    companyId,
+                    userData: {
+                        email:     targetEmail,
+                        phone:     lead?.phone,
+                        firstName: (lead?.name || deal.contactName)?.split(' ')[0],
+                        lastName:  (lead?.name || deal.contactName)?.split(' ').slice(1).join(' '),
+                        ip:        lead?.ipAddress,
+                        userAgent: lead?.userAgent,
+                        fbclid:    lead?.fbclid,
+                        fbc:       lead?.fbc,
+                        fbp:       lead?.fbp,
+                        gclid:     lead?.gclid,
+                        ttclid:    lead?.ttclid,
+                        li_fat_id: lead?.li_fat_id,
+                    }
                 });
-                const integrationMap = new Map(activeIntegrations.map(i => [i.provider, i.config]));
-                
-                if (stage === "WON") {
-                    await triggerMetaCapi(companyId, 'Purchase', userData, { value: deal.value, currency: 'USD', contentName: deal.title }, integrationMap);
-                    await triggerTiktokCapi(companyId, 'Purchase', userData, { value: deal.value, currency: 'USD', contentName: deal.title });
-                    await triggerGoogleCapi(companyId, 'purchase', userData, { value: deal.value, currency: 'USD', transaction_id: deal.id });
-                    await triggerLinkedinCapi(companyId, userData, { amount: deal.value, currencyCode: 'USD' });
-                } else if (stage === "CONTACTED") {
-                    await triggerMetaCapi(companyId, 'Contact', userData, { method: 'CRM_MANUAL' }, integrationMap);
-                    await triggerTiktokCapi(companyId, 'Contact', userData, { contentName: 'Deal Contacted' });
-                    await triggerGoogleCapi(companyId, 'contact_lead', userData, { lead_status: 'CONTACTED' });
-                    await triggerLinkedinCapi(companyId, userData, { amount: 10, currencyCode: 'USD' });
-                } else if (stage === "QUALIFIED") {
-                    await triggerMetaCapi(companyId, 'Lead', userData, { leadType: 'B2B/CRM' }, integrationMap);
-                    await triggerTiktokCapi(companyId, 'QualifiedLead', userData, { contentName: 'Deal Qualified' });
-                    await triggerGoogleCapi(companyId, 'qualify_lead', userData, { lead_status: 'QUALIFIED' });
-                    await triggerLinkedinCapi(companyId, userData, { amount: 50, currencyCode: 'USD' });
-                } else if (stage === "PROPOSAL") {
-                    await triggerMetaCapi(companyId, 'StartTrial', userData, { leadType: 'B2B/CRM' }, integrationMap);
-                    await triggerTiktokCapi(companyId, 'SubmitForm', userData, { contentName: 'Proposal Sent' });
-                    await triggerGoogleCapi(companyId, 'begin_checkout', userData, { value: deal.value });
-                    await triggerLinkedinCapi(companyId, userData, { amount: 150, currencyCode: 'USD' });
-                } else if (stage === "NEGOTIATION") {
-                    await triggerMetaCapi(companyId, 'CustomizeProduct', userData, { leadType: 'B2B/CRM' }, integrationMap);
-                    await triggerTiktokCapi(companyId, 'AddToCart', userData, { contentName: 'Negotiating' });
-                    await triggerGoogleCapi(companyId, 'add_shipping_info', userData, { value: deal.value });
-                    await triggerLinkedinCapi(companyId, userData, { amount: 300, currencyCode: 'USD' });
-                }
             }
         }
 
@@ -555,26 +549,19 @@ export async function createDeal(data: Record<string, unknown>) {
             }
         }
 
-        // FASE 7: Broad Audience Training: Meta, TikTok, GA4, LinkedIn trigger for NEW Lead
-        if (deal.companyId) {
-            const userData = {
-                email: data.contactEmail as string,
-                phone: data.contactPhone as string,
-                firstName: (data.contactName as string)?.split(' ')[0],
-                lastName: (data.contactName as string)?.split(' ').slice(1).join(' '),
-            };
-            await triggerMetaCapi(deal.companyId, 'Lead', userData, {
-                leadSource: data.source || 'MANUAL',
-            });
-            await triggerTiktokCapi(deal.companyId, 'SubmitForm', userData, {
-                contentName: 'CRM Deal Creation',
-            });
-            await triggerGoogleCapi(deal.companyId, 'generate_lead', userData, {
-                lead_source: data.source || 'MANUAL'
-            });
-            await triggerLinkedinCapi(deal.companyId, userData, {
-                amount: 0,
-                currencyCode: 'USD'
+        // FASE 7: Broad Audience Training: Dispatch Lead event for new deal creation
+        if (deal.companyId && data.contactEmail) {
+            triggerCRMConversion({
+                leadId:    `deal_${deal.id}`,
+                eventName: 'Lead',
+                value:     0,
+                companyId: deal.companyId,
+                userData: {
+                    email:     data.contactEmail as string,
+                    phone:     data.contactPhone as string | undefined,
+                    firstName: (data.contactName as string)?.split(' ')[0],
+                    lastName:  (data.contactName as string)?.split(' ').slice(1).join(' '),
+                }
             });
         }
 
@@ -710,20 +697,11 @@ export async function updateLead(id: string, data: Record<string, unknown>) {
             };
 
             if (data.status === "QUALIFIED") {
-                await triggerMetaCapi(companyId, 'QualifiedLead', userData, { leadType: 'B2B/CRM', score: lead.score });
-                await triggerTiktokCapi(companyId, 'QualifiedLead', userData, { contentName: 'Qualified CRM Lead' });
-                await triggerGoogleCapi(companyId, 'qualify_lead', userData, { lead_status: 'QUALIFIED' });
-                await triggerLinkedinCapi(companyId, userData, { amount: 50 }); // Optional arbitrary val for ML
+                triggerCRMConversion({ leadId: lead.id, eventName: 'QualifiedLead', value: 50, companyId, userData });
             } else if (data.status === "CONTACTED") {
-                await triggerMetaCapi(companyId, 'Contact', userData, { method: 'CRM_MANUAL' });
-                await triggerTiktokCapi(companyId, 'Contact', userData, { contentName: 'Contacted CRM Lead' });
-                await triggerGoogleCapi(companyId, 'contact_lead', userData, { lead_status: 'CONTACTED' });
-                await triggerLinkedinCapi(companyId, userData, { amount: 10 });
+                triggerCRMConversion({ leadId: lead.id, eventName: 'Contact', value: 10, companyId, userData });
             } else if (data.status === "NEW") {
-                await triggerMetaCapi(companyId, 'Lead', userData, { source: lead.source });
-                await triggerTiktokCapi(companyId, 'SubmitForm', userData, { contentName: 'New CRM Lead' });
-                await triggerGoogleCapi(companyId, 'generate_lead', userData, { lead_status: 'NEW' });
-                await triggerLinkedinCapi(companyId, userData, { amount: 0 });
+                triggerCRMConversion({ leadId: lead.id, eventName: 'Lead', value: 0, companyId, userData });
             }
 
             // ─── SYNC: Lead Status → Pipeline Deal Stage ────────────────────
@@ -1043,90 +1021,32 @@ export async function createCustomObjectDefinition(data: { name: string; label?:
 
 // ─── PRIVATE HELPERS ──────────────────────────────────────────────────────────
 
-async function triggerMetaCapi(companyId: string, eventName: any, userData: any, customData: any, integrationMap?: Map<string, any>) {
-    try {
-        // 2.1: Usar integrationMap pre-cargado si está disponible; si no, hacer query individual (fallback)
-        let config: any;
-        if (integrationMap) {
-            config = integrationMap.get('facebook') || integrationMap.get('facebook-pixel');
-        } else {
-            const configRecord = await prisma.integrationConfig.findFirst({
-                where: { companyId, provider: { in: ['facebook', 'facebook-pixel'] }, isEnabled: true }
-            });
-            config = configRecord?.config;
-        }
-
-        if (!config) return;
-
-        const pixelId = (config as any).pixelId;
-        const accessToken = (config as any).capiToken || (config as any).accessToken;
-
-        if (pixelId && accessToken) {
-            await sendMetaCapiEvent({
-                pixelId,
-                accessToken,
-                eventName,
-                userData,
-                customData,
-            });
-        }
-    } catch (error) {
-        console.error('[Meta CAPI Trigger] Error:', error);
-    }
-}
-
-async function triggerTiktokCapi(companyId: string, eventName: string, userData: any, customData: any) {
-    try {
-        await sendTiktokCapiEvent(companyId, {
-            eventName,
-            userData: {
-                email: userData.email,
-                phone: userData.phone,
-                clientIpAddress: userData.client_ip_address,
-                clientUserAgent: userData.client_user_agent,
-            },
-            customData: {
-                contentName: customData.contentName || 'CRM Lead Status Update',
-                value: customData.value || 0,
-                currency: customData.currency || 'USD'
-            }
-        }).catch(err => console.error(`[TikTok CAPI Dispatch] Background Warning:`, err));
-    } catch (error) {
-        console.error('[TikTok CAPI Trigger] Error:', error);
-    }
-}
-
-async function triggerGoogleCapi(companyId: string, eventName: string, userData: any, eventParams: any) {
-    try {
-        await sendGa4Event(companyId, {
-            eventName,
-            userData: {
-                email: userData.email,
-                phone: userData.phone,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-            },
-            eventParams
-        }).catch(err => console.error(`[Google CAPI Dispatch] Background Warning:`, err));
-    } catch (error) {
-        console.error('[Google CAPI Trigger] Error:', error);
-    }
-}
-
-async function triggerLinkedinCapi(companyId: string, userData: any, conversionInfo: any) {
-    try {
-        await sendLinkedinCapiEvent(companyId, {
-            userData: {
-                email: userData.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-            },
-            conversionInfo: {
-                currencyCode: conversionInfo.currencyCode || 'COP',
-                amount: conversionInfo.amount || 0
-            }
-        }).catch(err => console.error(`[LinkedIn CAPI Dispatch] Background Warning:`, err));
-    } catch (error) {
-        console.error('[LinkedIn CAPI Trigger] Error:', error);
-    }
+/**
+ * Canonical CRM S2S conversion trigger.
+ * Delegates to the primary dispatcher which handles all 4 platforms with:
+ *   ✅ external_id (SHA-256 leadId)
+ *   ✅ dynamic action_source
+ *   ✅ ttp cookie for TikTok
+ *   ✅ LinkedIn multi-conversionId
+ *   ✅ event_id deduplication for Meta
+ * Fire-and-forget — does NOT block the caller.
+ */
+function triggerCRMConversion(args: {
+    leadId: string;
+    eventName: string;
+    value: number;
+    companyId: string;
+    currency?: string;
+    userData: Parameters<typeof dispatchConversion>[0]['userData'];
+}) {
+    dispatchConversion({
+        leadId:    args.leadId,
+        eventName: args.eventName,
+        value:     args.value,
+        currency:  args.currency ?? 'USD',
+        timestamp: Date.now(),
+        userData:  args.userData,
+    }, args.companyId).catch(err =>
+        console.error('[CRM CAPI] Conversion dispatch failed:', err)
+    );
 }

@@ -76,18 +76,26 @@ export async function dispatchConversion(event: ConversionEvent, companyId: stri
 async function sendToMetaCAPI(event: ConversionEvent, hashedData: any, config?: IntegrationConfigData) {
   if (!config?.capiToken || !config?.pixelId) return;
 
-  const fbcValue = event.userData.fbclid ? `fb.1.${Date.now()}.${event.userData.fbclid}` : (event.userData.fbc || undefined);
+  const fbcValue = event.userData.fbclid
+    ? `fb.1.${Date.now()}.${event.userData.fbclid}`
+    : (event.userData.fbc || undefined);
+
+  // action_source: 'website' when there's a browser click ID (attribution is online)
+  // 'system_generated' for pure CRM events with no ad click origin
+  const hasClickId = !!(event.userData.fbclid || event.userData.fbc);
+  const actionSource = hasClickId ? 'website' : 'system_generated';
 
   const payload = {
     data: [{
       event_name: event.eventName,
       event_time: Math.floor(event.timestamp / 1000), // Seconds
-      action_source: "system_generated",
+      action_source: actionSource,
       user_data: {
         em: hashedData.email ? [hashedData.email] : undefined,
         ph: hashedData.phone ? [hashedData.phone] : undefined,
         fn: hashedData.firstName ? [hashedData.firstName] : undefined,
         ln: hashedData.lastName ? [hashedData.lastName] : undefined,
+        // external_id: SHA-256 of CRM leadId — the glue for offline-to-online attribution
         external_id: hashedData.externalId ? [hashedData.externalId] : undefined,
         client_ip_address: hashedData.ip,
         client_user_agent: hashedData.userAgent,
@@ -98,7 +106,7 @@ async function sendToMetaCAPI(event: ConversionEvent, hashedData: any, config?: 
         currency: event.currency,
         value: event.value,
       },
-      // Deduplication identifier is mandatory
+      // DEDUPLICATION: same event_id must be set on the browser pixel fbq('track', ..., {eventID})
       event_id: `${event.leadId}_${event.eventName}`
     }]
   };
@@ -172,8 +180,24 @@ async function sendToLinkedInCAPI(event: ConversionEvent, hashedData: any, confi
 
   if (userIds.length === 0) return;
 
+  /**
+   * LinkedIn requires separate conversionIds per event type so Campaign Manager
+   * can report on each funnel stage independently. Priority:
+   *   QualifiedLead → linkedinQualifiedConversionId
+   *   Purchase      → linkedinPurchaseConversionId
+   *   Lead/default  → linkedinConversionId (base)
+   */
+  const isQualified = ['QualifiedLead', 'qualify_lead'].includes(event.eventName);
+  const isPurchase  = ['Purchase', 'purchase'].includes(event.eventName);
+
+  const conversionId = isQualified
+    ? ((config as any).linkedinQualifiedConversionId || config.linkedinConversionId)
+    : isPurchase
+      ? ((config as any).linkedinPurchaseConversionId || config.linkedinConversionId)
+      : config.linkedinConversionId;
+
   const payload = {
-    conversion: `urn:li:sponsorConversion:${config.linkedinConversionId}`,
+    conversion: `urn:li:sponsorConversion:${conversionId}`,
     conversionHappenedAt: event.timestamp,
     conversionValue: {
       currencyCode: event.currency,
@@ -216,11 +240,18 @@ async function sendToTikTokEventsAPI(event: ConversionEvent, hashedData: any, co
     event_id: `${event.leadId}_${event.eventName}`,
     timestamp: new Date(event.timestamp).toISOString(),
     context: {
-      ad: { callback: event.userData.ttclid || undefined },
+      ad: {
+        // ttclid: TikTok click ID — enables click-level attribution in Safari/Firefox
+        callback: event.userData.ttclid || undefined,
+      },
       user: {
         emails: hashedData.email ? [hashedData.email] : undefined,
         phone_numbers: hashedData.phone ? [hashedData.phone] : undefined,
-        external_id: hashedData.externalId ? [hashedData.externalId] : undefined
+        // external_id: SHA-256 CRM ID for cross-device matching
+        external_id: hashedData.externalId ? [hashedData.externalId] : undefined,
+        // ttp: TikTok Pixel cookie — CRITICAL for iOS/Safari attribution
+        // Captured client-side and stored on the lead record
+        ttp: (event.userData as any).ttp || undefined,
       },
       ip: hashedData.ip || undefined,
       user_agent: hashedData.userAgent || undefined

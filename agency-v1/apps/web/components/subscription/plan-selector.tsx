@@ -6,7 +6,6 @@ import { Plan, PlanId } from '@/types/subscription'
 import { PLANS } from '@/lib/plans-config'
 import { PlanCard } from './plan-card'
 import { PricingToggle } from './pricing-toggle'
-import { createCheckoutSession } from '@/actions/billing'
 
 interface PlanSelectorProps {
   currentPlanId?: PlanId
@@ -34,15 +33,15 @@ export function PlanSelector({
     setLoadingPlanId(planId)
 
     try {
-      const result = await createCheckoutSession(planId, isYearly)
-
-      if (result?.success && result.data) {
-        window.location.href = result.data.url
-      } else if (result && !result.success && result.error) {
-        console.error('Error:', result.error)
+      // Simplified: directly redirect to checkout or login
+      if (planId === 'free') {
+        router.push('/dashboard/settings/billing')
+      } else {
+        // For now, redirect to login
+        router.push(`/auth/register?plan=${planId}&billing=${isYearly ? 'yearly' : 'monthly'}`)
       }
     } catch (error) {
-      console.error('Error creating checkout:', error)
+      console.error('Error selecting plan:', error)
     } finally {
       setLoadingPlanId(null)
     }

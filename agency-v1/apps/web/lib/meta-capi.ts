@@ -11,8 +11,9 @@ interface UserData {
     phone?: string | null;
     firstName?: string | null;
     lastName?: string | null;
-    fbc?: string | null;
-    fbp?: string | null;
+    externalId?: string | null;      // SHA-256 hashed CRM ID — deduplication cross-platform
+    fbc?: string | null;             // fb.1.<timestamp>.<fbclid> — click attribution
+    fbp?: string | null;             // Facebook browser cookie
     clientIpAddress?: string | null;
     clientUserAgent?: string | null;
 }
@@ -44,14 +45,20 @@ export async function sendMetaCapiEvent({
     userData,
     customData,
     eventSourceUrl,
+    eventId,
     testEventCode,
 }: {
     pixelId: string;
     accessToken: string;
-    eventName: 'Lead' | 'Contact' | 'Purchase' | 'QualifiedLead' | 'Other';
+    eventName: 'Lead' | 'Contact' | 'Purchase' | 'CompleteRegistration' | 'QualifiedLead' | 'ViewContent' | 'InitiateCheckout' | 'Other';
     userData: UserData;
     customData?: CustomData;
     eventSourceUrl?: string;
+    /**
+     * CRITICAL for deduplication: must match the eventID sent by the browser pixel.
+     * Format: `${leadId}_${eventName}` — Meta merges server + browser events with same ID.
+     */
+    eventId?: string;
     testEventCode?: string; // Used for testing in Events Manager
 }) {
     if (!pixelId || !accessToken) {
@@ -62,18 +69,30 @@ export async function sendMetaCapiEvent({
     const cleanPixelId = pixelId.trim();
     const cleanToken = accessToken.trim();
 
+    const timestamp = Math.floor(Date.now() / 1000);
+    // Auto-generate event_id if not provided — used for pixel deduplication
+    const resolvedEventId = eventId || `${eventName}_${timestamp}_${Math.random().toString(36).slice(2, 9)}`;
+
+    // QualifiedLead is not a standard Meta event — map it to Lead with custom_data label
+    const resolvedEventName = eventName === 'QualifiedLead' ? 'Lead' : eventName;
+
     const payload = {
         data: [
             {
-                event_name: eventName === 'QualifiedLead' ? 'Other' : eventName,
-                event_time: Math.floor(Date.now() / 1000),
-                action_source: 'website',
+                event_name: resolvedEventName,
+                event_time: timestamp,
+                // 'system_generated' for CRM/backend events; callers may override via customData
+                action_source: 'system_generated',
                 event_source_url: eventSourceUrl || '',
+                // DEDUPLICATION: same event_id must be sent by browser pixel fbq('track', ..., {eventID})
+                event_id: resolvedEventId,
                 user_data: {
                     em: userData.email ? [hashData(userData.email)] : [],
                     ph: userData.phone ? [hashData(userData.phone)] : [],
                     fn: userData.firstName ? [hashData(userData.firstName)] : [],
                     ln: userData.lastName ? [hashData(userData.lastName)] : [],
+                    // external_id links CRM identity to ad platform identity (cross-platform matching)
+                    external_id: userData.externalId ? [hashData(userData.externalId)] : [],
                     fbc: userData.fbc || null,
                     fbp: userData.fbp || null,
                     client_ip_address: userData.clientIpAddress || null,
@@ -81,8 +100,8 @@ export async function sendMetaCapiEvent({
                 },
                 custom_data: {
                     ...customData,
-                    // If it's a custom QualifiedLead event, we send the name in custom_data
-                    ...(eventName === 'QualifiedLead' && { event_name: 'QualifiedLead' }),
+                    // Tag QualifiedLead in custom_data so Meta UI can filter it
+                    ...(eventName === 'QualifiedLead' && { lead_type: 'QualifiedLead' }),
                 },
             },
         ],

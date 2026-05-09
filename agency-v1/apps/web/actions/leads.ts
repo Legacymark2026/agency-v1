@@ -3,25 +3,36 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { detectLeadSource, parseUTMParams, calculateLeadScore, type UTMParams } from "@/lib/lead-source-detector";
-import { sendMetaCapiEvent } from "@/lib/meta-capi";
 import { sendGa4Event } from "@/lib/ga4-mp";
-import { sendTiktokCapiEvent } from "@/lib/tiktok-capi";
-import { sendLinkedinCapiEvent } from "@/lib/linkedin-capi";
 import { auth } from "@/lib/auth";
 import { Permission, ROLE_PERMISSIONS, UserRole } from "@/types/auth";
 import { dispatchConversion } from "@/lib/services/conversions/dispatcher";
 import { createLocalNotification } from "./notifications";
 import { enforceQuota } from "@/lib/quotas";
+import crypto from "crypto";
 
-const CRM_VBO_STAGES: Record<string, { event: string, value: number }> = {
-  NEW: { event: 'Lead', value: 0 },
-  CONTACTED: { event: 'StartTrial', value: 10 },
-  QUALIFIED: { event: 'QualifiedLead', value: 50 }, // More descriptive for algorithms
-  PROPOSAL: { event: 'Contact', value: 150 },
-  NEGOTIATION: { event: 'CustomizeProduct', value: 300 },
-  WON: { event: 'Purchase', value: 0 }, // Value overridden by Deal value
-  LOST: { event: 'DisqualifiedLead', value: 0 },
-  DISQUALIFIED: { event: 'DisqualifiedLead', value: 0 }
+/**
+ * CRM Stage → Ad Platform Event mapping.
+ *
+ * Each entry defines:
+ *  - event:    Meta/TikTok-compatible event name (used as canonical name)
+ *  - ga4Event: GA4 snake_case event name (GA4 Measurement Protocol)
+ *  - value:    Estimated lead value for the stage (overridden by deal.value for WON)
+ *
+ * WHY TWO NAMES:
+ *  Meta CAPI expects PascalCase standard events (Lead, Purchase, CompleteRegistration).
+ *  GA4 Measurement Protocol expects snake_case per GA4 spec (generate_lead, qualify_lead).
+ *  The dispatcher routes each event name to the correct platform format.
+ */
+const CRM_VBO_STAGES: Record<string, { event: string; ga4Event: string; value: number }> = {
+  NEW:           { event: 'Lead',                  ga4Event: 'generate_lead',       value: 0 },
+  CONTACTED:     { event: 'Lead',                  ga4Event: 'generate_lead',       value: 10 },
+  QUALIFIED:     { event: 'QualifiedLead',          ga4Event: 'qualify_lead',        value: 50 },
+  PROPOSAL:      { event: 'Contact',               ga4Event: 'generate_lead',       value: 150 },
+  NEGOTIATION:   { event: 'CustomizeProduct',       ga4Event: 'view_item',           value: 300 },
+  WON:           { event: 'Purchase',              ga4Event: 'purchase',            value: 0 },  // value overridden by deal.value
+  LOST:          { event: 'DisqualifiedLead',       ga4Event: 'refund',              value: 0 },
+  DISQUALIFIED:  { event: 'DisqualifiedLead',       ga4Event: 'refund',              value: 0 },
 };
 
 /**
@@ -127,14 +138,59 @@ export interface CreateLeadInput {
     landingPage?: string;
 
     // Campaign attribution
-    campaignCode?: string; // Will be matched to a Campaign
+    campaignCode?: string;
 
-    // Meta
+    // Browser & device fingerprint
     formId?: string;
     formData?: Record<string, any>;
     ipAddress?: string;
     userAgent?: string;
     tags?: string[];
+
+    // ─── Click IDs & Cookies (First-Party Data) ─────────────────────────────────
+    /**
+     * Meta click ID from ?fbclid= URL param.
+     * Capture client-side: new URLSearchParams(window.location.search).get('fbclid')
+     */
+    fbclid?: string;
+    /**
+     * Meta browser cookie (_fbp) — set automatically by the Meta Pixel.
+     * Capture: document.cookie.match(/_fbp=([^;]+)/)?.[1]
+     */
+    fbp?: string;
+    /**
+     * Meta click ID cookie (_fbc) — derived from fbclid.
+     * Capture: document.cookie.match(/_fbc=([^;]+)/)?.[1]
+     *   or build it: `fb.1.${Date.now()}.${fbclid}`
+     */
+    fbc?: string;
+    /**
+     * Google click ID from ?gclid= URL param.
+     * Capture: new URLSearchParams(window.location.search).get('gclid')
+     */
+    gclid?: string;
+    /**
+     * TikTok click ID from ?ttclid= URL param.
+     * Capture: new URLSearchParams(window.location.search).get('ttclid')
+     */
+    ttclid?: string;
+    /**
+     * TikTok Pixel cookie (_ttp) — CRITICAL for iOS/Safari attribution.
+     * Capture: document.cookie.match(/_ttp=([^;]+)/)?.[1]
+     */
+    ttp?: string;
+    /**
+     * LinkedIn First-Party Ads Tracking UUID (li_fat_id URL param).
+     * Capture: new URLSearchParams(window.location.search).get('li_fat_id')
+     */
+    li_fat_id?: string;
+    /**
+     * Google Analytics client_id (_ga cookie) — ties server events to the browser session.
+     * Capture: document.cookie.match(/_ga=GA1\.\d+\.([^;]+)/)?.[1]
+     *   or via gtag: gtag('get', GA_MEASUREMENT_ID, 'client_id', (id) => { clientId = id })
+     * IMPORTANT: Without this, GA4 Measurement Protocol events are NOT joined to the user session.
+     */
+    gaClientId?: string;
 }
 
 /**
@@ -226,13 +282,24 @@ export async function createLead(input: CreateLeadInput) {
                 // Campaign
                 campaignId,
 
-                // Meta
+                // Device & server fingerprint
                 ipAddress: input.ipAddress,
                 userAgent: input.userAgent,
                 formId: input.formId,
                 formData: input.formData,
                 tags: input.tags || [],
                 score,
+
+                // ─── First-Party Click IDs & Cookies ────────────────────────────────
+                // These are the raw values captured client-side and persisted to the DB
+                // so that later CRM stage events (QUALIFIED, WON) can re-send them
+                // to ad platforms for proper attribution weeks after the original click.
+                fbclid: input.fbclid,
+                fbp:    input.fbp,
+                fbc:    input.fbc || (input.fbclid ? `fb.1.${Date.now()}.${input.fbclid}` : undefined),
+                gclid:  input.gclid,
+                ttclid: input.ttclid,
+                li_fat_id: input.li_fat_id,
 
                 // Company
                 companyId: input.companyId,
@@ -242,72 +309,52 @@ export async function createLead(input: CreateLeadInput) {
             }
         });
 
-        // Trigger Meta Conversions API Event
-        (sendMetaCapiEvent as any)(input.companyId, {
-            eventName: "Lead",
-            actionSource: "website",
-            eventSourceUrl: input.landingPage || input.referer || undefined,
+        // ─── S2S Conversion Dispatch — Lead Created ──────────────────────────────
+        // Use the canonical dispatchConversion() which handles all 4 platforms
+        // concurrently with retry logic. Fire-and-forget: does NOT block the response.
+        dispatchConversion({
+            leadId: lead.id,
+            eventName: 'Lead',
+            value: 0,
+            currency: 'USD',
+            timestamp: Date.now(),
             userData: {
-                em: input.email,
-                ph: input.phone || undefined,
-                fn: input.name ? input.name.split(' ')[0] : undefined,
-                ln: input.name ? input.name.split(' ').slice(1).join(' ') : undefined,
-                client_ip_address: input.ipAddress,
-                client_user_agent: input.userAgent,
-            },
-            customData: {
-                content_name: "CRM Lead Captured",
-                status: "NEW",
-                currency: "COP",
-                value: 0.00
-            }
-        }).catch((err: any) => console.error("[LeadsAction] Failed to send CAPI event:", err));
-
-        // Trigger Google Analytics 4 Measurement Protocol Event
-        sendGa4Event(input.companyId, {
-            eventName: "generate_lead",
-            userData: {
-                email: input.email,
-                phone: input.phone || undefined,
+                email:     input.email,
+                phone:     input.phone,
                 firstName: input.name ? input.name.split(' ')[0] : undefined,
-                lastName: input.name ? input.name.split(' ').slice(1).join(' ') : undefined,
+                lastName:  input.name ? input.name.split(' ').slice(1).join(' ') : undefined,
+                ip:        input.ipAddress,
+                userAgent: input.userAgent,
+                // Click IDs — enable attribution weeks after the original click
+                fbclid:    input.fbclid,
+                fbc:       input.fbc || (input.fbclid ? `fb.1.${Date.now()}.${input.fbclid}` : undefined),
+                fbp:       input.fbp,
+                gclid:     input.gclid,
+                ttclid:    input.ttclid,
+                li_fat_id: input.li_fat_id,
+            },
+        }, input.companyId).catch(err =>
+            console.error('[LeadsAction] S2S dispatch failed on lead create:', err)
+        );
+
+        // ─── GA4 Measurement Protocol — generate_lead ────────────────────────────
+        // Requires gaClientId from the _ga cookie to join this server event with
+        // the user's browser session in GA4. Without it, GA4 creates a phantom user.
+        sendGa4Event(input.companyId, {
+            eventName: 'generate_lead',
+            clientId: input.gaClientId, // _ga cookie captured client-side
+            userData: {
+                email:     input.email,
+                phone:     input.phone || undefined,
+                firstName: input.name ? input.name.split(' ')[0] : undefined,
+                lastName:  input.name ? input.name.split(' ').slice(1).join(' ') : undefined,
             },
             eventParams: {
                 lead_source: sourceResult.source,
-                lead_score: score,
-                lead_status: "NEW"
+                lead_score:  score,
+                lead_status: 'NEW',
             }
-        }).catch(err => console.error("[LeadsAction] Failed to send GA4-MP event:", err));
-
-        // Trigger TikTok Events API
-        sendTiktokCapiEvent(input.companyId, {
-            eventName: "SubmitForm",
-            eventSourceUrl: input.landingPage || input.referer || undefined,
-            userData: {
-                email: input.email,
-                phone: input.phone || undefined,
-                clientIpAddress: input.ipAddress,
-                clientUserAgent: input.userAgent,
-            },
-            customData: {
-                contentName: "CRM Lead Captured",
-                value: 0,
-                currency: "COP"
-            }
-        }).catch(err => console.error("[LeadsAction] Failed to send TikTok event:", err));
-
-        // Trigger LinkedIn Conversions API
-        sendLinkedinCapiEvent(input.companyId, {
-            conversionInfo: {
-                currencyCode: "COP",
-                amount: 0
-            },
-            userData: {
-                email: input.email,
-                firstName: input.name ? input.name.split(' ')[0] : undefined,
-                lastName: input.name ? input.name.split(' ').slice(1).join(' ') : undefined,
-            }
-        }).catch(err => console.error("[LeadsAction] Failed to send LinkedIn event:", err));
+        }).catch(err => console.error('[LeadsAction] GA4-MP failed:', err));
 
         // Crear notificación para el equipo
         try {
@@ -429,14 +476,15 @@ export async function updateLeadStatus(leadId: string, status: string) {
         const vboStage = CRM_VBO_STAGES[status];
         if (vboStage) {
             let eventValue = vboStage.value;
-            
-            // If it's closed WON and there's a deal, try to get actual Deal value for exact ROAS
+
+            // If it's closed WON and there's a deal, use actual Deal value for exact ROAS
             if (status === 'WON' && dealId) {
                 const deal = await prisma.deal.findUnique({ where: { id: dealId } });
                 if (deal) eventValue = deal.value;
             }
 
-            // Do not block the UI response
+            // ── Multi-platform S2S dispatch (Meta, TikTok, LinkedIn, Google) ──────
+            // Fire-and-forget: does NOT block the UI response
             dispatchConversion({
                 leadId: lead.id,
                 eventName: vboStage.event,
@@ -444,20 +492,44 @@ export async function updateLeadStatus(leadId: string, status: string) {
                 currency: "USD",
                 timestamp: Date.now(),
                 userData: {
-                    email: lead.email,
-                    phone: lead.phone,
+                    email:     lead.email,
+                    phone:     lead.phone,
                     firstName: lead.name ? lead.name.split(' ')[0] : undefined,
-                    lastName: lead.name ? lead.name.split(' ').slice(1).join(' ') : undefined,
-                    ip: lead.ipAddress,
+                    lastName:  lead.name ? lead.name.split(' ').slice(1).join(' ') : undefined,
+                    ip:        lead.ipAddress,
                     userAgent: lead.userAgent,
-                    gclid: lead.gclid,
-                    fbclid: lead.fbclid,
+                    // Re-send stored click IDs — these link back to the original ad click
+                    // even if weeks have passed since the lead was created
+                    gclid:     lead.gclid,
+                    fbclid:    lead.fbclid,
                     li_fat_id: lead.li_fat_id,
-                    ttclid: lead.ttclid,
-                    fbp: lead.fbp,
-                    fbc: lead.fbc
+                    ttclid:    lead.ttclid,
+                    fbp:       lead.fbp,
+                    fbc:       lead.fbc,
                 }
-            }, lead.companyId).catch(e => console.error("S2S Dispatcher Background Error:", e));
+            }, lead.companyId).catch(e => console.error("[S2S Dispatcher] Background error:", e));
+
+            // ── GA4 Measurement Protocol — stage-specific event name ─────────────
+            // GA4 uses snake_case events (qualify_lead, purchase) per spec.
+            // This is separate from the Meta/TikTok dispatch above to ensure
+            // the correct GA4 event name is used for audience building in Google Ads.
+            sendGa4Event(lead.companyId, {
+                eventName: vboStage.ga4Event,
+                eventParams: {
+                    lead_status: status,
+                    lead_score:  lead.score,
+                    value:       eventValue,
+                    currency:    'USD',
+                    // gclid ties this server event to a Google Ads click
+                    ...(lead.gclid && { gclid: lead.gclid }),
+                },
+                userData: {
+                    email:     lead.email,
+                    phone:     lead.phone ?? undefined,
+                    firstName: lead.name ? lead.name.split(' ')[0] : undefined,
+                    lastName:  lead.name ? lead.name.split(' ').slice(1).join(' ') : undefined,
+                },
+            }).catch(e => console.error('[GA4-MP] Stage event failed:', e));
         }
 
         revalidatePath('/dashboard/admin/crm/leads');

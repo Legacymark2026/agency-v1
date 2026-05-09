@@ -1,0 +1,92 @@
+
+> build
+> turbo build
+
+• turbo 2.9.6
+
+   • Packages in scope: @agency/video-agent, @agency/video-editor, @legacymark/rbac, web
+   • Running build in 4 packages
+   • Remote caching disabled
+
+web:build: cache miss, executing fb0824f1ab7b686e
+@agency/video-editor:build: cache hit, replaying logs 3e003d403158935a
+@agency/video-agent:build: cache hit, replaying logs 0ff86d363f2c754a
+@legacymark/rbac:build: cache hit, replaying logs 8c81a37ec4e3df41
+@agency/video-editor:build: 
+@agency/video-editor:build: > @agency/video-editor@1.0.0 build
+@legacymark/rbac:build: 
+@agency/video-editor:build: > tsc
+@legacymark/rbac:build: > @legacymark/rbac@0.1.0 build
+@agency/video-editor:build: 
+@legacymark/rbac:build: > tsc
+@legacymark/rbac:build: 
+@agency/video-agent:build: 
+@agency/video-agent:build: > @agency/video-agent@1.0.0 build
+@agency/video-agent:build: > tsc
+@agency/video-agent:build: 
+web:build: npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
+web:build: 
+web:build: > web@0.1.0 build
+web:build: > prisma generate && next build
+web:build: 
+web:build: warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+web:build: For more information, see: https://pris.ly/prisma-config
+web:build: 
+web:build: Environment variables loaded from .env
+web:build: Prisma schema loaded from prisma\schema.prisma
+web:build: 
+web:build: ✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 1.79s
+web:build: 
+web:build: Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+web:build: 
+web:build: Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+web:build: 
+web:build: ▲ Next.js 16.2.4 (Turbopack)
+web:build: - Environments: .env.local, .env
+web:build: - Experiments (use with caution):
+web:build:   · clientTraceMetadata
+web:build:   · optimizePackageImports
+web:build: 
+web:build: ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+web:build:   Creating an optimized production build ...
+web:build: ✓ Compiled successfully in 2.8min
+web:build:   Running next.config.js provided runAfterProductionCompile ...
+web:build: ✓ Completed runAfterProductionCompile in 5.1s
+web:build:   Running TypeScript ...
+web:build: 
+web:build: <--- Last few GCs --->
+web:build: 
+web:build: [21836:0000025C5C521000]   337618 ms: Scavenge 2039.2 (2088.0) -> 2035.4 (2088.0) MB, pooled: 0 MB, 3.54 / 0.00 ms  (average mu = 0.179, current mu = 0.221) allocation failure; 
+web:build: [21836:0000025C5C521000]   338725 ms: Mark-Compact 2039.4 (2088.5) -> 2034.5 (2088.0) MB, pooled: 0 MB, 1086.65 / 0.00 ms  (average mu = 0.206, current mu = 0.242) allocation failure; scavenge might not succeed
+web:build: 
+web:build: 
+web:build: <--- JS stacktrace --->
+web:build: 
+web:build: FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+web:build: ----- Native stack trace -----
+web:build: 
+web:build:  1: 00007FF74D77711D node::SetCppgcReference+17725
+web:build:  2: 00007FF74D6DA138 SSL_get_quiet_shutdown+92344
+web:build:  3: 00007FF74E260C51 v8::Isolate::ReportExternalAllocationLimitReached+65
+web:build:  4: 00007FF74E24D8D6 v8::Function::Experimental_IsNopFunction+2870
+web:build:  5: 00007FF74E09AA20 v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+31456
+web:build:  6: 00007FF74E09471A v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+6106
+web:build:  7: 00007FF74E08FDB5 v8::CpuProfileNode::GetScriptResourceNameStr+188453
+web:build:  8: 00007FF74DA1309D BIO_ssl_shutdown+189
+web:build:  9: 7FF8000000000000 
+web:build: Next.js build worker exited with code: 134 and signal: null
+web:build: npm error Lifecycle script `build` failed with error:
+web:build: npm error code 134
+web:build: npm error path C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+web:build: npm error workspace web@0.1.0
+web:build: npm error location C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+web:build: npm error command failed
+web:build: npm error command C:\WINDOWS\system32\cmd.exe /d /s /c prisma generate && next build
+ ERROR  web#build: command (C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web) C:\Program Files\nodejs\npm.cmd run build exited (134)
+
+ Tasks:    3 successful, 4 total
+Cached:    3 cached, 4 total
+  Time:    8m52.237s 
+Failed:    web#build
+
+ ERROR  run failed: command  exited (134)

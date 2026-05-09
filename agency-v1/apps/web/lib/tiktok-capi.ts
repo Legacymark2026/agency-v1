@@ -7,10 +7,21 @@ export interface TiktokEventData {
     eventId?: string;
     eventSourceUrl?: string;
     userData: {
-        email?: string; // Will be hashed SHA256
-        phone?: string; // Will be hashed SHA256
+        email?: string;         // Will be hashed SHA256
+        phone?: string;         // Will be hashed SHA256
+        externalId?: string;    // SHA-256 CRM ID for cross-platform matching
         clientIpAddress?: string;
         clientUserAgent?: string;
+        /**
+         * TikTok Pixel cookie (_ttp) — CRITICAL for iOS/Safari attribution.
+         * Capture from cookie: document.cookie match /_ttp=([^;]+)/
+         */
+        ttp?: string;
+        /**
+         * TikTok click ID (ttclid URL param) — enables click-level attribution.
+         * Capture from URL: new URLSearchParams(window.location.search).get('ttclid')
+         */
+        ttclid?: string;
     };
     customData?: {
         contentName?: string;
@@ -63,9 +74,19 @@ export async function sendTiktokCapiEvent(companyId: string, event: TiktokEventD
             event_id: event.eventId || `${event.eventName}_${timestamp}`,
             timestamp: new Date(timestamp * 1000).toISOString(),
             context: {
+                ad: {
+                    // ttclid enables click-level attribution in restrictive browsers
+                    callback: event.userData.ttclid || undefined,
+                },
                 user: {
                     emails: userPayload.email ? [userPayload.email] : undefined,
-                    phone_numbers: userPayload.phone_number ? [userPayload.phone_number] : undefined
+                    phone_numbers: userPayload.phone_number ? [userPayload.phone_number] : undefined,
+                    // external_id: CRM identity hash for cross-platform matching
+                    external_id: event.userData.externalId
+                        ? [hashSha256(event.userData.externalId)]
+                        : undefined,
+                    // ttp: TikTok Pixel cookie — CRITICAL for Safari/Firefox attribution
+                    ttp: event.userData.ttp || undefined,
                 },
                 ip: userPayload.ip || undefined,
                 user_agent: userPayload.user_agent || undefined,
