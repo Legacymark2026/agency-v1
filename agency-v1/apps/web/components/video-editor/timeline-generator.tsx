@@ -23,16 +23,39 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
   const generatedTimeline = useMemo(() => {
     if (!hasAnalysis || !hasConfig) return null;
     
-    // Simple timeline generation logic
+    // AI Tier processing variables
+    const aiTier = config.aiTier || 'skill';
+    const complexityMultiplier = 
+      aiTier === 'prompt' ? 1 : 
+      aiTier === 'skill' ? 2 : 
+      aiTier === 'skill-chain' ? 3 : 
+      aiTier === 'agent' ? 4 : 5;
+
     const heroClips = clips.filter(c => c.type === 'hero' || c.quality === 'excellent');
     const hookClip = heroClips[0] || clips[0];
     const bodyClips = clips.filter(c => c.type !== 'hero');
     const rewardClips = clips.filter(c => c.type === 'branding');
 
+    // Strict config application
     const hookDuration = config.hookDuration || 3;
-    const bodyDuration = Math.max(bodyClips.length * (config.rhythm === 'fast' ? 1.5 : config.rhythm === 'cinematic' ? 5 : 3), 6);
-    const climaxDuration = Math.max(rewardClips.length * 2.5, 4);
+    let bodyDuration = Math.max(bodyClips.length * (config.rhythm === 'fast' ? 1.5 : config.rhythm === 'cinematic' ? 5 : 3), 6);
+    let climaxDuration = Math.max(rewardClips.length * 2.5, 4);
     const outroDuration = 2;
+
+    // Agent Optimization: strictly fit to requested total duration if Agent or Agent Team
+    if (aiTier === 'agent' || aiTier === 'agent-team') {
+      const targetDuration = config.duration || 20;
+      const currentTotal = hookDuration + bodyDuration + climaxDuration + outroDuration;
+      if (currentTotal > targetDuration) {
+        const excess = currentTotal - targetDuration;
+        bodyDuration = Math.max(bodyDuration - (excess * 0.7), 2);
+        climaxDuration = Math.max(climaxDuration - (excess * 0.3), 1);
+      }
+    }
+
+    const transitions = aiTier === 'prompt' ? bodyClips.map(() => 'cut') :
+                        aiTier === 'skill' ? bodyClips.map((_, i) => i % 2 === 0 ? 'cut' : 'fade') :
+                        bodyClips.map((_, i) => i % 3 === 0 ? 'zoom' : i % 2 === 0 ? 'whip' : 'cut');
 
     const timelineData: Timeline = {
       segments: {
@@ -41,20 +64,20 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
           duration: hookDuration,
           type: 'hook',
           transitions: ['none'],
-          speedRamp: { start: 30, end: 50, duration: hookDuration }
+          speedRamp: complexityMultiplier > 2 ? { start: 30, end: 50, duration: hookDuration } : undefined
         },
         body: {
           clips: bodyClips,
           duration: bodyDuration,
           type: 'body',
-          transitions: bodyClips.map(() => 'cut'),
-          speedRamp: { start: 100, end: 100, duration: 0 }
+          transitions: transitions,
+          speedRamp: complexityMultiplier > 3 ? { start: 100, end: 150, duration: 2 } : undefined
         },
         climax: {
           clips: rewardClips,
           duration: climaxDuration,
           type: 'climax',
-          transitions: ['cut'],
+          transitions: complexityMultiplier > 1 ? ['flash'] : ['cut'],
           emphasis: true
         },
         outro: {
@@ -66,8 +89,8 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
         }
       },
       totalDuration: hookDuration + bodyDuration + climaxDuration + outroDuration,
-      cuts: (hookClip ? 1 : 0) + bodyClips.length + rewardClips.length,
-      averageCutDuration: (hookDuration + bodyDuration + climaxDuration) / ((hookClip ? 1 : 0) + bodyClips.length + rewardClips.length || 1)
+      cuts: ((hookClip ? 1 : 0) + bodyClips.length + rewardClips.length) * (complexityMultiplier > 3 ? 1.5 : 1),
+      averageCutDuration: (hookDuration + bodyDuration + climaxDuration) / (((hookClip ? 1 : 0) + bodyClips.length + rewardClips.length || 1) * (complexityMultiplier > 3 ? 1.5 : 1))
     };
 
     return timelineData;

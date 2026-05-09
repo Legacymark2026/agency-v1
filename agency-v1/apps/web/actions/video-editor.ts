@@ -27,6 +27,9 @@ export interface AudioTrack extends BaseAudioTrack {
 export interface ProjectConfig extends BaseProjectConfig {
   id?: string;
   name?: string;
+  aiTier?: 'prompt' | 'skill' | 'skill-chain' | 'agent' | 'agent-team';
+  aiInstructions?: string;
+  aiReferenceFiles?: { id: string; name: string; size: number; type: string }[];
 }
 
 export interface TextOverlay extends BaseTextOverlay {
