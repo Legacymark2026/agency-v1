@@ -1,10 +1,10 @@
-import { VideoEditorWizard } from '@/components/video-editor/video-editor-wizard';
+import { VideoEditorStudio } from '@/components/video-editor/video-editor-studio';
 
 export const metadata = {
-  title: 'Video Editor | Herramientas',
-  description: 'Crea videos profesionales con inteligencia artificial',
+  title: 'Video Studio | Herramientas',
+  description: 'Estudio de edición de video profesional con inteligencia artificial',
 };
 
 export default function VideoEditorPage() {
-  return <VideoEditorWizard />;
+  return <VideoEditorStudio />;
 }
