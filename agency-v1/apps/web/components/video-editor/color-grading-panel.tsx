@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Film, Palette, Sun, Contrast, Droplets, Sparkles, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Film, Palette, Sun, Contrast, Droplets, Sparkles, X, Layers, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Clip, ColorGrade } from '@/actions/video-editor';
 
@@ -17,66 +18,85 @@ interface ColorGradingPanelProps {
 }
 
 const PRESETS = [
-  { 
-    value: 'cinematic', 
-    label: 'Cinematic', 
+  {
+    value: 'cinematic',
+    label: 'Cinematic',
     desc: 'Film look profesional',
     icon: '🎬',
-    preview: 'bg-gradient-to-br from-slate-800 to-blue-900'
+    swatch: ['#0f2a4a', '#1a3a5c', '#2d5f8a', '#1e4060'],
+    preview: 'from-slate-800 via-blue-950 to-slate-900',
   },
-  { 
-    value: 'luxury', 
-    label: 'Luxury', 
+  {
+    value: 'luxury',
+    label: 'Luxury',
     desc: 'Elegante y premium',
     icon: '✨',
-    preview: 'bg-gradient-to-br from-amber-900 to-yellow-800'
+    swatch: ['#4a3000', '#6b4500', '#8b6914', '#3d2800'],
+    preview: 'from-amber-950 via-yellow-900 to-amber-950',
   },
-  { 
-    value: 'viral', 
-    label: 'Viral', 
+  {
+    value: 'viral',
+    label: 'Viral',
     desc: 'Colores vibrantes',
     icon: '⚡',
-    preview: 'bg-gradient-to-br from-pink-600 to-purple-600'
+    swatch: ['#7c0560', '#9d0f87', '#c91bb5', '#6b0052'],
+    preview: 'from-pink-700 via-fuchsia-600 to-purple-700',
   },
-  { 
-    value: 'corporate', 
-    label: 'Corporate', 
+  {
+    value: 'corporate',
+    label: 'Corporate',
     desc: 'Limpio y profesional',
     icon: '💼',
-    preview: 'bg-gradient-to-br from-blue-800 to-slate-700'
+    swatch: ['#0d2a4a', '#0f3460', '#174880', '#0a2040'],
+    preview: 'from-blue-900 via-blue-800 to-slate-800',
   },
-  { 
-    value: 'warm-artisan', 
-    label: 'Warm Artisan', 
+  {
+    value: 'warm-artisan',
+    label: 'Warm Artisan',
     desc: 'Tono artesanal cálido',
     icon: '🌿',
-    preview: 'bg-gradient-to-br from-orange-800 to-amber-900'
+    swatch: ['#3d1a00', '#5a2800', '#7a3c00', '#2d1200'],
+    preview: 'from-orange-950 via-amber-900 to-orange-950',
   },
 ] as const;
 
+function ColorSwatch({ colors }: { colors: readonly string[] }) {
+  return (
+    <div className="flex gap-0.5 w-full">
+      {colors.map((c, i) => (
+        <div key={i} className="flex-1 h-5 rounded-sm" style={{ backgroundColor: c }} />
+      ))}
+    </div>
+  );
+}
+
+function getPresetValues(style: string) {
+  const map: Record<string, Omit<ColorGrade, 'clipId' | 'style'>> = {
+    cinematic: { lut: 'Film-EM', temperature: 5600, tint: 5, contrast: 1.2, saturation: 0.9, highlights: -10, shadows: 15, midtones: 5 },
+    luxury: { lut: 'Gold-Premium', temperature: 4500, tint: 10, contrast: 1.3, saturation: 0.85, highlights: -15, shadows: 20, midtones: 10 },
+    viral: { lut: 'Pop-Culture', temperature: 6000, tint: 0, contrast: 1.1, saturation: 1.2, highlights: 0, shadows: 5, midtones: 0 },
+    corporate: { lut: 'Clean-Pro', temperature: 5500, tint: 0, contrast: 1.05, saturation: 0.95, highlights: 0, shadows: 10, midtones: 0 },
+    'warm-artisan': { lut: 'Warm-Authentic', temperature: 4000, tint: 15, contrast: 1.25, saturation: 1.0, highlights: -5, shadows: 18, midtones: 8 },
+  };
+  return map[style] ?? map['cinematic'];
+}
+
 export function ColorGradingPanel({ clips, colorGrades, onColorGradesChange }: ColorGradingPanelProps) {
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
+  const [applyAll, setApplyAll] = useState(false);
+  const [intensity, setIntensity] = useState<Record<string, number>>({});
 
   const selectedClip = clips.find(c => c.id === selectedClipId);
   const clipGrade = colorGrades.find(g => g.clipId === selectedClipId);
 
-  const applyPreset = (clipId: string, preset: ColorGrade['style']) => {
-    const grades = colorGrades.filter(g => g.clipId !== clipId);
-    
-    const newGrade: ColorGrade = {
-      clipId,
-      style: preset,
-      lut: getPresetLut(preset),
-      temperature: getPresetTemperature(preset),
-      tint: getPresetTint(preset),
-      contrast: getPresetContrast(preset),
-      saturation: getPresetSaturation(preset),
-      highlights: getPresetHighlights(preset),
-      shadows: getPresetShadows(preset),
-      midtones: getPresetMidtones(preset),
-    };
-
-    onColorGradesChange([...grades, newGrade]);
+  const applyPreset = (clipId: string, preset: ColorGrade['style'], toAll = false) => {
+    const values = getPresetValues(preset);
+    const clipIds = toAll ? clips.map(c => c.id) : [clipId];
+    const existing = colorGrades.filter(g => !clipIds.includes(g.clipId));
+    const newGrades: ColorGrade[] = clipIds.map(id => ({
+      ...values, clipId: id, style: preset,
+    }));
+    onColorGradesChange([...existing, ...newGrades]);
   };
 
   const removeGrade = (clipId: string) => {
@@ -84,100 +104,20 @@ export function ColorGradingPanel({ clips, colorGrades, onColorGradesChange }: C
     if (selectedClipId === clipId) setSelectedClipId(null);
   };
 
-  function getPresetLut(style: string): string {
-    const luts: Record<string, string> = {
-      'cinematic': 'Film-EM',
-      'luxury': 'Gold-Premium',
-      'viral': 'Pop-Culture',
-      'corporate': 'Clean-Pro',
-      'warm-artisan': 'Warm-Authentic'
-    };
-    return luts[style] || 'None';
-  }
+  const updateGradeField = (clipId: string, field: keyof ColorGrade, value: number | string) => {
+    onColorGradesChange(
+      colorGrades.map(g => g.clipId === clipId ? { ...g, [field]: value } : g)
+    );
+  };
 
-  function getPresetTemperature(style: string): number {
-    const temps: Record<string, number> = {
-      'cinematic': 5600,
-      'luxury': 4500,
-      'viral': 6000,
-      'corporate': 5500,
-      'warm-artisan': 4000
-    };
-    return temps[style] || 5500;
-  }
-
-  function getPresetTint(style: string): number {
-    const tints: Record<string, number> = {
-      'cinematic': 5,
-      'luxury': 10,
-      'viral': 0,
-      'corporate': 0,
-      'warm-artisan': 15
-    };
-    return tints[style] || 0;
-  }
-
-  function getPresetContrast(style: string): number {
-    const contrasts: Record<string, number> = {
-      'cinematic': 1.2,
-      'luxury': 1.3,
-      'viral': 1.1,
-      'corporate': 1.05,
-      'warm-artisan': 1.25
-    };
-    return contrasts[style] || 1.0;
-  }
-
-  function getPresetSaturation(style: string): number {
-    const sats: Record<string, number> = {
-      'cinematic': 0.9,
-      'luxury': 0.85,
-      'viral': 1.2,
-      'corporate': 0.95,
-      'warm-artisan': 1.0
-    };
-    return sats[style] || 1.0;
-  }
-
-  function getPresetHighlights(style: string): number {
-    const highs: Record<string, number> = {
-      'cinematic': -10,
-      'luxury': -15,
-      'viral': 0,
-      'corporate': 0,
-      'warm-artisan': -5
-    };
-    return highs[style] || 0;
-  }
-
-  function getPresetShadows(style: string): number {
-    const shadows: Record<string, number> = {
-      'cinematic': 15,
-      'luxury': 20,
-      'viral': 5,
-      'corporate': 10,
-      'warm-artisan': 18
-    };
-    return shadows[style] || 10;
-  }
-
-  function getPresetMidtones(style: string): number {
-    const mids: Record<string, number> = {
-      'cinematic': 5,
-      'luxury': 10,
-      'viral': 0,
-      'corporate': 0,
-      'warm-artisan': 8
-    };
-    return mids[style] || 0;
-  }
+  const clipIntensity = selectedClipId ? (intensity[selectedClipId] ?? 100) : 100;
 
   if (clips.length === 0) {
     return (
-      <Card className="bg-slate-800/30 border-slate-700 border-dashed">
-        <CardContent className="py-12 text-center">
-          <Film className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400">Añade clips de video primero</p>
+      <Card className="bg-slate-800/20 border-slate-800 border-dashed">
+        <CardContent className="py-16 text-center">
+          <Film className="w-14 h-14 text-slate-700 mx-auto mb-4" />
+          <p className="text-slate-500 font-medium">Añade clips de video primero</p>
         </CardContent>
       </Card>
     );
@@ -185,58 +125,85 @@ export function ColorGradingPanel({ clips, colorGrades, onColorGradesChange }: C
 
   return (
     <div className="space-y-6">
-      {/* Clips Grid */}
+      {/* Header Controls */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base text-white flex items-center gap-2">
-            <Palette className="w-5 h-5 text-purple-400" />
-            Selecciona un clip para aplicar color grading
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            {colorGrades.length} clip{colorGrades.length !== 1 ? 's' : ''} con color grading aplicado
-          </CardDescription>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="text-base text-white flex items-center gap-2">
+                <Palette className="w-4 h-4 text-purple-400" />
+                Color Grading
+              </CardTitle>
+              <CardDescription className="text-slate-400">
+                {colorGrades.length}/{clips.length} clips con estilo aplicado
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="apply-all" className="text-xs text-slate-400">Aplicar a todos</Label>
+                <Switch
+                  id="apply-all"
+                  checked={applyAll}
+                  onCheckedChange={setApplyAll}
+                  className="data-[state=checked]:bg-purple-600"
+                />
+              </div>
+              {colorGrades.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 h-8 text-xs"
+                  onClick={() => onColorGradesChange([])}
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Limpiar Todo
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
+
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {/* Clips Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
             {clips.map(clip => {
               const hasGrade = colorGrades.some(g => g.clipId === clip.id);
               const grade = colorGrades.find(g => g.clipId === clip.id);
-              
+              const preset = PRESETS.find(p => p.value === grade?.style);
+
               return (
                 <button
                   key={clip.id}
                   onClick={() => setSelectedClipId(clip.id)}
                   className={cn(
-                    "p-3 rounded-lg text-left transition-all border relative overflow-hidden",
+                    'p-2.5 rounded-xl text-left transition-all border relative overflow-hidden',
                     selectedClipId === clip.id
-                      ? "border-purple-500 ring-2 ring-purple-500/30"
+                      ? 'border-purple-500 ring-2 ring-purple-500/30'
                       : hasGrade
-                      ? "border-emerald-500"
-                      : "border-slate-700 hover:border-slate-600"
+                      ? 'border-emerald-500/60'
+                      : 'border-slate-700 hover:border-slate-600'
                   )}
                 >
-                  {hasGrade && grade && (
-                    <div className={cn("absolute inset-0 opacity-20", 
-                      grade.style === 'cinematic' ? 'bg-blue-900' :
-                      grade.style === 'luxury' ? 'bg-amber-900' :
-                      grade.style === 'viral' ? 'bg-purple-900' :
-                      grade.style === 'corporate' ? 'bg-slate-700' :
-                      'bg-orange-900'
-                    )} />
+                  {/* Gradient preview */}
+                  {preset && (
+                    <div className={cn('absolute inset-0 opacity-15 bg-gradient-to-br', preset.preview)} />
                   )}
-                  <div className="relative">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Film className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm text-white truncate">{clip.type}</span>
+                  <div className="relative space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Film className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-xs text-white font-medium truncate">{clip.type}</span>
                     </div>
-                    {hasGrade && grade ? (
-                      <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-400">
-                        {grade.style}
-                      </Badge>
+                    {hasGrade && grade && preset ? (
+                      <>
+                        <ColorSwatch colors={preset.swatch} />
+                        <Badge variant="outline" className="text-[9px] border-emerald-500/40 text-emerald-400 w-full justify-center py-0">
+                          {grade.style}
+                        </Badge>
+                      </>
                     ) : (
-                      <Badge variant="outline" className="text-[10px] border-slate-600 text-slate-400">
+                      <div className="flex items-center justify-center h-8 text-slate-600 text-[10px]">
                         Sin aplicar
-                      </Badge>
+                      </div>
                     )}
                   </div>
                 </button>
@@ -246,106 +213,103 @@ export function ColorGradingPanel({ clips, colorGrades, onColorGradesChange }: C
         </CardContent>
       </Card>
 
-      {/* Selected Clip Controls */}
-      {selectedClip && (
-        <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base text-white">Aplicar a: {selectedClip.type}</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Selecciona un preset de color grading
-                </CardDescription>
-              </div>
-              {clipGrade && (
-                <Button variant="ghost" size="sm" onClick={() => removeGrade(selectedClip.id)} className="text-slate-400 hover:text-red-400">
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Presets Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              {PRESETS.map(preset => (
+      {/* Preset Picker */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Wand2 className="w-4 h-4 text-purple-400" />
+            {applyAll ? 'Aplicar a Todos los Clips' : selectedClip ? `Preset para: ${selectedClip.type}` : 'Selecciona un Clip'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {PRESETS.map(preset => {
+              const isActive = clipGrade?.style === preset.value;
+              return (
                 <button
                   key={preset.value}
-                  onClick={() => applyPreset(selectedClip.id, preset.value as ColorGrade['style'])}
+                  onClick={() => {
+                    if (applyAll) {
+                      clips.forEach(c => applyPreset(c.id, preset.value as ColorGrade['style'], false));
+                      applyPreset(clips[0]?.id ?? '', preset.value as ColorGrade['style'], true);
+                    } else if (selectedClipId) {
+                      applyPreset(selectedClipId, preset.value as ColorGrade['style']);
+                    }
+                  }}
+                  disabled={!selectedClipId && !applyAll}
                   className={cn(
-                    "p-3 rounded-lg text-center transition-all border",
-                    clipGrade?.style === preset.value
-                      ? "border-purple-500 bg-purple-500/10"
-                      : "border-slate-700 bg-slate-800 hover:border-slate-600"
+                    'p-3 rounded-xl text-center transition-all border space-y-2 disabled:opacity-40',
+                    isActive && !applyAll
+                      ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500/30'
+                      : 'border-slate-700 bg-slate-800/50 hover:border-slate-500'
                   )}
                 >
-                  <div className={cn("w-full h-8 rounded mb-2", preset.preview)} />
-                  <div className="text-sm font-medium text-white">{preset.label}</div>
-                  <div className="text-xs text-slate-400">{preset.desc}</div>
+                  <div className={cn('w-full h-10 rounded-lg bg-gradient-to-br', preset.preview)} />
+                  <ColorSwatch colors={preset.swatch} />
+                  <div>
+                    <p className="text-xs font-semibold text-white">{preset.icon} {preset.label}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{preset.desc}</p>
+                  </div>
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            {/* Current Settings Display */}
-            {clipGrade && (
-              <div className="p-4 bg-slate-900 rounded-lg space-y-4">
-                <div className="flex items-center gap-2 mb-4">
+          {/* Intensity Slider */}
+          {selectedClipId && clipGrade && (
+            <div className="p-4 bg-slate-900 rounded-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-400" />
-                  <span className="text-white font-medium">Configuración Actual</span>
-                  <Badge variant="outline" className="border-purple-500/50 text-purple-400 ml-auto">
-                    {clipGrade.lut}
-                  </Badge>
+                  <span className="text-sm font-medium text-white">Intensidad del Efecto</span>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-1">
-                      <Sun className="w-3 h-3" />
-                      Temperatura
-                    </div>
-                    <p className="text-sm text-white">{clipGrade.temperature}K</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-1">
-                      <Droplets className="w-3 h-3" />
-                      Tinte
-                    </div>
-                    <p className="text-sm text-white">{clipGrade.tint > 0 ? `+${clipGrade.tint}` : clipGrade.tint}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-1">
-                      <Contrast className="w-3 h-3" />
-                      Contraste
-                    </div>
-                    <p className="text-sm text-white">{clipGrade.contrast}x</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-1">
-                      <Palette className="w-3 h-3" />
-                      Saturación
-                    </div>
-                    <p className="text-sm text-white">{Math.round(clipGrade.saturation * 100)}%</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800">
-                  <div>
-                    <div className="text-xs text-slate-400 mb-1">Highlights</div>
-                    <p className="text-sm text-white">{clipGrade.highlights > 0 ? `+${clipGrade.highlights}` : clipGrade.highlights}</p>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-400 mb-1">Shadows</div>
-                    <p className="text-sm text-white">+{clipGrade.shadows}</p>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-400 mb-1">Midtones</div>
-                    <p className="text-sm text-white">{clipGrade.midtones > 0 ? `+${clipGrade.midtones}` : clipGrade.midtones}</p>
-                  </div>
-                </div>
+                <Badge variant="outline" className="border-purple-500/40 text-purple-400">
+                  {clipIntensity}%
+                </Badge>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <Slider
+                value={[clipIntensity]}
+                onValueChange={([v]) => {
+                  setIntensity(prev => ({ ...prev, [selectedClipId]: v }));
+                }}
+                min={0} max={100} step={5}
+                className="py-1"
+              />
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>Sutil (0%)</span>
+                <span>Normal (50%)</span>
+                <span>Intenso (100%)</span>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-4 gap-3 pt-3 border-t border-slate-800">
+                {[
+                  { icon: Sun, label: 'Temp', val: `${clipGrade.temperature}K` },
+                  { icon: Contrast, label: 'Contraste', val: `${clipGrade.contrast}x` },
+                  { icon: Droplets, label: 'Saturación', val: `${Math.round(clipGrade.saturation * 100)}%` },
+                  { icon: Palette, label: 'LUT', val: clipGrade.lut },
+                ].map(({ icon: Icon, label, val }) => (
+                  <div key={label} className="text-center">
+                    <Icon className="w-3.5 h-3.5 text-slate-500 mx-auto mb-1" />
+                    <p className="text-[10px] text-slate-400">{label}</p>
+                    <p className="text-xs font-semibold text-white truncate">{val}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 w-full h-8 text-xs"
+                onClick={() => removeGrade(selectedClipId)}
+              >
+                <X className="w-3 h-3 mr-1" />
+                Quitar color grading de este clip
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
