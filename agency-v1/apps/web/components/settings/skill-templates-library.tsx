@@ -7,7 +7,7 @@ import {
 import { toast } from "sonner";
 import { 
     Download, Upload, Trash2, Eye, Star, BookOpen, Package, 
-    Search, Filter, Plus, Download as DownloadIcon, ExternalLink
+    Search, Filter, Plus, Download as DownloadIcon, ExternalLink, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -489,9 +489,9 @@ export function SkillTemplatesLibrary({ companyId, onImportSuccess, readonly = f
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 pt-4">
-                        {previewTemplate?.tags.length > 0 && (
+                        {(previewTemplate?.tags?.length ?? 0) > 0 && (
                             <div className="flex flex-wrap gap-2">
-                                {previewTemplate.tags.map(tag => (
+                                {previewTemplate?.tags.map(tag => (
                                     <Badge key={tag} variant="secondary" className="bg-slate-800">
                                         {tag}
                                     </Badge>
