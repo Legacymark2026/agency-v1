@@ -144,6 +144,7 @@ export function AISuggestionsPanel({
     }
 
     if (config.platform) {
+      const voiceTrack = audioTracks.find(t => t.type === 'voiceover');
       const hasVoice = !!voiceTrack;
       const needsVoice = config.platform === 'youtube' || config.platform === 'facebook';
       if (needsVoice && !hasVoice) {
