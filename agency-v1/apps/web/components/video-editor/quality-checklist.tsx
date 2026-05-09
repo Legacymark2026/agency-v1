@@ -195,7 +195,7 @@ export function QualityChecklist({ timeline, colorGrades, audioTracks, config, o
 
     if (config.platform) {
       const hasVoice = !!voiceTrack;
-      const needsVoice = config.platform === 'youtube' || config.platform === 'linkedin';
+      const needsVoice = config.platform === 'youtube' || config.platform === 'facebook';
       if (needsVoice && !hasVoice) {
         items.push({
           id: 'voiceover',

@@ -99,24 +99,37 @@ export function AISuggestionsPanel({
     if (timeline) {
       const dur = timeline.totalDuration;
       const format = config.format;
+      const platform = config.platform;
 
-      if (format === 'reel' && dur > 90) {
+      // 9:16 vertical (Reels/TikTok) — ideal ≤60s
+      if (format === '9:16' && dur > 90) {
         all.push({
           id: 'reel-too-long',
           type: 'warning',
-          title: 'Reel demasiado largo',
-          description: `Tu timeline tiene ${dur.toFixed(0)}s. Los Reels de mayor alcance son ≤60s.`,
+          title: 'Video vertical demasiado largo',
+          description: `Tu timeline tiene ${dur.toFixed(0)}s. Los videos 9:16 de mayor alcance son ≤60s.`,
           actionLabel: 'Ver Timeline',
           onAction: () => onNavigate(3),
         });
       }
 
-      if (format === 'story' && dur > 15) {
+      // Story-like short content
+      if ((platform === 'tiktok' || platform === 'reels') && dur > 60 && dur <= 90) {
         all.push({
-          id: 'story-too-long',
-          type: 'warning',
-          title: 'Story demasiado larga',
-          description: `Tu timeline tiene ${dur.toFixed(0)}s. Las Stories deben ser ≤15s.`,
+          id: 'short-form-long',
+          type: 'tip',
+          title: 'Duración elevada para contenido corto',
+          description: `${dur.toFixed(0)}s puede reducir la tasa de reproducción completa en ${platform}.`,
+        });
+      }
+
+      // YouTube — ideally > 60s for monetization
+      if (platform === 'youtube' && dur < 60) {
+        all.push({
+          id: 'youtube-short',
+          type: 'tip',
+          title: 'Video corto para YouTube',
+          description: `Con ${dur.toFixed(0)}s se procesará como YouTube Short. Considera >60s para contenido de formato largo.`,
         });
       }
 
@@ -126,6 +139,28 @@ export function AISuggestionsPanel({
           type: 'tip',
           title: 'Ritmo lento detectado',
           description: `Solo ${timeline.cuts} cortes. Aumenta el número de clips para mejorar el ritmo visual.`,
+        });
+      }
+    }
+
+    if (config.platform) {
+      const hasVoice = !!voiceTrack;
+      const needsVoice = config.platform === 'youtube' || config.platform === 'facebook';
+      if (needsVoice && !hasVoice) {
+        all.push({
+          id: 'voiceover',
+          type: 'optimization',
+          title: 'Voiceover recomendado',
+          description: `${config.platform === 'youtube' ? 'YouTube' : 'Facebook'} recomienda narración en off para mayor retención`,
+          actionLabel: 'Añadir Voiceover',
+          onAction: () => onNavigate(6),
+        });
+      } else if (needsVoice && hasVoice) {
+        all.push({
+          id: 'voiceover',
+          type: 'success',
+          title: 'Voiceover configurado',
+          description: `Voiceover activo — óptimo para ${config.platform}`,
         });
       }
     }
