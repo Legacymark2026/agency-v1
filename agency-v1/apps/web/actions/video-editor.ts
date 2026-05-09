@@ -38,7 +38,13 @@ export interface ColorGrade extends BaseColorGrade {
   style: 'cinematic' | 'luxury' | 'viral' | 'corporate' | 'warm-artisan';
 }
 
-export type SpeedRamp = BaseSpeedRamp;
+export interface SpeedRamp {
+  clipId: string;
+  startSpeed?: number;
+  endSpeed?: number;
+  keyframes?: { time: number; speed: number }[];
+  easing: 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+}
 export type SoundLayer = BaseSoundLayer;
 export type RenderOutput = BaseRenderOutput;
 
