@@ -11,7 +11,6 @@ import {
   ColorGrade as BaseColorGrade,
   SpeedRamp as BaseSpeedRamp,
   SoundLayer as BaseSoundLayer,
-  Timeline as BaseTimeline,
   RenderOutput as BaseRenderOutput
 } from '@agency/video-editor';
 
@@ -41,8 +40,29 @@ export interface ColorGrade extends BaseColorGrade {
 
 export type SpeedRamp = BaseSpeedRamp;
 export type SoundLayer = BaseSoundLayer;
-export type Timeline = BaseTimeline;
 export type RenderOutput = BaseRenderOutput;
+
+export interface TimelineSegment {
+  clips: Clip[];
+  duration: number;
+  type: 'hook' | 'body' | 'climax' | 'outro';
+  transitions: string[];
+  speedRamp?: any;
+  emphasis?: boolean;
+  fadeToBlack?: boolean;
+}
+
+export interface Timeline {
+  segments: {
+    hook: TimelineSegment;
+    body: TimelineSegment;
+    climax: TimelineSegment;
+    outro: TimelineSegment;
+  };
+  totalDuration: number;
+  cuts: number;
+  averageCutDuration: number;
+}
 
 export interface VideoProject {
   id: string;
