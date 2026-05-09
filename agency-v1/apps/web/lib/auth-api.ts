@@ -14,7 +14,7 @@ export async function validateApiKey(apiKey: string | null): Promise<{ companyId
             select: { companyId: true, expiresAt: true },
         });
 
-        if (!keyRecord) return null;
+        if (!keyRecord || !keyRecord.companyId) return null;
         if (keyRecord.expiresAt && keyRecord.expiresAt < new Date()) return null;
 
         return { companyId: keyRecord.companyId };
