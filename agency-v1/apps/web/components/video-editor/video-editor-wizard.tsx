@@ -134,9 +134,9 @@ export function VideoEditorWizard({ projectId, onSave }: VideoEditorWizardProps)
         // Update existing project
         await updateVideoProject(projectId, projectData as any);
       } else if (onSave) {
-        onSave(projectData);
+        onSave(projectData as any);
       } else {
-        await createVideoProject(projectData);
+        await createVideoProject(projectData as any);
       }
       alert('Proyecto guardado correctamente');
     } catch (error) {
