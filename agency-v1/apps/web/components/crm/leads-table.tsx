@@ -7,7 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { bulkUpdateLeads } from "@/actions/crm";
 import { CreateLeadDialog } from "@/components/crm/create-lead-dialog";
-import { Search, Download, ChevronUp, ChevronDown, X, Mail, Phone, ExternalLink } from "lucide-react";
+import { Search, Download, ChevronUp, ChevronDown, X, Mail, Phone, Flame, Snowflake, AlertCircle } from "lucide-react";
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -16,6 +16,7 @@ interface Lead {
     company: string | null; status: string; source: string; score: number;
     assignedTo: string | null; createdAt: Date; tags: string[];
     utmSource: string | null; utmCampaign: string | null; convertedAt: Date | null;
+    conversionProbability?: number | null;
 }
 
 interface Props { leads: Lead[]; total: number; companyId: string; }
@@ -49,7 +50,24 @@ function ScoreBar({ score }: { score: number }) {
     );
 }
 
-// ─── CONTROL STYLES ───────────────────────────────────────────────────────────
+// ─── ML PROBABILITY BADGE ─────────────────────────────────────────────────────
+
+function MlBadge({ probability }: { probability: number }) {
+    const pct = Math.round(probability * 100);
+    const isHot = pct >= 75;
+    const isMid = pct >= 40;
+    const color = isHot ? '#f97316' : isMid ? '#fbbf24' : '#94a3b8';
+    const bg   = isHot ? 'rgba(249,115,22,0.12)' : isMid ? 'rgba(251,191,36,0.1)' : 'rgba(30,41,59,0.5)';
+    const border = isHot ? 'rgba(249,115,22,0.35)' : isMid ? 'rgba(251,191,36,0.3)' : 'rgba(30,41,59,0.8)';
+    const emoji = isHot ? '🔥' : isMid ? '🟡' : '❄️';
+    return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '99px', fontSize: '11px', fontWeight: 800, fontFamily: 'monospace', color, background: bg, border: `1px solid ${border}` }}>
+            <span style={{ fontSize: '10px' }}>{emoji}</span>
+            {pct}%
+        </span>
+    );
+}
+
 
 const inputStyle: React.CSSProperties = {
     background: "rgba(15,23,42,0.8)",
@@ -74,6 +92,7 @@ export function LeadsTable({ leads, total, companyId }: Props) {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [bulkStatus, setBulkStatus] = useState("");
     const [bulkLoading, setBulkLoading] = useState(false);
+    const [mlFilter, setMlFilter] = useState<'all' | 'hot' | 'rescue'>('all');
 
     const toggleAll = () => { if (selected.size === leads.length) setSelected(new Set()); else setSelected(new Set(leads.map((l) => l.id))); };
     const toggle = (id: string) => setSelected((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
@@ -84,7 +103,12 @@ export function LeadsTable({ leads, total, companyId }: Props) {
         const matchSearch = !q || l.name?.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.company?.toLowerCase().includes(q);
         const matchStatus = !filterStatus || l.status === filterStatus;
         const matchSource = !filterSource || l.source === filterSource;
-        return matchSearch && matchStatus && matchSource;
+        const prob = l.conversionProbability ?? 0;
+        const matchML =
+            mlFilter === 'all' ? true :
+            mlFilter === 'hot' ? prob >= 0.75 :
+            prob >= 0.30 && prob < 0.75;
+        return matchSearch && matchStatus && matchSource && matchML;
     });
 
     const sorted = [...filtered].sort((a, b) => {
@@ -151,6 +175,27 @@ export function LeadsTable({ leads, total, companyId }: Props) {
                     <option value="">Todas las fuentes</option>
                     {Object.keys(SOURCE_ICONS).map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
+                {/* Smart ML Filters */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                    {([
+                        { key: 'all',    label: '🌐 Todos' },
+                        { key: 'hot',    label: '🔥 Alta Prioridad' },
+                        { key: 'rescue', label: '⚠️ Rescatables' },
+                    ] as const).map(f => (
+                        <button key={f.key} onClick={() => setMlFilter(f.key)}
+                            style={{
+                                padding: '6px 12px', fontSize: '11px', fontWeight: 800,
+                                fontFamily: 'monospace', borderRadius: '8px', cursor: 'pointer',
+                                border: `1px solid ${mlFilter === f.key ? 'rgba(13,148,136,0.6)' : 'rgba(30,41,59,0.9)'}`,
+                                background: mlFilter === f.key ? 'rgba(13,148,136,0.15)' : 'rgba(15,23,42,0.8)',
+                                color: mlFilter === f.key ? '#2dd4bf' : '#64748b',
+                                transition: 'all 0.15s',
+                                whiteSpace: 'nowrap',
+                            }}>
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
                 {/* Export */}
                 <button onClick={exportCSV}
                     style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", fontSize: "13px", fontWeight: 600, color: "#94a3b8", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(30,41,59,0.9)", borderRadius: "10px", cursor: "pointer", whiteSpace: "nowrap" }}
@@ -200,6 +245,7 @@ export function LeadsTable({ leads, total, companyId }: Props) {
                                 { key: "status", label: "Estado" },
                                 { key: "source", label: "Fuente" },
                                 { key: "score", label: "Score" },
+                                { key: "conversionProbability", label: "IA%" },
                                 { key: "company", label: "Empresa" },
                                 { key: "createdAt", label: "Fecha" },
                             ].map((col) => (
@@ -252,8 +298,15 @@ export function LeadsTable({ leads, total, companyId }: Props) {
                                             <span style={{ fontFamily: "monospace" }}>{lead.source}</span>
                                         </span>
                                     </td>
-                                    <td style={{ padding: "12px 16px" }}><ScoreBar score={lead.score} /></td>
-                                    <td style={{ padding: "12px 16px", color: "#64748b", fontSize: "13px" }}>{lead.company || "—"}</td>
+                                    <td style={{ padding: '12px 16px' }}><ScoreBar score={lead.score} /></td>
+                                    <td style={{ padding: '12px 16px' }}>
+                                        {lead.conversionProbability != null ? (
+                                            <MlBadge probability={lead.conversionProbability} />
+                                        ) : (
+                                            <span style={{ fontSize: '11px', color: '#334155', fontFamily: 'monospace' }}>—</span>
+                                        )}
+                                    </td>
+                                    <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '13px' }}>{lead.company || '—'}</td>
                                     <td style={{ padding: "12px 16px", fontSize: "11px", color: "#475569", whiteSpace: "nowrap", fontFamily: "monospace" }}>
                                         {formatDistanceToNow(new Date(lead.createdAt), { addSuffix: true, locale: es })}
                                     </td>

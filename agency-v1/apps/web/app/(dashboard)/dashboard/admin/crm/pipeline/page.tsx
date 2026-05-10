@@ -5,6 +5,8 @@ import { NewDealDialog } from "@/modules/crm/components/NewDealDialog";
 import { CsvExportButton } from "@/modules/crm/components/CsvExportButton";
 import { CsvImportDialog } from "@/components/crm/CsvImportDialog";
 import { AiForecastWidget } from "@/components/crm/AiForecastWidget";
+import { PipelineVelocity } from "@/components/crm/pipeline-velocity";
+import { DealAgingAlerts } from "@/components/crm/deal-aging-alerts";
 import { GitFork, DollarSign, TrendingUp, Users, BarChart2 } from "lucide-react";
 import { ComponentErrorBoundary } from "@/shared/components/ui/ComponentErrorBoundary";
 
@@ -100,12 +102,22 @@ export default async function PipelinePage() {
                 ))}
             </div>
 
-            {/* AI Forecast Widget */}
+            {/* AI Forecast + Pipeline Intelligence Row */}
             {company && (
-                <div className="relative z-10">
-                    <AiForecastWidget companyId={company.id} />
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2">
+                        <AiForecastWidget companyId={company.id} />
+                    </div>
+                    <div>
+                        <PipelineVelocity deals={deals} />
+                    </div>
                 </div>
             )}
+
+            {/* Deal Aging Alerts */}
+            <div className="relative z-10">
+                <DealAgingAlerts deals={deals} />
+            </div>
 
             {/* Board */}
             <div className="relative z-10 flex-1 min-h-[500px] overflow-hidden ds-section">
