@@ -12,6 +12,23 @@ interface PlanSelectorProps {
   isAuthenticated?: boolean
 }
 
+import { motion } from 'framer-motion'
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+}
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+}
+
 export function PlanSelector({
   currentPlanId,
   isAuthenticated = false,
@@ -33,11 +50,9 @@ export function PlanSelector({
     setLoadingPlanId(planId)
 
     try {
-      // Simplified: directly redirect to checkout or login
       if (planId === 'free') {
         router.push('/dashboard/settings/billing')
       } else {
-        // For now, redirect to login
         router.push(`/auth/register?plan=${planId}&billing=${isYearly ? 'yearly' : 'monthly'}`)
       }
     } catch (error) {
@@ -48,23 +63,29 @@ export function PlanSelector({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       <div className="flex justify-center">
         <PricingToggle isYearly={isYearly} onChange={setIsYearly} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <motion.div 
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 gap-6 md:grid-cols-3 max-w-6xl mx-auto"
+      >
         {PLANS.map((plan) => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            isYearly={isYearly}
-            isCurrentPlan={plan.id === currentPlanId}
-            onSelect={handleSelect}
-            isLoading={loadingPlanId === plan.id}
-          />
+          <motion.div key={plan.id} variants={item}>
+            <PlanCard
+              plan={plan}
+              isYearly={isYearly}
+              isCurrentPlan={plan.id === currentPlanId}
+              onSelect={handleSelect}
+              isLoading={loadingPlanId === plan.id}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }
