@@ -54,22 +54,40 @@ const NAV_GROUPS: NavGroup[] = [
         ],
     },
     {
-        title: "CRM & Ventas", code: "CRM_CORE",
+        title: "CRM · Core", code: "CRM_CORE",
         accent: "amber", icon: <TrendingUp size={20} />,
         items: [
-            { href: "/dashboard/admin/crm", label: "CRM Overview", icon: <TrendingUp size={14} />, code: "OVW" },
+            { href: "/dashboard/admin/crm", label: "Command Center", icon: <TrendingUp size={14} />, code: "OVW" },
             { href: "/dashboard/admin/crm/leads", label: "Leads", icon: <Users size={14} />, code: "LDS" },
-            { href: "/dashboard/admin/crm/pipeline", label: "Pipeline", icon: <Briefcase size={14} />, code: "PIP" },
+            { href: "/dashboard/admin/crm/pipeline", label: "Pipeline & Deals", icon: <Briefcase size={14} />, code: "PIP" },
+            { href: "/dashboard/admin/crm/tasks", label: "Tareas del Equipo", icon: <CheckSquare size={14} />, code: "TSK" },
+        ],
+    },
+    {
+        title: "CRM · Revenue", code: "CRM_REV",
+        accent: "amber", icon: <DollarSign size={20} />,
+        items: [
             { href: "/dashboard/admin/proposals", label: "Cotizaciones (e-Sign)", icon: <FileText size={14} />, code: "QOT" },
             { href: "/dashboard/admin/invoices", label: "Facturación B2B", icon: <CreditCard size={14} />, code: "INV" },
-            { href: "/dashboard/admin/crm/tasks", label: "Tareas", icon: <CheckSquare size={14} />, code: "TSK" },
-            { href: "/dashboard/admin/crm/reports", label: "Reportes CRM", icon: <BarChart2 size={14} />, code: "RPT" },
-            { href: "/dashboard/admin/crm/templates", label: "Templates Email", icon: <Mail size={14} />, code: "TPL" },
-            { href: "/dashboard/admin/crm/scoring", label: "Lead Scoring", icon: <Zap size={14} />, code: "SCR" },
-            { href: "/dashboard/admin/sales/goals", label: "Metas Ventas", icon: <Target size={14} />, code: "GLS" },
             { href: "/dashboard/admin/crm/commissions", label: "Comisiones", icon: <DollarSign size={14} />, code: "COM" },
-            { href: "/dashboard/admin/crm/automation", label: "Reglas CRM", icon: <Workflow size={14} />, code: "AUT" },
+            { href: "/dashboard/admin/sales/goals", label: "Metas de Ventas", icon: <Target size={14} />, code: "GLS" },
+        ],
+    },
+    {
+        title: "CRM · Automation", code: "CRM_AUTO",
+        accent: "amber", icon: <Workflow size={20} />,
+        items: [
             { href: "/dashboard/admin/crm/sequences", label: "Sequences", icon: <Mail size={14} />, code: "SEQ" },
+            { href: "/dashboard/admin/crm/automation", label: "Reglas CRM", icon: <Workflow size={14} />, code: "AUT" },
+            { href: "/dashboard/admin/crm/templates", label: "Templates Email", icon: <Mail size={14} />, code: "TPL" },
+        ],
+    },
+    {
+        title: "CRM · Intelligence", code: "CRM_INT",
+        accent: "amber", icon: <Zap size={20} />,
+        items: [
+            { href: "/dashboard/admin/crm/scoring", label: "Lead Scoring (ML)", icon: <Zap size={14} />, code: "SCR" },
+            { href: "/dashboard/admin/crm/reports", label: "Reportes & Analytics", icon: <BarChart2 size={14} />, code: "RPT" },
         ],
     },
     {
