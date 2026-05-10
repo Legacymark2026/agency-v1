@@ -33,12 +33,12 @@ async function gradeChunk(query: string, chunk: { name: string; content: string;
     try {
         const model = buildModel(GRADER_MODEL);
         const { text } = await generateText({
-            model: model as any,
+            model: model,
             system: GRADER_SYSTEM,
             prompt: `PREGUNTA: ${query}\n\nFRAGMENTO (${chunk.name}):\n${chunk.content.slice(0, 800)}`,
             maxTokens: 100,
             temperature: 0,
-        });
+        } as any);
 
         const clean = text.trim().replace(/```json|```/g, "").trim();
         const result = JSON.parse(clean);
