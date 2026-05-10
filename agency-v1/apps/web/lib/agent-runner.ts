@@ -13,20 +13,26 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { generateText, CoreMessage } from "ai";
+import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 
-async function getGeminiKey(companyId: string): Promise<string> {
-    const config = await prisma.integrationConfig.findUnique({
-        where: { companyId_provider: { companyId, provider: 'gemini' } }
+export async function getAIModelConfig(companyId: string): Promise<{ provider: 'openai' | 'gemini', apiKey: string }> {
+    const config = await prisma.integrationConfig.findFirst({
+        where: { companyId, provider: { in: ['openai', 'gemini'] }, isActive: true }
     });
     
+    if (config?.provider === 'openai') {
+        const apiKey = (config?.config as any)?.openaiApiKey || process.env.OPENAI_API_KEY;
+        if (apiKey) return { provider: 'openai', apiKey };
+    }
+
     const apiKey = (config?.config as any)?.geminiApiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    
     if (!apiKey) {
-        throw new Error("API Key de Gemini no configurada. Por favor configúrala en Ajustes > Integraciones.");
+        throw new Error("API Key de AI no configurada. Por favor configúrala en Ajustes > Integraciones.");
     }
     
-    return apiKey;
+    return { provider: 'gemini', apiKey };
 }
 
 // ── FRUSTRATION KEYWORDS FOR FAST DETECTION ──────────────────────────────────
@@ -48,6 +54,7 @@ interface AgentRunInput {
     senderUserId?: string; // If set, check for Human-in-the-Loop
     contactData?: Record<string, any>; // For CRM variable injection
     inlineHistory?: { role: "user" | "model", parts: { text: string }[] }[]; // Memory from UI
+    userContext?: any; // For RBAC
 }
 
 interface AgentRunOutput {
@@ -116,13 +123,17 @@ async function analyzeSentiment(message: string, companyId: string): Promise<num
 
     // LLM-based sentiment score for edge cases
     try {
-        const apiKey = await getGeminiKey(companyId);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-        const result = await model.generateContent(
-            `Analiza el sentimiento de frustración de este mensaje del cliente y devuelve ÚNICAMENTE un número decimal entre 0.0 (feliz) y 1.0 (muy frustrado). Mensaje: "${message.slice(0, 200)}"`
-        );
-        const score = parseFloat(result.response.text().trim());
+        const config = await getAIModelConfig(companyId);
+        const aiModel = config.provider === 'openai' 
+            ? openai("gpt-4o-mini") 
+            : google("gemini-2.0-flash-lite");
+
+        const { text } = await generateText({
+            model: aiModel,
+            prompt: `Analiza el sentimiento de frustración de este mensaje del cliente y devuelve ÚNICAMENTE un número decimal entre 0.0 (feliz) y 1.0 (muy frustrado). Mensaje: "${message.slice(0, 200)}"`
+        });
+        
+        const score = parseFloat(text.trim());
         return isNaN(score) ? 0 : Math.min(1, Math.max(0, score));
     } catch {
         return 0;
@@ -349,7 +360,8 @@ export async function runAIAgent({
     // 6. Build RAG Context (Semantic Search with pgvector)
     let ragContext = "";
     try {
-        const apiKey = await getGeminiKey(companyId);
+        const config = await getAIModelConfig(companyId);
+        const apiKey = config.apiKey;
         const { generateEmbedding } = await import("./embeddings");
         const queryVector = await generateEmbedding(userMessage, apiKey);
         
@@ -388,9 +400,12 @@ export async function runAIAgent({
     );
 
     // 8. Conversation History (Intelligent Token-Aware Sliding Window)
-    const history: { role: "user" | "model", parts: { text: string }[] }[] = [];
+    const history: CoreMessage[] = [];
     if (inlineHistory.length > 0) {
-        history.push(...inlineHistory);
+        history.push(...inlineHistory.map(m => ({
+            role: m.role === "model" ? "assistant" : "user",
+            content: m.parts[0]?.text || ""
+        })));
     } else if (conversationId) {
         // Fetch up to 100 recent messages, but we will filter based on token budget
         const prevMessages = await prisma.agentMessage.findMany({
@@ -415,81 +430,46 @@ export async function runAIAgent({
 
         for (const m of selectedMessages) {
             history.push({
-                role: m.role === "assistant" ? "model" : "user",
-                parts: [{ text: m.content }]
+                role: m.role === "assistant" ? "assistant" : "user",
+                content: m.content
             });
         }
     }
 
-    const { getToolDeclarations, executeTools } = await import("./agent-tools");
+    const { getToolDeclarations } = await import("./agent-tools");
     const enabledToolNames = Array.isArray(agent.enabledTools) ? (agent.enabledTools as string[]) : [];
-    const toolDeclarations = getToolDeclarations(enabledToolNames);
+    const tools = getToolDeclarations(enabledToolNames, companyId, contactData, userContext);
     
-    const tools = toolDeclarations.length > 0 ? [{ functionDeclarations: toolDeclarations }] : undefined;
+    // 9. Invoke Vercel AI SDK Core
+    const config = await getAIModelConfig(companyId);
+    const aiModel = config.provider === 'openai' 
+        ? openai(agent.llmModel || "gpt-4o") 
+        : google(agent.llmModel || "gemini-2.0-flash-lite");
 
-    // 9. Invoke Gemini SDK
-    const apiKey = await getGeminiKey(companyId);
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-        model: agent.llmModel,
-        systemInstruction: ragContext
-            ? `${processedSystemPrompt}\n\n${ragContext}`
-            : processedSystemPrompt,
-        generationConfig: { temperature, maxOutputTokens: maxTokens },
-        safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
-        ],
-        tools
-    });
-
-    let rawResponse: string = "";
-    let tokensUsed: number | undefined = 0;
-    let toolsUsed: any[] = [];
+    let rawResponse = "";
+    let tokensUsed = 0;
     try {
-        const chat = model.startChat({ history });
-        let geminiResult = await chat.sendMessage(userMessage);
+        const result = await generateText({
+            model: aiModel,
+            system: ragContext
+                ? `${processedSystemPrompt}\n\n${ragContext}`
+                : processedSystemPrompt,
+            messages: [...history, { role: "user", content: userMessage }],
+            tools: Object.keys(tools).length > 0 ? tools : undefined,
+            maxSteps: 5,
+            temperature,
+            maxTokens,
+        });
 
-        // ── ReAct Loop (Reasoning + Acting) ──
-        let iterations = 0;
-        const MAX_ITERATIONS = 5;
-
-        while (iterations < MAX_ITERATIONS) {
-            iterations++;
-            let functionCalls = geminiResult.response.functionCalls();
-            
-            // Accumulate tokens
-            tokensUsed = (tokensUsed || 0) + (geminiResult.response.usageMetadata?.totalTokenCount || 0);
-
-            if (functionCalls && functionCalls.length > 0) {
-                console.log(`[AGENT RUNNER] Turn ${iterations} - Tool calls detected: ${functionCalls.map(c => c.name).join(", ")}`);
-                
-                // Execute tools
-                const functionResponses = await executeTools(functionCalls, companyId, contactData);
-                
-                // Track tools used for debugging/logging
-                toolsUsed.push(...functionCalls.map(c => ({ name: c.name, args: c.args })));
-                
-                // Send results back to the model (Triggers the next reasoning step)
-                geminiResult = await chat.sendMessage(functionResponses);
-            } else {
-                // No more tool calls, AI has formulated a final text response
-                break;
-            }
-        }
-
-        if (iterations >= MAX_ITERATIONS) {
-            console.warn(`[AGENT RUNNER] ⚠️ Reached max tool calling iterations (${MAX_ITERATIONS}). Halting loop to prevent infinite recursion.`);
-        }
-
-        rawResponse = geminiResult.response.text();
+        rawResponse = result.text;
+        tokensUsed = result.usage?.totalTokens || 0;
         
         // 4.1: Éxito — resetear circuit breaker si estaba acumulando errores
         await resetCircuitBreaker(companyId);
-    } catch (geminiError) {
+    } catch (error) {
         // 4.1: Registrar error y potencialmente abrir el circuit breaker
         await recordGeminiError(companyId);
-        throw geminiError; // Re-lanzar para que el caller maneje
+        throw error; // Re-lanzar para que el caller maneje
     }
 
     // 10. Style Filter (Human Mimicry)
@@ -526,7 +506,8 @@ export async function triageAndRouteMessage(
     userMessage: string,
     conversationId?: string,
     contactData?: Record<string, any>,
-    inlineHistory?: { role: "user" | "model", parts: { text: string }[] }[]
+    inlineHistory?: { role: "user" | "model", parts: { text: string }[] }[],
+    userContext?: any
 ) {
     const activeAgents = await prisma.aIAgent.findMany({
         where: { companyId, isActive: true },
@@ -538,14 +519,16 @@ export async function triageAndRouteMessage(
     }
 
     if (activeAgents.length === 1) {
-        return runAIAgent({ agentId: activeAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory });
+        return runAIAgent({ agentId: activeAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory, userContext });
     }
 
-    // Use Gemini to triage to the best agent
+    // Use AI to triage to the best agent
     try {
-        const apiKey = await getGeminiKey(companyId);
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+        const config = await getAIModelConfig(companyId);
+        const aiModel = config.provider === 'openai' 
+            ? openai("gpt-4o-mini") 
+            : google("gemini-2.0-flash-lite");
+
         const routerPrompt = `Analiza la intención del usuario y elige el agente más apropiado.
 
 Agentes:
@@ -555,8 +538,8 @@ Mensaje: "${userMessage}"
 
 Devuelve ÚNICAMENTE el ID del agente elegido. Sin explicaciones.`;
 
-        const result = await model.generateContent(routerPrompt);
-        const selectedId = result.response.text().trim().replace(/[^a-z0-9-]/gi, "");
+        const { text } = await generateText({ model: aiModel, prompt: routerPrompt });
+        const selectedId = text.trim().replace(/[^a-z0-9-]/gi, "");
         const validAgent = activeAgents.find(a => a.id === selectedId);
         const chosenId = validAgent ? validAgent.id : activeAgents[0].id;
 
@@ -578,11 +561,11 @@ Devuelve ÚNICAMENTE el ID del agente elegido. Sin explicaciones.`;
 
         return runAIAgent({
             agentId: chosenId,
-            companyId, userMessage, conversationId, contactData, inlineHistory
+            companyId, userMessage, conversationId, contactData, inlineHistory, userContext
         });
 
     } catch {
         // Fallback to first agent on triage failure
-        return runAIAgent({ agentId: activeAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory });
+        return runAIAgent({ agentId: activeAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory, userContext });
     }
 }

@@ -1,157 +1,144 @@
-import { FunctionDeclaration, SchemaType } from "@google/generative-ai";
+import { z } from "zod";
+import { tool } from "ai";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { canAccessRoute } from "@/lib/rbac";
 
-export const AIAgentTools: Record<string, FunctionDeclaration> = {
+// Helper para validar permisos
+function checkPerm(userContext: any, requiredRoutes: string[]): boolean {
+    if (!userContext || userContext.role === 'guest') return false;
+    if (userContext.role === 'super_admin' || userContext.role === 'admin') return true;
+    
+    // Si no hay rutas requeridas, es público para usuarios logueados
+    if (requiredRoutes.length === 0) return true;
+
+    for (const route of requiredRoutes) {
+        if (canAccessRoute(route, userContext.role, userContext.allowedRoutes || [])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export const AIAgentTools = {
     // ── CRM y Ventas ──
     read_crm_leads: {
-        name: "read_crm_leads",
         description: "Busca perfiles de leads/clientes en el CRM de la empresa para saber si ya existen, sus datos de contacto o estado.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                query: { type: SchemaType.STRING, description: "Nombre, email o teléfono del lead a buscar" },
-                limit: { type: SchemaType.INTEGER, description: "Número max de resultados (default 5)" }
-            },
-            required: ["query"]
-        }
+        parameters: z.object({
+            query: z.string().describe("Nombre, email o teléfono del lead a buscar"),
+            limit: z.number().optional().describe("Número max de resultados (default 5)")
+        }),
+        requiredRoutes: ["/dashboard/admin/crm/leads"]
     },
     update_deals: {
-        name: "update_deals",
         description: "Actualiza el pipeline marcando al lead en una etapa como QUALIFIED, PROPOSAL, WON o LOST, y deja una nota.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                leadEmail: { type: SchemaType.STRING, description: "Email exacto del lead para identificarlo" },
-                newStage: { type: SchemaType.STRING, description: "Nueva etapa a asignar (ej: QUALIFIED, WON, LOST)" },
-                note: { type: SchemaType.STRING, description: "Resumen de la justificación o nota para los humanos" }
-            },
-            required: ["leadEmail", "newStage"]
-        }
+        parameters: z.object({
+            leadEmail: z.string().describe("Email exacto del lead para identificarlo"),
+            newStage: z.string().describe("Nueva etapa a asignar (ej: QUALIFIED, WON, LOST)"),
+            note: z.string().optional().describe("Resumen de la justificación o nota para los humanos")
+        }),
+        requiredRoutes: ["/dashboard/admin/crm/deals"]
     },
     create_crm_deal: {
-        name: "create_crm_deal",
         description: "Crea una nueva oportunidad (Deal) en el CRM asociada a un lead. Úsalo cuando hay real intención de compra.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                leadEmail: { type: SchemaType.STRING, description: "Email del lead asociado" },
-                dealName: { type: SchemaType.STRING, description: "Nombre resumen de la oportunidad" },
-                estimatedValue: { type: SchemaType.NUMBER, description: "Valor proyectado de la venta en USD" }
-            },
-            required: ["leadEmail", "dealName"]
-        }
+        parameters: z.object({
+            leadEmail: z.string().describe("Email del lead asociado"),
+            dealName: z.string().describe("Nombre resumen de la oportunidad"),
+            estimatedValue: z.number().optional().describe("Valor proyectado de la venta en USD")
+        }),
+        requiredRoutes: ["/dashboard/admin/crm/deals"]
     },
     qualify_and_score_lead: {
-        name: "qualify_and_score_lead",
         description: "Actualiza el puntaje de calificación (Lead Score) del usuario agregando o restando puntos según su interés.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                leadEmail: { type: SchemaType.STRING, description: "Email del lead" },
-                pointsToAdd: { type: SchemaType.INTEGER, description: "Puntos a sumar (1 a 20) o restar (negativo)" },
-                justification: { type: SchemaType.STRING, description: "Breve justificación del ajuste" }
-            },
-            required: ["leadEmail", "pointsToAdd"]
-        }
+        parameters: z.object({
+            leadEmail: z.string().describe("Email del lead"),
+            pointsToAdd: z.number().describe("Puntos a sumar (1 a 20) o restar (negativo)"),
+            justification: z.string().optional().describe("Breve justificación del ajuste")
+        }),
+        requiredRoutes: ["/dashboard/admin/crm/leads"]
     },
 
     // ── Comunicaciones & Soporte ──
     send_email: {
-        name: "send_email",
         description: "Prepara el envío de un correo automatizado o de follow-up hacia el cliente actual.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                recipientEmail: { type: SchemaType.STRING, description: "Email destino correspondiente al lead" },
-                subject: { type: SchemaType.STRING, description: "Asunto del correo" },
-                bodyContext: { type: SchemaType.STRING, description: "Instrucciones de lo que deberías decir en el cuerpo del correo" }
-            },
-            required: ["recipientEmail", "subject", "bodyContext"]
-        }
+        parameters: z.object({
+            recipientEmail: z.string().describe("Email destino correspondiente al lead"),
+            subject: z.string().describe("Asunto del correo"),
+            bodyContext: z.string().describe("Instrucciones de lo que deberías decir en el cuerpo del correo")
+        }),
+        requiredRoutes: ["/dashboard/inbox"]
     },
     transfer_to_human: {
-        name: "transfer_to_human",
         description: "Pausa tus mensajes automáticos en esta conversación y notifica a soporte humano urgente.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                reason: { type: SchemaType.STRING, description: "Razón para transferir (molestia, queja grave...)" }
-            },
-            required: ["reason"]
-        }
+        parameters: z.object({
+            reason: z.string().describe("Razón para transferir (molestia, queja grave...)")
+        }),
+        requiredRoutes: [] // Cualquiera puede transferir a humano
     },
     create_support_ticket: {
-        name: "create_support_ticket",
         description: "Crea una tarea técnica en el tablero Kanban de Soporte para que los humanos lo resuelvan.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                leadEmail: { type: SchemaType.STRING, description: "Email afectado" },
-                issueTitle: { type: SchemaType.STRING, description: "Título del ticket" },
-                issueDescription: { type: SchemaType.STRING, description: "Descripción completa" },
-                priority: { type: SchemaType.STRING, description: "Prioridad: LOW, MEDIUM, HIGH, URGENT" }
-            },
-            required: ["issueTitle", "issueDescription"]
-        }
+        parameters: z.object({
+            leadEmail: z.string().optional().describe("Email afectado"),
+            issueTitle: z.string().describe("Título del ticket"),
+            issueDescription: z.string().describe("Descripción completa"),
+            priority: z.string().optional().describe("Prioridad: LOW, MEDIUM, HIGH, URGENT")
+        }),
+        requiredRoutes: ["/dashboard/inbox"]
     },
 
     // ── Automations ──
     enroll_in_sequence: {
-        name: "enroll_in_sequence",
         description: "Suscribe al lead a una campaña de correos automáticos (Email Sequence) para nutrirlo o hacer retargeting.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                leadEmail: { type: SchemaType.STRING, description: "Email del lead" },
-                sequenceName: { type: SchemaType.STRING, description: "Nombre o ID de la secuencia (ej: 'Winback 2026', 'Onboarding')" }
-            },
-            required: ["leadEmail", "sequenceName"]
-        }
+        parameters: z.object({
+            leadEmail: z.string().describe("Email del lead"),
+            sequenceName: z.string().describe("Nombre o ID de la secuencia (ej: 'Winback 2026', 'Onboarding')")
+        }),
+        requiredRoutes: ["/dashboard/admin/crm/sequences"]
     },
 
     // ── Agenda y Eventos ──
     check_calendar_availability: {
-        name: "check_calendar_availability",
         description: "Revisa los turnos y espacios libres de la empresa en una fecha dada.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                date: { type: SchemaType.STRING, description: "Fecha en formato ISO (YYYY-MM-DD)" }
-            },
-            required: ["date"]
-        }
+        parameters: z.object({
+            date: z.string().describe("Fecha en formato ISO (YYYY-MM-DD)")
+        }),
+        requiredRoutes: ["/dashboard/events"]
     },
     create_calendar_event: {
-        name: "create_calendar_event",
         description: "Fija oficialmente una reunión o cita comercial en el calendario del equipo.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                leadName: { type: SchemaType.STRING, description: "Nombre del cliente" },
-                datetime: { type: SchemaType.STRING, description: "Fecha y hora ISO de inicio de la cita" },
-                durationMinutes: { type: SchemaType.INTEGER, description: "Duración en minutos (default 30)" }
-            },
-            required: ["leadName", "datetime"]
-        }
+        parameters: z.object({
+            leadName: z.string().describe("Nombre del cliente"),
+            datetime: z.string().describe("Fecha y hora ISO de inicio de la cita"),
+            durationMinutes: z.number().optional().describe("Duración en minutos (default 30)")
+        }),
+        requiredRoutes: ["/dashboard/events"]
     },
 
     // ── General ──
     web_search: {
-        name: "web_search",
         description: "Usa el buscador para buscar información pública, noticias recientes o datos del mercado.",
-        parameters: {
-            type: SchemaType.OBJECT,
-            properties: {
-                query: { type: SchemaType.STRING, description: "Término exacto de búsqueda" }
-            },
-            required: ["query"]
-        }
+        parameters: z.object({
+            query: z.string().describe("Término exacto de búsqueda")
+        }),
+        requiredRoutes: []
     }
 };
 
-export async function executeAgentTool(companyId: string, name: string, args: any): Promise<any> {
+export async function executeAgentTool(companyId: string, name: string, args: any, userContext: any): Promise<any> {
     try {
+        const toolDef = (AIAgentTools as any)[name];
+        if (!toolDef) {
+            return { success: false, error: `Tool ${name} no está implementada en el motor.` };
+        }
+
+        // RBAC CHECK
+        if (!checkPerm(userContext, toolDef.requiredRoutes)) {
+            return { 
+                success: false, 
+                error: `PERMISSION_DENIED: El usuario humano (${userContext?.role || 'invitado'}) no tiene permisos suficientes para ejecutar '${name}'. Por favor infórmale esto y discúlpate.` 
+            };
+        }
+
         switch (name) {
             case "read_crm_leads": {
                 const { query, limit } = args;
@@ -189,8 +176,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                     return { success: false, error: "Debes pedir primero el correo para identificar al lead y luego crear el Deal." };
                 }
 
-                // Create the deal... (assuming we map to the existing Deal / Proposal structure or Lead update)
-                // LegacyMark uses the 'Deal' model connected to pipeline logic. Let's create a proxy:
                 const deal = await db.deal.create({
                     data: {
                         companyId,
@@ -199,7 +184,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                         stage: "NEW"
                     }
                 });
-                // Link lead
                 await db.lead.update({ where: { id: lead.id }, data: { convertedToDealId: deal.id }});
                 
                 return { success: true, dealId: deal.id, message: "Oportunidad comercial creada." };
@@ -217,7 +201,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
 
             case "create_support_ticket": {
                 const { issueTitle, issueDescription, priority, leadEmail } = args;
-                // Query first Kanban project
                 const project = await db.kanbanProject.findFirst({ where: { companyId }});
                 if (!project) return { success: false, error: "No hay tablero Kanban en la empresa." };
 
@@ -240,7 +223,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                 const lead = await db.lead.findFirst({ where: { companyId, email: leadEmail } });
                 if (!lead) return { success: false, error: "Lead no encontrado en la base de datos." };
 
-                // Buscar la secuencia por nombre o ID
                 const sequence = await db.emailSequence.findFirst({
                     where: {
                         companyId,
@@ -258,8 +240,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                     };
                 }
 
-                // El schema usa dealId (no leadId) en EmailSequenceEnrollment.
-                // Buscar el deal más reciente del lead por email.
                 const deal = await db.deal.findFirst({
                     where: { companyId, contactEmail: lead.email ?? "" },
                     orderBy: { createdAt: "desc" },
@@ -267,7 +247,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                 });
 
                 if (!deal) {
-                    // Sin deal aún — registrar nota en el lead como fallback
                     await db.lead.update({
                         where: { id: lead.id },
                         data: { notes: `[IA ${new Date().toLocaleDateString("es-CO")}] Pendiente inscribir en: ${sequence.name}` }
@@ -278,7 +257,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                     };
                 }
 
-                // Verificar si ya está inscrito
                 const existingEnrollment = await db.emailSequenceEnrollment.findFirst({
                     where: { sequenceId: sequence.id, dealId: deal.id }
                 }).catch(() => null);
@@ -290,7 +268,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                     };
                 }
 
-                // Inscribir el deal en la secuencia
                 await db.emailSequenceEnrollment.create({
                     data: {
                         sequenceId: sequence.id,
@@ -312,7 +289,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                     return { success: false, error: "recipientEmail y subject son requeridos" };
                 }
 
-                // Buscar el lead para obtener el nombre
                 const lead = await db.lead.findFirst({
                     where: { companyId, email: recipientEmail },
                     select: { name: true }
@@ -345,12 +321,10 @@ export async function executeAgentTool(companyId: string, name: string, args: an
             }
 
             case "transfer_to_human": {
-                // Here we would pause the AI conversation state.
                 return { success: true, action: "PAUSED", message: "Notificación enviada al equipo humano. Informa al cliente que alguien del equipo se conectará en breve." };
             }
 
             case "check_calendar_availability": {
-                // Mocking Calendar read logic
                 return { success: true, availableSlots: ["09:00", "11:30", "15:00", "16:45"], message: `Hay disponibilidad limitada para el ${args.date}` };
             }
 
@@ -359,7 +333,6 @@ export async function executeAgentTool(companyId: string, name: string, args: an
             }
 
             case "web_search": {
-                // Delegate to OpenClaw Gateway Sandbox for execution
                 try {
                     const gatewayUrl = process.env.OPENCLAW_GATEWAY_URL || "http://localhost:18789";
                     const res = await fetch(`${gatewayUrl}/api/v1/tools/execute`, {

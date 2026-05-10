@@ -25,7 +25,12 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "No company associated with user." }), { status: 403 });
         }
 
-        // El motor ahora resuelve el API de Gemini de forma puramente dinámica usando companyId en agent-runner.ts
+        const userContext = {
+            userId: session.user.id,
+            role: (session.user as any).role || "client_user",
+            permissions: (session.user as any).permissions || [],
+            allowedRoutes: (session.user as any).allowedRoutes || []
+        };
 
         // 1. Extraer el último mensaje (el input actual) y el historial previo
         const inlineHistory = messages
@@ -47,7 +52,7 @@ export async function POST(req: Request) {
         };
 
         // 3. Ejecutar el nuevo motor cognitivo (Agent Runner)
-        const result = await triageAndRouteMessage(companyId, lastUserMessage, undefined, contactData, inlineHistory);
+        const result = await triageAndRouteMessage(companyId, lastUserMessage, undefined, contactData, inlineHistory, userContext);
 
         // 4. Simulador de Streaming (SSE compatible con Vercel AI SDK)
         const encoder = new TextEncoder();
