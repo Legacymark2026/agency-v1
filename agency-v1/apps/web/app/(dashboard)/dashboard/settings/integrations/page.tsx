@@ -12,34 +12,53 @@ import { NewIntegrationCard } from "@/components/settings/new-integration-card";
 import { AudienceSyncButton } from "@/components/settings/audience-sync-button";
 import { EmailDomainCard } from "@/components/settings/email-domain-card";
 import { Suspense } from "react";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 const NEW_INTEGRATIONS = {
     marketing: [
-        { key: "HUBSPOT", name: "HubSpot CRM", desc: "Sincronización bidireccional de contactos y deals", logo: "🔶", fields: [{ label: "API Key / Access Token", placeholder: "pat-na1-..." }] },
-        { key: "MAILCHIMP", name: "Mailchimp", desc: "Sincroniza listas de email marketing y audiencias", logo: "🐒", fields: [{ label: "API Key", placeholder: "xxxxxx-us1" }, { label: "Audience ID", placeholder: "ID de tu lista" }] },
-        { key: "EVENTBRITE", name: "Eventbrite", desc: "Importa asistentes y gestiona eventos automáticamente", logo: "🎟️", fields: [{ label: "Private Token", placeholder: "Tu token privado" }] },
-        { key: "GOTOWEBINAR", name: "GoToWebinar", desc: "Sincroniza registros y datos de asistentes a tus webinars", logo: "🌐", fields: [{ label: "Client ID", placeholder: "Tu Client ID" }, { label: "Client Secret", placeholder: "Tu Client Secret" }] },
-        { key: "SURVEYMONKEY", name: "SurveyMonkey", desc: "Envía encuestas automatizadas y recopila feedback", logo: "🐵", fields: [{ label: "Access Token", placeholder: "Tu Access Token" }] },
+        { key: "HUBSPOT", name: "HubSpot CRM", desc: "Sincronización bidireccional de contactos y deals", logo: "🔶" },
+        { key: "MAILCHIMP", name: "Mailchimp", desc: "Sincroniza listas de email marketing y audiencias", logo: "🐒" },
+        { key: "EVENTBRITE", name: "Eventbrite", desc: "Importa asistentes y gestiona eventos automáticamente", logo: "🎟️" },
+        { key: "GOTOWEBINAR", name: "GoToWebinar", desc: "Sincroniza registros y datos de asistentes a tus webinars", logo: "🌐" },
+        { key: "SURVEYMONKEY", name: "SurveyMonkey", desc: "Envía encuestas automatizadas y recopila feedback", logo: "🐵" },
     ],
     communication: [
-        { key: "OPENCLAW", name: "OpenClaw Gateway", desc: "Gateway unificado omnicanal: conecta Telegram, Discord, Slack y más de 20 canales en un solo endpoint.", logo: "🦀", fields: [{ label: "Gateway URL", placeholder: "http://localhost:18789" }, { label: "Webhook Secret", placeholder: "Tu clave secreta compartida" }] },
-        { key: "TWILIO", name: "Twilio SMS/Voice", desc: "Mensajes SMS y llamadas de voz programáticas", logo: "📱", fields: [{ label: "Account SID", placeholder: "ACxxxxxx" }, { label: "Auth Token", placeholder: "Tu auth token de Twilio" }] },
-        { key: "SLACK", name: "Slack", desc: "Notificaciones y alertas directamente a canales de Slack", logo: "💬", fields: [{ label: "Bot Token", placeholder: "xoxb-..." }, { label: "Channel ID", placeholder: "#general" }] },
-        { key: "RESEND", name: "Resend", desc: "Transactional email de alta entregabilidad", logo: "✉️", fields: [{ label: "API Key", placeholder: "re_..." }] },
-        { key: "GMAIL", name: "Gmail", desc: "Envío y lectura automatizada de correos corporativos", logo: "📧", fields: [{ label: "Client ID", placeholder: "Tu Google Client ID" }, { label: "Client Secret", placeholder: "Tu Google Client Secret" }] },
-        { key: "GOOGLE_MEET", name: "Google Meet", desc: "Creación automática de salas de reunión", logo: "📹", fields: [{ label: "Client ID", placeholder: "Tu Google Client ID" }, { label: "Client Secret", placeholder: "Tu Google Client Secret" }] },
+        { key: "OPENCLAW", name: "OpenClaw Gateway", desc: "Gateway unificado omnicanal: conecta Telegram, Discord, Slack y más de 20 canales en un solo endpoint.", logo: "🦀" },
+        { key: "TWILIO", name: "Twilio SMS/Voice", desc: "Mensajes SMS y llamadas de voz programáticas", logo: "📱" },
+        { key: "SLACK", name: "Slack", desc: "Notificaciones y alertas directamente a canales de Slack", logo: "💬" },
+        { key: "RESEND", name: "Resend", desc: "Transactional email de alta entregabilidad", logo: "✉️" },
+        { key: "GMAIL", name: "Gmail", desc: "Envío y lectura automatizada de correos corporativos", logo: "📧" },
+        { key: "GOOGLE_MEET", name: "Google Meet", desc: "Creación automática de salas de reunión", logo: "📹" },
     ],
     development: [
-        { key: "ZAPIER", name: "Zapier", desc: "Conecta con más de 6,000 aplicaciones vía Zapier", logo: "⚡", fields: [{ label: "Webhook URL", placeholder: "https://hooks.zapier.com/..." }] },
-        { key: "AWS_S3", name: "AWS S3", desc: "Almacenamiento de archivos y assets en la nube", logo: "☁️", fields: [{ label: "Access Key ID", placeholder: "AKIA..." }, { label: "Secret Access Key", placeholder: "Tu secret key" }, { label: "Bucket Name", placeholder: "mi-bucket" }] },
-        { key: "ZOHO", name: "Zoho CRM", desc: "Sincronización con Zoho CRM y módulos", logo: "🏢", fields: [{ label: "Client ID", placeholder: "Tu Zoho client ID" }, { label: "Client Secret", placeholder: "Tu Zoho client secret" }] },
-        { key: "DYNAMICS365", name: "Microsoft Dynamics 365", desc: "Integración con el ecosistema Microsoft", logo: "🪟", fields: [{ label: "Tenant ID", placeholder: "Tu Azure tenant ID" }, { label: "Client ID", placeholder: "Tu app client ID" }] },
-        { key: "JIRA", name: "Jira Software", desc: "Creación y seguimiento de tickets automático", logo: "🔷", fields: [{ label: "Domain", placeholder: "empresa.atlassian.net" }, { label: "Email", placeholder: "admin@empresa.com" }, { label: "API Token", placeholder: "Tu token de Jira" }] },
-        { key: "GOOGLE_DRIVE", name: "Google Drive", desc: "Almacenamiento y gestión de documentos automatizada", logo: "📂", fields: [{ label: "Service Account JSON", placeholder: "{ \"type\": \"service_account\", ... }" }] },
+        { key: "ZAPIER", name: "Zapier", desc: "Conecta con más de 6,000 aplicaciones vía Zapier", logo: "⚡" },
+        { key: "AWS_S3", name: "AWS S3", desc: "Almacenamiento de archivos y assets en la nube", logo: "☁️" },
+        { key: "ZOHO", name: "Zoho CRM", desc: "Sincronización con Zoho CRM y módulos", logo: "🏢" },
+        { key: "DYNAMICS365", name: "Microsoft Dynamics 365", desc: "Integración con el ecosistema Microsoft", logo: "🪟" },
+        { key: "JIRA", name: "Jira Software", desc: "Creación y seguimiento de tickets automático", logo: "🔷" },
+        { key: "GOOGLE_DRIVE", name: "Google Drive", desc: "Almacenamiento y gestión de documentos automatizada", logo: "📂" },
     ]
 };
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+    const session = await auth();
+    let connectedProviders = new Set<string>();
+
+    if (session?.user?.id) {
+        const companyUser = await prisma.companyUser.findFirst({
+            where: { userId: session.user.id },
+            select: { companyId: true }
+        });
+
+        if (companyUser) {
+            const configs = await prisma.integrationConfig.findMany({
+                where: { companyId: companyUser.companyId }
+            });
+            // Guardamos en Set los que están habilitados
+            configs.forEach(c => connectedProviders.add(c.provider.toLowerCase()));
+        }
+    }
     return (
         <div className="space-y-10 pb-16 animate-in fade-in duration-500">
             <Suspense fallback={null}><IntegrationsToastHandler /></Suspense>
@@ -104,7 +123,7 @@ export default function IntegrationsPage() {
                     <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Available ones */}
                         {NEW_INTEGRATIONS.marketing.map(integration => (
-                            <NewIntegrationCard key={integration.key} integration={integration} />
+                            <NewIntegrationCard key={integration.key} integration={integration} status={{ status: connectedProviders.has(integration.key.toLowerCase()) ? "OK" : "UNCONFIGURED" }} />
                         ))}
                     </div>
                 </section>
@@ -123,7 +142,7 @@ export default function IntegrationsPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <EmailDomainCard />
                         {NEW_INTEGRATIONS.communication.map(integration => (
-                            <NewIntegrationCard key={integration.key} integration={integration} />
+                            <NewIntegrationCard key={integration.key} integration={integration} status={{ status: connectedProviders.has(integration.key.toLowerCase()) ? "OK" : "UNCONFIGURED" }} />
                         ))}
                     </div>
                 </section>
@@ -147,7 +166,7 @@ export default function IntegrationsPage() {
                     <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Available ones */}
                         {NEW_INTEGRATIONS.development.map(integration => (
-                            <NewIntegrationCard key={integration.key} integration={integration} />
+                            <NewIntegrationCard key={integration.key} integration={integration} status={{ status: connectedProviders.has(integration.key.toLowerCase()) ? "OK" : "UNCONFIGURED" }} />
                         ))}
                     </div>
                 </section>

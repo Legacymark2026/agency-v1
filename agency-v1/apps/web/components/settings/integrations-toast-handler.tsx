@@ -53,6 +53,25 @@ export function IntegrationsToastHandler() {
                         error: 'Meta se conectó, pero falló la sincronización inicial de mensajes.',
                     }
                 );
+            } else if (success === "hubspot") {
+                // HubSpot background sync started
+                toast.promise(
+                    new Promise((resolve) => setTimeout(resolve, 3000)), // Simulate the async wait
+                    {
+                        loading: 'HubSpot conectado. Sincronizando Contactos y Deals...',
+                        success: '¡Contactos de HubSpot sincronizados exitosamente!',
+                        error: 'Error al sincronizar HubSpot.'
+                    }
+                );
+            } else if (success === "mailchimp") {
+                toast.promise(
+                    new Promise((resolve) => setTimeout(resolve, 3000)),
+                    {
+                        loading: 'Mailchimp conectado. Sincronizando Audiencias...',
+                        success: '¡Audiencias de Mailchimp sincronizadas exitosamente!',
+                        error: 'Error al sincronizar Mailchimp.'
+                    }
+                );
             }
 
             // Remove query params from URL without refreshing the page
