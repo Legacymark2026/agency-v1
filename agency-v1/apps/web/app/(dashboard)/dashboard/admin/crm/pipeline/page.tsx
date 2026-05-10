@@ -41,103 +41,68 @@ export default async function PipelinePage() {
     ];
 
     return (
-        <div className="ds-page h-full flex flex-col space-y-6">
+        <div className="h-[calc(100vh-80px)] flex flex-col space-y-4 overflow-hidden relative ds-page">
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.025] pointer-events-none mix-blend-screen" />
 
-            {/* ══ SECTION 1: Header ══ */}
-            <div className="relative z-10 flex justify-between items-start pb-6"
+            {/* ══ SECTION 1: Header & Compact KPIs ══ */}
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between lg:items-end gap-4 pb-4"
                 style={{ borderBottom: '1px solid rgba(30,41,59,0.8)' }}>
                 <div>
-                    <div className="mb-3">
-                        <span className="ds-badge ds-badge-amber">
-                            <span className="relative flex h-1.5 w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
-                            </span>
-                            CRM_CORE · PIPELINE
-                        </span>
-                    </div>
                     <div className="flex items-center gap-4">
-                        <div className="ds-icon-box w-11 h-11">
+                        <div className="ds-icon-box w-10 h-10">
                             <GitFork className="w-5 h-5 text-teal-400" />
                         </div>
                         <div>
-                            <h1 className="ds-heading-page">Sales Pipeline</h1>
-                            <p className="ds-subtext mt-1">Gestiona deals · Rastrea revenue · Cierra oportunidades</p>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-xl font-black text-white tracking-tight">Sales Pipeline</h1>
+                                <span className="ds-badge ds-badge-amber py-0">CRM_CORE</span>
+                            </div>
+                            <p className="ds-subtext mt-0.5 text-xs">Gestiona deals y revenue</p>
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 pt-1">
+
+                {/* Compact KPIs */}
+                <div className="flex items-center gap-4 bg-slate-900/50 rounded-lg border border-slate-800 p-2">
+                    {kpis.map((k, i) => (
+                        <div key={k.code} className={`flex items-center gap-3 ${i !== 0 ? 'pl-4 border-l border-slate-800' : ''}`}>
+                            <k.icon size={14} className="text-teal-500" />
+                            <div>
+                                <p className="text-[9px] font-mono font-bold text-slate-500 uppercase">{k.label}</p>
+                                <p className="text-sm font-black text-white">{k.value}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
                     <CsvExportButton deals={deals} />
                     <CsvImportDialog companyId={company?.id ?? ""} />
                     {company && <NewDealDialog companyId={company.id} />}
                 </div>
             </div>
 
-            {/* ══ SECTION 2: KPI Strip ══ */}
-            <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-3">
-                {kpis.map((k) => (
-                    <div key={k.code} className="ds-kpi group relative">
-                        <span className="absolute top-3 right-3 font-mono text-[10px] text-slate-800 uppercase tracking-widest group-hover:text-slate-600 transition-colors">[{k.code}]</span>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="ds-icon-box w-7 h-7">
-                                    <k.icon size={12} strokeWidth={1.5} className="text-slate-500 group-hover:text-teal-400 transition-colors" />
-                                </div>
-                                <p className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-widest">{k.label}</p>
-                            </div>
-                            <p className="ds-stat-value">{k.value}</p>
-                            <p className="text-[11px] text-slate-600 mt-1 font-mono">{k.sub}</p>
-                        </div>
-                        <div className="flex gap-0.5 h-3 items-end mt-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                            {[35, 55, 42, 75, 50, 88, 70].map((h, j) => (
-                                <div key={j} className="flex-1 bg-teal-500 rounded-t-sm" style={{ height: `${h}%` }} />
-                            ))}
-                        </div>
+            {/* ══ SECTION 2: Main Content (Board + Right Sidebar) ══ */}
+            <div className="relative z-10 flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
+                
+                {/* Left: Kanban Board */}
+                <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-slate-900/40 rounded-xl border border-slate-800/80">
+                    <div className="flex-1 overflow-hidden p-2">
+                        <ComponentErrorBoundary title="Error cargando el Tablero Kanban">
+                            <KanbanBoard initialDeals={deals} users={companyUsers} />
+                        </ComponentErrorBoundary>
                     </div>
-                ))}
-            </div>
-
-            {/* ══ SECTION 3: Intelligence Row ══ */}
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px flex-1" style={{ background: 'rgba(30,41,59,0.6)' }} />
-                    <span className="font-mono text-[9px] text-slate-700 uppercase tracking-[0.2em] px-2">PIPELINE INTELLIGENCE</span>
-                    <div className="h-px flex-1" style={{ background: 'rgba(30,41,59,0.6)' }} />
                 </div>
-                {company && (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div className="lg:col-span-2">
+
+                {/* Right: Intelligence Sidebar */}
+                <div className="w-full lg:w-[320px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-800 [&::-webkit-scrollbar-track]:bg-transparent">
+                    {company && (
+                        <div className="flex flex-col gap-4">
+                            <PipelineVelocity deals={deals} />
                             <AiForecastWidget companyId={company.id} />
                         </div>
-                        <div>
-                            <PipelineVelocity deals={deals} />
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* ══ SECTION 4: Alerts ══ */}
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px flex-1" style={{ background: 'rgba(30,41,59,0.6)' }} />
-                    <span className="font-mono text-[9px] text-slate-700 uppercase tracking-[0.2em] px-2">DEAL HEALTH MONITOR</span>
-                    <div className="h-px flex-1" style={{ background: 'rgba(30,41,59,0.6)' }} />
-                </div>
-                <DealAgingAlerts deals={deals} />
-            </div>
-
-            {/* ══ SECTION 5: Kanban Board ══ */}
-            <div className="relative z-10 flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px flex-1" style={{ background: 'rgba(30,41,59,0.6)' }} />
-                    <span className="font-mono text-[9px] text-slate-700 uppercase tracking-[0.2em] px-2">KANBAN BOARD</span>
-                    <div className="h-px flex-1" style={{ background: 'rgba(30,41,59,0.6)' }} />
-                </div>
-                <div className="min-h-[500px] overflow-hidden ds-section">
-                    <ComponentErrorBoundary title="Error cargando el Tablero Kanban">
-                        <KanbanBoard initialDeals={deals} users={companyUsers} />
-                    </ComponentErrorBoundary>
+                    )}
+                    <DealAgingAlerts deals={deals} />
                 </div>
             </div>
         </div>
