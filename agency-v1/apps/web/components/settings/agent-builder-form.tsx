@@ -16,6 +16,8 @@ import { AgentSpecializations } from "@/components/settings/agent-specialization
 import { AgentSkillsManager } from "@/components/settings/agent-skills-manager";
 import { SkillTemplatesLibrary } from "@/components/settings/skill-templates-library";
 import { ModelSelectorPanel } from "@/components/settings/model-selector-panel";
+import { generateSystemPromptWithAI } from "@/actions/agent-ai-builder";
+import { Sparkles, Loader2 } from "lucide-react";
 
 // ── CRM Variable Tokens ─────────────────────────────────────────────────────
 const CRM_TOKENS = [
@@ -99,6 +101,8 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
     const [temperature, setTemperature] = useState(initialData?.temperature ?? 0.4);
     const [maxTokens, setMaxTokens] = useState(initialData?.maxTokens ?? 400);
     const [learningMode, setLearningMode] = useState(initialData?.learningMode || "MANUAL");
+    const [generatingPrompt, setGeneratingPrompt] = useState(false);
+    const [kbHint, setKbHint] = useState("");
 
     // ── Tools
     // Note: enabledTools is a string array in db, but form uses an object
@@ -208,7 +212,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                         <Bot className="w-6 h-6 text-teal-400" />
                         {initialData ? "Editar Agente Ultra-Pro" : "Nuevo Agente Ultra-Pro"}
                     </h2>
-                    <p className="text-sm text-slate-400 mt-1">Motor cognitivo con RAG, CRM variables, Human-in-the-Loop y guardrails.</p>
+                    <p className="text-sm text-slate-400 mt-1">Motor cognitivo con <span className="text-teal-400 font-semibold">ReFRAG</span>, CRM variables, Human-in-the-Loop y guardrails.</p>
                 </div>
                 <button
                     type="submit"
@@ -262,6 +266,34 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
 
                     {/* System Prompt with CRM Token Helper */}
                     <Section icon={Terminal} title="System Prompt (Brain del Agente)" color="text-purple-400">
+                        {/* AI Generate Button */}
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex-1">
+                                {kbHint && <p className="text-[11px] text-teal-400">{kbHint}</p>}
+                            </div>
+                            <button
+                                type="button"
+                                disabled={generatingPrompt}
+                                onClick={async () => {
+                                    if (!name.trim()) return toast.error("Escribe el nombre del agente primero");
+                                    setGeneratingPrompt(true);
+                                    try {
+                                        const result = await generateSystemPromptWithAI({ agentType, name, description });
+                                        setSystemPrompt(result.systemPrompt);
+                                        setKbHint(result.usedKBChunks > 0
+                                            ? `✅ ${result.usedKBChunks} chunks de KB · ${result.subQueries} sub-queries ReFRAG`
+                                            : `✅ Generado por IA (sin KBs aún)`);
+                                        toast.success("System Prompt generado con ReFRAG");
+                                    } catch (e: any) { toast.error(e.message); }
+                                    finally { setGeneratingPrompt(false); }
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/60 border border-purple-800/40 text-purple-300 text-xs font-semibold hover:bg-purple-900/60 disabled:opacity-50 transition-all"
+                            >
+                                {generatingPrompt
+                                    ? <><Loader2 className="w-3 h-3 animate-spin" /> Generando...</>
+                                    : <><Sparkles className="w-3 h-3" /> Generar con IA</>}
+                            </button>
+                        </div>
                         {/* CRM Token chips */}
                         <div>
                             <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">

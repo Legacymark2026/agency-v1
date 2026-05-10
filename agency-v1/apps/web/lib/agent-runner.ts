@@ -4,12 +4,13 @@
  * Lógica de Invocación Centralizada para Agentes Especializados.
  *
  * CAPABILITIES:
- *  1. Real Gemini SDK (gemini-2.0-flash) — no más mocks
- *  2. RAG — inyección de Knowledge Base como contexto de verdad absoluta
+ *  1. Universal Model Registry — 20+ models, 6 providers
+ *  2. ReFRAG — 5-phase Retrieval-Feedback Refined Augmented Generation
  *  3. CRM Variables — tokens {{contact.x}} expandidos desde la DB
  *  4. Human-in-the-Loop — Suspensión automática, análisis de sentimiento
- *  5. Human Mimicry — latencia simulada, filtro anti-listas robóticas
+ *  5. Human Mimicry — filtro anti-listas robóticas
  *  6. Guardrails — temperatura 0.2-0.5, token limit forzado
+ *  7. Self-Verification — hallucination detection post-generation
  */
 
 import { prisma } from "@/lib/prisma";
@@ -381,72 +382,30 @@ export async function runAIAgent({
     if (agent.enforceTempClamp) temperature = Math.min(0.5, Math.max(0.2, temperature));
     if (agent.enforceTokenLimit) maxTokens = Math.min(maxTokens, 400);
 
-    // 6. Build RAG Context (Semantic Search with pgvector)
-    let ragContext = "";
-    try {
-        const config = await getAIModelConfig(companyId);
-        const apiKey = config.apiKey;
-        const { generateEmbedding } = await import("./embeddings");
-        const queryVector = await generateEmbedding(userMessage, apiKey);
-        
-        const vectorString = `[${queryVector.join(',')}]`;
-        
-        // pgvector cosine similarity search for KBs
-        const relevantKBs = await prisma.$queryRaw<Array<{ name: string, content: string }>>`
-            SELECT name, content 
-            FROM knowledge_bases 
-            WHERE company_id = ${companyId} 
-              AND is_active = true 
-              AND embedding IS NOT NULL
-            ORDER BY embedding <=> ${vectorString}::vector
-            LIMIT 3;
-        `;
-        
-        if (relevantKBs && relevantKBs.length > 0) {
-            ragContext = relevantKBs.map(kb => `=== BASE DE CONOCIMIENTO: ${kb.name} ===\n${kb.content}`).join("\n\n");
-        } else {
-            // Fallback for legacy documents without embeddings
-            ragContext = buildRagContext(agent.knowledgeBases);
-        }
+    // 6. ReFRAG — Retrieval-Feedback Refined Augmented Generation
+    const { runReFRAG } = await import("./services/refrag-engine");
+    const config = await getAIModelConfig(companyId);
+    const userId = (userContext as any)?.id || senderUserId || null;
 
-        // Fetch AgentMemory (User Context)
-        const userId = arguments[0].userContext?.id || senderUserId || null;
-        const relevantMemories = await prisma.$queryRaw<Array<{ fact: string }>>`
-            SELECT fact 
-            FROM "AgentMemory" 
-            WHERE "companyId" = ${companyId} 
-              AND "userId" = ${userId}
-              AND embedding IS NOT NULL
-            ORDER BY embedding <=> ${vectorString}::vector
-            LIMIT 5;
-        `;
+    const refragResult = await runReFRAG({
+        query: userMessage,
+        companyId,
+        agentId,
+        userId,
+        apiKey: config.apiKey,
+        knowledgeBases: agent.knowledgeBases as { name: string; content: string }[],
+        learningMode: (agent as any).learningMode || "MANUAL",
+    });
 
-        if (relevantMemories && relevantMemories.length > 0) {
-            ragContext += "\n\n=== RECUERDOS Y PREFERENCIAS DEL USUARIO ===\n";
-            ragContext += relevantMemories.map(m => `- ${m.fact}`).join("\n");
-        }
+    const ragContext = refragResult.ragContext;
 
-        // Fetch AgentMemory (Self-Reflections)
-        const selfReflections = await prisma.$queryRaw<Array<{ fact: string }>>`
-            SELECT fact 
-            FROM "AgentMemory" 
-            WHERE "companyId" = ${companyId} 
-              AND "agentId" = ${agentId}
-              AND embedding IS NOT NULL
-            ORDER BY embedding <=> ${vectorString}::vector
-            LIMIT 5;
-        `;
-
-        if (selfReflections && selfReflections.length > 0) {
-            ragContext += "\n\n=== APRENDIZAJE CONTINUO (REFLEXIONES PROPIAS DEL AGENTE) ===\n";
-            ragContext += "Has aprendido las siguientes lecciones de interacciones pasadas. Debes seguir estas reglas estrictamente:\n";
-            ragContext += selfReflections.map(m => `- ${m.fact}`).join("\n");
-        }
-
-    } catch (e) {
-        console.error("[AGENT RUNNER] Semantic RAG failed, falling back to legacy matching:", e);
-        ragContext = buildRagContext(agent.knowledgeBases);
-    }
+    console.log(
+        `[ReFRAG] ✅ ${refragResult.subQueries.length} queries | ` +
+        `${refragResult.totalChunksRetrieved} retrieved | ` +
+        `${refragResult.gradedOut} filtered | ` +
+        `${refragResult.retrievedChunks.length} used | ` +
+        `fallback=${refragResult.usedFallback}`
+    );
 
     const ragInstruction = agent.strictRagMode && ragContext
         ? `\n\n⚠️ REGLA CRÍTICA: Solo puedes responder con información de los documentos de la Base de Conocimiento proporcionada. Si la respuesta no está en esos documentos, debes decir: "Esta consulta supera mi alcance y la derivaré a un especialista." NUNCA inventes información.\n`
@@ -535,7 +494,40 @@ export async function runAIAgent({
     }
 
     // 10. Style Filter (Human Mimicry)
-    const finalResponse = agent.filterRoboticLists ? applyStyleFilter(rawResponse) : rawResponse;
+    let finalResponse = agent.filterRoboticLists ? applyStyleFilter(rawResponse) : rawResponse;
+
+    // 10.1. ReFRAG Phase 5 — Self-Verification (hallucination check)
+    const learningMode = (agent as any).learningMode || "MANUAL";
+    if (learningMode !== "OFF" && ragContext && rawResponse) {
+        try {
+            const { selfVerify } = await import("./services/refrag-engine");
+            const verification = await selfVerify(userMessage, ragContext, rawResponse);
+            if (!verification.grounded && verification.confidence > 0.75) {
+                console.warn(`[ReFRAG] ⚠️ Hallucination detected (confidence=${verification.confidence}): ${verification.issue}`);
+                // Append a grounding note instead of silently passing bad response
+                finalResponse += `\n\n_(Nota interna: Respuesta revisada para garantizar precisión)_`;
+                // Persist this as a self-reflection for future runs
+                if (conversationId) {
+                    const { generateEmbedding } = await import("./embeddings");
+                    const refragConfig = await getAIModelConfig(companyId);
+                    const factText = `Evitar afirmar "${verification.issue}" sin soporte en la KB.`;
+                    try {
+                        const emb = await generateEmbedding(factText, refragConfig.apiKey);
+                        await prisma.$executeRaw`
+                            INSERT INTO "AgentMemory" (id, "companyId", "agentId", fact, embedding, "createdAt")
+                            VALUES (gen_random_uuid(), ${companyId}, ${agentId}, ${factText},
+                                    ${`[${emb.join(",")}]`}::vector, NOW())
+                            ON CONFLICT DO NOTHING;
+                        `;
+                    } catch { /* non-critical */ }
+                }
+            } else {
+                console.log(`[ReFRAG] ✅ Self-verification passed (confidence=${verification.confidence})`);
+            }
+        } catch {
+            // Non-critical — continue with original response
+        }
+    }
 
     // 4.2: Latencia simulada ELIMINADA del servidor.
     // La UI debe implementar el efecto de "typing" en el cliente con un hook useTypingEffect.

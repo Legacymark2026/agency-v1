@@ -317,6 +317,8 @@ model Company {
   aiauditLogs               AIAuditLog[]
   agentMemories             AgentMemory[]
   agentSkillChains          AgentSkillChain[]
+  agentTeams                AgentTeam[]
+  agentTeamRuns             AgentTeamRun[]
 
   @@map("companies")
 }
@@ -2144,6 +2146,7 @@ model AIAgent {
   skillChains               AgentSkillChain[]
   company                   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
   agentMemories             AgentMemory[]
+  agentTeamMembers          AgentTeamMember[]
 
   @@index([companyId])
   @@index([isActive])
@@ -3177,4 +3180,63 @@ model AgentSkillChain {
 
   @@index([agentId])
   @@index([companyId])
+}
+
+// ══════════════════════════════════════════════════════════════
+// AGENT TEAM — PARALLEL WORKFORCE ORCHESTRATION
+// ══════════════════════════════════════════════════════════════
+
+model AgentTeam {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  objective   String   @db.Text // What this team is designed to accomplish
+  strategy    String   @default("PARALLEL") // PARALLEL | SEQUENTIAL | VOTE
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  members AgentTeamMember[]
+  runs    AgentTeamRun[]
+
+  @@index([companyId])
+  @@index([isActive])
+}
+
+model AgentTeamMember {
+  id       String @id @default(cuid())
+  teamId   String
+  agentId  String
+  role     String @default("WORKER") // ORCHESTRATOR | WORKER | REVIEWER | SYNTHESIZER
+  priority Int    @default(0) // Execution order for SEQUENTIAL strategy
+
+  team  AgentTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  agent AIAgent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, agentId])
+  @@index([teamId])
+}
+
+model AgentTeamRun {
+  id          String   @id @default(cuid())
+  teamId      String
+  companyId   String
+  trigger     String   @default("MANUAL") // MANUAL | WEBHOOK | SCHEDULE
+  input       String   @db.Text
+  status      String   @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  outputs     Json     @default("{}") // { agentId: response }
+  synthesis   String?  @db.Text // Synthesized final output
+  latencyMs   Int?
+  tokensTotal Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team    AgentTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  company Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([companyId])
+  @@index([status])
 }

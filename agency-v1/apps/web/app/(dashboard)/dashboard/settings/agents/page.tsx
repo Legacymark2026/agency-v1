@@ -1,7 +1,7 @@
 import { getAIAgents, deleteAIAgent } from "@/actions/ai-agents";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { Plus, Bot, Settings, Trash2, Zap } from "lucide-react";
+import { Plus, Bot, Settings, Trash2, Zap, Users } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -35,19 +35,17 @@ export default async function AgentsListPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link
-                        href="/dashboard/settings/agents/skillchains"
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white h-10 px-4 py-2 gap-2"
-                    >
-                        <Zap className="w-4 h-4 text-teal-400" />
-                        5x Skillchains
+                    <Link href="/dashboard/settings/agents/teams"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white h-10 px-4 py-2 gap-2">
+                        <Users className="w-4 h-4 text-purple-400" /> Agent Teams
                     </Link>
-                    <Link
-                        href="/dashboard/settings/agents/new"
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:pointer-events-none disabled:opacity-50 bg-teal-500 text-slate-950 hover:bg-teal-400 h-10 px-4 py-2"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Crear Agente
+                    <Link href="/dashboard/settings/agents/skillchains"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white h-10 px-4 py-2 gap-2">
+                        <Zap className="w-4 h-4 text-teal-400" /> 5x Skillchains
+                    </Link>
+                    <Link href="/dashboard/settings/agents/new"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-teal-500 text-slate-950 hover:bg-teal-400 h-10 px-4 py-2">
+                        <Plus className="w-4 h-4 mr-2" /> Crear Agente
                     </Link>
                 </div>
             </div>
