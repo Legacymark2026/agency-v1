@@ -316,6 +316,7 @@ model Company {
   mlWeights                 MLCompanyWeights[]
   aiauditLogs               AIAuditLog[]
   agentMemories             AgentMemory[]
+  agentSkillChains          AgentSkillChain[]
 
   @@map("companies")
 }
@@ -2129,6 +2130,7 @@ model AIAgent {
   enforceTokenLimit         Boolean             @default(true) @map("enforce_token_limit")
   simulateLatency           Boolean             @default(true) @map("simulate_latency")
   filterRoboticLists        Boolean             @default(true) @map("filter_robotic_lists")
+  learningMode              String              @default("MANUAL") @map("learning_mode")
   voiceId                   String?             @map("voice_id")
   stability                 Float               @default(0.5)
   similarityBoost           Float               @default(0.75) @map("similarity_boost")
@@ -2139,7 +2141,9 @@ model AIAgent {
   knowledgeBases            KnowledgeBase[]
   conversations             AgentConversation[]
   agentSkills               AgentSkill[]
+  skillChains               AgentSkillChain[]
   company                   Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  agentMemories             AgentMemory[]
 
   @@index([companyId])
   @@index([isActive])
@@ -3141,15 +3145,36 @@ model AgentMemory {
   id        String                      @id @default(cuid())
   companyId String
   userId    String?
+  agentId   String?
   agentName String?
   fact      String                      @db.Text
   embedding Unsupported("vector(768)")?
   createdAt DateTime                    @default(now())
   updatedAt DateTime                    @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  agent   AIAgent? @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([userId])
+  @@index([agentId])
+}
+
+model AgentSkillChain {
+  id          String   @id @default(cuid())
+  companyId   String
+  agentId     String
+  name        String
+  description String?
+  tools       Json     @default("[]") // Array of tool identifiers
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agent   AIAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([companyId])
 }

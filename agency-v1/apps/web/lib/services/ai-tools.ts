@@ -132,6 +132,21 @@ export const AIAgentTools = {
             fact: z.string().describe("La preferencia o hecho a memorizar (ej: 'El usuario prefiere respuestas muy cortas')")
         }),
         requiredRoutes: []
+    },
+    execute_skillchain: {
+        description: "Ejecuta una cadena de múltiples habilidades (Skillchain) preconfigurada. Permite automatizar flujos de trabajo completos de forma masiva sin requerir aprobaciones intermedias de la IA.",
+        parameters: z.object({
+            skillChainId: z.string().describe("El ID del Skillchain a ejecutar"),
+            initialPayload: z.record(z.any()).describe("Un objeto JSON con los datos iniciales necesarios para que la primera herramienta de la cadena comience.")
+        }),
+        requiredRoutes: [] // Delegamos los permisos a cada herramienta individual dentro del engine
+    },
+    agent_self_reflection: {
+        description: "Permite al agente grabar una regla, lección o mejora en su propia memoria a largo plazo. Úsalo cuando fallas en una tarea o recibes feedback explícito de que debes cambiar tu forma de actuar.",
+        parameters: z.object({
+            lesson: z.string().describe("La regla o lección aprendida (ej: 'Nunca enviar correos sin asunto', 'Debo ser más persuasivo').")
+        }),
+        requiredRoutes: []
     }
 };
 
@@ -414,6 +429,48 @@ async function executeAgentToolInner(companyId: string, name: string, args: any,
                 } catch(e: any) {
                     console.error("Error saving memory:", e);
                     return { success: false, error: "No se pudo guardar la memoria a largo plazo." };
+                }
+            }
+
+            case "execute_skillchain": {
+                const { skillChainId, initialPayload } = args;
+                try {
+                    const { executeSkillChain } = await import("./skillchain-engine");
+                    const result = await executeSkillChain(companyId, skillChainId, initialPayload, userContext);
+                    if (result.success) {
+                        return { success: true, message: `Skillchain completado con éxito. Herramientas ejecutadas: ${result.executedTools.join(', ')}.`, output: result.finalOutput };
+                    }
+                    return { success: false, error: result.error };
+                } catch (e: any) {
+                    return { success: false, error: `Error en Skillchain: ${e.message}` };
+                }
+            }
+
+            case "agent_self_reflection": {
+                const { lesson } = args;
+                try {
+                    const config = await import("../agent-runner").then(m => m.getAIModelConfig(companyId));
+                    const { generateEmbedding } = await import("../embeddings");
+                    const vector = await generateEmbedding(lesson, config.apiKey);
+                    
+                    const targetAgentId = userContext?.agentId || null; // El runner debe inyectar esto
+
+                    await db.$executeRaw`
+                        INSERT INTO "AgentMemory" ("id", "companyId", "userId", "agentId", "fact", "embedding", "updatedAt") 
+                        VALUES (
+                            gen_random_uuid()::text, 
+                            ${companyId}, 
+                            null, 
+                            ${targetAgentId}, 
+                            ${lesson}, 
+                            ${`[${vector.join(',')}]`}::vector,
+                            now()
+                        )
+                    `;
+                    return { success: true, message: "Lección aprendida e interiorizada para el futuro." };
+                } catch(e: any) {
+                    console.error("Error saving self-reflection:", e);
+                    return { success: false, error: "No se pudo interiorizar la lección." };
                 }
             }
 

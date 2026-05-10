@@ -386,13 +386,13 @@ export async function runAIAgent({
             ragContext = buildRagContext(agent.knowledgeBases);
         }
 
-        // Fetch AgentMemory
+        // Fetch AgentMemory (User Context)
         const userId = arguments[0].userContext?.id || senderUserId || null;
         const relevantMemories = await prisma.$queryRaw<Array<{ fact: string }>>`
             SELECT fact 
             FROM "AgentMemory" 
             WHERE "companyId" = ${companyId} 
-              AND ("userId" = ${userId} OR "userId" IS NULL)
+              AND "userId" = ${userId}
               AND embedding IS NOT NULL
             ORDER BY embedding <=> ${vectorString}::vector
             LIMIT 5;
@@ -401,6 +401,23 @@ export async function runAIAgent({
         if (relevantMemories && relevantMemories.length > 0) {
             ragContext += "\n\n=== RECUERDOS Y PREFERENCIAS DEL USUARIO ===\n";
             ragContext += relevantMemories.map(m => `- ${m.fact}`).join("\n");
+        }
+
+        // Fetch AgentMemory (Self-Reflections)
+        const selfReflections = await prisma.$queryRaw<Array<{ fact: string }>>`
+            SELECT fact 
+            FROM "AgentMemory" 
+            WHERE "companyId" = ${companyId} 
+              AND "agentId" = ${agentId}
+              AND embedding IS NOT NULL
+            ORDER BY embedding <=> ${vectorString}::vector
+            LIMIT 5;
+        `;
+
+        if (selfReflections && selfReflections.length > 0) {
+            ragContext += "\n\n=== APRENDIZAJE CONTINUO (REFLEXIONES PROPIAS DEL AGENTE) ===\n";
+            ragContext += "Has aprendido las siguientes lecciones de interacciones pasadas. Debes seguir estas reglas estrictamente:\n";
+            ragContext += selfReflections.map(m => `- ${m.fact}`).join("\n");
         }
 
     } catch (e) {
@@ -457,7 +474,11 @@ export async function runAIAgent({
 
     const { getToolDeclarations } = await import("./agent-tools");
     const enabledToolNames = Array.isArray(agent.enabledTools) ? (agent.enabledTools as string[]) : [];
-    const tools = getToolDeclarations(enabledToolNames, companyId, contactData, userContext);
+    
+    // Inject agentId for self_reflection
+    const contextWithAgent = { ...(userContext || {}), agentId };
+    
+    const tools = getToolDeclarations(enabledToolNames, companyId, contactData, contextWithAgent);
     
     // 9. Invoke Vercel AI SDK Core
     const config = await getAIModelConfig(companyId);
