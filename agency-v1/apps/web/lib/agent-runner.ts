@@ -284,7 +284,8 @@ export async function runAIAgent({
     conversationId,
     senderUserId,
     contactData = {},
-    inlineHistory = []
+    inlineHistory = [],
+    userContext
 }: AgentRunInput): Promise<AgentRunOutput> {
     const startTime = Date.now();
 
