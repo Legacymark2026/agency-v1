@@ -1,16 +1,18 @@
-import { Metadata } from 'next'
-import { siteConfig } from '@/lib/site-config'
-import { PlanSelector } from '@/components/subscription/plan-selector'
+import { Metadata } from 'next';
+import { siteConfig } from '@/lib/site-config';
+import { PlanSelector } from '@/components/subscription/plan-selector';
+import { ShieldCheck, Zap, BarChart3, CheckCircle2 } from 'lucide-react';
+import Script from 'next/script';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Elige tu Plan - Suscripción',
+    title: 'Planes y Precios | LegacyMark OS',
     description:
-      'Selecciona el plan perfecto para tu negocio. Planes para freelancers, equipos y agencias.',
+      'Escala tu agencia con LegacyMark OS. Elige el plan perfecto con CRM predictivo, Automatización Omnicanal y AI Video Studio integrados. Sin compromisos a largo plazo.',
     openGraph: {
-      title: 'Elige tu Plan - Suscripción',
+      title: 'Planes y Precios - Escala tu Agencia | LegacyMark OS',
       description:
-        'Selecciona el plan perfecto para tu negocio. Planes para freelancers, equipos y agencias.',
+        'Escala tu agencia con LegacyMark OS. Elige el plan perfecto con CRM predictivo, Automatización Omnicanal y AI Video Studio integrados.',
       url: `${siteConfig.url}/suscripcion`,
       siteName: siteConfig.name,
       images: [
@@ -22,79 +24,169 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
       type: 'website',
     },
-  }
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Planes y Precios | LegacyMark OS',
+      description: 'Automatiza tu agencia con IA. Cancela cuando quieras.',
+      images: [siteConfig.ogImage],
+    }
+  };
 }
 
 export default function SubscriptionPage() {
-  const currentPlanId = 'free'
+  const currentPlanId = 'free';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'LegacyMark OS',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'USD',
+      lowPrice: '0',
+      highPrice: '299',
+      offerCount: '3',
+      offers: [
+        {
+          '@type': 'Offer',
+          name: 'Free',
+          price: '0',
+          priceCurrency: 'USD'
+        },
+        {
+          '@type': 'Offer',
+          name: 'Pro',
+          price: '99',
+          priceCurrency: 'USD'
+        },
+        {
+          '@type': 'Offer',
+          name: 'Enterprise',
+          price: '299',
+          priceCurrency: 'USD'
+        }
+      ]
+    }
+  };
 
   return (
-    <main className="relative bg-slate-950 text-white min-h-screen">
-      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120%] h-[600px] bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.08)_0%,transparent_60%)] pointer-events-none" />
+    <main className="relative bg-slate-950 text-white min-h-screen overflow-hidden selection:bg-teal-500/30">
+      <Script
+        id="structured-data-software"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
-      <section className="py-20 px-6">
+      {/* HUD Glow Elements */}
+      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120%] h-[800px] bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.15)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] bg-teal-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-16 px-6 z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-black mb-4">
-              Elige el Plan Perfecto
+          <div className="text-center mb-16 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-400 text-sm font-medium tracking-wide uppercase mb-4 shadow-[0_0_15px_rgba(20,184,166,0.2)]">
+              <Zap className="w-4 h-4" />
+              <span>Infraestructura para Agencias</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white drop-shadow-lg">
+              Invierte en Escala. <br className="hidden md:block" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-400 via-teal-300 to-indigo-400 animate-gradient">
+                Domina tu Mercado.
+              </span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Escalable según tus necesidades. Cambia o cancela en cualquier
-              momento.
+            
+            <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto font-light leading-relaxed">
+              El único ecosistema operativo que unifica CRM Predictivo con Machine Learning, Automatización Omnicanal y un Video Studio potenciado por IA.
             </p>
+
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-300 pt-4 font-medium">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-teal-500" /> Cancela en cualquier momento
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-teal-500" /> Soporte prioritario
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-teal-500" /> Actualizaciones IA semanales
+              </div>
+            </div>
           </div>
 
-          <PlanSelector
-            currentPlanId={currentPlanId as any}
-            isAuthenticated={false}
-          />
+          {/* Pricing Component from Design System */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-teal-500/5 to-transparent rounded-3xl -z-10" />
+            <PlanSelector
+              currentPlanId={currentPlanId as any}
+              isAuthenticated={false}
+            />
+          </div>
         </div>
       </section>
 
-      <section className="py-16 px-6 border-t border-teal-500/20">
+      {/* Trust & Social Proof */}
+      <section className="py-12 border-y border-slate-800 bg-slate-900/50 backdrop-blur-sm relative z-10">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-center items-center gap-12 opacity-70">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-8 h-8 text-teal-500" />
+            <span className="font-mono text-lg tracking-wider text-slate-300 uppercase">Seguridad Nivel Bancario</span>
+          </div>
+          <div className="w-px h-12 bg-slate-800 hidden md:block" />
+          <div className="flex items-center gap-3">
+            <BarChart3 className="w-8 h-8 text-teal-500" />
+            <span className="font-mono text-lg tracking-wider text-slate-300 uppercase">99.9% Uptime SLA</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Redesigned FAQ */}
+      <section className="py-24 px-6 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-8">
-            Preguntas Frecuentes
-          </h2>
-          <div className="space-y-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Preguntas Frecuentes
+            </h2>
+            <p className="text-slate-400">Resolvemos tus dudas técnicas y comerciales</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
             <FaqItem
-              question="¿Puedo cambiar de plan en cualquier momento?"
-              answer="Sí, puedes upgrade o downgrade de plan en cualquier momento. Los cambios se aplicarán en el siguiente ciclo de facturación."
+              question="¿Puedo cambiar mi arquitectura de plan en cualquier momento?"
+              answer="Absolutamente. Tu base de datos y flujos de automatización persisten intactos al hacer upgrade o downgrade. El cambio en cuotas se aplica de manera instantánea."
             />
             <FaqItem
-              question="¿Qué métodos de pago aceptan?"
-              answer="Aceptamos tarjetas de crédito/débito (Visa, Mastercard, American Express) a través de Stripe, y PSE para pagos en Colombia."
+              question="¿Cómo manejan la seguridad de los datos de mis clientes?"
+              answer="Cumplimos con GDPR y SOC2. Utilizamos encriptación AES-256 en reposo y TLS 1.3 en tránsito. Tus tokens de integración y Webhooks están aislados mediante JWT cifrado."
             />
             <FaqItem
-              question="¿Hay período de prueba gratuita?"
-              answer="Sí, el plan Free no tiene costo y puedes usarlo indefinidamente para probar la plataforma."
+              question="¿Incluye entrenamiento para mi equipo comercial?"
+              answer="Los planes Pro y Enterprise incluyen sesiones de Onboarding 1-a-1, acceso a la Base de Conocimiento HUD y plantillas pre-entrenadas para el modelo de Machine Learning."
             />
             <FaqItem
-              question="¿Qué pasa si excedo los límites de mi plan?"
-              answer="Te notificaremos cuando alcances el 80% de tu límite. Puedes upgrade a un plan superior en cualquier momento."
+              question="¿El cobro de la IA de Gemini está incluido?"
+              answer="LegacyMark provee la infraestructura de orquestación (AgentCoordinator). Los consumos de tokens de los modelos fundacionales (como Gemini o OpenAI) requerirán que vincules tu propia API Key en la configuración."
             />
             <FaqItem
-              question="¿Puedo cancelar mi suscripción?"
-              answer="Sí, puedes cancelar en cualquier momento. Tu plan seguirá activo hasta el final del período pagado."
+              question="¿Qué pasarela de pagos utilizan?"
+              answer="Toda la infraestructura de facturación está soportada de manera segura por Stripe. Aceptamos todas las tarjetas principales globales y pasarelas locales según tu región."
             />
           </div>
         </div>
       </section>
     </main>
-  )
+  );
 }
 
-function FaqItem({
-  question,
-  answer,
-}: {
-  question: string
-  answer: string
-}) {
+function FaqItem({ question, answer }: { question: string; answer: string }) {
   return (
-    <div className="rounded-lg border border-teal-500/20 bg-teal-950/10 p-4">
-      <h3 className="font-semibold mb-2">{question}</h3>
-      <p className="text-muted-foreground text-sm">{answer}</p>
+    <div className="group relative rounded-xl border border-slate-800 bg-slate-900/40 p-6 hover:bg-slate-800/60 hover:border-teal-500/30 transition-all duration-300">
+      <div className="absolute top-0 left-0 w-1 h-0 bg-teal-500 transition-all duration-300 group-hover:h-full rounded-l-xl" />
+      <h3 className="text-lg font-medium text-slate-200 mb-3 group-hover:text-teal-400 transition-colors">{question}</h3>
+      <p className="text-slate-400 leading-relaxed font-light">{answer}</p>
     </div>
-  )
+  );
 }

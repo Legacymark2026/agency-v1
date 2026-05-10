@@ -10,6 +10,7 @@ import { dispatchConversion } from "@/lib/services/conversions/dispatcher";
 import { createLocalNotification } from "./notifications";
 import { enforceQuota } from "@/lib/quotas";
 import crypto from "crypto";
+import { predictLeadConversion, LeadFeatures } from "@/lib/ml/lead-scoring-model";
 
 /**
  * CRM Stage → Ad Platform Event mapping.
@@ -248,7 +249,7 @@ export async function createLead(input: CreateLeadInput) {
             }
         }
 
-        // Calculate lead score
+        // Calculate lead score (Legacy logic)
         const score = calculateLeadScore({
             email: input.email,
             name: input.name,
@@ -257,6 +258,20 @@ export async function createLead(input: CreateLeadInput) {
             jobTitle: input.jobTitle,
             source: sourceResult.source,
         });
+
+        // 🤖 Machine Learning Predictive Scoring
+        const mlFeatures: LeadFeatures = {
+            source: sourceResult.source || 'Direct',
+            hasEmail: !!input.email,
+            hasPhone: !!input.phone,
+            hasName: !!input.name,
+            hasCompany: !!input.company,
+            hasFacebookClickId: !!input.fbclid || !!input.fbc,
+            hasGoogleClickId: !!input.gclid,
+            hasLinkedInClickId: !!input.li_fat_id,
+            hasTikTokClickId: !!input.ttclid,
+        };
+        const mlPrediction = predictLeadConversion(mlFeatures);
 
         // Create the lead
         const lead = await prisma.lead.create({
@@ -300,6 +315,10 @@ export async function createLead(input: CreateLeadInput) {
                 gclid:  input.gclid,
                 ttclid: input.ttclid,
                 li_fat_id: input.li_fat_id,
+
+                // Machine Learning Factors
+                conversionProbability: mlPrediction.probability,
+                predictionFactors: mlPrediction.factors,
 
                 // Company
                 companyId: input.companyId,
