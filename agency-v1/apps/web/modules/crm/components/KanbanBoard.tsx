@@ -389,59 +389,10 @@ export function KanbanBoard({ initialDeals, users = [] }: { initialDeals: Deal[]
         );
     }
 
-    // Phase 15 Batch B: Calculate Pipeline Metrics
-    const totalPipeline = deals.reduce((sum, d) => sum + (d.stage !== 'WON' && d.stage !== 'LOST' ? d.value : 0), 0);
-    const weightedForecast = deals.reduce((sum, d) => sum + (d.stage !== 'WON' && d.stage !== 'LOST' ? d.value * (d.probability || 50) / 100 : 0), 0);
-    const wonDeals = deals.filter(d => d.stage === 'WON').length;
-    const closedDeals = deals.filter(d => d.stage === 'WON' || d.stage === 'LOST').length;
-    const winRate = closedDeals > 0 ? Math.round((wonDeals / closedDeals) * 100) : 0;
-
-    // Phase 15: Calculate funnel data
-    const funnelData = STAGES.filter(s => s.id !== 'WON' && s.id !== 'LOST').map(stage => ({
-        name: stage.label,
-        count: deals.filter(d => d.stage === stage.id).length
-    }));
-    const maxFunnelCount = Math.max(...funnelData.map(d => d.count), 1);
-
-    // DEBUG: Show raw deal stages to diagnose sync issues (REMOVE AFTER FIX)
-    const DEBUG_MODE = process.env.NODE_ENV === 'development' || deals.every(d => funnelData.every(s => deals.filter(deal => deal.stage === STAGES.find(st => st.label === s.name)?.id).length === 0));
+    // Calculate metrics locally if needed (already removed from UI)
 
     return (
         <div className="flex flex-col h-full space-y-5">
-            {/* KPI Metrics */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                {[
-                    { label: "Tubería Total", value: `$${(totalPipeline / 1000).toFixed(1)}`, unit: "mil", color: "#60a5fa", icon: "$", code: "PPL" },
-                    { label: "Pronóstico Ponderado", value: `$${(weightedForecast / 1000).toFixed(1)}`, unit: "mil", color: "#34d399", icon: "📊", code: "WGT" },
-                    { label: "Tasa de Victorias", value: `${winRate}`, unit: "%", color: "#a78bfa", icon: "🏆", code: "WIN" },
-                    { label: "Ofertas Activas", value: `${deals.filter(d => d.stage !== 'WON' && d.stage !== 'LOST').length}`, unit: "", color: "#fbbf24", icon: "📋", code: "ACT" },
-                ].map((m, i) => (
-                    <div key={i} style={{ background: "rgba(11,15,25,0.7)", border: "1px solid rgba(30,41,59,0.8)", borderRadius: "14px", padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                            <p style={{ fontSize: "9px", fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: "monospace", margin: 0 }}>{m.label}</p>
-                            <span style={{ fontSize: "14px" }}>{m.icon}</span>
-                        </div>
-                        <p style={{ fontSize: "28px", fontWeight: 900, color: m.color, fontFamily: "monospace", lineHeight: 1, marginTop: "8px" }}>
-                            {m.value}<span style={{ fontSize: "14px", color: "#475569" }}>{m.unit}</span>
-                        </p>
-                    </div>
-                ))}
-
-                {/* Funnel Visual */}
-                <div style={{ background: "rgba(11,15,25,0.7)", border: "1px solid rgba(30,41,59,0.8)", borderRadius: "14px", padding: "14px", display: "flex", flexDirection: "column", justifyContent: "flex-end", position: "relative", minHeight: "90px" }}>
-                    <div style={{ fontSize: "8px", textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.12em", color: "#334155", position: "absolute", top: "12px", left: "14px", fontFamily: "monospace" }}>Embudo de Conversión</div>
-                    <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", height: "44px", marginTop: "20px" }}>
-                        {funnelData.map((stage, i) => (
-                            <div key={stage.name} className="flex-1 rounded-t-sm transition-all duration-700 hover:opacity-100 opacity-80 group/bar relative"
-                                style={{ height: `${Math.max((stage.count / maxFunnelCount) * 100, 15)}%`, background: `linear-gradient(to top, rgba(13,148,136,0.5), rgba(45,212,191,${0.3 + i * 0.08}))` }}>
-                                <div style={{ position: "absolute", top: "-18px", left: "50%", transform: "translateX(-50%)", fontSize: "9px", fontWeight: 800, color: "#2dd4bf", background: "rgba(11,15,25,0.9)", padding: "1px 4px", borderRadius: "4px", opacity: 0, fontFamily: "monospace" }} className="group-hover/bar:opacity-100 transition-opacity">
-                                    {stage.count}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
 
             {/* Toolbar Principal */}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px", padding: "10px 12px", background: "rgba(11,15,25,0.7)", border: "1px solid rgba(30,41,59,0.8)", borderRadius: "12px" }}>
