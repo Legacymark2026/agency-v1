@@ -152,13 +152,13 @@ export default async function AnalyticsPage({
     }
 
     return (
-        <div className="ds-page space-y-6">
+        <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden relative ds-page bg-transparent pb-0 space-y-0">
             <TrackPageEvent eventName="ViewAnalytics" isCustom={true} />
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.025] pointer-events-none mix-blend-screen" />
 
             {/* ── Header ── */}
             <div
-                className="relative z-10 flex flex-col gap-4 pb-6"
+                className="relative z-10 flex flex-col gap-4 pb-4 pt-2 shrink-0"
                 style={{ borderBottom: "1px solid rgba(30,41,59,0.8)" }}
             >
                 {/* Top row: title + controls */}
@@ -195,6 +195,9 @@ export default async function AnalyticsPage({
                 <TabNav active={activeTab} />
             </div>
 
+            {/* ── Scrollable Content Area ── */}
+            <div className="relative z-10 flex-1 min-h-0 overflow-y-auto pt-6 pb-12 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-800 [&::-webkit-scrollbar-track]:bg-transparent">
+                
             {/* ══════════════════════════════════════════════════════════════
                 TAB: CRM BI (Nivel 3A/3B: Multi-tenant + Streaming SSR)
             ══════════════════════════════════════════════════════════════ */}
@@ -383,6 +386,8 @@ export default async function AnalyticsPage({
                     </DarkCard>
                 </div>
             )}
+
+            </div> {/* End Scrollable Content Area */}
         </div>
     );
 }
