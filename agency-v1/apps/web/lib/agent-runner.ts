@@ -463,7 +463,6 @@ export async function runAIAgent({
     const tools = getToolDeclarations(enabledToolNames, companyId, contactData, contextWithAgent);
     
     // 9. Invoke Vercel AI SDK Core — Universal Model Router
-    const config = await getAIModelConfig(companyId);
     // Use the model configured per-agent, falling back to gemini-2.0-flash
     const aiModel = buildModel(agent.llmModel || "gemini-2.0-flash");
 
