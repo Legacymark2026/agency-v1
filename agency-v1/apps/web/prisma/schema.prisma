@@ -3080,7 +3080,37 @@ model VideoEditorProject {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  performanceLogs VideoPerformanceLog[]
 
   @@index([companyId])
   @@map("video_editor_projects")
+}
+
+model MLCompanyWeights {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  platform  String   @default("default")
+  weights   Json
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([companyId, platform])
+  @@map("ml_company_weights")
+}
+
+model VideoPerformanceLog {
+  id             String             @id @default(uuid())
+  projectId      String             @map("project_id")
+  project        VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  predictedScore Float              @map("predicted_score")
+  actualScore    Float              @map("actual_score")
+  retentionRate  Float              @map("retention_rate")
+  views          Int                @default(0)
+
+  ingestedAt     DateTime           @default(now()) @map("ingested_at")
+
+  @@map("video_performance_logs")
 }
