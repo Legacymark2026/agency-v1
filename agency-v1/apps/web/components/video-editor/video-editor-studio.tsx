@@ -118,7 +118,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
     switch (activePanel) {
       case 1: return <ProjectConfigPanel config={config} onChange={setConfig} />;
       case 2: return <FootageAnalyzer clips={clips} analysis={analysis} onClipsChange={setClips} onAnalysisComplete={setAnalysis} />;
-      case 3: return <TimelineGenerator clips={clips} config={config as ProjectConfig} timeline={timeline} onTimelineGenerated={setTimeline} />;
+      case 3: return <TimelineGenerator clips={clips} config={config as ProjectConfig} timeline={timeline} projectId={projectId} onTimelineGenerated={setTimeline} />;
       case 4: return <SpeedRampingPanel clips={clips} speedRamps={speedRamps} onSpeedRampsChange={setSpeedRamps} />;
       case 5: return <ColorGradingPanel clips={clips} colorGrades={colorGrades} onColorGradesChange={setColorGrades} />;
       case 6: return <AudioMixer audioTracks={audioTracks} onAudioTracksChange={setAudioTracks} />;

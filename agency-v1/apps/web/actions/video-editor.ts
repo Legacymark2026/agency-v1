@@ -239,10 +239,66 @@ export async function analyzeFootage(clips: Clip[]): Promise<Map<string, ClipAna
   return analysis;
 }
 
+import { createCoordinator, initDatabase, CoordinatorInput } from '@agency/video-agent';
+
 export async function generateTimeline(clips: Clip[], config: ProjectConfig): Promise<Timeline> {
   const editor = getEditor(config);
   // generateTimeline calls analyzeFootage internally in the package
   return editor.generateTimeline(clips) as Timeline;
+}
+
+export async function executeAIAgentWorkflow(projectId: string): Promise<any> {
+  const companyId = await getCompanyId();
+  if (!companyId) throw new Error('Company not found');
+
+  const project = await prisma.videoEditorProject.findFirst({
+    where: { id: projectId, companyId }
+  });
+
+  if (!project) throw new Error('Project not found');
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+  // Initialize DB for the agent
+  initDatabase(prisma as any);
+  
+  const coordinator = createCoordinator(companyId, apiKey);
+  const config = project.config as unknown as ProjectConfig;
+
+  const input: CoordinatorInput = {
+    projectId: project.id,
+    companyId: companyId,
+    clips: project.clips as any[],
+    audioUrl: '', // Could be taken from audioTracks
+    outputFormat: config.format || '9:16',
+    platform: (config.platform as any) || 'reels',
+    style: (config.style as any) || 'cinematic',
+    duration: config.duration || 20,
+    hookDuration: config.hookDuration || 3,
+  };
+
+  // Execute full workflow (Logos, Croma, Phonos, Graphos)
+  const result = await coordinator.executeFullWorkflow(input);
+
+  // Parse result and adapt to frontend UI
+  return {
+    timeline: {
+      segments: {
+        hook: result.timeline.find((t: any) => t.type === 'hook') || { clips: [], duration: input.hookDuration, type: 'hook', transitions: [] },
+        body: result.timeline.find((t: any) => t.type === 'body') || { clips: [], duration: input.duration - input.hookDuration, type: 'body', transitions: [] },
+        climax: result.timeline.find((t: any) => t.type === 'climax') || { clips: [], duration: 3, type: 'climax', transitions: [] },
+        outro: result.timeline.find((t: any) => t.type === 'outro') || { clips: [], duration: 2, type: 'outro', transitions: [] },
+      },
+      totalDuration: input.duration,
+      cuts: result.timeline.reduce((acc: number, val: any) => acc + (val.clips?.length || 0), 0),
+      averageCutDuration: 2.5
+    },
+    colorGrades: result.colorGrade,
+    audioMix: result.audioMix,
+    textOverlays: result.textOverlays,
+    qualityCheck: result.qualityCheck
+  };
 }
 
 export async function applyColorGrade(clipId: string, style: 'cinematic' | 'luxury' | 'viral' | 'corporate' | 'warm-artisan'): Promise<ColorGrade> {

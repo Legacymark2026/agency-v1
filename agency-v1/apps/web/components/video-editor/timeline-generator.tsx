@@ -1,21 +1,26 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Film, Clock, Scissors, Zap, Play, Layers, Sparkles } from 'lucide-react';
+import { Loader2, Film, Clock, Scissors, Zap, Play, Layers, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { executeAIAgentWorkflow } from '@/actions/video-editor';
 import type { Clip, ProjectConfig, Timeline, TimelineSegment } from '@/actions/video-editor';
+import { predictVideoRetention, VideoFeatures } from '@/lib/ml/video-retention-model';
+import { toast } from 'sonner';
 
 interface TimelineGeneratorProps {
   clips: Clip[];
   config: ProjectConfig;
   timeline: Timeline | null;
+  projectId?: string;
   onTimelineGenerated: (timeline: Timeline) => void;
 }
 
-export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated }: TimelineGeneratorProps) {
+export function TimelineGenerator({ clips, config, timeline, projectId, onTimelineGenerated }: TimelineGeneratorProps) {
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
   const hasAnalysis = clips.length > 0;
   const hasConfig = !!config.type && !!config.format && !!config.style && !!config.platform;
 
@@ -96,9 +101,43 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
     return timelineData;
   }, [clips, config, hasAnalysis, hasConfig]);
 
-  const handleGenerate = () => {
-    if (generatedTimeline) {
-      onTimelineGenerated(generatedTimeline);
+  const prediction = useMemo(() => {
+    if (!generatedTimeline || !hasConfig) return null;
+    const features: VideoFeatures = {
+      totalDuration: generatedTimeline.totalDuration,
+      hookDuration: generatedTimeline.segments.hook?.duration || 0,
+      cutsCount: generatedTimeline.cuts,
+      averageCutDuration: generatedTimeline.averageCutDuration,
+      platform: (config.platform as any) || 'tiktok',
+      style: (config.style as any) || 'viral',
+      hasSpeedRamps: !!generatedTimeline.segments.hook?.speedRamp
+    };
+    return predictVideoRetention(features);
+  }, [generatedTimeline, config, hasConfig]);
+
+  const handleGenerate = async () => {
+    if (!projectId) {
+      toast.error('Guarda el proyecto primero para poder usar la IA');
+      return;
+    }
+
+    try {
+      setIsProcessingAI(true);
+      const result = await executeAIAgentWorkflow(projectId);
+      if (result && result.timeline) {
+        onTimelineGenerated(result.timeline);
+        toast.success('Línea de tiempo generada por Gemini AI con éxito');
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error('Error al ejecutar el flujo de IA: ' + error.message);
+      
+      // Fallback a simulación
+      if (generatedTimeline) {
+        onTimelineGenerated(generatedTimeline);
+      }
+    } finally {
+      setIsProcessingAI(false);
     }
   };
 
@@ -136,6 +175,42 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
 
   return (
     <div className="space-y-6">
+      {/* Prediction Score Banner */}
+      {prediction && (
+        <Card className={cn(
+          "border",
+          prediction.score >= 80 ? "bg-teal-900/20 border-teal-500/50" : 
+          prediction.score >= 60 ? "bg-amber-900/20 border-amber-500/50" : "bg-red-900/20 border-red-500/50"
+        )}>
+          <CardContent className="pt-6 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0 flex items-center justify-center w-24 h-24 rounded-full border-4 relative"
+              style={{ borderColor: prediction.score >= 80 ? '#2dd4bf' : prediction.score >= 60 ? '#fbbf24' : '#ef4444' }}>
+              <div className="text-center">
+                <span className="text-3xl font-bold text-white">{prediction.score}</span>
+                <span className="block text-[10px] text-slate-400 uppercase tracking-widest mt-1">Score</span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-white mb-2 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-teal-400" />
+                Predicción de Retención (Machine Learning)
+              </h3>
+              <p className="text-sm text-slate-300 mb-3">
+                El modelo estima que el <span className="font-bold text-white">{prediction.expectedRetentionRate}%</span> de la audiencia verá más de la mitad del video.
+              </p>
+              <div className="space-y-1">
+                {prediction.insights.map((insight, idx) => (
+                  <p key={idx} className="text-xs text-slate-400 flex items-start gap-1.5">
+                    <span className="text-teal-500 mt-0.5">•</span>
+                    {insight}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Overview */}
       <div className="grid grid-cols-4 gap-4">
         <Card className="bg-slate-800/50 border-slate-700">
@@ -284,14 +359,30 @@ export function TimelineGenerator({ clips, config, timeline, onTimelineGenerated
           </div>
 
           {timeline !== generatedTimeline && (
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex flex-col items-end gap-2">
               <button
                 onClick={handleGenerate}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium flex items-center gap-2"
+                disabled={isProcessingAI}
+                className={cn(
+                  "px-4 py-2 text-white rounded-lg font-medium flex items-center gap-2 transition-all",
+                  isProcessingAI ? "bg-purple-600/50 cursor-not-allowed" : "bg-gradient-to-r from-teal-500 to-purple-600 hover:from-teal-600 hover:to-purple-700"
+                )}
               >
-                <Play className="w-4 h-4" />
-                Aplicar Timeline
+                {isProcessingAI ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Agentes de IA trabajando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generar con IA Real (Gemini)
+                  </>
+                )}
               </button>
+              {!projectId && (
+                <p className="text-xs text-slate-400">Debes guardar el proyecto primero para enviar los datos a la IA.</p>
+              )}
             </div>
           )}
         </CardContent>
