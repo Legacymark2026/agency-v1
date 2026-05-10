@@ -578,9 +578,9 @@ export async function triageAndRouteMessage(
     // Use AI to triage to the best agent(s) (Swarm Routing)
     try {
         const config = await getAIModelConfig(companyId);
-        const aiModel = config.provider === 'openai' 
-            ? openai("gpt-4o-mini") 
-            : google("gemini-2.0-flash-lite");
+        const aiModel = buildModel(
+            config.provider === 'openai' ? "gpt-4o-mini" : "gemini-2.0-flash-lite"
+        );
 
         const routerPrompt = `Analiza la intención del usuario y determina qué agente o agentes son necesarios para cumplir la tarea.
 
