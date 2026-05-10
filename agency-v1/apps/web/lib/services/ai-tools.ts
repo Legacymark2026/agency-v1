@@ -37,7 +37,8 @@ export const AIAgentTools = {
             newStage: z.string().describe("Nueva etapa a asignar (ej: QUALIFIED, WON, LOST)"),
             note: z.string().optional().describe("Resumen de la justificación o nota para los humanos")
         }),
-        requiredRoutes: ["/dashboard/admin/crm/deals"]
+        requiredRoutes: ["/dashboard/admin/crm/deals"],
+        requiresApproval: true
     },
     create_crm_deal: {
         description: "Crea una nueva oportunidad (Deal) en el CRM asociada a un lead. Úsalo cuando hay real intención de compra.",
@@ -46,7 +47,8 @@ export const AIAgentTools = {
             dealName: z.string().describe("Nombre resumen de la oportunidad"),
             estimatedValue: z.number().optional().describe("Valor proyectado de la venta en USD")
         }),
-        requiredRoutes: ["/dashboard/admin/crm/deals"]
+        requiredRoutes: ["/dashboard/admin/crm/deals"],
+        requiresApproval: true
     },
     qualify_and_score_lead: {
         description: "Actualiza el puntaje de calificación (Lead Score) del usuario agregando o restando puntos según su interés.",
@@ -66,7 +68,8 @@ export const AIAgentTools = {
             subject: z.string().describe("Asunto del correo"),
             bodyContext: z.string().describe("Instrucciones de lo que deberías decir en el cuerpo del correo")
         }),
-        requiredRoutes: ["/dashboard/inbox"]
+        requiredRoutes: ["/dashboard/inbox"],
+        requiresApproval: true
     },
     transfer_to_human: {
         description: "Pausa tus mensajes automáticos en esta conversación y notifica a soporte humano urgente.",
@@ -93,7 +96,8 @@ export const AIAgentTools = {
             leadEmail: z.string().describe("Email del lead"),
             sequenceName: z.string().describe("Nombre o ID de la secuencia (ej: 'Winback 2026', 'Onboarding')")
         }),
-        requiredRoutes: ["/dashboard/admin/crm/sequences"]
+        requiredRoutes: ["/dashboard/admin/crm/sequences"],
+        requiresApproval: true
     },
 
     // ── Agenda y Eventos ──
@@ -121,10 +125,35 @@ export const AIAgentTools = {
             query: z.string().describe("Término exacto de búsqueda")
         }),
         requiredRoutes: []
+    },
+    save_user_preference: {
+        description: "Guarda un hecho o preferencia personal del usuario a largo plazo. Úsalo cuando el usuario pida que le llames de cierta forma, o que tengas en cuenta cierta información para el futuro.",
+        parameters: z.object({
+            fact: z.string().describe("La preferencia o hecho a memorizar (ej: 'El usuario prefiere respuestas muy cortas')")
+        }),
+        requiredRoutes: []
     }
 };
 
 export async function executeAgentTool(companyId: string, name: string, args: any, userContext: any): Promise<any> {
+    const logAudit = async (status: string, errorMessage?: string) => {
+        try {
+            await db.aIAuditLog.create({
+                data: {
+                    companyId,
+                    userId: userContext?.id,
+                    agentName: "AgentRunner",
+                    action: name,
+                    parameters: args,
+                    status,
+                    errorMessage
+                }
+            });
+        } catch(e) {
+            console.error("Failed to write to AIAuditLog", e);
+        }
+    };
+
     try {
         const toolDef = (AIAgentTools as any)[name];
         if (!toolDef) {
@@ -133,13 +162,22 @@ export async function executeAgentTool(companyId: string, name: string, args: an
 
         // RBAC CHECK
         if (!checkPerm(userContext, toolDef.requiredRoutes)) {
-            return { 
-                success: false, 
-                error: `PERMISSION_DENIED: El usuario humano (${userContext?.role || 'invitado'}) no tiene permisos suficientes para ejecutar '${name}'. Por favor infórmale esto y discúlpate.` 
-            };
+            const errorMsg = `PERMISSION_DENIED: El usuario humano (${userContext?.role || 'invitado'}) no tiene permisos suficientes para ejecutar '${name}'. Por favor infórmale esto y discúlpate.`;
+            await logAudit("DENIED", errorMsg);
+            return { success: false, error: errorMsg };
         }
 
-        switch (name) {
+        const result = await executeAgentToolInner(companyId, name, args, userContext);
+        await logAudit(result.success === false ? "ERROR" : "SUCCESS", result.error || null);
+        return result;
+    } catch (e: any) {
+        await logAudit("ERROR", e.message);
+        return { success: false, error: e.message };
+    }
+}
+
+async function executeAgentToolInner(companyId: string, name: string, args: any, userContext: any): Promise<any> {
+    switch (name) {
             case "read_crm_leads": {
                 const { query, limit } = args;
                 const leads = await db.lead.findMany({
@@ -353,11 +391,33 @@ export async function executeAgentTool(companyId: string, name: string, args: an
                 }
             }
 
+            case "save_user_preference": {
+                const { fact } = args;
+                try {
+                    // Si pgvector no está configurado o falla, lo atrapamos
+                    const config = await import("../agent-runner").then(m => m.getAIModelConfig(companyId));
+                    const { generateEmbedding } = await import("../embeddings");
+                    const vector = await generateEmbedding(fact, config.apiKey);
+                    
+                    await db.$executeRaw`
+                        INSERT INTO "AgentMemory" ("id", "companyId", "userId", "fact", "embedding", "updatedAt") 
+                        VALUES (
+                            gen_random_uuid()::text, 
+                            ${companyId}, 
+                            ${userContext?.id || null}, 
+                            ${fact}, 
+                            ${`[${vector.join(',')}]`}::vector,
+                            now()
+                        )
+                    `;
+                    return { success: true, message: "Preferencia guardada en la memoria." };
+                } catch(e: any) {
+                    console.error("Error saving memory:", e);
+                    return { success: false, error: "No se pudo guardar la memoria a largo plazo." };
+                }
+            }
+
             default:
                 return { success: false, error: `Tool ${name} no está implementada en el motor.` };
         }
-    } catch (error: any) {
-        console.error(`[AITool Execution Error: ${name}]`, error);
-        return { success: false, error: error.message };
-    }
 }

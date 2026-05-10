@@ -367,7 +367,7 @@ export async function runAIAgent({
         
         const vectorString = `[${queryVector.join(',')}]`;
         
-        // pgvector cosine similarity search
+        // pgvector cosine similarity search for KBs
         const relevantKBs = await prisma.$queryRaw<Array<{ name: string, content: string }>>`
             SELECT name, content 
             FROM knowledge_bases 
@@ -384,6 +384,24 @@ export async function runAIAgent({
             // Fallback for legacy documents without embeddings
             ragContext = buildRagContext(agent.knowledgeBases);
         }
+
+        // Fetch AgentMemory
+        const userId = arguments[0].userContext?.id || senderUserId || null;
+        const relevantMemories = await prisma.$queryRaw<Array<{ fact: string }>>`
+            SELECT fact 
+            FROM "AgentMemory" 
+            WHERE "companyId" = ${companyId} 
+              AND ("userId" = ${userId} OR "userId" IS NULL)
+              AND embedding IS NOT NULL
+            ORDER BY embedding <=> ${vectorString}::vector
+            LIMIT 5;
+        `;
+
+        if (relevantMemories && relevantMemories.length > 0) {
+            ragContext += "\n\n=== RECUERDOS Y PREFERENCIAS DEL USUARIO ===\n";
+            ragContext += relevantMemories.map(m => `- ${m.fact}`).join("\n");
+        }
+
     } catch (e) {
         console.error("[AGENT RUNNER] Semantic RAG failed, falling back to legacy matching:", e);
         ragContext = buildRagContext(agent.knowledgeBases);
@@ -522,47 +540,69 @@ export async function triageAndRouteMessage(
         return runAIAgent({ agentId: activeAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory, userContext });
     }
 
-    // Use AI to triage to the best agent
+    // Use AI to triage to the best agent(s) (Swarm Routing)
     try {
         const config = await getAIModelConfig(companyId);
         const aiModel = config.provider === 'openai' 
             ? openai("gpt-4o-mini") 
             : google("gemini-2.0-flash-lite");
 
-        const routerPrompt = `Analiza la intención del usuario y elige el agente más apropiado.
+        const routerPrompt = `Analiza la intención del usuario y determina qué agente o agentes son necesarios para cumplir la tarea.
 
 Agentes:
 ${activeAgents.map(a => `- ID: ${a.id} | Nombre: ${a.name} | Experiencia: ${a.description || "General"}`).join("\n")}
 
 Mensaje: "${userMessage}"
 
-Devuelve ÚNICAMENTE el ID del agente elegido. Sin explicaciones.`;
+Si la tarea requiere a varios especialistas trabajando en conjunto, devuelve sus IDs separados por comas. Si solo requiere uno, devuelve solo un ID. NO escribas explicaciones ni texto adicional.`;
 
         const { text } = await generateText({ model: aiModel, prompt: routerPrompt });
-        const selectedId = text.trim().replace(/[^a-z0-9-]/gi, "");
-        const validAgent = activeAgents.find(a => a.id === selectedId);
-        const chosenId = validAgent ? validAgent.id : activeAgents[0].id;
+        const selectedIds = text.split(",").map(id => id.trim().replace(/[^a-z0-9-]/gi, "")).filter(Boolean);
+        const validAgents = activeAgents.filter(a => selectedIds.includes(a.id));
+        
+        if (validAgents.length === 0) {
+            validAgents.push(activeAgents[0]); // fallback
+        }
 
-        // MEJORA #8: Cachear decisión de triage por 5 min (reduce ~50% llamadas a Gemini)
-        try {
-            const rdUrl = process.env.UPSTASH_REDIS_REST_URL;
-            const rdTok = process.env.UPSTASH_REDIS_REST_TOKEN;
-            if (rdUrl && rdTok) {
-                await fetch(`${rdUrl}/pipeline`, {
-                    method: "POST",
-                    headers: { Authorization: `Bearer ${rdTok}`, "Content-Type": "application/json" },
-                    body: JSON.stringify([
-                        ["SET", `triage:${companyId}:${userMessage.toLowerCase().slice(0, 60).replace(/[^a-z0-9]/g, "_")}`, chosenId],
-                        ["EXPIRE", `triage:${companyId}:${userMessage.toLowerCase().slice(0, 60).replace(/[^a-z0-9]/g, "_")}`, 300]
-                    ])
-                });
-            }
-        } catch { /* non-fatal */ }
+        if (validAgents.length === 1) {
+            return runAIAgent({ agentId: validAgents[0].id, companyId, userMessage, conversationId, contactData, inlineHistory, userContext });
+        }
 
-        return runAIAgent({
-            agentId: chosenId,
-            companyId, userMessage, conversationId, contactData, inlineHistory, userContext
-        });
+        // SWARM ORCHESTRATION MODE (Map-Reduce)
+        console.log(`[SWARM] Delegando a múltiples agentes: ${validAgents.map(a => a.name).join(", ")}`);
+        
+        // Map Phase: Execute all chosen agents in parallel
+        const swarmResults = await Promise.all(validAgents.map(agent => 
+            runAIAgent({ agentId: agent.id, companyId, userMessage, conversationId, contactData, inlineHistory, userContext })
+        ));
+
+        // Reduce Phase: Synthesize the responses into a single voice
+        const synthPrompt = `Múltiples agentes especialistas han trabajado en paralelo para resolver la petición del usuario.
+        
+Petición original del usuario: "${userMessage}"
+
+Reportes de los especialistas:
+${swarmResults.map(r => `--- Agente ${r.agentName} ---\n${r.result}`).join("\n\n")}
+
+Sintetiza estos reportes en una ÚNICA respuesta unificada, coherente y conversacional dirigida al usuario. Si algún especialista dice que le falta aprobación, transmíteselo al usuario.`;
+
+        const { text: finalResult, usage } = await generateText({ model: aiModel, prompt: synthPrompt });
+
+        // Aggregate execution metrics
+        const totalTokens = swarmResults.reduce((sum, r) => sum + (r.tokensUsed || 0), 0) + (usage?.totalTokens || 0);
+        const maxLatency = Math.max(...swarmResults.map(r => r.latencyMs || 0));
+
+        // Note: The individual runAIAgent calls already saved their AgentMessage locally, 
+        // but the synthetic response should probably be what the user sees.
+        // For now, we return the synthetic response.
+
+        return {
+            agentName: "Swarm Orchestrator",
+            result: finalResult,
+            sentimentScore: swarmResults[0].sentimentScore, // approximation
+            latencyMs: maxLatency,
+            tokensUsed: totalTokens
+        };
 
     } catch {
         // Fallback to first agent on triage failure
