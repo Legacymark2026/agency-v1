@@ -6,53 +6,71 @@
  * características extraídas de la línea de tiempo del video.
  */
 
+import { prisma } from '@/lib/prisma';
+
 export interface VideoFeatures {
-  totalDuration: number;      // Duración en segundos
-  hookDuration: number;       // Duración del gancho
-  cutsCount: number;          // Cantidad total de cortes
-  averageCutDuration: number; // Duración promedio de los cortes
+  totalDuration: number;
+  hookDuration: number;
+  cutsCount: number;
+  averageCutDuration: number;
   platform: 'tiktok' | 'reels' | 'youtube' | 'instagram-feed' | 'facebook' | 'multi';
   style: 'cinematic' | 'luxury' | 'viral' | 'corporate' | 'warm-artisan';
   hasSpeedRamps: boolean;
 }
 
 export interface PredictionResult {
-  score: number;             // Probabilidad de éxito / retención (0 a 100)
-  expectedRetentionRate: number; // Porcentaje de personas que verán más del 50%
-  insights: string[];        // Observaciones generadas por los pesos del modelo
+  score: number;
+  expectedRetentionRate: number;
+  insights: string[];
 }
 
-// Pesos pre-entrenados simulados para el modelo logístico
-const MODEL_WEIGHTS = {
-  bias: 0.15,
-  tiktok: { cutsRate: 1.5, hookWeight: 2.0, durationPenalty: -0.01 },
-  reels: { cutsRate: 1.2, hookWeight: 1.8, durationPenalty: -0.005 },
-  youtube: { cutsRate: 0.8, hookWeight: 1.2, durationPenalty: -0.001 },
-  default: { cutsRate: 1.0, hookWeight: 1.0, durationPenalty: -0.005 },
+export interface ModelWeights {
+  bias: number;
+  cutsRate: number;
+  hookWeight: number;
+  durationPenalty: number;
+}
+
+// Default weights if no company weights exist
+const DEFAULT_WEIGHTS: Record<string, ModelWeights> = {
+  tiktok: { bias: 0.15, cutsRate: 1.5, hookWeight: 2.0, durationPenalty: -0.01 },
+  reels: { bias: 0.15, cutsRate: 1.2, hookWeight: 1.8, durationPenalty: -0.005 },
+  youtube: { bias: 0.15, cutsRate: 0.8, hookWeight: 1.2, durationPenalty: -0.001 },
+  default: { bias: 0.15, cutsRate: 1.0, hookWeight: 1.0, durationPenalty: -0.005 },
 };
 
-/**
- * Función Sigmoide para la Regresión Logística
- * Mapea cualquier número a un valor entre 0 y 1.
- */
 function sigmoid(z: number): number {
   return 1 / (1 + Math.exp(-z));
 }
 
-export function predictVideoRetention(features: VideoFeatures): PredictionResult {
+// Fetch dynamic weights from Prisma
+async function getCompanyWeights(companyId: string, platform: string): Promise<ModelWeights> {
+  if (!companyId) return DEFAULT_WEIGHTS[platform] || DEFAULT_WEIGHTS.default;
+
+  const row = await prisma.mLCompanyWeights.findUnique({
+    where: { companyId_platform: { companyId, platform } }
+  });
+
+  if (row && row.weights) {
+    return row.weights as unknown as ModelWeights;
+  }
+  
+  return DEFAULT_WEIGHTS[platform] || DEFAULT_WEIGHTS.default;
+}
+
+export async function predictVideoRetention(features: VideoFeatures, companyId?: string): Promise<PredictionResult> {
   const insights: string[] = [];
   
-  // 1. Extraer pesos específicos de la plataforma
-  const weights = MODEL_WEIGHTS[features.platform as keyof typeof MODEL_WEIGHTS] || MODEL_WEIGHTS.default;
+  // 1. Get dynamic weights
+  const weights = await getCompanyWeights(companyId || '', features.platform);
 
-  // 2. Calcular Features Derivados
+  // 2. Calculate Derived Features
   const cutsPerMinute = features.totalDuration > 0 ? (features.cutsCount / features.totalDuration) * 60 : 0;
-  const hookRatio = features.totalDuration > 0 ? features.hookDuration / features.totalDuration : 0;
+  
+  // Features vector [1, cutsPerMinute, hookDuration, totalDuration]
+  let z = weights.bias;
 
-  let z = MODEL_WEIGHTS.bias;
-
-  // Feature A: Ritmo (Cuts per minute)
-  // Óptimo viral suele estar entre 15 y 30 CPM
+  // Feature A: Pacing
   if (cutsPerMinute > 12) {
     z += weights.cutsRate * 0.8;
   } else if (cutsPerMinute < 5) {
@@ -62,8 +80,7 @@ export function predictVideoRetention(features: VideoFeatures): PredictionResult
     z += weights.cutsRate * 0.4;
   }
 
-  // Feature B: Gancho (Hook Ratio & Duration)
-  // Un gancho de menos de 3s es ideal para TikTok/Reels
+  // Feature B: Hook
   if (features.hookDuration <= 3 && features.hookDuration > 0) {
     z += weights.hookWeight * 1.2;
     insights.push("Excelente duración del hook (<3s), ideal para atrapar atención temprana.");
@@ -72,42 +89,33 @@ export function predictVideoRetention(features: VideoFeatures): PredictionResult
     insights.push("El hook dura demasiado. Riesgo alto de swipe up en los primeros segundos.");
   }
 
-  // Feature C: Penalización por duración según plataforma
-  // Videos largos en TikTok sufren si el ritmo no es alto
+  // Feature C: Duration
   z += features.totalDuration * weights.durationPenalty;
   
   if (features.totalDuration > 60 && ['tiktok', 'reels'].includes(features.platform)) {
     insights.push("Duración extensa para videos cortos. Asegura mantener el engagement en el Clímax.");
   }
 
-  // Feature D: Impacto del Estilo y Modificadores (One-hot encoding logic)
+  // Style Impact
   if (features.style === 'viral') {
-    z += 0.5; // Boost natural de atención inicial
+    z += 0.5; 
     if (cutsPerMinute < 15) {
       insights.push("Estilo 'Viral' pero bajo ritmo de cortes. Hay discrepancia en el formato.");
     }
   } else if (features.style === 'cinematic') {
-    // Cinematic se beneficia menos del pacing frenético
     if (cutsPerMinute > 25) {
       z -= 0.3;
       insights.push("Estilo 'Cinematic' con demasiados cortes. Puede marear a la audiencia.");
     }
   }
 
-  // Modificadores Técnicos (Speed Ramps suben la retención)
   if (features.hasSpeedRamps) {
     z += 0.4;
     insights.push("Speed ramps detectados: Aumenta la retención visual en el Hook.");
   }
 
-  // 3. Pasar por la función de activación (Sigmoide)
   const probability = sigmoid(z);
-  
-  // 4. Mapear a Score (0-100)
   const score = Math.min(100, Math.max(0, Math.round(probability * 100)));
-  
-  // 5. Mapear a Tasa de Retención Esperada (Regresión Lineal simple desde el Sigmoide)
-  // Asumimos un techo de retención del 75% para la métrica "Visto más del 50%"
   const expectedRetentionRate = Math.round((probability * 0.75) * 100);
 
   if (score >= 80) {
@@ -118,9 +126,53 @@ export function predictVideoRetention(features: VideoFeatures): PredictionResult
     insights.unshift("⚠️ Riesgo de abandono: Considera ajustar el Hook o añadir más cortes.");
   }
 
-  return {
-    score,
-    expectedRetentionRate,
-    insights
+  return { score, expectedRetentionRate, insights };
+}
+
+/**
+ * BACKPROPAGATION: Gradient Descent Step
+ * Adjusts the weights based on actual retention data
+ */
+export async function trainModel(companyId: string, projectId: string, features: VideoFeatures, actualRetentionRate: number) {
+  const currentWeights = await getCompanyWeights(companyId, features.platform);
+  const prediction = await predictVideoRetention(features, companyId);
+  
+  // Calculate Error (Actual - Predicted)
+  const predictedRate = prediction.expectedRetentionRate / 100;
+  const actualRate = actualRetentionRate / 100;
+  const error = actualRate - predictedRate;
+  
+  // Hyperparameters
+  const learningRate = 0.05; // Alpha
+  
+  // Features derived
+  const cutsPerMinute = features.totalDuration > 0 ? (features.cutsCount / features.totalDuration) * 60 : 0;
+  
+  // Gradient Descent Adjustment (w = w + alpha * error * x)
+  const updatedWeights: ModelWeights = {
+    bias: currentWeights.bias + (learningRate * error * 1.0),
+    cutsRate: currentWeights.cutsRate + (learningRate * error * cutsPerMinute * 0.01), // normalized x
+    hookWeight: currentWeights.hookWeight + (learningRate * error * (features.hookDuration <= 3 ? 1.2 : -0.8)),
+    durationPenalty: currentWeights.durationPenalty + (learningRate * error * features.totalDuration * 0.01)
   };
+
+  // Upsert into Prisma DB
+  await prisma.mLCompanyWeights.upsert({
+    where: { companyId_platform: { companyId, platform: features.platform } },
+    update: { weights: updatedWeights as any },
+    create: { companyId, platform: features.platform, weights: updatedWeights as any }
+  });
+
+  // Log performance
+  await prisma.videoPerformanceLog.create({
+    data: {
+      projectId,
+      predictedScore: prediction.score,
+      actualScore: actualRetentionRate,
+      retentionRate: actualRetentionRate,
+      views: 1000 // Mock views for now
+    }
+  });
+
+  return updatedWeights;
 }

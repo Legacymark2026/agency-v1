@@ -311,6 +311,7 @@ model Company {
   agentSkills             AgentSkill[]
   skillTemplates          SkillTemplate[]
   agentConfigurationPresets AgentConfigurationPreset[]
+  mlWeights               MLCompanyWeights[]
 
   @@map("companies")
 }
