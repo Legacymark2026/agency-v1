@@ -33,12 +33,12 @@ export async function decomposeQuery(query: string): Promise<string[]> {
     try {
         const model = buildModel(DECOMPOSER_MODEL);
         const { text } = await generateText({
-            model: model as any,
+            model: model,
             system: DECOMPOSE_SYSTEM,
             prompt: query,
             maxTokens: 300,
             temperature: 0.2,
-        });
+        } as any);
 
         // Parse JSON array
         const clean = text.trim().replace(/```json|```/g, "").trim();
