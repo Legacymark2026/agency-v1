@@ -228,7 +228,7 @@ export async function triggerOmnichannelAgent(conversationId: string, companyId:
         // @ts-ignore
         const enabledSettings = (agent.enabledTools || []) as string[];
         const availableDeclarations = enabledSettings
-            .map((t: string) => AIAgentTools[t])
+            .map((t: string) => (AIAgentTools as any)[t])
             .filter(Boolean);
 
         const toolsConfig = availableDeclarations.length > 0 
@@ -316,7 +316,7 @@ export async function triggerOmnichannelAgent(conversationId: string, companyId:
             console.log(`[OmnichannelAgent] Executing tool: ${functionCall.name} (args: ${JSON.stringify(functionCall.args)})`);
             
             // Execute the system tool locally
-            const resultObj = await executeAgentTool(companyId, functionCall.name, functionCall.args);
+            const resultObj = await executeAgentTool(companyId, functionCall.name, functionCall.args, { id: "system", role: "system", permissions: ["*"], allowedRoutes: ["*"] });
             
             // Send the result back to Gemini so it can continue thinking
             chatResult = await chat.sendMessage([{

@@ -21,7 +21,7 @@ export function getToolDeclarations(
                   })
                 : toolDef.parameters;
 
-            tools[name] = tool({
+            tools[name] = (tool as any)({
                 description: toolDef.description,
                 parameters,
                 execute: async (args: any) => {
@@ -41,7 +41,7 @@ export function getToolDeclarations(
                     };
                     return await executeAgentTool(companyId, name, enrichedArgs, userContext);
                 }
-            });
+            }) as any;
         }
     }
 

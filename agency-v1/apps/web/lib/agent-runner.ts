@@ -13,13 +13,13 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { generateText, CoreMessage } from "ai";
+import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 
 export async function getAIModelConfig(companyId: string): Promise<{ provider: 'openai' | 'gemini', apiKey: string }> {
     const config = await prisma.integrationConfig.findFirst({
-        where: { companyId, provider: { in: ['openai', 'gemini'] }, isActive: true }
+        where: { companyId, provider: { in: ['openai', 'gemini'] } }
     });
     
     if (config?.provider === 'openai') {
@@ -129,7 +129,7 @@ async function analyzeSentiment(message: string, companyId: string): Promise<num
             : google("gemini-2.0-flash-lite");
 
         const { text } = await generateText({
-            model: aiModel,
+            model: aiModel as any,
             prompt: `Analiza el sentimiento de frustración de este mensaje del cliente y devuelve ÚNICAMENTE un número decimal entre 0.0 (feliz) y 1.0 (muy frustrado). Mensaje: "${message.slice(0, 200)}"`
         });
         
@@ -418,7 +418,7 @@ export async function runAIAgent({
     );
 
     // 8. Conversation History (Intelligent Token-Aware Sliding Window)
-    const history: CoreMessage[] = [];
+    const history: any[] = [];
     if (inlineHistory.length > 0) {
         history.push(...inlineHistory.map(m => ({
             role: m.role === "model" ? "assistant" : "user",
@@ -468,7 +468,7 @@ export async function runAIAgent({
     let tokensUsed = 0;
     try {
         const result = await generateText({
-            model: aiModel,
+            model: aiModel as any,
             system: ragContext
                 ? `${processedSystemPrompt}\n\n${ragContext}`
                 : processedSystemPrompt,
@@ -477,7 +477,7 @@ export async function runAIAgent({
             maxSteps: 5,
             temperature,
             maxTokens,
-        });
+        } as any);
 
         rawResponse = result.text;
         tokensUsed = result.usage?.totalTokens || 0;
@@ -556,7 +556,7 @@ Mensaje: "${userMessage}"
 
 Si la tarea requiere a varios especialistas trabajando en conjunto, devuelve sus IDs separados por comas. Si solo requiere uno, devuelve solo un ID. NO escribas explicaciones ni texto adicional.`;
 
-        const { text } = await generateText({ model: aiModel, prompt: routerPrompt });
+        const { text } = await generateText({ model: aiModel as any, prompt: routerPrompt });
         const selectedIds = text.split(",").map(id => id.trim().replace(/[^a-z0-9-]/gi, "")).filter(Boolean);
         const validAgents = activeAgents.filter(a => selectedIds.includes(a.id));
         
@@ -586,7 +586,7 @@ ${swarmResults.map(r => `--- Agente ${r.agentName} ---\n${r.result}`).join("\n\n
 
 Sintetiza estos reportes en una ÚNICA respuesta unificada, coherente y conversacional dirigida al usuario. Si algún especialista dice que le falta aprobación, transmíteselo al usuario.`;
 
-        const { text: finalResult, usage } = await generateText({ model: aiModel, prompt: synthPrompt });
+        const { text: finalResult, usage } = await generateText({ model: aiModel as any, prompt: synthPrompt });
 
         // Aggregate execution metrics
         const totalTokens = swarmResults.reduce((sum, r) => sum + (r.tokensUsed || 0), 0) + (usage?.totalTokens || 0);

@@ -21,8 +21,7 @@ export async function POST(req: Request) {
 
         // 1. Encontrar al administrador principal para notificarle, o usar una conversación global
         const adminUser = await prisma.companyUser.findFirst({
-            where: { companyId, role: { in: ["super_admin", "admin"] } },
-            orderBy: { createdAt: "asc" }
+            where: { companyId }
         });
 
         if (!adminUser) {
