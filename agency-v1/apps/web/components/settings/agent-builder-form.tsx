@@ -15,6 +15,7 @@ import { KnowledgeBaseManager } from "@/components/settings/knowledge-base-manag
 import { AgentSpecializations } from "@/components/settings/agent-specializations";
 import { AgentSkillsManager } from "@/components/settings/agent-skills-manager";
 import { SkillTemplatesLibrary } from "@/components/settings/skill-templates-library";
+import { ModelSelectorPanel } from "@/components/settings/model-selector-panel";
 
 // ── CRM Variable Tokens ─────────────────────────────────────────────────────
 const CRM_TOKENS = [
@@ -97,6 +98,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
     const [llmModel, setLlmModel] = useState(initialData?.llmModel || "gemini-2.0-flash");
     const [temperature, setTemperature] = useState(initialData?.temperature ?? 0.4);
     const [maxTokens, setMaxTokens] = useState(initialData?.maxTokens ?? 400);
+    const [learningMode, setLearningMode] = useState(initialData?.learningMode || "MANUAL");
 
     // ── Tools
     // Note: enabledTools is a string array in db, but form uses an object
@@ -175,7 +177,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                 id: initialData?.id, // ID is present if editing
                 companyId, name, description, agentType, systemPrompt,
                 llmModel, temperature, maxTokens, enabledTools, isActive, isInboxAgent,
-                knowledgeBaseIds: selectedKbIds, strictRagMode,
+                knowledgeBaseIds: selectedKbIds, strictRagMode, learningMode,
                 humanTransferWebhook: humanTransferWebhook || undefined,
                 suspensionDurationMinutes, priorityAlpha, frustrationThreshold,
                 enforceTempClamp, enforceTokenLimit, simulateLatency, filterRoboticLists,
@@ -458,26 +460,8 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                 <div className="space-y-6">
 
                     {/* Cognitive Engine */}
-                    <Section icon={Cpu} title="Motor Cognitivo">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-300 mb-1">Modelo de Lenguaje</label>
-                            <select value={llmModel} onChange={e => setLlmModel(e.target.value)}
-                                className="w-full h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-teal-500">
-                                <optgroup label="Google (Recomendado)">
-                                    <option value="gemini-2.0-flash">Gemini 2.0 Flash ⚡ Rápido</option>
-                                    <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite 💰 Económico</option>
-                                    <option value="gemini-1.5-pro">Gemini 1.5 Pro 🧠 Potente</option>
-                                </optgroup>
-                                <optgroup label="Anthropic">
-                                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-                                    <option value="claude-3-haiku">Claude 3 Haiku</option>
-                                </optgroup>
-                                <optgroup label="OpenAI">
-                                    <option value="gpt-4o">GPT-4o</option>
-                                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                                </optgroup>
-                            </select>
-                        </div>
+                    <Section icon={Cpu} title="Motor Cognitivo (Universal AI)">
+                        <ModelSelectorPanel value={llmModel} onChange={setLlmModel} />
                         <div>
                             <div className="flex justify-between items-center mb-1">
                                 <label className="text-sm font-medium text-slate-300">Temperatura</label>
@@ -496,6 +480,33 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                             <input type="number" value={maxTokens} min={50} max={4000}
                                 onChange={e => setMaxTokens(parseInt(e.target.value))}
                                 className="w-full h-10 rounded-md border border-slate-700 bg-slate-900 px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-teal-500" />
+                        </div>
+                        {/* Continuous Learning Mode */}
+                        <div className="pt-3 border-t border-slate-800">
+                            <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
+                                <Brain className="w-4 h-4 text-teal-400" /> Modo de Aprendizaje Continuo
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { value: "OFF",       label: "Desactivado",  hint: "Sin memoria reflexiva",           color: "text-slate-400" },
+                                    { value: "MANUAL",    label: "Manual",       hint: "Aprende cuando se le indica",     color: "text-yellow-400" },
+                                    { value: "AUTONOMOUS",label: "Autónomo",     hint: "Reflexiona solo al cerrar chats", color: "text-teal-400" },
+                                ].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setLearningMode(opt.value)}
+                                        className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-all
+                                            ${learningMode === opt.value
+                                                ? "border-teal-500/70 bg-teal-950/40 shadow-[0_0_12px_-4px_rgba(20,184,166,0.3)]"
+                                                : "border-slate-700/60 bg-slate-900/40 hover:border-slate-600"
+                                            }`}
+                                    >
+                                        <span className={`text-xs font-bold ${opt.color}`}>{opt.label}</span>
+                                        <span className="text-[10px] text-slate-500 mt-0.5 leading-tight">{opt.hint}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </Section>
 

@@ -66,6 +66,7 @@ export async function upsertAIAgent(data: {
     accentRegion?: string;
     gender?: string;
     isInboxAgent?: boolean;
+    learningMode?: string;
 }) {
     await getSession();
 
@@ -108,6 +109,7 @@ export async function upsertAIAgent(data: {
         accentRegion: data.accentRegion || null,
         gender: data.gender || null,
         isInboxAgent: data.isInboxAgent ?? false,
+        learningMode: data.learningMode || "MANUAL",
     };
 
     const knowledgeConnect = data.knowledgeBaseIds?.map(id => ({ id })) || [];

@@ -15,18 +15,37 @@
 import { prisma } from "@/lib/prisma";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { openai } from "@ai-sdk/openai";
+import { buildModel, getAvailableModels } from "./universal-model-registry";
 
-export async function getAIModelConfig(companyId: string): Promise<{ provider: 'openai' | 'gemini', apiKey: string }> {
+export { getAvailableModels };
+
+export async function getAIModelConfig(companyId: string): Promise<{ provider: string; apiKey: string }> {
     const config = await prisma.integrationConfig.findFirst({
-        where: { companyId, provider: { in: ['openai', 'gemini'] } }
+        where: { companyId, provider: { in: ['openai', 'gemini', 'anthropic', 'deepseek', 'mistral', 'cohere'] } }
     });
     
     if (config?.provider === 'openai') {
         const apiKey = (config?.config as any)?.openaiApiKey || process.env.OPENAI_API_KEY;
         if (apiKey) return { provider: 'openai', apiKey };
     }
+    if (config?.provider === 'anthropic') {
+        const apiKey = (config?.config as any)?.anthropicApiKey || process.env.ANTHROPIC_API_KEY;
+        if (apiKey) return { provider: 'anthropic', apiKey };
+    }
+    if (config?.provider === 'deepseek') {
+        const apiKey = (config?.config as any)?.deepseekApiKey || process.env.DEEPSEEK_API_KEY;
+        if (apiKey) return { provider: 'deepseek', apiKey };
+    }
+    if (config?.provider === 'mistral') {
+        const apiKey = (config?.config as any)?.mistralApiKey || process.env.MISTRAL_API_KEY;
+        if (apiKey) return { provider: 'mistral', apiKey };
+    }
+    if (config?.provider === 'cohere') {
+        const apiKey = (config?.config as any)?.cohereApiKey || process.env.COHERE_API_KEY;
+        if (apiKey) return { provider: 'cohere', apiKey };
+    }
 
+    // Default: Google Gemini
     const apiKey = (config?.config as any)?.geminiApiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new Error("API Key de AI no configurada. Por favor configúrala en Ajustes > Integraciones.");
@@ -124,9 +143,13 @@ async function analyzeSentiment(message: string, companyId: string): Promise<num
     // LLM-based sentiment score for edge cases
     try {
         const config = await getAIModelConfig(companyId);
-        const aiModel = config.provider === 'openai' 
-            ? openai("gpt-4o-mini") 
-            : google("gemini-2.0-flash-lite");
+        // Use lightweight models for cost efficiency on every message
+        const sentimentModelId = config.provider === 'openai' ? "gpt-4o-mini"
+            : config.provider === 'anthropic' ? "claude-haiku-3-5"
+            : config.provider === 'mistral' ? "mistral-small-latest"
+            : config.provider === 'deepseek' ? "deepseek-chat"
+            : "gemini-2.0-flash-lite";
+        const aiModel = buildModel(sentimentModelId);
 
         const { text } = await generateText({
             model: aiModel as any,
@@ -480,11 +503,10 @@ export async function runAIAgent({
     
     const tools = getToolDeclarations(enabledToolNames, companyId, contactData, contextWithAgent);
     
-    // 9. Invoke Vercel AI SDK Core
+    // 9. Invoke Vercel AI SDK Core — Universal Model Router
     const config = await getAIModelConfig(companyId);
-    const aiModel = config.provider === 'openai' 
-        ? openai(agent.llmModel || "gpt-4o") 
-        : google(agent.llmModel || "gemini-2.0-flash-lite");
+    // Use the model configured per-agent, falling back to gemini-2.0-flash
+    const aiModel = buildModel(agent.llmModel || "gemini-2.0-flash");
 
     let rawResponse = "";
     let tokensUsed = 0;
