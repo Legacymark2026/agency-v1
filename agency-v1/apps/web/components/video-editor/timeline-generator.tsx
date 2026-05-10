@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -101,8 +101,13 @@ export function TimelineGenerator({ clips, config, timeline, projectId, onTimeli
     return timelineData;
   }, [clips, config, hasAnalysis, hasConfig]);
 
-  const prediction = useMemo(() => {
-    if (!generatedTimeline || !hasConfig) return null;
+  const [prediction, setPrediction] = useState<import('@/lib/ml/video-retention-model').PredictionResult | null>(null);
+
+  useEffect(() => {
+    if (!generatedTimeline || !hasConfig) {
+      setPrediction(null);
+      return;
+    }
     const features: VideoFeatures = {
       totalDuration: generatedTimeline.totalDuration,
       hookDuration: generatedTimeline.segments.hook?.duration || 0,
@@ -112,7 +117,7 @@ export function TimelineGenerator({ clips, config, timeline, projectId, onTimeli
       style: (config.style as any) || 'viral',
       hasSpeedRamps: !!generatedTimeline.segments.hook?.speedRamp
     };
-    return predictVideoRetention(features);
+    predictVideoRetention(features).then(setPrediction);
   }, [generatedTimeline, config, hasConfig]);
 
   const handleGenerate = async () => {
