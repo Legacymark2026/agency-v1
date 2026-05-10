@@ -152,12 +152,12 @@ export async function selfVerify(
     try {
         const model = buildModel("gemini-2.0-flash-lite");
         const { text } = await generateText({
-            model: model as any,
+            model: model,
             system: VERIFIER_SYSTEM,
             prompt: `PREGUNTA: ${query}\n\nCONTEXTO:\n${context.slice(0, 1500)}\n\nRESPUESTA:\n${response}`,
             maxTokens: 120,
             temperature: 0,
-        });
+        } as any);
         const clean = text.trim().replace(/```json|```/g, "").trim();
         const result = JSON.parse(clean);
         return {
