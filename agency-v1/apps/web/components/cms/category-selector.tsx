@@ -33,14 +33,14 @@ export function CategorySelector({ categories, selectedIds, onChange }: Category
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:ring-2 focus:ring-black transition"
+                    className="w-full px-3 py-2 text-left bg-slate-950 border border-slate-800 text-slate-300 rounded-md hover:bg-slate-900 focus:ring-2 focus:ring-teal-500/50 transition"
                 >
                     {selectedCategories.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                             {selectedCategories.map((cat) => (
                                 <span
                                     key={cat.id}
-                                    className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 text-sm rounded"
+                                    className="inline-block px-2 py-0.5 bg-slate-800 text-slate-200 text-sm rounded border border-slate-700"
                                 >
                                     {cat.name}
                                 </span>
@@ -52,9 +52,9 @@ export function CategorySelector({ categories, selectedIds, onChange }: Category
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-slate-950 border border-slate-800 rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {categories.length === 0 ? (
-                            <div className="px-3 py-2 text-sm text-gray-500">
+                            <div className="px-3 py-2 text-sm text-slate-500">
                                 No categories available
                             </div>
                         ) : (
@@ -65,11 +65,11 @@ export function CategorySelector({ categories, selectedIds, onChange }: Category
                                         key={category.id}
                                         type="button"
                                         onClick={() => toggleCategory(category.id)}
-                                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-100 transition"
+                                        className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-900 transition text-slate-300"
                                     >
                                         <span className="text-sm">{category.name}</span>
                                         {isSelected && (
-                                            <Check className="h-4 w-4 text-black" />
+                                            <Check className="h-4 w-4 text-teal-500" />
                                         )}
                                     </button>
                                 );

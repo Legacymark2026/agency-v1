@@ -70,7 +70,7 @@ export function FAQManager({ value, onChange }: FAQManagerProps) {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-slate-50 border border-slate-200 rounded-xl p-4 relative group"
+                            className="bg-slate-900/50 border border-slate-800/50 rounded-xl p-4 relative group"
                         >
                             <div className="flex gap-4">
                                 <div className="mt-2 text-slate-400 cursor-grab active:cursor-grabbing">
@@ -86,7 +86,7 @@ export function FAQManager({ value, onChange }: FAQManagerProps) {
                                             value={faq.question}
                                             onChange={(e) => updateFAQ(index, "question", e.target.value)}
                                             placeholder="¿Cómo ayuda LegacyMark en el crecimiento de mi marca?"
-                                            className="bg-white border-slate-200 focus:border-teal-500 focus:ring-teal-500/20"
+                                            className="bg-slate-950 border-slate-800 text-slate-200 focus:border-teal-500 focus:ring-teal-500/50"
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -98,7 +98,7 @@ export function FAQManager({ value, onChange }: FAQManagerProps) {
                                             value={faq.answer}
                                             onChange={(e) => updateFAQ(index, "answer", e.target.value)}
                                             placeholder="Ofrecemos soluciones personalizadas impulsadas por IA..."
-                                            className="bg-white border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 min-h-[80px]"
+                                            className="bg-slate-950 border-slate-800 text-slate-200 focus:border-teal-500 focus:ring-teal-500/50 min-h-[80px]"
                                         />
                                     </div>
                                 </div>
@@ -119,8 +119,8 @@ export function FAQManager({ value, onChange }: FAQManagerProps) {
                 </AnimatePresence>
 
                 {faqs.length === 0 && (
-                    <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                        <HelpCircle className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-2xl bg-slate-900/30">
+                        <HelpCircle className="h-10 w-10 text-slate-600 mx-auto mb-3" />
                         <p className="text-slate-500 text-sm">No hay FAQs añadidas. Las FAQs ayudan a que Google y los modelos de IA entiendan mejor tu contenido.</p>
                         <Button 
                             type="button" 
