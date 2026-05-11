@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     const rateLimitHeaders: Record<string, string> = {};
     const rateLimitError = checkRateLimit(
-        { keyId: apiKey.id, companyId: apiKey.companyId, userId: apiKey.userId,
+        { keyId: apiKey.id, companyId: apiKey.companyId ?? "unknown", userId: apiKey.userId ?? undefined,
           scopes: apiKey.scopes as string[], plan: apiKey.company?.subscriptionTier ?? "free" },
         rateLimitHeaders
     );
