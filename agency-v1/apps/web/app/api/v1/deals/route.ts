@@ -15,10 +15,10 @@ export async function OPTIONS() { return apiResponse.options(); }
 
 const DEAL_SELECT = {
     id: true, title: true, value: true, stage: true, priority: true,
-    contactName: true, contactEmail: true, contactPhone: true,
-    source: true, notes: true, closingDate: true, probability: true,
-    assignedToId: true, createdAt: true, updatedAt: true,
-    assignedTo: { select: { firstName: true, lastName: true, email: true } },
+    contactName: true, contactEmail: true,
+    source: true, notes: true, expectedClose: true, probability: true,
+    assignedTo: true, createdAt: true, updatedAt: true,
+    assignedUser: { select: { firstName: true, lastName: true, email: true } },
 } as const;
 
 // ── GET /api/v1/deals ───────────────────────────────────────────────────────
@@ -78,11 +78,10 @@ export async function POST(req: NextRequest) {
             priority:     body.priority   ?? "MEDIUM",
             contactName:  body.contactName  ?? body.contact_name,
             contactEmail: body.contactEmail ?? body.contact_email,
-            contactPhone: body.contactPhone ?? body.contact_phone,
             source:       body.source     ?? "API",
             notes:        body.notes,
-            closingDate:  body.closingDate  ? new Date(body.closingDate)  : undefined,
-            probability:  body.probability,
+            expectedClose: body.closingDate ? new Date(body.closingDate) : undefined,
+            probability:  body.probability ? parseInt(body.probability) : undefined,
             companyId:    ctx!.companyId,
         },
         select: DEAL_SELECT,

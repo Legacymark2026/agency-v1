@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         where: { id, companyId: ctx!.companyId },
         select: {
             id: true, contactName: true, contactEmail: true,
-            contactPhone: true, source: true, stage: true,
+            source: true, stage: true,
             value: true, priority: true, notes: true, createdAt: true, updatedAt: true,
         },
     });
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return apiResponse.ok({
         id: deal.id, name: deal.contactName, email: deal.contactEmail,
-        phone: deal.contactPhone, source: deal.source, stage: deal.stage,
+        phone: null, source: deal.source, stage: deal.stage,
         dealValue: deal.value, priority: deal.priority, notes: deal.notes,
         createdAt: deal.createdAt, updatedAt: deal.updatedAt,
     }, undefined, rl);
@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         data: {
             ...(body.name     !== undefined && { contactName:  body.name }),
             ...(body.email    !== undefined && { contactEmail: body.email }),
-            ...(body.phone    !== undefined && { contactPhone: body.phone }),
+
             ...(body.notes    !== undefined && { notes:        body.notes }),
             ...(body.priority !== undefined && { priority:     body.priority }),
         },

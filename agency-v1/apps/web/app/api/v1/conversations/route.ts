@@ -35,13 +35,13 @@ export async function GET(req: NextRequest) {
         prisma.conversation.findMany({
             where,
             select: {
-                id: true, status: true, channel: true, platform: true,
-                contactName: true, contactPhone: true, contactEmail: true,
-                assignedToId: true, tags: true, unreadCount: true,
-                lastMessageAt: true, createdAt: true,
-                assignedTo: { select: { firstName: true, lastName: true } },
+                id: true, status: true, channel: true, platformId: true,
+                assignedTo: true, tags: true, unreadCount: true,
+                lastMessageAt: true, createdAt: true, leadId: true,
+                assignee: { select: { firstName: true, lastName: true } },
+                lead: { select: { name: true, phone: true, email: true } },
                 messages: {
-                    select: { body: true, direction: true, createdAt: true },
+                    select: { content: true, direction: true, createdAt: true },
                     orderBy: { createdAt: "desc" },
                     take: 1,
                 },
@@ -52,14 +52,18 @@ export async function GET(req: NextRequest) {
     ]);
 
     const data = conversations.map(c => ({
-        id: c.id, status: c.status, channel: c.channel, platform: c.platform,
-        contact: { name: c.contactName, phone: c.contactPhone, email: c.contactEmail },
-        assignedTo: c.assignedTo
-            ? `${c.assignedTo.firstName ?? ""} ${c.assignedTo.lastName ?? ""}`.trim()
+        id: c.id, status: c.status, channel: c.channel, platform: c.platformId,
+        contact: c.lead
+            ? { name: c.lead.name, phone: c.lead.phone, email: c.lead.email }
+            : null,
+        assignedTo: c.assignee
+            ? `${c.assignee.firstName ?? ""} ${c.assignee.lastName ?? ""}`.trim()
             : null,
         tags: c.tags,
         unreadCount: c.unreadCount,
-        lastMessage: c.messages[0] ?? null,
+        lastMessage: c.messages[0]
+            ? { body: c.messages[0].content, direction: c.messages[0].direction, createdAt: c.messages[0].createdAt }
+            : null,
         lastMessageAt: c.lastMessageAt,
         createdAt: c.createdAt,
     }));
@@ -77,23 +81,26 @@ export async function POST(req: NextRequest) {
     try { body = await req.json(); }
     catch { return apiResponse.badRequest("Invalid JSON body"); }
 
-    if (!body.contactPhone && !body.contactEmail) {
-        return apiResponse.badRequest("contactPhone or contactEmail is required");
+    // leadId is required to link a conversation to a contact
+    if (!body.leadId && !body.lead_id) {
+        return apiResponse.badRequest("leadId is required to open a conversation");
     }
+
+    const leadId = body.leadId ?? body.lead_id;
+    const lead = await prisma.lead.findFirst({ where: { id: leadId, companyId: ctx!.companyId } });
+    if (!lead) return apiResponse.notFound("Lead");
 
     const conversation = await prisma.conversation.create({
         data: {
-            channel:      body.channel      ?? "WHATSAPP",
-            platform:     body.platform     ?? "whatsapp",
-            contactName:  body.contactName,
-            contactPhone: body.contactPhone,
-            contactEmail: body.contactEmail,
-            status:       "OPEN",
-            companyId:    ctx!.companyId,
+            channel:    body.channel    ?? "WHATSAPP",
+            platformId: body.platformId ?? body.platform_id ?? null,
+            status:     "OPEN",
+            leadId,
+            companyId:  ctx!.companyId,
         },
         select: {
-            id: true, channel: true, platform: true,
-            contactName: true, contactPhone: true, status: true, createdAt: true,
+            id: true, channel: true, platformId: true,
+            status: true, leadId: true, createdAt: true,
         },
     });
 

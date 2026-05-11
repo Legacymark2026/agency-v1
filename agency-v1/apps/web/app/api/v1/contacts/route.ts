@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
             where,
             select: {
                 id: true, contactName: true, contactEmail: true,
-                contactPhone: true, source: true, stage: true,
+                source: true, stage: true,
                 value: true, priority: true, createdAt: true,
             },
             orderBy: { createdAt: "desc" },
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         id:    d.id,
         name:  d.contactName,
         email: d.contactEmail,
-        phone: d.contactPhone ?? null,
+        phone: null,
         source: d.source,
         stage:  d.stage,
         dealValue: d.value,
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
             title:        `Contact - ${body.name}`,
             contactName:  body.name,
             contactEmail: body.email,
-            contactPhone: body.phone,
+
             source:       body.source ?? "API",
             stage:        body.stage  ?? "NEW",
             value:        body.dealValue ?? 0,
@@ -93,14 +93,14 @@ export async function POST(req: NextRequest) {
         },
         select: {
             id: true, contactName: true, contactEmail: true,
-            contactPhone: true, source: true, stage: true,
+            source: true, stage: true,
             value: true, priority: true, createdAt: true,
         },
     });
 
     return apiResponse.created({
         id: contact.id, name: contact.contactName,
-        email: contact.contactEmail, phone: contact.contactPhone,
+        email: contact.contactEmail, phone: null,
         source: contact.source, stage: contact.stage,
         dealValue: contact.value, priority: contact.priority,
         createdAt: contact.createdAt,

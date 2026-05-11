@@ -86,21 +86,16 @@ export async function validateApiKey(
         };
     }
 
-    // ── 5. Log usage (fire-and-forget, non-blocking) ─────────────────────────
-    const endpoint = req.nextUrl.pathname;
-    const method   = req.method;
-    
-    prisma.apiUsageLog.create({
+    // Log usage (fire-and-forget, non-blocking)
+    prisma.userActivityLog.create({
         data: {
-            apiKeyId:   apiKey.id,
-            companyId:  apiKey.companyId,
-            endpoint,
-            method,
-            statusCode: 200, // Optimistic; will be overridden on errors by response layer
+            userId: apiKey.userId ?? undefined,
+            action: `api.${req.method.toLowerCase()}.${req.nextUrl.pathname}`,
+            details: { keyId: apiKey.id, endpoint: req.nextUrl.pathname },
         },
     }).catch(() => { /* non-critical */ });
 
-    // ── 6. Update lastUsedAt on the key ─────────────────────────────────────
+    // Update lastUsedAt (fire-and-forget)
     prisma.apiKey.update({
         where: { id: apiKey.id },
         data:  { lastUsedAt: new Date() },

@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         where: { id },
         data: {
             stage: newStage,
-            ...(newStage === "WON" && { closingDate: deal.closingDate ?? new Date() }),
+            ...(newStage === "WON" && { expectedClose: deal.expectedClose ?? new Date() }),
         },
         select: {
             id: true, title: true, stage: true, value: true,

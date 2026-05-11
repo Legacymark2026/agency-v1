@@ -16,10 +16,10 @@ export async function OPTIONS() { return apiResponse.options(); }
 
 const SELECT = {
     id: true, title: true, value: true, stage: true, priority: true,
-    contactName: true, contactEmail: true, contactPhone: true, source: true,
-    notes: true, closingDate: true, probability: true,
-    createdAt: true, updatedAt: true,
-    assignedTo: { select: { firstName: true, lastName: true, email: true } },
+    contactName: true, contactEmail: true, source: true,
+    notes: true, expectedClose: true, probability: true,
+    assignedTo: true, createdAt: true, updatedAt: true,
+    assignedUser: { select: { firstName: true, lastName: true, email: true } },
 } as const;
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -59,10 +59,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             ...(body.priority     !== undefined && { priority:     body.priority }),
             ...(body.notes        !== undefined && { notes:        body.notes }),
             ...(body.probability  !== undefined && { probability:  body.probability }),
-            ...(body.closingDate  !== undefined && { closingDate:  new Date(body.closingDate) }),
+            ...(body.closingDate  !== undefined && { expectedClose:  new Date(body.closingDate) }),
             ...(body.contactName  !== undefined && { contactName:  body.contactName }),
             ...(body.contactEmail !== undefined && { contactEmail: body.contactEmail }),
-            ...(body.contactPhone !== undefined && { contactPhone: body.contactPhone }),
         },
         select: SELECT,
     });
