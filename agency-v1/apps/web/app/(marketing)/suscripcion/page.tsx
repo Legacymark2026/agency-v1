@@ -1,8 +1,42 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { siteConfig } from '@/lib/site-config';
 import { PlanSelector } from '@/components/subscription/plan-selector';
-import { ShieldCheck, Zap, BarChart3, CheckCircle2, Check, X, Minus, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, BarChart3, CheckCircle2, Check, X, Minus, ArrowRight, Terminal, CreditCard, RefreshCw, Shield, Clock, HeadphonesIcon } from 'lucide-react';
 import Script from 'next/script';
+
+const SUBSCRIPTION_FAQS = [
+    {
+        id: "cambio",
+        icon: RefreshCw,
+        question: "¿Puedo cambiar de plan en cualquier momento?",
+        answer: "Sí, puedes hacer upgrade o downgrade de tu plan cuando lo necesites. Los cambios se aplican de manera inmediata y la diferencia de precio se ajusta en tu próximo ciclo de facturación. Tus datos y configuraciones se mantienen intactos durante el cambio."
+    },
+    {
+        id: "pagos",
+        icon: CreditCard,
+        question: "¿Qué métodos de pago aceptan?",
+        answer: "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express) a través de Stripe, la pasarela de pagos más segura del mundo. También aceptamos PayPal y PSE para pagos desde Colombia. Todos los pagos están protegidos con encriptación de nivel bancario."
+    },
+    {
+        id: "facturas",
+        icon: Clock,
+        question: "¿Cómo puedo ver mis facturas y facturación?",
+        answer: "Tienes acceso completo a tu historial de facturación desde el panel de configuración. Puedes descargar facturas en PDF de todos tus pagos, ver el detalle de tus suscripciones y gestionar tus métodos de pago en cualquier momento."
+    },
+    {
+        id: "seguridad",
+        icon: Shield,
+        question: "¿Qué pasa con mis datos si cancelo mi suscripción?",
+        answer: "Tus datos permanecen seguros durante 30 días después de la cancelación. Durante este período puedes exportar toda tu información o reactivar tu suscripción. Pasado este tiempo, los datos se eliminan de forma permanente según nuestra política de privacidad."
+    },
+    {
+        id: "soporte",
+        icon: HeadphonesIcon,
+        question: "¿Qué nivel de soporte incluye cada plan?",
+        answer: "El plan Free incluye soporte por email con tiempo de respuesta de 48 horas. El plan Pro incluye soporte prioritario con respuesta en menos de 4 horas. El plan Agency incluye un Account Manager dedicado y soporte 24/7 con respuesta inmediata."
+    }
+];
 
 const COMPARISON_DATA = {
   categories: [
@@ -329,51 +363,64 @@ export default function SubscriptionPage() {
         </div>
       </section>
 
-      {/* Redesigned FAQ */}
-      <section className="py-24 px-6 relative z-10">
-        <div className="max-w-4xl mx-auto">
+      {/* Redesigned FAQ - Terminal Style */}
+      <section className="py-24 px-6 relative z-10 bg-transparent">
+        <div className="mx-auto max-w-3xl px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm border border-teal-900/50 bg-slate-900/60 text-teal-400 text-xs font-mono mb-6 uppercase tracking-widest shadow-sm">
+              <Terminal size={12} strokeWidth={1.5} />
               Preguntas Frecuentes
+            </div>
+            <h2 className="text-4xl font-black tracking-[-0.04em] text-white sm:text-5xl text-balance">
+              Resuelve tus dudas
             </h2>
-            <p className="text-slate-400">Resolvemos tus dudas técnicas y comerciales</p>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <FaqItem
-              question="¿Puedo cambiar mi arquitectura de plan en cualquier momento?"
-              answer="Absolutamente. Tu base de datos y flujos de automatización persisten intactos al hacer upgrade o downgrade. El cambio en cuotas se aplica de manera instantánea."
-            />
-            <FaqItem
-              question="¿Cómo manejan la seguridad de los datos de mis clientes?"
-              answer="Cumplimos con GDPR y SOC2. Utilizamos encriptación AES-256 en reposo y TLS 1.3 en tránsito. Tus tokens de integración y Webhooks están aislados mediante JWT cifrado."
-            />
-            <FaqItem
-              question="¿Incluye entrenamiento para mi equipo comercial?"
-              answer="Los planes Pro y Enterprise incluyen sesiones de Onboarding 1-a-1, acceso a la Base de Conocimiento HUD y plantillas pre-entrenadas para el modelo de Machine Learning."
-            />
-            <FaqItem
-              question="¿El cobro de la IA de Gemini está incluido?"
-              answer="LegacyMark provee la infraestructura de orquestación (AgentCoordinator). Los consumos de tokens de los modelos fundacionales (como Gemini o OpenAI) requerirán que vincules tu propia API Key en la configuración."
-            />
-            <FaqItem
-              question="¿Qué pasarela de pagos utilizan?"
-              answer="Toda la infraestructura de facturación está soportada de manera segura por Stripe. Aceptamos todas las tarjetas principales globales y pasarelas locales según tu región."
-            />
+
+          <div className="bg-slate-900/50 backdrop-blur-sm rounded-sm border border-slate-800 shadow-xl hover:shadow-[0_20px_50px_-12px_rgba(13,148,136,0.15)] transition-shadow duration-500 overflow-hidden">
+            <div className="bg-slate-950 px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+              </div>
+              <div className="mx-auto text-xs font-mono text-slate-400">billing_protocol_v2.sh</div>
+            </div>
+
+            <div className="p-6 md:p-8">
+              <div className="space-y-4">
+                {SUBSCRIPTION_FAQS.map((faq) => (
+                  <div 
+                    key={faq.id}
+                    className="group border border-slate-800 rounded-sm px-4 hover:border-teal-500/30 hover:bg-slate-900 transition-all duration-300"
+                  >
+                    <details className="group">
+                      <summary className="flex items-center gap-3 py-4 cursor-pointer list-none">
+                        <faq.icon size={16} strokeWidth={1.5} className="text-teal-500 shrink-0" />
+                        <span className="text-white font-bold text-sm md:text-base group-hover:text-teal-400 transition-colors">
+                          {faq.question}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-slate-500 ml-auto group-open:rotate-90 transition-transform" />
+                      </summary>
+                      <div className="text-slate-400 pl-7 pb-4 leading-relaxed font-light text-sm md:text-base">
+                        {faq.answer}
+                      </div>
+                    </details>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA Final */}
+              <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+                <Link href="/contacto" className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-sm font-bold transition-colors">
+                  ¿Necesitas más información? Contactar
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
     </main>
-  );
-}
-
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-  return (
-    <div className="group relative rounded-xl border border-slate-800 bg-slate-900/40 p-6 hover:bg-slate-800/60 hover:border-teal-500/30 transition-all duration-300">
-      <div className="absolute top-0 left-0 w-1 h-0 bg-teal-500 transition-all duration-300 group-hover:h-full rounded-l-xl" />
-      <h3 className="text-lg font-medium text-slate-200 mb-3 group-hover:text-teal-400 transition-colors">{question}</h3>
-      <p className="text-slate-400 leading-relaxed font-light">{answer}</p>
-    </div>
   );
 }
 
