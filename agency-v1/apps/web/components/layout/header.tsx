@@ -66,6 +66,7 @@ export function Header() {
                 { name: "Tarifario", href: "/tarifario" },
                 { name: "Planes", href: "/suscripcion" },
                 { name: t("blog"), href: "/blog" },
+                { name: "API Docs", href: "/docs/api" },
             ]
         },
         { name: t("contact"), href: "/contacto" },
