@@ -1,8 +1,105 @@
 import { Metadata } from 'next';
 import { siteConfig } from '@/lib/site-config';
 import { PlanSelector } from '@/components/subscription/plan-selector';
-import { ShieldCheck, Zap, BarChart3, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Zap, BarChart3, CheckCircle2, Check, X, Minus, ArrowRight } from 'lucide-react';
 import Script from 'next/script';
+
+const COMPARISON_DATA = {
+  categories: [
+    {
+      name: 'Límites y Recursos',
+      features: [
+        { name: 'Leads por mes', free: '100', pro: '5,000', agency: 'Ilimitado' },
+        { name: 'Usuarios', free: '1', pro: '5', agency: 'Ilimitado' },
+        { name: 'Pipelines de ventas', free: '1', pro: '3', agency: 'Ilimitado' },
+        { name: 'Emails por mes', free: '500', pro: '10,000', agency: '100,000' },
+        { name: 'Campañas por mes', free: '1', pro: '10', agency: '999' },
+        { name: 'AI Agents', free: '1', pro: '3', agency: '999' },
+        { name: 'Interacciones AI/mes', free: '50', pro: '5,000', agency: 'Ilimitado' },
+      ]
+    },
+    {
+      name: 'CRM y Funciones',
+      features: [
+        { name: 'CRM completo', free: false, pro: true, agency: true },
+        { name: 'Pipeline de ventas', free: false, pro: true, agency: true },
+        { name: 'Gestión de contactos', free: false, pro: true, agency: true },
+        { name: 'Seguimiento de deals', free: false, pro: true, agency: true },
+        { name: 'Actividades y notas', free: false, pro: true, agency: true },
+      ]
+    },
+    {
+      name: 'Automatización',
+      features: [
+        { name: 'Workflows/Automatizaciones', free: false, pro: true, agency: true },
+        { name: 'Mensajería entrante', free: false, pro: true, agency: true },
+        { name: 'Secuencias de email', free: false, pro: true, agency: true },
+        { name: 'Webhooks personalizados', free: false, pro: true, agency: true },
+        { name: 'Zapier Integration', free: false, pro: true, agency: true },
+      ]
+    },
+    {
+      name: 'Integraciones',
+      features: [
+        { name: 'Instagram', free: true, pro: true, agency: true },
+        { name: 'Facebook', free: true, pro: true, agency: true },
+        { name: 'WhatsApp', free: false, pro: true, agency: true },
+        { name: 'TikTok', free: false, pro: true, agency: true },
+        { name: 'LinkedIn', free: false, pro: true, agency: true },
+        { name: 'Google Ads', free: false, pro: true, agency: true },
+        { name: 'Meta Pixel', free: false, pro: false, agency: true },
+        { name: 'CAPI (Conversions API)', free: false, pro: false, agency: true },
+      ]
+    },
+    {
+      name: 'Analytics e Informes',
+      features: [
+        { name: 'Analytics básico', free: true, pro: false, agency: false },
+        { name: 'Analytics avanzado', free: false, pro: true, agency: false },
+        { name: 'Reportes avanzados', free: false, pro: true, agency: true },
+        { name: 'Dashboard personalizado', free: false, pro: true, agency: true },
+        { name: 'Exportación de datos', free: false, pro: true, agency: true },
+      ]
+    },
+    {
+      name: 'Equipo y Colaboración',
+      features: [
+        { name: 'Gestión de equipos', free: false, pro: false, agency: true },
+        { name: 'Roles y permisos', free: false, pro: true, agency: true },
+        { name: 'Comentarios en deals', free: false, pro: true, agency: true },
+        { name: 'Actividad del equipo', free: false, pro: true, agency: true },
+      ]
+    },
+    {
+      name: 'Marca y Personalización',
+      features: [
+        { name: 'White-label', free: false, pro: false, agency: true },
+        { name: 'Branding personalizado', free: false, pro: false, agency: true },
+        { name: 'Dominio personalizado', free: false, pro: false, agency: true },
+        { name: 'Logo y colores propios', free: false, pro: false, agency: true },
+      ]
+    },
+    {
+      name: 'Desarrollo y API',
+      features: [
+        { name: 'API Access', free: false, pro: false, agency: true },
+        { name: 'Webhooks', free: false, pro: true, agency: true },
+        { name: 'Integraciones personalizadas', free: false, pro: false, agency: true },
+        { name: 'Documentación API', free: false, pro: false, agency: true },
+      ]
+    },
+    {
+      name: 'Soporte y Servicio',
+      features: [
+        { name: 'Soporte por email', free: true, pro: false, agency: false },
+        { name: 'Soporte prioritario', free: false, pro: true, agency: false },
+        { name: 'Account Manager dedicado', free: false, pro: false, agency: true },
+        { name: 'Onboarding personalizado', free: false, pro: true, agency: true },
+        { name: 'Capacitación del equipo', free: false, pro: true, agency: true },
+      ]
+    },
+  ]
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -44,28 +141,28 @@ export default function SubscriptionPage() {
     operatingSystem: 'Web',
     offers: {
       '@type': 'AggregateOffer',
-      priceCurrency: 'USD',
+      priceCurrency: 'COP',
       lowPrice: '0',
-      highPrice: '299',
+      highPrice: '299000',
       offerCount: '3',
       offers: [
         {
           '@type': 'Offer',
           name: 'Free',
           price: '0',
-          priceCurrency: 'USD'
+          priceCurrency: 'COP'
         },
         {
           '@type': 'Offer',
           name: 'Pro',
-          price: '99',
-          priceCurrency: 'USD'
+          price: '99000',
+          priceCurrency: 'COP'
         },
         {
           '@type': 'Offer',
-          name: 'Enterprise',
-          price: '299',
-          priceCurrency: 'USD'
+          name: 'Agency',
+          price: '299000',
+          priceCurrency: 'COP'
         }
       ]
     }
@@ -124,6 +221,95 @@ export default function SubscriptionPage() {
               currentPlanId={currentPlanId as any}
               isAuthenticated={false}
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Table */}
+      <section className="py-24 px-6 relative z-10 bg-slate-900/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Compara nuestros planes
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Elige el plan perfecto para tu agencia. Todos los planes incluyen soporte técnico y actualizaciones constantes.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="text-left py-6 px-4 text-slate-400 font-medium text-sm">Características</th>
+                  <th className="text-center py-6 px-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-bold text-white">Free</span>
+                      <span className="text-slate-500 text-sm">$0/mes</span>
+                    </div>
+                  </th>
+                  <th className="text-center py-6 px-4">
+                    <div className="flex flex-col items-center">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-medium mb-2">
+                        Popular
+                      </span>
+                      <span className="text-lg font-bold text-white">Pro</span>
+                      <span className="text-teal-400 text-sm font-medium">$99,000/mes</span>
+                    </div>
+                  </th>
+                  <th className="text-center py-6 px-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-bold text-white">Agency</span>
+                      <span className="text-slate-500 text-sm">$299,000/mes</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_DATA.categories.map((category, catIndex) => (
+                  <>
+                    <tr key={category.name} className="bg-slate-800/50">
+                      <td colSpan={4} className="py-3 px-4">
+                        <span className="text-teal-400 font-semibold text-sm uppercase tracking-wider">
+                          {category.name}
+                        </span>
+                      </td>
+                    </tr>
+                    {category.features.map((feature, featIndex) => (
+                      <tr 
+                        key={`${category.name}-${feature.name}`} 
+                        className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${featIndex === 0 ? '' : ''}`}
+                      >
+                        <td className="py-4 px-4 text-slate-300 font-medium">{feature.name}</td>
+                        <td className="py-4 px-4 text-center">
+                          <FeatureCell value={feature.free} />
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <FeatureCell value={feature.pro} />
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <FeatureCell value={feature.agency} />
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* CTA Final */}
+          <div className="mt-16 text-center">
+            <p className="text-slate-400 mb-6">
+              ¿Necesitas algo personalizado? Contáctanos para crear un plan a tu medida.
+            </p>
+            <a 
+              href="/contacto" 
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-medium hover:bg-slate-700 hover:border-slate-600 transition-all"
+            >
+              Contactar ventas
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </section>
@@ -188,5 +374,29 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
       <h3 className="text-lg font-medium text-slate-200 mb-3 group-hover:text-teal-400 transition-colors">{question}</h3>
       <p className="text-slate-400 leading-relaxed font-light">{answer}</p>
     </div>
+  );
+}
+
+function FeatureCell({ value }: { value: boolean | string }) {
+  if (typeof value === 'boolean') {
+    if (value) {
+      return (
+        <div className="flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
+            <Check className="w-4 h-4 text-teal-400" />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
+          <X className="w-4 h-4 text-slate-600" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <span className="text-white font-medium">{value}</span>
   );
 }

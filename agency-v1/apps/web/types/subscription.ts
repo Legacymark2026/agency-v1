@@ -3,12 +3,24 @@ export type PlanId = 'free' | 'pro' | 'agency'
 export interface PlanFeatures {
   leadsPerMonth: number
   users: number
+  pipelines: number
   analytics: 'basic' | 'advanced' | 'full'
   integrations: string[]
   support: 'email' | 'priority' | 'dedicated'
   crm: boolean
   whiteLabel: boolean
   apiAccess: boolean
+  workflows: boolean
+  inboundMessaging: boolean
+  teamManagement: boolean
+  customBranding: boolean
+  advancedReporting: boolean
+  prioritySupport: boolean
+  dedicatedAccountManager: boolean
+  emailPerMonth: number
+  campaignsPerMonth: number
+  aiAgents: number
+  aiInteractions: number
 }
 
 export interface Plan {

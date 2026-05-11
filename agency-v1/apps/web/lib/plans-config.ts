@@ -12,12 +12,24 @@ export const PLANS: Plan[] = [
     features: {
       leadsPerMonth: 100,
       users: 1,
+      pipelines: 1,
       analytics: 'basic',
       integrations: ['Instagram', 'Facebook'],
       support: 'email',
       crm: false,
       whiteLabel: false,
       apiAccess: false,
+      workflows: false,
+      inboundMessaging: false,
+      teamManagement: false,
+      customBranding: false,
+      advancedReporting: false,
+      prioritySupport: false,
+      dedicatedAccountManager: false,
+      emailPerMonth: 500,
+      campaignsPerMonth: 1,
+      aiAgents: 1,
+      aiInteractions: 50,
     },
   },
   {
@@ -31,14 +43,26 @@ export const PLANS: Plan[] = [
     stripePriceIdMonthly: process.env.STRIPE_PRICE_PRO_MONTHLY,
     stripePriceIdYearly: process.env.STRIPE_PRICE_PRO_YEARLY,
     features: {
-      leadsPerMonth: 1000,
+      leadsPerMonth: 5000,
       users: 5,
+      pipelines: 3,
       analytics: 'advanced',
       integrations: ['Instagram', 'Facebook', 'WhatsApp', 'TikTok', 'LinkedIn', 'Google Ads'],
       support: 'priority',
       crm: true,
       whiteLabel: false,
       apiAccess: false,
+      workflows: true,
+      inboundMessaging: true,
+      teamManagement: false,
+      customBranding: false,
+      advancedReporting: true,
+      prioritySupport: true,
+      dedicatedAccountManager: false,
+      emailPerMonth: 10000,
+      campaignsPerMonth: 10,
+      aiAgents: 3,
+      aiInteractions: 5000,
     },
   },
   {
@@ -54,12 +78,24 @@ export const PLANS: Plan[] = [
     features: {
       leadsPerMonth: -1,
       users: -1,
+      pipelines: -1,
       analytics: 'full',
       integrations: ['Instagram', 'Facebook', 'WhatsApp', 'TikTok', 'LinkedIn', 'Google Ads', 'Pixel', 'CAPI'],
       support: 'dedicated',
       crm: true,
       whiteLabel: true,
       apiAccess: true,
+      workflows: true,
+      inboundMessaging: true,
+      teamManagement: true,
+      customBranding: true,
+      advancedReporting: true,
+      prioritySupport: true,
+      dedicatedAccountManager: true,
+      emailPerMonth: 100000,
+      campaignsPerMonth: 999,
+      aiAgents: 999,
+      aiInteractions: 999999,
     },
   },
 ]
@@ -91,15 +127,52 @@ export const formatFeatures = (features: Plan['features']): string[] => {
     lines.push(`${features.users} usuario${features.users > 1 ? 's' : ''}`)
   }
 
-  lines.push(`Analytics ${features.analytics}`)
+  if (features.pipelines === -1) {
+    lines.push('Pipelines ilimitados')
+  } else {
+    lines.push(`${features.pipelines} pipeline${features.pipelines > 1 ? 's' : ''} de ventas`)
+  }
+
+  if (features.emailPerMonth === -1) {
+    lines.push('Emails ilimitados')
+  } else {
+    lines.push(`${features.emailPerMonth.toLocaleString('es-CO')} emails/mes`)
+  }
+
+  if (features.campaignsPerMonth === -1) {
+    lines.push('Campañas ilimitadas')
+  } else {
+    lines.push(`${features.campaignsPerMonth} campañas/mes`)
+  }
+
+  if (features.aiAgents === -1) {
+    lines.push('AI Agents ilimitados')
+  } else {
+    lines.push(`${features.aiAgents} AI Agent${features.aiAgents > 1 ? 's' : ''}`)
+  }
+
+  if (features.aiInteractions === -1) {
+    lines.push('Interacciones AI ilimitadas')
+  } else {
+    lines.push(`${features.aiInteractions.toLocaleString('es-CO')} interacciones AI/mes`)
+  }
+
+  lines.push(`Analytics ${features.advancedReporting ? 'Avanzado' : features.analytics}`)
 
   features.integrations.forEach((integration) => {
     lines.push(integration)
   })
 
   if (features.crm) lines.push('CRM completo')
+  if (features.workflows) lines.push('Automatizaciones (Workflows)')
+  if (features.inboundMessaging) lines.push('Mensajería entrante')
+  if (features.teamManagement) lines.push('Gestión de equipos')
   if (features.whiteLabel) lines.push('White-label')
+  if (features.customBranding) lines.push('Branding personalizado')
   if (features.apiAccess) lines.push('API Access')
+  if (features.dedicatedAccountManager) lines.push('Account Manager dedicado')
+  else if (features.prioritySupport) lines.push('Soporte prioritario')
+  else lines.push('Soporte por email')
 
   return lines
 }
