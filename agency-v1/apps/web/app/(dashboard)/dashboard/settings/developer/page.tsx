@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Key, Plus, Copy, RotateCw, Trash2, ChevronDown, CheckCircle2, Clock, Webhook, Send, Activity, FileCode, ExternalLink, ChevronRight, X, Eye, EyeOff, AlertTriangle, Timer, RefreshCw, ShieldCheck } from "lucide-react";
+import { Key, Plus, Copy, RotateCw, Trash2, ChevronDown, CheckCircle2, Clock, Webhook, Send, Activity, FileCode, ExternalLink, ChevronRight, X, Eye, EyeOff, AlertTriangle, Timer, RefreshCw, ShieldCheck, Edit2, ScrollText, BarChart3 } from "lucide-react";
 import {
     getApiKeys, createApiKey, revokeApiKey, rotateApiKey,
     getWebhooks, createWebhook, updateWebhook, deleteWebhook, testWebhook,
     getWebhookDeliveryLogs, getWebhookEvents, getApiUsageLogs,
     getCronSecret, saveCronSecret,
 } from "@/actions/developer";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const SCOPE_OPTIONS = [
@@ -324,9 +325,15 @@ function WebhookSection() {
     const [form, setForm] = useState({ name: "", url: "", events: [] as string[] });
     const [testing, setTesting] = useState<string | null>(null);
     const [testResult, setTestResult] = useState<Record<string, any>>({});
-    const [logs, setLogs] = useState<any[]>([]);
-    const [selectedWebhook, setSelectedWebhook] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Edit state
+    const [editingWebhook, setEditingWebhook] = useState<any | null>(null);
+    
+    // Logs state
+    const [viewingLogs, setViewingLogs] = useState<string | null>(null);
+    const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
 
     const load = useCallback(async () => {
         const [wRes, eRes] = await Promise.all([getWebhooks(), getWebhookEvents()]);
@@ -349,6 +356,22 @@ function WebhookSection() {
         } else toast.error(res.error);
     };
 
+    const handleUpdate = async () => {
+        if (!editingWebhook || !editingWebhook.name || !editingWebhook.url) return toast.error("Completa nombre y URL");
+        setIsSubmitting(true);
+        const res = await updateWebhook(editingWebhook.id, { 
+            name: editingWebhook.name, 
+            url: editingWebhook.url, 
+            events: editingWebhook.events 
+        });
+        setIsSubmitting(false);
+        if (res.success) {
+            toast.success("Webhook actualizado");
+            setEditingWebhook(null);
+            load();
+        } else toast.error(res.error);
+    };
+
     const handleTest = async (id: string) => {
         setTesting(id);
         const res = await testWebhook(id);
@@ -365,11 +388,27 @@ function WebhookSection() {
         load();
     };
 
-    const toggleEvent = (ev: string) => {
-        setForm(prev => ({
-            ...prev,
-            events: prev.events.includes(ev) ? prev.events.filter(e => e !== ev) : [...prev.events, ev],
-        }));
+    const handleViewLogs = async (id: string) => {
+        setViewingLogs(id);
+        setLoadingLogs(true);
+        const res = await getWebhookDeliveryLogs(id);
+        setLoadingLogs(false);
+        if (res.success) setWebhookLogs(res.data);
+        else toast.error(res.error || "Error al cargar logs");
+    };
+
+    const toggleEvent = (ev: string, isEditing: boolean = false) => {
+        if (isEditing) {
+            setEditingWebhook((prev: any) => ({
+                ...prev,
+                events: prev.events.includes(ev) ? prev.events.filter((e: string) => e !== ev) : [...prev.events, ev],
+            }));
+        } else {
+            setForm(prev => ({
+                ...prev,
+                events: prev.events.includes(ev) ? prev.events.filter(e => e !== ev) : [...prev.events, ev],
+            }));
+        }
     };
 
     const STATUS_DOT: Record<string, string> = {
@@ -453,13 +492,21 @@ function WebhookSection() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={() => handleViewLogs(w.id)}
+                                    className="p-1.5 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" title="Ver Logs">
+                                    <ScrollText className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setEditingWebhook(w)}
+                                    className="p-1.5 text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors" title="Editar">
+                                    <Edit2 className="w-4 h-4" />
+                                </button>
                                 <button onClick={() => handleTest(w.id)} disabled={testing === w.id}
                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors disabled:opacity-50">
                                     <Send className={`w-3 h-3 ${testing === w.id ? "animate-pulse" : ""}`} />
                                     {testing === w.id ? "Enviando..." : "Test"}
                                 </button>
                                 <button onClick={() => handleDelete(w.id)}
-                                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Eliminar">
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -472,6 +519,142 @@ function WebhookSection() {
                         )}
                     </div>
                 ))}
+            </div>
+
+            {/* Edit Webhook Modal */}
+            <Dialog open={!!editingWebhook} onOpenChange={(open) => !open && setEditingWebhook(null)}>
+                <DialogContent className="sm:max-w-[500px] bg-slate-950 border-slate-800 text-slate-200">
+                    <DialogHeader>
+                        <DialogTitle className="text-white">Editar Webhook</DialogTitle>
+                        <DialogDescription className="text-slate-400">Modifica la URL o los eventos a los que este webhook está suscrito.</DialogDescription>
+                    </DialogHeader>
+                    {editingWebhook && (
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <label className="text-xs text-slate-400 mb-1 block">Nombre</label>
+                                <input value={editingWebhook.name} onChange={e => setEditingWebhook((p: any) => ({ ...p, name: e.target.value }))}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 mb-1 block">URL *</label>
+                                <input value={editingWebhook.url} onChange={e => setEditingWebhook((p: any) => ({ ...p, url: e.target.value }))}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 mb-2 block">Eventos a suscribir</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {events.map(ev => (
+                                        <button key={ev} onClick={() => toggleEvent(ev, true)}
+                                            className={`px-2.5 py-1 text-xs rounded-md font-mono transition-colors ${editingWebhook.events.includes(ev) ? "bg-violet-500/20 text-violet-300 border border-violet-500/40" : "bg-slate-800 text-slate-500 border border-slate-700 hover:border-slate-600"}`}>
+                                            {ev}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button onClick={() => setEditingWebhook(null)} className="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancelar</button>
+                                <button onClick={handleUpdate} disabled={isSubmitting} className="px-4 py-2 text-sm bg-violet-600 hover:bg-violet-500 text-white font-semibold rounded-lg disabled:opacity-50 transition-colors">
+                                    {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Webhook Logs Modal */}
+            <Dialog open={!!viewingLogs} onOpenChange={(open) => !open && setViewingLogs(null)}>
+                <DialogContent className="sm:max-w-[700px] bg-slate-950 border-slate-800 text-slate-200 max-h-[85vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="text-white flex items-center gap-2"><ScrollText className="w-5 h-5 text-violet-400" /> Logs de Envíos</DialogTitle>
+                        <DialogDescription className="text-slate-400">Historial reciente de entregas para este webhook.</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex-1 overflow-y-auto mt-4 pr-2 space-y-4">
+                        {loadingLogs ? (
+                            <div className="text-center py-8 text-slate-500 text-sm">Cargando logs...</div>
+                        ) : webhookLogs.length === 0 ? (
+                            <div className="text-center py-8 text-slate-500 text-sm">No se han registrado entregas aún.</div>
+                        ) : (
+                            webhookLogs.map(log => (
+                                <div key={log.id} className="border border-slate-800 rounded-lg bg-slate-900/50 overflow-hidden">
+                                    <div className="flex items-center justify-between p-3 border-b border-slate-800 bg-slate-900">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono ${log.success ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>
+                                                HTTP {log.statusCode || "ERR"}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-mono">{log.event}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-slate-500">{log.durationMs}ms</span>
+                                            <span className="text-xs text-slate-500">{new Date(log.deliveredAt).toLocaleString("es-CO")}</span>
+                                        </div>
+                                    </div>
+                                    {log.responseBody && (
+                                        <div className="p-3 text-xs font-mono text-slate-400 bg-slate-950/80 border-t border-slate-800 overflow-x-auto whitespace-pre-wrap">
+                                            {log.responseBody}
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
+function ApiUsageSection() {
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getApiUsageLogs().then(res => {
+            if (res.success) setLogs(res.data);
+            setLoading(false);
+        });
+    }, []);
+
+    return (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden mt-6">
+            <div className="flex items-center gap-3 p-5 border-b border-slate-800">
+                <div className="p-2 bg-blue-500/10 rounded-lg"><BarChart3 className="w-4 h-4 text-blue-400" /></div>
+                <div>
+                    <h3 className="text-sm font-semibold text-white">Registro de Uso de API</h3>
+                    <p className="text-xs text-slate-500">Historial reciente de llamadas y consumo de plataforma.</p>
+                </div>
+            </div>
+            <div className="p-0">
+                {loading ? (
+                    <div className="p-8 text-center text-slate-500 text-sm">Cargando registros...</div>
+                ) : logs.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500 text-sm">No hay registros de uso recientes.</div>
+                ) : (
+                    <div className="overflow-x-auto max-h-[400px]">
+                        <table className="w-full text-left text-sm text-slate-400">
+                            <thead className="bg-slate-950/50 text-xs uppercase text-slate-500 border-b border-slate-800 sticky top-0 backdrop-blur-sm z-10">
+                                <tr>
+                                    <th className="px-4 py-3 font-medium">Fecha</th>
+                                    <th className="px-4 py-3 font-medium">Métrica</th>
+                                    <th className="px-4 py-3 font-medium text-right">Valor</th>
+                                    <th className="px-4 py-3 font-medium">Referencia</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800/50">
+                                {logs.map(log => (
+                                    <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-xs">{new Date(log.recordedAt).toLocaleString("es-CO")}</td>
+                                        <td className="px-4 py-2.5 font-mono text-xs text-slate-300">{log.metric}</td>
+                                        <td className="px-4 py-2.5 text-slate-200 font-semibold text-right">{log.value}</td>
+                                        <td className="px-4 py-2.5 truncate max-w-[200px] text-xs" title={log.resourceId || log.metadata || "—"}>
+                                            {log.resourceId || log.metadata || "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -505,6 +688,7 @@ export default function DeveloperPage() {
             <ApiKeySection />
             <WebhookSection />
             <CronConfigSection />
+            <ApiUsageSection />
         </div>
     );
 }

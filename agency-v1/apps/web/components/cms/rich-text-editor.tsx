@@ -118,126 +118,6 @@ export function RichTextEditor({ initialValue, onChange, placeholder = "Write yo
             }),
             TableRow,
             TableCell,
-'use client';
-
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
-import { TextStyle } from '@tiptap/extension-text-style';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
-import { Extension } from '@tiptap/core';
-import {
-    Bold,
-    Italic,
-    List,
-    ListOrdered,
-    Link2,
-    Heading1,
-    Heading2,
-    Heading3,
-    Heading4,
-    Type,
-    Table as TableIcon,
-    Trash2,
-    Plus,
-    Minus
-} from 'lucide-react';
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        fontSize: {
-            setFontSize: (size: string) => ReturnType
-            unsetFontSize: () => ReturnType
-        }
-    }
-}
-
-const FontSize = Extension.create({
-    name: 'fontSize',
-    addOptions() {
-        return {
-            types: ['textStyle'],
-        }
-    },
-    addGlobalAttributes() {
-        return [
-            {
-                types: this.options.types,
-                attributes: {
-                    fontSize: {
-                        default: null,
-                        parseHTML: element => element.style.fontSize.replace(/['"]+/g, ''),
-                        renderHTML: attributes => {
-                            if (!attributes.fontSize) {
-                                return {}
-                            }
-                            return {
-                                style: `font-size: ${attributes.fontSize}`,
-                            }
-                        },
-                    },
-                },
-            },
-        ]
-    },
-    addCommands() {
-        return {
-            setFontSize: fontSize => ({ chain }) => {
-                return chain()
-                    .setMark('textStyle', { fontSize })
-                    .run()
-            },
-            unsetFontSize: () => ({ chain }) => {
-                return chain()
-                    .setMark('textStyle', { fontSize: null })
-                    .removeEmptyTextStyle()
-                    .run()
-            },
-        }
-    },
-})
-
-interface RichTextEditorProps {
-    initialValue: string;
-    onChange: (html: string) => void;
-    placeholder?: string;
-}
-
-export function RichTextEditor({ initialValue, onChange, placeholder = "Write your content here..." }: RichTextEditorProps) {
-    const editor = useEditor({
-        immediatelyRender: false, // Fix SSR hydration mismatch
-        extensions: [
-            StarterKit.configure({
-                heading: {
-                    levels: [1, 2, 3, 4],
-                },
-                bulletList: {
-                    keepMarks: true,
-                    keepAttributes: false,
-                },
-                orderedList: {
-                    keepMarks: true,
-                    keepAttributes: false,
-                },
-            }),
-            Placeholder.configure({
-                placeholder,
-            }),
-            TextStyle,
-            FontSize,
-            Table.configure({
-                resizable: true,
-                allowTableNodeSelection: true,
-                HTMLAttributes: {
-                    class: 'tiptap-table',
-                },
-            }),
-            TableRow,
-            TableCell,
             TableHeader,
         ],
         content: initialValue,
@@ -314,6 +194,50 @@ export function RichTextEditor({ initialValue, onChange, placeholder = "Write yo
             },
         },
     });
+
+    if (!editor) {
+        return null;
+    }
+
+    const toggleLink = () => {
+        const previousUrl = editor.getAttributes('link').href;
+        const url = window.prompt('Enter URL:', previousUrl || '');
+
+        if (url === null) {
+            return;
+        }
+
+        if (url === '') {
+            editor.chain().focus().extendMarkRange('link').unsetLink().run();
+            return;
+        }
+
+        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    };
+
+    return (
+        <div className="border border-slate-800 rounded-md overflow-hidden bg-slate-950 text-slate-300 focus-within:ring-2 focus-within:ring-teal-500/50">
+            {/* Toolbar */}
+            <div className="bg-slate-900/50 border-b border-slate-800 p-2 flex flex-wrap items-center gap-1">
+
+                <div className="flex items-center space-x-1 mr-2 bg-slate-950 rounded border border-slate-800 p-0.5">
+                    <Type className="h-4 w-4 text-slate-400 ml-2" />
+                    <select
+                        onChange={(e) => {
+                            if (e.target.value) {
+                                editor.chain().focus().setFontSize(e.target.value).run();
+                            } else {
+                                editor.chain().focus().unsetFontSize().run();
+                            }
+                        }}
+                        value={editor.getAttributes('textStyle').fontSize || ''}
+                        className="p-1 rounded bg-transparent hover:bg-slate-800 focus:outline-none text-sm text-slate-300 font-medium cursor-pointer"
+                        title="Tamaño de Letra"
+                    >
+                        <option value="">Automático</option>
+                        <option value="12px">12px (Mini)</option>
+                        <option value="14px">14px (Pequeño)</option>
+                        <option value="16px">16px (Normal)</option>
                         <option value="18px">18px (Lectura)</option>
                         <option value="20px">20px (Grande)</option>
                         <option value="24px">24px (Subtítulo)</option>
