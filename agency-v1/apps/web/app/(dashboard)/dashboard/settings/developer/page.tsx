@@ -680,7 +680,7 @@ export default function DeveloperPage() {
                     <span className="text-amber-300">"Authorization: Bearer lm_live_•••"</span>{" "}
                     <span className="text-blue-400">https://api.legacymark.com/v1/leads</span>
                 </code>
-                <a href="#" className="ml-auto shrink-0 text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1">
+                <a href="/docs/api" target="_blank" className="ml-auto shrink-0 text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1">
                     Docs <ExternalLink className="w-3 h-3" />
                 </a>
             </div>
