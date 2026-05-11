@@ -9,11 +9,11 @@ For more information, see: https://pris.ly/prisma-config
 Environment variables loaded from .env
 Prisma schema loaded from prisma\schema.prisma
 
-✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 1.82s
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 4.00s
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
 
 ▲ Next.js 16.2.4 (Turbopack)
 - Environments: .env.local, .env
@@ -23,29 +23,34 @@ Tip: Need your database queries to be 1000x faster? Accelerate offers you that a
 
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-✓ Compiled successfully in 3.5min
+✓ Compiled successfully in 2.4min
   Running next.config.js provided runAfterProductionCompile ...
-✓ Completed runAfterProductionCompile in 9.0s
+✓ Completed runAfterProductionCompile in 5.9s
   Running TypeScript ...
-Failed to type check.
 
-./components/settings/skill-templates-library.tsx:70:26
-Type error: Argument of type '{ id: string; companyId: string | null; name: string; createdAt: Date; updatedAt: Date; content: JsonValue; category: string; createdBy: string | null; description: string | null; ... 4 more ...; downloads: number; }[]' is not assignable to parameter of type 'SetStateAction<Template[]>'.
-  Type '{ id: string; companyId: string | null; name: string; createdAt: Date; updatedAt: Date; content: JsonValue; category: string; createdBy: string | null; description: string | null; ... 4 more ...; downloads: number; }[]' is not assignable to type 'Template[]'.
-    Type '{ id: string; companyId: string | null; name: string; createdAt: Date; updatedAt: Date; content: JsonValue; category: string; createdBy: string | null; description: string | null; ... 4 more ...; downloads: number; }' is not assignable to type 'Template'.
-      Types of property 'createdAt' are incompatible.
-        Type 'Date' is not assignable to type 'string'.
+<--- Last few GCs --->
 
-  [90m68 |[0m         [36mtry[0m {
-  [90m69 |[0m             [36mconst[0m data = [36mawait[0m getSkillTemplates(companyId);
-[31m[1m>[0m [90m70 |[0m             setTemplates(data);
-  [90m   |[0m                          [31m[1m^[0m
-  [90m71 |[0m         } [36mcatch[0m (error) {
-  [90m72 |[0m             console.error([32m"Error loading templates:"[0m, error);
-  [90m73 |[0m             toast.error([32m"Error al cargar templates"[0m);
-Next.js build worker exited with code: 1 and signal: null
+[9568:000001AE2F671000]   481302 ms: Mark-Compact 2040.0 (2088.4) -> 2035.0 (2088.7) MB, pooled: 2 MB, 1700.71 / 0.01 ms  (average mu = 0.238, current mu = 0.342) allocation failure; scavenge might not succeed
+[9568:000001AE2F671000]   484698 ms: Mark-Compact 2039.0 (2088.7) -> 2035.2 (2095.7) MB, pooled: 1 MB, 3349.53 / 0.00 ms  (average mu = 0.109, current mu = 0.014) allocation failure; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7C825711D node::SetCppgcReference+17725
+ 2: 00007FF7C81BA138 SSL_get_quiet_shutdown+92344
+ 3: 00007FF7C8D40C51 v8::Isolate::ReportExternalAllocationLimitReached+65
+ 4: 00007FF7C8D2D8D6 v8::Function::Experimental_IsNopFunction+2870
+ 5: 00007FF7C8B7AA20 v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+31456
+ 6: 00007FF7C8B7471A v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+6106
+ 7: 00007FF7C8B6FDB5 v8::CpuProfileNode::GetScriptResourceNameStr+188453
+ 8: 00007FF7C84F309D BIO_ssl_shutdown+189
+ 9: 7FF8000000000000 
+Next.js build worker exited with code: 134 and signal: null
 npm error Lifecycle script `build` failed with error:
-npm error code 1
+npm error code 134
 npm error path C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
 npm error workspace web@0.1.0
 npm error location C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
