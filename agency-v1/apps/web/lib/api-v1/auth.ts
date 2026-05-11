@@ -104,8 +104,8 @@ export async function validateApiKey(
     return {
         ctx: {
             keyId:     apiKey.id,
-            companyId: apiKey.companyId,
-            userId:    apiKey.userId,
+            companyId: apiKey.companyId as string,
+            userId:    apiKey.userId ?? "",
             scopes:    keyScopes,
             plan:      apiKey.company?.subscriptionTier ?? "free",
         },
