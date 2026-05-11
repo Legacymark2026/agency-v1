@@ -65,17 +65,17 @@ export function TagInput({
     return (
         <div className="space-y-2">
             <div className="relative">
-                <div className="min-h-[42px] w-full px-3 py-2 rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-black flex flex-wrap gap-2 items-center">
+                <div className="min-h-[42px] w-full px-3 py-2 rounded-md border border-slate-800 bg-slate-950 focus-within:ring-2 focus-within:ring-teal-500/50 flex flex-wrap gap-2 items-center text-slate-300">
                     {value.map((tag) => (
                         <span
                             key={tag}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-black text-white text-sm rounded-md"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 text-sm rounded-md"
                         >
                             {tag}
                             <button
                                 type="button"
                                 onClick={() => removeTag(tag)}
-                                className="hover:bg-gray-700 rounded-full p-0.5 transition"
+                                className="hover:bg-teal-500/20 rounded-full p-0.5 transition"
                             >
                                 <X className="h-3 w-3" />
                             </button>
@@ -90,19 +90,19 @@ export function TagInput({
                         onFocus={() => setShowSuggestions(inputValue.length > 0 && filteredSuggestions.length > 0)}
                         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                         placeholder={value.length === 0 ? placeholder : ''}
-                        className="flex-1 min-w-[120px] outline-none bg-transparent"
+                        className="flex-1 min-w-[120px] outline-none bg-transparent placeholder-slate-500"
                     />
                 </div>
 
                 {/* Autocomplete Suggestions */}
                 {showSuggestions && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-slate-950 border border-slate-800 rounded-md shadow-lg max-h-48 overflow-y-auto">
                         {filteredSuggestions.map((suggestion) => (
                             <button
                                 key={suggestion}
                                 type="button"
                                 onClick={() => addTag(suggestion)}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm transition"
+                                className="w-full text-left px-3 py-2 hover:bg-slate-900 text-slate-300 text-sm transition"
                             >
                                 {suggestion}
                             </button>
