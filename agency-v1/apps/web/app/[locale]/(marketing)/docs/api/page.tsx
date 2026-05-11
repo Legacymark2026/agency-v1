@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Copy, Check, ChevronRight, Book, Key, Link as LinkIcon, ShieldAlert, Webhook, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
