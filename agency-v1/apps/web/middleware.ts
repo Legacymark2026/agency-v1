@@ -58,6 +58,15 @@ export default auth(function middleware(req: NextRequest) {
     // ── DASHBOARD: el authorized() callback de NextAuth YA verifica permisos.
     // NO hacer NextResponse.next() aquí — eso bypasaría el RBAC.
     // auth() wrapper aplica authorized() antes de llegar a este handler.
+    
+    // Si la ruta contiene un locale prefix seguido de dashboard/admin, lo removemos
+    const matchDashboardWithLocale = pathname.match(/^\/(en|es)\/(dashboard|admin)(.*)/);
+    if (matchDashboardWithLocale) {
+        const url = req.nextUrl.clone();
+        url.pathname = `/${matchDashboardWithLocale[2]}${matchDashboardWithLocale[3]}`;
+        return NextResponse.redirect(url);
+    }
+
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
         return NextResponse.next({
             request: {
