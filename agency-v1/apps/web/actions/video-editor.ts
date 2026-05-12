@@ -114,6 +114,9 @@ async function getCompanyId(): Promise<string | null> {
 // ============================================
 
 export async function createVideoProject(data: Partial<VideoProject>): Promise<VideoProject> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
@@ -135,6 +138,9 @@ export async function createVideoProject(data: Partial<VideoProject>): Promise<V
 }
 
 export async function getVideoProjects(): Promise<VideoProject[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
@@ -147,6 +153,9 @@ export async function getVideoProjects(): Promise<VideoProject[]> {
 }
 
 export async function getVideoProject(id: string): Promise<VideoProject | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
@@ -158,6 +167,9 @@ export async function getVideoProject(id: string): Promise<VideoProject | null> 
 }
 
 export async function updateVideoProject(id: string, data: Partial<VideoProject>): Promise<VideoProject> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
@@ -173,6 +185,9 @@ export async function updateVideoProject(id: string, data: Partial<VideoProject>
 }
 
 export async function deleteVideoProject(id: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
@@ -248,6 +263,9 @@ export async function generateTimeline(clips: Clip[], config: ProjectConfig): Pr
 }
 
 export async function executeAIAgentWorkflow(projectId: string): Promise<any> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 

@@ -7,13 +7,7 @@ import { revalidatePath } from "next/cache";
 
 export type BatchVariationStyle = "MINIMALIST" | "BOLD" | "LIFESTYLE" | "TYPOGRAPHIC" | "CINEMATIC";
 
-const STYLE_DESCRIPTORS: Record<BatchVariationStyle, string> = {
-    MINIMALIST: "clean white background, minimal design, Swiss typography, lots of white space, elegant",
-    BOLD: "high contrast, vivid neon colors, strong typography, energetic, loud, eye-catching",
-    LIFESTYLE: "natural light, real people lifestyle, candid photography, warm tones, authentic",
-    TYPOGRAPHIC: "text-forward design, creative typography as the main visual element, editorial layout",
-    CINEMATIC: "cinematic wide shot, dramatic lighting, film noir palette, movie poster aesthetic",
-};
+
 
 /**
  * Generates N style variations of the same creative brief simultaneously.
@@ -25,6 +19,16 @@ export async function generateBatchVariations(params: {
     aspectRatio: "1:1" | "9:16" | "16:9" | "4:5";
     styles?: BatchVariationStyle[];
 }) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const STYLE_DESCRIPTORS: Record<BatchVariationStyle, string> = {
+        MINIMALIST: "clean white background, minimal design, Swiss typography, lots of white space, elegant",
+        BOLD: "high contrast, vivid neon colors, strong typography, energetic, loud, eye-catching",
+        LIFESTYLE: "natural light, real people lifestyle, candid photography, warm tones, authentic",
+        TYPOGRAPHIC: "text-forward design, creative typography as the main visual element, editorial layout",
+        CINEMATIC: "cinematic wide shot, dramatic lighting, film noir palette, movie poster aesthetic",
+    };
     const styles = params.styles ?? ["MINIMALIST", "BOLD", "LIFESTYLE", "TYPOGRAPHIC", "CINEMATIC"];
 
     const results = await Promise.allSettled(
@@ -53,6 +57,8 @@ export async function generateBatchVariations(params: {
  * Uses Gemini Flash to produce copy + image prompt + platform specs.
  */
 export async function generateCreativeBrief(description: string, platforms: string[]) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
     const { generateText } = await import("ai");
     const { geminiFlashModel } = await import("@/lib/ai-provider");
 

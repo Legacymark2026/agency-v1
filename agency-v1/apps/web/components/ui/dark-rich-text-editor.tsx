@@ -81,6 +81,20 @@ interface DarkRichTextEditorProps {
     placeholder?: string;
 }
 
+const Btn = ({ onClick, active = false, icon: Icon, title, disabled = false }: any) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        title={title}
+        className={`p-1.5 rounded-sm transition-all focus:outline-none ${active ? 'bg-teal-500/20 text-teal-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'} ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+    >
+        <Icon className="w-4 h-4" strokeWidth={active ? 2.5 : 2} />
+    </button>
+);
+
+const Divider = () => <div className="w-px h-5 bg-slate-800 mx-1 shrink-0" />;
+
 export function DarkRichTextEditor({ initialValue, onChange, placeholder = "Escribe tu contenido aquí..." }: DarkRichTextEditorProps) {
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -159,20 +173,6 @@ export function DarkRichTextEditor({ initialValue, onChange, placeholder = "Escr
     if (!editor) {
         return <div className="min-h-[400px] bg-slate-950/50 border border-slate-800 rounded-lg animate-pulse" />;
     }
-
-    const Btn = ({ onClick, active = false, icon: Icon, title, disabled = false }: any) => (
-        <button
-            type="button"
-            onClick={onClick}
-            disabled={disabled}
-            title={title}
-            className={`p-1.5 rounded-sm transition-all focus:outline-none ${active ? 'bg-teal-500/20 text-teal-400' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'} ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
-        >
-            <Icon className="w-4 h-4" strokeWidth={active ? 2.5 : 2} />
-        </button>
-    );
-
-    const Divider = () => <div className="w-px h-5 bg-slate-800 mx-1 shrink-0" />;
 
     return (
         <div className={`flex flex-col border border-slate-800 rounded-lg overflow-hidden bg-slate-950/50 text-slate-200 focus-within:ring-1 focus-within:ring-teal-500/50 focus-within:border-teal-500/50 transition-all ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen rounded-none bg-slate-950' : ''}`}>

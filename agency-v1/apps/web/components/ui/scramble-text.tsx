@@ -63,9 +63,10 @@ export const ScrambleText = ({ text, className, reveal = true, speed = 50, delay
         if (isMounted && reveal && isInView && !hasStarted) {
             setHasStarted(true);
             setDisplayText("");
-            setTimeout(() => startScramble(), 50);
+            const timer = setTimeout(() => startScramble(), 50);
+            return () => clearTimeout(timer);
         }
-    }, [isMounted, reveal, isInView, hasStarted]);
+    }, [isMounted, reveal, isInView, hasStarted, startScramble]);
 
     return (
         <span ref={ref} className={className} onMouseEnter={!reveal ? startScramble : undefined}>

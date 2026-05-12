@@ -44,32 +44,8 @@ function SubmitButton() {
 
 const inputClass = "w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-12 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-colors text-sm";
 
-export default function NuevaContrasenaPage() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const token = searchParams.get("token");
-
-    const [state, dispatch] = useActionState(resetPassword, undefined);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [password, setPassword] = useState("");
-    const strength = getPasswordStrength(password);
-
-    useEffect(() => {
-        if (state?.success) {
-            const timer = setTimeout(() => router.push("/auth/login"), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [state?.success, router]);
-
-    const pageShell = (children: React.ReactNode) => {
-        const [year, setYear] = useState<number | null>(null);
-
-        useEffect(() => {
-            setYear(new Date().getFullYear());
-        }, []);
-
-        return (
+function PageShell({ children, year }: { children: React.ReactNode; year: number | null }) {
+    return (
         <div className="min-h-screen w-full flex items-center justify-center bg-[#0B0F19] text-white relative overflow-hidden p-4">
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                 <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-500/10 blur-[120px] rounded-full" />
@@ -93,11 +69,37 @@ export default function NuevaContrasenaPage() {
                 </p>
             </motion.div>
         </div>
-    )};
+    );
+}
+
+export default function NuevaContrasenaPage() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const token = searchParams.get("token");
+
+    const [state, dispatch] = useActionState(resetPassword, undefined);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [password, setPassword] = useState("");
+    const strength = getPasswordStrength(password);
+
+    useEffect(() => {
+        if (state?.success) {
+            const timer = setTimeout(() => router.push("/auth/login"), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [state?.success, router]);
+
+    const [year, setYear] = useState<number | null>(null);
+
+    useEffect(() => {
+        setYear(new Date().getFullYear());
+    }, []);
 
     // Token inválido
     if (!token) {
-        return pageShell(
+        return (
+            <PageShell year={year}>
             <div className="bg-[#1a1f2e]/60 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-2xl overflow-hidden">
                 <div className="h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
                 <div className="p-8 text-center">
@@ -117,10 +119,12 @@ export default function NuevaContrasenaPage() {
                     </Link>
                 </div>
             </div>
+            </PageShell>
         );
     }
 
-    return pageShell(
+    return (
+        <PageShell year={year}>
         <div className="bg-[#1a1f2e]/60 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-2xl overflow-hidden">
             <div className="h-px bg-gradient-to-r from-transparent via-teal-500/60 to-transparent" />
             <div className="p-8">
@@ -266,5 +270,6 @@ export default function NuevaContrasenaPage() {
                 </AnimatePresence>
             </div>
         </div>
+        </PageShell>
     );
 }
