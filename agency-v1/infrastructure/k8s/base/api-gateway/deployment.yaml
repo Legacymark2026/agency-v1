@@ -1,0 +1,49 @@
+# ── API Gateway Deployment ────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+    tier: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: gcr.io/legacymark/api-gateway:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits: { cpu: "1000m", memory: "512Mi" }
+          env:
+            - name: PORT
+              value: "8080"
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service:4001"
+            - name: CRM_SERVICE_URL
+              value: "http://crm-service:4002"
+            - name: AUTOMATION_SERVICE_URL
+              value: "http://automation-service:4003"
+            - name: AI_SERVICE_URL
+              value: "http://ai-engine:4004"
+            - name: INBOX_SERVICE_URL
+              value: "http://inbox-service:4005"
+            - name: FINANCE_SERVICE_URL
+              value: "http://finance-service:4006"
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10

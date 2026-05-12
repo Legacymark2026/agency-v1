@@ -1,0 +1,10 @@
+# Production overlay — Full HA configuration
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: legacymark
+
+# Production uses base values as-is (they're already production-tuned)

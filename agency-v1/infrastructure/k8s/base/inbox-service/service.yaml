@@ -1,0 +1,13 @@
+# Sticky sessions via sessionAffinity for WebSocket connections
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbox-service
+spec:
+  type: ClusterIP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  selector: { app: inbox-service }
+  ports: [{ port: 4005, targetPort: 4005 }]

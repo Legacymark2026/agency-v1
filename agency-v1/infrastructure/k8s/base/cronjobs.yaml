@@ -1,0 +1,80 @@
+# ── CronJobs (migrated from vercel.json crons) ───────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: automation-rules
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-automation
+              image: curlimages/curl:latest
+              command: ["curl", "-X", "POST", "http://automation-service:4003/api/cron/run-automation"]
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: social-publisher
+spec:
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-social
+              image: curlimages/curl:latest
+              command: ["curl", "-X", "POST", "http://automation-service:4003/api/cron/social-publisher"]
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: email-sequences
+spec:
+  schedule: "*/15 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-sequences
+              image: curlimages/curl:latest
+              command: ["curl", "-X", "POST", "http://automation-service:4003/api/cron/process-sequences"]
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: email-worker
+spec:
+  schedule: "*/2 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-email
+              image: curlimages/curl:latest
+              command: ["curl", "-X", "POST", "http://inbox-service:4005/api/cron/email-worker"]
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: subscription-renewals
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cron-subs
+              image: curlimages/curl:latest
+              command: ["curl", "-X", "POST", "http://finance-service:4006/api/cron/subscriptions"]
+          restartPolicy: OnFailure
