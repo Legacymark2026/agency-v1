@@ -37,7 +37,7 @@ export async function getSpecializations(companyId: string, includeGlobal = true
     await getSession();
     
     const where = includeGlobal 
-        ? { OR: [{ companyId }, { companyId: null, isGlobal: true }, { isSystem: true }] }
+        ? { OR: [{ companyId }, { companyId: null, isSystem: true }] }
         : { companyId };
 
     return prisma.agentSpecialization.findMany({
