@@ -95,7 +95,7 @@ export function AssetGallery({ campaignId, onAssetSelected, showUpload = true }:
         });
     }
 
-    function useInCampaign(asset: AssetRecord) {
+    function handleUseInCampaign(asset: AssetRecord) {
         addAssetUrl(asset.url);
         onAssetSelected?.(asset);
     }
@@ -173,7 +173,7 @@ export function AssetGallery({ campaignId, onAssetSelected, showUpload = true }:
                                     {/* Overlay */}
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
                                         <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-opacity">
-                                            <button type="button" onClick={(e) => { e.stopPropagation(); useInCampaign(asset); }}
+                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleUseInCampaign(asset); }}
                                                 className="bg-violet-600 hover:bg-violet-500 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1">
                                                 <Check className="w-3 h-3" /> Usar
                                             </button>

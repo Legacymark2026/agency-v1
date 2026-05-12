@@ -663,13 +663,9 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
                     else if (node.type === 'codeNode') {
                         const code = node.data?.code || "return { success: true };";
                         try {
-                            // Ejecución aislada básica
-                            const fn = new Function('triggerData', 'workflowData', 'context', code);
-                            const result = await fn(triggerData, workflow.steps, context);
-                            if (result && typeof result === 'object') {
-                                Object.assign(context, result);
-                            }
-                            logEntry.details = `CODE_EXECUTED: ${JSON.stringify(result)}`;
+                            // Ejecución aislada básica deshabilitada por razones de seguridad
+                            // React-Doctor (Security): new Function() is a code injection risk
+                            throw new Error("Code execution node is disabled for security reasons.");
                         } catch (e: any) {
                             throw new Error(`Code execution failed: ${e.message}`);
                         }

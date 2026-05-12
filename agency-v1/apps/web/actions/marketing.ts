@@ -1,5 +1,7 @@
 'use server';
 
+import { after } from 'next/server';
+
 import { db as prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { getFacebookCampaigns, getFacebookInsights } from './marketing/facebook-ads';
@@ -72,7 +74,7 @@ export async function syncLiveCampaigns() {
             }
         }
     } catch (error) {
-        console.warn("Skipping Meta Sync or Error Occurred:", error);
+        after(() => console.warn("Skipping Meta Sync or Error Occurred:", error));
     }
 
     // 2. Sync Google Ads (If implemented completely)
@@ -101,7 +103,7 @@ export async function syncLiveCampaigns() {
             syncedCount++;
         }
     } catch (error) {
-        console.warn("Skipping Google Sync or Error Occurred:", error);
+        after(() => console.warn("Skipping Google Sync or Error Occurred:", error));
     }
 
     // 3. Sync TikTok Ads
@@ -127,7 +129,7 @@ export async function syncLiveCampaigns() {
             }
         }
     } catch (error) {
-        console.warn("Skipping TikTok Sync or Error Occurred:", error);
+        after(() => console.warn("Skipping TikTok Sync or Error Occurred:", error));
     }
 
     // 4. Sync LinkedIn Ads
@@ -154,7 +156,7 @@ export async function syncLiveCampaigns() {
             }
         }
     } catch (error) {
-        console.warn("Skipping LinkedIn Sync or Error Occurred:", error);
+        after(() => console.warn("Skipping LinkedIn Sync or Error Occurred:", error));
     }
 
     // 5. Sync Insights/Spend
@@ -174,7 +176,7 @@ export async function syncLiveCampaigns() {
             }
         }
     } catch (error) {
-        console.warn("Failed to sync insights:", error);
+        after(() => console.warn("Failed to sync insights:", error));
     }
 
     return { success: true, syncedCount };

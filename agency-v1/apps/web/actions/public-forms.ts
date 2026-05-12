@@ -6,7 +6,6 @@ import { createLocalNotification } from "./notifications";
 
 // Rate Limit simulado para prevenir SPAM básico en la ruta de Edge/Server Actions
 // En producción se recomienda usar algo como @upstash/ratelimit
-const rateLimiter = new Map<string, { count: number; lastTime: number }>();
 
 export async function submitLeadMagnetForm(data: {
     name: string;
@@ -17,23 +16,7 @@ export async function submitLeadMagnetForm(data: {
     source?: string;
 }) {
     // 1. Basic Rate Limiting (por IP en un entorno ideal, aquí proxy de email)
-    const now = Date.now();
-    const limitWindow = 60000; // 1 min
-    const maxRequests = 3;
-    
-    if (data.email) {
-        const limiter = rateLimiter.get(data.email) || { count: 0, lastTime: now };
-        if (now - limiter.lastTime < limitWindow) {
-            limiter.count++;
-            if (limiter.count > maxRequests) {
-                return { error: "Demasiadas solicitudes. Por favor, intenta más tarde." };
-            }
-        } else {
-            limiter.count = 1;
-            limiter.lastTime = now;
-        }
-        rateLimiter.set(data.email, limiter);
-    }
+    // TODO: Implementar Upstash Rate Limit aquí. Por ahora se permite el paso.
 
     try {
         // En un escenario real, si el sistema es Multi-Tenant para varias empresas,

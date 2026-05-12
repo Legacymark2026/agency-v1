@@ -82,6 +82,10 @@ const inputStyle: React.CSSProperties = {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
+const SortIcon = ({ col, sortCol, sortDir }: { col: string, sortCol: string, sortDir: string }) => sortCol === col
+    ? sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+    : <div className="w-3 h-3" />;
+
 export function LeadsTable({ leads, total, companyId }: Props) {
     const router = useRouter();
     const [search, setSearch] = useState("");
@@ -136,9 +140,7 @@ export function LeadsTable({ leads, total, companyId }: Props) {
         a.click(); URL.revokeObjectURL(url);
     }, [sorted]);
 
-    const SortIcon = ({ col }: { col: string }) => sortCol === col
-        ? sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
-        : <div className="w-3 h-3" />;
+
 
     const TH_STYLE: React.CSSProperties = {
         padding: "12px 16px", textAlign: "left", fontSize: "10px",
@@ -251,7 +253,7 @@ export function LeadsTable({ leads, total, companyId }: Props) {
                             ].map((col) => (
                                 <th key={col.key} style={TH_STYLE} onClick={() => sortBy(col.key)}>
                                     <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                        {col.label} <SortIcon col={col.key} />
+                                        {col.label} <SortIcon col={col.key} sortCol={sortCol} sortDir={sortDir} />
                                     </span>
                                 </th>
                             ))}
