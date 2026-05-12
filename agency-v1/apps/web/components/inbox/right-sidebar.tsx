@@ -39,13 +39,9 @@ const D = {
 };
 
 export function RightSidebar({ conversation, leadDetails }: { conversation: any, leadDetails?: any }) {
-    if (!conversation) return (
-        <div style={{ width: "100%", height: "100%", background: D.bg, display: "flex", alignItems: "center", justifyContent: "center", color: D.textMuted, fontSize: "12px", fontFamily: D.mono }}>
-            Select a conversation
-        </div>
-    );
 
-    const lead = leadDetails || conversation.lead || {};
+
+    const lead = leadDetails || conversation?.lead || {};
     const leadScore = lead.score || 0;
     const temperature = leadScore > 70 ? 'Hot 🔥' : leadScore > 40 ? 'Warm ☀️' : 'Cold 🧊';
     const tempColor = leadScore > 70 ? '#f87171' : leadScore > 40 ? '#fbbf24' : '#60a5fa';
@@ -58,7 +54,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
     const [savedNotes, setSavedNotes] = useState<string[]>(lead.notes ? [lead.notes] : []);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [showDealModal, setShowDealModal] = useState(false);
-    const [activeTags, setActiveTags] = useState<string[]>(conversation.tags || []);
+    const [activeTags, setActiveTags] = useState<string[]>(conversation?.tags || []);
     const [customFields, setCustomFields] = useState<{ name: string, value: string }[]>([]);
     const [showNewFieldInput, setShowNewFieldInput] = useState(false);
     const [newFieldName, setNewFieldName] = useState('');
@@ -113,6 +109,12 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
             setIsCopilotTyping(false);
         }, 1500);
     };
+
+    if (!conversation) return (
+        <div style={{ width: "100%", height: "100%", background: D.bg, display: "flex", alignItems: "center", justifyContent: "center", color: D.textMuted, fontSize: "12px", fontFamily: D.mono }}>
+            Select a conversation
+        </div>
+    );
 
     return (
         <div style={{ width: "100%", height: "100%", background: D.bg, display: "flex", flexDirection: "column", overflowY: "auto" }}>
