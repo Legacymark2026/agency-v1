@@ -1,0 +1,11 @@
+# Agency-v1 Project Structure
+
+Generated at: {TIMESTAMP}
+
+```
+agency-v1/
+{STRUCTURE}
+```
+
+---
+*Auto-generated file. Run `pnpm run generate-structure` to update.*

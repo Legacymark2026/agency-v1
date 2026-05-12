@@ -1,0 +1,146 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# LegacyMark — Local Development Stack
+# ══════════════════════════════════════════════════════════════════════════════
+# Usage: docker compose up -d
+# All services: docker compose --profile all up -d
+
+services:
+  # ── Infrastructure ────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: legacymark
+      POSTGRES_PASSWORD: legacymark_dev
+      POSTGRES_DB: legacymark
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacymark"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+
+  # ── API Gateway ───────────────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    ports: ["8080:8080"]
+    environment:
+      PORT: "8080"
+      AUTH_SERVICE_URL: http://auth-service:4001
+      CRM_SERVICE_URL: http://crm-service:4002
+      AUTOMATION_SERVICE_URL: http://automation-service:4003
+      AI_SERVICE_URL: http://ai-engine:4004
+      INBOX_SERVICE_URL: http://inbox-service:4005
+      FINANCE_SERVICE_URL: http://finance-service:4006
+    depends_on:
+      auth-service: { condition: service_healthy }
+      crm-service: { condition: service_healthy }
+
+  # ── Auth Service ──────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    ports: ["4001:4001"]
+    environment: &common-env
+      PORT: "4001"
+      REDIS_URL: redis://redis:6379
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:legacymark_dev@postgres:5432/legacymark
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      NODE_ENV: development
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      interval: 15s
+      timeout: 5s
+
+  # ── CRM Service ──────────────────────────────────────────────────────────
+  crm-service:
+    build:
+      context: .
+      dockerfile: services/crm-service/Dockerfile
+    ports: ["4002:4002"]
+    environment:
+      <<: *common-env
+      PORT: "4002"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
+      interval: 15s
+      timeout: 5s
+
+  # ── Automation Service ────────────────────────────────────────────────────
+  automation-service:
+    build:
+      context: .
+      dockerfile: services/automation-service/Dockerfile
+    ports: ["4003:4003"]
+    environment:
+      <<: *common-env
+      PORT: "4003"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 2G }
+
+  # ── AI Engine ─────────────────────────────────────────────────────────────
+  ai-engine:
+    build:
+      context: .
+      dockerfile: services/ai-engine/Dockerfile
+    ports: ["4004:4004"]
+    environment:
+      <<: *common-env
+      PORT: "4004"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    deploy:
+      resources:
+        limits: { cpus: "4.0", memory: 4G }
+
+  # ── Inbox Service ─────────────────────────────────────────────────────────
+  inbox-service:
+    build:
+      context: .
+      dockerfile: services/inbox-service/Dockerfile
+    ports: ["4005:4005"]
+    environment:
+      <<: *common-env
+      PORT: "4005"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Finance Service ───────────────────────────────────────────────────────
+  finance-service:
+    build:
+      context: .
+      dockerfile: services/finance-service/Dockerfile
+    ports: ["4006:4006"]
+    environment:
+      <<: *common-env
+      PORT: "4006"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata:
