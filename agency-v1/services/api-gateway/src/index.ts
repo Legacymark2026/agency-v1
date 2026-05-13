@@ -36,6 +36,7 @@ const SERVICES = {
   video:      process.env.VIDEO_SERVICE_URL       || "http://video-service:4007",
   calendar:   process.env.CALENDAR_SERVICE_URL    || "http://calendar-service:4008",
   marketing:  process.env.MARKETING_SERVICE_URL   || "http://marketing-service:4009",
+  integration: process.env.INTEGRATION_SERVICE_URL || "http://integration-service:4010",
   document:   process.env.DOCUMENT_SERVICE_URL    || "http://document-service:4011",
   agentTeam:  process.env.AGENT_TEAM_ENGINE_URL   || "http://agent-team-engine:4012",
   analytics:  process.env.ANALYTICS_SERVICE_URL   || "http://analytics-service:4013",

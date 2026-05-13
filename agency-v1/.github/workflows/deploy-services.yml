@@ -19,6 +19,8 @@ env:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       services: ${{ steps.changes.outputs.services }}
     steps:
@@ -34,10 +36,21 @@ jobs:
             inbox-service: ['services/inbox-service/**', 'packages/**']
             finance-service: ['services/finance-service/**', 'packages/**']
             api-gateway: ['services/api-gateway/**']
+            video-service: ['services/video-service/**']
+            calendar-service: ['services/calendar-service/**']
+            marketing-service: ['services/marketing-service/**']
+            integration-service: ['services/integration-service/**']
+            document-service: ['services/document-service/**']
+            agent-team-engine: ['services/agent-team-engine/**']
+            analytics-service: ['services/analytics-service/**']
+            admin-service: ['services/admin-service/**']
+            public-api-service: ['services/public-api-service/**']
 
   build-deploy:
     needs: detect-changes
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       matrix:
         service:
@@ -48,6 +61,15 @@ jobs:
           - inbox-service
           - finance-service
           - api-gateway
+          - video-service
+          - calendar-service
+          - marketing-service
+          - integration-service
+          - document-service
+          - agent-team-engine
+          - analytics-service
+          - admin-service
+          - public-api-service
     steps:
       - uses: actions/checkout@v4
 
