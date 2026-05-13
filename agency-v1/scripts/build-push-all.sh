@@ -2,7 +2,7 @@
 # Build and push all microservices to Docker Hub
 set -e
 
-REGISTRY="docker.io/legacymark2026"
+REGISTRY="docker.io/legacymark"
 SERVICES=("api-gateway" "auth-service" "crm-service" "automation-service" "ai-engine" "inbox-service" "finance-service")
 
 echo "🔨 Building and pushing microservices to Docker Hub..."
