@@ -104,10 +104,11 @@ class EventBus {
         const poll = async () => {
             while (true) {
                 try {
-                    const results = (await this.subscriber.xreadgroup("GROUP", groupName, consumerName, "COUNT", 10, "BLOCK", 5000, "STREAMS", streamKey, ">"));
+                    const results = await this.subscriber.xreadgroup("GROUP", groupName, consumerName, "COUNT", 10, "BLOCK", 5000, "STREAMS", streamKey, ">");
                     if (!results)
                         continue;
-                    for (const [, messages] of results) {
+                    for (const entry of results) {
+                        const [, messages] = entry;
                         for (const [messageId, fields] of messages) {
                             try {
                                 const payload = JSON.parse(fields[1]);
