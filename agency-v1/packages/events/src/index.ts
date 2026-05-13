@@ -136,7 +136,7 @@ export class EventBus {
     const poll = async () => {
       while (true) {
         try {
-          const results = await this.subscriber.xreadgroup(
+          const results = (await this.subscriber.xreadgroup(
             "GROUP",
             groupName,
             consumerName,
@@ -147,7 +147,7 @@ export class EventBus {
             "STREAMS",
             streamKey,
             ">"
-          );
+          )) as any;
 
           if (!results) continue;
 
