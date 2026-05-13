@@ -34,7 +34,7 @@ jobs:
 
       # ── Prisma ─────────────────────────────────────────────
       - name: Generate Prisma Client
-        run: npx prisma generate
+        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
 
       # ── Static Analysis ────────────────────────────────────
       - name: TypeScript type check
