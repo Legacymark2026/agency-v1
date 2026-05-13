@@ -260,7 +260,7 @@ async function executeAIAgent(step: WorkflowStep, context: ExecutionContext): Pr
             body: JSON.stringify({ companyId: context.companyId, userMessage }),
             signal: AbortSignal.timeout(30_000),
         });
-        const result = await res.json();
+        const result = (await res.json()) as any;
         context.variables["ai_response"] = result.result;
         return { output: result };
     } catch (err: unknown) {
