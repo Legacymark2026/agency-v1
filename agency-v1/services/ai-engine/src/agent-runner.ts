@@ -249,7 +249,7 @@ export async function runAIAgent({ agentId, companyId, userMessage, conversation
     } else if (conversationId) {
         const prevMessages = await prisma.agentMessage.findMany({ where: { conversationId }, orderBy: { createdAt: "desc" }, take: 100 });
         let estimatedTokens = 0;
-        const selected = [];
+        const selected: any[] = [];
         for (const m of prevMessages) {
             const tokens = m.tokensUsed || Math.ceil(m.content.length / 4);
             if (estimatedTokens + tokens > 8000 && selected.length > 0) break;
