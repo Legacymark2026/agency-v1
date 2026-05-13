@@ -43,6 +43,15 @@ services:
       AI_SERVICE_URL: http://ai-engine:4004
       INBOX_SERVICE_URL: http://inbox-service:4005
       FINANCE_SERVICE_URL: http://finance-service:4006
+      VIDEO_SERVICE_URL: http://video-service:4007
+      CALENDAR_SERVICE_URL: http://calendar-service:4008
+      MARKETING_SERVICE_URL: http://marketing-service:4009
+      INTEGRATION_SERVICE_URL: http://integration-service:4010
+      DOCUMENT_SERVICE_URL: http://document-service:4011
+      AGENT_TEAM_ENGINE_URL: http://agent-team-engine:4012
+      ANALYTICS_SERVICE_URL: http://analytics-service:4013
+      ADMIN_SERVICE_URL: http://admin-service:4014
+      PUBLIC_API_SERVICE_URL: http://public-api-service:4015
     depends_on:
       auth-service: { condition: service_healthy }
       crm-service: { condition: service_healthy }
@@ -138,6 +147,123 @@ services:
     environment:
       <<: *common-env
       PORT: "4006"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Video Service ─────────────────────────────────────────────────────────
+  video-service:
+    build:
+      context: .
+      dockerfile: services/video-service/Dockerfile
+    ports: ["4007:4007"]
+    environment:
+      <<: *common-env
+      PORT: "4007"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Calendar Service ──────────────────────────────────────────────────────
+  calendar-service:
+    build:
+      context: .
+      dockerfile: services/calendar-service/Dockerfile
+    ports: ["4008:4008"]
+    environment:
+      <<: *common-env
+      PORT: "4008"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Marketing Service ─────────────────────────────────────────────────────
+  marketing-service:
+    build:
+      context: .
+      dockerfile: services/marketing-service/Dockerfile
+    ports: ["4009:4009"]
+    environment:
+      <<: *common-env
+      PORT: "4009"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Integration Service ───────────────────────────────────────────────────
+  integration-service:
+    build:
+      context: .
+      dockerfile: services/integration-service/Dockerfile
+    ports: ["4010:4010"]
+    environment:
+      <<: *common-env
+      PORT: "4010"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Document Service ──────────────────────────────────────────────────────
+  document-service:
+    build:
+      context: .
+      dockerfile: services/document-service/Dockerfile
+    ports: ["4011:4011"]
+    environment:
+      <<: *common-env
+      PORT: "4011"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Agent Team Engine ─────────────────────────────────────────────────────
+  agent-team-engine:
+    build:
+      context: .
+      dockerfile: services/agent-team-engine/Dockerfile
+    ports: ["4012:4012"]
+    environment:
+      <<: *common-env
+      PORT: "4012"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Analytics Service ─────────────────────────────────────────────────────
+  analytics-service:
+    build:
+      context: .
+      dockerfile: services/analytics-service/Dockerfile
+    ports: ["4013:4013"]
+    environment:
+      <<: *common-env
+      PORT: "4013"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Admin Service ─────────────────────────────────────────────────────────
+  admin-service:
+    build:
+      context: .
+      dockerfile: services/admin-service/Dockerfile
+    ports: ["4014:4014"]
+    environment:
+      <<: *common-env
+      PORT: "4014"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # ── Public API Service ────────────────────────────────────────────────────
+  public-api-service:
+    build:
+      context: .
+      dockerfile: services/public-api-service/Dockerfile
+    ports: ["4015:4015"]
+    environment:
+      <<: *common-env
+      PORT: "4015"
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

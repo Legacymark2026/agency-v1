@@ -33,6 +33,14 @@ const SERVICES = {
   ai:         process.env.AI_SERVICE_URL          || "http://ai-engine:4004",
   inbox:      process.env.INBOX_SERVICE_URL       || "http://inbox-service:4005",
   finance:    process.env.FINANCE_SERVICE_URL     || "http://finance-service:4006",
+  video:      process.env.VIDEO_SERVICE_URL       || "http://video-service:4007",
+  calendar:   process.env.CALENDAR_SERVICE_URL    || "http://calendar-service:4008",
+  marketing:  process.env.MARKETING_SERVICE_URL   || "http://marketing-service:4009",
+  document:   process.env.DOCUMENT_SERVICE_URL    || "http://document-service:4011",
+  agentTeam:  process.env.AGENT_TEAM_ENGINE_URL   || "http://agent-team-engine:4012",
+  analytics:  process.env.ANALYTICS_SERVICE_URL   || "http://analytics-service:4013",
+  admin:      process.env.ADMIN_SERVICE_URL       || "http://admin-service:4014",
+  publicApi:  process.env.PUBLIC_API_SERVICE_URL  || "http://public-api-service:4015",
 };
 
 // ── Request Logging ──────────────────────────────────────────────────────────
@@ -64,8 +72,6 @@ app.use("/api/crm", createProxyMiddleware(proxyOptions(SERVICES.crm)));
 // Automation Service
 app.use("/api/workflows", createProxyMiddleware(proxyOptions(SERVICES.automation)));
 app.use("/api/automation", createProxyMiddleware(proxyOptions(SERVICES.automation)));
-app.use("/api/campaigns", createProxyMiddleware(proxyOptions(SERVICES.automation)));
-app.use("/api/marketing", createProxyMiddleware(proxyOptions(SERVICES.automation)));
 app.use("/api/cron/run-automation", createProxyMiddleware(proxyOptions(SERVICES.automation)));
 app.use("/api/cron/social-publisher", createProxyMiddleware(proxyOptions(SERVICES.automation)));
 app.use("/api/cron/process-sequences", createProxyMiddleware(proxyOptions(SERVICES.automation)));
@@ -90,6 +96,48 @@ app.use("/api/webhooks/stripe", createProxyMiddleware(proxyOptions(SERVICES.fina
 app.use("/api/webhooks/paypal", createProxyMiddleware(proxyOptions(SERVICES.finance)));
 app.use("/api/cron/subscriptions", createProxyMiddleware(proxyOptions(SERVICES.finance)));
 
+// Video Service
+app.use("/api/video", createProxyMiddleware(proxyOptions(SERVICES.video)));
+app.use("/api/media", createProxyMiddleware(proxyOptions(SERVICES.video)));
+
+// Calendar Service
+app.use("/api/calendar", createProxyMiddleware(proxyOptions(SERVICES.calendar)));
+app.use("/api/scheduling", createProxyMiddleware(proxyOptions(SERVICES.calendar)));
+
+// Marketing Service
+app.use("/api/marketing", createProxyMiddleware(proxyOptions(SERVICES.marketing)));
+app.use("/api/campaigns", createProxyMiddleware(proxyOptions(SERVICES.marketing)));
+app.use("/api/email-blast", createProxyMiddleware(proxyOptions(SERVICES.marketing)));
+app.use("/api/creative", createProxyMiddleware(proxyOptions(SERVICES.marketing)));
+
+// Integration Service
+app.use("/api/integrations", createProxyMiddleware(proxyOptions(SERVICES.integration)));
+app.use("/api/webhooks/shopify", createProxyMiddleware(proxyOptions(SERVICES.integration)));
+app.use("/api/webhooks/wix", createProxyMiddleware(proxyOptions(SERVICES.integration)));
+
+// Document Service
+app.use("/api/proposals", createProxyMiddleware(proxyOptions(SERVICES.document)));
+app.use("/api/propuesta", createProxyMiddleware(proxyOptions(SERVICES.document)));
+app.use("/api/kb", createProxyMiddleware(proxyOptions(SERVICES.document)));
+
+// Agent Team Engine
+app.use("/api/agent", createProxyMiddleware(proxyOptions(SERVICES.agentTeam)));
+app.use("/api/test-flow", createProxyMiddleware(proxyOptions(SERVICES.agentTeam)));
+
+// Analytics Service
+app.use("/api/analytics", createProxyMiddleware(proxyOptions(SERVICES.analytics)));
+app.use("/api/track", createProxyMiddleware(proxyOptions(SERVICES.analytics)));
+
+// Admin Service
+app.use("/api/admin", createProxyMiddleware(proxyOptions(SERVICES.admin)));
+app.use("/api/diagnostics", createProxyMiddleware(proxyOptions(SERVICES.admin)));
+app.use("/api/debug", createProxyMiddleware(proxyOptions(SERVICES.admin)));
+
+// Public API Service
+app.use("/api/v1", createProxyMiddleware(proxyOptions(SERVICES.publicApi)));
+app.use("/api/public", createProxyMiddleware(proxyOptions(SERVICES.publicApi)));
+app.use("/api/serve", createProxyMiddleware(proxyOptions(SERVICES.publicApi)));
+
 // ── Fallback ─────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).json({ error: "Route not found", hint: "Check the API Gateway route table" });
@@ -99,6 +147,10 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🌐 API Gateway running on port ${PORT}`);
   console.log(`   Routes: auth→${SERVICES.auth}, crm→${SERVICES.crm}, automation→${SERVICES.automation}`);
   console.log(`   Routes: ai→${SERVICES.ai}, inbox→${SERVICES.inbox}, finance→${SERVICES.finance}`);
+  console.log(`   Routes: video→${SERVICES.video}, calendar→${SERVICES.calendar}`);
+  console.log(`   Routes: marketing→${SERVICES.marketing}, integration→${SERVICES.integration}`);
+  console.log(`   Routes: document→${SERVICES.document}, agentTeam→${SERVICES.agentTeam}`);
+  console.log(`   Routes: analytics→${SERVICES.analytics}, admin→${SERVICES.admin}, publicApi→${SERVICES.publicApi}`);
 });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
