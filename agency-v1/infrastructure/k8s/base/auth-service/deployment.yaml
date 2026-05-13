@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: gcr.io/legacymark/auth-service:latest
+          image: docker.io/legacymark2026/auth-service:latest
           ports: [{ containerPort: 4001 }]
           resources:
             requests: { cpu: "250m", memory: "256Mi" }

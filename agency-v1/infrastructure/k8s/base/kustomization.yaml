@@ -39,3 +39,9 @@ resources:
 commonLabels:
   app.kubernetes.io/part-of: legacymark
   managed-by: kustomize
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: legacymark
+      managed-by: kustomize
+    includeSelectors: false

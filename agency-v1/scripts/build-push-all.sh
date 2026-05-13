@@ -1,47 +1,22 @@
 #!/bin/bash
-# ══════════════════════════════════════════════════════════════════════════════
-# Build & Push all service images to Google Artifact Registry
-# Usage: ./scripts/build-push-all.sh
-# ══════════════════════════════════════════════════════════════════════════════
+# Build and push all microservices to Docker Hub
+set -e
 
-set -euo pipefail
+REGISTRY="docker.io/legacymark2026"
+SERVICES=("api-gateway" "auth-service" "crm-service" "automation-service" "ai-engine" "inbox-service" "finance-service")
 
-PROJECT_ID="${GCP_PROJECT:-legacymark}"
-REGION="us-central1"
-REGISTRY="$REGION-docker.pkg.dev/$PROJECT_ID/legacymark"
-TAG="${1:-latest}"
-
-SERVICES=(
-  "api-gateway"
-  "auth-service"
-  "crm-service"
-  "automation-service"
-  "ai-engine"
-  "inbox-service"
-  "finance-service"
-)
-
-echo "══════════════════════════════════════════════════════════════"
-echo "  Building & pushing ${#SERVICES[@]} service images"
-echo "  Registry: $REGISTRY"
-echo "  Tag: $TAG"
-echo "══════════════════════════════════════════════════════════════"
-
-# Configure Docker for GCR
-gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+echo "🔨 Building and pushing microservices to Docker Hub..."
+echo "   Registry: $REGISTRY"
+echo ""
 
 for SERVICE in "${SERVICES[@]}"; do
-  IMAGE="$REGISTRY/$SERVICE:$TAG"
-  echo ""
-  echo "🐳 Building $SERVICE → $IMAGE"
-  docker build -t "$IMAGE" -f "services/$SERVICE/Dockerfile" .
-  echo "📤 Pushing $IMAGE..."
-  docker push "$IMAGE"
-  echo "✅ $SERVICE done"
+    echo "📦 Building $SERVICE..."
+    docker build -t ${REGISTRY}/${SERVICE}:latest -t ${REGISTRY}/${SERVICE}:$(git rev-parse --short HEAD) -f services/${SERVICE}/Dockerfile .
+    echo "⬆️  Pushing $SERVICE..."
+    docker push ${REGISTRY}/${SERVICE}:latest
+    docker push ${REGISTRY}/${SERVICE}:$(git rev-parse --short HEAD)
+    echo "✅ $SERVICE pushed successfully!"
+    echo ""
 done
 
-echo ""
-echo "══════════════════════════════════════════════════════════════"
-echo "  ✅ All images pushed!"
-echo "  Deploy: npm run k8s:prod"
-echo "══════════════════════════════════════════════════════════════"
+echo "🎉 All services built and pushed!"

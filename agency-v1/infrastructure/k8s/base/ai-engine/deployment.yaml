@@ -13,11 +13,11 @@ spec:
     spec:
       containers:
         - name: ai-engine
-          image: gcr.io/legacymark/ai-engine:latest
+          image: docker.io/legacymark2026/ai-engine:latest
           ports: [{ containerPort: 4004 }]
           resources:
-            requests: { cpu: "500m", memory: "1Gi" }
-            limits: { cpu: "4000m", memory: "4Gi" }
+            requests: { cpu: "500m", memory: "512Mi" }
+            limits: { cpu: "2000m", memory: "2Gi" }
           envFrom: [{ secretRef: { name: service-secrets } }]
           env:
             - { name: PORT, value: "4004" }
