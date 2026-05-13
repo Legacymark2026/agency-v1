@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -71,9 +70,9 @@ export function SimulationPanel({ companyId = "default-company-id" }: { companyI
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Channel Simulation (Dev Tools)</DialogTitle>
-                    <DialogDescription className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 font-mono uppercase tracking-[0.1em]">
                         Trigger a fake incoming message to test the Inbox data flow without external API keys.
-                    </DialogDescription>
+                    </p>
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">

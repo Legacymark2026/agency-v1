@@ -7,13 +7,17 @@
   "scripts": {
     "test": "vitest",
     "build": "tsc",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src"
   },
   "keywords": ["video", "editor", "ai", "post-production", "cinematic"],
   "author": "Agency Team",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
   }
 }

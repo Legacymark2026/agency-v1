@@ -55,7 +55,7 @@ jobs:
         if: always()
         with:
           name: coverage-report-${{ github.sha }}
-          path: agency-v1/coverage/
+          path: agency-v1/**/coverage/
           retention-days: 14
 
 # NOTE: Production deployments are handled automatically by Vercel's
