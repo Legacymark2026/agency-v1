@@ -19,6 +19,8 @@ env:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       services: ${{ steps.changes.outputs.services }}
     steps:
@@ -32,12 +34,23 @@ jobs:
             automation-service: ['services/automation-service/**', 'packages/**']
             ai-engine: ['services/ai-engine/**', 'packages/**']
             inbox-service: ['services/inbox-service/**', 'packages/**']
-            finance-service: ['services/finance-service/**', 'packages/**']
-            api-gateway: ['services/api-gateway/**']
+            finance-service: ['agency-v1/services/finance-service/**', 'agency-v1/packages/**']
+            api-gateway: ['agency-v1/services/api-gateway/**']
+            video-service: ['agency-v1/services/video-service/**']
+            calendar-service: ['agency-v1/services/calendar-service/**']
+            marketing-service: ['agency-v1/services/marketing-service/**']
+            integration-service: ['agency-v1/services/integration-service/**']
+            document-service: ['agency-v1/services/document-service/**']
+            agent-team-engine: ['agency-v1/services/agent-team-engine/**']
+            analytics-service: ['agency-v1/services/analytics-service/**']
+            admin-service: ['agency-v1/services/admin-service/**']
+            public-api-service: ['agency-v1/services/public-api-service/**']
 
   build-deploy:
     needs: detect-changes
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       matrix:
         service:
@@ -48,6 +61,15 @@ jobs:
           - inbox-service
           - finance-service
           - api-gateway
+          - video-service
+          - calendar-service
+          - marketing-service
+          - integration-service
+          - document-service
+          - agent-team-engine
+          - analytics-service
+          - admin-service
+          - public-api-service
     steps:
       - uses: actions/checkout@v4
 
@@ -62,7 +84,7 @@ jobs:
       - name: Build Docker Image
         run: |
           IMAGE=${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.GAR_REPOSITORY }}/${{ matrix.service }}:${{ github.sha }}
-          docker build -t $IMAGE -f services/${{ matrix.service }}/Dockerfile .
+          docker build -t $IMAGE -f agency-v1/services/${{ matrix.service }}/Dockerfile agency-v1
           docker push $IMAGE
 
       - name: Get GKE Credentials

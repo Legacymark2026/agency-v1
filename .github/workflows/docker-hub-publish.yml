@@ -11,6 +11,8 @@ on:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     outputs:
       services: ${{ steps.changes.outputs.services }}
     steps:
@@ -26,10 +28,21 @@ jobs:
             inbox-service: ['agency-v1/services/inbox-service/**', 'agency-v1/packages/**']
             finance-service: ['agency-v1/services/finance-service/**', 'agency-v1/packages/**']
             api-gateway: ['agency-v1/services/api-gateway/**', 'agency-v1/packages/**']
+            video-service: ['agency-v1/services/video-service/**', 'agency-v1/packages/**']
+            calendar-service: ['agency-v1/services/calendar-service/**', 'agency-v1/packages/**']
+            marketing-service: ['agency-v1/services/marketing-service/**', 'agency-v1/packages/**']
+            integration-service: ['agency-v1/services/integration-service/**', 'agency-v1/packages/**']
+            document-service: ['agency-v1/services/document-service/**', 'agency-v1/packages/**']
+            agent-team-engine: ['agency-v1/services/agent-team-engine/**', 'agency-v1/packages/**']
+            analytics-service: ['agency-v1/services/analytics-service/**', 'agency-v1/packages/**']
+            admin-service: ['agency-v1/services/admin-service/**', 'agency-v1/packages/**']
+            public-api-service: ['agency-v1/services/public-api-service/**', 'agency-v1/packages/**']
 
   build-and-push:
     needs: detect-changes
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       fail-fast: false
       matrix:
@@ -41,6 +54,15 @@ jobs:
           - inbox-service
           - finance-service
           - api-gateway
+          - video-service
+          - calendar-service
+          - marketing-service
+          - integration-service
+          - document-service
+          - agent-team-engine
+          - analytics-service
+          - admin-service
+          - public-api-service
     
     steps:
       - name: Checkout code

@@ -10,18 +10,23 @@ jobs:
   quality-and-tests:
     name: "CI Pipeline — Type Check, Lint & Unit Tests"
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: agency-v1
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       # ── Checkout ───────────────────────────────────────────
       - name: Checkout code
         uses: actions/checkout@v4
 
       # ── Node.js Setup ──────────────────────────────────────
-      - name: Setup Node.js 20
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
+          cache-dependency-path: agency-v1/package-lock.json
 
       # ── Dependencies ───────────────────────────────────────
       - name: Install dependencies
@@ -50,7 +55,7 @@ jobs:
         if: always()
         with:
           name: coverage-report-${{ github.sha }}
-          path: coverage/
+          path: agency-v1/coverage/
           retention-days: 14
 
 # NOTE: Production deployments are handled automatically by Vercel's
