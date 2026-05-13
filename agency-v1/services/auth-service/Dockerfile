@@ -1,16 +1,16 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy workspace dependency manifests
+# Copy workspace manifests
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY services/auth-service/package.json ./services/auth-service/
 
-# Install all dependencies
+# Install dependencies
 RUN npm ci --workspace=packages/database --workspace=packages/events --workspace=services/auth-service
 
-# Copy source code
+# Copy source
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
 COPY services/auth-service/ ./services/auth-service/
@@ -28,7 +28,6 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy built artifacts
 COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma

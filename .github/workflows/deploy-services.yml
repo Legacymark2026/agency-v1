@@ -5,9 +5,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'services/**'
-      - 'packages/**'
-      - 'infrastructure/**'
+      - 'agency-v1/services/**'
+      - 'agency-v1/packages/**'
+      - 'agency-v1/infrastructure/**'
 
 env:
   GCP_PROJECT: legacymark
@@ -29,22 +29,22 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           filters: |
-            auth-service: ['services/auth-service/**', 'packages/**']
-            crm-service: ['services/crm-service/**', 'packages/**']
-            automation-service: ['services/automation-service/**', 'packages/**']
-            ai-engine: ['services/ai-engine/**', 'packages/**']
-            inbox-service: ['services/inbox-service/**', 'packages/**']
+            auth-service: ['agency-v1/services/auth-service/**', 'agency-v1/packages/**']
+            crm-service: ['agency-v1/services/crm-service/**', 'agency-v1/packages/**']
+            automation-service: ['agency-v1/services/automation-service/**', 'agency-v1/packages/**']
+            ai-engine: ['agency-v1/services/ai-engine/**', 'agency-v1/packages/**']
+            inbox-service: ['agency-v1/services/inbox-service/**', 'agency-v1/packages/**']
             finance-service: ['agency-v1/services/finance-service/**', 'agency-v1/packages/**']
-            api-gateway: ['agency-v1/services/api-gateway/**']
-            video-service: ['agency-v1/services/video-service/**']
-            calendar-service: ['agency-v1/services/calendar-service/**']
-            marketing-service: ['agency-v1/services/marketing-service/**']
-            integration-service: ['agency-v1/services/integration-service/**']
-            document-service: ['agency-v1/services/document-service/**']
-            agent-team-engine: ['agency-v1/services/agent-team-engine/**']
-            analytics-service: ['agency-v1/services/analytics-service/**']
-            admin-service: ['agency-v1/services/admin-service/**']
-            public-api-service: ['agency-v1/services/public-api-service/**']
+            api-gateway: ['agency-v1/services/api-gateway/**', 'agency-v1/packages/**']
+            video-service: ['agency-v1/services/video-service/**', 'agency-v1/packages/**']
+            calendar-service: ['agency-v1/services/calendar-service/**', 'agency-v1/packages/**']
+            marketing-service: ['agency-v1/services/marketing-service/**', 'agency-v1/packages/**']
+            integration-service: ['agency-v1/services/integration-service/**', 'agency-v1/packages/**']
+            document-service: ['agency-v1/services/document-service/**', 'agency-v1/packages/**']
+            agent-team-engine: ['agency-v1/services/agent-team-engine/**', 'agency-v1/packages/**']
+            analytics-service: ['agency-v1/services/analytics-service/**', 'agency-v1/packages/**']
+            admin-service: ['agency-v1/services/admin-service/**', 'agency-v1/packages/**']
+            public-api-service: ['agency-v1/services/public-api-service/**', 'agency-v1/packages/**']
 
   build-deploy:
     needs: detect-changes
@@ -52,6 +52,7 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
+      fail-fast: false
       matrix:
         service:
           - auth-service
