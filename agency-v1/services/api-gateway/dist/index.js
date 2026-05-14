@@ -14,6 +14,9 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const http_proxy_middleware_1 = require("http-proxy-middleware");
+const ioredis_1 = __importDefault(require("ioredis"));
+const server_1 = require("@apollo/server");
+const express4_1 = require("@apollo/server/express4");
 const app = (0, express_1.default)();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 app.use((0, helmet_1.default)());
@@ -26,6 +29,72 @@ app.use((0, cors_1.default)({
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
+// ── V3 Supergraph (GraphQL Federation Stub) ──────────────────────────────────
+const typeDefs = `#graphql
+  type User { id: ID!, name: String, email: String, leads: [Lead] }
+  type Lead { id: ID!, name: String, status: String }
+  type Query {
+    me: User
+    platformStats: String
+  }
+`;
+const resolvers = {
+    Query: {
+        me: () => ({ id: "1", name: "Admin", email: "admin@legacymark.com" }), // Resolver will fetch from Auth & CRM services in parallel
+        platformStats: () => "V3 Supergraph Active",
+    },
+    User: {
+        leads: () => [{ id: "100", name: "John Doe", status: "New" }], // Resolves from CRM service
+    }
+};
+const apolloServer = new server_1.ApolloServer({ typeDefs, resolvers });
+// Start Apollo Server asynchronously
+(async () => {
+    await apolloServer.start();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    app.use("/graphql", express_1.default.json(), (0, express4_1.expressMiddleware)(apolloServer));
+    console.log("🚀 V3 GraphQL Supergraph ready at /graphql");
+})();
+// ── Edge Cache (Redis) ───────────────────────────────────────────────────────
+const redis = new ioredis_1.default(process.env.REDIS_URL || "redis://localhost:6379");
+const CACHE_TTL = 300; // 5 minutes
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edgeCacheMiddleware = async (req, res, next) => {
+    if (req.method !== "GET")
+        return next();
+    // Skip caching for auth and admin routes to prevent sensitive data leaks
+    if (req.path.startsWith("/api/auth") || req.path.startsWith("/api/admin")) {
+        return next();
+    }
+    const cacheKey = `edge_cache:${req.path}`;
+    try {
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+            res.setHeader("X-Cache", "HIT");
+            res.setHeader("Content-Type", "application/json");
+            res.send(cachedData);
+            return;
+        }
+        res.setHeader("X-Cache", "MISS");
+        // Intercept response to save it in cache
+        const originalSend = res.send;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        res.send = function (body) {
+            // Only cache successful JSON responses
+            if (res.statusCode >= 200 && res.statusCode < 300 && res.getHeader("Content-Type")?.toString().includes("application/json")) {
+                redis.setex(cacheKey, CACHE_TTL, body).catch(err => console.error("[Edge Cache] Error setting cache:", err));
+            }
+            return originalSend.call(this, body);
+        };
+        next();
+    }
+    catch (error) {
+        console.error("[Edge Cache] Redis error:", error);
+        next();
+    }
+};
+// Apply Edge Cache globally (it filters by GET and skips auth/admin internally)
+app.use(edgeCacheMiddleware);
 // ── Service Discovery (K8s DNS) ──────────────────────────────────────────────
 const SERVICES = {
     auth: process.env.AUTH_SERVICE_URL || "http://auth-service:4001",

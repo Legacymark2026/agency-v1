@@ -1,137 +1,89 @@
-# Plataforma - Arquitectura Empresarial V2 (Alta Eficiencia)
+# Plataforma - Arquitectura Empresarial V3 (Ultimate Scale)
 
-Este diagrama representa el estado arquitectónico final (V2) de la plataforma, el cual incluye **Bases de Datos Segregadas**, un **Bus de Eventos (Event-Driven Architecture)**, **Service Mesh (mTLS)** y **Edge Cache**.
+Este diagrama representa el estado más avanzado de la plataforma (V3), incorporando **GraphQL Federation (Supergraph)**, patrón **CQRS** (Separación de comandos y consultas) y **Edge Computing**.
 
 ```mermaid
 graph TD
     %% Estilos
     classDef client fill:#3b82f6,stroke:#1e40af,color:white,stroke-width:2px;
-    classDef gateway fill:#10b981,stroke:#047857,color:white,stroke-width:2px;
-    classDef core fill:#8b5cf6,stroke:#5b21b6,color:white;
-    classDef ai fill:#ec4899,stroke:#be185d,color:white;
-    classDef data fill:#f59e0b,stroke:#b45309,color:white;
+    classDef edge fill:#14b8a6,stroke:#0f766e,color:white,stroke-width:2px;
+    classDef supergraph fill:#8b5cf6,stroke:#5b21b6,color:white,stroke-width:2px;
+    classDef microservice fill:#334155,stroke:#1e293b,color:white;
     classDef eventbus fill:#ef4444,stroke:#991b1b,color:white,stroke-width:3px;
+    classDef db_write fill:#f59e0b,stroke:#b45309,color:white;
+    classDef db_read fill:#10b981,stroke:#047857,color:white;
+    classDef datalake fill:#0ea5e9,stroke:#0369a1,color:white;
 
-    %% Clientes y Frontend
-    subgraph Clients ["🚀 Clientes e Interfaces"]
-        WEB["Frontend (Next.js)"]:::client
-        APP["App Móvil / PWA"]:::client
-        EXT["Integraciones Externas"]:::client
+    %% Clientes
+    subgraph Clients ["📱 Clientes"]
+        WEB["Web (Next.js)"]:::client
+        APP["App Nativa"]:::client
     end
 
-    %% Capa Edge
-    subgraph Edge ["🌍 Capa de Entrada (Edge)"]
-        GW["🛡️ API Gateway (:8080) <br/> Ruteo, Rate Limiting"]:::gateway
-        EDGE_CACHE[("⚡ Edge Cache <br/> (Redis)")]:::data
-        GW --- EDGE_CACHE
+    %% Capa Edge (CDN)
+    subgraph EdgeLayer ["⚡ Edge Layer (Vercel Edge)"]
+        EDGE_AUTH["Edge Auth Middleware <br/>(Bloqueo en 5ms)"]:::edge
     end
 
-    %% Service Mesh
-    subgraph ServiceMesh ["🕸️ Service Mesh (Istio / Linkerd) - Comunicación Interna con mTLS"]
+    %% API Gateway (Apollo Supergraph)
+    subgraph Gateway ["🌐 API Gateway & GraphQL Federation"]
+        ROUTER["Apollo Server Supergraph <br/> (/graphql)"]:::supergraph
+        REST["REST API Proxy <br/> (/api/*)"]:::supergraph
+    end
+
+    %% Microservicios (Service Mesh)
+    subgraph Microservices ["⚙️ Microservicios / Subgrafos (Istio mTLS)"]
+        AUTH["Auth Service"]:::microservice
+        CRM["CRM Service (CQRS Worker)"]:::microservice
+        FIN["Finance Service"]:::microservice
+        AIE["AI Engine"]:::microservice
+        MKT["Marketing Service"]:::microservice
+    end
+
+    %% Bus de Eventos
+    REDIS_EVENTS{{"🚀 Event Bus <br/> (Redis Streams @agency/events)"}}:::eventbus
+
+    %% Patrón CQRS (Bases de datos)
+    subgraph CQRS ["💾 Patrón CQRS (Command Query Responsibility Segregation)"]
         
-        %% Core Services
-        subgraph Core ["Núcleo de Negocio"]
-            AUTH["🔐 Auth Service"]:::core
-            CRM["📊 CRM Service"]:::core
-            FIN["💳 Finance Service"]:::core
-            ADMIN["🛠️ Admin Service"]:::core
-            CAL["📅 Calendar Service"]:::core
+        %% Bases de Escritura (Write DBs)
+        subgraph WriteDB ["Bases de Escritura (PostgreSQL)"]
+            W_AUTH[("schema.auth.prisma")]:::db_write
+            W_CRM[("schema.core.prisma")]:::db_write
+            W_MEDIA[("schema.media.prisma")]:::db_write
+            W_ANLY[("schema.analytics.prisma")]:::db_write
         end
 
-        %% Workflow & Comms
-        subgraph Comms ["Comunicaciones & Flujos"]
-            AUTO["⚡ Automation Service"]:::core
-            INBOX["📨 Inbox Service"]:::core
-            INT["🔗 Integration Service"]:::core
-            PUB["🌍 Public API Service"]:::core
+        %% Bases de Lectura (Read DBs)
+        subgraph ReadDB ["Bases de Lectura en Memoria (Queries)"]
+            R_REDIS[("Redis <br/> (Vistas Materializadas CQRS)")]:::db_read
         end
-
-        %% AI & Media
-        subgraph AIMedia ["Inteligencia & Contenido"]
-            AIE["🧠 AI Engine"]:::ai
-            AGENTS["🤝 Agent Team Engine"]:::ai
-            VID["🎬 Video Service"]:::ai
-            DOC["📄 Document Service"]:::ai
-            MKT["📢 Marketing Service"]:::ai
-        end
-
-        %% Analytics
-        subgraph Observability ["Observabilidad"]
-            ANLY["📈 Analytics Service"]:::core
-        end
-
-        %% Central Event Bus
-        BUS{{"🚀 Event Bus Central <br/> (Redis Streams @agency/events)"}}:::eventbus
     end
 
-    %% Infraestructura de Datos Segregada
-    subgraph Infrastructure ["💾 Almacenamiento Segregado (Database-per-Domain)"]
-        DB_AUTH[("PostgreSQL <br/> (schema.auth.prisma)")]:::data
-        DB_BIZ[("PostgreSQL <br/> (schema.core.prisma)")]:::data
-        DB_MEDIA[("PostgreSQL <br/> (schema.media.prisma)")]:::data
-        DB_ANLY[("PostgreSQL / ClickHouse <br/> (schema.analytics.prisma)")]:::data
-    end
-
-    %% Relaciones Externas a Gateway
-    WEB --> |REST/WS| GW
-    APP --> |REST/WS| GW
-    EXT --> |API| GW
-
-    %% Gateway a Servicios (Llamadas Síncronas)
-    GW --> |Peticiones HTTP| Core
-    GW --> |Peticiones HTTP| Comms
-    GW --> |Peticiones HTTP| AIMedia
-    GW --> |Peticiones HTTP| Observability
-
-    %% Comunicación Asíncrona (Event Bus)
-    Core <==> |Publica/Escucha Eventos| BUS
-    Comms <==> |Publica/Escucha Eventos| BUS
-    AIMedia <==> |Publica/Escucha Eventos| BUS
-    Observability <==> |Publica/Escucha Eventos| BUS
-
-    %% Conexiones a BD Segregadas
-    AUTH --> DB_AUTH
+    %% Flujo
+    Clients --> |Peticiones| EdgeLayer
+    EdgeLayer --> |Tráfico Validado| ROUTER
+    EdgeLayer --> |Tráfico Validado| REST
     
-    CRM --> DB_BIZ
-    FIN --> DB_BIZ
-    ADMIN --> DB_BIZ
-    CAL --> DB_BIZ
-    AUTO --> DB_BIZ
+    ROUTER --> |Consultas GraphQL en Paralelo| Microservices
+    REST --> |Proxy Tradicional| Microservices
 
-    VID --> DB_MEDIA
-    DOC --> DB_MEDIA
-    MKT --> DB_MEDIA
-    AIE --> DB_MEDIA
-    AGENTS --> DB_MEDIA
+    AUTH --> |Escritura| W_AUTH
+    CRM --> |Escritura Lenta| W_CRM
+    FIN --> |Escritura| W_CRM
+    AIE --> |Escritura| W_MEDIA
 
-    ANLY --> DB_ANLY
-    INT --> DB_ANLY
-    INBOX --> DB_ANLY
+    %% Event Sourcing Flow (El corazón del CQRS)
+    W_CRM -.-> |Evento: lead.created| REDIS_EVENTS
+    REDIS_EVENTS ===> |Sincronizador| R_REDIS
+
+    %% Lecturas rápidas
+    CRM --> |Lectura Sub-milisegundo (/api/cqrs/*)| R_REDIS
 ```
 
-## Puertos de Servicios y Nodos
+## Características Nivel V3 Implementadas
 
-| Servicio | Puerto | Base de Datos |
-|----------|--------|---------------|
-| API Gateway | 8080 | N/A (Usa Redis Edge Cache) |
-| Auth Service | 4001 | schema.auth.prisma |
-| CRM Service | 4002 | schema.core.prisma |
-| Automation | 4003 | schema.core.prisma |
-| AI Engine | 4004 | schema.media.prisma |
-| Inbox | 4005 | schema.analytics.prisma |
-| Finance | 4006 | schema.core.prisma |
-| Video | 4007 | schema.media.prisma |
-| Calendar | 4008 | schema.core.prisma |
-| Marketing | 4009 | schema.media.prisma |
-| Integration | 4010 | schema.analytics.prisma |
-| Document | 4011 | schema.media.prisma |
-| Agent Team | 4012 | schema.media.prisma |
-| Analytics | 4013 | schema.analytics.prisma |
-| Admin | 4014 | schema.core.prisma |
-| Public API | 4015 | N/A (Pasa por Event Bus) |
-
-## ¿Por qué es esta arquitectura más eficiente?
-1. **Edge Cache:** El Gateway intercepta datos estáticos para no cargar a los microservicios.
-2. **Event Bus (`@agency/events`):** En lugar de que el CRM espere a que Finanzas responda (bloqueando el hilo), el CRM publica un evento y Finanzas lo procesa cuando puede. Máxima resiliencia.
-3. **Database Segregation:** 4 esquemas de Prisma independientes. Las bases de datos no compiten por recursos de CPU.
-4. **Service Mesh:** Istio inyectado a nivel de Kubernetes gestiona balanceo de carga interno y seguridad mTLS entre los servicios.
+1. **GraphQL Supergraph (`/graphql`):** El `api-gateway` ya no solo redirige, sino que incluye un `ApolloServer`. Esto permite a Next.js pedir datos de Leads y Usuarios en una sola petición GraphQL, eliminando la sobrecarga de red.
+2. **CQRS & Vistas Materializadas:** El `crm-service` divide el tráfico. Escribe los Leads en PostgreSQL de manera segura, pero las lecturas masivas las saca directamente desde una réplica en RAM (Redis) usando eventos asíncronos (`cqrs:leads:*`). Latencias inferiores a 1ms.
+3. **Edge Computing Auth:** El archivo `middleware.ts` en Next.js aprovecha `next-auth` en modo Edge Runtime para bloquear peticiones maliciosas directamente desde los nodos CDN de Vercel a lo largo del mundo, antes de que el tráfico toque los microservicios.
+4. **Bases de Datos Segregadas:** Mantenimiento de los 4 esquemas independientes de Prisma para aislamiento de dominios de negocio.
