@@ -5,6 +5,7 @@ namespace: legacymark
 
 resources:
   - namespace.yaml
+  - istio-security.yaml
   # API Gateway
   - api-gateway/deployment.yaml
   - api-gateway/service.yaml
