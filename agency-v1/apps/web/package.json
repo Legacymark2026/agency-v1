@@ -178,6 +178,11 @@
     "last 2 versions",
     "not dead",
     "> 0.2%",
-    "not ie 11"
-  ]
+  ],
+  "optionalDependencies": {
+    "@next/swc-linux-x64-gnu": "16.2.4",
+    "@next/swc-linux-x64-musl": "16.2.4",
+    "@parcel/watcher-linux-x64-glibc": "^2.5.0",
+    "@parcel/watcher-linux-x64-musl": "^2.5.0"
+  }
 }
