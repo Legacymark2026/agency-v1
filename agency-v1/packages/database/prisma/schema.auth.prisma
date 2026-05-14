@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client/auth"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AUTH_DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth & Identity Management (IAM)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String               @id @default(uuid())
+  name            String?
+  email           String?              @unique
+  emailVerified   DateTime?            @map("email_verified")
+  image           String?
+  passwordHash    String?              @map("password_hash")
+  firstName       String?              @map("first_name")
+  lastName        String?              @map("last_name")
+  phone           String?
+  role            String               @default("guest")
+  mfaEnabled      Boolean              @default(false) @map("mfa_enabled")
+  mfaSecret       String?              @map("mfa_secret")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  deactivatedAt   DateTime?            @map("deactivated_at")
+  adminNotes      String?              @map("admin_notes")
+  backupCodes     Json?                @map("backup_codes")
+  customTag       String?              @map("custom_tag")
+  jobTitle        String?              @map("job_title")
+  globalRole      String               @default("client_user") @map("global_role")
+
+  // Auth local relations
+  accounts            Account[]
+  sessions            Session[]
+  profile             UserProfile?
+  resourcePermissions ResourcePermission[]
+  apiKeys             ApiKey[]
+
+  @@index([role])
+  @@index([email])
+  @@index([globalRole])
+  @@map("users")
+}
+
+model UserProfile {
+  id               String  @id @default(uuid())
+  userId           String  @unique @map("user_id")
+  jobTitle         String? @map("job_title")
+  department       String?
+  bio              String?
+  socialLinks      Json?   @default("{}") @map("social_links")
+  preferences      Json?   @default("{\"theme\": \"system\", \"notifications\": {\"email\": true}}")
+  metadata         Json?   @default("{}")
+  googleAnalytics  Json?   @map("google_analytics_config")
+  facebookPixel    Json?   @map("facebook_pixel_config")
+  googleTagManager Json?   @map("google_tag_manager_config")
+  hotjar           Json?   @map("hotjar_config")
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Role-Based Access Control (RBAC)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model RoleConfig {
+  id            String   @id @default(uuid())
+  roleName      String   @unique @map("role_name")
+  allowedRoutes Json     @default("[]") @map("allowed_routes")
+  description   String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([roleName])
+  @@map("role_configs")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  companyId   String           @map("company_id") // Soft link to Core DB
+  name        String
+  description String?
+  isDefault   Boolean          @default(false) @map("is_default")
+  isActive    Boolean          @default(true) @map("is_active")
+  priority    Int              @default(0)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  permissions RolePermission[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  module          String
+  description     String?
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model ResourcePermission {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  companyId    String   @map("company_id") // Soft link
+  resourceType String
+  resourceId   String   @map("resource_id") // Soft link
+  permission   String
+  access       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, resourceType, resourceId, permission])
+  @@index([userId, companyId])
+  @@index([resourceType, resourceId])
+  @@map("resource_permissions")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  name       String
+  keyHash    String    @unique @map("key_hash")
+  userId     String?   @map("user_id")
+  companyId  String?   @map("company_id") // Soft link
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  createdBy  String?   @map("created_by")
+  expiresAt  DateTime? @map("expires_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  prefix     String?   @map("prefix")
+  scopes     String[]  @default([])
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}
