@@ -9,6 +9,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import Redis from "ioredis";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
@@ -24,6 +25,52 @@ app.use(cors({
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
+
+// ── Edge Cache (Redis) ───────────────────────────────────────────────────────
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const CACHE_TTL = 300; // 5 minutes
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const edgeCacheMiddleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.method !== "GET") return next();
+  
+  // Skip caching for auth and admin routes to prevent sensitive data leaks
+  if (req.path.startsWith("/api/auth") || req.path.startsWith("/api/admin")) {
+    return next();
+  }
+
+  const cacheKey = `edge_cache:${req.path}`;
+  try {
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      res.setHeader("X-Cache", "HIT");
+      res.setHeader("Content-Type", "application/json");
+      res.send(cachedData);
+      return;
+    }
+
+    res.setHeader("X-Cache", "MISS");
+    
+    // Intercept response to save it in cache
+    const originalSend = res.send;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    res.send = function (body: any): express.Response {
+      // Only cache successful JSON responses
+      if (res.statusCode >= 200 && res.statusCode < 300 && res.getHeader("Content-Type")?.toString().includes("application/json")) {
+        redis.setex(cacheKey, CACHE_TTL, body).catch(err => console.error("[Edge Cache] Error setting cache:", err));
+      }
+      return originalSend.call(this, body);
+    };
+    next();
+  } catch (error) {
+    console.error("[Edge Cache] Redis error:", error);
+    next();
+  }
+};
+
+// Apply Edge Cache globally (it filters by GET and skips auth/admin internally)
+app.use(edgeCacheMiddleware);
+
 
 // ── Service Discovery (K8s DNS) ──────────────────────────────────────────────
 const SERVICES = {
