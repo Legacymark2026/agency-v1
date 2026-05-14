@@ -10,6 +10,8 @@ import cors from "cors";
 import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import Redis from "ioredis";
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@apollo/server/express4";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
@@ -25,6 +27,34 @@ app.use(cors({
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
+
+// ── V3 Supergraph (GraphQL Federation Stub) ──────────────────────────────────
+const typeDefs = `#graphql
+  type User { id: ID!, name: String, email: String, leads: [Lead] }
+  type Lead { id: ID!, name: String, status: String }
+  type Query {
+    me: User
+    platformStats: String
+  }
+`;
+const resolvers = {
+  Query: {
+    me: () => ({ id: "1", name: "Admin", email: "admin@legacymark.com" }), // Resolver will fetch from Auth & CRM services in parallel
+    platformStats: () => "V3 Supergraph Active",
+  },
+  User: {
+    leads: () => [{ id: "100", name: "John Doe", status: "New" }], // Resolves from CRM service
+  }
+};
+
+const apolloServer = new ApolloServer({ typeDefs, resolvers });
+// Start Apollo Server asynchronously
+(async () => {
+  await apolloServer.start();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.use("/graphql", express.json(), expressMiddleware(apolloServer) as any);
+  console.log("🚀 V3 GraphQL Supergraph ready at /graphql");
+})();
 
 // ── Edge Cache (Redis) ───────────────────────────────────────────────────────
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
