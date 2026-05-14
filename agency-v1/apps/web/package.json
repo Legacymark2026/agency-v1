@@ -177,7 +177,7 @@
     "defaults",
     "last 2 versions",
     "not dead",
-    "> 0.2%",
+    "> 0.2%"
   ],
   "optionalDependencies": {
     "@next/swc-linux-x64-gnu": "16.2.4",
