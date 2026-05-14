@@ -10,6 +10,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
+import Redis from "ioredis";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4002", 10);
@@ -63,8 +64,29 @@ app.get("/api/leads", async (req, res) => {
 app.post("/api/leads", async (req, res) => {
   try {
     const lead = await prisma.lead.create({ data: req.body });
-    await eventBus.publish("lead.created", { leadId: lead.id, companyId: lead.companyId });
+    await eventBus.publish("lead.created", { leadId: lead.id, companyId: lead.companyId, data: lead });
     res.status(201).json({ lead });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ── CQRS: Fast Read DB Endpoint (Redis Materialized View) ────────────────────
+app.get("/api/cqrs/leads", async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) return res.status(400).json({ error: "companyId required" });
+
+    // Read directly from Redis instead of PostgreSQL
+    const keys = await redisClient.keys(`cqrs:leads:${companyId}:*`);
+    if (keys.length === 0) {
+      return res.json({ leads: [], source: "read_db_redis", note: "No leads in materialized view yet" });
+    }
+
+    const leads = await Promise.all(keys.map(k => redisClient.get(k)));
+    const parsedLeads = leads.filter(Boolean).map(l => JSON.parse(l!));
+    
+    res.json({ leads: parsedLeads, source: "read_db_redis", latency: "sub-millisecond" });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -146,8 +168,19 @@ app.get("/api/crm/funnel/:companyId", async (req, res) => {
   }
 });
 
-// ── Event Bus Setup ──────────────────────────────────────────────────────────
+// ── Event Bus Setup & CQRS Worker ────────────────────────────────────────────
 const eventBus = new EventBus(REDIS_URL, "crm-service");
+const redisClient = new Redis(REDIS_URL); // Read DB
+
+// CQRS Synchronizer: Listen to Write DB events and update Read DB (Redis)
+eventBus.subscribe("lead.created", async (payload) => {
+  const { leadId, companyId, data } = payload.data as any;
+  if (leadId && companyId && data) {
+    console.log(`[CQRS Worker] Synchronizing lead ${leadId} to Read DB (Redis)`);
+    // Store in Redis as a materialized view
+    await redisClient.set(`cqrs:leads:${companyId}:${leadId}`, JSON.stringify(data));
+  }
+});
 
 // Subscribe to relevant events from other services
 eventBus.subscribe("invoice.paid", async (payload) => {
