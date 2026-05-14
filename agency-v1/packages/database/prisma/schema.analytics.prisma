@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client/analytics"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ANALYTICS_DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Analytics & Audit Logs (High Write Volume)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model UserActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id") // Soft link
+  action    String
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_activity_logs")
+}
+
+model ProjectView {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id") // Soft link
+  ipHash    String   @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  referer   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("project_views")
+}
+
+model PostView {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id") // Soft link
+  ipHash    String   @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  referer   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([postId])
+  @@index([createdAt])
+  @@map("post_views")
+}
+
+model UsageLog {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id") // Soft link
+  feature   String
+  metric    Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@index([createdAt])
+  @@map("usage_logs")
+}
+
+model IntegrationLog {
+  id            String   @id @default(uuid())
+  integrationId String   @map("integration_id") // Soft link
+  status        String
+  payload       Json?
+  errorMessage  String?  @map("error_message")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([integrationId])
+  @@index([status])
+  @@map("integration_logs")
+}
+
+model NotificationDeliveryLog {
+  id             String   @id @default(uuid())
+  notificationId String   @map("notification_id")
+  userId         String   @map("user_id") // Soft link
+  channel        String
+  status         String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("notification_delivery_logs")
+}
