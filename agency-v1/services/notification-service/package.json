@@ -9,8 +9,8 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@agency/database": "workspace:*",
-    "@agency/events": "workspace:*",
+    "@agency/database": "*",
+    "@agency/events": "*",
     "express": "^4.21.2",
     "cors": "^2.8.5",
     "helmet": "^8.1.0",
