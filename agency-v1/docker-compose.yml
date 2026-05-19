@@ -1,19 +1,25 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# LegacyMark — Local Development Stack
+# LegacyMark — Production Docker Compose Stack
 # ══════════════════════════════════════════════════════════════════════════════
-# Usage: docker compose up -d
-# All services: docker compose --profile all up -d
+# Usage:
+#   docker compose up -d                    # Core services only
+#   docker compose --profile all up -d      # All services
+#   docker compose --profile monitoring up -d  # With monitoring
+#
+# Services: 16 microservices + PostgreSQL + Redis + Next.js Web App
 
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: legacymark
-      POSTGRES_PASSWORD: legacymark_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
       POSTGRES_DB: legacymark
     ports: ["5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U legacymark"]
       interval: 10s
@@ -22,21 +28,45 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     ports: ["6379:6379"]
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
+
+  # ── Next.js Web App ────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports: ["3000:3000"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
+      REDIS_URL: redis://redis:6379
+      API_GATEWAY_URL: http://api-gateway:8080
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      api-gateway: { condition: service_healthy }
+    profiles: ["all"]
 
   # ── API Gateway ───────────────────────────────────────────────────────────
   api-gateway:
     build:
       context: .
       dockerfile: services/api-gateway/Dockerfile
+    restart: unless-stopped
     ports: ["8080:8080"]
     environment:
       PORT: "8080"
+      REDIS_URL: redis://redis:6379
       AUTH_SERVICE_URL: http://auth-service:4001
       CRM_SERVICE_URL: http://crm-service:4002
       AUTOMATION_SERVICE_URL: http://automation-service:4003
@@ -52,22 +82,33 @@ services:
       ANALYTICS_SERVICE_URL: http://analytics-service:4013
       ADMIN_SERVICE_URL: http://admin-service:4014
       PUBLIC_API_SERVICE_URL: http://public-api-service:4015
+      NOTIFICATION_SERVICE_URL: http://notification-service:4016
+      HR_SERVICE_URL: http://hr-service:4017
+      PROJECT_SERVICE_URL: http://project-service:4018
     depends_on:
+      redis: { condition: service_healthy }
       auth-service: { condition: service_healthy }
       crm-service: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Auth Service ──────────────────────────────────────────────────────────
   auth-service:
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
+    restart: unless-stopped
     ports: ["4001:4001"]
     environment: &common-env
       PORT: "4001"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:legacymark_dev@postgres:5432/legacymark
-      JWT_SECRET: dev-jwt-secret-change-in-production
-      NODE_ENV: development
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -75,12 +116,14 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
       interval: 15s
       timeout: 5s
+      start_period: 10s
 
   # ── CRM Service ──────────────────────────────────────────────────────────
   crm-service:
     build:
       context: .
       dockerfile: services/crm-service/Dockerfile
+    restart: unless-stopped
     ports: ["4002:4002"]
     environment:
       <<: *common-env
@@ -92,12 +135,14 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
       interval: 15s
       timeout: 5s
+      start_period: 10s
 
   # ── Automation Service ────────────────────────────────────────────────────
   automation-service:
     build:
       context: .
       dockerfile: services/automation-service/Dockerfile
+    restart: unless-stopped
     ports: ["4003:4003"]
     environment:
       <<: *common-env
@@ -105,6 +150,11 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4003/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
     deploy:
       resources:
         limits: { cpus: "2.0", memory: 2G }
@@ -114,13 +164,21 @@ services:
     build:
       context: .
       dockerfile: services/ai-engine/Dockerfile
+    restart: unless-stopped
     ports: ["4004:4004"]
     environment:
       <<: *common-env
       PORT: "4004"
+      GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4004/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
     deploy:
       resources:
         limits: { cpus: "4.0", memory: 4G }
@@ -130,6 +188,7 @@ services:
     build:
       context: .
       dockerfile: services/inbox-service/Dockerfile
+    restart: unless-stopped
     ports: ["4005:4005"]
     environment:
       <<: *common-env
@@ -137,25 +196,39 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4005/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Finance Service ───────────────────────────────────────────────────────
   finance-service:
     build:
       context: .
       dockerfile: services/finance-service/Dockerfile
+    restart: unless-stopped
     ports: ["4006:4006"]
     environment:
       <<: *common-env
       PORT: "4006"
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4006/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Video Service ─────────────────────────────────────────────────────────
   video-service:
     build:
       context: .
       dockerfile: services/video-service/Dockerfile
+    restart: unless-stopped
     ports: ["4007:4007"]
     environment:
       <<: *common-env
@@ -163,12 +236,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4007/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Calendar Service ──────────────────────────────────────────────────────
   calendar-service:
     build:
       context: .
       dockerfile: services/calendar-service/Dockerfile
+    restart: unless-stopped
     ports: ["4008:4008"]
     environment:
       <<: *common-env
@@ -176,12 +255,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4008/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Marketing Service ─────────────────────────────────────────────────────
   marketing-service:
     build:
       context: .
       dockerfile: services/marketing-service/Dockerfile
+    restart: unless-stopped
     ports: ["4009:4009"]
     environment:
       <<: *common-env
@@ -189,12 +274,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4009/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Integration Service ───────────────────────────────────────────────────
   integration-service:
     build:
       context: .
       dockerfile: services/integration-service/Dockerfile
+    restart: unless-stopped
     ports: ["4010:4010"]
     environment:
       <<: *common-env
@@ -202,12 +293,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4010/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Document Service ──────────────────────────────────────────────────────
   document-service:
     build:
       context: .
       dockerfile: services/document-service/Dockerfile
+    restart: unless-stopped
     ports: ["4011:4011"]
     environment:
       <<: *common-env
@@ -215,12 +312,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4011/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Agent Team Engine ─────────────────────────────────────────────────────
   agent-team-engine:
     build:
       context: .
       dockerfile: services/agent-team-engine/Dockerfile
+    restart: unless-stopped
     ports: ["4012:4012"]
     environment:
       <<: *common-env
@@ -228,12 +331,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4012/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Analytics Service ─────────────────────────────────────────────────────
   analytics-service:
     build:
       context: .
       dockerfile: services/analytics-service/Dockerfile
+    restart: unless-stopped
     ports: ["4013:4013"]
     environment:
       <<: *common-env
@@ -241,12 +350,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4013/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Admin Service ─────────────────────────────────────────────────────────
   admin-service:
     build:
       context: .
       dockerfile: services/admin-service/Dockerfile
+    restart: unless-stopped
     ports: ["4014:4014"]
     environment:
       <<: *common-env
@@ -254,12 +369,18 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4014/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
   # ── Public API Service ────────────────────────────────────────────────────
   public-api-service:
     build:
       context: .
       dockerfile: services/public-api-service/Dockerfile
+    restart: unless-stopped
     ports: ["4015:4015"]
     environment:
       <<: *common-env
@@ -267,6 +388,70 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4015/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+
+  # ── Notification Service ──────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    restart: unless-stopped
+    ports: ["4016:4016"]
+    environment:
+      <<: *common-env
+      PORT: "4016"
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4016/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+
+  # ── HR Service ────────────────────────────────────────────────────────────
+  hr-service:
+    build:
+      context: .
+      dockerfile: services/hr-service/Dockerfile
+    restart: unless-stopped
+    ports: ["4017:4017"]
+    environment:
+      <<: *common-env
+      PORT: "4017"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4017/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+
+  # ── Project Service ───────────────────────────────────────────────────────
+  project-service:
+    build:
+      context: .
+      dockerfile: services/project-service/Dockerfile
+    restart: unless-stopped
+    ports: ["4018:4018"]
+    environment:
+      <<: *common-env
+      PORT: "4018"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4018/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
 
 volumes:
   pgdata:
+  redisdata:

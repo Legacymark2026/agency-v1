@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -60,6 +60,45 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [saveAnimation, setSaveAnimation] = useState(false);
+  const hasChanges = useRef(false);
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Marcar cambios cuando cambia el estado
+  useEffect(() => { hasChanges.current = true; }, [config, clips, audioTracks, textOverlays, colorGrades, speedRamps, timeline]);
+
+  // Auto-guardado cada 30 segundos si hay cambios y hay projectId
+  useEffect(() => {
+    if (!projectId) return;
+    autoSaveTimer.current = setInterval(() => {
+      if (hasChanges.current) {
+        hasChanges.current = false;
+        handleSave();
+      }
+    }, 30_000);
+    return () => { if (autoSaveTimer.current) clearInterval(autoSaveTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  // Hotkeys: Ctrl+S = guardar, ← → = navegar paneles
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+      if (e.key === 'ArrowRight' && e.altKey) {
+        e.preventDefault();
+        setActivePanel(p => Math.min(PANELS.length, p + 1));
+      }
+      if (e.key === 'ArrowLeft' && e.altKey) {
+        e.preventDefault();
+        setActivePanel(p => Math.max(1, p - 1));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!projectId) return;
@@ -133,6 +172,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
       case 9: return (
         <ExportPanel
           config={config as ProjectConfig} timeline={timeline} qualityPassed={qualityPassed}
+          projectId={projectId}
           onExport={(outputs) => console.log('Exported:', outputs)}
         />
       );

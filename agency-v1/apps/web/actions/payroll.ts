@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { UserRole } from "@/types/auth";
 import { revalidatePath } from "next/cache";
+import { notifyUsers } from "@/lib/notifications/notification-engine";
 import { CreatePayrollRequest, calculatePayroll, generatePILARows, generatePILACSV } from "@/lib/payroll";
 import { getFinancialAccounts } from "@/actions/treasury";
 
@@ -85,6 +86,15 @@ export async function generatePayroll(data: CreatePayrollRequest) {
         });
 
         revalidatePath("/dashboard/admin/payroll");
+
+        // ─── Enterprise Notification — Payroll Generated ─────────────────────
+        notifyUsers("FINANCE.PAYROLL_PROCESSED", {
+            companyId: session.user!.companyId!,
+            title: "Nómina Generada",
+            message: `${employee.firstName} ${employee.lastName} — Neto: $${calculation.netPay.toLocaleString()}`,
+            roles: ["super_admin", "admin"],
+        }).catch(() => {});
+
         return { success: true, payrollId: payroll.id };
     } catch (error: any) {
         console.error("[GENERATE_PAYROLL]", error);
@@ -250,6 +260,22 @@ export async function updatePayrollStatus(id: string, status: string) {
         });
 
         await logPayrollAction(id, session.user!.id!, status === "PAID" ? "PAID" : "STATUS_CHANGED", { status });
+
+        // ─── Enterprise Notification — Payroll Paid ──────────────────────────
+        if (status === "PAID") {
+            const full = await prisma.payroll.findUnique({
+                where: { id },
+                include: { employee: { select: { firstName: true, lastName: true } } },
+            });
+            if (full) {
+                notifyUsers("FINANCE.PAYROLL_PROCESSED", {
+                    companyId: session.user!.companyId!,
+                    title: "Nómina Pagada ✅",
+                    message: `${full.employee.firstName} ${full.employee.lastName} — $${full.netPay.toLocaleString()}`,
+                    roles: ["super_admin", "admin"],
+                }).catch(() => {});
+            }
+        }
 
         revalidatePath("/dashboard/admin/payroll");
         return { success: true, payrollId: payroll.id };

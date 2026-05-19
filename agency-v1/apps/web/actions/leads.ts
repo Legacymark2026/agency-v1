@@ -7,7 +7,7 @@ import { sendGa4Event } from "@/lib/ga4-mp";
 import { auth } from "@/lib/auth";
 import { Permission, ROLE_PERMISSIONS, UserRole } from "@/types/auth";
 import { dispatchConversion } from "@/lib/services/conversions/dispatcher";
-import { createLocalNotification } from "./notifications";
+import { notifyUsers } from "@/lib/notifications/notification-engine";
 import { enforceQuota } from "@/lib/quotas";
 import crypto from "crypto";
 import { predictLeadConversion, LeadFeatures } from "@/lib/ml/lead-scoring-model";
@@ -375,31 +375,14 @@ export async function createLead(input: CreateLeadInput) {
             }
         }).catch(err => console.error('[LeadsAction] GA4-MP failed:', err));
 
-        // Crear notificación para el equipo
-        try {
-            const admins = await prisma.user.findMany({
-                where: {
-                    companyId: input.companyId,
-                    role: { in: ['super_admin', 'admin', 'content_manager'] }
-                } as any,
-                select: { id: true }
-            });
-
-            const notificationPromises = admins.map(admin => 
-                createLocalNotification({
-                    companyId: input.companyId,
-                    userId: admin.id,
-                    type: 'NEW_LEAD',
-                    title: 'Nuevo Lead Recibido',
-                    message: `Nuevo lead "${input.name}" desde ${sourceResult.source}. ${input.email}`,
-                    link: `/dashboard/admin/crm/leads?highlight=${lead.id}`
-                })
-            );
-
-            await Promise.all(notificationPromises);
-        } catch (notifError) {
-            console.error("[LeadsAction] Failed to create notification:", notifError);
-        }
+        // ─── Enterprise Notification — Lead Created ─────────────────────────────
+        notifyUsers("CRM.LEAD_CREATED", {
+            companyId: input.companyId,
+            title: "Nuevo Lead Recibido",
+            message: `${input.name || "Sin nombre"} desde ${sourceResult.source}. ${input.email}`,
+            roles: ["super_admin", "admin", "content_manager"],
+            data: { leadId: lead.id },
+        }).catch((e) => console.error("[LeadsAction] Notification failed:", e));
 
         revalidatePath('/dashboard/admin/crm/leads');
         return { success: true, data: lead };
@@ -553,6 +536,34 @@ export async function updateLeadStatus(leadId: string, status: string) {
 
         revalidatePath('/dashboard/admin/crm/leads');
         revalidatePath('/dashboard/admin/crm/pipeline');
+
+        // ─── Enterprise Notifications — Stage Changed ─────────────────────────
+        if (status === "WON") {
+            notifyUsers("CRM.DEAL_WON", {
+                companyId: lead.companyId,
+                title: "¡Deal Cerrado! 🎉",
+                message: `${lead.name || lead.email} — ${status}`,
+                roles: ["super_admin", "admin"],
+                data: { dealId: dealId || "", leadId: lead.id },
+            }).catch(() => {});
+        } else if (status === "LOST") {
+            notifyUsers("CRM.DEAL_LOST", {
+                companyId: lead.companyId,
+                title: "Deal Perdido",
+                message: `${lead.name || lead.email} — marcado como perdido`,
+                roles: ["super_admin", "admin"],
+                data: { dealId: dealId || "", leadId: lead.id },
+            }).catch(() => {});
+        } else {
+            notifyUsers("CRM.STAGE_CHANGED", {
+                companyId: lead.companyId,
+                title: `Lead → ${status}`,
+                message: `${lead.name || lead.email} movido a etapa ${status}`,
+                roles: ["super_admin", "admin"],
+                data: { leadId: lead.id },
+            }).catch(() => {});
+        }
+
         return { success: true, data: updatedLead };
     } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
         console.error(error);

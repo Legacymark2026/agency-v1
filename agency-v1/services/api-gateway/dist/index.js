@@ -112,6 +112,9 @@ const SERVICES = {
     analytics: process.env.ANALYTICS_SERVICE_URL || "http://analytics-service:4013",
     admin: process.env.ADMIN_SERVICE_URL || "http://admin-service:4014",
     publicApi: process.env.PUBLIC_API_SERVICE_URL || "http://public-api-service:4015",
+    notification: process.env.NOTIFICATION_SERVICE_URL || "http://notification-service:4016",
+    hr: process.env.HR_SERVICE_URL || "http://hr-service:4017",
+    project: process.env.PROJECT_SERVICE_URL || "http://project-service:4018",
 };
 // ── Request Logging ──────────────────────────────────────────────────────────
 app.use((req, _res, next) => {
@@ -191,6 +194,18 @@ app.use("/api/debug", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOp
 app.use("/api/v1", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.publicApi)));
 app.use("/api/public", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.publicApi)));
 app.use("/api/serve", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.publicApi)));
+// Notification Service
+app.use("/api/notifications", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.notification)));
+app.use("/api/notification-preferences", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.notification)));
+// HR Service
+app.use("/api/employees", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
+app.use("/api/hr", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
+app.use("/api/time-tracking", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
+app.use("/api/payroll", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
+// Project Service
+app.use("/api/projects", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.project)));
+app.use("/api/kanban", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.project)));
+app.use("/api/tasks", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.project)));
 // ── Fallback ─────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ error: "Route not found", hint: "Check the API Gateway route table" });
@@ -203,6 +218,7 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log(`   Routes: marketing→${SERVICES.marketing}, integration→${SERVICES.integration}`);
     console.log(`   Routes: document→${SERVICES.document}, agentTeam→${SERVICES.agentTeam}`);
     console.log(`   Routes: analytics→${SERVICES.analytics}, admin→${SERVICES.admin}, publicApi→${SERVICES.publicApi}`);
+    console.log(`   Routes: notification→${SERVICES.notification}, hr→${SERVICES.hr}, project→${SERVICES.project}`);
 });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 exports.default = app;

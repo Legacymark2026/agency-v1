@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPermissionOrFail, isSuperAdmin } from "@/lib/security";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { CreateRoleInput, UpdateRoleInput, RoleWithPermissions } from "@/types/rbac";
+import { MASTER_PERMISSIONS } from "@/lib/rbac";
 
 async function getSessionCompanyId(): Promise<string> {
   const session = await auth();
@@ -384,4 +385,82 @@ export async function getRoleStats() {
       userCount: r._count.users,
     })),
   };
+}
+
+// ─── Sync Permissions with Platform ──────────────────────────────────────────
+
+/**
+ * Synchronizes the Permission table with MASTER_PERMISSIONS from lib/rbac.ts.
+ * Creates any missing permissions. Never deletes or modifies existing ones.
+ * 
+ * SAFE: Idempotent — can be called repeatedly without side effects.
+ * RESTRICTED: Super Admin only.
+ */
+export async function syncPermissionsWithPlatform() {
+  const session = await auth();
+  if (!session?.user?.id) throw new UnauthorizedError();
+
+  const isSA = await isSuperAdmin(session.user.id);
+  if (!isSA) throw new ForbiddenError("Solo Super Admin puede sincronizar permisos");
+
+  const existing = await prisma.permission.findMany({ select: { name: true } });
+  const existingNames = new Set(existing.map((p) => p.name));
+
+  let created = 0;
+  const newPerms: string[] = [];
+
+  for (const perm of MASTER_PERMISSIONS) {
+    if (existingNames.has(perm.name)) continue;
+
+    await prisma.permission.create({
+      data: {
+        name: perm.name,
+        module: perm.module,
+        description: perm.description,
+        isActive: true,
+      },
+    });
+
+    newPerms.push(perm.name);
+    created++;
+  }
+
+  revalidatePath("/dashboard/users");
+  revalidatePath("/dashboard/settings");
+
+  return {
+    success: true,
+    created,
+    total: existingNames.size + created,
+    newPermissions: newPerms,
+    masterTotal: MASTER_PERMISSIONS.length,
+  };
+}
+
+// ─── Get Available Permissions Grouped by Module ─────────────────────────────
+
+/**
+ * Returns all active permissions grouped by module for the role editor UI.
+ */
+export async function getAvailablePermissionsByModule() {
+  const companyId = await getSessionCompanyId();
+
+  const permissions = await prisma.permission.findMany({
+    where: { isActive: true },
+    orderBy: [{ module: "asc" }, { name: "asc" }],
+  });
+
+  // Group by module
+  const grouped: Record<string, { id: string; name: string; description: string | null }[]> = {};
+
+  for (const perm of permissions) {
+    if (!grouped[perm.module]) grouped[perm.module] = [];
+    grouped[perm.module].push({
+      id: perm.id,
+      name: perm.name,
+      description: perm.description,
+    });
+  }
+
+  return { success: true, modules: grouped, total: permissions.length };
 }

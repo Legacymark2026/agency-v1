@@ -57,6 +57,25 @@ export const EVENTS = {
   "invoice.paid": { source: "finance-service" },
   "payroll.processed": { source: "finance-service" },
   "expense.approved": { source: "finance-service" },
+
+  // Notification Service Events
+  "notification.dispatched": { source: "notification-service" },
+  "notification.preferences_updated": { source: "notification-service" },
+
+  // HR Service Events  
+  "employee.created": { source: "hr-service" },
+  "employee.updated": { source: "hr-service" },
+  "employee.terminated": { source: "hr-service" },
+  "payroll.generated": { source: "hr-service" },
+  "payroll.paid": { source: "hr-service" },
+  "timesheet.submitted": { source: "hr-service" },
+
+  // Project Service Events
+  "project.created": { source: "project-service" },
+  "project.completed": { source: "project-service" },
+  "task.created": { source: "project-service" },
+  "task.moved": { source: "project-service" },
+  "task.completed": { source: "project-service" },
 } as const;
 
 export type EventName = keyof typeof EVENTS;

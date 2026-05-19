@@ -82,6 +82,7 @@ model User {
   profile                 UserProfile?
   aiauditLogs             AIAuditLog[]
   agentMemories           AgentMemory[]
+  mediaUploads            MediaAsset[]              @relation("MediaUploader")
 
   @@index([role])
   @@index([email])
@@ -319,6 +320,8 @@ model Company {
   agentSkillChains          AgentSkillChain[]
   agentTeams                AgentTeam[]
   agentTeamRuns             AgentTeamRun[]
+  mediaAssets               MediaAsset[]
+  videoRenderJobs           VideoRenderJob[]
 
   @@map("companies")
 }
@@ -3092,6 +3095,7 @@ model VideoEditorProject {
 
   company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
   performanceLogs VideoPerformanceLog[]
+  renderJobs      VideoRenderJob[]
 
   @@index([companyId])
   @@map("video_editor_projects")
@@ -3239,4 +3243,66 @@ model AgentTeamRun {
   @@index([teamId])
   @@index([companyId])
   @@index([status])
+}
+
+// ══════════════════════════════════════════════════════════════
+// MEDIA ASSET — Almacenamiento de archivos en VPS
+// ══════════════════════════════════════════════════════════════
+
+model MediaAsset {
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  uploadedById String   @map("uploaded_by_id")
+  name         String
+  originalName String   @map("original_name")
+  url          String   // path relativo: /api/serve/uploads/...
+  mimeType     String   @map("mime_type")
+  type         String   // 'image' | 'video' | 'document' | 'audio' | 'other'
+  sizeBytes    Int      @map("size_bytes")
+  duration     Float?   // para videos/audio, en segundos
+  width        Int?     // para imágenes/videos
+  height       Int?     // para imágenes/videos
+  fps          Float?   // para videos
+  resolution   String?  // ej. '1920x1080'
+  tags         String[] @default([])
+  isPublic     Boolean  @default(false) @map("is_public")
+  metadata     Json?    @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  uploadedBy User    @relation("MediaUploader", fields: [uploadedById], references: [id])
+
+  @@index([companyId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("media_assets")
+}
+
+// ══════════════════════════════════════════════════════════════
+// VIDEO RENDER JOB — Trabajos de renderizado en VPS
+// ══════════════════════════════════════════════════════════════
+
+model VideoRenderJob {
+  id           String    @id @default(uuid())
+  companyId    String    @map("company_id")
+  projectId    String    @map("project_id")
+  status       String    @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  progress     Int       @default(0)         // 0-100
+  inputData    Json      @map("input_data")  // { timeline, colorGrades, audioTracks, textOverlays, config }
+  outputUrl    String?   @map("output_url")  // URL del video renderizado en VPS
+  errorMessage String?   @map("error_message")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  durationMs   Int?      @map("duration_ms")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  project VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([status])
+  @@map("video_render_jobs")
 }

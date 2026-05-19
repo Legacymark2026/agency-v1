@@ -1,0 +1,122 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# LegacyMark — GitHub Actions CI/CD Pipeline
+# ══════════════════════════════════════════════════════════════════════════════
+# Builds and pushes all 16 microservice Docker images to Docker Hub.
+#
+# Required GitHub Secrets:
+#   DOCKERHUB_USERNAME   — Your Docker Hub username
+#   DOCKERHUB_TOKEN      — Docker Hub access token (NOT your password)
+#
+# Usage: Triggered on push to main, or manually via workflow_dispatch.
+
+name: 🐳 Build & Push Microservices
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'services/**'
+      - 'packages/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Comma-separated list of services to build (or "all")'
+        required: false
+        default: 'all'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_PREFIX: legacymark
+
+jobs:
+  # ── Detect Changed Services ──────────────────────────────────────────────
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set-matrix.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Determine services to build
+        id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.services }}" = "all" ] || [ -z "${{ github.event.inputs.services }}" ]; then
+            SERVICES='["api-gateway","auth-service","crm-service","automation-service","ai-engine","inbox-service","finance-service","video-service","calendar-service","marketing-service","integration-service","document-service","agent-team-engine","analytics-service","admin-service","public-api-service","notification-service","hr-service","project-service"]'
+          else
+            IFS=',' read -ra SVC_ARRAY <<< "${{ github.event.inputs.services }}"
+            SERVICES=$(printf '%s\n' "${SVC_ARRAY[@]}" | jq -R . | jq -s .)
+          fi
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+          echo "🎯 Building: $SERVICES"
+
+  # ── Build & Push Each Service ────────────────────────────────────────────
+  build-and-push:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔐 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 📦 Build image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+            type=raw,value={{date 'YYYY-MM-DD'}}
+
+      - name: 🐳 Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: ✅ Verify image
+        run: |
+          echo "🎉 Successfully pushed: ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
+          docker inspect ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest --format='Size: {{.Size}} bytes'
+
+  # ── Summary ──────────────────────────────────────────────────────────────
+  summary:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📊 Deployment Summary
+        run: |
+          echo "══════════════════════════════════════════════"
+          echo "🐳 LegacyMark Microservices — Build Summary"
+          echo "══════════════════════════════════════════════"
+          echo "Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}"
+          echo "Trigger:  ${{ github.event_name }}"
+          echo "Commit:   ${{ github.sha }}"
+          echo "Branch:   ${{ github.ref_name }}"
+          echo "══════════════════════════════════════════════"

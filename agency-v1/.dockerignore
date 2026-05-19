@@ -1,15 +1,44 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# LegacyMark — Docker Ignore
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Dependencies (reinstalled in Docker)
 node_modules
+**/node_modules
+
+# Build artifacts
 .next
-.turbo
-dist
-*.log
+**/dist
+**/.turbo
+
+# Dev & IDE
 .git
-.github
-.env*
 .vscode
+.idea
+*.swp
+*.swo
+
+# Environment (secrets — never bake into images)
+.env
+.env.local
+.env.production
+.env.docker
+
+# Docs & meta
+README.md
+LICENSE
 *.md
-tests
-coverage
-portfolio
-apps/web/node_modules
-apps/web/.next
+docs/
+
+# Portfolio & non-service assets
+portfolio/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test & coverage
+coverage/
+**/__tests__
+**/*.test.*
+**/*.spec.*

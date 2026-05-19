@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import Handlebars from "handlebars";
+import { notifyUsers } from "@/lib/notifications/notification-engine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -749,29 +750,17 @@ export async function executeWorkflow(workflowId: string, triggerData: any, resu
             data: { status: 'FAILED', completedAt: new Date(), logs: [{ error: error.message, ts: new Date().toISOString() }] as any },
         });
 
-        // ── AUTO-ALERT: Notificar admins sobre fallo ─────────────────────────
+        // ── Enterprise Notification: Workflow Failed ─────────────────────────
         try {
             const wf = await prisma.workflow.findUnique({ where: { id: workflowId }, select: { name: true, companyId: true } });
             if (wf && wf.companyId) {
-                const admins = await prisma.companyUser.findMany({
-                    where: { 
-                        companyId: wf.companyId, 
-                        OR: [{ roleName: "admin" }, { roleName: "owner" }] 
-                    },
-                    select: { userId: true }
-                });
-                if (admins.length > 0) {
-                    await prisma.notification.createMany({
-                        data: admins.map(a => ({
-                            userId: a.userId,
-                            companyId: wf.companyId!,
-                            title: `⚠️ Workflow Fallido: ${wf.name}`,
-                            message: `Error: ${error.message?.substring(0, 200)}. Revisa Automatización → Ejecuciones.`,
-                            type: "WORKFLOW",
-                            isRead: false,
-                        }))
-                    });
-                }
+                notifyUsers("AUTOMATION.WORKFLOW_FAILED", {
+                    companyId: wf.companyId,
+                    title: `⚠️ Workflow Fallido: ${wf.name}`,
+                    message: `Error: ${error.message?.substring(0, 200)}. Revisa Automatización → Ejecuciones.`,
+                    roles: ["super_admin", "admin"],
+                    roleNames: ["admin", "owner"],
+                }).catch(() => {});
             }
         } catch (alertErr) {
             console.error("[AutoAlert] Failed to send failure notification:", alertErr);

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { UserRole } from "@/types/auth";
 import { getStripeSession } from "@/lib/stripe";
 import { revalidatePath } from "next/cache";
+import { notifyUsers } from "@/lib/notifications/notification-engine";
 
 export type InvoiceInput = {
     clientName: string;
@@ -106,6 +107,16 @@ export async function createInvoice(data: InvoiceInput) {
         }
 
         revalidatePath("/dashboard/admin/invoices");
+
+        // ─── Enterprise Notification — Invoice Created ────────────────────────
+        notifyUsers("FINANCE.INVOICE_CREATED", {
+            companyId: session.user.companyId,
+            title: "Nueva Factura Creada",
+            message: `Factura para ${data.clientName} — $${data.finalAmount.toLocaleString()}`,
+            roles: ["super_admin", "admin"],
+            data: { invoiceId: invoice.id },
+        }).catch(() => {});
+
         return { success: true, invoiceId: invoice.id };
 
     } catch (error: any) {
@@ -119,10 +130,22 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        await prisma.invoice.update({
+        const invoice = await prisma.invoice.update({
             where: { id: invoiceId, companyId: session.user.companyId },
-            data: { status }
+            data: { status },
+            select: { id: true, clientName: true, totalAmount: true }
         });
+
+        // ─── Enterprise Notification — Invoice Status ─────────────────────────
+        if (status === "PAID") {
+            notifyUsers("FINANCE.INVOICE_PAID", {
+                companyId: session.user.companyId,
+                title: "Factura Pagada ✅",
+                message: `${invoice.clientName} — $${invoice.totalAmount.toLocaleString()}`,
+                roles: ["super_admin", "admin"],
+                data: { invoiceId },
+            }).catch(() => {});
+        }
 
         revalidatePath("/dashboard/admin/invoices");
         return { success: true };

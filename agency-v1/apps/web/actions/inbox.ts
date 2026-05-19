@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { ChannelType } from "@/types/inbox";
 import { rateLimit } from "@/lib/rate-limit"; // A-5: rate limiting
 import { createLead } from "@/modules/leads/actions/leads";
-import { createLocalNotification } from "./notifications";
+import { notifyUsers } from "@/lib/notifications/notification-engine";
 // --- Types ---
 export interface GetConversationsParams {
     companyId: string;
@@ -646,33 +646,15 @@ export async function simulateIncomingMessage(params: {
              console.error("[simulateIncomingMessage] Error in background AI dispatch:", err)
         );
 
-        // 5. Crear notificación para el equipo
-        try {
-            const admins = await prisma.user.findMany({
-                where: {
-                    companyId,
-                    role: { in: ['super_admin', 'admin', 'content_manager'] }
-                } as any,
-                select: { id: true }
-            });
-
-            const channelLabel = channel === 'WHATSAPP' ? 'WhatsApp' : channel === 'INSTAGRAM' ? 'Instagram' : channel === 'MESSENGER' ? 'Messenger' : channel === 'EMAIL' ? 'Email' : 'Mensaje';
-
-            const notificationPromises = admins.map(admin => 
-                createLocalNotification({
-                    companyId,
-                    userId: admin.id,
-                    type: 'NEW_MESSAGE',
-                    title: `Nuevo ${channelLabel} de ${lead.name}`,
-                    message: content.substring(0, 100),
-                    link: `/dashboard/inbox?conversation=${conversation.id}`
-                })
-            );
-
-            await Promise.all(notificationPromises);
-        } catch (notifError) {
-            console.error("[simulateIncomingMessage] Failed to create notification:", notifError);
-        }
+        // 5. Enterprise Notification — Message Received
+        const channelLabel = channel === 'WHATSAPP' ? 'WhatsApp' : channel === 'INSTAGRAM' ? 'Instagram' : channel === 'MESSENGER' ? 'Messenger' : channel === 'EMAIL' ? 'Email' : 'Mensaje';
+        notifyUsers("INBOX.MESSAGE_RECEIVED", {
+            companyId,
+            title: `Nuevo ${channelLabel} de ${lead.name || 'Contacto'}`,
+            message: content.substring(0, 100),
+            roles: ["super_admin", "admin", "content_manager"],
+            data: { conversationId: conversation.id },
+        }).catch(() => {});
 
         return { success: true };
 

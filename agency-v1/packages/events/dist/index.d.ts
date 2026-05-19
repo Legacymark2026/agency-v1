@@ -97,6 +97,45 @@ export declare const EVENTS: {
     readonly "expense.approved": {
         readonly source: "finance-service";
     };
+    readonly "notification.dispatched": {
+        readonly source: "notification-service";
+    };
+    readonly "notification.preferences_updated": {
+        readonly source: "notification-service";
+    };
+    readonly "employee.created": {
+        readonly source: "hr-service";
+    };
+    readonly "employee.updated": {
+        readonly source: "hr-service";
+    };
+    readonly "employee.terminated": {
+        readonly source: "hr-service";
+    };
+    readonly "payroll.generated": {
+        readonly source: "hr-service";
+    };
+    readonly "payroll.paid": {
+        readonly source: "hr-service";
+    };
+    readonly "timesheet.submitted": {
+        readonly source: "hr-service";
+    };
+    readonly "project.created": {
+        readonly source: "project-service";
+    };
+    readonly "project.completed": {
+        readonly source: "project-service";
+    };
+    readonly "task.created": {
+        readonly source: "project-service";
+    };
+    readonly "task.moved": {
+        readonly source: "project-service";
+    };
+    readonly "task.completed": {
+        readonly source: "project-service";
+    };
 };
 export type EventName = keyof typeof EVENTS;
 export interface EventPayload {
