@@ -200,7 +200,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
   return (
     <div className="h-screen bg-slate-950 text-white flex flex-col overflow-hidden">
       {/* ===== TOP TOOLBAR ===== */}
-      <header className="flex-shrink-0 bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center gap-3 z-20">
+      <header className="shrink-0 bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center gap-3 z-20">
         {/* Logo / Title */}
         <button
           onClick={() => setSidebarOpen(o => !o)}
@@ -210,7 +210,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-linear-to-br from-teal-500 to-cyan-600 flex items-center justify-center shrink-0">
             <Film className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -283,7 +283,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
       <div className="flex flex-1 overflow-hidden">
         {/* ===== SIDEBAR ===== */}
         <aside className={cn(
-          'flex-shrink-0 bg-slate-900/80 border-r border-slate-800 flex flex-col transition-all duration-300 overflow-hidden',
+          'shrink-0 bg-slate-900/80 border-r border-slate-800 flex flex-col transition-all duration-300 overflow-hidden',
           sidebarOpen ? 'w-52' : 'w-14'
         )}>
           {/* Panel navigation */}
@@ -318,8 +318,8 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-teal-400 rounded-r" />
                   )}
 
-                  <div className="relative flex-shrink-0">
-                    <Icon className={cn('w-4 h-4 flex-shrink-0 transition-colors', isActive ? 'text-teal-400' : panel.color)} />
+                  <div className="relative shrink-0">
+                    <Icon className={cn('w-4 h-4 shrink-0 transition-colors', isActive ? 'text-teal-400' : panel.color)} />
                     {isDone && !isActive && (
                       <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full" />
                     )}
@@ -396,7 +396,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
           </div>
 
           {/* ===== AI SUGGESTIONS PANEL ===== */}
-          <div className="flex-shrink-0 p-3 hidden xl:block">
+          <div className="shrink-0 p-3 hidden xl:block">
             <AISuggestionsPanel
               config={config}
               clips={clips}
@@ -411,9 +411,9 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
 
       {/* ===== BOTTOM TIMELINE STRIP ===== */}
       {timeline && (
-        <div className="flex-shrink-0 bg-slate-900 border-t border-slate-800 px-4 py-2">
+        <div className="shrink-0 bg-slate-900 border-t border-slate-800 px-4 py-2">
           <div className="flex items-center gap-1 overflow-x-auto">
-            <span className="text-[10px] text-slate-500 flex-shrink-0 mr-2">TIMELINE</span>
+            <span className="text-[10px] text-slate-500 shrink-0 mr-2">TIMELINE</span>
             {(['hook', 'body', 'climax', 'outro'] as const).map(seg => {
               const segment = timeline.segments[seg];
               if (!segment) return null;
@@ -431,7 +431,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
                   key={seg}
                   onClick={() => setActivePanel(3)}
                   className={cn(
-                    'h-7 rounded flex items-center justify-center text-[9px] font-bold text-white uppercase tracking-wider flex-shrink-0 hover:brightness-110 transition-all',
+                    'h-7 rounded flex items-center justify-center text-[9px] font-bold text-white uppercase tracking-wider shrink-0 hover:brightness-110 transition-all',
                     colors[seg]
                   )}
                   style={{ width: `${Math.max(widthPercent, 6)}%`, minWidth: 40 }}
@@ -441,7 +441,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
                 </button>
               );
             })}
-            <span className="text-[10px] text-slate-500 flex-shrink-0 ml-2">
+            <span className="text-[10px] text-slate-500 shrink-0 ml-2">
               {timeline.totalDuration.toFixed(0)}s · {timeline.cuts} cortes
             </span>
           </div>

@@ -49,7 +49,7 @@ function ProjectCard({
   return (
     <div className="group relative rounded-2xl border border-slate-800 overflow-hidden hover:border-teal-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-teal-500/5">
       {/* Thumbnail */}
-      <div className={cn('h-40 bg-gradient-to-br relative', gradient)}>
+      <div className={cn('h-40 bg-linear-to-br relative', gradient)}>
         {/* Film grain */}
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: 'cover' }}
@@ -91,7 +91,7 @@ function ProjectCard({
               {formatDistanceToNow(new Date(project.updatedAt), { addSuffix: true, locale: es })}
             </p>
           </div>
-          <div className="relative flex-shrink-0">
+          <div className="relative shrink-0">
             <button
               onClick={() => setMenuOpen(o => !o)}
               className="p-1 rounded-lg hover:bg-slate-800 text-slate-500 hover:text-white transition-colors"
@@ -143,7 +143,7 @@ function ProjectCard({
           </div>
           <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full transition-all"
+              className="h-full bg-linear-to-r from-teal-500 to-cyan-500 rounded-full transition-all"
               style={{
                 width: `${Math.min(
                   (((project.clips as any[])?.length > 0 ? 20 : 0)
@@ -222,7 +222,7 @@ export default function VideoProjectsPage() {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
         <div>
           <h1 className="ds-heading-1 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
               <Film className="w-5 h-5 text-white" />
             </div>
             Video Studio
@@ -300,7 +300,7 @@ export default function VideoProjectsPage() {
       ) : projects.length === 0 ? (
         /* Empty state */
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-600/20 border border-teal-500/30 flex items-center justify-center mb-6">
+          <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-teal-500/20 to-cyan-600/20 border border-teal-500/30 flex items-center justify-center mb-6">
             <Film className="w-10 h-10 text-teal-400" />
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Sin proyectos todavía</h2>

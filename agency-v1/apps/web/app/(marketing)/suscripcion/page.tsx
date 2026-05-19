@@ -30,7 +30,7 @@ export default function SubscriptionPage() {
 
   return (
     <main className="relative bg-slate-950 text-white min-h-screen">
-      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120%] h-[600px] bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.08)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120%] h-150 bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.08)_0%,transparent_60%)] pointer-events-none" />
 
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
