@@ -297,7 +297,7 @@ export function ExportPanel({ config, timeline, qualityPassed, projectId, onExpo
       )}
 
       {/* Export Button */}
-      {(exportStatus === 'idle' || exportStatus === 'COMPLETED' || exportStatus === 'FAILED') && (
+      {(exportStatus === 'idle' || exportStatus === 'creating' || exportStatus === 'COMPLETED' || exportStatus === 'FAILED') && (
         <Card className="bg-linear-to-r from-teal-900 to-slate-900 border-teal-500/30">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
