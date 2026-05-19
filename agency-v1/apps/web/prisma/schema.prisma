@@ -1141,6 +1141,19 @@ model Campaign {
   launchedAt      DateTime?        @map("launched_at")
   parameters      Json?
   trackingConfig  Json?            @map("tracking_config")
+  targeting       Json?            // Structured targeting: age, gender, locations, interests, lookalike, remarketing
+  creative        Json?            // Headlines, descriptions, primaryTexts, CTA, assetUrls, adGroups
+  dayParting      Json?            @map("day_parting") // Weekly schedule grid
+  brandManual     Json?            @map("brand_manual") // Brand identity and guidelines
+  abTestConfig    Json?            @map("ab_test_config") // A/B test variants config
+  utmConfig       Json?            @map("utm_config") // UTM source/medium/campaign/content
+  platformConfigs Json?            @map("platform_configs") // Per-platform advanced settings (keywords, pixel, etc)
+  budgetType      String?          @default("DAILY") @map("budget_type") // DAILY or LIFETIME
+  bidStrategy     String?          @map("bid_strategy") // LOWEST_COST, COST_CAP, etc
+  bidAmount       Float?           @map("bid_amount")
+  pacing          String?          @default("STANDARD") // STANDARD or ACCELERATED
+  currency        String?          @default("USD")
+  objective       String?          // LEAD_GENERATION, CONVERSIONS, etc
   abTests         ABTest[]
   adSpends        AdSpend[]
   assets          CampaignAsset[]

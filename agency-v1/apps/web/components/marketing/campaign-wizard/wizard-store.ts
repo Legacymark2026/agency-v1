@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { create } from 'zustand';
 
@@ -366,10 +366,11 @@ const defaultCreative: WizardCreative = {
     activeAdGroupId: undefined,
 };
 
+
 // ─── STORE ────────────────────────────────────────────────────────────────────
 
 export const useCampaignWizard = create<WizardState>((set, get) => ({
-    step: 0, // FIX #2: Start at step 0 (Templates screen) instead of step 1 (Platform)
+    step: 0,
     platforms: [],
     objective: 'LEAD_GENERATION',
     name: '',
@@ -462,34 +463,34 @@ export const useCampaignWizard = create<WizardState>((set, get) => ({
                 industry: preset.industry,
                 desiredCTA: preset.desiredCTA,
                 generateCount: 3,
-                },
             },
-        })),
+        },
+    })),
         
-setAIGenerationConfig: (config: Partial<AIGenerationConfig>) => set((s) => ({
-            creative: {
-                ...s.creative,
-                aiGenerated: { ...s.creative.aiGenerated, ...config } as AIGenerationConfig,
-            },
-        })),
-        
-        setBrandIdentity: (identity: Partial<BrandIdentity>) => set((s) => ({
-            creative: {
-                ...s.creative,
-                brandIdentity: { ...s.creative.brandIdentity, ...identity } as BrandIdentity,
-            },
-        })),
-        
-        setBrandManual: (manual: Partial<BrandManual>) => set((s) => ({
-            creative: {
-                ...s.creative,
-                brandManual: { 
-                    ...s.creative.brandManual, 
-                    ...manual,
-                    updatedAt: new Date().toISOString(),
-                } as BrandManual,
-            },
-        })),
+    setAIGenerationConfig: (config: Partial<AIGenerationConfig>) => set((s) => ({
+        creative: {
+            ...s.creative,
+            aiGenerated: { ...s.creative.aiGenerated, ...config } as AIGenerationConfig,
+        },
+    })),
+    
+    setBrandIdentity: (identity: Partial<BrandIdentity>) => set((s) => ({
+        creative: {
+            ...s.creative,
+            brandIdentity: { ...s.creative.brandIdentity, ...identity } as BrandIdentity,
+        },
+    })),
+    
+    setBrandManual: (manual: Partial<BrandManual>) => set((s) => ({
+        creative: {
+            ...s.creative,
+            brandManual: { 
+                ...s.creative.brandManual, 
+                ...manual,
+                updatedAt: new Date().toISOString(),
+            } as BrandManual,
+        },
+    })),
     
     // Ad Groups Management
     addAdGroup: (name: string) => {
@@ -571,7 +572,6 @@ setAIGenerationConfig: (config: Partial<AIGenerationConfig>) => set((s) => ({
         const state = get();
         if (!state.creative.aiGenerated?.enabled) return;
         
-        const tone = state.creative.aiGenerated?.tone || 'professional';
         const hookStyle = state.creative.aiGenerated?.hookStyle || 'benefit';
         const count = state.creative.aiGenerated?.generateCount || 3;
         
@@ -617,32 +617,40 @@ setAIGenerationConfig: (config: Partial<AIGenerationConfig>) => set((s) => ({
     analyzePerformance: async () => {
         set({ isAnalyzing: true });
         
-        // Simulate analytics analysis
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const analytics: CampaignAnalytics = {
-            impressions: Math.floor(Math.random() * 100000) + 10000,
-            clicks: Math.floor(Math.random() * 5000) + 500,
-            conversions: Math.floor(Math.random() * 200) + 20,
-            spend: Math.floor(Math.random() * 2000) + 200,
-            cpc: Math.random() * 2 + 0.5,
-            cpm: Math.random() * 10 + 5,
-            roas: Math.random() * 4 + 1,
-            conversionRate: Math.random() * 5 + 1,
-            platformData: {
-                FACEBOOK_ADS: { impressions: 40000, clicks: 2000, conversions: 80, spend: 800 },
-                GOOGLE_ADS: { impressions: 30000, clicks: 1500, conversions: 60, spend: 600 },
-                TIKTOK_ADS: { impressions: 20000, clicks: 1000, conversions: 40, spend: 400 },
-                LINKEDIN_ADS: { impressions: 10000, clicks: 500, conversions: 20, spend: 200 },
-            },
-        };
-        
-        set({ analytics, isAnalyzing: false });
+        try {
+            const { getCampaignAnalytics } = await import('@/actions/marketing');
+            const analytics = await getCampaignAnalytics();
+            
+            set({ 
+                analytics: {
+                    impressions: analytics.impressions,
+                    clicks: analytics.clicks,
+                    conversions: analytics.conversions,
+                    spend: analytics.spend,
+                    cpc: analytics.cpc,
+                    cpm: analytics.cpm,
+                    roas: analytics.roas,
+                    conversionRate: analytics.conversionRate,
+                    platformData: analytics.platformData as any,
+                },
+                isAnalyzing: false,
+            });
+        } catch (error) {
+            console.error('Failed to fetch analytics:', error);
+            set({ 
+                analytics: {
+                    impressions: 0, clicks: 0, conversions: 0, spend: 0,
+                    cpc: 0, cpm: 0, roas: 0, conversionRate: 0,
+                    platformData: {} as any,
+                },
+                isAnalyzing: false,
+            });
+        }
     },
     
     reset: () =>
         set({
-            step: 0, // FIX #2: Reset to step 0 (Templates) not step 1
+            step: 0,
             platforms: [],
             objective: 'LEAD_GENERATION',
             name: '',

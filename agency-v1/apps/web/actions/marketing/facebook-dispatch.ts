@@ -7,7 +7,7 @@ import { getFacebookAdsConfig } from './facebook-ads';
 const FB_GRAPH_URL = 'https://graph.facebook.com/v19.0';
 
 /**
- * Creates a real Campaign and AdSet in Meta Ads via Graph API
+ * Creates a real Campaign, AdSet, and Ad in Meta Ads via Graph API
  */
 export async function createFacebookAdSet(campaignData: any) {
     const config = await getFacebookAdsConfig();
@@ -67,6 +67,40 @@ export async function createFacebookAdSet(campaignData: any) {
         adSetPayload.bid_amount = (parameters.bidAmount * 100).toString();
     }
 
+    // ROAS target: when bid strategy is TROAS, use LOWEST_COST_WITH_MIN_ROAS
+    if (parameters.bidStrategy === 'TROAS' && parameters.roasTarget) {
+        adSetPayload.bid_strategy = 'LOWEST_COST_WITH_MIN_ROAS';
+        adSetPayload.roas_avg_floor = (parameters.roasTarget / 100).toString();
+    }
+
+    // Cost cap amount: set bid_amount in cents when strategy is COST_CAP
+    if (parameters.bidStrategy === 'COST_CAP' && parameters.costCapAmount) {
+        adSetPayload.bid_amount = (parameters.costCapAmount * 100).toString();
+    }
+
+    // Pacing type
+    if (parameters.pacing) {
+        adSetPayload.pacing_type = JSON.stringify(
+            parameters.pacing === 'no_pacing' ? ['no_pacing'] : ['standard']
+        );
+    }
+
+    // Day parting schedule
+    if (parameters.dayParting?.schedule && Array.isArray(parameters.dayParting.schedule)) {
+        const adsetSchedule = parameters.dayParting.schedule.map((slot: any) => ({
+            start_minute: slot.start_minute ?? 0,
+            end_minute: slot.end_minute ?? 1440,
+            days: slot.days ?? [0, 1, 2, 3, 4, 5, 6],
+            timezone_type: 'USER'
+        }));
+        adSetPayload.adset_schedule = JSON.stringify(adsetSchedule);
+    }
+
+    // Promoted object with pixel_id
+    if (parameters.pixelId) {
+        adSetPayload.promoted_object = JSON.stringify({ pixel_id: parameters.pixelId });
+    }
+
     // Advanced Targeting payload
     // FIX #5: locations can be either a LocationTarget[] (from wizard store) or a CSV string (legacy).
     // Normalize to an array of country codes/names before sending to Meta.
@@ -118,10 +152,29 @@ export async function createFacebookAdSet(campaignData: any) {
         targeting.excluded_custom_audiences = parameters.excludedAudiences.split(',').map((id: string) => ({ id: id.trim() }));
     }
 
+    // Interest targeting: pass interests[] to flexible_spec
+    if (parameters.interests && Array.isArray(parameters.interests) && parameters.interests.length > 0) {
+        targeting.flexible_spec = [
+            {
+                interests: parameters.interests.map((interest: any) => ({
+                    id: interest.id,
+                    name: interest.name
+                }))
+            }
+        ];
+    }
+
+    // Advantage+ targeting automation
+    if (parameters.advantagePlus) {
+        targeting.targeting_automation = {
+            advantage_audience: 1
+        };
+    }
+
     // Attach targeting
     adSetPayload.targeting = JSON.stringify(targeting);
 
-    // Advantage+ / Manual Placements
+    // Manual Placements (only when NOT Advantage+)
     if (!parameters.advantagePlus && parameters.manualPlacements) {
         const targetingObj = JSON.parse(adSetPayload.targeting);
         if (parameters.manualPlacements === 'FB_IG') {
@@ -148,9 +201,70 @@ export async function createFacebookAdSet(campaignData: any) {
         throw new Error(adSetResult.error.message || "Failed to create Meta Ad Set");
     }
 
+    const fbAdSetId = adSetResult.id;
+
+    // 3. Create a real Ad within the Ad Set
+    const ctaType = parameters.callToAction || 'LEARN_MORE';
+    const destinationUrl = parameters.destinationUrl || 'https://example.com';
+    const primaryText = parameters.primaryText || parameters.adCopy || name;
+    const headline = parameters.headline || name;
+    const description = parameters.description || '';
+    const assetUrls: string[] = parameters.assetUrls || [];
+
+    const linkData: any = {
+        message: primaryText,
+        link: destinationUrl,
+        name: headline,
+        description: description,
+        call_to_action: {
+            type: ctaType,
+            value: { link: destinationUrl }
+        }
+    };
+
+    // Use picture URL from assetUrls[0] since we don't have image_hash
+    if (assetUrls.length > 0) {
+        linkData.picture = assetUrls[0];
+    }
+
+    const adCreative = {
+        object_story_spec: {
+            page_id: parameters.pageId || '',
+            link_data: linkData
+        }
+    };
+
+    const adPayload = new URLSearchParams({
+        name: `${name} - Ad`,
+        adset_id: fbAdSetId,
+        status: 'PAUSED',
+        creative: JSON.stringify(adCreative),
+        access_token: accessToken
+    });
+
+    const adRes = await fetch(`${FB_GRAPH_URL}/${adAccountId}/ads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: adPayload
+    });
+
+    const adResult = await adRes.json();
+    if (adResult.error) {
+        console.error("Meta Ad Creation Error:", adResult.error);
+        // Don't throw — campaign + adset already created successfully
+        return {
+            success: true,
+            campaignId: fbCampaignId,
+            adSetId: fbAdSetId,
+            adId: null,
+            adError: adResult.error.message || "Failed to create Meta Ad"
+        };
+    }
+
     return {
         success: true,
         campaignId: fbCampaignId,
-        adSetId: adSetResult.id
+        adSetId: fbAdSetId,
+        adId: adResult.id
     };
 }

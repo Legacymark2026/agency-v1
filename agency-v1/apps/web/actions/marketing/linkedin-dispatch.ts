@@ -7,7 +7,21 @@ const LINKEDIN_API_VERSION = '202306'; // Example version, check latest LinkedIn
 const LINKEDIN_BASE_URL = 'https://api.linkedin.com/rest';
 
 /**
- * Creates a real Campaign and Campaign Group in LinkedIn Ads API
+ * Ad format mapping from wizard values to LinkedIn API format strings
+ */
+const AD_FORMAT_MAP: Record<string, string> = {
+    SINGLE_IMAGE: 'SINGLE_IMAGE',
+    VIDEO_AD: 'VIDEO_AD',
+    VIDEO: 'VIDEO_AD',
+    CAROUSEL: 'CAROUSEL',
+    MESSAGE_AD: 'MESSAGE_AD',
+    MESSAGE: 'MESSAGE_AD',
+    CONVERSATION_AD: 'CONVERSATION_AD',
+    CONVERSATION: 'CONVERSATION_AD',
+};
+
+/**
+ * Creates a real Campaign Group, Campaign, and Creative in LinkedIn Ads API
  */
 export async function createLinkedInCampaign(campaignData: any) {
     const session = await auth();
@@ -36,6 +50,13 @@ export async function createLinkedInCampaign(campaignData: any) {
     const { accountId, accessToken } = configRecord.config as any;
     const { parameters, name, dailyBudget, lifetimeBudget } = campaignData;
 
+    const defaultHeaders = {
+        'Authorization': `Bearer ${accessToken}`,
+        'X-RestLi-Protocol-Version': '2.0.0',
+        'LinkedIn-Version': LINKEDIN_API_VERSION,
+        'Content-Type': 'application/json'
+    };
+
     // 1. Ensure a Campaign Group exists or create one
     // We'll create a default one for this campaign to keep it isolated initially
     const groupPayload = {
@@ -46,12 +67,7 @@ export async function createLinkedInCampaign(campaignData: any) {
 
     const groupRes = await fetch(`${LINKEDIN_BASE_URL}/adCampaignGroups`, {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'X-RestLi-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': LINKEDIN_API_VERSION,
-            'Content-Type': 'application/json'
-        },
+        headers: defaultHeaders,
         body: JSON.stringify(groupPayload)
     });
 
@@ -124,7 +140,41 @@ export async function createLinkedInCampaign(campaignData: any) {
         }
     }
 
+    // Job Function targeting
+    if (parameters.jobFunctions && Array.isArray(parameters.jobFunctions) && parameters.jobFunctions.length > 0) {
+        const jobFunctionUrns = parameters.jobFunctions.map(
+            (jf: any) => typeof jf === 'string' ? `urn:li:function:${jf}` : `urn:li:function:${jf.id}`
+        );
+        targetingCriteria.include.and.push({
+            or: { 'urn:li:adTargetingFacet:jobFunctions': jobFunctionUrns }
+        });
+    }
+
+    // Industry targeting
+    if (parameters.industries && Array.isArray(parameters.industries) && parameters.industries.length > 0) {
+        const industryUrns = parameters.industries.map(
+            (ind: any) => typeof ind === 'string' ? `urn:li:industry:${ind}` : `urn:li:industry:${ind.id}`
+        );
+        targetingCriteria.include.and.push({
+            or: { 'urn:li:adTargetingFacet:industries': industryUrns }
+        });
+    }
+
+    // Skills targeting
+    if (parameters.skills && Array.isArray(parameters.skills) && parameters.skills.length > 0) {
+        const skillUrns = parameters.skills.map(
+            (sk: any) => typeof sk === 'string' ? `urn:li:skill:${sk}` : `urn:li:skill:${sk.id}`
+        );
+        targetingCriteria.include.and.push({
+            or: { 'urn:li:adTargetingFacet:skills': skillUrns }
+        });
+    }
+
     // 3. Create Campaign Payload
+    // Resolve ad format
+    const rawFormat = parameters.adFormat || 'SINGLE_IMAGE';
+    const resolvedFormat = AD_FORMAT_MAP[rawFormat] || rawFormat;
+
     const campaignPayload: any = {
         account: `urn:li:sponsoredAccount:${accountId}`,
         campaignGroup: fullGroupUrn,
@@ -132,11 +182,21 @@ export async function createLinkedInCampaign(campaignData: any) {
         objectiveType: parameters.objective || 'LEAD_GENERATION',
         audience: targetingCriteria,
         status: 'PAUSED',
-        format: parameters.adFormat || 'SINGLE_IMAGE',
+        format: resolvedFormat,
         runSchedule: {
             start: Date.now()
         }
     };
+
+    // Day parting: extend runSchedule with start/end timestamps
+    if (parameters.dayParting) {
+        if (parameters.dayParting.startTimestamp) {
+            campaignPayload.runSchedule.start = parameters.dayParting.startTimestamp;
+        }
+        if (parameters.dayParting.endTimestamp) {
+            campaignPayload.runSchedule.end = parameters.dayParting.endTimestamp;
+        }
+    }
 
     // Budgets
     if (parameters.biddingStrategy === 'TARGET_COST') {
@@ -150,14 +210,14 @@ export async function createLinkedInCampaign(campaignData: any) {
         campaignPayload.dailyBudget = { currencyCode: 'USD', amount: dailyBudget.toString() };
     }
 
+    // Lifetime budget via totalBudget field
+    if (parameters.budgetType === 'LIFETIME' && lifetimeBudget) {
+        campaignPayload.totalBudget = { currencyCode: 'USD', amount: lifetimeBudget.toString() };
+    }
+
     const campaignRes = await fetch(`${LINKEDIN_BASE_URL}/adCampaigns`, {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'X-RestLi-Protocol-Version': '2.0.0',
-            'LinkedIn-Version': LINKEDIN_API_VERSION,
-            'Content-Type': 'application/json'
-        },
+        headers: defaultHeaders,
         body: JSON.stringify(campaignPayload)
     });
 
@@ -169,9 +229,88 @@ export async function createLinkedInCampaign(campaignData: any) {
 
     const campaignUrn = campaignRes.headers.get('x-restli-id') || campaignRes.headers.get('location')?.split('/').pop()?.replace('urn:li:sponsoredCampaign:', '');
 
+    if (!campaignUrn) {
+        throw new Error("Failed to parse Campaign URN from LinkedIn response");
+    }
+
+    const fullCampaignUrn = `urn:li:sponsoredCampaign:${campaignUrn}`;
+
+    // 4. Create a real Ad Creative
+    const primaryText = parameters.primaryText || parameters.adCopy || name;
+    const headline = parameters.headline || name;
+    const assetUrls: string[] = parameters.assetUrls || [];
+    const destinationUrl = parameters.destinationUrl || 'https://example.com';
+
+    const creativeVariables: any = {
+        data: {
+            'com.linkedin.ads.SponsoredUpdateCreativeVariables': {
+                activity: '',
+                directSponsoredContent: true,
+                share: {
+                    shareCommentary: {
+                        text: primaryText
+                    },
+                    shareMediaCategory: 'NONE'
+                }
+            }
+        }
+    };
+
+    // Attach image if available
+    if (assetUrls.length > 0) {
+        const shareMedia = {
+            shareMediaCategory: 'IMAGE',
+            media: assetUrls.map((url: string) => ({
+                status: 'READY',
+                originalUrl: url,
+                title: {
+                    text: headline
+                },
+                description: {
+                    text: parameters.description || ''
+                }
+            }))
+        };
+        creativeVariables.data['com.linkedin.ads.SponsoredUpdateCreativeVariables'].share = {
+            ...creativeVariables.data['com.linkedin.ads.SponsoredUpdateCreativeVariables'].share,
+            ...shareMedia
+        };
+    }
+
+    const creativePayload = {
+        campaign: fullCampaignUrn,
+        reference: `urn:li:sponsoredAccount:${accountId}`,
+        status: 'PAUSED',
+        variables: creativeVariables
+    };
+
+    const creativeRes = await fetch(`${LINKEDIN_BASE_URL}/adCreatives`, {
+        method: 'POST',
+        headers: defaultHeaders,
+        body: JSON.stringify(creativePayload)
+    });
+
+    let creativeId: string | null = null;
+
+    if (!creativeRes.ok) {
+        const creativeError = await creativeRes.text();
+        console.error("LinkedIn Creative Error:", creativeError);
+        // Non-fatal: campaign already created
+        return {
+            success: true,
+            groupId: groupUrn,
+            campaignId: campaignUrn,
+            creativeId: null,
+            creativeError: "Failed to create LinkedIn Creative"
+        };
+    } else {
+        creativeId = creativeRes.headers.get('x-restli-id') || null;
+    }
+
     return {
         success: true,
         groupId: groupUrn,
-        campaignId: campaignUrn
+        campaignId: campaignUrn,
+        creativeId
     };
 }

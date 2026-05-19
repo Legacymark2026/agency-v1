@@ -143,6 +143,20 @@ export async function saveCampaignDraft(data: {
     parameters: any;
     trackingConfig: any;
     campaignId?: string;
+    // ─── New structured fields ───
+    targeting?: any;
+    creative?: any;
+    dayParting?: any;
+    brandManual?: any;
+    abTestConfig?: any;
+    utmConfig?: any;
+    platformConfigs?: any;
+    budgetType?: string;
+    bidStrategy?: string;
+    bidAmount?: number;
+    pacing?: string;
+    currency?: string;
+    objective?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
@@ -153,33 +167,47 @@ export async function saveCampaignDraft(data: {
     });
     if (!companyUser) throw new Error("Company not found");
 
-    console.log("Saving campaign with trackingConfig:", JSON.stringify(data.trackingConfig));
+    const { campaignId, startDate, endDate, ...rest } = data;
 
-    const { campaignId, ...campaignData } = data;
+    const dbPayload = {
+        name: rest.name,
+        platform: rest.platform,
+        budget: rest.budget,
+        description: rest.description,
+        parameters: rest.parameters,
+        trackingConfig: rest.trackingConfig,
+        targeting: rest.targeting ?? undefined,
+        creative: rest.creative ?? undefined,
+        dayParting: rest.dayParting ?? undefined,
+        brandManual: rest.brandManual ?? undefined,
+        abTestConfig: rest.abTestConfig ?? undefined,
+        utmConfig: rest.utmConfig ?? undefined,
+        platformConfigs: rest.platformConfigs ?? undefined,
+        budgetType: rest.budgetType ?? 'DAILY',
+        bidStrategy: rest.bidStrategy ?? undefined,
+        bidAmount: rest.bidAmount ?? undefined,
+        pacing: rest.pacing ?? 'STANDARD',
+        currency: rest.currency ?? 'USD',
+        objective: rest.objective ?? undefined,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+    };
 
     if (campaignId) {
-        // Update existing draft
         const updated = await prisma.campaign.update({
             where: { id: campaignId, companyId: companyUser.companyId },
-            data: {
-                ...campaignData,
-                startDate: data.startDate ? new Date(data.startDate) : null,
-                endDate: data.endDate ? new Date(data.endDate) : null,
-            }
+            data: dbPayload,
         });
         return { success: true, id: updated.id };
     } else {
-        // Create new draft
         const created = await prisma.campaign.create({
             data: {
-                ...campaignData,
+                ...dbPayload,
                 code: `DRAFT-${Date.now()}`,
                 status: 'DRAFT',
                 approvalStatus: 'DRAFT',
                 launchStatus: 'PENDING',
                 companyId: companyUser.companyId,
-                startDate: data.startDate ? new Date(data.startDate) : null,
-                endDate: data.endDate ? new Date(data.endDate) : null,
             }
         });
         return { success: true, id: created.id };

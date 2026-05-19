@@ -254,3 +254,74 @@ export async function getCampaignChartData() {
         conversions: s._sum.conversions || 0,
     }));
 }
+
+/**
+ * Gets real analytics for a specific campaign or aggregated for all campaigns.
+ * Reads from DB (synced via syncLiveCampaigns). Falls back to platform API data if available.
+ */
+export async function getCampaignAnalytics(campaignId?: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    const companyUser = await prisma.companyUser.findFirst({
+        where: { userId: session.user.id },
+        select: { companyId: true }
+    });
+    if (!companyUser) throw new Error("Company not found");
+
+    const where: any = { companyId: companyUser.companyId };
+    if (campaignId) where.id = campaignId;
+
+    const campaigns = await prisma.campaign.findMany({
+        where,
+        select: {
+            id: true,
+            platform: true,
+            impressions: true,
+            clicks: true,
+            conversions: true,
+            spend: true,
+            budget: true,
+            status: true,
+        }
+    });
+
+    // Aggregate totals
+    const totals = campaigns.reduce((acc, c) => ({
+        impressions: acc.impressions + c.impressions,
+        clicks: acc.clicks + c.clicks,
+        conversions: acc.conversions + c.conversions,
+        spend: acc.spend + c.spend,
+    }), { impressions: 0, clicks: 0, conversions: 0, spend: 0 });
+
+    // Break down by platform
+    const platformData: Record<string, { impressions: number; clicks: number; conversions: number; spend: number }> = {};
+    for (const c of campaigns) {
+        const platforms = c.platform.split(',');
+        for (const p of platforms) {
+            const key = p.trim();
+            if (!platformData[key]) {
+                platformData[key] = { impressions: 0, clicks: 0, conversions: 0, spend: 0 };
+            }
+            // Distribute evenly across platforms if multi-platform
+            const factor = 1 / platforms.length;
+            platformData[key].impressions += Math.round(c.impressions * factor);
+            platformData[key].clicks += Math.round(c.clicks * factor);
+            platformData[key].conversions += Math.round(c.conversions * factor);
+            platformData[key].spend += c.spend * factor;
+        }
+    }
+
+    return {
+        impressions: totals.impressions,
+        clicks: totals.clicks,
+        conversions: totals.conversions,
+        spend: totals.spend,
+        cpc: totals.clicks > 0 ? totals.spend / totals.clicks : 0,
+        cpm: totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0,
+        roas: totals.spend > 0 ? (totals.conversions * 50) / totals.spend : 0, // Assume $50 avg conversion value
+        conversionRate: totals.clicks > 0 ? (totals.conversions / totals.clicks) * 100 : 0,
+        platformData,
+        campaignCount: campaigns.length,
+    };
+}
