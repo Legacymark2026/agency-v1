@@ -7,8 +7,8 @@ FROM node:20-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache git openssl
 
-# Copy root workspace manifests
-COPY package*.json ./
+# Copy root workspace manifests and configs
+COPY package*.json turbo.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/video-editor/package.json ./packages/video-editor/
