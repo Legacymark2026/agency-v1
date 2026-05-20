@@ -99,7 +99,7 @@ async function shouldDeliver(
     });
 
     // No preference → use defaults
-    if (!pref) return eventMeta.defaultChannels.includes(channel);
+    if (!pref) return (eventMeta.defaultChannels as readonly DeliveryChannel[]).includes(channel);
 
     return pref.enabled;
   } catch {
