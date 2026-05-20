@@ -49,6 +49,7 @@ COPY --from=base /app/apps/web/next.config.ts ./apps/web/
 COPY --from=base /app/apps/web/package.json ./apps/web/
 COPY --from=base /app/apps/web/public ./apps/web/public
 COPY --from=base /app/apps/web/.next ./apps/web/.next
+COPY --from=base /app/apps/web/prisma ./apps/web/prisma
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages ./packages
 
