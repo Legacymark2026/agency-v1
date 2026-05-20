@@ -51,7 +51,7 @@ export interface NotificationEventMeta {
   /** Default priority level */
   defaultPriority: NotificationPriority;
   /** Default delivery channels for new users */
-  defaultChannels: DeliveryChannel[];
+  defaultChannels: readonly DeliveryChannel[];
   /** URL template — {id} placeholders resolved at emission time */
   linkTemplate?: string;
   /** Whether this event can be disabled by users */
