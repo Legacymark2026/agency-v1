@@ -131,9 +131,11 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
     const [selectedKbIds, setSelectedKbIds] = useState<string[]>(initKbIds);
 
     // ── Multi-Specialization Framework
-    const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
-    const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-    const [showSkillsTab, setShowSkillsTab] = useState(false);
+    const initSkillIds = initialData?.agentSkills?.map((s: any) => s.id) || [];
+    const initSpecIds = [...new Set(initialData?.agentSkills?.map((s: any) => s.specializationId) || [])] as string[];
+    const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>(initSpecIds);
+    const [selectedSkills, setSelectedSkills] = useState<string[]>(initSkillIds);
+    const [showSkillsTab, setShowSkillsTab] = useState(initSkillIds.length > 0);
     const [strictRagMode, setStrictRagMode] = useState(initialData?.strictRagMode ?? false);
 
     // ── Human-in-the-Loop
@@ -186,6 +188,7 @@ export function AgentBuilderForm({ companyId, knowledgeBases = [], initialData }
                 suspensionDurationMinutes, priorityAlpha, frustrationThreshold,
                 enforceTempClamp, enforceTokenLimit, simulateLatency, filterRoboticLists,
                 voiceId, stability, similarityBoost, accentRegion, gender,
+                skillIds: selectedSkills,
             });
             if (result.success) {
                 toast.success(initialData ? "¡Agente Actualizado!" : "¡Agente Ultra-Pro creado!", { id: tid });

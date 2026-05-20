@@ -34,7 +34,11 @@ export async function getAIAgents(companyId: string) {
 export async function getAIAgentById(id: string) {
     return prisma.aIAgent.findUnique({
         where: { id },
-        include: { knowledgeBases: true, conversations: { orderBy: { createdAt: "desc" }, take: 10 } }
+        include: { 
+            knowledgeBases: true, 
+            conversations: { orderBy: { createdAt: "desc" }, take: 10 },
+            agentSkills: true
+        }
     });
 }
 
@@ -67,6 +71,7 @@ export async function upsertAIAgent(data: {
     gender?: string;
     isInboxAgent?: boolean;
     learningMode?: string;
+    skillIds?: string[];
 }) {
     await getSession();
 
@@ -113,6 +118,7 @@ export async function upsertAIAgent(data: {
     };
 
     const knowledgeConnect = data.knowledgeBaseIds?.map(id => ({ id })) || [];
+    const skillConnect = data.skillIds?.map(id => ({ id })) || [];
 
     // If this agent is being set as the Inbox Agent, unset it for all others in the company
     if (payload.isInboxAgent) {
@@ -126,11 +132,19 @@ export async function upsertAIAgent(data: {
     if (data.id) {
         agent = await prisma.aIAgent.update({
             where: { id: data.id },
-            data: { ...payload, knowledgeBases: { set: knowledgeConnect } }
+            data: { 
+                ...payload, 
+                knowledgeBases: { set: knowledgeConnect },
+                agentSkills: { set: skillConnect }
+            }
         });
     } else {
         agent = await prisma.aIAgent.create({
-            data: { ...payload, knowledgeBases: { connect: knowledgeConnect } }
+            data: { 
+                ...payload, 
+                knowledgeBases: { connect: knowledgeConnect },
+                agentSkills: { connect: skillConnect }
+            }
         });
     }
 
