@@ -369,7 +369,8 @@ export class VideoEditorModule {
         const zone = this.getSafeZoneConfig(format, platform);
         const issues = [];
         overlays.forEach(o => {
-            if (!o.safeZone) {
+            const isSafe = this.validateSafeZone(o, zone);
+            if (!isSafe) {
                 issues.push(o.text);
             }
         });

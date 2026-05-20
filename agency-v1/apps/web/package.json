@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:turbo": "next dev",
-    "build": "prisma generate && next build",
+    "build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx prisma generate && set NODE_OPTIONS=--max-old-space-size=8192 && next build",
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
@@ -23,7 +23,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
     "sync-meta": "tsx scripts/sync-meta-env.ts",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "vercel-build": "set NODE_OPTIONS=--max-old-space-size=4096 && prisma generate && set NODE_OPTIONS=--max-old-space-size=4096 && prisma migrate deploy && set NODE_OPTIONS=--max-old-space-size=4096 && next build",
     "verify:deployment": "node scripts/testing/verify-deployment.js",
     "generate:secrets": "node scripts/utils/generate-secrets.js"
   },
