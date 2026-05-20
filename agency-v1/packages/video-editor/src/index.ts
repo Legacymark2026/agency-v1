@@ -504,7 +504,8 @@ export class VideoEditorModule {
     const issues: string[] = [];
 
     overlays.forEach(o => {
-      if (!o.safeZone) {
+      const isSafe = this.validateSafeZone(o, zone);
+      if (!isSafe) {
         issues.push(o.text);
       }
     });
