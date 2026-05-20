@@ -11,7 +11,7 @@
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────
   postgres:
-    image: pgvector/pgvector:16-pgvector
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: legacymark
