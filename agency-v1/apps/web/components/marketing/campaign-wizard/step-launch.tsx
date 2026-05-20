@@ -85,6 +85,7 @@ export function StepLaunch() {
                 utmConfig: creative.utmConfig,
                 brandManual: creative.brandManual,
                 abTestConfig: useCampaignWizard.getState().abTestConfig,
+                platformConfigs: (useCampaignWizard.getState() as any).platformConfigs,
                 parameters: {
                     objective,
                     bidStrategy: budget.bidStrategy,
@@ -115,6 +116,16 @@ export function StepLaunch() {
                     destinationUrl: creative.destinationUrl,
                     assetUrls: creative.assetUrls,
                     dayParting: budget.dayParting,
+                    // Platform-specific configs from Fase 5
+                    ...(useCampaignWizard.getState() as any).platformConfigs && {
+                        platformConfigs: (useCampaignWizard.getState() as any).platformConfigs,
+                    },
+                    ...(useCampaignWizard.getState() as any).linkedinTargeting && {
+                        linkedinTargeting: (useCampaignWizard.getState() as any).linkedinTargeting,
+                    },
+                    ...(useCampaignWizard.getState() as any).googleKeywords && {
+                        googleKeywords: (useCampaignWizard.getState() as any).googleKeywords,
+                    },
                 },
                 trackingConfig: {
                     utm: creative.utmConfig,

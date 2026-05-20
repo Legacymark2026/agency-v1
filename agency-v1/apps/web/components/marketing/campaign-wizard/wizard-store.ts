@@ -1,10 +1,41 @@
-﻿'use client';
+'use client';
 
 import { create } from 'zustand';
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
 
 export type PlatformKey = 'FACEBOOK_ADS' | 'GOOGLE_ADS' | 'TIKTOK_ADS' | 'LINKEDIN_ADS';
+
+// ─── PLATFORM-SPECIFIC CONFIGS ────────────────────────────────────────────────
+
+export interface GoogleAdsConfig {
+    campaignType: 'SEARCH' | 'DISPLAY' | 'VIDEO' | 'PERFORMANCE_MAX';
+    searchPartners: boolean;
+    displayNetwork: boolean;
+}
+
+export interface MetaAdsConfig {
+    pixelId: string;
+    advantagePlus: boolean;
+    specialAdCategories: ('NONE' | 'CREDIT' | 'EMPLOYMENT' | 'HOUSING' | 'SOCIAL_ISSUES')[];
+}
+
+export interface TikTokAdsConfig {
+    optimizationGoal: 'CONVERSION' | 'CLICK' | 'REACH' | 'IMPRESSION' | 'VIDEO_VIEW';
+    placement: 'AUTOMATIC' | 'TIKTOK_ONLY' | 'PANGLE';
+}
+
+export interface LinkedInAdsConfig {
+    adFormat: 'SINGLE_IMAGE' | 'VIDEO' | 'CAROUSEL' | 'MESSAGE' | 'CONVERSATION';
+    objectiveType: 'LEAD_GENERATION' | 'BRAND_AWARENESS' | 'WEBSITE_VISITS' | 'ENGAGEMENT' | 'VIDEO_VIEWS' | 'JOB_APPLICANTS';
+}
+
+export interface PlatformConfigs {
+    google?: GoogleAdsConfig;
+    meta?: MetaAdsConfig;
+    tiktok?: TikTokAdsConfig;
+    linkedin?: LinkedInAdsConfig;
+}
 
 export interface WizardBudget {
     type: 'DAILY' | 'LIFETIME';
@@ -269,6 +300,10 @@ export interface WizardState {
     isLaunching: boolean;
     launchResults: Array<{ platform: string; success: boolean; externalId?: string; error?: string }>;
 
+    // Platform-specific advanced configs
+    platformConfigs: PlatformConfigs;
+    setPlatformConfigs: (configs: PlatformConfigs) => void;
+
     // Advanced Features
     templates: CampaignTemplate[];
     savedTemplate?: CampaignTemplate;
@@ -387,6 +422,7 @@ export const useCampaignWizard = create<WizardState>((set, get) => ({
     isAnalyzing: false,
     abTestConfig: undefined,
     brandPresets: [],
+    platformConfigs: {},
     
     setStep: (step) => set({ step }),
     nextStep: () => set((s) => ({ step: Math.min(s.step + 1, 6) })),
@@ -436,6 +472,7 @@ export const useCampaignWizard = create<WizardState>((set, get) => ({
     setIsAnalyzing: (isAnalyzing) => set({ isAnalyzing }),
     setABTestConfig: (abTestConfig) => set({ abTestConfig }),
     setBrandPresets: (brandPresets) => set({ brandPresets }),
+    setPlatformConfigs: (platformConfigs) => set({ platformConfigs }),
     
     saveBrandPreset: (name: string) => {
         const state = get();
@@ -666,5 +703,6 @@ export const useCampaignWizard = create<WizardState>((set, get) => ({
             smartAllocation: [],
             analytics: undefined,
             abTestConfig: undefined,
+            platformConfigs: {},
         }),
 }));

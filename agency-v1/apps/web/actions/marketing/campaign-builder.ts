@@ -121,7 +121,9 @@ export async function launchMultiPlatformCampaign(
                 launchedAt: new Date(),
             },
         });
-        revalidatePath('/dashboard/admin/marketing/campaigns');
+        try {
+            revalidatePath('/dashboard/admin/marketing/campaigns');
+        } catch (e) {}
     } else {
         await prisma.campaign.update({
             where: { id: campaignId },
@@ -223,7 +225,9 @@ export async function submitForApproval(campaignId: string) {
         data: { approvalStatus: 'PENDING_APPROVAL' }
     });
 
-    revalidatePath('/dashboard/admin/marketing/approvals');
+    try {
+        revalidatePath('/dashboard/admin/marketing/approvals');
+    } catch (e) {}
     return { success: true };
 }
 
@@ -244,8 +248,10 @@ export async function updateApprovalStatus(campaignId: string, status: 'APPROVED
         }
     });
 
-    revalidatePath('/dashboard/admin/marketing/approvals');
-    revalidatePath('/dashboard/admin/marketing/campaigns');
+    try {
+        revalidatePath('/dashboard/admin/marketing/approvals');
+        revalidatePath('/dashboard/admin/marketing/campaigns');
+    } catch (e) {}
 
     // Optionally log the activity with the note...
 
@@ -323,7 +329,9 @@ export async function launchCampaign(campaignId: string) {
             }
         });
 
-        revalidatePath('/dashboard/admin/marketing/campaigns');
+        try {
+            revalidatePath('/dashboard/admin/marketing/campaigns');
+        } catch (e) {}
         return { success: true };
     } catch (error: any) {
         await prisma.campaign.update({

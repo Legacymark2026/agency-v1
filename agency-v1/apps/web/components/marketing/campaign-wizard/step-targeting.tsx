@@ -12,9 +12,10 @@ import {
     X, Plus, MapPin, Globe, Target, 
     Users, TrendingUp, Ban, Sparkles, 
     Building2, ShoppingCart, Heart, Briefcase, RefreshCw,
-    Copy, FileText, ClipboardList, Upload, Download
+    Copy, FileText, ClipboardList, Upload, Download,
+    Linkedin, Search
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LocationMap } from './location-map';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,10 +38,73 @@ const INTEREST_CATEGORIES = [
     { name: 'Profesional', icon: Briefcase, interests: ['Marketing Digital', 'Finanzas', 'RRHH', 'Ventas'] },
 ];
 
+const LINKEDIN_JOB_FUNCTIONS = [
+    'ACCOUNTING', 'ADMINISTRATIVE', 'ARTS_DESIGN', 'BUSINESS_DEVELOPMENT', 'COMMUNITY_SOCIAL',
+    'CONSULTING', 'EDUCATION', 'ENGINEERING', 'ENTREPRENEURSHIP', 'FINANCE',
+    'HEALTHCARE', 'HUMAN_RESOURCES', 'IT', 'LEGAL', 'MARKETING',
+    'MEDIA_COMMUNICATIONS', 'MILITARY', 'OPERATIONS', 'PRODUCT_MANAGEMENT', 'PURCHASING',
+    'QUALITY_ASSURANCE', 'REAL_ESTATE', 'RESEARCH', 'SALES', 'SUPPORT',
+];
+
+const LINKEDIN_INDUSTRIES = [
+    'TECHNOLOGY', 'FINANCIAL_SERVICES', 'HEALTHCARE', 'EDUCATION', 'MANUFACTURING',
+    'RETAIL', 'MEDIA', 'CONSULTING', 'REAL_ESTATE', 'ENERGY',
+    'AUTOMOTIVE', 'FOOD_BEVERAGE', 'TRAVEL', 'ENTERTAINMENT', 'GOVERNMENT',
+];
+
+const LINKEDIN_COMPANY_SIZES = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
+const LINKEDIN_SENIORITY = ['CXO', 'VP', 'DIRECTOR', 'MANAGER', 'SENIOR', 'ENTRY'];
+
 export function StepTargeting() {
-    const { targeting, setTargeting, nextStep, prevStep } = useCampaignWizard();
+    const { targeting, setTargeting, nextStep, prevStep, platforms } = useCampaignWizard();
     const [interestInput, setInterestInput] = useState('');
     
+    // LinkedIn B2B Targeting State
+    const [liJobFunctions, setLiJobFunctions] = useState<string[]>([]);
+    const [liIndustries, setLiIndustries] = useState<string[]>([]);
+    const [liCompanySize, setLiCompanySize] = useState('');
+    const [liSeniority, setLiSeniority] = useState('');
+    const [liSkillsInput, setLiSkillsInput] = useState('');
+
+    // Google Keywords Targeting State
+    const [gKeywords, setGKeywords] = useState('');
+    const [gMatchType, setGMatchType] = useState<'BROAD' | 'PHRASE' | 'EXACT'>('BROAD');
+    const [gNegativeKeywords, setGNegativeKeywords] = useState('');
+
+    // Sync LinkedIn targeting to wizard store
+    useEffect(() => {
+        if (!platforms.includes('LINKEDIN_ADS')) return;
+        const skills = liSkillsInput.split(',').map(s => s.trim()).filter(Boolean);
+        useCampaignWizard.setState({
+            linkedinTargeting: {
+                jobFunctions: liJobFunctions,
+                industries: liIndustries,
+                companySize: liCompanySize,
+                seniority: liSeniority,
+                skills,
+            },
+        } as any);
+    }, [liJobFunctions, liIndustries, liCompanySize, liSeniority, liSkillsInput, platforms]);
+
+    // Sync Google keywords to wizard store
+    useEffect(() => {
+        if (!platforms.includes('GOOGLE_ADS')) return;
+        const keywords = gKeywords.split('\n').map(s => s.trim()).filter(Boolean);
+        const negativeKeywords = gNegativeKeywords.split('\n').map(s => s.trim()).filter(Boolean);
+        useCampaignWizard.setState({
+            googleKeywords: {
+                keywords,
+                matchType: gMatchType,
+                negativeKeywords,
+            },
+        } as any);
+    }, [gKeywords, gMatchType, gNegativeKeywords, platforms]);
+
+    // Chip toggle helper
+    function toggleChip(value: string, list: string[], setter: (v: string[]) => void) {
+        setter(list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
+    }
+
     // Advanced Location Inputs
     const [locType, setLocType] = useState<'COUNTRY' | 'REGION' | 'CITY' | 'SECTOR' | 'COORDINATES'>('COUNTRY');
     const [locName, setLocName] = useState('');
@@ -477,6 +541,197 @@ export function StepTargeting() {
                     />
                 </div>
             </div>
+
+            {/* ═══════════════════════════ LinkedIn B2B Targeting ═══════════════════════════ */}
+            {platforms.includes('LINKEDIN_ADS') && (
+                <div className="space-y-5 pt-6 border-t border-blue-500/20">
+                    {/* Section Header */}
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30">
+                            <Linkedin className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-blue-300 tracking-wide">LinkedIn B2B Targeting</h3>
+                            <p className="text-xs text-blue-400/60">Segmentación profesional avanzada</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white/5 border border-blue-500/10 rounded-2xl p-5 space-y-6">
+                        {/* Job Functions — Multi-select Chips */}
+                        <div className="space-y-3">
+                            <Label className="text-xs font-semibold text-blue-300/80 uppercase tracking-widest">Job Functions</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {LINKEDIN_JOB_FUNCTIONS.map((fn) => (
+                                    <button
+                                        key={fn}
+                                        type="button"
+                                        onClick={() => toggleChip(fn, liJobFunctions, setLiJobFunctions)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                                            liJobFunctions.includes(fn)
+                                                ? 'border-blue-500 bg-blue-500/20 text-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
+                                                : 'border-white/10 bg-white/5 text-gray-400 hover:border-blue-500/40 hover:text-blue-300'
+                                        }`}
+                                    >
+                                        {liJobFunctions.includes(fn) && '✓ '}{fn.replace(/_/g, ' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Industries — Multi-select Chips */}
+                        <div className="space-y-3">
+                            <Label className="text-xs font-semibold text-blue-300/80 uppercase tracking-widest">Industries</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {LINKEDIN_INDUSTRIES.map((ind) => (
+                                    <button
+                                        key={ind}
+                                        type="button"
+                                        onClick={() => toggleChip(ind, liIndustries, setLiIndustries)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                                            liIndustries.includes(ind)
+                                                ? 'border-blue-500 bg-blue-500/20 text-blue-200 shadow-[0_0_8px_rgba(59,130,246,0.15)]'
+                                                : 'border-white/10 bg-white/5 text-gray-400 hover:border-blue-500/40 hover:text-blue-300'
+                                        }`}
+                                    >
+                                        {liIndustries.includes(ind) && '✓ '}{ind.replace(/_/g, ' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Company Size & Seniority — Grid Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-blue-300/80 uppercase tracking-widest">Company Size</Label>
+                                <select
+                                    value={liCompanySize}
+                                    onChange={(e) => setLiCompanySize(e.target.value)}
+                                    className="w-full bg-slate-950 border border-white/10 text-white rounded-lg h-11 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow outline-none"
+                                >
+                                    <option value="">Seleccionar tamaño...</option>
+                                    {LINKEDIN_COMPANY_SIZES.map((sz) => (
+                                        <option key={sz} value={sz}>{sz} empleados</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-blue-300/80 uppercase tracking-widest">Seniority</Label>
+                                <select
+                                    value={liSeniority}
+                                    onChange={(e) => setLiSeniority(e.target.value)}
+                                    className="w-full bg-slate-950 border border-white/10 text-white rounded-lg h-11 px-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow outline-none"
+                                >
+                                    <option value="">Seleccionar nivel...</option>
+                                    {LINKEDIN_SENIORITY.map((s) => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Skills — Comma-separated Tags */}
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-blue-300/80 uppercase tracking-widest">Skills</Label>
+                            <Input
+                                value={liSkillsInput}
+                                onChange={(e) => setLiSkillsInput(e.target.value)}
+                                placeholder="Ej: React, Product Management, Data Analysis (separados por coma)"
+                                className="bg-white/5 border-white/10 text-white h-11"
+                            />
+                            {liSkillsInput && (
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {liSkillsInput.split(',').map(s => s.trim()).filter(Boolean).map((skill, i) => (
+                                        <Badge key={i} className="px-2 py-0.5 bg-blue-500/10 text-blue-300 border border-blue-500/20 text-xs">
+                                            {skill}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══════════════════════════ Google Keywords ═══════════════════════════ */}
+            {platforms.includes('GOOGLE_ADS') && (
+                <div className="space-y-5 pt-6 border-t border-yellow-500/20">
+                    {/* Section Header */}
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-yellow-500/20 border border-yellow-500/30">
+                            <Search className="w-5 h-5 text-yellow-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-yellow-300 tracking-wide">Google Keywords</h3>
+                            <p className="text-xs text-yellow-400/60">Palabras clave y concordancia de búsqueda</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white/5 border border-yellow-500/10 rounded-2xl p-5 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Keywords Textarea */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-yellow-300/80 uppercase tracking-widest">Keywords</Label>
+                                <Textarea
+                                    value={gKeywords}
+                                    onChange={(e) => setGKeywords(e.target.value)}
+                                    placeholder={"marketing digital\nautomatización CRM\nsoftware empresarial\n(una keyword por línea)"}
+                                    className="bg-slate-950 border-white/10 text-white font-mono text-sm h-40 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                />
+                                {gKeywords.trim() && (
+                                    <p className="text-xs text-yellow-400/60">
+                                        {gKeywords.split('\n').filter(l => l.trim()).length} keyword(s) detectadas
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Negative Keywords Textarea */}
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-yellow-300/80 uppercase tracking-widest">Negative Keywords</Label>
+                                <Textarea
+                                    value={gNegativeKeywords}
+                                    onChange={(e) => setGNegativeKeywords(e.target.value)}
+                                    placeholder={"gratis\nbarato\ncurso\n(una por línea)"}
+                                    className="bg-slate-950 border-white/10 text-white font-mono text-sm h-40 focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50"
+                                />
+                                {gNegativeKeywords.trim() && (
+                                    <p className="text-xs text-red-400/60">
+                                        {gNegativeKeywords.split('\n').filter(l => l.trim()).length} exclusión(es)
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Match Type Selector */}
+                        <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-yellow-300/80 uppercase tracking-widest">Match Type (para todas las keywords)</Label>
+                            <div className="flex gap-2">
+                                {(['BROAD', 'PHRASE', 'EXACT'] as const).map((mt) => (
+                                    <button
+                                        key={mt}
+                                        type="button"
+                                        onClick={() => setGMatchType(mt)}
+                                        className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                                            gMatchType === mt
+                                                ? 'border-yellow-500 bg-yellow-500/15 text-yellow-200 shadow-[0_0_10px_rgba(234,179,8,0.1)]'
+                                                : 'border-white/10 bg-white/5 text-gray-400 hover:border-yellow-500/30'
+                                        }`}
+                                    >
+                                        {mt === 'BROAD' && '🔍 '}
+                                        {mt === 'PHRASE' && '"..." '}
+                                        {mt === 'EXACT' && '[...] '}
+                                        {mt}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                {gMatchType === 'BROAD' && 'Concordancia amplia: tus anuncios aparecerán en búsquedas relacionadas.'}
+                                {gMatchType === 'PHRASE' && 'Concordancia de frase: tus anuncios aparecerán cuando la búsqueda contenga tu frase.'}
+                                {gMatchType === 'EXACT' && 'Concordancia exacta: tus anuncios solo aparecerán con búsquedas exactas o muy cercanas.'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Actions Bar */}
             <div className="flex justify-between pt-8 border-t border-white/10">

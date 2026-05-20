@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useCampaignWizard, PlatformKey } from './wizard-store';
+import {
+    useCampaignWizard,
+    PlatformKey,
+    type PlatformConfigs,
+    type GoogleAdsConfig,
+    type MetaAdsConfig,
+    type TikTokAdsConfig,
+    type LinkedInAdsConfig,
+} from './wizard-store';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle2, Circle, Wifi, WifiOff, Loader2, AlertTriangle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Circle, Wifi, WifiOff, Loader2, AlertTriangle, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { connectFacebookAds } from '@/actions/marketing/facebook-ads';
 import { toast } from 'sonner';
@@ -75,8 +83,11 @@ type PlatformStatusMap = Record<PlatformKey, boolean>;
 // ─── COMPONENTE ───────────────────────────────────────────────────────────────
 
 export function StepPlatform() {
-    const { platforms, objective, name, description, setPlatforms, setObjective, setName, setDescription, nextStep } =
-        useCampaignWizard();
+    const {
+        platforms, objective, name, description,
+        setPlatforms, setObjective, setName, setDescription, nextStep,
+        platformConfigs, setPlatformConfigs,
+    } = useCampaignWizard();
 
     // FIX #4: Connection status from API
     const [connStatus, setConnStatus] = useState<PlatformStatusMap | null>(null);
@@ -87,6 +98,9 @@ export function StepPlatform() {
     const [fbAdAccountId, setFbAdAccountId] = useState('');
     const [fbAccessToken, setFbAccessToken] = useState('');
     const [savingFB, setSavingFB] = useState(false);
+
+    // Advanced platform config panels
+    const [expandedPanels, setExpandedPanels] = useState<Record<string, boolean>>({});
 
     // Fetch connection status on mount
     useEffect(() => {
@@ -370,6 +384,45 @@ export function StepPlatform() {
                 </Select>
             </div>
 
+            {/* Advanced Configuration by Platform */}
+            {platforms.length > 0 && (
+                <div className="space-y-4 border border-white/10 rounded-xl p-4 bg-white/5">
+                    <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                        ⚙️ Configuración Avanzada por Plataforma
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                        Personaliza opciones específicas de entrega, formatos y segmentación para cada canal.
+                    </p>
+                    
+                    <div className="space-y-3">
+                        {platforms.includes('GOOGLE_ADS') && (
+                            <GoogleSettings 
+                                config={platformConfigs.google} 
+                                onChange={(google) => setPlatformConfigs({ ...platformConfigs, google })} 
+                            />
+                        )}
+                        {platforms.includes('FACEBOOK_ADS') && (
+                            <MetaSettings 
+                                config={platformConfigs.meta} 
+                                onChange={(meta) => setPlatformConfigs({ ...platformConfigs, meta })} 
+                            />
+                        )}
+                        {platforms.includes('TIKTOK_ADS') && (
+                            <TikTokSettings 
+                                config={platformConfigs.tiktok} 
+                                onChange={(tiktok) => setPlatformConfigs({ ...platformConfigs, tiktok })} 
+                            />
+                        )}
+                        {platforms.includes('LINKEDIN_ADS') && (
+                            <LinkedInSettings 
+                                config={platformConfigs.linkedin} 
+                                onChange={(linkedin) => setPlatformConfigs({ ...platformConfigs, linkedin })} 
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Actions */}
             <div className="flex justify-end pt-4">
                 <Button
@@ -381,6 +434,331 @@ export function StepPlatform() {
                     Continuar →
                 </Button>
             </div>
+        </div>
+    );
+}
+
+// ─── PLATFORM-SPECIFIC SETTINGS COMPONENTS ────────────────────────────────────
+
+function GoogleSettings({
+    config,
+    onChange,
+}: {
+    config?: GoogleAdsConfig;
+    onChange: (cfg: GoogleAdsConfig) => void;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const campaignType = config?.campaignType || 'SEARCH';
+    const searchPartners = config?.searchPartners ?? true;
+    const displayNetwork = config?.displayNetwork ?? false;
+
+    const update = (key: keyof GoogleAdsConfig, value: any) => {
+        onChange({
+            campaignType,
+            searchPartners,
+            displayNetwork,
+            [key]: value,
+        });
+    };
+
+    return (
+        <div className="border border-white/5 bg-white/2 rounded-lg overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-3 bg-white/5 text-left text-sm font-medium"
+            >
+                <span className="flex items-center gap-2">🔍 Configuración Google Ads</span>
+                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {isOpen && (
+                <div className="p-4 space-y-4 bg-black/20 text-xs">
+                    <div className="space-y-1.5">
+                        <Label className="text-gray-300">Tipo de Campaña</Label>
+                        <Select
+                            value={campaignType}
+                            onValueChange={(val: any) => update('campaignType', val)}
+                        >
+                            <SelectTrigger className="bg-white/5 border-white/10 text-white h-9 text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-900 border-white/10 text-xs text-white">
+                                <SelectItem value="SEARCH" className="text-white hover:bg-white/10 cursor-pointer">Búsqueda (Search)</SelectItem>
+                                <SelectItem value="DISPLAY" className="text-white hover:bg-white/10 cursor-pointer">Display</SelectItem>
+                                <SelectItem value="VIDEO" className="text-white hover:bg-white/10 cursor-pointer">Video / YouTube</SelectItem>
+                                <SelectItem value="PERFORMANCE_MAX" className="text-white hover:bg-white/10 cursor-pointer">Performance Max (PMax)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col gap-2 pt-2">
+                        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={searchPartners}
+                                onChange={(e) => update('searchPartners', e.target.checked)}
+                                className="rounded border-white/10 bg-white/5 text-teal-600 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                            />
+                            Incluir Partners de Búsqueda de Google
+                        </label>
+                        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={displayNetwork}
+                                onChange={(e) => update('displayNetwork', e.target.checked)}
+                                className="rounded border-white/10 bg-white/5 text-teal-600 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                            />
+                            Incluir Red de Display de Google
+                        </label>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function MetaSettings({
+    config,
+    onChange,
+}: {
+    config?: MetaAdsConfig;
+    onChange: (cfg: MetaAdsConfig) => void;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const pixelId = config?.pixelId || '';
+    const advantagePlus = config?.advantagePlus ?? true;
+    const specialAdCategories = config?.specialAdCategories || ['NONE'];
+
+    const update = (key: keyof MetaAdsConfig, value: any) => {
+        onChange({
+            pixelId,
+            advantagePlus,
+            specialAdCategories,
+            [key]: value,
+        });
+    };
+
+    const handleCategoryToggle = (cat: 'NONE' | 'CREDIT' | 'EMPLOYMENT' | 'HOUSING' | 'SOCIAL_ISSUES') => {
+        let newCats: ('NONE' | 'CREDIT' | 'EMPLOYMENT' | 'HOUSING' | 'SOCIAL_ISSUES')[];
+        if (cat === 'NONE') {
+            newCats = ['NONE'];
+        } else {
+            const filtered = specialAdCategories.filter(c => c !== 'NONE');
+            if (filtered.includes(cat)) {
+                newCats = filtered.filter(c => c !== cat);
+                if (newCats.length === 0) newCats = ['NONE'];
+            } else {
+                newCats = [...filtered, cat];
+            }
+        }
+        update('specialAdCategories', newCats);
+    };
+
+    return (
+        <div className="border border-white/5 bg-white/2 rounded-lg overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-3 bg-white/5 text-left text-sm font-medium"
+            >
+                <span className="flex items-center gap-2">📘 Configuración Meta Ads</span>
+                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {isOpen && (
+                <div className="p-4 space-y-4 bg-black/20 text-xs text-white">
+                    <div className="space-y-1.5">
+                        <Label className="text-gray-300">Meta Pixel ID (Opcional)</Label>
+                        <Input
+                            placeholder="Ej: 123456789012345"
+                            value={pixelId}
+                            onChange={(e) => update('pixelId', e.target.value)}
+                            className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 h-9 text-xs"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-gray-300">Categorías de Anuncios Especiales</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                            {(['NONE', 'CREDIT', 'EMPLOYMENT', 'HOUSING', 'SOCIAL_ISSUES'] as const).map(cat => {
+                                const active = specialAdCategories.includes(cat);
+                                return (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => handleCategoryToggle(cat)}
+                                        className={cn(
+                                            "px-2.5 py-1 rounded text-[10px] font-semibold border transition-all duration-150",
+                                            active
+                                                ? "bg-teal-500/20 text-teal-300 border-teal-500/50"
+                                                : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
+                                        )}
+                                    >
+                                        {cat}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="pt-1">
+                        <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={advantagePlus}
+                                onChange={(e) => update('advantagePlus', e.target.checked)}
+                                className="rounded border-white/10 bg-white/5 text-teal-600 focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                            />
+                            Habilitar Advantage+ Campaign Budget
+                        </label>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function TikTokSettings({
+    config,
+    onChange,
+}: {
+    config?: TikTokAdsConfig;
+    onChange: (cfg: TikTokAdsConfig) => void;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const optimizationGoal = config?.optimizationGoal || 'CONVERSION';
+    const placement = config?.placement || 'AUTOMATIC';
+
+    const update = (key: keyof TikTokAdsConfig, value: any) => {
+        onChange({
+            optimizationGoal,
+            placement,
+            [key]: value,
+        });
+    };
+
+    return (
+        <div className="border border-white/5 bg-white/2 rounded-lg overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-3 bg-white/5 text-left text-sm font-medium"
+            >
+                <span className="flex items-center gap-2">🎵 Configuración TikTok Ads</span>
+                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {isOpen && (
+                <div className="p-4 space-y-4 bg-black/20 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-gray-300">Objetivo de Optimización</Label>
+                            <Select
+                                value={optimizationGoal}
+                                onValueChange={(val: any) => update('optimizationGoal', val)}
+                            >
+                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-9 text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-900 border-white/10 text-xs text-white">
+                                    <SelectItem value="CONVERSION" className="text-white hover:bg-white/10 cursor-pointer">Conversión</SelectItem>
+                                    <SelectItem value="CLICK" className="text-white hover:bg-white/10 cursor-pointer">Click</SelectItem>
+                                    <SelectItem value="REACH" className="text-white hover:bg-white/10 cursor-pointer">Alcance (Reach)</SelectItem>
+                                    <SelectItem value="IMPRESSION" className="text-white hover:bg-white/10 cursor-pointer">Impresiones</SelectItem>
+                                    <SelectItem value="VIDEO_VIEW" className="text-white hover:bg-white/10 cursor-pointer">Reproducciones Video</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-gray-300">Ubicación (Placements)</Label>
+                            <Select
+                                value={placement}
+                                onValueChange={(val: any) => update('placement', val)}
+                            >
+                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-9 text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-900 border-white/10 text-xs text-white">
+                                    <SelectItem value="AUTOMATIC" className="text-white hover:bg-white/10 cursor-pointer">Automático (Recomendado)</SelectItem>
+                                    <SelectItem value="TIKTOK_ONLY" className="text-white hover:bg-white/10 cursor-pointer">Solo TikTok</SelectItem>
+                                    <SelectItem value="PANGLE" className="text-white hover:bg-white/10 cursor-pointer">Solo Pangle (Red de Apps)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function LinkedInSettings({
+    config,
+    onChange,
+}: {
+    config?: LinkedInAdsConfig;
+    onChange: (cfg: LinkedInAdsConfig) => void;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const adFormat = config?.adFormat || 'SINGLE_IMAGE';
+    const objectiveType = config?.objectiveType || 'LEAD_GENERATION';
+
+    const update = (key: keyof LinkedInAdsConfig, value: any) => {
+        onChange({
+            adFormat,
+            objectiveType,
+            [key]: value,
+        });
+    };
+
+    return (
+        <div className="border border-white/5 bg-white/2 rounded-lg overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-3 bg-white/5 text-left text-sm font-medium"
+            >
+                <span className="flex items-center gap-2">💼 Configuración LinkedIn Ads</span>
+                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {isOpen && (
+                <div className="p-4 space-y-4 bg-black/20 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-gray-300">Formato del Anuncio</Label>
+                            <Select
+                                value={adFormat}
+                                onValueChange={(val: any) => update('adFormat', val)}
+                            >
+                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-9 text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-900 border-white/10 text-xs text-white">
+                                    <SelectItem value="SINGLE_IMAGE" className="text-white hover:bg-white/10 cursor-pointer">Imagen Única</SelectItem>
+                                    <SelectItem value="VIDEO" className="text-white hover:bg-white/10 cursor-pointer">Video</SelectItem>
+                                    <SelectItem value="CAROUSEL" className="text-white hover:bg-white/10 cursor-pointer">Carusel</SelectItem>
+                                    <SelectItem value="MESSAGE" className="text-white hover:bg-white/10 cursor-pointer">Mensaje Patrocinado</SelectItem>
+                                    <SelectItem value="CONVERSATION" className="text-white hover:bg-white/10 cursor-pointer">Anuncio de Conversación</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-gray-300">Tipo de Objetivo</Label>
+                            <Select
+                                value={objectiveType}
+                                onValueChange={(val: any) => update('objectiveType', val)}
+                            >
+                                <SelectTrigger className="bg-white/5 border-white/10 text-white h-9 text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-900 border-white/10 text-xs text-white">
+                                    <SelectItem value="LEAD_GENERATION" className="text-white hover:bg-white/10 cursor-pointer">Generación de Leads</SelectItem>
+                                    <SelectItem value="BRAND_AWARENESS" className="text-white hover:bg-white/10 cursor-pointer">Conocimiento de Marca</SelectItem>
+                                    <SelectItem value="WEBSITE_VISITS" className="text-white hover:bg-white/10 cursor-pointer">Visitas al Sitio Web</SelectItem>
+                                    <SelectItem value="ENGAGEMENT" className="text-white hover:bg-white/10 cursor-pointer">Interacción</SelectItem>
+                                    <SelectItem value="VIDEO_VIEWS" className="text-white hover:bg-white/10 cursor-pointer">Vistas de Video</SelectItem>
+                                    <SelectItem value="JOB_APPLICANTS" className="text-white hover:bg-white/10 cursor-pointer">Candidatos a Empleo</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

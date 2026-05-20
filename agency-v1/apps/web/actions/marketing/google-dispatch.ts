@@ -211,6 +211,56 @@ export async function createGoogleCampaign(campaignData: any) {
 
         adGroupResourceName = adGroupResult.results[0].resourceName;
 
+        // 6.1 Create Keywords (Positive & Negative) if googleKeywords is provided
+        const googleKeywords = parameters.googleKeywords;
+        if (googleKeywords && Array.isArray(googleKeywords.keywords) && googleKeywords.keywords.length > 0) {
+            const keywordMatchMap: Record<string, string> = {
+                'BROAD': 'BROAD',
+                'PHRASE': 'PHRASE',
+                'EXACT': 'EXACT'
+            };
+            const matchType = keywordMatchMap[googleKeywords.matchType] || 'BROAD';
+
+            const keywordOps = googleKeywords.keywords.map((kw: string) => ({
+                create: {
+                    adGroup: adGroupResourceName,
+                    keyword: {
+                        text: kw,
+                        matchType
+                    },
+                    negative: false
+                }
+            }));
+
+            // Also add negative keywords to the ad group if specified
+            if (Array.isArray(googleKeywords.negativeKeywords) && googleKeywords.negativeKeywords.length > 0) {
+                googleKeywords.negativeKeywords.forEach((negKw: string) => {
+                    keywordOps.push({
+                        create: {
+                            adGroup: adGroupResourceName,
+                            keyword: {
+                                text: negKw,
+                                matchType: 'EXACT' // Default to EXACT for negatives
+                            },
+                            negative: true
+                        }
+                    });
+                });
+            }
+
+            const kwRes = await fetch(`${GOOGLE_ADS_API_URL}/adGroupCriteria:mutate`, {
+                method: 'POST',
+                headers: defaultHeaders,
+                body: JSON.stringify({ operations: keywordOps })
+            });
+
+            const kwResult = await kwRes.json();
+            if (kwResult.error) {
+                console.error("Google Keywords Creation Error:", kwResult.error);
+                // Non-fatal, log and continue
+            }
+        }
+
         // 7. Age and gender targeting via ad group criteria
         const demographicOps: any[] = [];
 

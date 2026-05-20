@@ -106,24 +106,37 @@ export async function createLinkedInCampaign(campaignData: any) {
         });
     }
 
-    if (parameters.companySize) {
+    const linkedinTargeting = parameters.linkedinTargeting || {};
+    const companySize = linkedinTargeting.companySize || parameters.companySize;
+    const seniority = linkedinTargeting.seniority || parameters.seniority;
+    const jobFunctions = linkedinTargeting.jobFunctions || parameters.jobFunctions;
+    const industries = linkedinTargeting.industries || parameters.industries;
+    const skills = linkedinTargeting.skills || parameters.skills;
+
+    if (companySize) {
         // Map size to URNs
         const sizeMap: Record<string, string> = {
             '1_10': 'urn:li:organizationCapacity:(1,10)',
+            '1-10': 'urn:li:organizationCapacity:(1,10)',
             '11_50': 'urn:li:organizationCapacity:(11,50)',
+            '11-50': 'urn:li:organizationCapacity:(11,50)',
             '51_200': 'urn:li:organizationCapacity:(51,200)',
+            '51-200': 'urn:li:organizationCapacity:(51,200)',
             '201_500': 'urn:li:organizationCapacity:(201,500)',
+            '201-500': 'urn:li:organizationCapacity:(201,500)',
             '501_1000': 'urn:li:organizationCapacity:(501,1000)',
-            '1000_PLUS': 'urn:li:organizationCapacity:(1001,)'
+            '501-1000': 'urn:li:organizationCapacity:(501,1000)',
+            '1000_PLUS': 'urn:li:organizationCapacity:(1001,)',
+            '1000+': 'urn:li:organizationCapacity:(1001,)'
         };
-        if (sizeMap[parameters.companySize]) {
+        if (sizeMap[companySize]) {
             targetingCriteria.include.and.push({
-                or: { 'urn:li:adTargetingFacet:staffCountRanges': [sizeMap[parameters.companySize]] }
+                or: { 'urn:li:adTargetingFacet:staffCountRanges': [sizeMap[companySize]] }
             });
         }
     }
 
-    if (parameters.seniority) {
+    if (seniority) {
         // Map seniority to URNs
         const seniorityMap: Record<string, string> = {
             'CXO': 'urn:li:seniority:10',
@@ -133,16 +146,16 @@ export async function createLinkedInCampaign(campaignData: any) {
             'SENIOR': 'urn:li:seniority:6',
             'ENTRY': 'urn:li:seniority:3'
         };
-        if (seniorityMap[parameters.seniority]) {
+        if (seniorityMap[seniority]) {
             targetingCriteria.include.and.push({
-                or: { 'urn:li:adTargetingFacet:seniorities': [seniorityMap[parameters.seniority]] }
+                or: { 'urn:li:adTargetingFacet:seniorities': [seniorityMap[seniority]] }
             });
         }
     }
 
     // Job Function targeting
-    if (parameters.jobFunctions && Array.isArray(parameters.jobFunctions) && parameters.jobFunctions.length > 0) {
-        const jobFunctionUrns = parameters.jobFunctions.map(
+    if (jobFunctions && Array.isArray(jobFunctions) && jobFunctions.length > 0) {
+        const jobFunctionUrns = jobFunctions.map(
             (jf: any) => typeof jf === 'string' ? `urn:li:function:${jf}` : `urn:li:function:${jf.id}`
         );
         targetingCriteria.include.and.push({
@@ -151,8 +164,8 @@ export async function createLinkedInCampaign(campaignData: any) {
     }
 
     // Industry targeting
-    if (parameters.industries && Array.isArray(parameters.industries) && parameters.industries.length > 0) {
-        const industryUrns = parameters.industries.map(
+    if (industries && Array.isArray(industries) && industries.length > 0) {
+        const industryUrns = industries.map(
             (ind: any) => typeof ind === 'string' ? `urn:li:industry:${ind}` : `urn:li:industry:${ind.id}`
         );
         targetingCriteria.include.and.push({
@@ -161,8 +174,8 @@ export async function createLinkedInCampaign(campaignData: any) {
     }
 
     // Skills targeting
-    if (parameters.skills && Array.isArray(parameters.skills) && parameters.skills.length > 0) {
-        const skillUrns = parameters.skills.map(
+    if (skills && Array.isArray(skills) && skills.length > 0) {
+        const skillUrns = skills.map(
             (sk: any) => typeof sk === 'string' ? `urn:li:skill:${sk}` : `urn:li:skill:${sk.id}`
         );
         targetingCriteria.include.and.push({
