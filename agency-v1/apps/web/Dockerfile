@@ -8,7 +8,7 @@ WORKDIR /app
 RUN apk add --no-cache git openssl
 
 # Copy root workspace manifests and configs
-COPY package*.json turbo.json ./
+COPY package*.json turbo.json tsconfig*.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/video-editor/package.json ./packages/video-editor/
