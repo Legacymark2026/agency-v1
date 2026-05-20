@@ -38,9 +38,22 @@ Un monorepo para herramientas de agencia basado en Next.js, diseñado para gesti
 - Cobertura de tests >80%.
 - Usar conventional commits.
 
-## API Docs
+## Documentación y Desarrollo Reciente
 
-Ver `apps/web/actions/` para server actions. Esquema DB en `apps/web/prisma/schema.prisma`.
+### Rutas y Localización (next-intl)
+- El middleware está configurado para omitir prefijos locales en rutas específicas como `/dashboard` y `/admin`. 
+- Se agregaron bloques de control (`try/catch`) robustos en los layouts (`layout.tsx` principal y layout del dashboard) alrededor de las llamadas de contexto de `next-intl` para evitar caídas en rutas no localizadas.
+
+### Serialización de Datos y React Server Components (RSC)
+- Los componentes interactivos del cliente (como `AnalyticsOverview`) se declaran explícitamente con `'use client'` y reciben objetos de datos planos ya resueltos a través de Server Actions (`getAnalyticsOverview`) en lugar de pasar directamente promesas o consultas de base de datos complejas para cumplir con las restricciones de serialización de Next.js.
+
+### Calidad y Estilo de Código (Linting)
+- El linter (`npm run lint`) valida estrictamente las variables y parámetros de todos los paquetes. Por ejemplo, en `@agency/video-editor`, el método `checkSafeZones` fue refactorizado para calcular dinámicamente las zonas seguras de los textos usando los argumentos provistos, eliminando advertencias y errores de compilación.
+
+### API Docs
+- Documentación interactiva de la API pública en `/es/docs/api` (rutas para leads, contactos, deals, campañas, webhooks, motor de flujos de trabajo `workflows`, y callback de video render).
+- Ver `apps/web/actions/` para server actions de Next.js.
+- Esquema DB disponible en `apps/web/prisma/schema.prisma`.
 
 ## Licencia
 

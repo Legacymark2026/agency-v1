@@ -79,6 +79,8 @@ export default function ApiDocsPage() {
         { id: "deals",           label: "Deals",            icon: BarChart2 },
         { id: "conversations",   label: "Conversaciones",   icon: MessageSquare },
         { id: "campaigns",       label: "Campañas",         icon: BarChart2 },
+        { id: "workflows",       label: "Workflows Engine", icon: Webhook },
+        { id: "video-api",       label: "Video Render API", icon: BarChart2 },
         { id: "webhooks-api",    label: "Webhooks API",     icon: Webhook },
         { id: "errores",         label: "Errores",          icon: ShieldAlert },
     ];
@@ -263,6 +265,86 @@ export default function ApiDocsPage() {
   "platform": "META",
   "budget": 5000,
   "startDate": "2025-11-28"
+}`} />
+                    </section>
+
+                    {/* Workflows Engine */}
+                    <section id="workflows" className="scroll-mt-28 border-t border-slate-800/50 pt-10">
+                        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><Webhook className="w-5 h-5 text-teal-400" /> Workflows Engine</h2>
+                        <p className="text-slate-400 mb-5">Dispara, consulta y reanuda flujos de trabajo automatizados basados en triggers y steps asíncronos.</p>
+                        
+                        <div className="bg-slate-900 rounded-xl border border-slate-800 px-4 mb-6">
+                            <Endpoint method="POST"   path="/api/workflows/execute"              desc="Disparar un flujo de trabajo (Trigger)"     scope="x-api-key" />
+                            <Endpoint method="GET"    path="/api/workflows/executions/:id"        desc="Obtener estado e historial de ejecución"   scope="session" />
+                            <Endpoint method="POST"   path="/api/workflows/resume/:executionId"   desc="Reanudar un flujo de trabajo en WAITING"   scope="session / secret" />
+                            <Endpoint method="DELETE" path="/api/workflows/executions/:id"        desc="Cancelar una ejecución activa o en espera"  scope="session" />
+                        </div>
+
+                        <h4 className="text-sm font-semibold text-slate-300 mb-2">POST /api/workflows/execute — Parámetros</h4>
+                        <div className="overflow-x-auto rounded-xl border border-slate-800 mb-4">
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-900 text-slate-400 border-b border-slate-800">
+                                    <tr><th className="px-4 py-3 text-left">Header / Campo</th><th className="px-4 py-3 text-left">Tipo</th><th className="px-4 py-3 text-left">Descripción</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50 bg-slate-950">
+                                    <ParamRow name="x-api-key" type="Header (string)*" desc="Clave API pública de LegacyMark" />
+                                    <ParamRow name="x-idempotency-key" type="Header (string)" desc="Llave opcional para prevenir ejecuciones duplicadas" />
+                                    <ParamRow name="workflowId" type="Body (string)*" desc="ID del workflow a disparar" />
+                                    <ParamRow name="triggerData" type="Body (object)" desc="Payload JSON con datos iniciales del trigger" />
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <CodeBlock language="JavaScript" code={`// Disparar flujo de trabajo con idempotencia
+const res = await fetch('https://legacymarksas.com/api/workflows/execute', {
+  method: 'POST',
+  headers: {
+    'x-api-key': 'lm_live_YOUR_KEY',
+    'x-idempotency-key': 'unique-uuid-key-12345',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    workflowId: 'wf_prod_showcase_01',
+    triggerData: { customerEmail: 'juan@dev.com', amount: 150.00 }
+  })
+});
+// Response status: 202 Accepted
+// { "success": true, "message": "Workflow execution queued asynchronously", "workflow": { "id": "...", "name": "..." } }`} />
+                    </section>
+
+                    {/* Video Render API */}
+                    <section id="video-api" className="scroll-mt-28 border-t border-slate-800/50 pt-10">
+                        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-violet-400" /> Video Render API</h2>
+                        <p className="text-slate-400 mb-5">Endpoint interno para la integración y callbacks del motor de renderizado asíncrono de videos.</p>
+                        
+                        <div className="bg-slate-900 rounded-xl border border-slate-800 px-4 mb-6">
+                            <Endpoint method="POST" path="/api/video/render-callback" desc="Callback de actualización de estado de renderizado" scope="internal-secret" />
+                        </div>
+
+                        <h4 className="text-sm font-semibold text-slate-300 mb-2">POST /api/video/render-callback — Payload</h4>
+                        <div className="overflow-x-auto rounded-xl border border-slate-800 mb-4">
+                            <table className="w-full text-sm">
+                                <thead className="bg-slate-900 text-slate-400 border-b border-slate-800">
+                                    <tr><th className="px-4 py-3 text-left">Header / Campo</th><th className="px-4 py-3 text-left">Tipo</th><th className="px-4 py-3 text-left">Descripción</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50 bg-slate-950">
+                                    <ParamRow name="x-internal-secret" type="Header (string)*" desc="Secreto interno compartido de la plataforma" />
+                                    <ParamRow name="jobId" type="Body (string)*" desc="ID de la tarea de renderizado (videoRenderJob)" />
+                                    <ParamRow name="status" type="Body (string)*" desc="Estado del render: PROCESSING | COMPLETED | FAILED" />
+                                    <ParamRow name="progress" type="Body (number)" desc="Progreso actual de 0 a 100" />
+                                    <ParamRow name="outputUrl" type="Body (string)" desc="URL final del video renderizado en la nube (MP4)" />
+                                    <ParamRow name="errorMessage" type="Body (string)" desc="Mensaje de error en caso de fallo" />
+                                    <ParamRow name="durationMs" type="Body (number)" desc="Duración del renderizado en milisegundos" />
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <CodeBlock language="POST Callback Body" code={`{
+  "jobId": "clx123abc456",
+  "status": "COMPLETED",
+  "progress": 100,
+  "outputUrl": "https://storage.legacymarksas.com/renders/project-video-v1.mp4",
+  "durationMs": 42500
 }`} />
                     </section>
 
