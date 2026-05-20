@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import { writeFile, mkdir, readdir } from 'fs/promises';
 import { join, extname } from 'path';
 import { existsSync } from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
