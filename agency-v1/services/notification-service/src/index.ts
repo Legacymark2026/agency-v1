@@ -392,9 +392,9 @@ const EVENT_MAPPINGS: Record<string, { type: string; titleFn: (data: any) => str
 };
 
 for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
-  eventBus.subscribe(eventName, async (payload) => {
+  eventBus.subscribe(eventName as any, async (payload) => {
     try {
-      const { companyId } = payload.data;
+      const companyId = payload.data?.companyId as string;
       if (!companyId) return;
 
       const admins = await prisma.companyUser.findMany({

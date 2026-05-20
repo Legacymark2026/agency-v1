@@ -71,7 +71,7 @@ app.post('/api/video/render', async (req: Request, res: Response) => {
 
 // ─── GET /api/video/render/:jobId — Estado del render ───────────────────────
 app.get('/api/video/render/:jobId', (req: Request, res: Response) => {
-  const { jobId } = req.params;
+  const jobId = req.params.jobId as string;
   const job = jobs.get(jobId);
 
   if (!job) {
@@ -90,7 +90,7 @@ app.get('/api/video/render/:jobId', (req: Request, res: Response) => {
 
 // ─── POST /api/video/render/:jobId/cancel — Cancelar render ─────────────────
 app.post('/api/video/render/:jobId/cancel', (req: Request, res: Response) => {
-  const { jobId } = req.params;
+  const jobId = req.params.jobId as string;
   const job = jobs.get(jobId);
 
   if (!job) return res.status(404).json({ error: 'Job not found' });
