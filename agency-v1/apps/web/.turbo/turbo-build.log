@@ -9,11 +9,11 @@ For more information, see: https://pris.ly/prisma-config
 Environment variables loaded from .env
 Prisma schema loaded from prisma\schema.prisma
 
-✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 3.42s
+✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 1.95s
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
 
 ⚠ Found lockfile missing swc dependencies, patching...
 error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
@@ -53,8 +53,46 @@ Error: Failed to get registry from "yarn".
       <Buffer >,
       <Buffer 65 72 72 6f 72 20 54 68 69 73 20 70 72 6f 6a 65 63 74 27 73 20 70 61 63 6b 61 67 65 2e 6a 73 6f 6e 20 64 65 66 69 6e 65 73 20 22 70 61 63 6b 61 67 65 ... 425 more bytes>
     ],
-    pid: 24048,
+    pid: 7388,
     stdout: <Buffer >,
     stderr: <Buffer 65 72 72 6f 72 20 54 68 69 73 20 70 72 6f 6a 65 63 74 27 73 20 70 61 63 6b 61 67 65 2e 6a 73 6f 6e 20 64 65 66 69 6e 65 73 20 22 70 61 63 6b 61 67 65 ... 425 more bytes>
   }
 }
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  · clientTraceMetadata
+  · optimizePackageImports
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+⚠ Found lockfile missing swc dependencies, patching...
+error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
+
+Presence of the "packageManager" field indicates that the project is meant to be used with Corepack, a tool included by default with all official Node.js distributions starting from 16.9 and 14.19.
+Corepack must currently be enabled by running corepack enable in your terminal. For more information, check out https://yarnpkg.com/corepack.
+error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
+
+Presence of the "packageManager" field indicates that the project is meant to be used with Corepack, a tool included by default with all official Node.js distributions starting from 16.9 and 14.19.
+Corepack must currently be enabled by running corepack enable in your terminal. For more information, check out https://yarnpkg.com/corepack.
+error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
+
+Presence of the "packageManager" field indicates that the project is meant to be used with Corepack, a tool included by default with all official Node.js distributions starting from 16.9 and 14.19.
+Corepack must currently be enabled by running corepack enable in your terminal. For more information, check out https://yarnpkg.com/corepack.
+error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
+
+Presence of the "packageManager" field indicates that the project is meant to be used with Corepack, a tool included by default with all official Node.js distributions starting from 16.9 and 14.19.
+Corepack must currently be enabled by running corepack enable in your terminal. For more information, check out https://yarnpkg.com/corepack.
+error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
+
+Presence of the "packageManager" field indicates that the project is meant to be used with Corepack, a tool included by default with all official Node.js distributions starting from 16.9 and 14.19.
+Corepack must currently be enabled by running corepack enable in your terminal. For more information, check out https://yarnpkg.com/corepack.
+⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+Error: Failed to get registry from "yarn".
+    at getRegistry (C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\node_modules\next\dist\lib\helpers\get-registry.js:34:37)
+    at fetchPkgInfo (C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\node_modules\next\dist\lib\patch-incorrect-lockfile.js:65:60)
+    ... 2 lines matching cause stack trace ...
+    at Object.patchIncorrectLockfile (C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\node_modules\next\dist\lib\patch-incorrect-lockfile.js:166:59) {
+  [cause]: Error: Command failed: yarn config get registry 
+  error This project's package.json defines "packageManager": "yarn@npm@10.8.2". However the current global version of Yarn is 1.22.22.
+  

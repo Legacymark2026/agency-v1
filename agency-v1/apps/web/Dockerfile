@@ -17,7 +17,7 @@ COPY packages/video-editor/package.json ./packages/video-editor/
 COPY apps/web/package.json ./apps/web/
 
 # Install dependencies
-RUN npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+RUN npm ci --ignore-scripts || npm install --ignore-scripts
 
 # Copy shared packages
 COPY packages/database/ ./packages/database/

@@ -90,7 +90,7 @@ services:
       auth-service: { condition: service_healthy }
       crm-service: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -113,7 +113,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -132,7 +132,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -151,7 +151,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4003/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -175,7 +175,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4004/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/health"]
       interval: 15s
       timeout: 5s
       start_period: 15s
@@ -197,7 +197,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4005/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4005/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -218,7 +218,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4006/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4006/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -237,7 +237,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4007/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4007/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -256,7 +256,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4008/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4008/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -275,7 +275,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4009/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4009/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -294,7 +294,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4010/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4010/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -313,7 +313,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4011/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4011/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -332,7 +332,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4012/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4012/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -351,7 +351,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4013/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4013/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -370,7 +370,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4014/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4014/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -389,7 +389,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4015/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4015/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -409,7 +409,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4016/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4016/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -428,7 +428,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4017/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4017/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s
@@ -447,7 +447,7 @@ services:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4018/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4018/health"]
       interval: 15s
       timeout: 5s
       start_period: 10s

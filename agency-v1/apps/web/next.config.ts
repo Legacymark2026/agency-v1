@@ -155,40 +155,39 @@ const nextConfig: NextConfig = {
   },
 };
 
-// ── Sentry Configuration ─────────────────────────────────────────────────────
-// withSentryConfig wraps the Next.js config to:
-//  1. Auto-upload source maps to Sentry on build (for readable stack traces)
-//  2. Instrument Server Actions, API Routes and Middleware automatically
-//  3. Tree-shake Sentry from client-side bundle when DSN is not provided
-export default withSentryConfig(
-  withNextIntl(nextConfig),
-  {
-    // ── Sentry Organization & Project ──────────────────────
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT || 'agency-v1',
+const finalConfig = withNextIntl(nextConfig);
 
-    // ── Silent mode: suppress build output noise ───────────
-    silent: !process.env.CI,
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(
+      finalConfig,
+      {
+        // ── Sentry Organization & Project ──────────────────────
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT || 'agency-v1',
 
-    // ── Source Maps ────────────────────────────────────────
-    // Upload source maps to Sentry so production stack traces
-    // point to original TypeScript code, not minified JS.
-    sourcemaps: {
-      deleteSourcemapsAfterUpload: true, // Don't ship maps to clients
-    },
+        // ── Silent mode: suppress build output noise ───────────
+        silent: !process.env.CI,
 
-    // ── Automatic Instrumentation ──────────────────────────
-    // Note: Some of these options require webpack explicitly in recent SDKs
-    webpack: {
-      autoInstrumentServerFunctions: true,
-      autoInstrumentMiddleware: true,
-      autoInstrumentAppDirectory: true,
-      treeshake: {
-        removeDebugLogging: true
+        // ── Source Maps ────────────────────────────────────────
+        // Upload source maps to Sentry so production stack traces
+        // point to original TypeScript code, not minified JS.
+        sourcemaps: {
+          deleteSourcemapsAfterUpload: true, // Don't ship maps to clients
+        },
+
+        // ── Automatic Instrumentation ──────────────────────────
+        // Note: Some of these options require webpack explicitly in recent SDKs
+        webpack: {
+          autoInstrumentServerFunctions: true,
+          autoInstrumentMiddleware: true,
+          autoInstrumentAppDirectory: true,
+          treeshake: {
+            removeDebugLogging: true
+          }
+        },
+
+        // ── Tunneling (bypass ad-blockers for error reports) ───
+        tunnelRoute: '/monitoring-tunnel',
       }
-    },
-
-    // ── Tunneling (bypass ad-blockers for error reports) ───
-    tunnelRoute: '/monitoring-tunnel',
-  }
-);
+    )
+  : finalConfig;

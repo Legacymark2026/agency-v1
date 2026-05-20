@@ -8,7 +8,7 @@ COPY packages/events/package.json ./packages/events/
 COPY services/auth-service/package.json ./services/auth-service/
 
 # Install dependencies
-RUN npm ci 2>/dev/null || npm install
+RUN npm ci || npm install
 
 # Copy shared packages + Prisma schema
 COPY packages/database/ ./packages/database/
@@ -17,18 +17,18 @@ COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
 # Generate Prisma client
 WORKDIR /app/packages/database
-RUN npx prisma generate --schema=./prisma/schema.prisma 2>/dev/null || true
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Build shared packages
-RUN npx tsc --outDir dist 2>/dev/null || true
+RUN npx tsc --outDir dist
 WORKDIR /app/packages/events
-RUN npx tsc --outDir dist 2>/dev/null || true
+RUN npx tsc --outDir dist
 
 # Copy and build service
 WORKDIR /app
 COPY services/auth-service/ ./services/auth-service/
 WORKDIR /app/services/auth-service
-RUN npx tsc --outDir dist 2>/dev/null || true
+RUN npx tsc --outDir dist
 
 # ── Production Image ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
@@ -44,6 +44,6 @@ COPY --from=builder /app/services/auth-service/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 4001
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://localhost:4001/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4001/health || exit 1
 
 CMD ["node", "dist/index.js"]
