@@ -30,6 +30,7 @@ import {
   type NotificationCategory,
   type NotificationPriority,
   type DeliveryChannel,
+  type NotificationEventMeta,
 } from "./notification-types";
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
@@ -81,7 +82,7 @@ async function shouldDeliver(
   eventType: NotificationEventType,
   channel: DeliveryChannel
 ): Promise<boolean> {
-  const eventMeta = NOTIFICATION_EVENTS[eventType];
+  const eventMeta = NOTIFICATION_EVENTS[eventType] as NotificationEventMeta;
 
   // Non-configurable events always deliver
   if (!eventMeta.userConfigurable) return true;
@@ -99,7 +100,7 @@ async function shouldDeliver(
     });
 
     // No preference → use defaults
-    if (!pref) return (eventMeta.defaultChannels as readonly DeliveryChannel[]).includes(channel);
+    if (!pref) return eventMeta.defaultChannels.includes(channel);
 
     return pref.enabled;
   } catch {
@@ -118,7 +119,7 @@ export async function notifyEvent(
   eventType: NotificationEventType,
   params: NotifyEventParams
 ): Promise<string | null> {
-  const eventMeta = NOTIFICATION_EVENTS[eventType];
+  const eventMeta = NOTIFICATION_EVENTS[eventType] as NotificationEventMeta;
   if (!eventMeta) {
     console.error(`[NotificationEngine] Unknown event type: ${eventType}`);
     return null;
