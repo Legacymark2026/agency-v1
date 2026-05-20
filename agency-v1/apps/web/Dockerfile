@@ -35,7 +35,7 @@ RUN npx prisma generate
 
 # Build Next.js app using turbo from the root
 WORKDIR /app
-RUN npx turbo build --filter=web
+RUN NODE_OPTIONS="--max-old-space-size=4096" npx turbo build --filter=web
 
 # Runner stage
 FROM node:20-alpine AS runner
