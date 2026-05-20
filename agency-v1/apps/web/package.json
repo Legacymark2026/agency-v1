@@ -28,6 +28,7 @@
     "generate:secrets": "node scripts/utils/generate-secrets.js"
   },
   "dependencies": {
+    "@agency/video-agent": "file:../../packages/video-agent",
     "@agency/video-editor": "file:../../packages/video-editor",
     "@ai-sdk/anthropic": "^3.0.74",
     "@ai-sdk/cohere": "^3.0.35",
