@@ -25,10 +25,10 @@
     "db:migrate": "npm run migrate:deploy --workspace=packages/database",
     "db:studio": "npm run studio --workspace=packages/database"
   },
+  "packageManager": "npm@10.8.2",
   "devDependencies": {
     "turbo": "^2.0.0"
   },
-  "packageManager": "npm@10.8.2",
   "dependencies": {
     "puppeteer": "^24.43.0",
     "puppeteer-cluster": "^0.25.0"

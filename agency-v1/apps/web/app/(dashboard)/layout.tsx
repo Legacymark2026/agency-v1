@@ -16,13 +16,21 @@ import { getLocale, getTranslations } from "next-intl/server";
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-    const locale = await getLocale();
-    const t = await getTranslations({ locale, namespace: "dashboard.metadata" });
+    try {
+        const locale = await getLocale();
+        const t = await getTranslations({ locale, namespace: "dashboard.metadata" });
 
-    return {
-        title: t("title"),
-        description: t("description"),
-    };
+        return {
+            title: t("title"),
+            description: t("description"),
+        };
+    } catch (e) {
+        console.warn("[next-intl] getLocale/getTranslations failed in DashboardLayout generateMetadata (likely bypassed in middleware):", e);
+        return {
+            title: "Panel de Control | LegacyMark",
+            description: "Gestiona tus operaciones y campañas en tiempo real.",
+        };
+    }
 }
 
 function resolveBadge(role: string, customRoleName?: string) {

@@ -1,6 +1,8 @@
+'use client';
+
 import { Users, TrendingUp, Clock, Activity, Eye, MousePointerClick } from "lucide-react";
-import { getAnalyticsOverview } from "@/modules/analytics/actions/analytics";
 import { DashboardKPI } from "@/components/dashboard/DashboardUI";
+import type { AnalyticsOverviewData } from "@/modules/analytics/actions/analytics";
 
 function formatNumber(num: number): string {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -15,9 +17,7 @@ function formatDuration(seconds: number): string {
     return `${mins}m ${secs}s`;
 }
 
-export async function AnalyticsOverview() {
-    const data = await getAnalyticsOverview(30);
-
+export function AnalyticsOverview({ data }: { data: AnalyticsOverviewData }) {
     return (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <DashboardKPI

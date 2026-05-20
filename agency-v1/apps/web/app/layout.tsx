@@ -21,8 +21,22 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { PageTransition } from "@/components/ui/page-transition";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
-  const t = await getTranslations({ locale, namespace: "home.metadata" });
+  let locale = "es";
+  let t: (key: string) => string;
+
+  try {
+    locale = await getLocale();
+    const translations = await getTranslations({ locale, namespace: "home.metadata" });
+    t = (key) => translations(key);
+  } catch (e) {
+    console.warn("[next-intl] getLocale/getTranslations failed in RootLayout generateMetadata (likely bypassed in middleware):", e);
+    t = (key) => {
+      if (key === "title") return "LegacyMark | Plataforma de Operaciones de Marketing y CRM";
+      if (key === "description") return "Gestiona tus campañas, leads, automatizaciones y analíticas desde un solo panel de control unificado.";
+      return key;
+    };
+  }
+
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
   const openGraphLocale = locale === 'en' ? 'en_US' : 'es_ES';
@@ -94,7 +108,13 @@ export default async function RootLayout({
 }>) {
   const integrations = await getPublicIntegrations();
   const session = await auth();
-  const locale = await getLocale();
+  
+  let locale = "es";
+  try {
+    locale = await getLocale();
+  } catch (e) {
+    console.warn("[next-intl] getLocale failed in RootLayout (likely bypassed in middleware):", e);
+  }
 
   let userData: { em?: string; fn?: string; ln?: string; ph?: string } | undefined;
   if (session?.user) {

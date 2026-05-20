@@ -45,7 +45,7 @@ import {
     getDeviceStats, getGeoStats, getTopPages, getBrowserOsStats, getRealtimeUsers,
     getRevenueStats, getChannelAttribution, getPageSpeedMetrics, getActivityHeatmap,
     getSessionDurationDistribution, getGoalsProgress, getQuickInsights,
-    getSearchTerms, getSocialMetrics, getEngagementMetrics
+    getSearchTerms, getSocialMetrics, getEngagementMetrics, getAnalyticsOverview
 } from "@/modules/analytics/actions/analytics";
 
 export const metadata = {
@@ -119,7 +119,7 @@ export default async function AnalyticsPage({
     // En la pestaña CRM BI, los datos cargan vía Suspense (Streaming SSR) sin bloquear la página.
     let trafficData, trafficSources, funnelData, seoData, deviceData, geoData, topPagesData, browserOsData;
     let activeUsers = 0, revenueData, attributionData, pageSpeedData, heatmapData, sessionDurationData;
-    let goalsData, insightsData, searchTermsData, socialMetricsData, engagementData;
+    let goalsData, insightsData, searchTermsData, socialMetricsData, engagementData, overviewData;
 
     if (activeTab !== "crm-bi") {
         [
@@ -128,6 +128,7 @@ export default async function AnalyticsPage({
             activeUsers, revenueData, attributionData, pageSpeedData,
             heatmapData, sessionDurationData, goalsData, insightsData,
             searchTermsData, socialMetricsData, engagementData,
+            overviewData,
         ] = await Promise.all([
             getTrafficData(7),
             getTrafficSources(30),
@@ -148,6 +149,7 @@ export default async function AnalyticsPage({
             getSearchTerms(),
             getSocialMetrics(),
             getEngagementMetrics(),
+            getAnalyticsOverview(30),
         ]);
     }
 
@@ -218,7 +220,17 @@ export default async function AnalyticsPage({
                     <QuickInsights data={insightsData} />
 
                     {/* KPI Overview */}
-                    <AnalyticsOverview />
+                    <AnalyticsOverview data={overviewData || {
+                        visitors: 0,
+                        sessions: 0,
+                        pageViews: 0,
+                        avgDuration: 0,
+                        bounceRate: 0,
+                        pagesPerSession: 0,
+                        conversions: 0,
+                        conversionRate: 0,
+                        trends: { visitors: 0, sessions: 0, bounceRate: 0, conversions: 0 }
+                    }} />
 
                     {/* Period Comparison */}
                     <PeriodComparison />

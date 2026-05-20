@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { AnalyticsOverview } from "@/modules/analytics/components/overview";
+import { getAnalyticsOverview } from "@/modules/analytics/actions/analytics";
 import { prisma } from "@/lib/prisma";
 import { Activity, ShieldCheck, Sparkles, Clock, Terminal } from "lucide-react";
 
@@ -18,6 +19,8 @@ export default async function DashboardPage() {
         orderBy: { createdAt: 'desc' },
         take: 5
     }) : [];
+
+    const analyticsData = await getAnalyticsOverview(30);
 
     return (
         <div className="ds-page space-y-8">
@@ -77,7 +80,7 @@ export default async function DashboardPage() {
                     </div>
                     <h2 className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Métricas Estratégicas</h2>
                 </div>
-                <AnalyticsOverview />
+                <AnalyticsOverview data={analyticsData} />
             </div>
 
             {/* ── Recent Activity ── */}
