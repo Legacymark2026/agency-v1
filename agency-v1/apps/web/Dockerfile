@@ -12,7 +12,6 @@ COPY package*.json turbo.json tsconfig*.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/rbac/package.json ./packages/rbac/
-COPY packages/ui/package.json ./packages/ui/
 COPY packages/video-agent/package.json ./packages/video-agent/
 COPY packages/video-editor/package.json ./packages/video-editor/
 COPY apps/web/package.json ./apps/web/
@@ -24,7 +23,6 @@ RUN npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
 COPY packages/rbac/ ./packages/rbac/
-COPY packages/ui/ ./packages/ui/
 COPY packages/video-agent/ ./packages/video-agent/
 COPY packages/video-editor/ ./packages/video-editor/
 
