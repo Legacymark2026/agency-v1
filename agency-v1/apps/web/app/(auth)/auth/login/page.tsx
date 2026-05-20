@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, Suspense } from "react";
 import { useFormStatus } from "react-dom";
 import { loginUser, loginWithOAuth } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -21,6 +21,24 @@ function SubmitButton() {
         >
             {pending ? "Iniciando sesión..." : "Sign In"}
         </Button>
+    );
+}
+
+function DeletedAlert() {
+    const searchParams = useSearchParams();
+    const isDeleted = searchParams.get("deleted") === "1";
+
+    if (!isDeleted) return null;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-amber-500/10 border border-amber-500/50 text-amber-400 px-4 py-3 rounded-lg flex items-center text-sm mb-6"
+        >
+            <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+            <p>Tu sesión ha expirado o tu usuario fue eliminado de la base de datos. Por favor, inicia sesión de nuevo.</p>
+        </motion.div>
     );
 }
 
@@ -129,6 +147,10 @@ export default function LoginPage() {
                     </div>
 
                     <form action={handleSubmit} className="space-y-6">
+                        <Suspense fallback={null}>
+                            <DeletedAlert />
+                        </Suspense>
+
                         {errorMessage && (
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}

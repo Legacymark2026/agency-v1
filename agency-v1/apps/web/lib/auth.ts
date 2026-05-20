@@ -324,6 +324,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
                 // RBAC Fix: Propagar allowedRoutes para roles custom
                 session.user.allowedRoutes = (token.allowedRoutes as string[]) ?? [];
+                session.user.isDeleted = token.isDeleted as boolean | undefined;
             }
             return session;
         },

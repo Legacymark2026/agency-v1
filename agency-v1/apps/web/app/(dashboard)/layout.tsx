@@ -58,7 +58,11 @@ export default async function DashboardLayout({
         }),
     ]);
 
-    if (dbUser?.role) role = dbUser.role as UserRole;
+    if (!dbUser) {
+        redirect("/auth/login?deleted=1");
+    }
+
+    if (dbUser.role) role = dbUser.role as UserRole;
     if (role === UserRole.GUEST) redirect("/dashboard/unauthorized");
 
     // Get company user data for permissions

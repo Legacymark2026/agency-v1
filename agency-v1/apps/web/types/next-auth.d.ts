@@ -8,6 +8,7 @@ declare module "next-auth" {
             companyId?: string;          // B-2: ID de la empresa activa del usuario
             permissions?: Permission[];  // B-2: Permisos del usuario en esa empresa
             allowedRoutes?: string[];    // RBAC: Rutas permitidas para roles custom
+            isDeleted?: boolean;
         } & DefaultSession["user"];
     }
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
         companyId?: string;
         permissions?: Permission[];
         allowedRoutes?: string[];
+        isDeleted?: boolean;
     }
 }
 
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
         companyId?: string | null;   // B-2: companyId en token
         permissions?: Permission[];  // B-2: permissions en token
         allowedRoutes?: string[];    // RBAC: rutas permitidas para roles custom
+        isDeleted?: boolean;
     }
 }

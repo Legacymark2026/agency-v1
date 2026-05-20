@@ -47,6 +47,7 @@ export const authConfig: NextAuthConfig = {
                 session.user.permissions = token.permissions as import("@/types/auth").Permission[] | undefined;
                 // Propagar allowedRoutes al cliente para el sidebar
                 session.user.allowedRoutes = (token.allowedRoutes as string[]) ?? [];
+                session.user.isDeleted = token.isDeleted as boolean | undefined;
             }
             return session;
         },
