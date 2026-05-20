@@ -1,8 +1,10 @@
 'use client';
 
-import { ReactNode, useRef, useState } from 'react';
+import { ReactNode, useRef, useState, useEffect } from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+
 
 // ─── Page wrapper ─────────────────────────────────────────────────────────────
 interface DashboardPageProps { children: ReactNode; className?: string; }
@@ -94,16 +96,54 @@ export function DashboardSection({ children, title, subtitle, code, actions, cla
     );
 }
 
+// Hook for count-up animation
+function useCountUp(end: number, duration: number = 1500) {
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+        let startTime: number | null = null;
+        let frame: number;
+        const animate = (ts: number) => {
+            if (!startTime) startTime = ts;
+            const pct = Math.min((ts - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - pct, 4);
+            setCount(end * ease);
+            if (pct < 1) frame = requestAnimationFrame(animate);
+        };
+        frame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(frame);
+    }, [end, duration]);
+    return count;
+}
+
 // ─── KPI card with flashlight hover effect (home style) ──────────────────────
-interface DashboardKPIProps {
+export interface DashboardKPIProps {
     label: string;
-    value: string | number;
+    value?: string | number;
+    numericValue?: number;
+    formatValue?: (val: number) => string;
     delta?: string;
     deltaUp?: boolean;
+    deltaText?: string;
     icon?: ReactNode;
     code?: string;
+    accentColor?: 'teal' | 'amber' | 'red' | 'blue' | 'sky' | 'emerald' | 'violet' | 'slate';
+    className?: string;
+    delay?: number;
 }
-export function DashboardKPI({ label, value, delta, deltaUp, icon, code }: DashboardKPIProps) {
+export function DashboardKPI({ 
+    label, 
+    value, 
+    numericValue, 
+    formatValue, 
+    delta, 
+    deltaUp, 
+    deltaText, 
+    icon, 
+    code,
+    accentColor = 'teal',
+    className,
+    delay = 0 
+}: DashboardKPIProps) {
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
 
@@ -113,32 +153,109 @@ export function DashboardKPI({ label, value, delta, deltaUp, icon, code }: Dashb
         mouseY.set(clientY - top);
     }
 
+    const animatedVal = useCountUp(numericValue ?? 0);
+    const displayValue = numericValue !== undefined 
+        ? (formatValue ? formatValue(animatedVal) : Math.floor(animatedVal).toString())
+        : value;
+
+    // HUD styles color maps
+    const borderAccentMap = {
+        teal: "border-teal-500/30 group-hover:border-teal-500/50 shadow-teal-500/5",
+        amber: "border-amber-500/30 group-hover:border-amber-500/50 shadow-amber-500/5",
+        red: "border-red-500/30 group-hover:border-red-500/50 shadow-red-500/5",
+        blue: "border-blue-500/30 group-hover:border-blue-500/50 shadow-blue-500/5",
+        sky: "border-sky-500/30 group-hover:border-sky-500/50 shadow-sky-500/5",
+        emerald: "border-emerald-500/30 group-hover:border-emerald-500/50 shadow-emerald-500/5",
+        violet: "border-violet-500/30 group-hover:border-violet-500/50 shadow-violet-500/5",
+        slate: "border-slate-800 group-hover:border-slate-700 shadow-slate-900/50",
+    };
+
+    const textAccentMap = {
+        teal: "text-teal-400",
+        amber: "text-amber-400",
+        red: "text-red-400",
+        blue: "text-blue-400",
+        sky: "text-sky-400",
+        emerald: "text-emerald-400",
+        violet: "text-violet-400",
+        slate: "text-slate-400",
+    };
+
+    const barAccentMap = {
+        teal: "from-teal-500 to-teal-400",
+        amber: "from-amber-500 to-amber-400",
+        red: "from-red-500 to-red-400",
+        blue: "from-blue-500 to-blue-400",
+        sky: "from-sky-500 to-sky-400",
+        emerald: "from-emerald-500 to-emerald-400",
+        violet: "from-violet-500 to-violet-400",
+        slate: "from-slate-700 to-slate-600",
+    };
+
     return (
-        <div onMouseMove={handleMouseMove} className="ds-kpi group">
-            {/* Flashlight effect — exactly like home TechCard */}
+        <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            onMouseMove={handleMouseMove} 
+            className={cn("ds-kpi group relative overflow-hidden transition-all duration-300 border bg-slate-950/60 backdrop-blur-md hover:shadow-lg", borderAccentMap[accentColor], className)}
+        >
+            {/* Flashlight effect */}
             <motion.div
                 className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100 z-0"
                 style={{
-                    background: useMotionTemplate`radial-gradient(250px circle at ${mouseX}px ${mouseY}px, rgba(45,212,191,0.04), transparent 80%)`,
+                    background: useMotionTemplate`radial-gradient(280px circle at ${mouseX}px ${mouseY}px, rgba(45,212,191,0.06), transparent 80%)`,
                 }}
             />
 
             {/* Code tag */}
-            {code && <div className="absolute top-3 right-3 ds-code-tag">[{code}]</div>}
+            {code && <div className="absolute top-3 right-3 ds-code-tag group-hover:text-slate-500 transition-colors">[{code}]</div>}
 
             <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                    <p className="ds-stat-label">{label}</p>
-                    {icon && <span className="text-teal-600 opacity-70 group-hover:opacity-100 group-hover:text-teal-400 transition-all">{icon}</span>}
+                <div className="flex items-start justify-between mb-4">
+                    <p className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">{label}</p>
+                    {icon && (
+                        <div className="w-8 h-8 flex items-center justify-center bg-slate-900/60 border border-slate-800 rounded group-hover:border-slate-700 transition-colors">
+                            <span className={cn("transition-colors group-hover:text-white", textAccentMap[accentColor])}>{icon}</span>
+                        </div>
+                    )}
                 </div>
-                <p className="ds-stat-value">{value}</p>
-                {delta && (
-                    <p className={`mt-1 ${deltaUp ? 'ds-stat-delta-up' : 'ds-stat-delta-down'}`}>
-                        {deltaUp ? '↑' : '↓'} {delta}
-                    </p>
+                
+                <div className="flex items-baseline gap-2">
+                    <p className="ds-stat-value text-2xl font-black text-white tracking-tight">{displayValue}</p>
+                    {delta && !deltaText && (
+                        <span className={cn(
+                            "flex items-center text-xs font-bold font-mono ml-2",
+                            deltaUp ? "text-emerald-400" : "text-red-400"
+                        )}>
+                            {deltaUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                            {delta}
+                        </span>
+                    )}
+                </div>
+
+                {delta && deltaText && (
+                    <div className="flex items-center gap-2 mt-3">
+                        <span className={cn(
+                            "inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono font-bold rounded-sm border",
+                            deltaUp 
+                                ? "bg-teal-950/40 text-teal-400 border-teal-900/40" 
+                                : "bg-red-950/40 text-red-400 border-red-900/40"
+                        )}>
+                            {deltaUp ? <ArrowUpRight className="w-2.5 h-2.5" /> : <ArrowDownRight className="w-2.5 h-2.5" />}
+                            {delta}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{deltaText}</span>
+                    </div>
                 )}
             </div>
-        </div>
+
+            {/* Bottom animated accent line */}
+            <div className={cn(
+                "absolute bottom-0 left-0 h-0.5 bg-gradient-to-r w-0 group-hover:w-full transition-all duration-500",
+                barAccentMap[accentColor]
+            )} />
+        </motion.div>
     );
 }
 

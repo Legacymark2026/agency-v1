@@ -13,6 +13,7 @@ import {
   GripVertical
 } from "lucide-react";
 import Link from "next/link";
+import { DashboardKPI } from "@/components/dashboard/DashboardUI";
 
 interface OperationsDashboardClientProps {
   data: any; // We'll type this properly based on getOperationsDashboardData
@@ -23,47 +24,6 @@ export function OperationsDashboardClient({ data }: OperationsDashboardClientPro
 
   // Destructure real data
   const { kpis, projects, attendance } = data || {};
-
-  const kpiStats = [
-    {
-      label: "Active Projects",
-      value: kpis?.activeProjects || 0,
-      icon: Briefcase,
-      trend: "Currently tracked",
-      trendType: "neutral",
-      color: "from-blue-500/20 to-blue-500/5",
-      iconColor: "text-blue-400"
-    },
-    {
-      label: "Avg Swimlane Velocity",
-      value: kpis?.avgVelocity || 0,
-      suffix: " tasks/day",
-      icon: Activity,
-      trend: "Steady pace",
-      trendType: "positive",
-      color: "from-teal-500/20 to-teal-500/5",
-      iconColor: "text-teal-400"
-    },
-    {
-      label: "Team Utilization",
-      value: kpis?.teamUtilization || 0,
-      suffix: "%",
-      icon: Users,
-      trend: "Optimal Range",
-      trendType: "neutral",
-      color: "from-purple-500/20 to-purple-500/5",
-      iconColor: "text-purple-400"
-    },
-    {
-      label: "Projects At Risk",
-      value: kpis?.projectsAtRisk || 0,
-      icon: AlertTriangle,
-      trend: kpis?.projectsAtRisk > 0 ? "Needs Attention" : "All healthy",
-      trendType: kpis?.projectsAtRisk > 0 ? "negative" : "positive",
-      color: kpis?.projectsAtRisk > 0 ? "from-red-500/20 to-red-500/5" : "from-green-500/20 to-green-500/5",
-      iconColor: kpis?.projectsAtRisk > 0 ? "text-red-400" : "text-green-400"
-    }
-  ];
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -86,8 +46,8 @@ export function OperationsDashboardClient({ data }: OperationsDashboardClientPro
              </button>
           </Link>
           <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors text-slate-300">
-            <Clock className="w-4 h-4 text-amber-400" />
-            Global Timer
+             <Clock className="w-4 h-4 text-amber-400" />
+             Global Timer
           </button>
           <button 
             onClick={() => setIsNewProjectOpen(true)}
@@ -101,40 +61,54 @@ export function OperationsDashboardClient({ data }: OperationsDashboardClientPro
 
       {/* Primary KPIs Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpiStats.map((stat, idx) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className={`p-6 rounded-xl border border-slate-800 bg-gradient-to-br ${stat.color} backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition-colors`}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-slate-400 font-medium text-sm">{stat.label}</span>
-              <span className={`p-2 rounded-lg bg-slate-900/50 ${stat.iconColor}`}>
-                <stat.icon className="w-5 h-5" />
-              </span>
-            </div>
-            
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-slate-100">{stat.value}</span>
-              {stat.suffix && (
-                <span className="text-sm font-medium text-slate-400">{stat.suffix}</span>
-              )}
-            </div>
-            
-            <div className="mt-4 flex items-center gap-2 text-sm">
-              <span className={`
-                ${stat.trendType === 'positive' ? 'text-teal-400' : ''}
-                ${stat.trendType === 'negative' ? 'text-red-400' : ''}
-                ${stat.trendType === 'neutral' ? 'text-slate-400' : ''}
-              `}>
-                {stat.trend}
-              </span>
-            </div>
-          </motion.div>
-        ))}
+        <DashboardKPI
+          label="Active Projects"
+          numericValue={kpis?.activeProjects || 0}
+          delta="Active"
+          deltaUp={true}
+          deltaText="Currently tracked"
+          code="OP_ACT"
+          icon={<Briefcase className="w-4 h-4" />}
+          accentColor="blue"
+          delay={0}
+        />
+        <DashboardKPI
+          label="Avg Swimlane Velocity"
+          numericValue={kpis?.avgVelocity || 0}
+          formatValue={(v) => `${v.toFixed(1)} tasks/day`}
+          delta="Steady"
+          deltaUp={true}
+          deltaText="Current pace"
+          code="OP_VEL"
+          icon={<Activity className="w-4 h-4" />}
+          accentColor="teal"
+          delay={0.08}
+        />
+        <DashboardKPI
+          label="Team Utilization"
+          numericValue={kpis?.teamUtilization || 0}
+          formatValue={(v) => `${Math.floor(v)}%`}
+          delta="Optimal"
+          deltaUp={true}
+          deltaText="Resource load"
+          code="OP_UTL"
+          icon={<Users className="w-4 h-4" />}
+          accentColor="violet"
+          delay={0.16}
+        />
+        <DashboardKPI
+          label="Projects At Risk"
+          numericValue={kpis?.projectsAtRisk || 0}
+          delta={kpis?.projectsAtRisk > 0 ? "Attention Required" : "All healthy"}
+          deltaUp={kpis?.projectsAtRisk === 0}
+          deltaText="Project health"
+          code="OP_RSK"
+          icon={<AlertTriangle className="w-4 h-4" />}
+          accentColor={kpis?.projectsAtRisk > 0 ? "red" : "emerald"}
+          delay={0.24}
+        />
       </div>
+
 
       {/* Main Grid: Projects & Workload */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

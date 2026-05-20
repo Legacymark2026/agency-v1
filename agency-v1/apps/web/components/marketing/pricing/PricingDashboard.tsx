@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Plus, Search, HelpCircle, Loader2, Link as LinkIcon, CheckCircle2, Trash2 } from "lucide-react";
+import { Plus, Search, HelpCircle, Loader2, Link as LinkIcon, CheckCircle2, Trash2, Check, Coins, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { ServicePrice } from "@/types/pricing";
 import { PricingTable } from "./PricingTable";
@@ -17,6 +17,7 @@ import {
   bulkDeleteServicePrices 
 } from "@/app/actions/pricing";
 import { toast } from "react-hot-toast";
+import { DashboardKPI } from "@/components/dashboard/DashboardUI";
 
 export function PricingDashboard() {
   const [items, setItems] = useState<ServicePrice[]>([]);
@@ -185,6 +186,43 @@ export function PricingDashboard() {
                Nuevo Servicio
             </button>
           </header>
+        </div>
+
+        {/* KPI Summary Cards */}
+        <div className="relative z-10 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <DashboardKPI 
+            label="Total Servicios" 
+            numericValue={items.length} 
+            code="SRV_TOT"
+            icon={<Coins className="w-4 h-4" />}
+            accentColor="slate"
+            delay={0}
+          />
+          <DashboardKPI 
+            label="Servicios Activos" 
+            numericValue={items.filter(i => i.estado === "activo").length} 
+            code="SRV_ACT"
+            icon={<Check className="w-4 h-4" />}
+            accentColor="teal"
+            delay={0.08}
+          />
+          <DashboardKPI 
+            label="Precio Promedio" 
+            numericValue={items.length > 0 ? Math.round(items.reduce((sum, i) => sum + i.precio_base, 0) / items.length) : 0} 
+            formatValue={(val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val)}
+            code="SRV_AVG"
+            icon={<Coins className="w-4 h-4" />}
+            accentColor="amber"
+            delay={0.16}
+          />
+          <DashboardKPI 
+            label="Servicios Express" 
+            numericValue={items.filter(i => i.isExpress).length} 
+            code="SRV_EXP"
+            icon={<Clock className="w-4 h-4" />}
+            accentColor="violet"
+            delay={0.24}
+          />
         </div>
 
         {/* Action Panel */}
