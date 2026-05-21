@@ -345,6 +345,8 @@ model Company {
   agentTeamRuns             AgentTeamRun[]
   mediaAssets               MediaAsset[]
   videoRenderJobs           VideoRenderJob[]
+  brandStyles               BrandStyle[]
+  assetCatalogs             AssetCatalog[]
 
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
