@@ -365,3 +365,156 @@ export async function generateRenderOutputs(config: ProjectConfig): Promise<Rend
   const editor = getEditor(config);
   return editor.generateRenderOutputs() as RenderOutput[];
 }
+
+import { SynthesisAgent } from '@agency/video-agent';
+
+export async function runSynthesisAudit(projectId: string): Promise<any> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const companyId = await getCompanyId();
+  if (!companyId) throw new Error('Company not found');
+
+  const project = await prisma.videoEditorProject.findFirst({
+    where: { id: projectId, companyId }
+  });
+
+  if (!project) throw new Error('Project not found');
+
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  if (!geminiApiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+  const config = project.config as unknown as ProjectConfig;
+
+  const clipsMapped = ((project.clips as any[]) || []).map((c: any) => ({
+    id: c.id,
+    url: c.url || '',
+    duration: c.duration || 5,
+    resolution: c.resolution || '1920x1080',
+    fps: c.fps || 30,
+    tags: c.semanticTags || [],
+    metadata: {
+      quality: c.quality,
+      focus: c.focus,
+      stability: c.stability,
+      lighting: c.lighting,
+      intention: c.intention,
+      heroShot: c.heroShot,
+      semanticTags: c.semanticTags
+    }
+  }));
+
+  let timelineSegments: any[] = [];
+  if (project.timeline && (project.timeline as any).segments) {
+    const segs = (project.timeline as any).segments;
+    const order = ['hook', 'body', 'climax', 'outro'] as const;
+    order.forEach(key => {
+      const seg = segs[key];
+      if (seg) {
+        timelineSegments.push({
+          id: key,
+          type: key,
+          clipIds: (seg.clips || []).map((c: any) => c.id),
+          duration: seg.duration || 0,
+          transitions: seg.transitions || ['none']
+        });
+      }
+    });
+  }
+
+  const voiceoverTrack = ((project.audioTracks as any[]) || []).find((t: any) => t.type === 'voiceover');
+  const voiceoverText = voiceoverTrack?.source || '';
+
+  const synthesizer = new SynthesisAgent({
+    projectId: project.id,
+    companyId: companyId,
+    clips: clipsMapped,
+    timeline: timelineSegments,
+    voiceover: voiceoverText,
+    style: config.style || 'cinematic',
+    platform: config.platform || 'reels',
+    apiKeys: {
+      pexels: process.env.PEXELS_API_KEY || 'dummy_pexels_key',
+      midjourney: process.env.MIDJOURNEY_API_KEY || 'dummy_mj_key',
+      elevenlabs: process.env.ELEVENLABS_API_KEY,
+      suno: process.env.SUNO_API_KEY
+    }
+  });
+
+  const audit = await synthesizer.runAudit(geminiApiKey);
+  return JSON.parse(JSON.stringify(audit)); // Sanitize for client-side serialization
+}
+
+export async function approveSynthesisProposal(projectId: string, audit: any, proposalId: string): Promise<any> {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized');
+
+  const companyId = await getCompanyId();
+  if (!companyId) throw new Error('Company not found');
+
+  const project = await prisma.videoEditorProject.findFirst({
+    where: { id: projectId, companyId }
+  });
+
+  if (!project) throw new Error('Project not found');
+
+  const config = project.config as unknown as ProjectConfig;
+
+  const clipsMapped = ((project.clips as any[]) || []).map((c: any) => ({
+    id: c.id,
+    url: c.url || '',
+    duration: c.duration || 5,
+    resolution: c.resolution || '1920x1080',
+    fps: c.fps || 30,
+    tags: c.semanticTags || [],
+    metadata: {
+      quality: c.quality,
+      focus: c.focus,
+      stability: c.stability,
+      lighting: c.lighting,
+      intention: c.intention,
+      heroShot: c.heroShot,
+      semanticTags: c.semanticTags
+    }
+  }));
+
+  let timelineSegments: any[] = [];
+  if (project.timeline && (project.timeline as any).segments) {
+    const segs = (project.timeline as any).segments;
+    const order = ['hook', 'body', 'climax', 'outro'] as const;
+    order.forEach(key => {
+      const seg = segs[key];
+      if (seg) {
+        timelineSegments.push({
+          id: key,
+          type: key,
+          clipIds: (seg.clips || []).map((c: any) => c.id),
+          duration: seg.duration || 0,
+          transitions: seg.transitions || ['none']
+        });
+      }
+    });
+  }
+
+  const voiceoverTrack = ((project.audioTracks as any[]) || []).find((t: any) => t.type === 'voiceover');
+  const voiceoverText = voiceoverTrack?.source || '';
+
+  const synthesizer = new SynthesisAgent({
+    projectId: project.id,
+    companyId: companyId,
+    clips: clipsMapped,
+    timeline: timelineSegments,
+    voiceover: voiceoverText,
+    style: config.style || 'cinematic',
+    platform: config.platform || 'reels',
+    apiKeys: {
+      pexels: process.env.PEXELS_API_KEY || 'dummy_pexels_key',
+      midjourney: process.env.MIDJOURNEY_API_KEY || 'dummy_mj_key',
+      elevenlabs: process.env.ELEVENLABS_API_KEY,
+      suno: process.env.SUNO_API_KEY
+    }
+  });
+
+  const result = await synthesizer.approveProposal(proposalId, audit);
+  return JSON.parse(JSON.stringify(result)); // Sanitize for client-side serialization
+}

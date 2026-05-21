@@ -1,0 +1,35 @@
+npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
+
+> web@0.1.0 type-check
+> tsc --noEmit
+
+
+<--- Last few GCs --->
+
+[8664:0000020601FA1000]   126382 ms: Scavenge 2027.2 (2079.7) -> 2019.6 (2080.2) MB, pooled: 0 MB, 2.71 / 0.00 ms  (average mu = 0.716, current mu = 0.731) allocation failure; 
+[8664:0000020601FA1000]   126421 ms: Scavenge 2027.4 (2080.2) -> 2019.8 (2096.2) MB, pooled: 0 MB, 6.79 / 0.00 ms  (average mu = 0.716, current mu = 0.731) allocation failure; 
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF6CBAB711D node::SetCppgcReference+17725
+ 2: 00007FF6CBA1A138 SSL_get_quiet_shutdown+92344
+ 3: 00007FF6CC5A0C51 v8::Isolate::ReportExternalAllocationLimitReached+65
+ 4: 00007FF6CC58D8D6 v8::Function::Experimental_IsNopFunction+2870
+ 5: 00007FF6CC3DAA20 v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+31456
+ 6: 00007FF6CC3D7A8A v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+19274
+ 7: 00007FF6CC3ED2E1 v8::Isolate::GetHeapProfiler+7793
+ 8: 00007FF6CC3EDB88 v8::Isolate::GetHeapProfiler+10008
+ 9: 00007FF6CC3FE83B v8::Isolate::GetHeapProfiler+78795
+10: 00007FF6CC0C772B v8::base::AddressSpaceReservation::AddressSpaceReservation+322075
+11: 00007FF66C62D4BA 
+npm error Lifecycle script `type-check` failed with error:
+npm error code 134
+npm error path C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+npm error workspace web@0.1.0
+npm error location C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc --noEmit

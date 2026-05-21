@@ -398,12 +398,14 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
           {/* ===== AI SUGGESTIONS PANEL ===== */}
           <div className="shrink-0 p-3 hidden xl:block">
             <AISuggestionsPanel
+              projectId={projectId}
               config={config}
               clips={clips}
               timeline={timeline}
               colorGrades={colorGrades}
               audioTracks={audioTracks}
               onNavigate={setActivePanel}
+              onClipsChange={setClips}
             />
           </div>
         </div>
