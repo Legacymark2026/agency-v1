@@ -1,0 +1,10 @@
+import { WebSocketServer } from 'ws';
+import { Server } from 'http';
+export declare function initWebSocket(server: Server): WebSocketServer;
+export declare function broadcastProgress(jobId: string, progress: number, status: string): void;
+export declare function broadcastComplete(jobId: string, result: any): void;
+export declare function broadcastFailed(jobId: string, error: string): void;
+export declare function broadcastTimelineUpdate(projectId: string, timeline: any): void;
+export declare function broadcastAgentMessage(sessionId: string, message: any): void;
+export declare function getConnectedClients(): number;
+export declare function closeWebSocket(): void;

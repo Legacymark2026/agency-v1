@@ -1,101 +1,48 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { createServer } from 'http';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { z } from 'zod';
 import Redis from 'ioredis';
+import { initWebSocket, broadcastProgress, broadcastComplete, broadcastFailed, getConnectedClients } from './websocket';
+import { addRenderJob, getJobStatus, cancelJob, getQueueStats, closeQueue, createWorker, getQueue } from './queue/render-queue';
+import { getAllTemplates, getTemplateById, getTemplatesByCategory, applyTemplate } from './templates';
+import { getLUTPresets, getLUTPresetsByCategory } from './lut';
+import { getAllPresets, getPresetById, getPresetsByPlatform, generateFFmpegArgs } from './presets';
+import { rateLimitMiddleware, getRateLimitStatus } from './middleware/rate-limit';
 
-const execAsync = promisify(exec);
 const app = express();
+const server = createServer(app);
 const port = process.env.PORT || 4007;
 
 // ─── Redis connection ────────────────────────────────────────────────────────
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: 3,
   retryStrategy: (times) => {
-    if (times > 3) {
-      console.warn('[redis] Max retries reached, falling back to in-memory store');
-      return null;
-    }
+    if (times > 3) return null;
     return Math.min(times * 200, 2000);
   },
 });
 
 let redisAvailable = false;
-
 redis.on('error', (err) => {
   if (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND') || err.message.includes('NOAUTH')) {
     redisAvailable = false;
-    console.warn('[redis] Unavailable, using in-memory fallback:', err.message);
   }
 });
-
 redis.on('ready', () => {
   redisAvailable = true;
   console.log('[redis] Connected and ready');
 });
 
-// ─── In-memory fallback store ────────────────────────────────────────────────
-const memoryStore = new Map<string, { data: string; expiresAt: number }>();
-
-async function redisSet(key: string, value: string, mode: 'EX', ttl: number): Promise<void> {
-  if (redisAvailable) {
-    try {
-      await redis.set(key, value, mode as any, ttl);
-      return;
-    } catch (err: any) {
-      if (err?.message?.includes('NOAUTH') || err?.message?.includes('ECONNREFUSED')) {
-        redisAvailable = false;
-      }
-      console.warn('[redis] Set failed, falling back to memory:', err?.message || err);
-    }
-  }
-  memoryStore.set(key, { data: value, expiresAt: Date.now() + ttl * 1000 });
-}
-
-async function redisGet(key: string): Promise<string | null> {
-  if (redisAvailable) {
-    try {
-      return await redis.get(key);
-    } catch (err: any) {
-      if (err?.message?.includes('NOAUTH') || err?.message?.includes('ECONNREFUSED')) {
-        redisAvailable = false;
-      }
-      console.warn('[redis] Get failed, falling back to memory:', err?.message || err);
-    }
-  }
-  const entry = memoryStore.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    memoryStore.delete(key);
-    return null;
-  }
-  return entry.data;
-}
-
-async function redisKeys(pattern: string): Promise<string[]> {
-  if (redisAvailable) {
-    try {
-      return await redis.keys(pattern);
-    } catch (err: any) {
-      if (err?.message?.includes('NOAUTH') || err?.message?.includes('ECONNREFUSED')) {
-        redisAvailable = false;
-      }
-      console.warn('[redis] Keys failed, falling back to memory:', err?.message || err);
-    }
-  }
-  return Array.from(memoryStore.keys()).filter(k => k.startsWith(pattern.replace('*', '')));
-}
-
 // ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 
-// ─── Auth middleware for internal endpoints ──────────────────────────────────
+// ─── Auth middleware ─────────────────────────────────────────────────────────
 function requireInternalSecret(req: Request, res: Response, next: NextFunction) {
   const secret = req.headers['x-internal-secret'] as string;
   const expected = process.env.INTERNAL_SECRET ?? 'video-service-secret-change-in-production';
@@ -110,8 +57,10 @@ const RenderJobSchema = z.object({
   jobId: z.string().min(1),
   companyId: z.string().min(1),
   projectId: z.string().min(1),
+  templateId: z.string().optional(),
+  presetId: z.string().optional(),
   config: z.object({
-    format: z.enum(['16:9', '9:16', '1:1']).optional().default('16:9'),
+    format: z.enum(['16:9', '9:16', '1:1', '4:5']).optional().default('16:9'),
     style: z.string().optional().default('cinematic'),
     platform: z.string().optional().default('reels'),
     duration: z.number().optional().default(20),
@@ -122,24 +71,18 @@ const RenderJobSchema = z.object({
   audioTracks: z.array(z.any()).optional().default([]),
 });
 
-// ─── RenderJob type ──────────────────────────────────────────────────────────
-interface RenderJob {
-  jobId: string;
-  companyId: string;
-  projectId: string;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  progress: number;
-  outputUrl?: string;
-  errorMessage?: string;
-  createdAt: string;
-}
+// ─── Initialize WebSocket ────────────────────────────────────────────────────
+initWebSocket(server);
 
-const JOB_TTL_SECONDS = 86400; // 24 hours
+// ─── Initialize BullMQ Worker ────────────────────────────────────────────────
+const outputDir = process.env.RENDER_OUTPUT_DIR || join(process.cwd(), 'renders');
+createWorker(outputDir);
 
 // ─── Healthcheck ─────────────────────────────────────────────────────────────
 app.get('/health', async (_req: Request, res: Response) => {
   let redisStatus = 'disconnected';
   let ffmpegStatus = false;
+  let wsClients = 0;
 
   try {
     await redis.ping();
@@ -150,23 +93,33 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 
   try {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
     await execAsync('ffmpeg -version', { timeout: 3000 });
     ffmpegStatus = true;
   } catch {
     ffmpegStatus = false;
   }
 
+  try {
+    wsClients = getConnectedClients();
+  } catch {
+    wsClients = 0;
+  }
+
   res.status(200).json({
     status: 'ok',
     service: 'video-service',
-    version: '2.1.0',
+    version: '3.0.0',
     redis: redisStatus,
     ffmpeg: ffmpegStatus,
+    websocketClients: wsClients,
   });
 });
 
-// ─── POST /api/video/render — Iniciar render ─────────────────────────────────
-app.post('/api/video/render', requireInternalSecret, async (req: Request, res: Response) => {
+// ─── POST /api/video/render — Start render job ───────────────────────────────
+app.post('/api/video/render', requireInternalSecret, rateLimitMiddleware, async (req: Request, res: Response) => {
   try {
     const parsed = RenderJobSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -176,28 +129,43 @@ app.post('/api/video/render', requireInternalSecret, async (req: Request, res: R
       });
     }
 
-    const { jobId, companyId, projectId, config, timeline, audioTracks } = parsed.data;
+    const { jobId, companyId, projectId, config, timeline, audioTracks, templateId, presetId } = parsed.data;
 
-    const job: RenderJob = {
+    let finalConfig = config;
+    let finalTimeline = timeline;
+
+    if (templateId) {
+      const template = applyTemplate(templateId);
+      if (template) {
+        finalConfig = { ...finalConfig, format: template.config.format as any, style: template.config.style, platform: template.config.platform };
+        finalTimeline = { ...finalTimeline, totalDuration: template.timeline.hookDuration + template.timeline.bodyDuration + template.timeline.climaxDuration + template.timeline.outroDuration };
+      }
+    }
+
+    if (presetId) {
+      const preset = getPresetById(presetId as string);
+      if (preset) {
+        finalConfig = {
+          ...finalConfig,
+          format: preset.aspectRatio as any,
+          platform: preset.platform,
+        };
+      }
+    }
+
+    const job = await addRenderJob({
       jobId,
       companyId,
       projectId,
-      status: 'PENDING',
-      progress: 0,
-      createdAt: new Date().toISOString(),
-    };
+      config: finalConfig,
+      timeline: finalTimeline,
+      audioTracks,
+    });
 
-    await redisSet(
-      `video:job:${jobId}`,
-      JSON.stringify(job),
-      'EX',
-      JOB_TTL_SECONDS,
-    );
-
-    res.status(202).json({ jobId, status: 'PENDING', message: 'Render job accepted' });
-
-    processRenderJob(job, { config, timeline, audioTracks }).catch(err => {
-      console.error(`[render] Job ${jobId} failed:`, err);
+    res.status(202).json({
+      jobId,
+      status: 'QUEUED',
+      message: 'Render job queued',
     });
 
   } catch (error: any) {
@@ -206,205 +174,127 @@ app.post('/api/video/render', requireInternalSecret, async (req: Request, res: R
   }
 });
 
-// ─── GET /api/video/render/:jobId — Estado del render ───────────────────────
+// ─── GET /api/video/render/:jobId — Job status ──────────────────────────────
 app.get('/api/video/render/:jobId', async (req: Request, res: Response) => {
   const jobId = req.params.jobId as string;
-  const raw = await redisGet(`video:job:${jobId}`);
+  const status = await getJobStatus(jobId);
 
-  if (!raw) {
+  if (!status) {
     return res.status(404).json({ error: 'Job not found or expired' });
   }
 
-  const job: RenderJob = JSON.parse(raw);
   res.json({
-    jobId: job.jobId,
-    status: job.status,
-    progress: job.progress,
-    outputUrl: job.outputUrl ?? null,
-    errorMessage: job.errorMessage ?? null,
-    createdAt: job.createdAt,
+    jobId,
+    status: status.state,
+    progress: status.progress,
+    outputUrl: status.result?.outputUrl ?? null,
+    errorMessage: status.failedReason ?? null,
+    createdAt: new Date().toISOString(),
   });
 });
 
-// ─── POST /api/video/render/:jobId/cancel — Cancelar render ─────────────────
+// ─── POST /api/video/render/:jobId/cancel — Cancel job ──────────────────────
 app.post('/api/video/render/:jobId/cancel', requireInternalSecret, async (req: Request, res: Response) => {
   const jobId = req.params.jobId as string;
-  const raw = await redisGet(`video:job:${jobId}`);
+  const success = await cancelJob(jobId);
 
-  if (!raw) return res.status(404).json({ error: 'Job not found' });
-
-  const job: RenderJob = JSON.parse(raw);
-  if (job.status === 'PENDING' || job.status === 'PROCESSING') {
-    job.status = 'FAILED';
-    job.errorMessage = 'Cancelled by user';
-    await redisSet(`video:job:${jobId}`, JSON.stringify(job), 'EX', JOB_TTL_SECONDS);
+  if (!success) {
+    return res.status(404).json({ error: 'Job not found or already processing' });
   }
 
   res.json({ success: true });
 });
 
-// ─── GET /api/video/jobs — Listar todos los jobs activos ─────────────────────
+// ─── GET /api/video/jobs — List all jobs ────────────────────────────────────
 app.get('/api/video/jobs', async (_req: Request, res: Response) => {
-  const keys = await redisKeys('video:job:*');
-  const allJobs: RenderJob[] = [];
-
-  for (const key of keys) {
-    const raw = await redisGet(key);
-    if (raw) {
-      allJobs.push(JSON.parse(raw));
-    }
-  }
-
-  const summary = allJobs.map(j => ({
-    jobId: j.jobId,
-    status: j.status,
-    progress: j.progress,
-    createdAt: j.createdAt,
-  }));
-
-  res.json({ jobs: summary, total: summary.length });
+  const stats = await getQueueStats();
+  res.json({
+    queue: stats,
+    total: stats.waiting + stats.active + stats.completed + stats.failed,
+  });
 });
 
-// ─── POST /api/media/upload-vps — Upload directo al VPS ──────────────────────
+// ─── GET /api/video/templates — List templates ──────────────────────────────
+app.get('/api/video/templates', (req: Request, res: Response) => {
+  const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+  if (category) {
+    res.json({ templates: getTemplatesByCategory(category) });
+  } else {
+    res.json({ templates: getAllTemplates() });
+  }
+});
+
+// ─── GET /api/video/templates/:id — Get template ────────────────────────────
+app.get('/api/video/templates/:id', (req: Request, res: Response) => {
+  const template = getTemplateById(req.params.id as string);
+  if (!template) {
+    return res.status(404).json({ error: 'Template not found' });
+  }
+  res.json({ template });
+});
+
+// ─── GET /api/video/presets — List render presets ───────────────────────────
+app.get('/api/video/presets', (req: Request, res: Response) => {
+  const platform = typeof req.query.platform === 'string' ? req.query.platform : undefined;
+  if (platform) {
+    res.json({ presets: getPresetsByPlatform(platform) });
+  } else {
+    res.json({ presets: getAllPresets() });
+  }
+});
+
+// ─── GET /api/video/presets/:id — Get preset ────────────────────────────────
+app.get('/api/video/presets/:id', (req: Request, res: Response) => {
+  const preset = getPresetById(req.params.id as string);
+  if (!preset) {
+    return res.status(404).json({ error: 'Preset not found' });
+  }
+  res.json({ preset, ffmpegArgs: generateFFmpegArgs(preset, 'input.mp4', 'output.mp4') });
+});
+
+// ─── GET /api/video/luts — List LUT presets ─────────────────────────────────
+app.get('/api/video/luts', (req: Request, res: Response) => {
+  const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+  if (category) {
+    res.json({ luts: getLUTPresetsByCategory(category) });
+  } else {
+    res.json({ luts: getLUTPresets() });
+  }
+});
+
+// ─── GET /api/video/rate-limit/:companyId — Rate limit status ───────────────
+app.get('/api/video/rate-limit/:companyId', async (req: Request, res: Response) => {
+  const status = await getRateLimitStatus(req.params.companyId as string);
+  res.json(status);
+});
+
+// ─── GET /api/video/stats — Queue stats ─────────────────────────────────────
+app.get('/api/video/stats', async (_req: Request, res: Response) => {
+  const stats = await getQueueStats();
+  res.json({
+    ...stats,
+    websocketClients: getConnectedClients(),
+  });
+});
+
+// ─── POST /api/video/render/:jobId/webhook — Webhook callback ───────────────
+app.post('/api/video/render/:jobId/webhook', async (req: Request, res: Response) => {
+  const jobId = req.params.jobId as string;
+  const { url, secret } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: 'Missing webhook URL' });
+  }
+
+  res.json({ success: true, message: 'Webhook registered (not yet implemented)' });
+});
+
+// ─── POST /api/media/upload-vps ─────────────────────────────────────────────
 app.post('/api/media/upload-vps', async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Use /api/media/upload from the Next.js app' });
 });
 
-// ─── Lógica real de render ─────────────────────────────────────────────────
-async function processRenderJob(job: RenderJob, data: any) {
-  const startTime = Date.now();
-
-  try {
-    job.status = 'PROCESSING';
-    job.progress = 5;
-    await saveJob(job);
-
-    const { config, timeline } = data;
-    const outputDir = process.env.RENDER_OUTPUT_DIR || join(process.cwd(), 'renders');
-    await mkdir(outputDir, { recursive: true });
-
-    const outputFilename = `render_${job.jobId}_${Date.now()}.mp4`;
-    const outputPath = join(outputDir, outputFilename);
-    const outputUrl = `/api/serve/uploads/${job.companyId}/renders/${outputFilename}`;
-
-    const ffmpegAvailable = await checkFFmpeg();
-
-    if (ffmpegAvailable) {
-      const duration = timeline?.totalDuration ?? config?.duration ?? 20;
-      const resolution = config?.format === '9:16' ? '1080x1920' :
-                         config?.format === '1:1'  ? '1080x1080' : '1920x1080';
-      const [width, height] = resolution.split('x');
-
-      job.progress = 20;
-      await saveJob(job);
-
-      const style = config?.style ?? 'cinematic';
-      const platform = config?.platform ?? 'reels';
-      const colorMap: Record<string, string> = {
-        cinematic: '0x1a1a2e',
-        luxury:    '0x2d1b00',
-        viral:     '0x0d0d0d',
-        corporate: '0x0a2540',
-        'warm-artisan': '0x1a0f00',
-      };
-      const bgColor = colorMap[style] ?? '0x000000';
-
-      const textOverlay = `Video Studio | ${platform.toUpperCase()} | ${duration}s`;
-      const ffmpegCmd = [
-        'ffmpeg -y',
-        `-f lavfi -i "color=c=${bgColor}:s=${width}x${height}:d=${duration}:r=30"`,
-        `-f lavfi -i "sine=frequency=440:duration=${duration}"`,
-        `-vf "drawtext=fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2:text='${textOverlay}':box=1:boxcolor=black@0.5:boxborderw=10"`,
-        `-c:v libx264 -preset fast -crf 23`,
-        `-c:a aac -b:a 128k`,
-        `-movflags +faststart`,
-        `"${outputPath}"`,
-      ].join(' ');
-
-      job.progress = 40;
-      await saveJob(job);
-
-      await execAsync(ffmpegCmd, { timeout: 120_000 });
-
-      job.progress = 90;
-      await saveJob(job);
-
-    } else {
-      console.warn('[render] FFmpeg not available — generating JSON project file');
-
-      const projectData = {
-        jobId:     job.jobId,
-        projectId: job.projectId,
-        config,
-        timeline,
-        renderedAt: new Date().toISOString(),
-        note: 'FFmpeg not available on this server. Install FFmpeg to enable real video rendering.',
-      };
-
-      const jsonFilename = `project_${job.jobId}.json`;
-      const jsonPath = join(outputDir, jsonFilename);
-      await writeFile(jsonPath, JSON.stringify(projectData, null, 2), 'utf-8');
-
-      job.progress = 80;
-      job.outputUrl = `/api/serve/uploads/${job.companyId}/renders/${jsonFilename}`;
-      job.status = 'COMPLETED';
-      job.progress = 100;
-      await saveJob(job);
-
-      await updateJobInNextApp(job.jobId, {
-        status: 'COMPLETED',
-        progress: 100,
-        outputUrl: job.outputUrl,
-        durationMs: Date.now() - startTime,
-      });
-
-      console.log(`[render] Job ${job.jobId} completed (JSON fallback) in ${Date.now() - startTime}ms`);
-      return;
-    }
-
-    job.outputUrl = outputUrl;
-    job.status = 'COMPLETED';
-    job.progress = 100;
-    await saveJob(job);
-
-    await updateJobInNextApp(job.jobId, {
-      status: 'COMPLETED',
-      progress: 100,
-      outputUrl,
-      durationMs: Date.now() - startTime,
-    });
-
-    console.log(`[render] Job ${job.jobId} completed in ${Date.now() - startTime}ms → ${outputUrl}`);
-
-  } catch (error: any) {
-    job.status = 'FAILED';
-    job.errorMessage = error.message;
-    job.progress = job.progress || 0;
-    console.error(`[render] Job ${job.jobId} FAILED:`, error.message);
-    await saveJob(job);
-
-    await updateJobInNextApp(job.jobId, {
-      status: 'FAILED',
-      progress: job.progress,
-      errorMessage: error.message,
-      durationMs: Date.now() - startTime,
-    });
-  }
-}
-
-async function saveJob(job: RenderJob) {
-  await redisSet(`video:job:${job.jobId}`, JSON.stringify(job), 'EX', JOB_TTL_SECONDS);
-}
-
-async function checkFFmpeg(): Promise<boolean> {
-  try {
-    await execAsync('ffmpeg -version', { timeout: 5000 });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
+// ─── Callback to Next.js ────────────────────────────────────────────────────
 async function updateJobInNextApp(jobId: string, data: object) {
   const nextUrl = process.env.NEXT_APP_URL ?? 'http://localhost:3000';
   try {
@@ -421,12 +311,26 @@ async function updateJobInNextApp(jobId: string, data: object) {
   }
 }
 
-app.listen(port, () => {
-  console.log(`Video Service v2.1 listening at http://localhost:${port}`);
+// ─── Start server ───────────────────────────────────────────────────────────
+server.listen(port, () => {
+  console.log(`Video Service v3.0 listening at http://localhost:${port}`);
   console.log(`   Routes:`);
-  console.log(`   POST /api/video/render        — Start a render job`);
+  console.log(`   POST /api/video/render        — Start a render job (with queue)`);
   console.log(`   GET  /api/video/render/:jobId — Get job status`);
   console.log(`   POST /api/video/render/:jobId/cancel — Cancel a render job`);
-  console.log(`   GET  /api/video/jobs          — List all jobs`);
-  console.log(`   GET  /health                  — Healthcheck (includes Redis + FFmpeg status)`);
+  console.log(`   GET  /api/video/jobs          — Queue stats`);
+  console.log(`   GET  /api/video/templates     — List video templates`);
+  console.log(`   GET  /api/video/presets       — List render presets`);
+  console.log(`   GET  /api/video/luts          — List LUT presets`);
+  console.log(`   GET  /api/video/stats         — Full stats`);
+  console.log(`   GET  /health                  — Healthcheck`);
+  console.log(`   WS   /ws/video               — WebSocket for real-time updates`);
+});
+
+// ─── Graceful shutdown ──────────────────────────────────────────────────────
+process.on('SIGTERM', async () => {
+  console.log('[shutdown] SIGTERM received, closing queue...');
+  await closeQueue();
+  server.close();
+  process.exit(0);
 });
