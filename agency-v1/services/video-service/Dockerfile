@@ -27,6 +27,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Install FFmpeg for real video rendering
+RUN apk add --no-cache ffmpeg
+
 COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
@@ -34,6 +37,9 @@ COPY --from=builder /app/packages/events/package.json ./packages/events/
 COPY --from=builder /app/services/video-service/dist ./dist
 COPY --from=builder /app/services/video-service/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
+
+# Create output directory for rendered videos
+RUN mkdir -p /app/renders
 
 EXPOSE 4007
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4007/health || exit 1

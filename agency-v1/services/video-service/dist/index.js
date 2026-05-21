@@ -10,37 +10,163 @@ const promises_1 = require("fs/promises");
 const path_1 = require("path");
 const child_process_1 = require("child_process");
 const util_1 = require("util");
+const zod_1 = require("zod");
+const ioredis_1 = __importDefault(require("ioredis"));
 const execAsync = (0, util_1.promisify)(child_process_1.exec);
 const app = (0, express_1.default)();
 const port = process.env.PORT || 4007;
+// ─── Redis connection ────────────────────────────────────────────────────────
+const redis = new ioredis_1.default(process.env.REDIS_URL || 'redis://localhost:6379', {
+    maxRetriesPerRequest: 3,
+    retryStrategy: (times) => {
+        if (times > 3) {
+            console.warn('[redis] Max retries reached, falling back to in-memory store');
+            return null;
+        }
+        return Math.min(times * 200, 2000);
+    },
+});
+let redisAvailable = false;
+redis.on('error', (err) => {
+    if (err.message.includes('ECONNREFUSED') || err.message.includes('ENOTFOUND') || err.message.includes('NOAUTH')) {
+        redisAvailable = false;
+        console.warn('[redis] Unavailable, using in-memory fallback:', err.message);
+    }
+});
+redis.on('ready', () => {
+    redisAvailable = true;
+    console.log('[redis] Connected and ready');
+});
+// ─── In-memory fallback store ────────────────────────────────────────────────
+const memoryStore = new Map();
+async function redisSet(key, value, mode, ttl) {
+    if (redisAvailable) {
+        try {
+            await redis.set(key, value, mode, ttl);
+            return;
+        }
+        catch (err) {
+            if (err?.message?.includes('NOAUTH') || err?.message?.includes('ECONNREFUSED')) {
+                redisAvailable = false;
+            }
+            console.warn('[redis] Set failed, falling back to memory:', err?.message || err);
+        }
+    }
+    memoryStore.set(key, { data: value, expiresAt: Date.now() + ttl * 1000 });
+}
+async function redisGet(key) {
+    if (redisAvailable) {
+        try {
+            return await redis.get(key);
+        }
+        catch (err) {
+            if (err?.message?.includes('NOAUTH') || err?.message?.includes('ECONNREFUSED')) {
+                redisAvailable = false;
+            }
+            console.warn('[redis] Get failed, falling back to memory:', err?.message || err);
+        }
+    }
+    const entry = memoryStore.get(key);
+    if (!entry)
+        return null;
+    if (Date.now() > entry.expiresAt) {
+        memoryStore.delete(key);
+        return null;
+    }
+    return entry.data;
+}
+async function redisKeys(pattern) {
+    if (redisAvailable) {
+        try {
+            return await redis.keys(pattern);
+        }
+        catch (err) {
+            if (err?.message?.includes('NOAUTH') || err?.message?.includes('ECONNREFUSED')) {
+                redisAvailable = false;
+            }
+            console.warn('[redis] Keys failed, falling back to memory:', err?.message || err);
+        }
+    }
+    return Array.from(memoryStore.keys()).filter(k => k.startsWith(pattern.replace('*', '')));
+}
+// ─── Middleware ──────────────────────────────────────────────────────────────
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: '10mb' }));
-const jobs = new Map();
+// ─── Auth middleware for internal endpoints ──────────────────────────────────
+function requireInternalSecret(req, res, next) {
+    const secret = req.headers['x-internal-secret'];
+    const expected = process.env.INTERNAL_SECRET ?? 'video-service-secret-change-in-production';
+    if (secret !== expected) {
+        return res.status(403).json({ error: 'Forbidden: invalid or missing internal secret' });
+    }
+    next();
+}
+// ─── Zod schemas ─────────────────────────────────────────────────────────────
+const RenderJobSchema = zod_1.z.object({
+    jobId: zod_1.z.string().min(1),
+    companyId: zod_1.z.string().min(1),
+    projectId: zod_1.z.string().min(1),
+    config: zod_1.z.object({
+        format: zod_1.z.enum(['16:9', '9:16', '1:1']).optional().default('16:9'),
+        style: zod_1.z.string().optional().default('cinematic'),
+        platform: zod_1.z.string().optional().default('reels'),
+        duration: zod_1.z.number().optional().default(20),
+    }).optional().default({}),
+    timeline: zod_1.z.object({
+        totalDuration: zod_1.z.number().optional(),
+    }).optional().default({}),
+    audioTracks: zod_1.z.array(zod_1.z.any()).optional().default([]),
+});
+const JOB_TTL_SECONDS = 86400; // 24 hours
 // ─── Healthcheck ─────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'ok', service: 'video-service', version: '2.0.0' });
+app.get('/health', async (_req, res) => {
+    let redisStatus = 'disconnected';
+    let ffmpegStatus = false;
+    try {
+        await redis.ping();
+        redisStatus = 'connected';
+        redisAvailable = true;
+    }
+    catch {
+        redisStatus = redisAvailable ? 'connected' : 'disconnected (using in-memory fallback)';
+    }
+    try {
+        await execAsync('ffmpeg -version', { timeout: 3000 });
+        ffmpegStatus = true;
+    }
+    catch {
+        ffmpegStatus = false;
+    }
+    res.status(200).json({
+        status: 'ok',
+        service: 'video-service',
+        version: '2.1.0',
+        redis: redisStatus,
+        ffmpeg: ffmpegStatus,
+    });
 });
 // ─── POST /api/video/render — Iniciar render ─────────────────────────────────
-app.post('/api/video/render', async (req, res) => {
+app.post('/api/video/render', requireInternalSecret, async (req, res) => {
     try {
-        const { jobId, companyId, projectId, config, timeline, audioTracks } = req.body;
-        if (!jobId || !companyId || !projectId) {
-            return res.status(400).json({ error: 'Missing required fields: jobId, companyId, projectId' });
+        const parsed = RenderJobSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                error: 'Invalid payload',
+                details: parsed.error.flatten(),
+            });
         }
-        // Registrar job en memoria
+        const { jobId, companyId, projectId, config, timeline, audioTracks } = parsed.data;
         const job = {
             jobId,
             companyId,
             projectId,
             status: 'PENDING',
             progress: 0,
-            createdAt: new Date(),
+            createdAt: new Date().toISOString(),
         };
-        jobs.set(jobId, job);
-        // Responder inmediatamente
+        await redisSet(`video:job:${jobId}`, JSON.stringify(job), 'EX', JOB_TTL_SECONDS);
         res.status(202).json({ jobId, status: 'PENDING', message: 'Render job accepted' });
-        // Procesar en background
         processRenderJob(job, { config, timeline, audioTracks }).catch(err => {
             console.error(`[render] Job ${jobId} failed:`, err);
         });
@@ -51,12 +177,13 @@ app.post('/api/video/render', async (req, res) => {
     }
 });
 // ─── GET /api/video/render/:jobId — Estado del render ───────────────────────
-app.get('/api/video/render/:jobId', (req, res) => {
+app.get('/api/video/render/:jobId', async (req, res) => {
     const jobId = req.params.jobId;
-    const job = jobs.get(jobId);
-    if (!job) {
-        return res.status(404).json({ error: 'Job not found' });
+    const raw = await redisGet(`video:job:${jobId}`);
+    if (!raw) {
+        return res.status(404).json({ error: 'Job not found or expired' });
     }
+    const job = JSON.parse(raw);
     res.json({
         jobId: job.jobId,
         status: job.status,
@@ -67,31 +194,39 @@ app.get('/api/video/render/:jobId', (req, res) => {
     });
 });
 // ─── POST /api/video/render/:jobId/cancel — Cancelar render ─────────────────
-app.post('/api/video/render/:jobId/cancel', (req, res) => {
+app.post('/api/video/render/:jobId/cancel', requireInternalSecret, async (req, res) => {
     const jobId = req.params.jobId;
-    const job = jobs.get(jobId);
-    if (!job)
+    const raw = await redisGet(`video:job:${jobId}`);
+    if (!raw)
         return res.status(404).json({ error: 'Job not found' });
-    if (job.status === 'PROCESSING') {
+    const job = JSON.parse(raw);
+    if (job.status === 'PENDING' || job.status === 'PROCESSING') {
         job.status = 'FAILED';
         job.errorMessage = 'Cancelled by user';
+        await redisSet(`video:job:${jobId}`, JSON.stringify(job), 'EX', JOB_TTL_SECONDS);
     }
     res.json({ success: true });
 });
 // ─── GET /api/video/jobs — Listar todos los jobs activos ─────────────────────
-app.get('/api/video/jobs', (_req, res) => {
-    const allJobs = Array.from(jobs.values()).map(j => ({
+app.get('/api/video/jobs', async (_req, res) => {
+    const keys = await redisKeys('video:job:*');
+    const allJobs = [];
+    for (const key of keys) {
+        const raw = await redisGet(key);
+        if (raw) {
+            allJobs.push(JSON.parse(raw));
+        }
+    }
+    const summary = allJobs.map(j => ({
         jobId: j.jobId,
         status: j.status,
         progress: j.progress,
         createdAt: j.createdAt,
     }));
-    res.json({ jobs: allJobs, total: allJobs.length });
+    res.json({ jobs: summary, total: summary.length });
 });
 // ─── POST /api/media/upload-vps — Upload directo al VPS ──────────────────────
 app.post('/api/media/upload-vps', async (req, res) => {
-    // Este endpoint es llamado por el frontend directamente
-    // El upload real se maneja desde Next.js /api/media/upload
     res.status(200).json({ message: 'Use /api/media/upload from the Next.js app' });
 });
 // ─── Lógica real de render ─────────────────────────────────────────────────
@@ -100,23 +235,21 @@ async function processRenderJob(job, data) {
     try {
         job.status = 'PROCESSING';
         job.progress = 5;
+        await saveJob(job);
         const { config, timeline } = data;
-        const outputDir = (0, path_1.join)(process.cwd(), '..', '..', 'apps', 'web', 'public', 'uploads', job.companyId, 'renders');
+        const outputDir = process.env.RENDER_OUTPUT_DIR || (0, path_1.join)(process.cwd(), 'renders');
         await (0, promises_1.mkdir)(outputDir, { recursive: true });
         const outputFilename = `render_${job.jobId}_${Date.now()}.mp4`;
         const outputPath = (0, path_1.join)(outputDir, outputFilename);
         const outputUrl = `/api/serve/uploads/${job.companyId}/renders/${outputFilename}`;
-        // Verificar si FFmpeg está disponible
         const ffmpegAvailable = await checkFFmpeg();
         if (ffmpegAvailable) {
-            // ── Render real con FFmpeg ──────────────────────────────────────────
             const duration = timeline?.totalDuration ?? config?.duration ?? 20;
             const resolution = config?.format === '9:16' ? '1080x1920' :
                 config?.format === '1:1' ? '1080x1080' : '1920x1080';
             const [width, height] = resolution.split('x');
             job.progress = 20;
-            // Generar video con FFmpeg (color sólido + texto como placeholder del render)
-            // En producción: combinar clips reales usando concat demuxer
+            await saveJob(job);
             const style = config?.style ?? 'cinematic';
             const platform = config?.platform ?? 'reels';
             const colorMap = {
@@ -139,11 +272,12 @@ async function processRenderJob(job, data) {
                 `"${outputPath}"`,
             ].join(' ');
             job.progress = 40;
+            await saveJob(job);
             await execAsync(ffmpegCmd, { timeout: 120_000 });
             job.progress = 90;
+            await saveJob(job);
         }
         else {
-            // ── Fallback: generar archivo JSON del proyecto ──────────────────────
             console.warn('[render] FFmpeg not available — generating JSON project file');
             const projectData = {
                 jobId: job.jobId,
@@ -157,13 +291,10 @@ async function processRenderJob(job, data) {
             const jsonPath = (0, path_1.join)(outputDir, jsonFilename);
             await (0, promises_1.writeFile)(jsonPath, JSON.stringify(projectData, null, 2), 'utf-8');
             job.progress = 80;
-            // Generar un MP4 mínimo válido usando Node (1 frame negro, sin FFmpeg)
-            // Simplemente marcamos como completado con el JSON
-            const outputFilenameJson = jsonFilename.replace('.json', '.mp4');
-            // En prod se usaría FFmpeg; aquí dejamos el JSON como "output"
             job.outputUrl = `/api/serve/uploads/${job.companyId}/renders/${jsonFilename}`;
             job.status = 'COMPLETED';
             job.progress = 100;
+            await saveJob(job);
             await updateJobInNextApp(job.jobId, {
                 status: 'COMPLETED',
                 progress: 100,
@@ -176,6 +307,7 @@ async function processRenderJob(job, data) {
         job.outputUrl = outputUrl;
         job.status = 'COMPLETED';
         job.progress = 100;
+        await saveJob(job);
         await updateJobInNextApp(job.jobId, {
             status: 'COMPLETED',
             progress: 100,
@@ -187,7 +319,9 @@ async function processRenderJob(job, data) {
     catch (error) {
         job.status = 'FAILED';
         job.errorMessage = error.message;
+        job.progress = job.progress || 0;
         console.error(`[render] Job ${job.jobId} FAILED:`, error.message);
+        await saveJob(job);
         await updateJobInNextApp(job.jobId, {
             status: 'FAILED',
             progress: job.progress,
@@ -195,6 +329,9 @@ async function processRenderJob(job, data) {
             durationMs: Date.now() - startTime,
         });
     }
+}
+async function saveJob(job) {
+    await redisSet(`video:job:${job.jobId}`, JSON.stringify(job), 'EX', JOB_TTL_SECONDS);
 }
 async function checkFFmpeg() {
     try {
@@ -205,7 +342,6 @@ async function checkFFmpeg() {
         return false;
     }
 }
-// Notifica a Next.js (via su propia API interna) para actualizar el job en DB
 async function updateJobInNextApp(jobId, data) {
     const nextUrl = process.env.NEXT_APP_URL ?? 'http://localhost:3000';
     try {
@@ -213,7 +349,7 @@ async function updateJobInNextApp(jobId, data) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-internal-secret': process.env.INTERNAL_SECRET ?? 'video-service-secret',
+                'x-internal-secret': process.env.INTERNAL_SECRET ?? 'video-service-secret-change-in-production',
             },
             body: JSON.stringify({ jobId, ...data }),
         });
@@ -223,11 +359,12 @@ async function updateJobInNextApp(jobId, data) {
     }
 }
 app.listen(port, () => {
-    console.log(`🎬 Video Service v2.0 listening at http://localhost:${port}`);
+    console.log(`Video Service v2.1 listening at http://localhost:${port}`);
     console.log(`   Routes:`);
     console.log(`   POST /api/video/render        — Start a render job`);
     console.log(`   GET  /api/video/render/:jobId — Get job status`);
+    console.log(`   POST /api/video/render/:jobId/cancel — Cancel a render job`);
     console.log(`   GET  /api/video/jobs          — List all jobs`);
-    console.log(`   GET  /health                  — Healthcheck`);
+    console.log(`   GET  /health                  — Healthcheck (includes Redis + FFmpeg status)`);
 });
 //# sourceMappingURL=index.js.map

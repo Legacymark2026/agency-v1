@@ -44,10 +44,14 @@ export async function createRenderJob(
 
   // Disparar al video-service en background (fire-and-forget)
   const videoServiceUrl = process.env.VIDEO_SERVICE_URL ?? 'http://localhost:4007';
+  const internalSecret = process.env.INTERNAL_SECRET ?? 'video-service-secret-change-in-production';
 
   fetch(`${videoServiceUrl}/api/video/render`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-secret': internalSecret,
+    },
     body: JSON.stringify({
       jobId: job.id,
       companyId,

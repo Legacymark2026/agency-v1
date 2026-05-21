@@ -49,8 +49,10 @@ services:
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
       REDIS_URL: redis://redis:6379
       API_GATEWAY_URL: http://api-gateway:8080
+      VIDEO_SERVICE_URL: http://video-service:4007
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
+      INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -233,6 +235,11 @@ services:
     environment:
       <<: *common-env
       PORT: "4007"
+      NEXT_APP_URL: http://web:3000
+      INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
+      RENDER_OUTPUT_DIR: /app/renders
+    volumes:
+      - render-data:/app/renders
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -241,6 +248,9 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 2G }
 
   # ── Calendar Service ──────────────────────────────────────────────────────
   calendar-service:
@@ -455,3 +465,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  render-data:
