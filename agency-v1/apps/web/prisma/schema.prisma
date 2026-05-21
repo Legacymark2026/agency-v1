@@ -3395,9 +3395,127 @@ model VideoEditorProject {
   company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
   performanceLogs VideoPerformanceLog[]
   renderJobs      VideoRenderJob[]
+  aiSessions      VideoAISession[]
+  brandStyle      BrandStyle?           @relation(fields: [brandStyleId], references: [id], onDelete: SetNull)
+  brandStyleId    String?               @map("brand_style_id")
 
   @@index([companyId])
   @@map("tbl_video_editor_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VIDEO AI SESSION — Memoria Temporal del Agente
+// ══════════════════════════════════════════════════════════════════════════════
+
+model VideoAISession {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  projectId   String   @map("project_id")
+  status      String   @default("ACTIVE")  // ACTIVE | COMPLETED | ABANDONED
+  prompt      String?  @map("initial_prompt") @db.Text  // "Edita esto estilo TikTok..."
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  messages    VideoAIMessage[]
+  historyLogs VideoEditHistory[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([status])
+  @@map("tbl_video_ai_sessions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoAIMessage {
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  role        String    // "user" | "assistant" | "system" | "tool"
+  content     String    @db.Text
+  toolCalls   Json?     @map("tool_calls")   // [{name: "cut_track", args: {...}}]
+  toolResults Json?     @map("tool_results")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([role])
+  @@map("tbl_video_ai_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoEditHistory {
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  action      String    // "cut" | "insert_text" | "color_grade" | "speed_ramp" | "smart_crop" | "inject_broll"
+  description String    @db.Text
+  beforeState Json      @map("before_state")
+  afterState  Json      @map("after_state")
+  undone      Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([action])
+  @@index([undone])
+  @@map("tbl_video_edit_history")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BRAND STYLE — Aprendizaje Continuo de Estilo de Marca
+// ══════════════════════════════════════════════════════════════════════════════
+
+model BrandStyle {
+  id             String    @id @default(uuid())
+  companyId      String    @unique @map("company_id")
+  clientName     String    @map("client_name")
+  primaryColor   String    @default("#6D28D9") @map("primary_color")
+  secondaryColor String    @default("#FFFFFF") @map("secondary_color")
+  accentColor    String    @default("#10B981") @map("accent_color")
+  fontFamily     String    @default("Inter")   @map("font_family")
+  subtitlePreset Json      @map("subtitle_preset")  // {size, color, shadow, animation, position}
+  styleEmbedding String?   @map("style_embedding")  // vector(1536) como string base64
+  preferences    Json?     // {preferredTransitions, preferredSFX, colorTendency, etc.}
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  projects       VideoEditorProject[]
+
+  @@index([companyId])
+  @@map("tbl_brand_styles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSET CATALOG — Catálogo Centralizado de Recursos Profesionales
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AssetCatalog {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  type        String    @map("asset_type")  // "transition" | "sfx" | "lut" | "broll"
+  name        String
+  url         String
+  tags        String[]  @default([])
+  metadata    Json?     // {emotionalTag, duration, format, etc.}
+  isPremium   Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([type])
+  @@index([tags])
+  @@map("tbl_asset_catalogs")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }

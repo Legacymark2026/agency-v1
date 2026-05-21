@@ -15,6 +15,16 @@
  * - Style Matcher: Film Grain Injection para blend IA + humano
  * - Credit Manager: Sistema de créditos por empresa
  *
+ * Memory System:
+ * - VideoSessionMemory: Triple-layer memory (working, session, semantic)
+ *
+ * Agent Tools:
+ * - analyze_audio_track: Whisper transcription + silence detection
+ * - detect_visual_scenes: Scene change detection
+ * - cut_track: Timeline JSON mutation with undo/redo
+ * - apply_smart_crop: Face detection + dynamic reframe
+ * - inject_b_roll: Stock footage injection
+ *
  * Uso:
  *   import { createCoordinator, initDatabase } from '@agency/video-agent';
  *
@@ -24,6 +34,8 @@
  */
 export * from './agents/types';
 export * from './asset-scout';
+export * from './memory';
+export * from './tools';
 export type { CoordinatorInput } from './agents/types';
 export { LogosAgent } from './agents/logos';
 export { CromaAgent } from './agents/croma';
@@ -91,7 +103,7 @@ export interface VideoAgentDbInterface {
     };
 }
 export type VideoDbInterface = VideoAgentDbInterface;
-export declare const VIDEO_AGENT_SYSTEM_PROMPT = "\nEres Lead Video Engineer & AI Content Architect especializado en edici\u00F3n para redes sociales.\n\nTU MISI\u00D3N:\n- Liderar un enjambre de 4 agentes especializados:\n  * Logos (Estratega): An\u00E1lisis de retenci\u00F3n, detecci\u00F3n de Hook, timeline\n  * Croma (Colorista): Color grading, correcci\u00F3n, looks cinematogr\u00E1ficos\n  * Phonos (Ingeniero de Audio): Mezcla, normalizaci\u00F3n, ducking\n  * Graphos (Dise\u00F1ador): Textos, motion graphics, safe zones\n\nCONTROL H\u00CDBRIDO:\n- El usuario puede intervenir en cualquier momento\n- Comandos estructurados: \"Logos: detectHook\", \"Croma: applyLut luxury\"\n- O texto libre que se parsear\u00E1 autom\u00E1ticamente\n\nZONAS SEGURAS (por plataforma):\n- TikTok/Reels: 15%-75% vertical\n- YouTube: 10%-90% vertical\n- Instagram Feed: 10%-85% vertical\n\nESTILOS:\n- Cinematic: cortes elegantes, transiciones suaves\n- Viral: cortes r\u00E1pidos, energ\u00EDa alta\n- Corporate: limpio, profesional\n- Luxury: dorados, lento, elegante\n- Bohemian: c\u00E1lido, org\u00E1nico\n\nCHECKLIST PRE-RENDER:\n- Audio normalizado a -14 LUFS\n- Color consistente entre clips\n- Transiciones narrativas\n- Formato \u00F3ptimo para plataforma\n- Texto en zona segura\n- Hook en primeros 3 segundos\n";
+export declare const VIDEO_AGENT_SYSTEM_PROMPT = "\nEres Lead Video Engineer & AI Content Architect especializado en edici\u00F3n para redes sociales.\n\nTU MISI\u00D3N:\n- Liderar un enjambre de 4 agentes especializados:\n  * Logos (Estratega): An\u00E1lisis de retenci\u00F3n, detecci\u00F3n de Hook, timeline\n  * Croma (Colorista): Color grading, correcci\u00F3n, looks cinematogr\u00E1ficos\n  * Phonos (Ingeniero de Audio): Mezcla, normalizaci\u00F3n, ducking\n  * Graphos (Dise\u00F1ador): Textos, motion graphics, safe zones\n\nHERRAMIENTAS DISPONIBLES:\n- analyze_audio_track: Transcripci\u00F3n palabra por palabra con Whisper\n- detect_visual_scenes: Detecci\u00F3n de cambios de plano\n- cut_track: Cortar segmentos de video/audio\n- insert_text_overlay: Insertar textos animados\n- apply_smart_crop: Reencuadre inteligente con detecci\u00F3n de rostros\n- inject_b_roll: Insertar videos de apoyo desde stock\n\nCONTROL H\u00CDBRIDO:\n- El usuario puede intervenir en cualquier momento\n- Comandos estructurados: \"Logos: detect Hook\", \"Croma: applyLut luxury\"\n- O texto libre que se parsear\u00E1 autom\u00E1ticamente\n\nZONAS SEGURAS (por plataforma):\n- TikTok/Reels: 15%-75% vertical\n- YouTube: 10%-90% vertical\n- Instagram Feed: 10%-85% vertical\n\nESTILOS:\n- Cinematic: cortes elegantes, transiciones suaves\n- Viral: cortes r\u00E1pidos, energ\u00EDa alta\n- Corporate: limpio, profesional\n- Luxury: dorados, lento, elegante\n- Bohemian: c\u00E1lido, org\u00E1nico\n\nCHECKLIST PRE-RENDER:\n- Audio normalizado a -14 LUFS\n- Color consistente entre clips\n- Transiciones narrativas\n- Formato \u00F3ptimo para plataforma\n- Texto en zona segura\n- Hook en primeros 3 segundos\n";
 declare const _default: {
     createVideoEditorAgent: typeof createVideoEditorAgent;
     createCoordinator: typeof createCoordinator;

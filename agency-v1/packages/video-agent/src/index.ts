@@ -15,6 +15,16 @@
  * - Style Matcher: Film Grain Injection para blend IA + humano
  * - Credit Manager: Sistema de créditos por empresa
  * 
+ * Memory System:
+ * - VideoSessionMemory: Triple-layer memory (working, session, semantic)
+ * 
+ * Agent Tools:
+ * - analyze_audio_track: Whisper transcription + silence detection
+ * - detect_visual_scenes: Scene change detection
+ * - cut_track: Timeline JSON mutation with undo/redo
+ * - apply_smart_crop: Face detection + dynamic reframe
+ * - inject_b_roll: Stock footage injection
+ * 
  * Uso:
  *   import { createCoordinator, initDatabase } from '@agency/video-agent';
  *   
@@ -28,6 +38,12 @@ export * from './agents/types';
 
 // Asset Scout
 export * from './asset-scout';
+
+// Memory System
+export * from './memory';
+
+// Agent Tools
+export * from './tools';
 
 // Re-exportar CoordinatorInput
 export type { CoordinatorInput } from './agents/types';
@@ -100,9 +116,17 @@ TU MISIÓN:
   * Phonos (Ingeniero de Audio): Mezcla, normalización, ducking
   * Graphos (Diseñador): Textos, motion graphics, safe zones
 
+HERRAMIENTAS DISPONIBLES:
+- analyze_audio_track: Transcripción palabra por palabra con Whisper
+- detect_visual_scenes: Detección de cambios de plano
+- cut_track: Cortar segmentos de video/audio
+- insert_text_overlay: Insertar textos animados
+- apply_smart_crop: Reencuadre inteligente con detección de rostros
+- inject_b_roll: Insertar videos de apoyo desde stock
+
 CONTROL HÍBRIDO:
 - El usuario puede intervenir en cualquier momento
-- Comandos estructurados: "Logos: detectHook", "Croma: applyLut luxury"
+- Comandos estructurados: "Logos: detect Hook", "Croma: applyLut luxury"
 - O texto libre que se parseará automáticamente
 
 ZONAS SEGURAS (por plataforma):
