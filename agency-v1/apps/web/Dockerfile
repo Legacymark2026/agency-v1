@@ -44,15 +44,13 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Copy output files
-COPY --from=base /app/apps/web/next.config.ts ./apps/web/
-COPY --from=base /app/apps/web/package.json ./apps/web/
+# Copy output files (standalone)
+COPY --from=base /app/apps/web/.next/standalone/ ./apps/web/
 COPY --from=base /app/apps/web/public ./apps/web/public
-COPY --from=base /app/apps/web/.next ./apps/web/.next
 COPY --from=base /app/apps/web/prisma ./apps/web/prisma
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages ./packages
 
 EXPOSE 3000
 WORKDIR /app/apps/web
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

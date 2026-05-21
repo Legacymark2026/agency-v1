@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/@prisma/client/media"
+  col_output = "../node_modules/@prisma/client/media"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
@@ -12,117 +13,132 @@ datasource db {
 // Content & AI (Media, Blogs, Automations, Agents)
 // ─────────────────────────────────────────────────────────────────────────────
 
-model Post {
+model tbl_post {
   id              String   @id @default(uuid())
-  title           String
+  title String
   slug            String   @unique
-  content         String
-  authorId        String   @map("author_id") // Soft link to Auth DB
-  published       Boolean  @default(false)
-  status          String   @default("draft")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  content String
+  authorId        String   @map("author_id") // Soft link to Auth col_db published       Boolean  @default(false)
+  col_status String   @default("draft")
+  col_created_at DateTime @default(now()) @map("created_at")
+  col_updated_at DateTime @updatedAt @map("updated_at")
 
   categories      Category[]
   tags            Tag[]
 
   @@index([authorId])
-  @@map("posts")
+  @@map("tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_posts")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Category {
+model tbl_category {
   id    String @id @default(uuid())
-  name  String @unique
-  slug  String @unique
+  col_name String @unique
+  col_slug String @unique
   posts Post[]
 
-  @@map("categories")
+  @@map("tbl_categories")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Tag {
+model tbl_tag {
   id    String @id @default(uuid())
-  name  String @unique
+  col_name String @unique
   posts Post[]
 
-  @@map("tags")
+  @@map("tbl_tags")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Project {
+model tbl_project {
   id          String   @id @default(uuid())
-  title       String
+  title String
   slug        String   @unique
   description String
   published   Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  col_created_at DateTime @default(now()) @map("created_at")
+  col_updated_at DateTime @updatedAt @map("updated_at")
 
-  @@map("projects")
+  @@map("tbl_projects")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Workflow {
+model tbl_workflow {
   id            String   @id @default(uuid())
-  companyId     String?  @map("company_id") // Soft link to Core DB
-  name          String
+  col_company_id String?  @map("company_id") // Soft link to Core DB
+  name String
   isActive      Boolean  @default(false) @map("is_active")
-  triggerType   String   @map("trigger_type")
-  triggerConfig Json     @map("trigger_config")
-  steps         Json
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  col_trigger_type String   @map("trigger_type")
+  col_trigger_config Json     @map("trigger_config")
+  steps         col_json createdAt     DateTime @default(now()) @map("created_at")
+  col_updated_at DateTime @updatedAt @map("updated_at")
 
   @@index([companyId])
-  @@map("workflows")
+  @@map("tbl_workflows")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Campaign {
+model tbl_campaign {
   id          String   @id @default(uuid())
-  companyId   String   @map("company_id") // Soft link to Core DB
-  name        String
+  col_company_id String   @map("company_id") // Soft link to Core DB
+  name String
   status      String   @default("draft")
-  budget      Float    @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
+  col_budget Float    @default(0)
+  col_created_at DateTime @default(now()) @map("created_at")
   
   @@index([companyId])
-  @@map("campaigns")
+  @@map("tbl_campaigns")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model SocialPost {
+model tbl_social_post {
   id          String   @id @default(uuid())
-  companyId   String   @map("company_id") // Soft link
+  col_company_id String   @map("company_id") // Soft link
   platform    String
-  content     String
+  content String
   status      String   @default("draft")
-  scheduledAt DateTime? @map("scheduled_at")
-  createdAt   DateTime @default(now()) @map("created_at")
+  col_scheduled_at DateTime? @map("scheduled_at")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   @@index([companyId])
-  @@map("social_posts")
+  @@map("tbl_social_posts")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model AIAgent {
+model tbl_aiagent {
   id          String   @id @default(uuid())
-  companyId   String   @map("company_id") // Soft link
+  col_company_id String   @map("company_id") // Soft link
   name        String
-  prompt      String
+  prompt String
   model       String   @default("gpt-4")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
+  col_is_active Boolean  @default(true) @map("is_active")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   memories    AgentMemory[]
 
   @@index([companyId])
-  @@map("ai_agents")
+  @@map("tbl_ai_agents")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model AgentMemory {
+model tbl_agent_memory {
   id          String   @id @default(uuid())
-  agentId     String   @map("agent_id")
+  col_agent_id String   @map("agent_id")
   key         String
-  value       Json
-  createdAt   DateTime @default(now()) @map("created_at")
+  value       col_json createdAt   DateTime @default(now()) @map("created_at")
 
-  agent       AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  col_agent AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
-  @@map("agent_memories")
+  @@map("tbl_agent_memories")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }

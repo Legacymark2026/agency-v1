@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/@prisma/client/core"
+  col_output = "../node_modules/@prisma/client/core"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
@@ -12,19 +13,19 @@ datasource db {
 // Business Core (CRM, Finance, Admin)
 // ─────────────────────────────────────────────────────────────────────────────
 
-model Company {
+model tbl_company {
   id                        String   @id @default(uuid())
   name                      String
   slug                      String   @unique
-  logoUrl                   String?  @map("logo_url")
+  col_logo_url String?  @map("logo_url")
   industry                  String?
   website                   String?
-  subscriptionTier          String   @default("free") @map("subscription_tier")
-  subscriptionStatus        String   @default("active") @map("subscription_status")
-  onboardingCompleted       Boolean  @default(false) @map("onboarding_completed")
-  createdAt                 DateTime @default(now()) @map("created_at")
-  stripeCustomerId          String?  @map("stripe_customer_id")
-  stripeSubscriptionId      String?  @map("stripe_subscription_id")
+  col_subscription_tier String   @default("free") @map("subscription_tier")
+  col_subscription_status String   @default("active") @map("subscription_status")
+  col_onboarding_completed Boolean  @default(false) @map("onboarding_completed")
+  col_created_at DateTime @default(now()) @map("created_at")
+  col_stripe_customer_id String?  @map("stripe_customer_id")
+  col_stripe_subscription_id String?  @map("stripe_subscription_id")
 
   // Core Relations
   teams                     Team[]
@@ -36,127 +37,157 @@ model Company {
   servicePrices             ServicePrice[]
   kanbanProjects            KanbanProject[]
 
-  @@map("companies")
+
+  @@map("tbl_companies")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model CompanyUser {
+model tbl_company_user {
   id             String   @id @default(uuid())
-  userId         String   @map("user_id") // Soft link to Auth DB
-  companyId      String   @map("company_id")
-  permissions    Json?    @default("[]")
-  invitedBy      String?  @map("invited_by")
-  joinedAt       DateTime @default(now()) @map("joined_at")
-  teamId         String?  @map("team_id")
-  roleName       String   @default("member") @map("role_name")
-  
-  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  team           Team?    @relation(fields: [teamId], references: [id])
+  col_user_id String   @map("user_id") // Soft link to Auth col_db companyId      String   @map("company_id")
+  col_permissions Json?    @default("[]")
+  col_invited_by String?  @map("invited_by")
+  col_joined_at DateTime @default(now()) @map("joined_at")
+  col_team_id String?  @map("team_id")
+  col_role_name String   @default("member") @map("role_name")
+
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_team Team?    @relation(fields: [teamId], references: [id])
 
   @@unique([userId, companyId])
-  @@map("company_users")
+  @@map("tbl_company_users")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Team {
+
+
+
+
+model tbl_team {
   id            String   @id @default(uuid())
   name          String
   description   String?
-  companyId     String   @map("company_id")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  col_company_id String   @map("company_id")
+  col_created_at DateTime @default(now()) @map("created_at")
+  col_updated_at DateTime @updatedAt @map("updated_at")
 
   members       CompanyUser[]
-  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("teams")
+  @@map("tbl_teams")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Lead {
+model tbl_lead {
   id        String   @id @default(uuid())
-  companyId String   @map("company_id")
+  col_company_id String   @map("company_id")
   name      String
   email     String?
   phone     String?
   source    String?
-  status    String   @default("new")
-  assignedToUserId String? @map("assigned_to_user_id") // Soft link
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  col_status String   @default("new")
+  col_assigned_to_user_id String? @map("assigned_to_user_id") // Soft col_link createdAt DateTime @default(now()) @map("created_at")
+  col_updated_at DateTime @updatedAt @map("updated_at")
 
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("leads")
+  @@map("tbl_leads")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Deal {
+model tbl_deal {
   id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  name      String
+  col_company_id String   @map("company_id")
+  name String
   value     Float    @default(0)
-  stage     String   @default("lead")
-  assignedToUserId String? @map("assigned_to_user_id") // Soft link
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  col_stage String   @default("lead")
+  col_assigned_to_user_id String? @map("assigned_to_user_id") // Soft col_link createdAt DateTime @default(now()) @map("created_at")
+  col_updated_at DateTime @updatedAt @map("updated_at")
 
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("deals")
+  @@map("tbl_deals")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Invoice {
+model tbl_invoice {
   id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  amount    Float
+  col_company_id String   @map("company_id")
+  amount Float
   status    String   @default("pending")
-  dueDate   DateTime @map("due_date")
-  createdAt DateTime @default(now()) @map("created_at")
+  col_due_date DateTime @map("due_date")
+  col_created_at DateTime @default(now()) @map("created_at")
 
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("invoices")
+  @@map("tbl_invoices")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model Expense {
+model tbl_expense {
   id        String   @id @default(uuid())
-  companyId String   @map("company_id")
+  col_company_id String   @map("company_id")
   amount    Float
   category  String
-  date      DateTime
+  date DateTime
   createdAt DateTime @default(now()) @map("created_at")
 
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("expenses")
+  @@map("tbl_expenses")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model ServicePrice {
+
+
+model tbl_kanban_project {
+  id        String   @id @default(uuid())
+  col_company_id String   @map("company_id")
+  name String
+  status    String   @default("active")
+  col_created_at DateTime @default(now()) @map("created_at")
+
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_kanban_projects")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
+}
+
+
+
+
+
+
+
+model tbl_service_price {
   id               String   @id @default(uuid())
-  companyId        String   @map("company_id")
+  col_company_id String   @map("company_id")
   nombre_servicio  String
   categoria        String
-  precio_base      Float
+  precio_base Float
   estado           String   @default("activo")
-  createdAt        DateTime @default(now()) @map("created_at")
+  col_created_at DateTime @default(now()) @map("created_at")
   
-  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  col_company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("service_prices")
+  @@map("tbl_service_prices")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model KanbanProject {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  name      String
-  status    String   @default("active")
-  createdAt DateTime @default(now()) @map("created_at")
 
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("kanban_projects")
-}

@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/@prisma/client/analytics"
+  col_output = "../node_modules/@prisma/client/analytics"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
@@ -12,80 +13,90 @@ datasource db {
 // Analytics & Audit Logs (High Write Volume)
 // ─────────────────────────────────────────────────────────────────────────────
 
-model UserActivityLog {
+model tbl_user_activity_log {
   id        String   @id @default(uuid())
-  userId    String?  @map("user_id") // Soft link
+  col_user_id String?  @map("user_id") // Soft link
   action    String
   details   Json?
-  ipAddress String?  @map("ip_address")
-  userAgent String?  @map("user_agent")
-  createdAt DateTime @default(now()) @map("created_at")
+  col_ip_address String?  @map("ip_address")
+  col_user_agent String?  @map("user_agent")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([createdAt])
-  @@map("user_activity_logs")
+  @@map("tbl_tbl_tbl_tbl_tbl_tbl_user_activity_logs")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model ProjectView {
+model tbl_project_view {
   id        String   @id @default(uuid())
-  projectId String   @map("project_id") // Soft link
-  ipHash    String   @map("ip_hash")
-  userAgent String?  @map("user_agent")
+  col_project_id String   @map("project_id") // Soft col_link ipHash    String   @map("ip_hash")
+  col_user_agent String?  @map("user_agent")
   referer   String?
-  createdAt DateTime @default(now()) @map("created_at")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   @@index([projectId])
   @@index([createdAt])
-  @@map("project_views")
+  @@map("tbl_project_views")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model PostView {
+model tbl_post_view {
   id        String   @id @default(uuid())
-  postId    String   @map("post_id") // Soft link
-  ipHash    String   @map("ip_hash")
-  userAgent String?  @map("user_agent")
+  col_post_id String   @map("post_id") // Soft col_link ipHash    String   @map("ip_hash")
+  col_user_agent String?  @map("user_agent")
   referer   String?
-  createdAt DateTime @default(now()) @map("created_at")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   @@index([postId])
   @@index([createdAt])
-  @@map("post_views")
+  @@map("tbl_post_views")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model UsageLog {
+model tbl_usage_log {
   id        String   @id @default(uuid())
-  companyId String   @map("company_id") // Soft link
-  feature   String
+  col_company_id String   @map("company_id") // Soft link
+  feature String
   metric    Int      @default(1)
-  createdAt DateTime @default(now()) @map("created_at")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   @@index([companyId])
   @@index([createdAt])
-  @@map("usage_logs")
+  @@map("tbl_usage_logs")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model IntegrationLog {
+model tbl_integration_log {
   id            String   @id @default(uuid())
-  integrationId String   @map("integration_id") // Soft link
+  col_integration_id String   @map("integration_id") // Soft link
   status        String
   payload       Json?
-  errorMessage  String?  @map("error_message")
-  createdAt     DateTime @default(now()) @map("created_at")
+  col_error_message String?  @map("error_message")
+  col_created_at DateTime @default(now()) @map("created_at")
 
   @@index([integrationId])
   @@index([status])
-  @@map("integration_logs")
+  @@map("tbl_integration_logs")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }
 
-model NotificationDeliveryLog {
+model tbl_notification_delivery_log {
   id             String   @id @default(uuid())
-  notificationId String   @map("notification_id")
-  userId         String   @map("user_id") // Soft link
+  col_notification_id String   @map("notification_id")
+  col_user_id String   @map("user_id") // Soft link
   channel        String
-  status         String
+  status String
   createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([status])
-  @@map("notification_delivery_logs")
+  @@map("tbl_notification_delivery_logs")
+  col_schema_version Int @default(0) @map("col_schema_version")
+  col_deleted_at DateTime? @map("col_deleted_at")
 }

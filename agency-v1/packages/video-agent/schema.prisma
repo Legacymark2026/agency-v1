@@ -34,6 +34,9 @@ model VideoProject {
 
   @@index([companyId])
   @@index([status])
+  @@map("tbl_video_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model EditVersion {
@@ -51,6 +54,9 @@ model EditVersion {
   project     VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@map("tbl_edit_versions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AgentExecution {
@@ -67,6 +73,9 @@ model AgentExecution {
 
   @@index([projectId])
   @@index([agentName])
+  @@map("tbl_agent_executions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model EditorCommand {
@@ -85,6 +94,9 @@ model EditorCommand {
 
   @@index([projectId])
   @@index([agentName])
+  @@map("tbl_editor_commands")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AudioConfig {
@@ -97,6 +109,9 @@ model AudioConfig {
   updatedAt   DateTime @updatedAt
 
   @@index([projectId])
+  @@map("tbl_audio_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ExportConfig {
@@ -113,6 +128,9 @@ model ExportConfig {
   completedAt DateTime?
 
   @@index([projectId])
+  @@map("tbl_export_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ─────────────────────────────────────────────
@@ -142,6 +160,9 @@ model ExternalAsset {
 
   @@index([projectId])
   @@index([sourceApi])
+  @@map("tbl_external_assets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model SynthesisAudit {
@@ -169,6 +190,9 @@ model SynthesisAudit {
   project       VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@map("tbl_synthesis_audits")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ApiKey {
@@ -186,6 +210,9 @@ model ApiKey {
   
   @@unique([companyId, provider])
   @@index([companyId])
+  @@map("tbl_api_keys")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CreditTransaction {
@@ -201,6 +228,9 @@ model CreditTransaction {
   
   @@index([companyId])
   @@index([projectId])
+  @@map("tbl_credit_transactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // Configuración de créditos por empresa (usando integrationConfig)

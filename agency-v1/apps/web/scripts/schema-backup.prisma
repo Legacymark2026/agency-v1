@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client/core"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
@@ -68,7 +70,9 @@ model User {
 
   @@index([role])
   @@index([email])
-  @@map("users")
+  @@map("tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_tbl_users")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Permisos de roles custom ───────────────────────────────
@@ -84,7 +88,9 @@ model RoleConfig {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([roleName])
-  @@map("role_configs")
+  @@map("tbl_role_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model PasswordResetToken {
@@ -97,7 +103,9 @@ model PasswordResetToken {
 
   @@index([email])
   @@index([token])
-  @@map("password_reset_tokens")
+  @@map("tbl_password_reset_tokens")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model UserProfile {
@@ -115,7 +123,9 @@ model UserProfile {
   hotjar           Json?   @map("hotjar_config")
   user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("user_profiles")
+  @@map("tbl_user_profiles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Account {
@@ -134,7 +144,9 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts")
+  @@map("tbl_accounts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Session {
@@ -146,7 +158,9 @@ model Session {
   userAgent    String?  @map("user_agent")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
+  @@map("tbl_sessions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model VerificationToken {
@@ -155,7 +169,9 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verification_tokens")
+  @@map("tbl_verification_tokens")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Company {
@@ -215,7 +231,9 @@ model Company {
   usageLogs               UsageLog[]
   integrationLogs         IntegrationLog[]
 
-  @@map("companies")
+  @@map("tbl_companies")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model BrandKit {
@@ -235,7 +253,9 @@ model BrandKit {
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@map("brand_kits")
+  @@map("tbl_brand_kits")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CompanyUser {
@@ -255,7 +275,9 @@ model CompanyUser {
 
   @@unique([userId, companyId])
   @@index([role])
-  @@map("company_users")
+  @@map("tbl_company_users")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Team {
@@ -279,7 +301,9 @@ model Team {
 
   @@index([companyId])
   @@index([path])
-  @@map("teams")
+  @@map("tbl_teams")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CustomObjectDefinition {
@@ -298,6 +322,9 @@ model CustomObjectDefinition {
   records           CustomObjectRecord[]
 
   @@unique([companyId, name])
+  @@map("tbl_custom_object_definitions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CustomObjectField {
@@ -311,6 +338,9 @@ model CustomObjectField {
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   definition   CustomObjectDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  @@map("tbl_custom_object_fields")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CustomObjectRelationship {
@@ -323,6 +353,9 @@ model CustomObjectRelationship {
   updatedAt DateTime               @updatedAt
   from      CustomObjectDefinition @relation("RelationshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
   to        CustomObjectDefinition @relation("RelationshipTo", fields: [toId], references: [id], onDelete: Cascade)
+  @@map("tbl_custom_object_relationships")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CustomObjectPermission {
@@ -337,6 +370,9 @@ model CustomObjectPermission {
   team         Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, definitionId])
+  @@map("tbl_custom_object_permissions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CustomObjectRecord {
@@ -349,7 +385,9 @@ model CustomObjectRecord {
   definition   CustomObjectDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
 
   @@index([definitionId])
-  @@map("custom_object_records")
+  @@map("tbl_custom_object_records")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model UserActivityLog {
@@ -362,7 +400,9 @@ model UserActivityLog {
   createdAt DateTime @default(now()) @map("created_at")
   user      User?    @relation(fields: [userId], references: [id])
 
-  @@map("user_activity_logs")
+  @@map("tbl_user_activity_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ApiKey {
@@ -376,7 +416,9 @@ model ApiKey {
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("api_keys")
+  @@map("tbl_api_keys")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Post {
@@ -409,7 +451,9 @@ model Post {
 
   @@index([authorId])
   @@index([seriesId])
-  @@map("posts")
+  @@map("tbl_posts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Project {
@@ -453,7 +497,9 @@ model Project {
   @@index([categoryId])
   @@index([status])
   @@index([featured])
-  @@map("projects")
+  @@map("tbl_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProjectCategory {
@@ -466,7 +512,9 @@ model ProjectCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   projects    Project[]
 
-  @@map("project_categories")
+  @@map("tbl_project_categories")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProjectTag {
@@ -474,7 +522,9 @@ model ProjectTag {
   name                String                @unique
   ProjectToProjectTag ProjectToProjectTag[]
 
-  @@map("project_tags")
+  @@map("tbl_project_tags")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProjectView {
@@ -489,7 +539,9 @@ model ProjectView {
   @@unique([projectId, ipHash, createdAt])
   @@index([projectId])
   @@index([createdAt])
-  @@map("project_views")
+  @@map("tbl_project_views")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Service {
@@ -502,7 +554,9 @@ model Service {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   projects    Project[] @relation("ProjectToService")
 
-  @@map("services")
+  @@map("tbl_services")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Tag {
@@ -510,7 +564,9 @@ model Tag {
   name  String @unique
   posts Post[] @relation("PostToTag")
 
-  @@map("tags")
+  @@map("tbl_tags")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Category {
@@ -519,7 +575,9 @@ model Category {
   slug  String @unique
   posts Post[] @relation("CategoryToPost")
 
-  @@map("categories")
+  @@map("tbl_categories")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Workflow {
@@ -537,7 +595,9 @@ model Workflow {
   company       Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("workflows")
+  @@map("tbl_workflows")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model WorkflowExecution {
@@ -553,7 +613,9 @@ model WorkflowExecution {
 
   @@index([workflowId])
   @@index([status])
-  @@map("workflow_executions")
+  @@map("tbl_workflow_executions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Bounty {
@@ -574,7 +636,9 @@ model Bounty {
 
   @@index([teamId])
   @@index([status])
-  @@map("bounties")
+  @@map("tbl_bounties")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model PostView {
@@ -589,7 +653,9 @@ model PostView {
   @@unique([postId, ipHash, createdAt])
   @@index([postId])
   @@index([createdAt])
-  @@map("post_views")
+  @@map("tbl_post_views")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model PostLike {
@@ -601,7 +667,9 @@ model PostLike {
 
   @@unique([postId, sessionId])
   @@index([postId])
-  @@map("post_likes")
+  @@map("tbl_post_likes")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Comment {
@@ -624,7 +692,9 @@ model Comment {
   @@index([postId])
   @@index([parentId])
   @@index([approved])
-  @@map("comments")
+  @@map("tbl_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model NewsletterSubscription {
@@ -642,7 +712,9 @@ model NewsletterSubscription {
 
   @@index([confirmed])
   @@index([unsubscribed])
-  @@map("newsletter_subscriptions")
+  @@map("tbl_newsletter_subscriptions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model PostSeries {
@@ -655,7 +727,9 @@ model PostSeries {
   updatedAt   DateTime @updatedAt @map("updated_at")
   posts       Post[]
 
-  @@map("post_series")
+  @@map("tbl_post_series")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ReadingListItem {
@@ -667,7 +741,9 @@ model ReadingListItem {
 
   @@unique([userId, postSlug])
   @@index([userId])
-  @@map("reading_list_items")
+  @@map("tbl_reading_list_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Deal {
@@ -702,7 +778,9 @@ model Deal {
   @@index([stage])
   @@index([priority])
   @@index([assignedTo])
-  @@map("deals")
+  @@map("tbl_deals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CRMActivity {
@@ -719,7 +797,9 @@ model CRMActivity {
   @@index([dealId])
   @@index([userId])
   @@index([createdAt])
-  @@map("crm_activities")
+  @@map("tbl_crm_activities")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Task {
@@ -746,7 +826,9 @@ model Task {
   @@index([dealId])
   @@index([dueDate])
   @@index([completed])
-  @@map("tasks")
+  @@map("tbl_tasks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model EmailTemplate {
@@ -764,7 +846,9 @@ model EmailTemplate {
 
   @@index([companyId])
   @@index([category])
-  @@map("email_templates")
+  @@map("tbl_email_templates")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model LeadScoringRule {
@@ -782,7 +866,9 @@ model LeadScoringRule {
 
   @@index([companyId])
   @@index([active])
-  @@map("lead_scoring_rules")
+  @@map("tbl_lead_scoring_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Campaign {
@@ -819,7 +905,9 @@ model Campaign {
   @@index([companyId])
   @@index([code])
   @@index([status])
-  @@map("campaigns")
+  @@map("tbl_campaigns")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Lead {
@@ -885,7 +973,9 @@ model Lead {
   @@index([createdAt])
   @@index([email])
   @@index([status])
-  @@map("leads")
+  @@map("tbl_leads")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model MarketingEvent {
@@ -914,7 +1004,9 @@ model MarketingEvent {
   @@index([visitorId])
   @@index([eventType])
   @@index([createdAt])
-  @@map("marketing_events")
+  @@map("tbl_marketing_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AdSpend {
@@ -940,7 +1032,9 @@ model AdSpend {
   @@unique([date, campaignId, platform])
   @@index([companyId])
   @@index([date])
-  @@map("ad_spend")
+  @@map("tbl_ad_spend")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CampaignAsset {
@@ -966,7 +1060,9 @@ model CampaignAsset {
 
   @@index([companyId])
   @@index([campaignId])
-  @@map("campaign_assets")
+  @@map("tbl_campaign_assets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ABTest {
@@ -986,7 +1082,9 @@ model ABTest {
 
   @@index([campaignId])
   @@index([companyId])
-  @@map("ab_tests")
+  @@map("tbl_ab_tests")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ABTestVariant {
@@ -1003,7 +1101,9 @@ model ABTestVariant {
   asset       CampaignAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   @@index([abTestId])
-  @@map("ab_test_variants")
+  @@map("tbl_ab_test_variants")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ShortLink {
@@ -1022,7 +1122,9 @@ model ShortLink {
   company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("short_links")
+  @@map("tbl_short_links")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Conversation {
@@ -1053,7 +1155,9 @@ model Conversation {
   @@index([status])
   @@index([channel])
   @@index([lastMessageAt])
-  @@map("conversations")
+  @@map("tbl_conversations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Message {
@@ -1074,7 +1178,9 @@ model Message {
   @@unique([externalId, conversationId])
   @@index([conversationId])
   @@index([createdAt])
-  @@map("messages")
+  @@map("tbl_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AnalyticsEvent {
@@ -1121,7 +1227,9 @@ model AnalyticsEvent {
   @@index([utmSource, utmMedium, utmCampaign])
   @@index([country, createdAt])
   @@index([device, createdAt])
-  @@map("analytics_events")
+  @@map("tbl_analytics_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Expert {
@@ -1141,7 +1249,9 @@ model Expert {
 
   @@index([order])
   @@index([isVisible])
-  @@map("experts")
+  @@map("tbl_experts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Experiment {
@@ -1163,7 +1273,9 @@ model Experiment {
 
   @@index([companyId])
   @@index([status])
-  @@map("experiments")
+  @@map("tbl_experiments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Annotation {
@@ -1178,7 +1290,9 @@ model Annotation {
 
   @@index([companyId])
   @@index([date])
-  @@map("annotations")
+  @@map("tbl_annotations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AnalyticsSession {
@@ -1217,7 +1331,9 @@ model AnalyticsSession {
   @@index([utmSource, utmMedium])
   @@index([device, startedAt])
   @@index([isBounce, startedAt])
-  @@map("analytics_sessions")
+  @@map("tbl_analytics_sessions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AnalyticsGoal {
@@ -1237,7 +1353,9 @@ model AnalyticsGoal {
 
   @@index([type])
   @@index([isActive])
-  @@map("analytics_goals")
+  @@map("tbl_analytics_goals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AnalyticsDailyStats {
@@ -1259,7 +1377,9 @@ model AnalyticsDailyStats {
   createdAt       DateTime @default(now()) @map("created_at")
 
   @@index([date])
-  @@map("analytics_daily_stats")
+  @@map("tbl_analytics_daily_stats")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model IntegrationConfig {
@@ -1273,7 +1393,9 @@ model IntegrationConfig {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, provider])
-  @@map("integration_configs")
+  @@map("tbl_integration_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Event {
@@ -1306,7 +1428,9 @@ model Event {
   @@index([startDate, endDate])
   @@index([status])
   @@index([type])
-  @@map("events")
+  @@map("tbl_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model EventParticipant {
@@ -1329,7 +1453,9 @@ model EventParticipant {
   @@index([userId])
   @@index([leadId])
   @@index([rsvpStatus])
-  @@map("event_participants")
+  @@map("tbl_event_participants")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProjectToProjectTag {
@@ -1340,7 +1466,9 @@ model ProjectToProjectTag {
 
   @@unique([A, B], map: "_ProjectToProjectTag_AB_unique")
   @@index([B], map: "_ProjectToProjectTag_B_index")
-  @@map("_ProjectToProjectTag")
+  @@map("tbl__ProjectToProjectTag")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Email Masivo ───────────────────────────────────────────────────────────
@@ -1365,7 +1493,9 @@ model EmailBlast {
 
   @@index([companyId])
   @@index([status])
-  @@map("email_blasts")
+  @@map("tbl_email_blasts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model EmailBlastRecipient {
@@ -1381,7 +1511,9 @@ model EmailBlastRecipient {
 
   @@index([blastId])
   @@index([status])
-  @@map("email_blast_recipients")
+  @@map("tbl_email_blast_recipients")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Modulo Publishing (Multi-Plataforma) ─────────────────────
@@ -1430,7 +1562,9 @@ model SocialPost {
   @@index([companyId])
   @@index([status])
   @@index([approvalStatus])
-  @@map("social_posts")
+  @@map("tbl_social_posts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Comentarios Internos (Módulo Social Publisher) ───────────
@@ -1446,7 +1580,9 @@ model SocialPostComment {
 
   @@index([postId])
   @@index([userId])
-  @@map("social_post_comments")
+  @@map("tbl_social_post_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Logs de Auditoría Específicos (Social Publisher) ─────────
@@ -1463,7 +1599,9 @@ model SocialPostLog {
 
   @@index([postId])
   @@index([userId])
-  @@map("social_post_logs")
+  @@map("tbl_social_post_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Módulo de Facturación y Cobros (Cognitive AI) ────────────
@@ -1516,7 +1654,9 @@ model Invoice {
   @@index([leadId])
   @@index([dealId])
   @@index([token])
-  @@map("invoices")
+  @@map("tbl_invoices")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model InvoiceLineItem {
@@ -1535,7 +1675,9 @@ model InvoiceLineItem {
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
-  @@map("invoice_line_items")
+  @@map("tbl_invoice_line_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Módulo Agente Cognitivo: Historial de Conversaciones ────────────────────
@@ -1553,7 +1695,9 @@ model AgentConversation {
 
   @@index([userId])
   @@index([companyId])
-  @@map("agent_conversations")
+  @@map("tbl_agent_conversations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AgentMessage {
@@ -1566,7 +1710,9 @@ model AgentMessage {
   conversation AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
-  @@map("agent_messages")
+  @@map("tbl_agent_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AgentConfig {
@@ -1589,7 +1735,9 @@ model AgentConfig {
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@map("agent_configs")
+  @@map("tbl_agent_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Módulo Agente Cognitivo: Agentes Especializados (Multi-Agent Hub) ────────
@@ -1616,7 +1764,9 @@ model AIAgent {
 
   @@index([companyId])
   @@index([isActive])
-  @@map("ai_agents")
+  @@map("tbl_ai_agents")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // --- FASE 5: ERP EMPRESARIAL (PROJECT MANAGEMENT) ---
@@ -1645,7 +1795,9 @@ model KanbanProject {
 
   @@index([companyId])
   @@index([status])
-  @@map("kanban_projects")
+  @@map("tbl_kanban_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model KanbanSwimlane {
@@ -1660,7 +1812,9 @@ model KanbanSwimlane {
   kanbanTasks KanbanTask[]
 
   @@index([projectId])
-  @@map("kanban_swimlanes")
+  @@map("tbl_kanban_swimlanes")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProjectHealthLog {
@@ -1673,7 +1827,9 @@ model ProjectHealthLog {
   project KanbanProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
-  @@map("project_health_logs")
+  @@map("tbl_project_health_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model KanbanTask {
@@ -1702,7 +1858,9 @@ model KanbanTask {
   @@index([swimlaneId])
   @@index([assigneeId])
   @@index([status])
-  @@map("kanban_tasks")
+  @@map("tbl_kanban_tasks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // --- FASE 5: SPRINT 2 - COTIZADORES Y FIRMAS DIGITALES ---
@@ -1735,7 +1893,9 @@ model Proposal {
   @@index([companyId])
   @@index([status])
   @@index([token])
-  @@map("proposals")
+  @@map("tbl_proposals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProposalItem {
@@ -1752,7 +1912,9 @@ model ProposalItem {
   proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
 
   @@index([proposalId])
-  @@map("proposal_items")
+  @@map("tbl_proposal_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model InboxMacro {
@@ -1769,7 +1931,9 @@ model InboxMacro {
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("inbox_macros")
+  @@map("tbl_inbox_macros")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model TimeEntry {
@@ -1791,7 +1955,9 @@ model TimeEntry {
   @@index([timesheetId])
   @@index([kanbanTaskId])
   @@index([userId])
-  @@map("time_entries")
+  @@map("tbl_time_entries")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // --- FASE 6: NÓMINA Y EGRESOS DE PERSONAL (DIAN) ---
@@ -1849,7 +2015,9 @@ model Employee {
   @@unique([companyId, documentNumber])
   @@index([companyId])
   @@index([isActive])
-  @@map("employees")
+  @@map("tbl_employees")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Payroll {
@@ -1886,7 +2054,9 @@ model Payroll {
   @@index([employeeId])
   @@index([status])
   @@index([periodStart, periodEnd])
-  @@map("payrolls")
+  @@map("tbl_payrolls")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model PayrollItem {
@@ -1905,7 +2075,9 @@ model PayrollItem {
 
   @@index([payrollId])
   @@index([type])
-  @@map("payroll_items")
+  @@map("tbl_payroll_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // --- FASE 7: TESORERÍA Y FINANZAS (TREASURY) ---
@@ -1929,7 +2101,9 @@ model FinancialAccount {
 
   @@index([companyId])
   @@index([isActive])
-  @@map("financial_accounts")
+  @@map("tbl_financial_accounts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model FinancialTransaction {
@@ -1957,7 +2131,9 @@ model FinancialTransaction {
   @@index([type])
   @@index([category])
   @@index([date])
-  @@map("financial_transactions")
+  @@map("tbl_financial_transactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Timesheet {
@@ -1978,7 +2154,9 @@ model Timesheet {
 
   @@index([employeeId])
   @@index([status])
-  @@map("timesheets")
+  @@map("tbl_timesheets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model TimeOffRequest {
@@ -1998,7 +2176,9 @@ model TimeOffRequest {
 
   @@index([employeeId])
   @@index([status])
-  @@map("time_off_requests")
+  @@map("tbl_time_off_requests")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Beneficios Extralegales por Empleado ─────────────────────────────────────
@@ -2021,7 +2201,9 @@ model EmployeeBenefit {
 
   @@index([employeeId])
   @@index([companyId])
-  @@map("employee_benefits")
+  @@map("tbl_employee_benefits")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Categorías de Egresos ────────────────────────────────────────────────────
@@ -2040,7 +2222,9 @@ model ExpenseCategory {
 
   @@unique([companyId, name])
   @@index([companyId])
-  @@map("expense_categories")
+  @@map("tbl_expense_categories")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Egresos Operativos (Gastos) ───────────────────────────────────────────────
@@ -2080,7 +2264,9 @@ model Expense {
   @@index([categoryId])
   @@index([status])
   @@index([date])
-  @@map("expenses")
+  @@map("tbl_expenses")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ── Auditoría de Nómina ───────────────────────────────────────────────────────
@@ -2098,7 +2284,9 @@ model PayrollAuditLog {
 
   @@index([payrollId])
   @@index([userId])
-  @@map("payroll_audit_logs")
+  @@map("tbl_payroll_audit_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ─── Creative Studio: Collaboration & Versioning ──────────────────────────────
@@ -2118,7 +2306,9 @@ model AssetAnnotation {
 
   @@index([assetId])
   @@index([authorId])
-  @@map("asset_annotations")
+  @@map("tbl_asset_annotations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AssetCollection {
@@ -2134,7 +2324,9 @@ model AssetCollection {
   items       AssetCollectionItem[]
 
   @@index([companyId])
-  @@map("asset_collections")
+  @@map("tbl_asset_collections")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AssetCollectionItem {
@@ -2148,7 +2340,9 @@ model AssetCollectionItem {
 
   @@unique([collectionId, assetId])
   @@index([collectionId])
-  @@map("asset_collection_items")
+  @@map("tbl_asset_collection_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AssetVersion {
@@ -2165,7 +2359,9 @@ model AssetVersion {
 
   @@unique([assetId, version])
   @@index([assetId])
-  @@map("asset_versions")
+  @@map("tbl_asset_versions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2192,7 +2388,9 @@ model Webhook {
   deliveryLogs    WebhookDeliveryLog[]
 
   @@index([companyId])
-  @@map("webhooks")
+  @@map("tbl_webhooks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model WebhookDeliveryLog {
@@ -2208,7 +2406,9 @@ model WebhookDeliveryLog {
   webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
 
   @@index([webhookId])
-  @@map("webhook_delivery_logs")
+  @@map("tbl_webhook_delivery_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model NotificationPreference {
@@ -2225,7 +2425,9 @@ model NotificationPreference {
 
   @@unique([userId, companyId, channel, event])
   @@index([userId, companyId])
-  @@map("notification_preferences")
+  @@map("tbl_notification_preferences")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model UsageLog {
@@ -2238,7 +2440,9 @@ model UsageLog {
 
   @@index([companyId, metric])
   @@index([companyId, recordedAt])
-  @@map("usage_logs")
+  @@map("tbl_usage_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model IntegrationLog {
@@ -2253,7 +2457,9 @@ model IntegrationLog {
 
   @@index([companyId])
   @@index([companyId, integration])
-  @@map("integration_logs")
+  @@map("tbl_integration_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2275,7 +2481,9 @@ model KnowledgeBase {
   agents       AIAgent[]
 
   @@index([companyId])
-  @@map("knowledge_bases")
+  @@map("tbl_knowledge_bases")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AIAgent {
@@ -2315,7 +2523,9 @@ model AIAgent {
   conversations AgentConversation[]
 
   @@index([companyId, isActive])
-  @@map("ai_agents")
+  @@map("tbl_ai_agents")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AgentConversation {
@@ -2335,7 +2545,9 @@ model AgentConversation {
 
   @@index([agentId, status])
   @@index([companyId])
-  @@map("agent_conversations")
+  @@map("tbl_agent_conversations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AgentMessage {
@@ -2353,6 +2565,8 @@ model AgentMessage {
 
   @@index([conversationId, role])
   @@index([conversationId, createdAt])
-  @@map("agent_messages")
+  @@map("tbl_agent_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
