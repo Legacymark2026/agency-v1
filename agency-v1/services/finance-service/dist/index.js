@@ -36,8 +36,12 @@ app.get("/api/invoices", async (req, res) => {
             return res.status(400).json({ error: "companyId required" });
         const where = { companyId: String(companyId) };
         if (status)
-            where.status = String(status);
-        const invoices = await database_1.prisma.invoice.findMany({ where, orderBy: { createdAt: "desc" }, include: { items: true } });
+            where.col_status = String(status);
+        const invoices = await database_1.prisma.invoice.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+            include: { items: true }
+        });
         res.json({ invoices });
     }
     catch (err) {
@@ -46,8 +50,16 @@ app.get("/api/invoices", async (req, res) => {
 });
 app.patch("/api/invoices/:id/pay", async (req, res) => {
     try {
-        const invoice = await database_1.prisma.invoice.update({ where: { id: req.params.id }, data: { status: "PAID" } });
-        await eventBus.publish("invoice.paid", { invoiceId: invoice.id, companyId: invoice.companyId, dealId: invoice.dealId, amount: invoice.totalAmount });
+        const invoice = await database_1.prisma.invoice.update({
+            where: { id: req.params.id },
+            data: { status: "PAID" }
+        });
+        await eventBus.publish("invoice.paid", {
+            invoiceId: invoice.id,
+            companyId: invoice.companyId,
+            dealId: invoice.dealId || undefined,
+            amount: invoice.totalAmount
+        });
         res.json({ invoice });
     }
     catch (err) {
@@ -60,7 +72,11 @@ app.get("/api/payroll", async (req, res) => {
         const { companyId } = req.query;
         if (!companyId)
             return res.status(400).json({ error: "companyId required" });
-        const payrolls = await database_1.prisma.payroll.findMany({ where: { companyId: String(companyId) }, orderBy: { periodEnd: "desc" }, include: { employee: true } });
+        const payrolls = await database_1.prisma.payroll.findMany({
+            where: { companyId: String(companyId) },
+            orderBy: { periodEnd: "desc" },
+            include: { employee: true }
+        });
         res.json({ payrolls });
     }
     catch (err) {
@@ -73,7 +89,11 @@ app.get("/api/expenses", async (req, res) => {
         const { companyId } = req.query;
         if (!companyId)
             return res.status(400).json({ error: "companyId required" });
-        const expenses = await database_1.prisma.expense.findMany({ where: { companyId: String(companyId) }, orderBy: { date: "desc" }, include: { category: true } });
+        const expenses = await database_1.prisma.expense.findMany({
+            where: { companyId: String(companyId) },
+            orderBy: { date: "desc" },
+            include: { category: true }
+        });
         res.json({ expenses });
     }
     catch (err) {

@@ -1,19 +1,20 @@
 npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
 
 > web@0.1.0 build
-> prisma generate && next build
+> set NODE_OPTIONS=--max-old-space-size=8192 && npx prisma generate && set NODE_OPTIONS=--max-old-space-size=8192 && next build
 
+npm warn config ignoring workspace config at C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web/.npmrc
 warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
 For more information, see: https://pris.ly/prisma-config
 
 Environment variables loaded from .env
 Prisma schema loaded from prisma\schema.prisma
 
-✔ Generated Prisma Client (v6.19.3) to .\..\..\node_modules\@prisma\client in 4.94s
+✔ Generated Prisma Client (v6.19.3) to .\node_modules\@prisma\client\core in 7.46s
 
 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
 
-Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
 
 ▲ Next.js 16.2.4 (Turbopack)
 - Environments: .env.local, .env
@@ -22,34 +23,1214 @@ Tip: Need your database queries to be 1000x faster? Accelerate offers you that a
 
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-✓ Compiled successfully in 2.1min
-  Running TypeScript ...
+✓ Compiled successfully in 3.2min
+  Skipping validation of types
+  Finished TypeScript config validation in 815ms ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/167) ...
+  Generating static pages using 3 workers (41/167) 
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
 
-<--- Last few GCs --->
 
-[16236:000001F7B25B6000]    90379 ms: Mark-Compact 2042.9 (2088.8) -> 2038.8 (2089.1) MB, pooled: 0 MB, 3122.11 / 0.00 ms  (average mu = 0.064, current mu = 0.045) allocation failure; scavenge might not succeed
-[16236:000001F7B25B6000]    91931 ms: Mark-Compact 2042.8 (2089.1) -> 2038.8 (2089.3) MB, pooled: 0 MB, 1489.91 / 0.00 ms  (average mu = 0.054, current mu = 0.040) allocation failure; scavenge might not succeed
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
 
 
-<--- JS stacktrace --->
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
 
-FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
------ Native stack trace -----
 
- 1: 00007FF6236C711D node::SetCppgcReference+17725
- 2: 00007FF62362A138 SSL_get_quiet_shutdown+92344
- 3: 00007FF6241B0C51 v8::Isolate::ReportExternalAllocationLimitReached+65
- 4: 00007FF62419D8D6 v8::Function::Experimental_IsNopFunction+2870
- 5: 00007FF623FEAA20 v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+31456
- 6: 00007FF623FE471A v8::internal::StrongRootAllocatorBase::StrongRootAllocatorBase+6106
- 7: 00007FF623FDFDB5 v8::CpuProfileNode::GetScriptResourceNameStr+188453
- 8: 00007FF62396309D BIO_ssl_shutdown+189
- 9: 7FF8000000000000 
-Next.js build worker exited with code: 134 and signal: null
-npm error Lifecycle script `build` failed with error:
-npm error code 134
-npm error path C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
-npm error workspace web@0.1.0
-npm error location C:\Users\hboho\.gemini\antigravity\scratch\agency-v1\apps\web
-npm error command failed
-npm error command C:\WINDOWS\system32\cmd.exe /d /s /c prisma generate && next build
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.expert.findMany()` invocation:
+
+
+The table `public.tbl_experts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.servicePrice.findMany()` invocation:
+
+
+The table `public.tbl_service_prices` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.project.findMany()` invocation:
+
+
+The table `public.tbl_projects` does not exist in the current database.
+prisma:error 
+Invalid `prisma.servicePrice.findMany()` invocation:
+
+
+The table `public.tbl_service_prices` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+  Generating static pages using 3 workers (83/167) 
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.expert.findMany()` invocation:
+
+
+The table `public.tbl_experts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.projectCategory.findMany()` invocation:
+
+
+The table `public.tbl_project_categories` does not exist in the current database.
+prisma:error 
+Invalid `prisma.project.findMany()` invocation:
+
+
+The table `public.tbl_projects` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+  Generating static pages using 3 workers (125/167) 
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.expert.findMany()` invocation:
+
+
+The table `public.tbl_experts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.expert.findMany()` invocation:
+
+
+The table `public.tbl_experts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.project.findMany()` invocation:
+
+
+The table `public.tbl_projects` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.project.findMany()` invocation:
+
+
+The table `public.tbl_projects` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.post.findMany()` invocation:
+
+
+The table `public.tbl_posts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.expert.findMany()` invocation:
+
+
+The table `public.tbl_experts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.expert.findMany()` invocation:
+
+
+The table `public.tbl_experts` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.socialProfile.findMany()` invocation:
+
+
+The table `public.tbl_social_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.projectCategory.findMany()` invocation:
+
+
+The table `public.tbl_project_categories` does not exist in the current database.
+prisma:error 
+Invalid `prisma.project.findMany()` invocation:
+
+
+The table `public.tbl_projects` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.projectCategory.findMany()` invocation:
+
+
+The table `public.tbl_project_categories` does not exist in the current database.
+prisma:error 
+Invalid `prisma.socialProfile.findMany()` invocation:
+
+
+The table `public.tbl_social_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.project.findMany()` invocation:
+
+
+The table `public.tbl_projects` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.integrationConfig.findMany()` invocation:
+
+
+The table `public.tbl_integration_configs` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+prisma:error 
+Invalid `prisma.userProfile.findFirst()` invocation:
+
+
+The table `public.tbl_user_profiles` does not exist in the current database.
+✓ Generating static pages using 3 workers (167/167) in 17.6s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /.well-known/apple-app-site-association
+├ ƒ /.well-known/ucp
+├ ƒ /[locale]
+├ ƒ /[locale]/blog
+├ ƒ /[locale]/blog/[slug]
+├ ƒ /[locale]/contacto
+├ ƒ /[locale]/data-deletion
+├ ƒ /[locale]/docs/api
+├ ƒ /[locale]/flyering
+├ ƒ /[locale]/invoice/[token]
+├ ƒ /[locale]/metodologia
+├ ƒ /[locale]/nosotros
+├ ƒ /[locale]/politica-cookies
+├ ƒ /[locale]/politica-privacidad
+├ ƒ /[locale]/portfolio
+├ ƒ /[locale]/portfolio/[slug]
+├ ƒ /[locale]/recursos/guia-pagina-web
+├ ƒ /[locale]/servicios
+├ ƒ /[locale]/sitemap
+├ ƒ /[locale]/soluciones/automatizacion
+├ ƒ /[locale]/soluciones/creacion-contenido
+├ ƒ /[locale]/soluciones/estrategia
+├ ƒ /[locale]/soluciones/estrategia-de-marca
+├ ƒ /[locale]/soluciones/web-dev
+├ ƒ /[locale]/suscripcion
+├ ƒ /[locale]/tarifario
+├ ƒ /[locale]/terms
+├ ƒ /[locale]/vip
+├ ƒ /api/admin/agent-config
+├ ƒ /api/admin/comments
+├ ƒ /api/admin/comments/[id]
+├ ƒ /api/admin/comments/[id]/approve
+├ ƒ /api/admin/integrations/payu
+├ ƒ /api/admin/integrations/stripe
+├ ƒ /api/admin/invoices
+├ ƒ /api/admin/invoices/[id]
+├ ƒ /api/admin/kanban
+├ ƒ /api/admin/kanban/tasks
+├ ƒ /api/admin/proposals
+├ ƒ /api/admin/proposals/[id]
+├ ƒ /api/agent
+├ ƒ /api/agent/alerts
+├ ƒ /api/agent/daily-report
+├ ƒ /api/agent/history
+├ ƒ /api/agents/[agentId]/voice
+├ ƒ /api/ai/models
+├ ƒ /api/analytics/end-session
+├ ƒ /api/analytics/heartbeat
+├ ƒ /api/analytics/track
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/automation/ai-suggest
+├ ƒ /api/automation/resume
+├ ƒ /api/automation/test
+├ ƒ /api/automation/trigger
+├ ƒ /api/calendar/sync
+├ ƒ /api/creative/copy
+├ ƒ /api/creative/image
+├ ƒ /api/creative/safety
+├ ƒ /api/creative/score
+├ ƒ /api/creative/video
+├ ƒ /api/crm/ai-forecast
+├ ƒ /api/crm/import-deals
+├ ƒ /api/crm/run-automation
+├ ƒ /api/cron/process-sequences
+├ ƒ /api/cron/run-automation
+├ ƒ /api/cron/social-publisher
+├ ƒ /api/cron/subscriptions
+├ ƒ /api/debug/verify
+├ ƒ /api/diagnostics/automation
+├ ƒ /api/diagnostics/crm
+├ ƒ /api/email-blast/send
+├ ƒ /api/inbox/copilot
+├ ƒ /api/inbox/search
+├ ƒ /api/integrations/facebook/callback
+├ ƒ /api/integrations/facebook/webhook
+├ ƒ /api/integrations/oauth/authorize
+├ ƒ /api/integrations/oauth/callback
+├ ƒ /api/integrations/tiktok/webhook
+├ ƒ /api/integrations/whatsapp/webhook
+├ ƒ /api/invoices/[id]/pay
+├ ƒ /api/kb/upload
+├ ƒ /api/leads/capture
+├ ƒ /api/marketing/platform-status
+├ ƒ /api/marketing/templates
+├ ƒ /api/media/upload
+├ ƒ /api/media/whatsapp-upload
+├ ƒ /api/media/whatsapp/[id]
+├ ƒ /api/proposals/[id]/sign
+├ ƒ /api/propuesta
+├ ƒ /api/public/chat/upload
+├ ƒ /api/public/leads
+├ ƒ /api/public/proposals/[token]
+├ ƒ /api/public/proposals/[token]/sign
+├ ƒ /api/public/proposals/[token]/view
+├ ƒ /api/serve/[...path]
+├ ƒ /api/test-marketing
+├ ƒ /api/track/click
+├ ƒ /api/track/open
+├ ƒ /api/upload
+├ ƒ /api/v1/campaigns
+├ ƒ /api/v1/contacts
+├ ƒ /api/v1/contacts/[id]
+├ ƒ /api/v1/conversations
+├ ƒ /api/v1/conversations/[id]/messages
+├ ƒ /api/v1/deals
+├ ƒ /api/v1/deals/[id]
+├ ƒ /api/v1/deals/[id]/stage
+├ ƒ /api/v1/leads
+├ ƒ /api/v1/leads/[id]
+├ ƒ /api/v1/me
+├ ƒ /api/v1/webhooks
+├ ƒ /api/v1/webhooks/[id]
+├ ƒ /api/video/render-callback
+├ ƒ /api/webhooks/[workflowId]
+├ ƒ /api/webhooks/agent-proactive
+├ ƒ /api/webhooks/channels/[provider]
+├ ƒ /api/webhooks/cron/audiences
+├ ƒ /api/webhooks/cron/email-worker
+├ ƒ /api/webhooks/external
+├ ƒ /api/webhooks/google
+├ ƒ /api/webhooks/google-leads
+├ ƒ /api/webhooks/linkedin
+├ ƒ /api/webhooks/linkedin-leads
+├ ƒ /api/webhooks/meta
+├ ƒ /api/webhooks/openclaw
+├ ƒ /api/webhooks/paypal
+├ ƒ /api/webhooks/payu
+├ ƒ /api/webhooks/pse
+├ ƒ /api/webhooks/resend
+├ ƒ /api/webhooks/stripe
+├ ƒ /api/webhooks/tiktok
+├ ƒ /api/webhooks/video-analytics
+├ ƒ /api/webhooks/whatsapp
+├ ƒ /api/workflows/execute
+├ ƒ /api/workflows/executions/[id]
+├ ƒ /api/workflows/resume/[executionId]
+├ ƒ /apple-app-site-association
+├ ƒ /atom.xml
+├ ƒ /auth/login
+├ ƒ /auth/mfa-verify
+├ ƒ /auth/nueva-contrasena
+├ ƒ /auth/pending-approval
+├ ƒ /auth/recuperar
+├ ƒ /auth/register
+├ ƒ /blog
+├ ƒ /contacto
+├ ƒ /dashboard
+├ ƒ /dashboard/admin/agent-config
+├ ƒ /dashboard/admin/ai-insights
+├ ƒ /dashboard/admin/architecture
+├ ƒ /dashboard/admin/architecture/[id]
+├ ƒ /dashboard/admin/automation
+├ ƒ /dashboard/admin/automation/builder
+├ ƒ /dashboard/admin/automation/executions
+├ ƒ /dashboard/admin/automation/executions/[id]
+├ ƒ /dashboard/admin/crm
+├ ƒ /dashboard/admin/crm/automation
+├ ƒ /dashboard/admin/crm/campaigns
+├ ƒ /dashboard/admin/crm/commissions
+├ ƒ /dashboard/admin/crm/deals/[id]
+├ ƒ /dashboard/admin/crm/goals
+├ ƒ /dashboard/admin/crm/leads
+├ ƒ /dashboard/admin/crm/leads/[id]
+├ ƒ /dashboard/admin/crm/pipeline
+├ ƒ /dashboard/admin/crm/reports
+├ ƒ /dashboard/admin/crm/scoring
+├ ƒ /dashboard/admin/crm/sequences
+├ ƒ /dashboard/admin/crm/tasks
+├ ƒ /dashboard/admin/crm/templates
+├ ƒ /dashboard/admin/invoices
+├ ƒ /dashboard/admin/invoices/new
+├ ƒ /dashboard/admin/marketing
+├ ƒ /dashboard/admin/marketing/approvals
+├ ƒ /dashboard/admin/marketing/builder
+├ ƒ /dashboard/admin/marketing/campaigns
+├ ƒ /dashboard/admin/marketing/campaigns/new
+├ ƒ /dashboard/admin/marketing/creative-studio
+├ ƒ /dashboard/admin/marketing/links
+├ ƒ /dashboard/admin/marketing/settings
+├ ƒ /dashboard/admin/marketing/spend
+├ ƒ /dashboard/admin/operations
+├ ƒ /dashboard/admin/operations/kanban
+├ ƒ /dashboard/admin/operations/timesheets
+├ ƒ /dashboard/admin/operations/treasury
+├ ƒ /dashboard/admin/payroll
+├ ƒ /dashboard/admin/payroll/[id]
+├ ƒ /dashboard/admin/payroll/employees
+├ ƒ /dashboard/admin/payroll/employees/new
+├ ƒ /dashboard/admin/payroll/expenses
+├ ƒ /dashboard/admin/payroll/new
+├ ƒ /dashboard/admin/payroll/reports
+├ ƒ /dashboard/admin/payroll/time-off
+├ ƒ /dashboard/admin/payroll/timesheets
+├ ƒ /dashboard/admin/proposals
+├ ƒ /dashboard/admin/proposals/[id]
+├ ƒ /dashboard/admin/proposals/new
+├ ƒ /dashboard/admin/sales/goals
+├ ƒ /dashboard/admin/team
+├ ƒ /dashboard/admin/treasury
+├ ƒ /dashboard/admin/treasury/accounts/new
+├ ƒ /dashboard/admin/treasury/transactions/new
+├ ƒ /dashboard/analytics
+├ ƒ /dashboard/client
+├ ƒ /dashboard/client/projects
+├ ƒ /dashboard/client/proposals
+├ ƒ /dashboard/events
+├ ƒ /dashboard/experts
+├ ƒ /dashboard/inbox
+├ ƒ /dashboard/inbox/[conversationId]
+├ ƒ /dashboard/kanban
+├ ƒ /dashboard/marketing
+├ ƒ /dashboard/marketing/automation
+├ ƒ /dashboard/marketing/calendar
+├ ƒ /dashboard/marketing/campaigns
+├ ƒ /dashboard/marketing/campaigns/[id]
+├ ƒ /dashboard/marketing/campaigns/new
+├ ƒ /dashboard/marketing/email-blast
+├ ƒ /dashboard/marketing/email-blast/audience
+├ ƒ /dashboard/marketing/links
+├ ƒ /dashboard/marketing/listening
+├ ƒ /dashboard/marketing/pricing
+├ ƒ /dashboard/marketing/spend
+├ ƒ /dashboard/media
+├ ƒ /dashboard/posts
+├ ƒ /dashboard/posts/[id]
+├ ƒ /dashboard/posts/categories
+├ ƒ /dashboard/posts/comments
+├ ƒ /dashboard/posts/create
+├ ƒ /dashboard/projects
+├ ƒ /dashboard/projects/[id]
+├ ƒ /dashboard/projects/create
+├ ƒ /dashboard/roles
+├ ƒ /dashboard/security
+├ ƒ /dashboard/settings
+├ ƒ /dashboard/settings/agents
+├ ƒ /dashboard/settings/agents/[id]
+├ ƒ /dashboard/settings/agents/knowledge
+├ ƒ /dashboard/settings/agents/new
+├ ƒ /dashboard/settings/agents/skillchains
+├ ƒ /dashboard/settings/agents/teams
+├ ƒ /dashboard/settings/appearance
+├ ƒ /dashboard/settings/billing
+├ ƒ /dashboard/settings/company
+├ ƒ /dashboard/settings/developer
+├ ƒ /dashboard/settings/inbox/macros
+├ ƒ /dashboard/settings/integrations
+├ ƒ /dashboard/settings/members
+├ ƒ /dashboard/settings/notifications
+├ ƒ /dashboard/settings/profile
+├ ƒ /dashboard/settings/roles
+├ ƒ /dashboard/settings/security
+├ ƒ /dashboard/settings/social-profiles
+├ ƒ /dashboard/test-analytics
+├ ƒ /dashboard/tools/video-editor
+├ ƒ /dashboard/unauthorized
+├ ƒ /dashboard/users
+├ ƒ /dashboard/video
+├ ƒ /dashboard/video/[projectId]
+├ ƒ /flyering
+├ ƒ /l/[slug]
+├ ƒ /meta.json
+├ ƒ /metodologia
+├ ƒ /nosotros
+├ ƒ /politica-cookies
+├ ƒ /politica-privacidad
+├ ƒ /portfolio
+├ ƒ /proposal/[token]
+├ ƒ /register-agency
+├ ○ /robots.txt
+├ ƒ /rss
+├ ƒ /servicios
+├ ƒ /sign/[token]
+├ ƒ /sitemap_index.xml
+├ ƒ /sitemap.txt
+├ ○ /sitemap.xml
+├ ƒ /sitemap.xml.gz
+├ ƒ /sitemaps.xml
+├ ƒ /soluciones/automatizacion
+├ ƒ /soluciones/creacion-contenido
+├ ƒ /soluciones/estrategia
+├ ƒ /soluciones/estrategia-de-marca
+├ ƒ /soluciones/web-dev
+├ ƒ /suscripcion
+├ ƒ /suscripcion/cancelado
+├ ƒ /suscripcion/exito
+├ ƒ /terms
+├ ƒ /test_auth_debug
+├ ƒ /test-cloudinary
+├ ƒ /vip
+└ ƒ /widget/chat
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

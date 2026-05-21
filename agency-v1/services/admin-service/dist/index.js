@@ -25,7 +25,7 @@ app.get('/api/admin/kanban', async (req, res) => {
             return res.status(400).json({ error: "companyId is required" });
         }
         const projects = await database_1.prisma.kanbanProject.findMany({
-            where: { companyId },
+            where: { companyId: companyId },
             include: {
                 kanbanTasks: {
                     select: {
@@ -67,9 +67,9 @@ app.post('/api/admin/kanban', async (req, res) => {
         }
         const newProject = await database_1.prisma.kanbanProject.create({
             data: {
-                name,
-                description,
-                companyId,
+                name: name,
+                description: description,
+                companyId: companyId,
                 dealId: dealId || null,
             }
         });
@@ -95,4 +95,6 @@ app.use('/api/admin', (req, res) => { res.status(200).json({ message: '/api/admi
 app.listen(port, () => {
     console.log(`Admin Service listening at http://localhost:${port}`);
 });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+exports.default = app;
 //# sourceMappingURL=index.js.map

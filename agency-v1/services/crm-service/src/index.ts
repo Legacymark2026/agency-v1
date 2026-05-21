@@ -63,8 +63,22 @@ app.get("/api/leads", async (req, res) => {
 
 app.post("/api/leads", async (req, res) => {
   try {
-    const lead = await prisma.lead.create({ data: req.body });
-    await eventBus.publish("lead.created", { leadId: lead.id, companyId: lead.companyId, data: lead });
+    const correlationId = (req.headers["x-correlation-id"] || `trace-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`) as string;
+
+    // Atomically persist Lead and create OutboxEvent in a single transaction
+    // Guarantees Transactional Outbox consistency — if Redis is down, data is safe in tbl_outbox_events
+    const lead = await prisma.$transaction(async (tx) => {
+      const createdLead = await tx.lead.create({ data: req.body });
+      await tx.outboxEvent.create({
+        data: {
+          eventName: "lead.created",
+          payload: { leadId: createdLead.id, companyId: createdLead.companyId, data: createdLead },
+          correlationId,
+        },
+      });
+      return createdLead;
+    });
+
     res.status(201).json({ lead });
   } catch (err) {
     res.status(500).json({ error: String(err) });
@@ -77,7 +91,6 @@ app.get("/api/cqrs/leads", async (req, res) => {
     const { companyId } = req.query;
     if (!companyId) return res.status(400).json({ error: "companyId required" });
 
-    // Read directly from Redis instead of PostgreSQL
     const keys = await redisClient.keys(`cqrs:leads:${companyId}:*`);
     if (keys.length === 0) {
       return res.json({ leads: [], source: "read_db_redis", note: "No leads in materialized view yet" });
@@ -85,7 +98,7 @@ app.get("/api/cqrs/leads", async (req, res) => {
 
     const leads = await Promise.all(keys.map(k => redisClient.get(k)));
     const parsedLeads = leads.filter(Boolean).map(l => JSON.parse(l!));
-    
+
     res.json({ leads: parsedLeads, source: "read_db_redis", latency: "sub-millisecond" });
   } catch (err) {
     res.status(500).json({ error: String(err) });
@@ -105,7 +118,6 @@ app.get("/api/deals", async (req, res) => {
     const deals = await prisma.deal.findMany({
       where,
       orderBy: { updatedAt: "desc" },
-      include: { assignedUser: { select: { id: true, name: true, image: true } } },
     });
 
     res.json({ deals });
@@ -116,23 +128,13 @@ app.get("/api/deals", async (req, res) => {
 
 app.patch("/api/deals/:id/stage", async (req, res) => {
   try {
-    const { stage, changedBy, note } = req.body;
+    const { stage } = req.body;
     const deal = await prisma.deal.findUnique({ where: { id: req.params.id } });
     if (!deal) return res.status(404).json({ error: "Deal not found" });
 
     const updated = await prisma.deal.update({
       where: { id: req.params.id },
-      data: { stage, lastActivity: new Date() },
-    });
-
-    await prisma.dealStageHistory.create({
-      data: {
-        dealId: deal.id,
-        fromStage: deal.stage,
-        toStage: stage,
-        changedBy,
-        note,
-      },
+      data: { stage },
     });
 
     await eventBus.publish("deal.stage_changed", {
@@ -170,25 +172,81 @@ app.get("/api/crm/funnel/:companyId", async (req, res) => {
 
 // ── Event Bus Setup & CQRS Worker ────────────────────────────────────────────
 const eventBus = new EventBus(REDIS_URL, "crm-service");
-const redisClient = new Redis(REDIS_URL); // Read DB
+const redisClient = new Redis(REDIS_URL);
 
 // CQRS Synchronizer: Listen to Write DB events and update Read DB (Redis)
 eventBus.subscribe("lead.created", async (payload) => {
   const { leadId, companyId, data } = payload.data as any;
   if (leadId && companyId && data) {
     console.log(`[CQRS Worker] Synchronizing lead ${leadId} to Read DB (Redis)`);
-    // Store in Redis as a materialized view
     await redisClient.set(`cqrs:leads:${companyId}:${leadId}`, JSON.stringify(data));
   }
 });
 
-// Subscribe to relevant events from other services
 eventBus.subscribe("invoice.paid", async (payload) => {
   const { dealId } = payload.data;
   if (dealId) {
     console.log(`[crm-service] Invoice paid for deal ${dealId}`);
   }
 });
+
+// ── Message Relay Worker ─────────────────────────────────────────────────────
+/**
+ * Polls tbl_outbox_events for PENDING/FAILED events and publishes them to EventBus.
+ * This decouples the HTTP request from the Redis publish, guaranteeing
+ * at-least-once delivery even if Redis was down when the lead was created.
+ */
+const startMessageRelayWorker = () => {
+  const INTERVAL_MS = 2000;
+
+  const poll = async () => {
+    try {
+      const pendingEvents = await prisma.outboxEvent.findMany({
+        where: {
+          status: { in: ["PENDING", "FAILED"] },
+          attempts: { lt: 3 },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 20,
+      });
+
+      for (const event of pendingEvents) {
+        try {
+          const payloadData = event.payload as Record<string, unknown>;
+          await eventBus.publish(event.eventName as any, payloadData, event.correlationId);
+
+          await prisma.outboxEvent.update({
+            where: { id: event.id },
+            data: {
+              status: "PROCESSED",
+              processedAt: new Date(),
+              attempts: { increment: 1 },
+            },
+          });
+        } catch (pubErr) {
+          console.error(`[MessageRelayWorker] Failed to publish outbox event ${event.id}:`, pubErr);
+
+          await prisma.outboxEvent.update({
+            where: { id: event.id },
+            data: {
+              attempts: { increment: 1 },
+              status: "FAILED",
+            },
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`[MessageRelayWorker] Error checking outbox events:`, err);
+    } finally {
+      setTimeout(poll, INTERVAL_MS);
+    }
+  };
+
+  setTimeout(poll, INTERVAL_MS);
+  console.log("📨 Message Relay Worker started");
+};
+
+startMessageRelayWorker();
 
 // ── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {

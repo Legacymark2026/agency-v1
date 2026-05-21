@@ -17,14 +17,23 @@ const http_proxy_middleware_1 = require("http-proxy-middleware");
 const ioredis_1 = __importDefault(require("ioredis"));
 const server_1 = require("@apollo/server");
 const express4_1 = require("@apollo/server/express4");
+const crypto_1 = __importDefault(require("crypto"));
 const app = (0, express_1.default)();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-api-key", "x-device-id"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-api-key", "x-device-id", "x-correlation-id"],
+    exposedHeaders: ["x-correlation-id"],
 }));
+// ── Correlation ID Middleware ────────────────────────────────────────────────
+app.use((req, res, next) => {
+    const correlationId = (req.headers["x-correlation-id"] || req.headers["correlation-id"] || crypto_1.default.randomUUID());
+    req.headers["x-correlation-id"] = correlationId;
+    res.setHeader("x-correlation-id", correlationId);
+    next();
+});
 // ── Health Check ─────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
@@ -122,90 +131,183 @@ app.use((req, _res, next) => {
     next();
 });
 // ── Route Definitions ────────────────────────────────────────────────────────
-const proxyOptions = (target) => ({
-    target,
-    changeOrigin: true,
-    timeout: 30000,
-    proxyTimeout: 30000,
-    onError: (err, _req, res) => {
-        console.error(`[gateway] Proxy error to ${target}:`, err.message);
-        res.status(502).json({ error: "Service unavailable", service: target });
-    },
-});
+// ── Circuit Breaker Implementation ───────────────────────────────────────────
+class CircuitBreaker {
+    serviceName;
+    state = "CLOSED";
+    failureCount = 0;
+    lastStateChange = Date.now();
+    failureThreshold = 5;
+    cooldownPeriod = 10000; // 10 seconds
+    constructor(serviceName) {
+        this.serviceName = serviceName;
+    }
+    checkState() {
+        if (this.state === "OPEN" && Date.now() - this.lastStateChange > this.cooldownPeriod) {
+            this.state = "HALF-OPEN";
+            this.lastStateChange = Date.now();
+            console.log(`[CircuitBreaker] Circuit transitioned to HALF-OPEN for ${this.serviceName}`);
+        }
+    }
+    recordSuccess() {
+        this.failureCount = 0;
+        if (this.state === "HALF-OPEN") {
+            this.state = "CLOSED";
+            this.lastStateChange = Date.now();
+            console.log(`[CircuitBreaker] Circuit transitioned to CLOSED for ${this.serviceName}`);
+        }
+    }
+    recordFailure() {
+        this.failureCount++;
+        this.lastStateChange = Date.now();
+        if (this.state === "HALF-OPEN" || this.failureCount >= this.failureThreshold) {
+            this.state = "OPEN";
+            console.warn(`[CircuitBreaker] Circuit transitioned to OPEN for ${this.serviceName} due to failures (${this.failureCount})`);
+        }
+    }
+}
+const breakers = {};
+const getBreaker = (serviceName) => {
+    if (!breakers[serviceName]) {
+        breakers[serviceName] = new CircuitBreaker(serviceName);
+    }
+    return breakers[serviceName];
+};
+const handleFallback = async (req, res, serviceName, reason) => {
+    if (req.method === "GET") {
+        // Try to get from Redis cache
+        const cacheKey = `edge_cache:${req.path}`;
+        try {
+            const cachedData = await redis.get(cacheKey);
+            if (cachedData) {
+                res.setHeader("X-Cache-Fallback", "HIT");
+                res.setHeader("Content-Type", "application/json");
+                res.status(200).send(cachedData);
+                return;
+            }
+        }
+        catch (cacheErr) {
+            console.error(`[CircuitBreaker] Fallback cache read error for ${serviceName}:`, cacheErr);
+        }
+    }
+    res.status(503).json({
+        error: "Service temporarily degraded",
+        service: serviceName,
+        reason,
+        timestamp: new Date().toISOString()
+    });
+};
+const resilientProxy = (serviceName, target) => {
+    const breaker = getBreaker(serviceName);
+    const proxy = (0, http_proxy_middleware_1.createProxyMiddleware)({
+        target,
+        changeOrigin: true,
+        on: {
+            proxyReq: (proxyReq, req) => {
+                if (req.headers["x-correlation-id"]) {
+                    proxyReq.setHeader("x-correlation-id", req.headers["x-correlation-id"]);
+                }
+            },
+            proxyRes: (proxyRes, req, res) => {
+                if (proxyRes.statusCode && proxyRes.statusCode >= 500) {
+                    breaker.recordFailure();
+                }
+                else {
+                    breaker.recordSuccess();
+                }
+            },
+            error: async (err, req, res) => {
+                console.error(`[CircuitBreaker] Proxy error for ${serviceName} to ${target}:`, err.message);
+                breaker.recordFailure();
+                await handleFallback(req, res, serviceName, `Proxy error: ${err.message}`);
+            }
+        }
+    });
+    return async (req, res, next) => {
+        breaker.checkState();
+        if (breaker.state === "OPEN") {
+            console.warn(`[CircuitBreaker] Short-circuiting request for ${serviceName} (Circuit is OPEN)`);
+            return handleFallback(req, res, serviceName, "Circuit breaker is open");
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return proxy(req, res, next);
+    };
+};
+// ── Route Definitions ────────────────────────────────────────────────────────
 // Auth Service
-app.use("/api/auth", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.auth)));
+app.use("/api/auth", resilientProxy("auth", SERVICES.auth));
 // CRM Service
-app.use("/api/leads", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.crm)));
-app.use("/api/deals", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.crm)));
-app.use("/api/crm", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.crm)));
+app.use("/api/leads", resilientProxy("crm", SERVICES.crm));
+app.use("/api/deals", resilientProxy("crm", SERVICES.crm));
+app.use("/api/crm", resilientProxy("crm", SERVICES.crm));
 // Automation Service
-app.use("/api/workflows", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.automation)));
-app.use("/api/automation", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.automation)));
-app.use("/api/cron/run-automation", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.automation)));
-app.use("/api/cron/social-publisher", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.automation)));
-app.use("/api/cron/process-sequences", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.automation)));
+app.use("/api/workflows", resilientProxy("automation", SERVICES.automation));
+app.use("/api/automation", resilientProxy("automation", SERVICES.automation));
+app.use("/api/cron/run-automation", resilientProxy("automation", SERVICES.automation));
+app.use("/api/cron/social-publisher", resilientProxy("automation", SERVICES.automation));
+app.use("/api/cron/process-sequences", resilientProxy("automation", SERVICES.automation));
 // AI Engine
-app.use("/api/agents", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.ai)));
-app.use("/api/ai", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.ai)));
-app.use("/api/knowledge-bases", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.ai)));
+app.use("/api/agents", resilientProxy("ai", SERVICES.ai));
+app.use("/api/ai", resilientProxy("ai", SERVICES.ai));
+app.use("/api/knowledge-bases", resilientProxy("ai", SERVICES.ai));
 // Inbox Service
-app.use("/api/inbox", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.inbox)));
-app.use("/api/webhooks/whatsapp", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.inbox)));
-app.use("/api/webhooks/meta", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.inbox)));
-app.use("/api/webhooks/channels", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.inbox)));
-app.use("/api/cron/email-worker", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.inbox)));
+app.use("/api/inbox", resilientProxy("inbox", SERVICES.inbox));
+app.use("/api/webhooks/whatsapp", resilientProxy("inbox", SERVICES.inbox));
+app.use("/api/webhooks/meta", resilientProxy("inbox", SERVICES.inbox));
+app.use("/api/webhooks/channels", resilientProxy("inbox", SERVICES.inbox));
+app.use("/api/cron/email-worker", resilientProxy("inbox", SERVICES.inbox));
 // Finance Service
-app.use("/api/invoices", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.finance)));
-app.use("/api/payroll", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.finance)));
-app.use("/api/expenses", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.finance)));
-app.use("/api/webhooks/stripe", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.finance)));
-app.use("/api/webhooks/paypal", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.finance)));
-app.use("/api/cron/subscriptions", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.finance)));
+app.use("/api/invoices", resilientProxy("finance", SERVICES.finance));
+app.use("/api/payroll", resilientProxy("finance", SERVICES.finance));
+app.use("/api/expenses", resilientProxy("finance", SERVICES.finance));
+app.use("/api/webhooks/stripe", resilientProxy("finance", SERVICES.finance));
+app.use("/api/webhooks/paypal", resilientProxy("finance", SERVICES.finance));
+app.use("/api/cron/subscriptions", resilientProxy("finance", SERVICES.finance));
 // Video Service
-app.use("/api/video", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.video)));
-app.use("/api/media", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.video)));
+app.use("/api/video", resilientProxy("video", SERVICES.video));
+app.use("/api/media", resilientProxy("video", SERVICES.video));
 // Calendar Service
-app.use("/api/calendar", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.calendar)));
-app.use("/api/scheduling", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.calendar)));
+app.use("/api/calendar", resilientProxy("calendar", SERVICES.calendar));
+app.use("/api/scheduling", resilientProxy("calendar", SERVICES.calendar));
 // Marketing Service
-app.use("/api/marketing", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.marketing)));
-app.use("/api/campaigns", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.marketing)));
-app.use("/api/email-blast", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.marketing)));
-app.use("/api/creative", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.marketing)));
+app.use("/api/marketing", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/campaigns", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/email-blast", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/creative", resilientProxy("marketing", SERVICES.marketing));
 // Integration Service
-app.use("/api/integrations", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.integration)));
-app.use("/api/webhooks/shopify", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.integration)));
-app.use("/api/webhooks/wix", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.integration)));
+app.use("/api/integrations", resilientProxy("integration", SERVICES.integration));
+app.use("/api/webhooks/shopify", resilientProxy("integration", SERVICES.integration));
+app.use("/api/webhooks/wix", resilientProxy("integration", SERVICES.integration));
 // Document Service
-app.use("/api/proposals", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.document)));
-app.use("/api/propuesta", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.document)));
-app.use("/api/kb", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.document)));
+app.use("/api/proposals", resilientProxy("document", SERVICES.document));
+app.use("/api/propuesta", resilientProxy("document", SERVICES.document));
+app.use("/api/kb", resilientProxy("document", SERVICES.document));
 // Agent Team Engine
-app.use("/api/agent", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.agentTeam)));
-app.use("/api/test-flow", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.agentTeam)));
+app.use("/api/agent", resilientProxy("agentTeam", SERVICES.agentTeam));
+app.use("/api/test-flow", resilientProxy("agentTeam", SERVICES.agentTeam));
 // Analytics Service
-app.use("/api/analytics", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.analytics)));
-app.use("/api/track", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.analytics)));
+app.use("/api/analytics", resilientProxy("analytics", SERVICES.analytics));
+app.use("/api/track", resilientProxy("analytics", SERVICES.analytics));
 // Admin Service
-app.use("/api/admin", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.admin)));
-app.use("/api/diagnostics", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.admin)));
-app.use("/api/debug", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.admin)));
+app.use("/api/admin", resilientProxy("admin", SERVICES.admin));
+app.use("/api/diagnostics", resilientProxy("admin", SERVICES.admin));
+app.use("/api/debug", resilientProxy("admin", SERVICES.admin));
 // Public API Service
-app.use("/api/v1", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.publicApi)));
-app.use("/api/public", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.publicApi)));
-app.use("/api/serve", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.publicApi)));
+app.use("/api/v1", resilientProxy("publicApi", SERVICES.publicApi));
+app.use("/api/public", resilientProxy("publicApi", SERVICES.publicApi));
+app.use("/api/serve", resilientProxy("publicApi", SERVICES.publicApi));
 // Notification Service
-app.use("/api/notifications", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.notification)));
-app.use("/api/notification-preferences", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.notification)));
+app.use("/api/notifications", resilientProxy("notification", SERVICES.notification));
+app.use("/api/notification-preferences", resilientProxy("notification", SERVICES.notification));
 // HR Service
-app.use("/api/employees", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
-app.use("/api/hr", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
-app.use("/api/time-tracking", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
-app.use("/api/payroll", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.hr)));
+app.use("/api/employees", resilientProxy("hr", SERVICES.hr));
+app.use("/api/hr", resilientProxy("hr", SERVICES.hr));
+app.use("/api/time-tracking", resilientProxy("hr", SERVICES.hr));
+app.use("/api/payroll-hr", resilientProxy("hr", SERVICES.hr));
 // Project Service
-app.use("/api/projects", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.project)));
-app.use("/api/kanban", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.project)));
-app.use("/api/tasks", (0, http_proxy_middleware_1.createProxyMiddleware)(proxyOptions(SERVICES.project)));
+app.use("/api/projects", resilientProxy("project", SERVICES.project));
+app.use("/api/kanban", resilientProxy("project", SERVICES.project));
+app.use("/api/tasks", resilientProxy("project", SERVICES.project));
 // ── Fallback ─────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ error: "Route not found", hint: "Check the API Gateway route table" });

@@ -44,7 +44,7 @@ model User {
   @@index([role])
   @@index([email])
   @@index([globalRole])
-  @@map("tbl_users")
+  @@map("users")
 }
 
 model UserProfile {
@@ -62,7 +62,7 @@ model UserProfile {
   hotjar           Json?   @map("hotjar_config")
   user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("tbl_user_profiles")
+  @@map("user_profiles")
 }
 
 model Account {
@@ -81,7 +81,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("tbl_accounts")
+  @@map("accounts")
 }
 
 model Session {
@@ -93,7 +93,7 @@ model Session {
   userAgent    String?  @map("user_agent")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("tbl_sessions")
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -102,7 +102,7 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("tbl_verification_tokens")
+  @@map("verification_tokens")
 }
 
 model PasswordResetToken {
@@ -115,7 +115,7 @@ model PasswordResetToken {
 
   @@index([email])
   @@index([token])
-  @@map("tbl_password_reset_tokens")
+  @@map("password_reset_tokens")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -132,7 +132,7 @@ model RoleConfig {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([roleName])
-  @@map("tbl_role_configs")
+  @@map("role_configs")
 }
 
 model Role {
@@ -149,7 +149,7 @@ model Role {
 
   @@unique([companyId, name])
   @@index([companyId])
-  @@map("tbl_roles")
+  @@map("roles")
 }
 
 model Permission {
@@ -163,7 +163,7 @@ model Permission {
   rolePermissions RolePermission[]
 
   @@index([module])
-  @@map("tbl_permissions")
+  @@map("permissions")
 }
 
 model RolePermission {
@@ -175,7 +175,7 @@ model RolePermission {
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
-  @@map("tbl_role_permissions")
+  @@map("role_permissions")
 }
 
 model ResourcePermission {
@@ -193,7 +193,7 @@ model ResourcePermission {
   @@unique([userId, companyId, resourceType, resourceId, permission])
   @@index([userId, companyId])
   @@index([resourceType, resourceId])
-  @@map("tbl_resource_permissions")
+  @@map("resource_permissions")
 }
 
 model ApiKey {
@@ -211,5 +211,5 @@ model ApiKey {
   scopes     String[]  @default([])
   user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("tbl_api_keys")
+  @@map("api_keys")
 }

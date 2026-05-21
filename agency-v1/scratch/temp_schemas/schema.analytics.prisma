@@ -23,7 +23,7 @@ model UserActivityLog {
 
   @@index([userId])
   @@index([createdAt])
-  @@map("tbl_user_activity_logs")
+  @@map("user_activity_logs")
 }
 
 model ProjectView {
@@ -36,7 +36,7 @@ model ProjectView {
 
   @@index([projectId])
   @@index([createdAt])
-  @@map("tbl_project_views")
+  @@map("project_views")
 }
 
 model PostView {
@@ -49,7 +49,7 @@ model PostView {
 
   @@index([postId])
   @@index([createdAt])
-  @@map("tbl_post_views")
+  @@map("post_views")
 }
 
 model UsageLog {
@@ -61,7 +61,7 @@ model UsageLog {
 
   @@index([companyId])
   @@index([createdAt])
-  @@map("tbl_usage_logs")
+  @@map("usage_logs")
 }
 
 model IntegrationLog {
@@ -74,7 +74,7 @@ model IntegrationLog {
 
   @@index([integrationId])
   @@index([status])
-  @@map("tbl_integration_logs")
+  @@map("integration_logs")
 }
 
 model NotificationDeliveryLog {
@@ -87,5 +87,5 @@ model NotificationDeliveryLog {
 
   @@index([userId])
   @@index([status])
-  @@map("tbl_notification_delivery_logs")
+  @@map("notification_delivery_logs")
 }

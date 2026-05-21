@@ -142,6 +142,7 @@ export interface EventPayload {
     eventId: string;
     timestamp: string;
     source: string;
+    correlationId: string;
     data: Record<string, unknown>;
 }
 export declare class EventBus {
@@ -150,9 +151,13 @@ export declare class EventBus {
     private serviceName;
     constructor(redisUrl: string, serviceName: string);
     /**
+     * Validate schemas natively
+     */
+    private validateEventSchema;
+    /**
      * Publish an event to a Redis Stream
      */
-    publish(event: EventName, data: Record<string, unknown>): Promise<string | null>;
+    publish(event: EventName, data: Record<string, unknown>, correlationId?: string): Promise<string | null>;
     /**
      * Subscribe to an event stream using Consumer Groups
      * Each service gets its own consumer group to ensure at-least-once delivery

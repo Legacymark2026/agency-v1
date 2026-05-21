@@ -27,7 +27,7 @@ model Post {
   tags            Tag[]
 
   @@index([authorId])
-  @@map("tbl_posts")
+  @@map("posts")
 }
 
 model Category {
@@ -36,7 +36,7 @@ model Category {
   slug  String @unique
   posts Post[]
 
-  @@map("tbl_categories")
+  @@map("categories")
 }
 
 model Tag {
@@ -44,7 +44,7 @@ model Tag {
   name  String @unique
   posts Post[]
 
-  @@map("tbl_tags")
+  @@map("tags")
 }
 
 model Project {
@@ -56,7 +56,7 @@ model Project {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@map("tbl_projects")
+  @@map("projects")
 }
 
 model Workflow {
@@ -71,7 +71,7 @@ model Workflow {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([companyId])
-  @@map("tbl_workflows")
+  @@map("workflows")
 }
 
 model Campaign {
@@ -83,7 +83,7 @@ model Campaign {
   createdAt   DateTime @default(now()) @map("created_at")
   
   @@index([companyId])
-  @@map("tbl_campaigns")
+  @@map("campaigns")
 }
 
 model SocialPost {
@@ -96,7 +96,7 @@ model SocialPost {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([companyId])
-  @@map("tbl_social_posts")
+  @@map("social_posts")
 }
 
 model AIAgent {
@@ -111,7 +111,7 @@ model AIAgent {
   memories    AgentMemory[]
 
   @@index([companyId])
-  @@map("tbl_ai_agents")
+  @@map("ai_agents")
 }
 
 model AgentMemory {
@@ -124,5 +124,5 @@ model AgentMemory {
   agent       AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
-  @@map("tbl_agent_memories")
+  @@map("agent_memories")
 }

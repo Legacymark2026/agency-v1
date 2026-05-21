@@ -36,7 +36,7 @@ model Company {
   servicePrices             ServicePrice[]
   kanbanProjects            KanbanProject[]
 
-  @@map("tbl_companies")
+  @@map("companies")
 }
 
 model CompanyUser {
@@ -53,7 +53,7 @@ model CompanyUser {
   team           Team?    @relation(fields: [teamId], references: [id])
 
   @@unique([userId, companyId])
-  @@map("tbl_company_users")
+  @@map("company_users")
 }
 
 model Team {
@@ -68,7 +68,7 @@ model Team {
   company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_teams")
+  @@map("teams")
 }
 
 model Lead {
@@ -86,7 +86,7 @@ model Lead {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_leads")
+  @@map("leads")
 }
 
 model Deal {
@@ -102,7 +102,7 @@ model Deal {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_deals")
+  @@map("deals")
 }
 
 model Invoice {
@@ -116,7 +116,7 @@ model Invoice {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_invoices")
+  @@map("invoices")
 }
 
 model Expense {
@@ -130,7 +130,7 @@ model Expense {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_expenses")
+  @@map("expenses")
 }
 
 model ServicePrice {
@@ -145,7 +145,7 @@ model ServicePrice {
   company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_service_prices")
+  @@map("service_prices")
 }
 
 model KanbanProject {
@@ -158,5 +158,5 @@ model KanbanProject {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
-  @@map("tbl_kanban_projects")
+  @@map("kanban_projects")
 }

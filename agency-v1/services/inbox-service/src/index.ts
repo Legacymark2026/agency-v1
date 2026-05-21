@@ -38,8 +38,16 @@ app.get("/api/inbox/conversations", async (req, res) => {
     if (channel) where.channel = String(channel);
     const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
     const [conversations, total] = await Promise.all([
-      prisma.conversation.findMany({ where, orderBy: { lastMessageAt: "desc" }, take: parseInt(String(limit)), skip,
-        include: { lead: { select: { id: true, name: true, email: true } }, assignee: { select: { id: true, name: true, image: true } } } }),
+      prisma.conversation.findMany({ 
+        where, 
+        orderBy: { lastMessageAt: "desc" }, 
+        take: parseInt(String(limit)), 
+        skip,
+        include: { 
+          lead: { select: { id: true, name: true, email: true } }, 
+          assignee: { select: { id: true, name: true, image: true } } 
+        } 
+      }),
       prisma.conversation.count({ where }),
     ]);
     res.json({ conversations, total });
@@ -48,7 +56,11 @@ app.get("/api/inbox/conversations", async (req, res) => {
 
 app.get("/api/inbox/conversations/:id/messages", async (req, res) => {
   try {
-    const messages = await prisma.message.findMany({ where: { conversationId: req.params.id }, orderBy: { createdAt: "asc" }, include: { attachments: true } });
+    const messages = await prisma.message.findMany({ 
+      where: { conversationId: req.params.id }, 
+      orderBy: { createdAt: "asc" }, 
+      include: { attachments: true } 
+    });
     res.json({ messages });
   } catch (err) { res.status(500).json({ error: String(err) }); }
 });
@@ -56,8 +68,23 @@ app.get("/api/inbox/conversations/:id/messages", async (req, res) => {
 app.post("/api/inbox/conversations/:id/messages", async (req, res) => {
   try {
     const { content, type = "TEXT", direction, senderId } = req.body;
-    const message = await prisma.message.create({ data: { conversationId: req.params.id, content, type, direction, senderId, status: "SENT" } });
-    await prisma.conversation.update({ where: { id: req.params.id }, data: { lastMessageAt: new Date(), lastMessagePreview: content?.slice(0, 100) } });
+    const message = await prisma.message.create({ 
+      data: { 
+        conversationId: req.params.id, 
+        content: content, 
+        type: type, 
+        direction: direction, 
+        senderId: senderId, 
+        status: "SENT" 
+      } 
+    });
+    await prisma.conversation.update({ 
+      where: { id: req.params.id }, 
+      data: { 
+        lastMessageAt: new Date(), 
+        lastMessagePreview: content?.slice(0, 100) 
+      } 
+    });
     await eventBus.publish("message.sent", { messageId: message.id, conversationId: req.params.id, direction });
     res.status(201).json({ message });
   } catch (err) { res.status(500).json({ error: String(err) }); }

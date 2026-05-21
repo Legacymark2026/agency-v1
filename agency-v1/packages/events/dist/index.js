@@ -87,18 +87,43 @@ class EventBus {
         this.subscriber.on("error", (err) => console.error(`[EventBus:${serviceName}] Subscriber error:`, err.message));
     }
     /**
+     * Validate schemas natively
+     */
+    validateEventSchema(event, data) {
+        switch (event) {
+            case "lead.created":
+                if (!data.companyId) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'lead.created': companyId is required`);
+                }
+                break;
+            case "user.created":
+                if (!data.email) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'user.created': email is required`);
+                }
+                break;
+            case "invoice.created":
+                if (!data.invoiceId && !data.id) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'invoice.created': invoiceId/id is required`);
+                }
+                break;
+        }
+    }
+    /**
      * Publish an event to a Redis Stream
      */
-    async publish(event, data) {
+    async publish(event, data, correlationId) {
+        // Validate schema before publishing
+        this.validateEventSchema(event, data);
         const payload = {
             eventId: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             timestamp: new Date().toISOString(),
             source: this.serviceName,
+            correlationId: correlationId || `trace-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
             data,
         };
         const streamKey = `events:${event}`;
         const messageId = await this.publisher.xadd(streamKey, "*", "payload", JSON.stringify(payload));
-        console.log(`[EventBus:${this.serviceName}] Published ${event} → ${messageId}`);
+        console.log(`[EventBus:${this.serviceName}] Published ${event} → ${messageId} (trace: ${payload.correlationId})`);
         return messageId;
     }
     /**
@@ -126,15 +151,43 @@ class EventBus {
                     for (const entry of results) {
                         const [, messages] = entry;
                         for (const [messageId, fields] of messages) {
+                            const attemptKey = `dlq:attempts:${groupName}:${messageId}`;
                             try {
                                 const payload = JSON.parse(fields[1]);
-                                await handler(payload);
-                                // Acknowledge successful processing
-                                await this.subscriber.xack(streamKey, groupName, messageId);
+                                try {
+                                    await handler(payload);
+                                    // Acknowledge successful processing
+                                    await this.subscriber.xack(streamKey, groupName, messageId);
+                                    // Cleanup attempts counter if it was created
+                                    await this.publisher.del(attemptKey).catch(() => { });
+                                }
+                                catch (err) {
+                                    console.error(`[EventBus:${this.serviceName}] Error processing ${event}:${messageId}:`, err);
+                                    // Increment attempts
+                                    const attempts = await this.subscriber.incr(attemptKey);
+                                    await this.subscriber.expire(attemptKey, 86400); // 1 day TTL
+                                    if (attempts >= 3) {
+                                        console.error(`[EventBus:${this.serviceName}] Message ${messageId} exceeded max attempts (3). Moving to DLQ.`);
+                                        const dlqPayload = {
+                                            originalEvent: event,
+                                            originalMessageId: messageId,
+                                            consumerGroup: groupName,
+                                            payload,
+                                            error: err instanceof Error ? err.message : String(err),
+                                            timestamp: new Date().toISOString()
+                                        };
+                                        // Move to dead letter stream
+                                        await this.publisher.xadd("events:dead-letter", "*", "payload", JSON.stringify(dlqPayload));
+                                        // Acknowledge to stop retry cycle
+                                        await this.subscriber.xack(streamKey, groupName, messageId);
+                                        await this.publisher.del(attemptKey).catch(() => { });
+                                    }
+                                }
                             }
-                            catch (err) {
-                                console.error(`[EventBus:${this.serviceName}] Error processing ${event}:${messageId}:`, err);
-                                // Message will be re-delivered on next XREADGROUP with pending entries
+                            catch (parseErr) {
+                                console.error(`[EventBus:${this.serviceName}] Error parsing message payload ${messageId}:`, parseErr);
+                                // Corrupt payload, acknowledge immediately to prevent blocking the stream
+                                await this.subscriber.xack(streamKey, groupName, messageId);
                             }
                         }
                     }
