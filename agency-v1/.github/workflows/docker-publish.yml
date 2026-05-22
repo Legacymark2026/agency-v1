@@ -1,7 +1,8 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # LegacyMark — GitHub Actions CI/CD Pipeline
 # ══════════════════════════════════════════════════════════════════════════════
-# Builds and pushes all 16 microservice Docker images to Docker Hub.
+# Builds and pushes all microservice Docker images to Docker Hub.
+# Services are auto-detected from the services/ directory.
 #
 # Required GitHub Secrets:
 #   DOCKERHUB_USERNAME   — Your Docker Hub username
@@ -46,13 +47,19 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ github.event.inputs.services }}" = "all" ] || [ -z "${{ github.event.inputs.services }}" ]; then
-            SERVICES='["api-gateway","auth-service","crm-service","automation-service","ai-engine","inbox-service","finance-service","video-service","calendar-service","marketing-service","integration-service","document-service","agent-team-engine","analytics-service","admin-service","public-api-service","notification-service","hr-service","project-service"]'
+            # Auto-detect all directories under services/ that have a Dockerfile
+            SERVICES=$(ls -d services/*/Dockerfile 2>/dev/null | sed 's|services/||;s|/Dockerfile||' | jq -R . | jq -s .)
+            if [ "$SERVICES" = "[]" ] || [ -z "$SERVICES" ]; then
+              echo "⚠️ No services detected via Dockerfile discovery, using fallback list"
+              SERVICES='["api-gateway","auth-service","crm-service","automation-service","ai-engine","inbox-service","finance-service","video-service","calendar-service","marketing-service","integration-service","document-service","agent-team-engine","analytics-service","admin-service","public-api-service","notification-service","hr-service","project-service"]'
+            fi
           else
             IFS=',' read -ra SVC_ARRAY <<< "${{ github.event.inputs.services }}"
             SERVICES=$(printf '%s\n' "${SVC_ARRAY[@]}" | jq -R . | jq -s .)
           fi
+          COUNT=$(echo "$SERVICES" | jq length)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
-          echo "🎯 Building: $SERVICES"
+          echo "🎯 Building $COUNT service(s): $SERVICES"
 
   # ── Build & Push Each Service ────────────────────────────────────────────
   build-and-push:
@@ -112,11 +119,12 @@ jobs:
     steps:
       - name: 📊 Deployment Summary
         run: |
-          echo "══════════════════════════════════════════════"
+          echo "═══════════════════════════════════════════════"
           echo "🐳 LegacyMark Microservices — Build Summary"
-          echo "══════════════════════════════════════════════"
-          echo "Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}"
-          echo "Trigger:  ${{ github.event_name }}"
-          echo "Commit:   ${{ github.sha }}"
-          echo "Branch:   ${{ github.ref_name }}"
-          echo "══════════════════════════════════════════════"
+          echo "═══════════════════════════════════════════════"
+          echo "Registry:  ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}"
+          echo "Trigger:   ${{ github.event_name }}"
+          echo "Commit:    ${{ github.sha }}"
+          echo "Branch:    ${{ github.ref_name }}"
+          echo "Services:  ${{ needs.detect-changes.outputs.services }}"
+          echo "═══════════════════════════════════════════════"
