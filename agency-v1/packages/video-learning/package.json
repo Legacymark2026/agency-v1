@@ -1,0 +1,16 @@
+{
+  "name": "@agency/video-learning",
+  "version": "1.0.0",
+  "description": "Pattern learning system that analyzes AI corrections to improve future video editing suggestions",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

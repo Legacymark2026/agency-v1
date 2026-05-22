@@ -1,0 +1,16 @@
+{
+  "name": "@agency/video-confidence",
+  "version": "1.0.0",
+  "description": "Confidence scoring system that evaluates AI edit proposals based on historical accuracy and context similarity",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}

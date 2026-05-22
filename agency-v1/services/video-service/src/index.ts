@@ -12,6 +12,11 @@ import { getAllTemplates, getTemplateById, getTemplatesByCategory, applyTemplate
 import { getLUTPresets, getLUTPresetsByCategory } from './lut';
 import { getAllPresets, getPresetById, getPresetsByPlatform, generateFFmpegArgs } from './presets';
 import { rateLimitMiddleware, getRateLimitStatus } from './middleware/rate-limit';
+import { transcribeAudio, exportSRT, exportVTT, exportASS, extractAudioFromVideo, type CaptionSegment, type CaptionOptions } from './captioning';
+import { detectBeats, snapToNearestBeat, generateCutPoints, type BeatDetectionResult } from './beat-detection';
+import { getAllTransitionPresets, getTransitionPresetById, suggestTransition, autoSuggestAllTransitions, type TransitionSuggestion, type ClipMetadata } from './transitions';
+import { suggestColorMatch, batchColorMatch, generateColorMatchFFmpegFilter, extractHistogram, getDefaultLUTs, type ColorMatchSuggestion, type ColorAdjustments, type ColorHistogram } from './color-match';
+import { extractBestFrames, extractFrameAtTimestamp, generateThumbnailGrid, pickBestThumbnail, type BatchThumbnailResult, type ThumbnailResult } from './thumbnails';
 
 const app = express();
 const server = createServer(app);
@@ -289,6 +294,194 @@ app.post('/api/video/render/:jobId/webhook', async (req: Request, res: Response)
   res.json({ success: true, message: 'Webhook registered (not yet implemented)' });
 });
 
+// ─── POST /api/video/caption/transcribe — Transcribe audio ────────────────────
+app.post('/api/video/caption/transcribe', requireInternalSecret, async (req: Request, res: Response) => {
+  try {
+    const { audioPath, language } = req.body;
+    const result = await transcribeAudio(audioPath, { language });
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/caption/export — Export captions ─────────────────────────
+app.post('/api/video/caption/export', async (req: Request, res: Response) => {
+  try {
+    const { segments, format } = req.body;
+    let output: string;
+    switch (format) {
+      case 'srt': output = exportSRT(segments); break;
+      case 'vtt': output = exportVTT(segments); break;
+      case 'ass': output = exportASS(segments); break;
+      default: return res.status(400).json({ error: 'Unsupported format' });
+    }
+    res.json({ format, content: output });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/caption/extract-audio — Extract audio from video ─────────
+app.post('/api/video/caption/extract-audio', requireInternalSecret, async (req: Request, res: Response) => {
+  try {
+    const { videoPath, outputPath } = req.body;
+    await extractAudioFromVideo(videoPath, outputPath);
+    res.json({ success: true, outputPath });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/beat/detect — Detect beats ──────────────────────────────
+app.post('/api/video/beat/detect', requireInternalSecret, async (req: Request, res: Response) => {
+  try {
+    const { audioPath, options } = req.body;
+    const result = await detectBeats(audioPath, options);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/beat/snap — Snap to nearest beat ────────────────────────
+app.post('/api/video/beat/snap', async (req: Request, res: Response) => {
+  try {
+    const { time, beats } = req.body;
+    const snapped = snapToNearestBeat(time, beats);
+    res.json({ original: time, snapped });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/beat/cut-points — Generate cut points ───────────────────
+app.post('/api/video/beat/cut-points', async (req: Request, res: Response) => {
+  try {
+    const { beats, intervalBeats } = req.body;
+    const cuts = generateCutPoints(beats, intervalBeats || 4);
+    res.json({ cuts });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── GET /api/video/transitions/presets — List transition presets ────────────
+app.get('/api/video/transitions/presets', (_req: Request, res: Response) => {
+  res.json({ presets: getAllTransitionPresets() });
+});
+
+// ─── GET /api/video/transitions/presets/:id — Get transition preset ──────────
+app.get('/api/video/transitions/presets/:id', (req: Request, res: Response) => {
+  const preset = getTransitionPresetById(req.params.id as string);
+  if (!preset) return res.status(404).json({ error: 'Preset not found' });
+  res.json({ preset });
+});
+
+// ─── POST /api/video/transitions/suggest — Suggest transitions ──────────────
+app.post('/api/video/transitions/suggest', (req: Request, res: Response) => {
+  try {
+    const { fromClip, toClip, options } = req.body;
+    const suggestions = suggestTransition(fromClip as ClipMetadata, toClip as ClipMetadata, options);
+    res.json({ suggestions });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/transitions/auto-suggest — Auto-suggest all transitions ─
+app.post('/api/video/transitions/auto-suggest', (req: Request, res: Response) => {
+  try {
+    const { clips, options } = req.body;
+    const suggestions = autoSuggestAllTransitions(clips as ClipMetadata[], options);
+    res.json({ suggestions });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/color/match — Match colors between clips ───────────────
+app.post('/api/video/color/match', requireInternalSecret, (req: Request, res: Response) => {
+  try {
+    const { sourceImg, targetImg, sourceId, targetId, options } = req.body;
+    const suggestion = suggestColorMatch(sourceImg, targetImg, sourceId, targetId, options);
+    res.json(suggestion);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/color/batch-match — Batch color match ──────────────────
+app.post('/api/video/color/batch-match', requireInternalSecret, (req: Request, res: Response) => {
+  try {
+    const { clips, referenceId, options } = req.body;
+    const suggestions = batchColorMatch(clips, referenceId, options);
+    res.json({ suggestions });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/color/analyze — Analyze image histogram ────────────────
+app.post('/api/video/color/analyze', (req: Request, res: Response) => {
+  try {
+    const { imagePath } = req.body;
+    const histogram = extractHistogram(imagePath);
+    res.json(histogram);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── GET /api/video/color/luts — Get default LUTs ───────────────────────────
+app.get('/api/video/color/luts', (_req: Request, res: Response) => {
+  res.json({ luts: getDefaultLUTs() });
+});
+
+// ─── POST /api/video/color/ffmpeg-filter — Generate FFmpeg color filter ────
+app.post('/api/video/color/ffmpeg-filter', (req: Request, res: Response) => {
+  try {
+    const { adjustments } = req.body;
+    const filter = generateColorMatchFFmpegFilter(adjustments as ColorAdjustments);
+    res.json({ filter });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/thumbnails/generate — Generate thumbnails ──────────────
+app.post('/api/video/thumbnails/generate', requireInternalSecret, async (req: Request, res: Response) => {
+  try {
+    const { videoPath, outputDir, options } = req.body;
+    const result = await extractBestFrames(videoPath, outputDir, options);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/thumbnails/extract-frame — Extract single frame ────────
+app.post('/api/video/thumbnails/extract-frame', requireInternalSecret, async (req: Request, res: Response) => {
+  try {
+    const { videoPath, outputPath, timestamp, width, height } = req.body;
+    await extractFrameAtTimestamp(videoPath, outputPath, timestamp, width, height);
+    res.json({ success: true, outputPath });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── POST /api/video/thumbnails/grid — Generate thumbnail grid ───────────────
+app.post('/api/video/thumbnails/grid', requireInternalSecret, async (req: Request, res: Response) => {
+  try {
+    const { thumbnails, outputPath, cols, rows } = req.body;
+    await generateThumbnailGrid(thumbnails, outputPath, cols, rows);
+    res.json({ success: true, outputPath });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ─── POST /api/media/upload-vps ─────────────────────────────────────────────
 app.post('/api/media/upload-vps', async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Use /api/media/upload from the Next.js app' });
@@ -315,16 +508,33 @@ async function updateJobInNextApp(jobId: string, data: object) {
 server.listen(port, () => {
   console.log(`Video Service v3.0 listening at http://localhost:${port}`);
   console.log(`   Routes:`);
-  console.log(`   POST /api/video/render        — Start a render job (with queue)`);
-  console.log(`   GET  /api/video/render/:jobId — Get job status`);
-  console.log(`   POST /api/video/render/:jobId/cancel — Cancel a render job`);
-  console.log(`   GET  /api/video/jobs          — Queue stats`);
-  console.log(`   GET  /api/video/templates     — List video templates`);
-  console.log(`   GET  /api/video/presets       — List render presets`);
-  console.log(`   GET  /api/video/luts          — List LUT presets`);
-  console.log(`   GET  /api/video/stats         — Full stats`);
-  console.log(`   GET  /health                  — Healthcheck`);
-  console.log(`   WS   /ws/video               — WebSocket for real-time updates`);
+  console.log(`   POST /api/video/render                    — Start a render job (with queue)`);
+  console.log(`   GET  /api/video/render/:jobId             — Get job status`);
+  console.log(`   POST /api/video/render/:jobId/cancel      — Cancel a render job`);
+  console.log(`   GET  /api/video/jobs                      — Queue stats`);
+  console.log(`   GET  /api/video/templates                 — List video templates`);
+  console.log(`   GET  /api/video/presets                   — List render presets`);
+  console.log(`   GET  /api/video/luts                      — List LUT presets`);
+  console.log(`   POST /api/video/caption/transcribe        — Transcribe audio with Whisper`);
+  console.log(`   POST /api/video/caption/export            — Export captions (SRT/VTT/ASS)`);
+  console.log(`   POST /api/video/caption/extract-audio     — Extract audio from video`);
+  console.log(`   POST /api/video/beat/detect               — Detect audio beats/BPM`);
+  console.log(`   POST /api/video/beat/snap                 — Snap time to nearest beat`);
+  console.log(`   POST /api/video/beat/cut-points           — Generate beat-synced cut points`);
+  console.log(`   GET  /api/video/transitions/presets       — List transition presets`);
+  console.log(`   POST /api/video/transitions/suggest       — Suggest transition between clips`);
+  console.log(`   POST /api/video/transitions/auto-suggest  — Auto-suggest all transitions`);
+  console.log(`   POST /api/video/color/match               — Match colors between clips`);
+  console.log(`   POST /api/video/color/batch-match         — Batch color match`);
+  console.log(`   POST /api/video/color/analyze             — Analyze image histogram`);
+  console.log(`   GET  /api/video/color/luts                — Get default LUT presets`);
+  console.log(`   POST /api/video/color/ffmpeg-filter       — Generate FFmpeg color filter`);
+  console.log(`   POST /api/video/thumbnails/generate       — Generate best thumbnails`);
+  console.log(`   POST /api/video/thumbnails/extract-frame  — Extract frame at timestamp`);
+  console.log(`   POST /api/video/thumbnails/grid           — Generate thumbnail grid`);
+  console.log(`   GET  /api/video/stats                     — Full stats`);
+  console.log(`   GET  /health                              — Healthcheck`);
+  console.log(`   WS   /ws/video                           — WebSocket for real-time updates`);
 });
 
 // ─── Graceful shutdown ──────────────────────────────────────────────────────
