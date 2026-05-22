@@ -3390,7 +3390,7 @@ model VideoEditorProject {
   soundLayers  Json // SoundLayer[]
   timeline     Json? // Timeline
   qualityCheck Json? // { passed, issues }
-  activeSessionId String? @map("active_session_id")
+  activeSessionId String? @unique @map("active_session_id")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
