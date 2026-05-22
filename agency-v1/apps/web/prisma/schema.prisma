@@ -3390,6 +3390,7 @@ model VideoEditorProject {
   soundLayers  Json // SoundLayer[]
   timeline     Json? // Timeline
   qualityCheck Json? // { passed, issues }
+  activeSessionId String? @map("active_session_id")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -3397,8 +3398,12 @@ model VideoEditorProject {
   performanceLogs VideoPerformanceLog[]
   renderJobs      VideoRenderJob[]
   aiSessions      VideoAISession[]
+  activeSession   VideoAISession?       @relation(fields: [activeSessionId], references: [id], onDelete: SetNull)
   brandStyle      BrandStyle?           @relation(fields: [brandStyleId], references: [id], onDelete: SetNull)
   brandStyleId    String?               @map("brand_style_id")
+  versions        VersionSnapshot[]
+  comments        VideoComment[]
+  exportJobs      ExportJob[]
 
   @@index([companyId])
   @@map("tbl_video_editor_projects")
@@ -3453,6 +3458,8 @@ model VideoEditHistory {
   id          String    @id @default(uuid())
   sessionId   String    @map("session_id")
   action      String    // "cut" | "insert_text" | "color_grade" | "speed_ramp" | "smart_crop" | "inject_broll"
+  author      String    @default("human") @map("edit_author")  // "ai" | "human" | "merged"
+  confidence  Float     @default(1.0) @map("edit_confidence")
   description String    @db.Text
   beforeState Json      @map("before_state")
   afterState  Json      @map("after_state")
@@ -3464,7 +3471,189 @@ model VideoEditHistory {
   @@index([sessionId])
   @@index([action])
   @@index([undone])
+  @@index([author])
   @@map("tbl_video_edit_history")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EDIT PROPOSAL — AI proposes edits for human approval
+// ══════════════════════════════════════════════════════════════════════════════
+
+model EditProposal {
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  projectId   String    @map("project_id")
+  type        String    @map("proposal_type")  // "cut" | "color" | "text" | "audio" | "transition" | "broll" | "crop"
+  title       String
+  description String    @db.Text
+  confidence  Float     @map("proposal_confidence")  // 0.0 - 1.0
+  status      String    @default("pending")  // "pending" | "approved" | "rejected" | "applied"
+  beforeState Json      @map("before_state")
+  afterState  Json      @map("after_state")
+  metadata    Json?     // {reason, impact, alternatives}
+  createdAt   DateTime  @default(now()) @map("created_at")
+  respondedAt DateTime? @map("responded_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([projectId])
+  @@index([status])
+  @@index([confidence])
+  @@map("tbl_edit_proposals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EDIT CONFLICT — AI vs Human edit conflicts
+// ══════════════════════════════════════════════════════════════════════════════
+
+model EditConflict {
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  projectId   String    @map("project_id")
+  elementId   String    @map("element_id")
+  elementType String    @map("element_type")  // "clip" | "text" | "audio" | "color"
+  aiEdit      Json      @map("ai_edit")
+  humanEdit   Json      @map("human_edit")
+  resolved    Boolean   @default(false)
+  resolution  String?   @map("conflict_resolution")  // "ai" | "human" | "merged" | "discarded"
+  resolutionNote String? @map("resolution_note") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  resolvedAt  DateTime? @map("resolved_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([projectId])
+  @@index([resolved])
+  @@map("tbl_edit_conflicts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VERSION SNAPSHOT — Named versions with state
+// ══════════════════════════════════════════════════════════════════════════════
+
+model VersionSnapshot {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  name        String
+  description String    @db.Text
+  state       Json
+  author      String    @default("human") @map("snapshot_author")
+  clipCount   Int       @default(0) @map("clip_count")
+  duration    Float     @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("tbl_version_snapshots")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AI CORRECTION — Learning from user corrections
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AICorrection {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  sessionId   String?   @map("session_id")
+  actionType  String    @map("action_type")  // "cut" | "color" | "text" | "audio" | "transition"
+  aiSuggestion Json     @map("ai_suggestion")
+  userCorrection Json   @map("user_correction")
+  category    String?   @map("correction_category")
+  pattern     String?   @map("correction_pattern")
+  confidenceDelta Float? @map("confidence_delta")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@index([actionType])
+  @@index([category])
+  @@map("tbl_ai_corrections")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VIDEO COMMENT — Team collaboration comments
+// ══════════════════════════════════════════════════════════════════════════════
+
+model VideoComment {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  authorId    String    @map("author_id")
+  authorName  String    @map("author_name")
+  clipId      String?   @map("clip_id")
+  timestamp   Float?    @map("comment_timestamp")  // Position in video
+  content     String    @db.Text
+  resolved    Boolean   @default(false)
+  parentId    String?   @map("parent_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([clipId])
+  @@index([resolved])
+  @@map("tbl_video_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AUTO CAPTION — Word-level captions from Whisper
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AutoCaption {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  clipId      String    @map("clip_id")
+  word        String
+  startTime   Float     @map("start_time")
+  endTime     Float     @map("end_time")
+  confidence  Float
+  language    String    @default("es")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([clipId])
+  @@map("tbl_auto_captions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPORT JOB — Multi-format export tracking
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ExportJob {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  format      String    @map("export_format")  // "mp4" | "webm" | "gif" | "thumbnail"
+  preset      String    @map("export_preset")  // "tiktok" | "reels" | "youtube" | "custom"
+  status      String    @default("pending")
+  progress    Int       @default(0)
+  outputUrl   String?   @map("output_url")
+  fileSize    Int?      @map("file_size")
+  errorMessage String?  @map("error_message")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("tbl_export_jobs")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }

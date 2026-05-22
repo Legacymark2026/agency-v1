@@ -1,0 +1,15 @@
+{
+  "jobId": "test-final",
+  "projectId": "proj-1",
+  "config": {
+    "format": "16:9",
+    "style": "corporate",
+    "platform": "youtube",
+    "duration": 20
+  },
+  "timeline": {
+    "totalDuration": 3
+  },
+  "renderedAt": "2026-05-21T21:40:43.383Z",
+  "note": "FFmpeg not available on this server. Install FFmpeg to enable real video rendering."
+}

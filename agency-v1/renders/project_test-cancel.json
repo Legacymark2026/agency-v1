@@ -1,0 +1,13 @@
+{
+  "jobId": "test-cancel",
+  "projectId": "proj-2",
+  "config": {
+    "format": "16:9",
+    "style": "cinematic",
+    "platform": "reels",
+    "duration": 20
+  },
+  "timeline": {},
+  "renderedAt": "2026-05-21T21:41:25.535Z",
+  "note": "FFmpeg not available on this server. Install FFmpeg to enable real video rendering."
+}
