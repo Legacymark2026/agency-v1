@@ -3397,8 +3397,8 @@ model VideoEditorProject {
   company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
   performanceLogs VideoPerformanceLog[]
   renderJobs      VideoRenderJob[]
-  aiSessions      VideoAISession[]
-  activeSession   VideoAISession?       @relation(fields: [activeSessionId], references: [id], onDelete: SetNull)
+  aiSessions      VideoAISession[]      @relation("ProjectSessions")
+  activeSession   VideoAISession?       @relation("ActiveSession", fields: [activeSessionId], references: [id], onDelete: SetNull)
   brandStyle      BrandStyle?           @relation(fields: [brandStyleId], references: [id], onDelete: SetNull)
   brandStyleId    String?               @map("brand_style_id")
   versions        VersionSnapshot[]
@@ -3729,7 +3729,7 @@ model MLCompanyWeights {
 model VideoPerformanceLog {
   id        String             @id @default(uuid())
   projectId String             @map("project_id")
-  project   VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     VideoEditorProject @relation("ProjectSessions", fields: [projectId], references: [id], onDelete: Cascade)
 
   predictedScore Float @map("predicted_score")
   actualScore    Float @map("actual_score")
