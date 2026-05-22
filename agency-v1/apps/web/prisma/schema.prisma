@@ -3424,9 +3424,12 @@ model VideoAISession {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  messages    VideoAIMessage[]
-  historyLogs VideoEditHistory[]
+  project        VideoEditorProject  @relation("ProjectSessions", fields: [projectId], references: [id], onDelete: Cascade)
+  activeProject  VideoEditorProject? @relation("ActiveSession")
+  messages       VideoAIMessage[]
+  historyLogs    VideoEditHistory[]
+  editProposals  EditProposal[]
+  editConflicts  EditConflict[]
 
   @@index([companyId])
   @@index([projectId])
@@ -3729,7 +3732,7 @@ model MLCompanyWeights {
 model VideoPerformanceLog {
   id        String             @id @default(uuid())
   projectId String             @map("project_id")
-  project     VideoEditorProject @relation("ProjectSessions", fields: [projectId], references: [id], onDelete: Cascade)
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   predictedScore Float @map("predicted_score")
   actualScore    Float @map("actual_score")
