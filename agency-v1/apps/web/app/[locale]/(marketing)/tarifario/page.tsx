@@ -18,15 +18,21 @@ export default async function PublicPricingPage() {
   // Fetch only active prices, ordered exactly how the admin dropped them
   // Note: For a robust multi-tenant system, this should filter by the URL param or domain.
   // Since we are creating a generic direct page, we extract the first company's data or all active global items.
-  const servicesData = await prisma.servicePrice.findMany({
-    where: {
-      estado: "activo",
-    },
-    orderBy: [
-      { orderIndex: 'asc' },
-      { createdAt: 'desc' }
-    ]
-  });
+  let servicesData = [];
+  try {
+    servicesData = await prisma.servicePrice.findMany({
+      where: {
+        estado: "activo",
+      },
+      orderBy: [
+        { orderIndex: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+  } catch (error) {
+    // During build or if database tables don't exist, return empty pricing page
+    console.warn('Failed to fetch service prices:', error instanceof Error ? error.message : String(error));
+  }
 
   return (
     <PublicPricingClient services={servicesData as any} />

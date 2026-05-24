@@ -8,15 +8,21 @@ export async function GET() {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://legacymark.com';
 
     // Get published posts
-    const posts = await prisma.post.findMany({
-        where: { published: true },
-        orderBy: { createdAt: 'desc' },
-        take: 50, // Limit to last 50 posts
-        include: {
-            author: { select: { name: true } },
-            categories: { select: { name: true } }
-        }
-    });
+    let posts = [];
+    try {
+        posts = await prisma.post.findMany({
+            where: { published: true },
+            orderBy: { createdAt: 'desc' },
+            take: 50, // Limit to last 50 posts
+            include: {
+                author: { select: { name: true } },
+                categories: { select: { name: true } }
+            }
+        });
+    } catch (error) {
+        // During build or if database tables don't exist, return empty feed
+        console.warn('Failed to fetch posts for RSS feed:', error instanceof Error ? error.message : String(error));
+    }
 
     // Build RSS XML
     const rssXml = `<?xml version="1.0" encoding="UTF-8"?>

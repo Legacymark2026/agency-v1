@@ -8,15 +8,21 @@ export const revalidate = 3600;
 export async function GET() {
     const baseUrl = siteConfig.url;
 
-    const posts = await prisma.post.findMany({
-        where: { published: true },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-        include: {
-            author: { select: { name: true } },
-            categories: { select: { name: true } },
-        },
-    });
+    let posts = [];
+    try {
+        posts = await prisma.post.findMany({
+            where: { published: true },
+            orderBy: { createdAt: "desc" },
+            take: 50,
+            include: {
+                author: { select: { name: true } },
+                categories: { select: { name: true } },
+            },
+        });
+    } catch (error) {
+        // During build or if database tables don't exist, return empty feed
+        console.warn('Failed to fetch posts for Atom feed:', error instanceof Error ? error.message : String(error));
+    }
 
     const updated = posts.length > 0
         ? new Date(posts[0].createdAt).toISOString()
