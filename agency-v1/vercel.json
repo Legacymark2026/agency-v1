@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd apps/web && prisma migrate deploy && npm run build",
+  "buildCommand": "cd apps/web && npm run build",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs"
 }
