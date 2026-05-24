@@ -69,7 +69,18 @@ export async function registerUser(formData: z.infer<typeof registerSchema>) {
 }
 
 export async function loginUser(prevState: string | undefined, formData: FormData) {
-    const email = formData.get("email") as string;
+    const emailValue = formData.get("email");
+    const passwordValue = formData.get("password");
+
+    if (typeof emailValue !== "string" || !emailValue.trim()) {
+        return "Por favor ingresa un email válido.";
+    }
+
+    if (typeof passwordValue !== "string" || !passwordValue.trim()) {
+        return "Por favor ingresa tu contraseña.";
+    }
+
+    const email = emailValue.trim();
 
     // Rate limit: máx 10 intentos de login por email en 5 minutos
     const isAllowed = await rateLimit(`login:${email}`, 10, 5 * 60 * 1000);
@@ -83,23 +94,33 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
 
         await signIn('credentials', {
             ...Object.fromEntries(formData),
-            redirectTo: redirectTo
+            redirectTo,
         });
+
+        return undefined;
     } catch (error) {
+        console.error('[LoginUser] Authentication error:', error);
+
         if (error instanceof AuthError) {
             switch (error.type) {
                 case 'CredentialsSignin':
                     return 'Credenciales inválidas.';
                 default:
-                    return 'Algo salió mal.';
+                    return 'Algo salió mal. Por favor intenta de nuevo.';
             }
         }
-        throw error;
+
+        return 'Servicio temporalmente no disponible. Por favor intenta de nuevo más tarde.';
     }
 }
 
 export async function loginWithOAuth(provider: string) {
-    await signIn(provider, { redirectTo: '/dashboard' });
+    try {
+        await signIn(provider, { redirectTo: '/dashboard' });
+    } catch (error) {
+        console.error('[LoginWithOAuth] OAuth login error:', error);
+        return { error: 'No se pudo iniciar sesión con el proveedor seleccionado. Intenta nuevamente.' };
+    }
 }
 
 // ─── PASSWORD RESET ───────────────────────────────────────────────────────────

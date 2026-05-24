@@ -119,11 +119,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse request body
-        const body = await request.json();
+        let body: Record<string, any> = {};
+        try {
+            body = await request.json();
+        } catch (parsingError) {
+            console.warn('[Analytics Track] Failed to parse request body:', parsingError);
+            return NextResponse.json({ success: false, error: 'Invalid payload' }, { status: 400 });
+        }
+
         const {
             eventType,
             eventName,
-            // eventValue, // Removed: Field does not exist in schema
             path,
             title,
             referrer,
