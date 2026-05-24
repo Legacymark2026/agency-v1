@@ -235,21 +235,14 @@ export async function getPublicIntegrations() {
         // console.log("[Settings] Initializing Public Integrations Retrieval...");
 
         // 1. Fetch from IntegrationConfig (New standard)
-        let allConfigs: any[] = [];
-        try {
-            allConfigs = await prisma.integrationConfig.findMany({
-                where: { isEnabled: true }
-            });
-            // console.log(`[Settings] Found ${allConfigs.length} enabled integration configs`);
-        } catch (dbErr) {
-            console.error("[Settings] CRITICAL: Failed to query integrationConfig table:", dbErr);
-            // Continue with empty configs — don't abort the whole function
-        }
+        const allConfigs = await safeTableQuery("tbl_integration_configs", async () =>
+            prisma.integrationConfig.findMany({ where: { isEnabled: true } }),
+            []
+        );
 
         // 2. Fetch from UserProfile (Legacy/Fallback)
-        let profile: any = null;
-        try {
-            profile = await prisma.userProfile.findFirst({
+        const profile = await safeTableQuery("tbl_user_profiles", async () =>
+            prisma.userProfile.findFirst({
                 where: {
                     OR: [
                         { facebookPixel: { not: null as any } },
@@ -258,11 +251,9 @@ export async function getPublicIntegrations() {
                         { googleAnalytics: { not: null as any } }
                     ]
                 }
-            });
-        } catch (dbErr) {
-            console.error("[Settings] Non-fatal: Failed to query userProfile table:", dbErr);
-            profile = null;
-        }
+            }),
+            null
+        );
 
         let fbPixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || "";
         let gtmId = process.env.NEXT_PUBLIC_GTM_ID || "";

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { safeTableQuery } from "@/lib/db-utils";
 import { revalidatePath } from "next/cache";
 
 export type SocialProfileData = {
@@ -17,24 +18,20 @@ export type SocialProfileData = {
 
 /** Get all 3 platform profiles */
 export async function getSocialProfiles() {
-    try {
-        return await prisma.socialProfile.findMany({
+    return safeTableQuery("tbl_social_profiles", async () =>
+        prisma.socialProfile.findMany({
             orderBy: { platform: "asc" },
-        });
-    } catch (error) {
-        console.error("[SocialProfiles] Failed to fetch social profiles:", error);
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 /** Get a single platform profile (public - no auth) */
 export async function getSocialProfile(platform: string) {
-    try {
-        return await prisma.socialProfile.findUnique({ where: { platform } });
-    } catch (error) {
-        console.error("[SocialProfiles] Failed to fetch social profile:", error);
-        return null;
-    }
+    return safeTableQuery("tbl_social_profiles", async () =>
+        prisma.socialProfile.findUnique({ where: { platform } }),
+        null
+    );
 }
 
 /** Upsert a profile from the dashboard */

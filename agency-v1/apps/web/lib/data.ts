@@ -1,59 +1,58 @@
 import { prisma } from "@/lib/prisma";
+import { safeTableQuery } from "@/lib/db-utils";
 
 export async function getRecentPosts(limit: number = 3) {
-    try {
-        return await prisma.post.findMany({
+    return safeTableQuery("tbl_posts", async () =>
+        prisma.post.findMany({
             where: { published: true },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             take: limit,
             include: { author: { select: { name: true } } }
-        });
-    } catch (error) {
-        console.error('Failed to fetch recent posts:', error);
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 export async function getAllPosts() {
-    try {
-        return await prisma.post.findMany({
+    return safeTableQuery("tbl_posts", async () =>
+        prisma.post.findMany({
             where: { published: true },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             include: { author: { select: { name: true } } }
-        });
-    } catch (error) {
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 export async function getPostBySlug(slug: string) {
-    try {
-        return await prisma.post.findUnique({
+    return safeTableQuery("tbl_posts", async () =>
+        prisma.post.findUnique({
             where: { slug },
             include: {
                 author: { select: { name: true, image: true } },
                 categories: { select: { id: true, name: true } },
                 tags: { select: { name: true } }
             }
-        });
-    } catch (error) {
-        return null;
-    }
+        }),
+        null
+    );
 }
 
 export async function getRelatedPosts(currentPostId: string, categoryIds: string[], limit: number = 3) {
-    try {
-        return await prisma.post.findMany({
+    return safeTableQuery("tbl_posts", async () =>
+        prisma.post.findMany({
             where: {
                 published: true,
                 id: { not: currentPostId },
-                ...(categoryIds.length > 0 ? {
-                    categories: {
-                        some: { id: { in: categoryIds } }
+                ...(categoryIds.length > 0
+                    ? {
+                        categories: {
+                            some: { id: { in: categoryIds } }
+                        }
                     }
-                } : {})
+                    : {})
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             take: limit,
             select: {
                 id: true,
@@ -62,43 +61,39 @@ export async function getRelatedPosts(currentPostId: string, categoryIds: string
                 excerpt: true,
                 coverImage: true
             }
-        });
-    } catch (error) {
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 // --- Projects ---
 
 export async function getRecentProjects(limit: number = 3) {
-    try {
-        return await prisma.project.findMany({
+    return safeTableQuery("tbl_projects", async () =>
+        prisma.project.findMany({
             where: { published: true },
-            orderBy: { createdAt: 'desc' },
-            take: limit,
-        });
-    } catch (error) {
-        return [];
-    }
+            orderBy: { createdAt: "desc" },
+            take: limit
+        }),
+        []
+    );
 }
 
 export async function getAllProjects() {
-    try {
-        return await prisma.project.findMany({
+    return safeTableQuery("tbl_projects", async () =>
+        prisma.project.findMany({
             where: { published: true },
-            orderBy: { createdAt: 'desc' },
-        });
-    } catch (error) {
-        return [];
-    }
+            orderBy: { createdAt: "desc" }
+        }),
+        []
+    );
 }
 
 export async function getProjectBySlug(slug: string) {
-    try {
-        return await prisma.project.findUnique({
-            where: { slug },
-        });
-    } catch (error) {
-        return null;
-    }
+    return safeTableQuery("tbl_projects", async () =>
+        prisma.project.findUnique({
+            where: { slug }
+        }),
+        null
+    );
 }

@@ -2,6 +2,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { safeTableQuery } from '@/lib/db-utils';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { ProjectSchema, type ProjectFormData } from '@/lib/schemas';
@@ -38,35 +39,41 @@ export async function getProjects(options?: {
         ];
     }
 
-    return prisma.project.findMany({
-        where,
-        orderBy: [
-            { featured: 'desc' },
-            { displayOrder: 'asc' },
-            { createdAt: 'desc' }
-        ],
-        include: {
-            category: true,
-            _count: {
-                select: { views: true }
+    return safeTableQuery("tbl_projects", async () =>
+        prisma.project.findMany({
+            where,
+            orderBy: [
+                { featured: 'desc' },
+                { displayOrder: 'asc' },
+                { createdAt: 'desc' }
+            ],
+            include: {
+                category: true,
+                _count: {
+                    select: { views: true }
+                }
             }
-        }
-    });
+        }),
+        []
+    );
 }
 
 export async function getProject(id: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    return prisma.project.findUnique({
-        where: { id },
-        include: {
-            category: true,
-            // relatedProjects: {
-            //     select: { id: true, title: true, slug: true, coverImage: true }
-            // }
-        }
-    });
+    return safeTableQuery("tbl_projects", async () =>
+        prisma.project.findUnique({
+            where: { id },
+            include: {
+                category: true,
+                // relatedProjects: {
+                //     select: { id: true, title: true, slug: true, coverImage: true }
+                // }
+            }
+        }),
+        null
+    );
 }
 
 export async function getPublicProjects(options?: {
@@ -82,8 +89,8 @@ export async function getPublicProjects(options?: {
         where.category = { slug: options.categorySlug };
     }
 
-    try {
-        return await prisma.project.findMany({
+    return safeTableQuery("tbl_projects", async () =>
+        prisma.project.findMany({
             where,
             take: options?.limit,
             orderBy: [
@@ -97,11 +104,9 @@ export async function getPublicProjects(options?: {
                     select: { views: true }
                 }
             }
-        });
-    } catch (error) {
-        console.error("[Projects] Failed to fetch public projects:", error);
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 export async function createProject(data: ProjectFormData) {
@@ -282,14 +287,12 @@ export async function deleteProject(id: string) {
 // --- Category Actions ---
 
 export async function getProjectCategories() {
-    try {
-        return await prisma.projectCategory.findMany({
+    return safeTableQuery("tbl_project_categories", async () =>
+        prisma.projectCategory.findMany({
             orderBy: { name: 'asc' }
-        });
-    } catch (error) {
-        console.error("[Projects] Failed to fetch project categories:", error);
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 export async function createProjectCategory(name: string) {

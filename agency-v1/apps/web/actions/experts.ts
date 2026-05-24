@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { safeTableQuery } from "@/lib/db-utils";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -24,28 +25,22 @@ export type ExpertInput = z.infer<typeof ExpertSchema>;
 // --- Actions ---
 
 export async function getExperts() {
-    try {
-        const experts = await db.expert.findMany({
+    return safeTableQuery("tbl_experts", async () =>
+        db.expert.findMany({
             where: { isVisible: true },
             orderBy: { order: "asc" },
-        });
-        return experts;
-    } catch (error) {
-        console.error("Error fetching experts:", error);
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 export async function getAllExpertsAdmin() {
-    try {
-        const experts = await db.expert.findMany({
+    return safeTableQuery("tbl_experts", async () =>
+        db.expert.findMany({
             orderBy: { order: "asc" },
-        });
-        return experts;
-    } catch (error) {
-        console.error("Error fetching all experts:", error);
-        return [];
-    }
+        }),
+        []
+    );
 }
 
 export async function createExpert(data: ExpertInput) {
