@@ -17,14 +17,24 @@ export type SocialProfileData = {
 
 /** Get all 3 platform profiles */
 export async function getSocialProfiles() {
-    return prisma.socialProfile.findMany({
-        orderBy: { platform: "asc" },
-    });
+    try {
+        return await prisma.socialProfile.findMany({
+            orderBy: { platform: "asc" },
+        });
+    } catch (error) {
+        console.error("[SocialProfiles] Failed to fetch social profiles:", error);
+        return [];
+    }
 }
 
 /** Get a single platform profile (public - no auth) */
 export async function getSocialProfile(platform: string) {
-    return prisma.socialProfile.findUnique({ where: { platform } });
+    try {
+        return await prisma.socialProfile.findUnique({ where: { platform } });
+    } catch (error) {
+        console.error("[SocialProfiles] Failed to fetch social profile:", error);
+        return null;
+    }
 }
 
 /** Upsert a profile from the dashboard */

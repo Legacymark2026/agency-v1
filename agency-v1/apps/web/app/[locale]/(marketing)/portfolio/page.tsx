@@ -9,11 +9,19 @@ export const revalidate = 3600;
 // Next.js 15 Server Component
 export default async function PortfolioPage() {
     // Fetch live data directly from the DB
-    const [projects, categories, socialProfiles] = await Promise.all([
-        getPublicProjects(),
-        getProjectCategories(),
-        getSocialProfiles(),
-    ]);
+    let projects = [];
+    let categories = [];
+    let socialProfiles = [];
+
+    try {
+        [projects, categories, socialProfiles] = await Promise.all([
+            getPublicProjects(),
+            getProjectCategories(),
+            getSocialProfiles(),
+        ]);
+    } catch (error) {
+        console.error("[PortfolioPage] Non-fatal: Failed to load portfolio data:", error);
+    }
 
     return <PortfolioClient projects={projects} categories={categories} socialProfiles={socialProfiles} />;
 }

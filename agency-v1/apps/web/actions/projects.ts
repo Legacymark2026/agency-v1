@@ -82,21 +82,26 @@ export async function getPublicProjects(options?: {
         where.category = { slug: options.categorySlug };
     }
 
-    return prisma.project.findMany({
-        where,
-        take: options?.limit,
-        orderBy: [
-            { featured: 'desc' },
-            { displayOrder: 'asc' },
-            { createdAt: 'desc' }
-        ],
-        include: {
-            category: true,
-            _count: {
-                select: { views: true }
+    try {
+        return await prisma.project.findMany({
+            where,
+            take: options?.limit,
+            orderBy: [
+                { featured: 'desc' },
+                { displayOrder: 'asc' },
+                { createdAt: 'desc' }
+            ],
+            include: {
+                category: true,
+                _count: {
+                    select: { views: true }
+                }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error("[Projects] Failed to fetch public projects:", error);
+        return [];
+    }
 }
 
 export async function createProject(data: ProjectFormData) {
@@ -277,9 +282,14 @@ export async function deleteProject(id: string) {
 // --- Category Actions ---
 
 export async function getProjectCategories() {
-    return prisma.projectCategory.findMany({
-        orderBy: { name: 'asc' }
-    });
+    try {
+        return await prisma.projectCategory.findMany({
+            orderBy: { name: 'asc' }
+        });
+    } catch (error) {
+        console.error("[Projects] Failed to fetch project categories:", error);
+        return [];
+    }
 }
 
 export async function createProjectCategory(name: string) {
