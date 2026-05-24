@@ -106,8 +106,30 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const integrations = await getPublicIntegrations();
-  const session = await auth();
+  let integrations = {
+    fbPixelId: "",
+    gtmId: "",
+    hotjarId: "",
+    ahrefsDataKey: "",
+    gaPropertyId: "",
+    tiktokPixelId: "",
+    linkedinPartnerId: "",
+    googleAdsId: "",
+  };
+  let session = null;
+
+  try {
+    integrations = await getPublicIntegrations();
+  } catch (error) {
+    console.error("[RootLayout] Non-fatal: Failed to load public integrations:", error);
+  }
+
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("[RootLayout] Non-fatal: Failed to resolve auth session:", error);
+    session = null;
+  }
   
   let locale = "es";
   try {

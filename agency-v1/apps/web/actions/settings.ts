@@ -247,16 +247,22 @@ export async function getPublicIntegrations() {
         }
 
         // 2. Fetch from UserProfile (Legacy/Fallback)
-        const profile = await prisma.userProfile.findFirst({
-            where: {
-                OR: [
-                    { facebookPixel: { not: null as any } },
-                    { googleTagManager: { not: null as any } },
-                    { hotjar: { not: null as any } },
-                    { googleAnalytics: { not: null as any } }
-                ]
-            }
-        });
+        let profile: any = null;
+        try {
+            profile = await prisma.userProfile.findFirst({
+                where: {
+                    OR: [
+                        { facebookPixel: { not: null as any } },
+                        { googleTagManager: { not: null as any } },
+                        { hotjar: { not: null as any } },
+                        { googleAnalytics: { not: null as any } }
+                    ]
+                }
+            });
+        } catch (dbErr) {
+            console.error("[Settings] Non-fatal: Failed to query userProfile table:", dbErr);
+            profile = null;
+        }
 
         let fbPixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || "";
         let gtmId = process.env.NEXT_PUBLIC_GTM_ID || "";

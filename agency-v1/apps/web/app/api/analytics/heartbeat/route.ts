@@ -46,14 +46,14 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         // Ignore "Record to update not found" errors (P2025)
-        if (error.code === 'P2025') {
+        if (error?.code === 'P2025') {
             return NextResponse.json({ success: true, warning: 'Session not found' });
         }
 
         console.error('Heartbeat error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
+            { success: false, error: 'Analytics unavailable' },
+            { status: 200 }
         );
     }
 }

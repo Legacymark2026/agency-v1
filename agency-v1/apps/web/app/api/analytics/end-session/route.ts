@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Session end error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
+            { success: false, error: 'Analytics unavailable' },
+            { status: 200 }
         );
     }
 }
