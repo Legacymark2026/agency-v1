@@ -1,0 +1,9 @@
+{
+  "ignore": {
+    "files": [
+      ".next/**",
+      "apps/web/.next/**",
+      "apps/web/.next/standalone/**"
+    ]
+  }
+}

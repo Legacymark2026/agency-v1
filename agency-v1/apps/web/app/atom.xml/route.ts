@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { siteConfig } from "@/lib/site-config";
 
+// Enable ISR - revalidate Atom feed every hour
+export const revalidate = 3600;
+
 export async function GET() {
     const baseUrl = siteConfig.url;
 

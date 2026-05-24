@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+// Enable ISR - revalidate RSS feed every hour
+export const revalidate = 3600;
+
 export async function GET() {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://legacymark.com';
 

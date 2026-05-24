@@ -1,120 +1,37 @@
-import { prisma } from "@/lib/prisma";
-import { SignProposalClient } from "@/components/proposals/sign-proposal-client";
-import { Loader2 } from "lucide-react";
-import { Metadata } from "next";
+"use client";
 
-// Enable ISR - revalidate every hour
-export const revalidate = 3600;
+import { useState, useRef } from "react";
+import { CheckCircle, Edit, Shield, Clock, FileText, Loader2 } from "lucide-react";
 
-interface Props {
-    params: Promise<{ token: string }>;
+interface ProposalItem {
+    id: string;
+    title: string;
+    description?: string;
+    price: number;
+    quantity: number;
 }
 
-// Generate metadata
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { token } = await params;
-    
-    try {
-        const proposal = await prisma.proposal.findUnique({
-            where: { token },
-            select: { title: true }
-        });
-
-        if (!proposal) return { title: 'Propuesta no encontrada' };
-
-        return {
-            title: `Firmar: ${proposal.title}`,
-            robots: { index: false, follow: false }
-        };
-    } catch (error) {
-        return { title: 'Propuesta no encontrada' };
-    }
+interface ProposalData {
+    id: string;
+    title: string;
+    company?: {
+        name: string;
+    };
+    items: ProposalItem[];
+    expiresAt?: string;
 }
 
-export default async function SignProposalPage({ params }: Props) {
-    const { token } = await params;
-
-    try {
-        // Fetch proposal data on server - SERVER-SIDE RENDERING FOR SEO
-        const proposal = await prisma.proposal.findUnique({
-            where: { token },
-            include: {
-                company: {
-                    select: { name: true }
-                },
-                items: {
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        price: true,
-                        quantity: true
-                    }
-                }
-            }
-        });
-
-        if (!proposal) {
-            return (
-                <div className="min-h-screen flex items-center justify-center" style={{ background: '#020817' }}>
-                    <div className="text-center">
-                        <p className="font-mono text-xs font-bold text-red-400 uppercase tracking-widest">Propuesta no encontrada</p>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <SignProposalClient
-                proposal={{
-                    id: proposal.id,
-                    title: proposal.title,
-                    company: proposal.company ? { name: proposal.company.name } : undefined,
-                    items: proposal.items.map(item => ({
-                        id: item.id,
-                        title: item.title,
-                        description: item.description || undefined,
-                        price: item.price,
-                        quantity: item.quantity
-                    })),
-                    expiresAt: proposal.expiresAt?.toISOString()
-                }}
-            />
-        );
-    } catch (error) {
-        console.error('Error loading proposal:', error);
-        return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: '#020817' }}>
-                <div className="text-center">
-                    <p className="font-mono text-xs font-bold text-red-400 uppercase tracking-widest">Error al cargar la propuesta</p>
-                </div>
-            </div>
-        );
-    }
+interface SignProposalClientProps {
+    proposal: ProposalData;
 }
-    const [token, setToken] = useState<string>("");
-    const [proposal, setProposal] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+
+export function SignProposalClient({ proposal }: SignProposalClientProps) {
     const [signed, setSigned] = useState(false);
     const [signingLoading, setSigningLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(false);
-
-    useEffect(() => {
-        params.then(p => {
-            setToken(p.token);
-            fetch(`/api/proposals/${p.token}/sign?token=${p.token}`)
-                .then(r => r.json())
-                .then(d => {
-                    if (d.data) setProposal(d.data);
-                    else setError(d.error ?? "Propuesta no encontrada");
-                })
-                .catch(() => setError("Error al cargar la propuesta"))
-                .finally(() => setLoading(false));
-        });
-    }, [params]);
 
     // Canvas signature logic
     const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
@@ -174,12 +91,6 @@ export default async function SignProposalPage({ params }: Props) {
         setSigningLoading(false);
     };
 
-    if (loading) return (
-        <div className="min-h-screen flex items-center justify-center" style={{ background: '#020817' }}>
-            <Loader2 className="animate-spin text-teal-400" size={32} />
-        </div>
-    );
-
     if (error) return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: '#020817' }}>
             <div className="text-center">
@@ -201,8 +112,8 @@ export default async function SignProposalPage({ params }: Props) {
         </div>
     );
 
-    const items = proposal?.items ?? [];
-    const total = items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+    const items = proposal.items ?? [];
+    const total = items.reduce((s: number, i: ProposalItem) => s + i.price * i.quantity, 0);
 
     return (
         <div className="min-h-screen py-12 px-4" style={{ background: '#020817' }}>
@@ -212,16 +123,16 @@ export default async function SignProposalPage({ params }: Props) {
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 font-mono text-xs text-teal-400" style={{ background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.2)' }}>
                         <Shield size={10} />FIRMA DIGITAL SEGURA
                     </div>
-                    <h1 className="font-mono text-2xl font-black text-slate-100">{proposal?.title}</h1>
-                    <p className="font-mono text-xs text-slate-500 mt-2">{proposal?.company?.name}</p>
+                    <h1 className="font-mono text-2xl font-black text-slate-100">{proposal.title}</h1>
+                    <p className="font-mono text-xs text-slate-500 mt-2">{proposal.company?.name}</p>
                 </div>
 
                 {/* Proposal details */}
                 <div className="rounded-2xl p-6" style={{ background: 'rgba(15,20,35,0.9)', border: '1px solid rgba(30,41,59,0.8)' }}>
                     <p className="font-mono text-xs text-slate-500 uppercase tracking-widest mb-4">Detalle de la Propuesta</p>
                     <div className="space-y-2 mb-4">
-                        {items.map((item: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
+                        {items.map((item: ProposalItem, i: number) => (
+                            <div key={item.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
                                 <div>
                                     <p className="font-mono text-xs text-slate-200">{item.title}</p>
                                     {item.description && <p className="font-mono text-xs text-slate-600">{item.description}</p>}
@@ -234,7 +145,7 @@ export default async function SignProposalPage({ params }: Props) {
                         <p className="font-mono text-xs font-bold text-slate-400">TOTAL</p>
                         <p className="font-mono text-2xl font-black text-teal-400">${total.toLocaleString()}</p>
                     </div>
-                    {proposal?.expiresAt && (
+                    {proposal.expiresAt && (
                         <div className="flex items-center gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
                             <Clock size={12} className="text-amber-400" />
                             <p className="font-mono text-xs text-amber-400">Vence: {new Date(proposal.expiresAt).toLocaleDateString()}</p>

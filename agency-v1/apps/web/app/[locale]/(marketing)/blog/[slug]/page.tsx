@@ -1,6 +1,8 @@
-import { getPostBySlug, getRelatedPosts } from "@/lib/data";
+import { getPostBySlug, getRelatedPosts, getAllPosts } from "@/lib/data";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import { Metadata } from "next";
 import { ArrowLeft, Tag, Rss, Calendar, Clock, ChevronRight } from "lucide-react";
 import {
@@ -35,6 +37,23 @@ function addHeadingIds(html: string): string {
 }
 
 import { siteConfig } from "@/lib/site-config";
+
+// Enable ISR with 1 hour revalidation for blog posts
+export const revalidate = 3600;
+
+// Generate static params for all published blog posts for SSG
+export async function generateStaticParams() {
+    try {
+        const posts = await getAllPosts();
+        return posts.map(post => ({
+            slug: post.slug,
+            locale: 'es' // Add more locales if needed
+        }));
+    } catch (error) {
+        console.error('Failed to generate static params for blog posts:', error);
+        return [];
+    }
+}
 
 // Generate dynamic metadata for SEO
 export async function generateMetadata({ params }: { params: Promise<{ slug: string; locale: string }> }): Promise<Metadata> {
@@ -207,11 +226,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 -mt-4 mb-12 relative z-10">
                         <figure className="relative">
                             <div className="aspect-[21/9] w-full relative overflow-hidden rounded-2xl group" style={{ boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(30,41,59,0.8)' }}>
-                                <img
+                                <Image
                                     src={post.coverImage}
                                     alt={post.imageAlt || post.title}
-                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    loading="eager"
+                                    fill
+                                    className="absolute inset-0 object-cover transition-transform duration-700 group-hover:scale-105"
+                                    unoptimized
+                                    priority
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent" />
                             </div>
@@ -379,24 +400,22 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             </article>
 
             {/* Reading Progress Script */}
-            <script
-                dangerouslySetInnerHTML={{
-                    __html: `
-                        if (typeof window !== 'undefined') {
-                            window.addEventListener('scroll', function() {
-                                const article = document.querySelector('article');
-                                const progress = document.getElementById('reading-progress');
-                                if (article && progress) {
-                                    const scrollTop = window.scrollY;
-                                    const docHeight = article.scrollHeight - window.innerHeight;
-                                    const scrollPercent = Math.min((scrollTop / docHeight) * 100, 100);
-                                    progress.style.width = scrollPercent + '%';
-                                }
-                            });
-                        }
-                    `
-                }}
-            />
+            <Script id="reading-progress" strategy="afterInteractive">
+                {`
+                    if (typeof window !== 'undefined') {
+                        window.addEventListener('scroll', function() {
+                            const article = document.querySelector('article');
+                            const progress = document.getElementById('reading-progress');
+                            if (article && progress) {
+                                const scrollTop = window.scrollY;
+                                const docHeight = article.scrollHeight - window.innerHeight;
+                                const scrollPercent = Math.min((scrollTop / docHeight) * 100, 100);
+                                progress.style.width = scrollPercent + '%';
+                            }
+                        });
+                    }
+                `}
+            </Script>
         </>
     );
 }

@@ -1,9 +1,27 @@
-import { getProjectBySlug } from "@/lib/data";
+import { getProjectBySlug, getAllProjects } from "@/lib/data";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { BlogContentViewer } from "@/components/blog/blog-content-viewer";
 import { ProjectGallery } from "@/components/portfolio/project-gallery";
+
+// Enable ISR with 1 hour revalidation for portfolio projects
+export const revalidate = 3600;
+
+// Generate static params for all published portfolio projects for SSG
+export async function generateStaticParams() {
+    try {
+        const projects = await getAllProjects();
+        return projects.map(project => ({
+            slug: project.slug
+        }));
+    } catch (error) {
+        console.error('Failed to generate static params for portfolio projects:', error);
+        return [];
+    }
+}
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -43,12 +61,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
                     <div className="flex items-center gap-5 mb-8">
                         {project.clientLogo && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img 
-                                src={project.clientLogo.replace('/uploads/', '/api/serve/')} 
-                                alt={`${project.client || 'Client'} logo`}
-                                className="h-16 w-auto object-contain rounded-xl bg-white/10 backdrop-blur-md p-2.5 border border-white/10 shadow-xl"
-                            />
+                            <div className="relative h-16 w-auto rounded-xl overflow-hidden bg-white/10 backdrop-blur-md p-2.5 border border-white/10 shadow-xl">
+                                <Image
+                                    src={project.clientLogo.replace('/uploads/', '/api/serve/')}
+                                    alt={`${project.client || 'Client'} logo`}
+                                    width={64}
+                                    height={64}
+                                    className="h-full w-full object-contain"
+                                    unoptimized
+                                />
+                            </div>
                         )}
                         {project.client && (
                             <span className="inline-block rounded-full bg-teal-500/20 border border-teal-500/30 shadow-[0_0_15px_rgba(20,184,166,0.15)] px-4 py-1.5 text-xs font-bold text-teal-300 tracking-widest uppercase backdrop-blur-sm">
@@ -92,10 +114,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                         {/* Rich Text Editor Content */}
                         <div className="rounded-3xl border border-slate-800/60 bg-slate-900/30 p-8 md:p-12 shadow-2xl backdrop-blur-sm mb-20">
                             {project.content ? (
-                                <div 
-                                    className="prose prose-invert prose-lg md:prose-xl max-w-none text-slate-300 prose-headings:font-bold prose-headings:text-white prose-a:text-teal-400 prose-strong:text-teal-50 prose-strong:font-bold leading-relaxed tracking-wide"
-                                    dangerouslySetInnerHTML={{ __html: project.content }} 
-                                />
+                                <BlogContentViewer content={project.content} />
                             ) : (
                                 <div className="text-center py-12">
                                     <p className="italic text-slate-500">Detalles técnicos del caso de estudio próximamente...</p>

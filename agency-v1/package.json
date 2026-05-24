@@ -23,7 +23,8 @@
     "k8s:prod": "kubectl apply -k infrastructure/k8s/overlays/production",
     "db:generate": "npm run generate --workspace=packages/database",
     "db:migrate": "npm run migrate:deploy --workspace=packages/database",
-    "db:studio": "npm run studio --workspace=packages/database"
+    "db:studio": "npm run studio --workspace=packages/database",
+    "doctor": "npx react-doctor --project web --full --verbose"
   },
   "packageManager": "npm@10.8.2",
   "devDependencies": {
