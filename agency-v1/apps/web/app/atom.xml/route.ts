@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeTableQuery } from "@/lib/db-utils";
 import { NextResponse } from "next/server";
 import { siteConfig } from "@/lib/site-config";
 
@@ -8,9 +9,8 @@ export const revalidate = 3600;
 export async function GET() {
     const baseUrl = siteConfig.url;
 
-    let posts = [];
-    try {
-        posts = await prisma.post.findMany({
+    const posts = await safeTableQuery("tbl_posts", async () =>
+        prisma.post.findMany({
             where: { published: true },
             orderBy: { createdAt: "desc" },
             take: 50,
@@ -18,11 +18,9 @@ export async function GET() {
                 author: { select: { name: true } },
                 categories: { select: { name: true } },
             },
-        });
-    } catch (error) {
-        // During build or if database tables don't exist, return empty feed
-        console.warn('Failed to fetch posts for Atom feed:', error instanceof Error ? error.message : String(error));
-    }
+        }),
+        []
+    );
 
     const updated = posts.length > 0
         ? new Date(posts[0].createdAt).toISOString()

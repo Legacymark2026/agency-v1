@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { safeTableQuery } from "@/lib/db-utils";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -21,14 +22,16 @@ export async function getServicePrices() {
 
     try {
         const companyId = await getCompanyId(session.user.id);
-        const services = await prisma.servicePrice.findMany({
-            where: { companyId },
-            orderBy: [
-              { orderIndex: 'asc' },
-              { createdAt: 'desc' }
-            ]
-        });
-        return services;
+        return safeTableQuery("tbl_service_prices", async () =>
+            prisma.servicePrice.findMany({
+                where: { companyId },
+                orderBy: [
+                    { orderIndex: 'asc' },
+                    { createdAt: 'desc' }
+                ]
+            }),
+            []
+        );
     } catch (error) {
         console.error("Error fetching service prices:", error);
         return [];

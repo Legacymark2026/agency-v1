@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { safeTableQuery } from "@/lib/db-utils";
 import { PublicPricingClient } from "@/components/marketing/pricing/PublicPricingClient";
 
 export const metadata: Metadata = {
@@ -19,20 +20,18 @@ export default async function PublicPricingPage() {
   // Note: For a robust multi-tenant system, this should filter by the URL param or domain.
   // Since we are creating a generic direct page, we extract the first company's data or all active global items.
   let servicesData = [];
-  try {
-    servicesData = await prisma.servicePrice.findMany({
-      where: {
-        estado: "activo",
-      },
-      orderBy: [
-        { orderIndex: 'asc' },
-        { createdAt: 'desc' }
-      ]
-    });
-  } catch (error) {
-    // During build or if database tables don't exist, return empty pricing page
-    console.warn('Failed to fetch service prices:', error instanceof Error ? error.message : String(error));
-  }
+  servicesData = await safeTableQuery("tbl_service_prices", async () =>
+      prisma.servicePrice.findMany({
+          where: {
+              estado: "activo",
+          },
+          orderBy: [
+              { orderIndex: 'asc' },
+              { createdAt: 'desc' }
+          ]
+      }),
+      []
+  );
 
   return (
     <PublicPricingClient services={servicesData as any} />
