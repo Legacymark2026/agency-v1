@@ -91,7 +91,7 @@ async function fetchSitemapUrls() {
 async function inspectUrl(accessToken, targetUrl) {
   const requestBody = JSON.stringify({
     inspectionUrl: targetUrl,
-    siteUrl: 'https://legacymarksas.com/',
+    siteUrl: 'sc-domain:legacymarksas.com',
     languageCode: 'es'
   });
 
