@@ -84,12 +84,33 @@ function askQuestion(rl, questionText) {
   console.log('5. Copia el código que aparece en la barra de direcciones después de "?code="');
   console.log('   y pégalo a continuación:\n');
 
-  const code = await askQuestion(readline, 'Introduce el código de autorización: ');
+  let code = await askQuestion(readline, 'Introduce el código de autorización (o pega la URL completa redireccionada): ');
   readline.close();
 
   if (!code) {
     console.error('❌ El código de autorización es obligatorio.');
     return;
+  }
+
+  // Automatically extract code from URL if the user pasted the full URL
+  if (code.includes('code=')) {
+    try {
+      if (!code.startsWith('http')) {
+        code = 'http://' + code; // Ensure it's a valid URL for the parser
+      }
+      const urlObj = new URL(code);
+      const urlCode = urlObj.searchParams.get('code');
+      if (urlCode) {
+        code = urlCode;
+        console.log(`\n👉 Código extraído automáticamente de la URL: ${code}`);
+      }
+    } catch (e) {
+      const match = code.match(/[?&]code=([^&]+)/);
+      if (match) {
+        code = match[1];
+        console.log(`\n👉 Código extraído automáticamente de la URL (fallback): ${code}`);
+      }
+    }
   }
 
   console.log('\nIntercambiando código de autorización por tokens...');
