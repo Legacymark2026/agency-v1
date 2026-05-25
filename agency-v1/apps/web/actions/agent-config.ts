@@ -36,6 +36,18 @@ async function checkAdminAccess(companyId: string) {
 export async function getSpecializations(companyId: string, includeGlobal = true) {
     await getSession();
     
+    // Auto-seed system specializations if none exist yet (self-healing)
+    const systemCount = await prisma.agentSpecialization.count({
+        where: { isSystem: true }
+    });
+    if (systemCount === 0) {
+        try {
+            await seedSystemSpecializations();
+        } catch (e) {
+            console.error("Failed to seed system specializations:", e);
+        }
+    }
+    
     const where = includeGlobal 
         ? { OR: [{ companyId }, { companyId: null, isSystem: true }] }
         : { companyId };
@@ -265,13 +277,51 @@ export async function importSkillFromTemplate(templateId: string, companyId: str
     // Create skill from template content
     const content = template.content as any;
     
+    // Resilient specialization lookup
+    let targetSpecId = content.specializationId;
+    if (targetSpecId) {
+        const specExists = await prisma.agentSpecialization.findUnique({ where: { id: targetSpecId } });
+        if (!specExists) {
+            targetSpecId = null;
+        }
+    }
+
+    if (!targetSpecId) {
+        // Auto-seed system specializations first to make sure there's a fallback
+        const systemCount = await prisma.agentSpecialization.count({ where: { isSystem: true } });
+        if (systemCount === 0) {
+            try { await seedSystemSpecializations(); } catch {}
+        }
+
+        // Try to find a specialization matching the template category in company or system
+        const resolvedSpec = await prisma.agentSpecialization.findFirst({
+            where: {
+                OR: [
+                    { companyId, category: template.category },
+                    { companyId: null, isSystem: true, category: template.category },
+                    { companyId },
+                    { companyId: null, isSystem: true }
+                ]
+            },
+            orderBy: [
+                { companyId: "desc" }, // company-specific first
+                { isSystem: "desc" }   // system defaults next
+            ]
+        });
+        targetSpecId = resolvedSpec?.id;
+    }
+
+    if (!targetSpecId) {
+        throw new Error("No se pudo asociar la habilidad a ninguna especialización válida.");
+    }
+    
     return prisma.agentSkill.create({
         data: {
             name: content.name || template.name,
             description: content.description || template.description,
             category: content.category || template.category,
             parameters: content.parameters || template.parameters,
-            specializationId: content.specializationId,
+            specializationId: targetSpecId,
             agentId,
             companyId,
             priority: 0
