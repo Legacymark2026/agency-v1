@@ -20,8 +20,10 @@ export function Hero() {
     const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
     const [index, setIndex] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const interval = setInterval(() => {
             setIndex((prev) => (prev + 1) % WORDS.length);
         }, 3000);
@@ -46,7 +48,7 @@ export function Hero() {
 
                 {/* 2. Futuristic Badge */}
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
+                    initial={isMounted ? { opacity: 0, y: -20 } : false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
                     className="mb-8 group relative inline-flex items-center overflow-hidden rounded-full border border-purple-500/30 bg-purple-900/10 px-6 py-2 backdrop-blur-md transition-all hover:bg-purple-900/20 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
@@ -81,7 +83,7 @@ export function Hero() {
 
                 {/* 4. Description */}
                 <motion.p
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={isMounted ? { opacity: 0, y: 20 } : false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.3 }}
                     className="mx-auto mt-8 max-w-2xl text-lg text-gray-400 sm:text-xl leading-relaxed font-light"
@@ -92,7 +94,7 @@ export function Hero() {
 
                 {/* 5. CTAs with Magnetic Effect */}
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={isMounted ? { opacity: 0, y: 30 } : false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row z-30"

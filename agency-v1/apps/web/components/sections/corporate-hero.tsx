@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { MouseEvent, useRef, useState } from "react";
+import { MouseEvent, useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Sparkles, Target, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -39,6 +39,11 @@ function MagneticButton({ children, className }: { children: React.ReactNode, cl
 
 export function CorporateHero() {
     const t = useTranslations("nosotrosPage.hero");
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Mouse Interaction
     const mouseX = useMotionValue(0);
@@ -89,7 +94,7 @@ export function CorporateHero() {
 
                     {/* 3. Badge */}
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }}
+                        initial={isMounted ? { opacity: 0, y: -20 } : false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className="relative"
@@ -115,7 +120,7 @@ export function CorporateHero() {
                         </h1>
 
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={isMounted ? { opacity: 0, y: 20 } : false}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
                             className="mx-auto max-w-3xl relative"
@@ -133,7 +138,7 @@ export function CorporateHero() {
 
                     {/* Buttons with Magnetic Effect */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={isMounted ? { opacity: 0, y: 20 } : false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.4 }}
                         className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pt-4 pb-8 w-full sm:w-auto px-4 sm:px-0"
@@ -157,7 +162,7 @@ export function CorporateHero() {
 
                     {/* 5. Metrics / Trust */}
                     <motion.div
-                        initial={{ opacity: 0 }}
+                        initial={isMounted ? { opacity: 0 } : false}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.6 }}
                         className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 pt-12 border-t border-slate-800 w-full max-w-4xl"

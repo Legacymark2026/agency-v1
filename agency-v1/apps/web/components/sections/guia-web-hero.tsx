@@ -1,10 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { ArrowRight, Code, Zap, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function GuiaWebHero() {
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     return (
         <div className="relative min-h-[90vh] w-full flex items-center justify-center bg-slate-950 overflow-hidden pt-24 pb-16">
             {/* Background elements */}
@@ -15,7 +21,7 @@ export function GuiaWebHero() {
                 <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
                     
                     <motion.div 
-                        initial={{ opacity: 0, y: 20 }} 
+                        initial={isMounted ? { opacity: 0, y: 20 } : false} 
                         animate={{ opacity: 1, y: 0 }} 
                         transition={{ duration: 0.5 }}
                         className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-950/40 border border-teal-500/20 text-teal-400 text-sm font-medium mb-4"
@@ -28,7 +34,7 @@ export function GuiaWebHero() {
                     </motion.div>
 
                     <motion.h1 
-                        initial={{ opacity: 0, y: 20 }} 
+                        initial={isMounted ? { opacity: 0, y: 20 } : false} 
                         animate={{ opacity: 1, y: 0 }} 
                         transition={{ duration: 0.5, delay: 0.1 }}
                         className="text-5xl md:text-7xl font-black tracking-tighter text-white leading-tight"
@@ -40,7 +46,7 @@ export function GuiaWebHero() {
                     </motion.h1>
 
                     <motion.p 
-                        initial={{ opacity: 0, y: 20 }} 
+                        initial={isMounted ? { opacity: 0, y: 20 } : false} 
                         animate={{ opacity: 1, y: 0 }} 
                         transition={{ duration: 0.5, delay: 0.2 }}
                         className="text-lg md:text-xl text-slate-400 leading-relaxed max-w-2xl font-medium"
@@ -49,7 +55,7 @@ export function GuiaWebHero() {
                     </motion.p>
 
                     <motion.div 
-                        initial={{ opacity: 0, y: 20 }} 
+                        initial={isMounted ? { opacity: 0, y: 20 } : false} 
                         animate={{ opacity: 1, y: 0 }} 
                         transition={{ duration: 0.5, delay: 0.3 }}
                         className="flex flex-col sm:flex-row items-center gap-4 pt-6 w-full sm:w-auto"
@@ -64,7 +70,7 @@ export function GuiaWebHero() {
 
                     {/* Features row */}
                     <motion.div 
-                        initial={{ opacity: 0 }} 
+                        initial={isMounted ? { opacity: 0 } : false} 
                         animate={{ opacity: 1 }} 
                         transition={{ delay: 0.8, duration: 1 }}
                         className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 w-full text-slate-400"

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Play, Wifi, Rocket, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExitIntentPopup } from "@/components/ui/exit-intent-popup";
@@ -12,6 +13,11 @@ import { HeroDashboard } from "./flyering-hero/hero-dashboard";
 const GLITCH_MSGS = ["DIGITAL", "INTEGRAL", "360°", "GLOBAL", "TOTAL"];
 
 export function FlyeringHero() {
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const { mouseX, mouseY, rotateX, rotateY, layer1X, layer1Y, layer2X, layer2Y, handleMouseMove } = useHeroParallax();
     const glitchText = useGlitchText(GLITCH_MSGS, 4000);
 
@@ -50,7 +56,7 @@ export function FlyeringHero() {
 
                     {/* 5. Buttons */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={isMounted ? { opacity: 0, y: 20 } : false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
                         className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-8 w-full sm:w-auto px-4 sm:px-0"
@@ -69,7 +75,7 @@ export function FlyeringHero() {
                     </motion.div>
 
                     <motion.p
-                        initial={{ opacity: 0 }}
+                        initial={isMounted ? { opacity: 0 } : false}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 1 }}
                         className="text-xs text-slate-500 font-medium"
