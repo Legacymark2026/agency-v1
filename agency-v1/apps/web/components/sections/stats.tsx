@@ -48,7 +48,7 @@ function Counter({ value, suffix }: { value: number, suffix: string }) {
         }
     }, [inView, value, springValue]);
 
-    const displayValue = useTransform(springValue, (current) => Math.floor(current).toLocaleString());
+    const displayValue = useTransform(springValue, (current) => Math.floor(current).toLocaleString('es-ES'));
 
     return (
         <span className="text-5xl sm:text-6xl lg:text-[5rem] font-black tracking-[-0.04em] text-white flex items-center justify-center font-mono relative z-10 leading-none">
