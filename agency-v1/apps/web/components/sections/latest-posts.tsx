@@ -47,12 +47,8 @@ export function LatestPosts({ posts }: LatestPostsProps) {
 
                 <div className="grid gap-8 md:grid-cols-3">
                     {posts.map((post, index) => (
-                        <motion.article
+                        <article
                             key={post.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                            viewport={{ once: true }}
                             className="group flex flex-col overflow-hidden rounded-sm bg-slate-900/50 backdrop-blur-sm border border-slate-800 hover:border-teal-500/30 hover:shadow-[0_20px_50px_-12px_rgba(13,148,136,0.15)] transition-all duration-300 hover:-translate-y-1"
                         >
                             <Link href={`/blog/${post.slug}`} className="flex flex-col h-full">
@@ -66,7 +62,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
 
                                 <div className="flex flex-1 flex-col p-6">
                                     <div className="mb-4 flex items-center gap-4 text-xs font-mono text-teal-500 uppercase tracking-widest">
-                                        <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} aria-hidden="true" /> {new Date(post.createdAt).toLocaleDateString()}</span>
+                                        <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} aria-hidden="true" /> {new Date(post.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                                         {post.author?.name && (
                                             <span className="flex items-center gap-1.5"><User size={12} strokeWidth={1.5} aria-hidden="true" /> {post.author.name}</span>
                                         )}
@@ -85,7 +81,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
                                     </div>
                                 </div>
                             </Link>
-                        </motion.article>
+                        </article>
                     ))}
                 </div>
             </div>

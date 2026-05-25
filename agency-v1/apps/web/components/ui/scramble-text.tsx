@@ -62,7 +62,7 @@ export const ScrambleText = ({ text, className, reveal = true, speed = 50, delay
     useEffect(() => {
         if (isMounted && reveal && isInView && !hasStarted) {
             setHasStarted(true);
-            setDisplayText("");
+            // Do NOT set to empty string — start scramble from existing text to avoid #418 hydration mismatch
             const timer = setTimeout(() => startScramble(), 50);
             return () => clearTimeout(timer);
         }
