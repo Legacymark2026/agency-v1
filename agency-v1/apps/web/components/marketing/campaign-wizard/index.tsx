@@ -28,6 +28,49 @@ import { toast } from 'sonner';
 export function CampaignWizard() {
     const { step } = useCampaignWizard();
 
+    // Check and restore local draft on mount
+    useEffect(() => {
+        const draftStr = localStorage.getItem('campaign_wizard_draft');
+        if (draftStr) {
+            try {
+                const draft = JSON.parse(draftStr);
+                if (draft.name || (draft.platforms && draft.platforms.length > 0)) {
+                    toast("¿Deseas restaurar tu borrador anterior?", {
+                        description: `Campaña: ${draft.name || 'Sin nombre'} (Paso ${draft.step})`,
+                        action: {
+                            label: "Restaurar",
+                            onClick: () => {
+                                useCampaignWizard.setState({
+                                    step: draft.step ?? 0,
+                                    platforms: draft.platforms ?? [],
+                                    objective: draft.objective ?? 'LEAD_GENERATION',
+                                    name: draft.name ?? '',
+                                    description: draft.description ?? '',
+                                    budget: draft.budget ?? {},
+                                    targeting: draft.targeting ?? {},
+                                    creative: draft.creative ?? {},
+                                    platformConfigs: draft.platformConfigs ?? {},
+                                    abTestConfig: draft.abTestConfig ?? undefined,
+                                });
+                                toast.success("Borrador restaurado correctamente");
+                            },
+                        },
+                        cancel: {
+                            label: "Descartar",
+                            onClick: () => {
+                                localStorage.removeItem('campaign_wizard_draft');
+                                toast.info("Borrador descartado");
+                            }
+                        },
+                        duration: 10000,
+                    });
+                }
+            } catch (e) {
+                console.error("Error parsing campaign draft", e);
+            }
+        }
+    }, []);
+
     // FIX 4: Auto-save local draft
     useEffect(() => {
         if (step === 0) return;

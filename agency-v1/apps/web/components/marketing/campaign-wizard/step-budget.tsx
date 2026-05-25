@@ -4,7 +4,7 @@ import { useCampaignWizard, PlatformKey } from './wizard-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { InteractiveSpotlight } from '@/components/dashboard/InteractiveSpotlight';
 import {
     Select,
     SelectContent,
@@ -119,25 +119,29 @@ export function StepBudget() {
                 <Label className="text-sm font-semibold text-gray-300">Tipo de Presupuesto</Label>
                 <div className="grid grid-cols-2 gap-3">
                     {(['DAILY', 'LIFETIME'] as const).map((type) => (
-                        <button
+                        <InteractiveSpotlight
                             key={type}
-                            id={`budget-type-${type.toLowerCase()}`}
-                            type="button"
-                            onClick={() => setBudget({ type })}
-                            className={`p-4 rounded-xl border-2 text-left transition-all ${budget.type === type
-                                    ? 'border-teal-500 bg-teal-500/10'
-                                    : 'border-white/10 bg-white/3 hover:border-white/20'
+                            className={`rounded-xl border-2 text-left transition-all overflow-hidden ${budget.type === type
+                                    ? 'border-teal-500 bg-teal-500/10 shadow-[0_0_15px_rgba(13,148,136,0.15)]'
+                                    : 'border-white/10 bg-white/3 hover:border-teal-500/30'
                                 }`}
                         >
-                            <p className="font-semibold text-white text-sm">
-                                {type === 'DAILY' ? 'Diario (ABO)' : 'Total (CBO)'}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                {type === 'DAILY'
-                                    ? 'Controla el gasto por día por conjunto de anuncios'
-                                    : 'El algoritmo optimiza el gasto total de la campaña'}
-                            </p>
-                        </button>
+                            <button
+                                id={`budget-type-${type.toLowerCase()}`}
+                                type="button"
+                                onClick={() => setBudget({ type })}
+                                className="w-full p-4 text-left cursor-pointer"
+                            >
+                                <p className="font-semibold text-white text-sm">
+                                    {type === 'DAILY' ? 'Diario (ABO)' : 'Total (CBO)'}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {type === 'DAILY'
+                                        ? 'Controla el gasto por día por conjunto de anuncios'
+                                        : 'El algoritmo optimiza el gasto total de la campaña'}
+                                </p>
+                            </button>
+                        </InteractiveSpotlight>
                     ))}
                 </div>
             </div>
@@ -421,8 +425,11 @@ export function StepBudget() {
 
             {/* Visual HUD (Right Column) */}
             <div className="lg:col-span-1">
-                <Card className="bg-slate-900 border-slate-800 sticky top-4 shadow-2xl">
-                    <CardContent className="p-6 space-y-6">
+                <InteractiveSpotlight 
+                    className="bg-white/5 border border-white/10 sticky top-4 shadow-2xl rounded-xl overflow-hidden"
+                    glowColor="rgba(20, 184, 166, 0.12)"
+                >
+                    <div className="p-6 space-y-6">
                         <div className="flex items-center gap-2 text-teal-400">
                             <Zap className="w-5 h-5" />
                             <h3 className="font-semibold text-sm uppercase tracking-wider font-mono">Estimaciones Diarias</h3>
@@ -479,8 +486,8 @@ export function StepBudget() {
                                 <span>Aumentar el presupuesto o cambiar a CBO podría mejorar la estabilidad de estas métricas.</span>
                             </p>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </InteractiveSpotlight>
             </div>
         </div>
     );

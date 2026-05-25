@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { InteractiveSpotlight } from '@/components/dashboard/InteractiveSpotlight';
 import { Upload, Image as ImageIcon, Link2, Trash2, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
@@ -190,68 +191,73 @@ export function StepCreative() {
             {/* Asset Upload */}
             <div className="space-y-3">
                 <Label className="text-sm font-semibold text-gray-300">Creativos (Imágenes / Videos)</Label>
-                <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-teal-500/40 transition-colors">
-                    <Upload className="w-8 h-8 text-gray-500 mx-auto mb-3" />
-                    <p className="text-sm text-gray-400">Arrastra archivos aquí, o ingresa una URL de asset</p>
-                    <div className="flex gap-2 mt-4 max-w-md mx-auto flex-wrap justify-center">
-                        <input 
-                            ref={assetFileInputRef}
-                            type="file"
-                            accept="image/*,video/*"
-                            multiple
-                            onChange={handleAssetUpload}
-                            className="hidden"
-                        />
-                        <Button 
-                            type="button"
-                            variant="outline"
-                            onClick={() => assetFileInputRef.current?.click()}
-                            disabled={isUploading}
-                            className="h-10 border-teal-500/30 text-teal-400 hover:text-teal-300 hover:border-teal-500/50 bg-teal-500/10 shrink-0"
-                        >
-                            {isUploading ? (
-                                <span>Cargando...</span>
-                            ) : (
-                                <>
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Subir Archivos
-                                </>
-                            )}
-                        </Button>
-                        <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => setIsAssetModalOpen(true)}
-                            className="h-10 border-teal-500/30 text-teal-400 hover:text-teal-300 hover:border-teal-500/50 bg-teal-500/10 shrink-0"
-                        >
-                            <ImageIcon className="w-4 h-4 mr-2" />
-                            Media Hub
-                        </Button>
-                        <Input
-                            id="asset-url-input"
-                            placeholder="https://cdn.example.com/imagen.jpg"
-                            className="bg-white/5 border-white/10 text-white h-10 text-sm flex-1"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    addAssetUrl((e.target as HTMLInputElement).value);
-                                    (e.target as HTMLInputElement).value = '';
-                                }
-                            }}
-                        />
-                        <Button
-                            type="button"
-                            id="add-asset-url"
-                            variant="outline"
-                            onClick={(e) => {
-                                const input = document.getElementById('asset-url-input') as HTMLInputElement;
-                                if (input?.value) { addAssetUrl(input.value); input.value = ''; }
-                            }}
-                            className="h-10 border-white/10 text-gray-300 hover:bg-white/5 shrink-0"
-                        >
-                            <Link2 className="w-4 h-4" />
-                        </Button>
+                <InteractiveSpotlight 
+                    className="border-2 border-dashed border-white/10 rounded-xl overflow-hidden hover:border-teal-500/40 transition-colors"
+                    glowColor="rgba(20, 184, 166, 0.08)"
+                >
+                    <div className="p-6 text-center">
+                        <Upload className="w-8 h-8 text-gray-500 mx-auto mb-3" />
+                        <p className="text-sm text-gray-400">Arrastra archivos aquí, o ingresa una URL de asset</p>
+                        <div className="flex gap-2 mt-4 max-w-md mx-auto flex-wrap justify-center">
+                            <input 
+                                ref={assetFileInputRef}
+                                type="file"
+                                accept="image/*,video/*"
+                                multiple
+                                onChange={handleAssetUpload}
+                                className="hidden"
+                            />
+                            <Button 
+                                type="button"
+                                variant="outline"
+                                onClick={() => assetFileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="h-10 border-teal-500/30 text-teal-400 hover:text-teal-300 hover:border-teal-500/50 bg-teal-500/10 shrink-0"
+                            >
+                                {isUploading ? (
+                                    <span>Cargando...</span>
+                                ) : (
+                                    <>
+                                        <Upload className="w-4 h-4 mr-2" />
+                                        Subir Archivos
+                                    </>
+                                )}
+                            </Button>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={() => setIsAssetModalOpen(true)}
+                                className="h-10 border-teal-500/30 text-teal-400 hover:text-teal-300 hover:border-teal-500/50 bg-teal-500/10 shrink-0"
+                            >
+                                <ImageIcon className="w-4 h-4 mr-2" />
+                                Media Hub
+                            </Button>
+                            <Input
+                                id="asset-url-input"
+                                placeholder="https://cdn.example.com/imagen.jpg"
+                                className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white h-10 text-sm flex-1"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        addAssetUrl((e.target as HTMLInputElement).value);
+                                        (e.target as HTMLInputElement).value = '';
+                                    }
+                                }}
+                            />
+                            <Button
+                                type="button"
+                                id="add-asset-url"
+                                variant="outline"
+                                onClick={(e) => {
+                                    const input = document.getElementById('asset-url-input') as HTMLInputElement;
+                                    if (input?.value) { addAssetUrl(input.value); input.value = ''; }
+                                }}
+                                className="h-10 border-white/10 text-gray-300 hover:bg-white/5 shrink-0"
+                            >
+                                <Link2 className="w-4 h-4" />
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                </InteractiveSpotlight>
 
                 {/* Asset Previews */}
                 {creative.assetUrls.length > 0 && (
@@ -335,7 +341,7 @@ export function StepCreative() {
                                     onChange={(e) => updateArray('headlines', i, e.target.value)}
                                     placeholder="Ej: Transforma tu negocio hoy"
                                     maxLength={40}
-                                    className="bg-white/5 border-white/10 text-white h-11 pr-10"
+                                    className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white h-11 pr-10"
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
                                     {hl.length}/40
@@ -359,7 +365,7 @@ export function StepCreative() {
                         value={creative.callToAction ?? ''}
                         onChange={(e) => setCreative({ callToAction: e.target.value })}
                         placeholder="Ej: Saber más, Contactar, Empezar"
-                        className="bg-white/5 border-white/10 text-white h-11"
+                        className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white h-11"
                     />
                 </div>
             </div>
@@ -375,7 +381,7 @@ export function StepCreative() {
                                 onChange={(e) => updateArray('descriptions', i, e.target.value)}
                                 placeholder="Describe tu propuesta de valor..."
                                 maxLength={125}
-                                className="bg-white/5 border-white/10 text-white resize-none min-h-[80px]"
+                                className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white resize-none min-h-[80px]"
                             />
                             <div className="absolute right-3 bottom-2 text-xs text-gray-500">
                                 {desc.length}/125
@@ -414,7 +420,7 @@ export function StepCreative() {
                     value={creative.destinationUrl ?? ''}
                     onChange={(e) => setCreative({ destinationUrl: e.target.value })}
                     placeholder="https://tudominio.com/landing"
-                    className="bg-white/5 border-white/10 text-white h-11"
+                    className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white h-11"
                 />
 
                 <div className="grid grid-cols-2 gap-3">
@@ -424,7 +430,7 @@ export function StepCreative() {
                             <Input
                                 value={creative.utmConfig[key] ?? ''}
                                 onChange={(e) => setCreative({ utmConfig: { ...creative.utmConfig, [key]: e.target.value } })}
-                                className="bg-white/5 border-white/10 text-white h-9 text-sm"
+                                className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white h-9 text-sm"
                             />
                         </div>
                     ))}

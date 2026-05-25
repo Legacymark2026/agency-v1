@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { InteractiveSpotlight } from '@/components/dashboard/InteractiveSpotlight';
 import {
     Select,
     SelectContent,
@@ -165,7 +166,7 @@ export function StepPlatform() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ej: Lanzamiento Q2 2026 — Leads Latinoamérica"
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-11"
+                    className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white placeholder:text-gray-500 h-11"
                 />
             </div>
 
@@ -176,7 +177,7 @@ export function StepPlatform() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Objetivo, contexto o notas para el equipo..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 min-h-[80px] resize-none"
+                    className="bg-white/5 border-white/10 focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-white placeholder:text-gray-500 min-h-[80px] resize-none"
                 />
             </div>
 
@@ -204,54 +205,69 @@ export function StepPlatform() {
 
                         return (
                             <div key={key} className="flex flex-col gap-1">
-                                <button
-                                    id={`platform-${key.toLowerCase()}`}
-                                    type="button"
-                                    onClick={() => togglePlatform(key)}
+                                <InteractiveSpotlight
                                     className={cn(
-                                        'relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200 text-left',
+                                        'rounded-xl border-2 transition-all duration-300 text-left overflow-hidden',
                                         selected
-                                            ? 'border-teal-500 bg-teal-500/10 shadow-[0_0_20px_rgba(13,148,136,0.2)]'
+                                            ? 'border-teal-500 bg-teal-500/10 shadow-[0_0_20px_rgba(13,148,136,0.25)]'
                                             : isConnected
-                                                ? 'border-white/10 bg-white/3 hover:border-teal-800 hover:bg-white/5'
-                                                : 'border-white/5 bg-white/2 hover:border-amber-800/50 hover:bg-amber-900/5 opacity-80'
+                                                ? 'border-white/10 bg-white/3 hover:border-teal-500/40 hover:bg-white/5'
+                                                : 'border-white/5 bg-white/2 hover:border-amber-500/40 hover:bg-amber-900/5 opacity-80'
                                     )}
+                                    glowColor={
+                                        selected 
+                                            ? "rgba(13, 148, 136, 0.15)" 
+                                            : key === 'FACEBOOK_ADS' 
+                                                ? "rgba(59, 130, 246, 0.12)" 
+                                                : key === 'GOOGLE_ADS' 
+                                                    ? "rgba(234, 179, 8, 0.12)" 
+                                                    : key === 'TIKTOK_ADS' 
+                                                        ? "rgba(239, 68, 68, 0.12)" 
+                                                        : "rgba(13, 148, 136, 0.12)"
+                                    }
                                 >
-                                    <span className="text-2xl">{icon}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-white text-sm">{label}</p>
-                                        {/* FIX #4: Connection badge */}
-                                        <div className="mt-1">
-                                            {stillLoading ? (
-                                                <span className="flex items-center gap-1 text-xs text-gray-600 font-mono">
-                                                    <Loader2 className="w-2.5 h-2.5 animate-spin" /> Verificando...
-                                                </span>
-                                            ) : isConnected ? (
-                                                <span className="flex items-center gap-1 text-xs text-teal-400 font-mono font-bold">
-                                                    <Wifi className="w-2.5 h-2.5" /> CONECTADA
-                                                </span>
-                                            ) : (
-                                                <span className="flex items-center gap-1 text-xs text-amber-400 font-mono">
-                                                    <WifiOff className="w-2.5 h-2.5" /> SIN CONFIGURAR
-                                                </span>
+                                    <button
+                                        id={`platform-${key.toLowerCase()}`}
+                                        type="button"
+                                        onClick={() => togglePlatform(key)}
+                                        className="relative w-full flex items-center gap-3 p-4 text-left cursor-pointer"
+                                    >
+                                        <span className="text-2xl">{icon}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-white text-sm">{label}</p>
+                                            {/* FIX #4: Connection badge */}
+                                            <div className="mt-1">
+                                                {stillLoading ? (
+                                                    <span className="flex items-center gap-1 text-xs text-gray-500 font-mono">
+                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Verificando...
+                                                    </span>
+                                                ) : isConnected ? (
+                                                    <span className="flex items-center gap-1 text-xs text-teal-400 font-mono font-bold">
+                                                        <Wifi className="w-2.5 h-2.5" /> CONECTADA
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-xs text-amber-400 font-mono">
+                                                        <WifiOff className="w-2.5 h-2.5" /> SIN CONFIGURAR
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {selected && (
+                                                <Badge className="mt-1.5 bg-violet-500/30 text-teal-300 border-0 text-[10px] uppercase font-mono tracking-wider font-bold">
+                                                    Seleccionada
+                                                </Badge>
                                             )}
                                         </div>
-                                        {selected && (
-                                            <Badge className="mt-1 bg-violet-500/30 text-teal-300 border-0 text-xs">
-                                                Seleccionada
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <div className="absolute top-3 right-3">
-                                        {selected ? (
-                                            <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                                        ) : isConnected ? (
-                                            <Circle className="w-4 h-4 text-gray-600" />
-                                        ) : (
-                                            <AlertTriangle className="w-4 h-4 text-amber-500/60" />
-                                        )}
-                                    </div>
-                                </button>
+                                        <div className="absolute top-3 right-3">
+                                            {selected ? (
+                                                <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                                            ) : isConnected ? (
+                                                <Circle className="w-4 h-4 text-gray-700" />
+                                            ) : (
+                                                <AlertTriangle className="w-4 h-4 text-amber-500/60" />
+                                            )}
+                                        </div>
+                                    </button>
+                                </InteractiveSpotlight>
 
                                 {/* FIX #4: Quick connect hint for unconnected platforms */}
                                 {!isConnected && !stillLoading && (

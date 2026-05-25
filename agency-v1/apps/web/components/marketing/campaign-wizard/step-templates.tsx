@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InteractiveSpotlight } from '@/components/dashboard/InteractiveSpotlight';
 import { 
     Save, FolderOpen, Trash2, Plus, 
     Layout, Zap, TrendingUp, Target,
@@ -198,8 +199,12 @@ export function StepTemplates() {
                     {/* Template Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredTemplates.map((template) => (
-                            <Card key={template.id} className="bg-slate-900 border-slate-800 hover:border-purple-500/50 transition-colors cursor-pointer group">
-                                <CardContent className="p-5">
+                            <InteractiveSpotlight 
+                                key={template.id} 
+                                className="bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all duration-300 rounded-xl cursor-pointer group overflow-hidden"
+                                glowColor="rgba(168, 85, 247, 0.12)"
+                            >
+                                <div className="p-5">
                                     <div className="flex items-start justify-between mb-3">
                                         <div>
                                             <h3 className="font-semibold text-white group-hover:text-purple-400 transition-colors">{template.name}</h3>
@@ -227,8 +232,8 @@ export function StepTemplates() {
                                             </Button>
                                         </div>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </InteractiveSpotlight>
                         ))}
                     </div>
                 </TabsContent>
@@ -243,8 +248,12 @@ export function StepTemplates() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {templates.map((template) => (
-                                <Card key={template.id} className="bg-slate-900 border-slate-800">
-                                    <CardContent className="p-5">
+                                <InteractiveSpotlight 
+                                    key={template.id} 
+                                    className="bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all duration-300 rounded-xl cursor-pointer group overflow-hidden"
+                                    glowColor="rgba(168, 85, 247, 0.12)"
+                                >
+                                    <div className="p-5">
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
                                                 <h3 className="font-semibold text-white">{template.name}</h3>
@@ -264,8 +273,8 @@ export function StepTemplates() {
                                                 Cargar <ArrowRight className="w-3 h-3 ml-1" />
                                             </Button>
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </InteractiveSpotlight>
                             ))}
                         </div>
                     )}
