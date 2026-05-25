@@ -59,3 +59,12 @@ google-credentials.json
 .logs_archive/
 
 .vercel
+
+# debug scripts and screenshots
+debug-page.js
+debug-all-pages.js
+debug-local.js
+check-sitemap.js
+live-screenshot*.png
+local-dev-screenshot.png
+*screenshot*.png
