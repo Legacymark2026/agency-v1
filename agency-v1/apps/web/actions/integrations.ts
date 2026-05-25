@@ -54,6 +54,7 @@ export async function disconnectIntegration(provider: string) {
         'google-ads': ['google-ads'],
         'google-analytics': ['google-analytics'],
         'google-tag-manager': ['google-tag-manager'],
+        'google-search-console': ['google-search-console'],
         'hotjar': ['hotjar'],
     };
 

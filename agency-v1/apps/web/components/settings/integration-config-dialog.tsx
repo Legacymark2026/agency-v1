@@ -66,7 +66,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
 
     // Brand Colors & Gradients
     const isWhatsapp = provider === 'whatsapp';
-    const isGoogle = provider === 'google-analytics' || provider === 'google-tag-manager';
+    const isGoogle = provider === 'google-analytics' || provider === 'google-tag-manager' || provider === 'google-search-console';
     const isMeta = provider === 'facebook' || provider === 'instagram' || provider === 'facebook-pixel';
     const isHotjar = provider === 'hotjar';
     const isAiModels = provider === 'ai-models' || provider === 'gemini';
@@ -84,12 +84,14 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
         brandRing = 'focus-visible:ring-emerald-500';
         brandGradient = 'bg-gradient-to-r from-emerald-50 via-green-50 to-white';
     } else if (isGoogle) {
-        brandColor = provider === 'google-tag-manager' ? 'text-blue-600' : 'text-orange-600';
-        brandBg = provider === 'google-tag-manager' ? 'bg-blue-50' : 'bg-orange-50';
-        brandBorder = provider === 'google-tag-manager' ? 'border-blue-100' : 'border-orange-100';
-        brandRing = provider === 'google-tag-manager' ? 'focus-visible:ring-blue-500' : 'focus-visible:ring-orange-500';
+        brandColor = provider === 'google-tag-manager' ? 'text-blue-600' : provider === 'google-search-console' ? 'text-teal-600' : 'text-orange-600';
+        brandBg = provider === 'google-tag-manager' ? 'bg-blue-50' : provider === 'google-search-console' ? 'bg-teal-50' : 'bg-orange-50';
+        brandBorder = provider === 'google-tag-manager' ? 'border-blue-100' : provider === 'google-search-console' ? 'border-teal-100' : 'border-orange-100';
+        brandRing = provider === 'google-tag-manager' ? 'focus-visible:ring-blue-500' : provider === 'google-search-console' ? 'focus-visible:ring-teal-500' : 'focus-visible:ring-orange-500';
         brandGradient = provider === 'google-tag-manager'
             ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-white'
+            : provider === 'google-search-console'
+            ? 'bg-gradient-to-r from-teal-50 via-emerald-50 to-white'
             : 'bg-gradient-to-r from-orange-50 via-amber-50 to-white';
     } else if (isMeta) {
         brandColor = 'text-blue-600';
@@ -418,6 +420,82 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                                     </Button>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </>
+                                ) : provider === 'google-search-console' ? (
+                                    <>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="clientId" className="text-xs font-semibold text-gray-700">
+                                                OAuth Client ID
+                                            </Label>
+                                            <div className="relative">
+                                                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    id="clientId"
+                                                    value={formData.clientId || ''}
+                                                    onChange={e => handleChange('clientId', e.target.value)}
+                                                    className={cn("pl-9 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white focus:bg-white font-mono text-xs", brandRing)}
+                                                    placeholder="193110041107-..."
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2 mt-4">
+                                            <Label htmlFor="clientSecret" className="text-xs font-semibold text-gray-700">
+                                                OAuth Client Secret
+                                            </Label>
+                                            <div className="relative group">
+                                                <Key className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                                                <Input
+                                                    id="clientSecret"
+                                                    type={showSecret ? "text" : "password"}
+                                                    value={formData.clientSecret || ''}
+                                                    onChange={e => handleChange('clientSecret', e.target.value)}
+                                                    className={cn("pl-9 pr-10 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white font-mono text-xs focus:bg-white", brandRing)}
+                                                    placeholder="GOCSPX-..."
+                                                />
+                                                <div className="absolute right-2 top-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-gray-400 hover:text-gray-600 rounded-md"
+                                                        onClick={() => setShowSecret(!showSecret)}
+                                                    >
+                                                        {showSecret ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="grid gap-2 mt-4">
+                                            <Label htmlFor="refreshToken" className="text-xs font-semibold text-gray-700">
+                                                OAuth Refresh Token
+                                            </Label>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                                                <Input
+                                                    id="refreshToken"
+                                                    type={showToken ? "text" : "password"}
+                                                    value={formData.refreshToken || ''}
+                                                    onChange={e => handleChange('refreshToken', e.target.value)}
+                                                    className={cn("pl-9 pr-10 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white font-mono text-xs focus:bg-white", brandRing)}
+                                                    placeholder="1//0..."
+                                                />
+                                                <div className="absolute right-2 top-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-gray-400 hover:text-gray-600 rounded-md"
+                                                        onClick={() => setShowToken(!showToken)}
+                                                    >
+                                                        {showToken ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5 leading-normal">
+                                                <Info className="h-3.5 w-3.5 text-teal-500 shrink-0" />
+                                                <span>Puedes obtener el token de refresco ejecutando el asistente <code className="text-teal-400 font-mono bg-teal-500/5 px-1 rounded">node gsc-authorize.js</code> en el servidor con tu ID y Secreto de cliente.</span>
+                                            </p>
                                         </div>
                                     </>
                                 ) : provider === 'google-tag-manager' ? (
@@ -1037,7 +1115,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                         disabled={loading || saving}
                         className={cn("px-6 min-w-[140px] shadow-lg hover:shadow-xl transition-all font-semibold text-white",
                             isWhatsapp ? 'bg-emerald-600 hover:bg-emerald-700' :
-                                isGoogle ? (provider === 'google-tag-manager' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700') :
+                                isGoogle ? (provider === 'google-tag-manager' ? 'bg-blue-600 hover:bg-blue-700' : provider === 'google-search-console' ? 'bg-teal-600 hover:bg-teal-700' : 'bg-orange-600 hover:bg-orange-700') :
                                     isHotjar ? 'bg-rose-600 hover:bg-rose-700' :
                                         isAiModels ? 'bg-violet-600 hover:bg-violet-700' :
                                             'bg-blue-600 hover:bg-blue-700'

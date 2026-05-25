@@ -35,6 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/inbox", label: "Inbox Omnicanal", icon: <MessageSquare size={14} />, code: "BCX" },
             { href: "/dashboard/events", label: "Calendario", icon: <Calendar size={14} />, code: "CAL" },
             { href: "/dashboard/analytics", label: "Analítica Web", icon: <BarChart2 size={14} />, code: "ANL" },
+            { href: "/dashboard/seo", label: "Monitor SEO", icon: <Wifi size={14} />, code: "SEO" },
         ],
     },
     {

@@ -456,7 +456,7 @@ export async function getIntegrationHealthDashboard() {
         const ALL_PROVIDERS = [
             'facebook-pixel', 'tiktok-pixel', 'linkedin-insight', 'google-analytics',
             'google-tag-manager', 'google-ads', 'hotjar', 'whatsapp',
-            'facebook', 'instagram', 'gemini',
+            'facebook', 'instagram', 'gemini', 'google-search-console',
             // New integration card names (not yet configured)
             'HUBSPOT', 'MAILCHIMP', 'TWILIO', 'SLACK', 'RESEND',
             'OPENAI', 'ZAPIER', 'AWS_S3', 'ZOHO', 'DYNAMICS365',

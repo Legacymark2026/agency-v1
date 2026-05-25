@@ -104,6 +104,7 @@ export default async function DashboardLayout({
     const allRoutes = [
         "/dashboard/client", "/dashboard/client/proposals", "/dashboard/client/projects",
         "/dashboard", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
+        "/dashboard/seo",
         "/dashboard/admin/marketing", "/dashboard/admin/marketing/campaigns", "/dashboard/marketing/calendar",
         "/dashboard/marketing/email-blast", "/dashboard/admin/marketing/creative-studio", "/dashboard/marketing/pricing",
         "/dashboard/admin/automation", "/dashboard/admin/marketing/spend", "/dashboard/admin/marketing/links",

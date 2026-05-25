@@ -27,6 +27,7 @@ export type IntegrationProvider =
   // Other Platforms (unchanged)
   | 'google-analytics'
   | 'google-tag-manager'
+  | 'google-search-console'
   | 'google-ads'
   | 'hotjar'
   | 'ahrefs'
@@ -107,6 +108,13 @@ export interface GoogleAnalyticsConfig {
   privateKey?: string;
 }
 
+// Google Search Console
+export interface GoogleSearchConsoleConfig {
+  clientId?: string;
+  clientSecret?: string;
+  refreshToken?: string;
+}
+
 // Google GTM
 export interface GoogleTagManagerConfig {
   containerId?: string;
@@ -155,6 +163,7 @@ export type IntegrationConfigData = Partial<
   LinkedInAdsConfig &
   LinkedInWebhookConfig &
   GoogleAnalyticsConfig &
+  GoogleSearchConsoleConfig &
   GoogleTagManagerConfig &
   GoogleAdsConfig &
   HotjarConfig &
@@ -181,9 +190,9 @@ const PROVIDER_MIGRATION_MAP: Record<string, string> = {
   'linkedin-insight': 'linkedin-ads',
   'linkedin-webhook': 'linkedin-webhook',
   
-  // Others stay the same
   'google-analytics': 'google-analytics',
   'google-tag-manager': 'google-tag-manager',
+  'google-search-console': 'google-search-console',
   'google-ads': 'google-ads',
   'hotjar': 'hotjar',
   'ahrefs': 'ahrefs',
