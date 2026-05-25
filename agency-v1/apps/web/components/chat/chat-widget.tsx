@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LeadForm } from "./lead-form";
 import { ChatWindow } from "./chat-window";
 import { cn } from "@/lib/utils";
+import { safeStorage } from "@/lib/utils/storage";
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
@@ -30,8 +31,8 @@ export function ChatWidget() {
 
     useEffect(() => {
         const checkExistingChat = async () => {
-            const storedVid = localStorage.getItem("chat_visitor_id");
-            const storedCid = localStorage.getItem("chat_conversation_id");
+            const storedVid = safeStorage.getItem("chat_visitor_id");
+            const storedCid = safeStorage.getItem("chat_conversation_id");
             
             if (storedVid) setVisitorId(storedVid);
             
@@ -44,13 +45,13 @@ export function ChatWidget() {
                         setConversationId(storedCid);
                     } else {
                         // Clear invalid conversation
-                        localStorage.removeItem("chat_conversation_id");
-                        localStorage.removeItem("chat_visitor_id");
+                        safeStorage.removeItem("chat_conversation_id");
+                        safeStorage.removeItem("chat_visitor_id");
                         setConversationId(null);
                         setVisitorId(null);
                     }
                 } catch {
-                    localStorage.removeItem("chat_conversation_id");
+                    safeStorage.removeItem("chat_conversation_id");
                     setConversationId(null);
                 }
             }
@@ -67,8 +68,8 @@ export function ChatWidget() {
     const handleChatStarted = (cid: string, vid: string) => {
         setConversationId(cid);
         setVisitorId(vid);
-        localStorage.setItem("chat_conversation_id", cid);
-        localStorage.setItem("chat_visitor_id", vid);
+        safeStorage.setItem("chat_conversation_id", cid);
+        safeStorage.setItem("chat_visitor_id", vid);
     };
 
     const toggleChat = () => {

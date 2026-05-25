@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { safeStorage, safeSessionStorage } from '@/lib/utils/storage';
 
 // ============================================
 // TYPES
@@ -39,10 +40,10 @@ function generateId(): string {
 function getVisitorId(): string {
     if (typeof window === 'undefined') return generateId();
 
-    let visitorId = localStorage.getItem('_lm_visitor_id');
+    let visitorId = safeStorage.getItem('_lm_visitor_id');
     if (!visitorId) {
         visitorId = generateId();
-        localStorage.setItem('_lm_visitor_id', visitorId);
+        safeStorage.setItem('_lm_visitor_id', visitorId);
     }
     return visitorId;
 }
@@ -51,10 +52,10 @@ function getVisitorId(): string {
 function getSessionId(): string {
     if (typeof window === 'undefined') return generateId();
 
-    let sessionId = sessionStorage.getItem('_lm_session_id');
+    let sessionId = safeSessionStorage.getItem('_lm_session_id');
     if (!sessionId) {
         sessionId = generateId();
-        sessionStorage.setItem('_lm_session_id', sessionId);
+        safeSessionStorage.setItem('_lm_session_id', sessionId);
     }
     return sessionId;
 }

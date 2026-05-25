@@ -5,15 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import Link from "next/link";
+import { safeStorage } from "@/lib/utils/storage";
 
 export function CookieConsent() {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        const consent = localStorage.getItem("cookie_consent");
+        const consent = safeStorage.getItem("cookie_consent");
         if (!consent) {
             // Auto-accept on first visit — dispara el evento para que el AnalyticsProvider active el tracking
-            localStorage.setItem("cookie_consent", "accepted");
+            safeStorage.setItem("cookie_consent", "accepted");
             window.dispatchEvent(new Event("cookie_consent_updated"));
             setIsVisible(true);
         } else {
@@ -24,13 +25,13 @@ export function CookieConsent() {
     }, []);
 
     const handleAccept = () => {
-        localStorage.setItem("cookie_consent", "accepted");
+        safeStorage.setItem("cookie_consent", "accepted");
         window.dispatchEvent(new Event("cookie_consent_updated"));
         setIsVisible(false);
     };
 
     const handleDecline = () => {
-        localStorage.setItem("cookie_consent", "declined");
+        safeStorage.setItem("cookie_consent", "declined");
         window.dispatchEvent(new Event("cookie_consent_updated"));
         setIsVisible(false);
     };

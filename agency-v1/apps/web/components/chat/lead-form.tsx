@@ -5,6 +5,7 @@ import { initializeChat } from "@/actions/chat";
 import { Loader2, User, Mail, ArrowRight, Shield, Clock, Star, Zap, ChevronDown, DollarSign, HelpCircle, Headphones, MessageSquare, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { safeStorage } from "@/lib/utils/storage";
 
 interface LeadFormProps {
     onChatStarted: (conversationId: string, visitorId: string) => void;
@@ -182,10 +183,10 @@ export function LeadForm({ onChatStarted, companyId }: LeadFormProps) {
         setIsSubmitting(true);
         setError("");
 
-        let visitorId = localStorage.getItem("chat_visitor_id");
+        let visitorId = safeStorage.getItem("chat_visitor_id");
         if (!visitorId) {
             visitorId = crypto.randomUUID();
-            localStorage.setItem("chat_visitor_id", visitorId);
+            safeStorage.setItem("chat_visitor_id", visitorId);
         }
 
         const fullMessage = reason 

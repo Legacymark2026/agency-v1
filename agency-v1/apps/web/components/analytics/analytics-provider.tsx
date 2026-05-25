@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { safeStorage } from '@/lib/utils/storage';
 
 type AnalyticsConfig = {
     gaPropertyId?: string;
@@ -88,11 +89,11 @@ export function AnalyticsProvider({ config }: { config: AnalyticsConfig }) {
 
     // ── Consent Management ──────────────────────────────────────────────
     useEffect(() => {
-        const stored = localStorage.getItem('cookie_consent');
+        const stored = safeStorage.getItem('cookie_consent');
         setConsent(stored === 'accepted' ? 'granted' : 'denied');
 
         const handleUpdate = () => {
-            const updated = localStorage.getItem('cookie_consent');
+            const updated = safeStorage.getItem('cookie_consent');
             setConsent(updated === 'accepted' ? 'granted' : 'denied');
         };
         window.addEventListener('cookie_consent_updated', handleUpdate);

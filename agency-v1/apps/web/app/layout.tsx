@@ -156,6 +156,78 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={`font-sans ${jetbrainsMono.variable} antialiased selection:bg-teal-500 selection:text-white`}
       >
+        {/* SEO & Hydration Debug Error Logger */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var errDiv = null;
+                function showError(type, message, source, lineno, colno, error) {
+                  try {
+                    if (!errDiv) {
+                      errDiv = document.createElement('div');
+                      errDiv.id = 'seo-debug-errors';
+                      errDiv.style.position = 'fixed';
+                      errDiv.style.bottom = '0';
+                      errDiv.style.left = '0';
+                      errDiv.style.width = '100%';
+                      errDiv.style.backgroundColor = 'rgba(220, 38, 38, 0.95)';
+                      errDiv.style.color = '#ffffff';
+                      errDiv.style.padding = '20px';
+                      errDiv.style.zIndex = '999999999';
+                      errDiv.style.fontFamily = 'monospace';
+                      errDiv.style.fontSize = '14px';
+                      errDiv.style.lineHeight = '1.5';
+                      errDiv.style.maxHeight = '50vh';
+                      errDiv.style.overflow = 'auto';
+                      errDiv.style.boxShadow = '0 -10px 15px -3px rgba(0, 0, 0, 0.3)';
+                      var title = document.createElement('h3');
+                      title.style.margin = '0 0 10px 0';
+                      title.style.fontSize = '18px';
+                      title.style.fontWeight = 'bold';
+                      title.innerText = '🔴 CLIENT-SIDE RUNTIME ERROR DETECTED';
+                      errDiv.appendChild(title);
+                      document.body.appendChild(errDiv);
+                    }
+                    var item = document.createElement('div');
+                    item.style.marginBottom = '15px';
+                    item.style.borderBottom = '1px solid rgba(255,255,255,0.2)';
+                    item.style.paddingBottom = '10px';
+                    
+                    var stack = error && error.stack ? error.stack : 'No stack trace available';
+                    item.innerHTML = '<strong>Type:</strong> ' + type + '<br/>' +
+                                     '<strong>Message:</strong> ' + message + '<br/>' +
+                                     '<strong>Source:</strong> ' + source + ' (line ' + lineno + ', col ' + colno + ')<br/>' +
+                                     '<strong>Stack:</strong> <pre style="white-space: pre-wrap; margin: 5px 0 0 0; font-size: 12px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">' + stack + '</pre>';
+                    errDiv.appendChild(item);
+                  } catch(e) {
+                    console.error('Error logger failed:', e);
+                  }
+                }
+
+                window.onerror = function(message, source, lineno, colno, error) {
+                  showError('uncaughtException', message, source, lineno, colno, error);
+                  return false;
+                };
+
+                window.addEventListener('error', function(event) {
+                  if (event.error) {
+                    showError('errorEvent', event.message, event.filename, event.lineno, event.colno, event.error);
+                  } else if (event.message) {
+                    showError('errorEvent', event.message, event.filename, event.lineno, event.colno, new Error(event.message));
+                  }
+                }, true);
+
+                window.addEventListener('unhandledrejection', function(event) {
+                  var reason = event.reason;
+                  var msg = reason instanceof Error ? reason.message : String(reason);
+                  var stack = reason instanceof Error ? reason.stack : '';
+                  showError('unhandledRejection', msg, 'Promise', 0, 0, { stack: stack });
+                });
+              })();
+            `
+          }}
+        />
         <Providers session={session}>
           <InternalAnalyticsProvider userId={session?.user?.id}>
             <Suspense fallback={null}>
