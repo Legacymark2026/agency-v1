@@ -59,10 +59,15 @@ async function getGeoFromIP(ip: string): Promise<{ country: string; countryCode:
     }
 
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
         // Using ip-api.com free tier (45 req/min limit)
         const response = await fetch(`http://ip-api.com/json/${ip}?fields=country,countryCode,regionName,city,timezone`, {
             next: { revalidate: 86400 }, // Cache for 24 hours
+            signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (response.ok) {
             const data = await response.json();

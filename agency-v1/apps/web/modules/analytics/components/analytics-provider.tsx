@@ -98,7 +98,6 @@ export function AnalyticsProvider({ children, userId, enabled = true }: Analytic
     const [visitorId, setVisitorId] = useState('');
     const [sessionId, setSessionId] = useState('');
     const pathname = usePathname();
-    const searchParams = useSearchParams();
 
     // Initialize IDs on client mount
     useEffect(() => {
@@ -116,9 +115,9 @@ export function AnalyticsProvider({ children, userId, enabled = true }: Analytic
     // UTM params (captured on first pageview)
     const utmParams = useRef<UTMParams>({});
 
-    useEffect(() => {
-        utmParams.current = getUTMParams(searchParams);
-    }, [searchParams]);
+    const handleUTMUpdate = useCallback((params: URLSearchParams) => {
+        utmParams.current = getUTMParams(params);
+    }, []);
 
     // Track scroll depth
     useEffect(() => {
@@ -273,7 +272,23 @@ export function AnalyticsProvider({ children, userId, enabled = true }: Analytic
 
     return (
         <AnalyticsContext.Provider value={{ visitorId, sessionId, trackEvent, trackPageView }}>
+            <React.Suspense fallback={null}>
+                <UTMTracker onUpdate={handleUTMUpdate} />
+            </React.Suspense>
             {children}
         </AnalyticsContext.Provider>
     );
+}
+
+// Separate component for useSearchParams to avoid suspending the entire tree
+function UTMTracker({ onUpdate }: { onUpdate: (params: URLSearchParams) => void }) {
+    const searchParams = useSearchParams();
+    
+    useEffect(() => {
+        if (searchParams) {
+            onUpdate(searchParams);
+        }
+    }, [searchParams, onUpdate]);
+
+    return null;
 }
