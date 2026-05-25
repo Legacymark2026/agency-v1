@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { SettingsSchema, type SettingsFormData } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { safeTableQuery } from "@/lib/db-utils";
 
 export async function getSettings() {
     const session = await auth();
