@@ -78,8 +78,9 @@ interface DashboardSectionProps {
     dense?: boolean;
 }
 export function DashboardSection({ children, title, subtitle, code, actions, className, dense }: DashboardSectionProps) {
+    const spotlightProps = dense ? { style: { padding: '1rem' } } : {};
     return (
-        <InteractiveSpotlight className={cn('ds-section', className)} style={{ padding: dense ? '1rem' : undefined }}>
+        <InteractiveSpotlight className={cn('ds-section', className)} {...spotlightProps}>
             {(title || code || actions) && (
                 <div className="flex items-start justify-between mb-6 gap-3">
                     <div>

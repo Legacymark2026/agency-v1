@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
-interface InteractiveSpotlightProps extends React.HTMLAttributes<HTMLDivElement> {
+interface InteractiveSpotlightProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'style'> {
     children: React.ReactNode;
     glowColor?: string; // Default to the teal theme color with low opacity
+    style?: CSSProperties;
 }
 
 export function InteractiveSpotlight({
     children,
     className,
     glowColor = "rgba(13, 148, 136, 0.08)",
+    style,
     ...props
 }: InteractiveSpotlightProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -38,6 +40,7 @@ export function InteractiveSpotlight({
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             className={cn("relative overflow-hidden", className)}
+            style={style}
             {...props}
         >
             {/* Spotlight overlay */}
