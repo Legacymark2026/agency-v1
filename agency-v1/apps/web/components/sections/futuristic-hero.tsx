@@ -10,6 +10,12 @@ const GLITCH_MSGS = ["INNOVATION", "DISRUPTION", "EVOLUTION", "DOMINATION", "GRO
 
 export function FuturisticHero() {
     const t = useTranslations("home.hero");
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     // Mouse Interaction
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
@@ -102,7 +108,7 @@ export function FuturisticHero() {
 
                     {/* 3. Badge */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        initial={isMounted ? { opacity: 0, scale: 0.95 } : false}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                         className="relative hidden sm:block"
@@ -118,7 +124,7 @@ export function FuturisticHero() {
 
                     {/* 4. Main Headline (Dark Text) */}
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={isMounted ? { opacity: 0, y: 30 } : false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                         className="max-w-6xl space-y-6 sm:space-y-8 relative w-full"
@@ -144,7 +150,7 @@ export function FuturisticHero() {
 
                     {/* 5. Buttons */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={isMounted ? { opacity: 0, y: 20 } : false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
                         className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-6 sm:mt-8 w-full sm:w-auto relative z-10"
