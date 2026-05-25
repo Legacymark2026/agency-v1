@@ -62,7 +62,7 @@ export function LatestPosts({ posts }: LatestPostsProps) {
 
                                 <div className="flex flex-1 flex-col p-6">
                                     <div className="mb-4 flex items-center gap-4 text-xs font-mono text-teal-500 uppercase tracking-widest">
-                                        <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} aria-hidden="true" /> {new Date(post.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                        <span className="flex items-center gap-1.5"><Calendar size={12} strokeWidth={1.5} aria-hidden="true" /> {new Date(post.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}</span>
                                         {post.author?.name && (
                                             <span className="flex items-center gap-1.5"><User size={12} strokeWidth={1.5} aria-hidden="true" /> {post.author.name}</span>
                                         )}

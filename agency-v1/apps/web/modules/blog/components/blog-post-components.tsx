@@ -69,7 +69,7 @@ export function BlogPostHeader({ title, createdAt, authorName, authorImage, read
                 <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-teal-500" />
                     <time dateTime={new Date(createdAt).toISOString()}>
-                        {new Date(createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        {new Date(createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}
                     </time>
                 </div>
 
