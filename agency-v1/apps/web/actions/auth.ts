@@ -99,17 +99,28 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
 
         return undefined;
     } catch (error) {
-        console.error('[LoginUser] Authentication error:', error);
+        // CRITICAL: Next.js usa throw internamente para ejecutar redirects en Server Actions.
+        // Si no re-lanzamos el error de redirect, el login nunca redirige al dashboard
+        // aunque las credenciales sean correctas — y en cambio muestra el mensaje de error genérico.
+        const isNextRedirect =
+            error instanceof Error &&
+            (error.message === 'NEXT_REDIRECT' ||
+                (error as { digest?: string }).digest?.startsWith('NEXT_REDIRECT'));
+        if (isNextRedirect) throw error;
 
         if (error instanceof AuthError) {
             switch (error.type) {
                 case 'CredentialsSignin':
                     return 'Credenciales inválidas.';
+                case 'CallbackRouteError':
+                    return 'Error de autenticación. Verifica tus credenciales.';
                 default:
+                    console.error('[LoginUser] AuthError type:', error.type, error.cause);
                     return 'Algo salió mal. Por favor intenta de nuevo.';
             }
         }
 
+        console.error('[LoginUser] Unexpected error:', error);
         return 'Servicio temporalmente no disponible. Por favor intenta de nuevo más tarde.';
     }
 }
