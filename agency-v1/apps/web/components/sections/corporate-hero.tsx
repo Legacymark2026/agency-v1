@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { MouseEvent, useRef, useState, useEffect } from "react";
+import { MouseEvent, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Sparkles, Target, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -39,11 +39,6 @@ function MagneticButton({ children, className }: { children: React.ReactNode, cl
 
 export function CorporateHero() {
     const t = useTranslations("nosotrosPage.hero");
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
     // Mouse Interaction
     const mouseX = useMotionValue(0);
@@ -93,12 +88,7 @@ export function CorporateHero() {
                 <div className="flex flex-col items-center text-center space-y-8">
 
                     {/* 3. Badge */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0, y: -20 } : false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="relative"
-                    >
+                    <div className="relative">
                         <span className="relative inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-teal-500/10 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-teal-400 shadow-sm uppercase tracking-wider">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
@@ -106,7 +96,7 @@ export function CorporateHero() {
                             </span>
                             {t('badge')}
                         </span>
-                    </motion.div>
+                    </div>
 
                     {/* 4. Main Headline */}
                     <div className="max-w-5xl space-y-6 relative">
@@ -119,12 +109,7 @@ export function CorporateHero() {
                             </span>
                         </h1>
 
-                        <motion.div
-                            initial={isMounted ? { opacity: 0, y: 20 } : false}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="mx-auto max-w-3xl relative"
-                        >
+                        <div className="mx-auto max-w-3xl relative">
                             <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-teal-500 to-transparent hidden md:block" />
                             <p className="text-lg md:text-xl text-slate-400 leading-relaxed text-pretty font-medium pl-6 text-left border-l-2 border-teal-500/20 md:border-none">
                                 {t.rich('description', {
@@ -133,16 +118,11 @@ export function CorporateHero() {
                                     ),
                                 })}
                             </p>
-                        </motion.div>
+                        </div>
                     </div>
 
                     {/* Buttons with Magnetic Effect */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0, y: 20 } : false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
-                        className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pt-4 pb-8 w-full sm:w-auto px-4 sm:px-0"
-                    >
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pt-4 pb-8 w-full sm:w-auto px-4 sm:px-0">
                         <MagneticButton>
                             <Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-full bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-base sm:text-lg transition-all shadow-xl shadow-teal-500/20 relative overflow-hidden group">
                                 <span className="relative flex items-center gap-2">
@@ -158,15 +138,10 @@ export function CorporateHero() {
                                 </span>
                             </Button>
                         </MagneticButton>
-                    </motion.div>
+                    </div>
 
                     {/* 5. Metrics / Trust */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0 } : false}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 }}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 pt-12 border-t border-slate-800 w-full max-w-4xl"
-                    >
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 pt-12 border-t border-slate-800 w-full max-w-4xl">
                         {[
                             { label: t("stats.precision.label"), icon: Target, value: t("stats.precision.value") },
                             { label: t("stats.innovation.label"), icon: Sparkles, value: t("stats.innovation.value") },
@@ -181,7 +156,7 @@ export function CorporateHero() {
                                 <div className="text-xs font-mono text-slate-500 uppercase tracking-widest">{stat.label}</div>
                             </div>
                         ))}
-                    </motion.div>
+                    </div>
 
                 </div>
             </div>

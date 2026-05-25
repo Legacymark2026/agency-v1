@@ -13,11 +13,6 @@ import { HeroDashboard } from "./flyering-hero/hero-dashboard";
 const GLITCH_MSGS = ["DIGITAL", "INTEGRAL", "360°", "GLOBAL", "TOTAL"];
 
 export function FlyeringHero() {
-    const [isMounted, setIsMounted] = useState(false);
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
     const { mouseX, mouseY, rotateX, rotateY, layer1X, layer1Y, layer2X, layer2Y, handleMouseMove } = useHeroParallax();
     const glitchText = useGlitchText(GLITCH_MSGS, 4000);
 
@@ -55,12 +50,7 @@ export function FlyeringHero() {
                     </div>
 
                     {/* 5. Buttons */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0, y: 20 } : false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-8 w-full sm:w-auto px-4 sm:px-0"
-                    >
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-8 w-full sm:w-auto px-4 sm:px-0">
                         <Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold text-base sm:text-lg transition-all hover:scale-105 shadow-xl shadow-red-700/20 relative overflow-hidden group animate-pulse-slow">
                             <span className="relative flex items-center gap-2 uppercase tracking-wide">
                                 ¡RECLAMAR MI CUPO AHORA! <Rocket className="w-5 h-5 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" />
@@ -72,16 +62,11 @@ export function FlyeringHero() {
                                 <Play className="w-4 h-4 fill-current" /> Ver Soluciones
                             </span>
                         </Button>
-                    </motion.div>
+                    </div>
 
-                    <motion.p
-                        initial={isMounted ? { opacity: 0 } : false}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 1 }}
-                        className="text-xs text-slate-500 font-medium"
-                    >
+                    <p className="text-xs text-slate-500 font-medium">
                         🔒 <span className="text-slate-400">Validado por +50 empresas locales.</span> Tu competencia ya está aquí.
-                    </motion.p>
+                    </p>
 
                     {/* 6. 3D Parallax Dashboard */}
                     <HeroDashboard

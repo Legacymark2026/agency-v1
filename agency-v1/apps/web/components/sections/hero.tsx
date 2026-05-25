@@ -20,10 +20,8 @@ export function Hero() {
     const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
     const [index, setIndex] = useState(0);
-    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
-        setIsMounted(true);
         const interval = setInterval(() => {
             setIndex((prev) => (prev + 1) % WORDS.length);
         }, 3000);
@@ -47,10 +45,7 @@ export function Hero() {
             <div className="relative z-10 mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8 flex flex-col items-center">
 
                 {/* 2. Futuristic Badge */}
-                <motion.div
-                    initial={isMounted ? { opacity: 0, y: -20 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                <div
                     className="mb-8 group relative inline-flex items-center overflow-hidden rounded-full border border-purple-500/30 bg-purple-900/10 px-6 py-2 backdrop-blur-md transition-all hover:bg-purple-900/20 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
@@ -58,7 +53,7 @@ export function Hero() {
                     <span className="text-sm font-medium text-purple-100 tracking-wider uppercase">
                         <ScrambleText text="La Agencia del Futuro" reveal={true} speed={30} />
                     </span>
-                </motion.div>
+                </div>
 
                 {/* 3. Main Title with Glitch/Scramble Vibe */}
                 <motion.div style={{ y: y1, opacity }} className="relative z-20">
@@ -82,23 +77,13 @@ export function Hero() {
                 </motion.div>
 
                 {/* 4. Description */}
-                <motion.p
-                    initial={isMounted ? { opacity: 0, y: 20 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.3 }}
-                    className="mx-auto mt-8 max-w-2xl text-lg text-gray-400 sm:text-xl leading-relaxed font-light"
-                >
+                <p className="mx-auto mt-8 max-w-2xl text-lg text-gray-400 sm:text-xl leading-relaxed font-light">
                     Agencia de marketing performance impulsada por <span className="text-cyan-400 font-medium font-mono">INTELIGENCIA ARTIFICIAL</span>.
                     Maximizamos tu ROI con estrategias predictivas y automatización avanzada.
-                </motion.p>
+                </p>
 
                 {/* 5. CTAs with Magnetic Effect */}
-                <motion.div
-                    initial={isMounted ? { opacity: 0, y: 30 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                    className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row z-30"
-                >
+                <div className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row z-30">
                     <Link href="/contacto">
                         <MagneticButton strength={0.3}>
                             <Button size="lg" className="h-16 px-10 rounded-full bg-white text-black font-bold text-lg hover:bg-gray-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 group relative overflow-hidden">
@@ -116,7 +101,7 @@ export function Hero() {
                             </Button>
                         </MagneticButton>
                     </Link>
-                </motion.div>
+                </div>
 
                 {/* 6. Code/Terminal Aesthetic Decoration */}
                 <motion.div

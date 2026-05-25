@@ -10,11 +10,6 @@ const GLITCH_MSGS = ["INNOVATION", "DISRUPTION", "EVOLUTION", "DOMINATION", "GRO
 
 export function FuturisticHero() {
     const t = useTranslations("home.hero");
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
     // Mouse Interaction
     const mouseX = useMotionValue(0);
@@ -107,12 +102,7 @@ export function FuturisticHero() {
                 <div className="flex flex-col items-center text-center space-y-8 sm:space-y-10">
 
                     {/* 3. Badge */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0, scale: 0.95 } : false}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                        className="relative hidden sm:block"
-                    >
+                    <div className="relative hidden sm:block">
                         <span className="relative inline-flex items-center gap-2 rounded-full border border-teal-900/50 bg-slate-900/60 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-teal-50 shadow-sm uppercase tracking-widest font-mono">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
@@ -120,15 +110,10 @@ export function FuturisticHero() {
                             </span>
                             <span className="text-teal-400">{t('systemActive')}</span> {t('systemStatus')}
                         </span>
-                    </motion.div>
+                    </div>
 
                     {/* 4. Main Headline (Dark Text) */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0, y: 30 } : false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                        className="max-w-6xl space-y-6 sm:space-y-8 relative w-full"
-                    >
+                    <div className="max-w-6xl space-y-6 sm:space-y-8 relative w-full">
                         {/* Ambient Glow behind text */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-teal-400/10 blur-[100px] rounded-full pointer-events-none animate-pulse" />
 
@@ -146,15 +131,10 @@ export function FuturisticHero() {
                         <p className="mx-auto max-w-2xl text-base md:text-lg text-slate-400 leading-relaxed text-pretty font-light uppercase tracking-widest font-mono relative z-10">
                             {t('subtitle')}
                         </p>
-                    </motion.div>
+                    </div>
 
                     {/* 5. Buttons */}
-                    <motion.div
-                        initial={isMounted ? { opacity: 0, y: 20 } : false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-6 sm:mt-8 w-full sm:w-auto relative z-10"
-                    >
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-6 sm:mt-8 w-full sm:w-auto relative z-10">
                         <Button size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-8 sm:px-10 rounded-sm bg-slate-900 hover:bg-slate-800 border-none text-white font-bold text-sm sm:text-base transition-all duration-300 shadow-[0_0_40px_-10px_rgba(13,148,136,0.3)] hover:shadow-[0_0_60px_-15px_rgba(13,148,136,0.5)] relative overflow-hidden group">
                             {/* Animated Sweep Shimmer Effect */}
                             <div className="absolute inset-0 -translate-x-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)] group-hover:animate-[shimmer_1.5s_infinite]" />
@@ -168,7 +148,7 @@ export function FuturisticHero() {
                                 <Play className="w-4 h-4 fill-current" aria-hidden="true" strokeWidth={1.5} /> {t('ctaSecondary')}
                             </span>
                         </Button>
-                    </motion.div>
+                    </div>
 
                     {/* 6. 3D Parallax Dashboard - Hidden on mobile for performance */}
                     <div className="w-full max-w-6xl mt-12 sm:mt-20 perspective-[2000px] relative z-10 group/dashboard hidden sm:block">
