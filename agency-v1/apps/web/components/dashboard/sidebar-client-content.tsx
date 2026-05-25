@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { signOutAction } from "@/app/actions/auth";
 import {
-    LogOut, PanelLeftClose, PanelLeft
+    LogOut, PanelLeftClose, PanelLeft, Palette, Check
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -26,7 +26,8 @@ interface SidebarContentProps {
 }
 
 export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: SidebarContentProps) {
-    const { sidebarCollapsed, toggleSidebar } = useUIStore();
+    const { sidebarCollapsed, toggleSidebar, accent, setAccent } = useUIStore();
+    const [showColorPicker, setShowColorPicker] = useState(false);
     const pathname = usePathname();
     const accessibleSet = new Set(accessibleRoutes);
 
@@ -92,6 +93,61 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
 
                 {/* Footer Left Pane: User Avatar */}
                 <div className="flex flex-col items-center gap-4 w-full">
+                    {/* Quick Color Picker */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowColorPicker(!showColorPicker)}
+                            className={`p-2 rounded-xl text-slate-500 hover:text-teal-400 hover:bg-slate-800 transition-all ${
+                                showColorPicker ? 'bg-slate-800 text-teal-400' : ''
+                            }`}
+                            title="Color de Acento"
+                        >
+                            <Palette size={18} />
+                        </button>
+                        
+                        {showColorPicker && (
+                            <div 
+                                onMouseLeave={() => setShowColorPicker(false)}
+                                className="absolute bottom-0 left-[56px] bg-slate-950/95 backdrop-blur-md border border-slate-800/80 rounded-2xl p-3 flex flex-col gap-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.7),0_0_30px_var(--ds-teal-dim)] z-50 transition-all duration-300 ease-out"
+                                style={{ minWidth: '140px' }}
+                            >
+                                <div className="flex items-center justify-between border-b border-slate-800/50 pb-1.5 mb-0.5">
+                                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Tema Acento</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                                </div>
+                                <div className="grid grid-cols-3 gap-2.5">
+                                    {[
+                                        { key: "teal", bg: "bg-teal-500", label: "Teal" },
+                                        { key: "violet", bg: "bg-violet-500", label: "Violeta" },
+                                        { key: "blue", bg: "bg-blue-500", label: "Azul" },
+                                        { key: "amber", bg: "bg-amber-500", label: "Ámbar" },
+                                        { key: "rose", bg: "bg-rose-500", label: "Rosa" },
+                                        { key: "emerald", bg: "bg-emerald-500", label: "Esmeralda" },
+                                    ].map((c) => {
+                                        const isSelected = accent === c.key;
+                                        return (
+                                            <button
+                                                key={c.key}
+                                                onClick={() => {
+                                                    setAccent(c.key as any);
+                                                    setShowColorPicker(false);
+                                                }}
+                                                className={`w-7 h-7 rounded-full ${c.bg} hover:scale-110 active:scale-95 transition-all duration-200 relative flex items-center justify-center cursor-pointer shadow-md ${
+                                                    isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950 scale-105' : 'hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]'
+                                                }`}
+                                                title={c.label}
+                                            >
+                                                {isSelected && (
+                                                    <Check size={12} className="text-white font-bold stroke-[3]" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     <NotificationBell />
                     <div className="group relative">
                         {userInfo.image ? (

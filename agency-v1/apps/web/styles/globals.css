@@ -3,6 +3,16 @@
 @theme {
   --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --color-teal-300: var(--ds-teal-bright);
+  --color-teal-400: var(--ds-teal-bright);
+  --color-teal-500: var(--ds-teal-md);
+  --color-teal-600: var(--ds-teal);
+  --color-teal-700: var(--ds-teal);
+  --color-teal-800: var(--ds-teal-dim);
+  --color-teal-900: var(--ds-teal-dim);
+  
+  --color-primary: var(--ds-teal);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
