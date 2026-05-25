@@ -54,6 +54,7 @@ debug-whatsapp.log
 
 # credentials
 google-credentials.json
+gsc-credentials.json
 
 # old archive
 .logs_archive/
