@@ -207,40 +207,82 @@ export default function LoginPage() {
                         </div>
                     </form>
 
-                    {/* Redes simplificadas basadas en el mockup */}
-                    <div className="mt-8 flex flex-col items-center gap-4">
-                        <div className="flex gap-4">
-                            <button type="button" onClick={() => loginWithOAuth('facebook')} className="text-slate-400 hover:text-white transition-colors" title="Login with Facebook">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                            <button type="button" onClick={() => loginWithOAuth('google')} className="text-slate-400 hover:text-white transition-colors" title="Login with Google">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                            <button type="button" onClick={() => loginWithOAuth('linkedin')} className="text-slate-400 hover:text-white transition-colors" title="Login with LinkedIn">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                                </svg>
-                            </button>
-                            <button type="button" onClick={() => loginWithOAuth('tiktok')} className="text-slate-400 hover:text-white transition-colors" title="Login with TikTok">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91.04.15 1.5.76 2.92 1.68 4.09 1.15 1.48 2.8 2.45 4.67 2.8v3.91c-1.46-.02-2.9-.4-4.2-1.12-.52-.29-1-.66-1.43-1.08v8.32c0 2.22-.9 4.34-2.48 5.88-1.57 1.54-3.69 2.41-5.91 2.41-2.22 0-4.34-.87-5.9-2.41-1.58-1.54-2.48-3.66-2.48-5.88 0-2.24.9-4.36 2.48-5.9 1.56-1.55 3.68-2.42 5.9-2.42.5 0 1 .04 1.5.12V12.7c-1.63-.38-3.32-.01-4.7 1.05-1.09.83-1.78 2.1-1.92 3.48-.12 1.37.33 2.74 1.25 3.79 1.15 1.3 2.78 2.05 4.5 2.05 1.7 0 3.32-.73 4.47-2.02 1.16-1.3 1.83-3.02 1.83-4.75V4.62c-1.35.34-2.75.46-4.14.34V.021z" />
-                                </svg>
-                            </button>
+                    {/* Separador */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-white/5"></div>
                         </div>
+                        <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wider">
+                            <span className="bg-[#1a1f2e] px-3 text-slate-500 font-mono">O continúa con</span>
+                        </div>
+                    </div>
 
-                        <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                            <Link href="/auth/recuperar" className="hover:text-teal-400 transition-colors">
-                                Recuperar contraseña
-                            </Link>
-                            <span className="w-1 h-1 rounded-full bg-slate-600" />
-                            <Link href="/contacto" className="hover:text-teal-400 transition-colors">
-                                Soporte
-                            </Link>
-                        </div>
+                    {/* Grilla Premium de Proveedores OAuth */}
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                        {[
+                            {
+                                id: "google",
+                                name: "Google",
+                                icon: (
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                                    </svg>
+                                )
+                            },
+                            {
+                                id: "microsoft-entra-id",
+                                name: "Microsoft",
+                                icon: (
+                                    <svg className="w-4 h-4" viewBox="0 0 23 23" fill="currentColor">
+                                        <path d="M0 0h11v11H0z" fill="#F25022"/>
+                                        <path d="M12 0h11v11H12z" fill="#7FBA00"/>
+                                        <path d="M0 12h11v11H0z" fill="#00A4EF"/>
+                                        <path d="M12 12h11v11H12z" fill="#FFB900"/>
+                                    </svg>
+                                )
+                            },
+                            {
+                                id: "github",
+                                name: "GitHub",
+                                icon: (
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"/>
+                                    </svg>
+                                )
+                            },
+                            {
+                                id: "facebook",
+                                name: "Facebook",
+                                icon: (
+                                    <svg className="w-4 h-4" fill="#1877F2" viewBox="0 0 24 24">
+                                        <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                                    </svg>
+                                )
+                            }
+                        ].map((provider) => (
+                            <button
+                                key={provider.id}
+                                type="button"
+                                onClick={() => loginWithOAuth(provider.id)}
+                                className="flex items-center justify-center gap-2.5 py-3 px-4 bg-white/5 border border-white/10 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 hover:border-teal-500/50 active:scale-95 transition-all duration-200 text-xs font-semibold shadow-md group"
+                            >
+                                <span className="group-hover:scale-110 transition-transform">{provider.icon}</span>
+                                <span>{provider.name}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center justify-center gap-4 text-xs font-medium text-slate-500 mt-2">
+                        <Link href="/auth/recuperar" className="hover:text-teal-400 transition-colors">
+                            Recuperar contraseña
+                        </Link>
+                        <span className="w-1 h-1 rounded-full bg-slate-600" />
+                        <Link href="/contacto" className="hover:text-teal-400 transition-colors">
+                            Soporte
+                        </Link>
                     </div>
                 </motion.div>
             </div>

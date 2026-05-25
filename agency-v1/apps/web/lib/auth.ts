@@ -5,6 +5,8 @@ import Google from "next-auth/providers/google";
 import LinkedIn from "next-auth/providers/linkedin";
 import Facebook from "next-auth/providers/facebook";
 import TikTok from "next-auth/providers/tiktok";
+import GitHub from "next-auth/providers/github";
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -350,6 +352,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         ...(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET ? [TikTok({
             clientId: process.env.TIKTOK_CLIENT_KEY,
             clientSecret: process.env.TIKTOK_CLIENT_SECRET,
+        })] : []),
+        ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET ? [GitHub({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        })] : []),
+        ...((process.env.MICROSOFT_CLIENT_ID || process.env.AZURE_AD_CLIENT_ID) && (process.env.MICROSOFT_CLIENT_SECRET || process.env.AZURE_AD_CLIENT_SECRET) ? [MicrosoftEntraID({
+            clientId: process.env.MICROSOFT_CLIENT_ID || process.env.AZURE_AD_CLIENT_ID,
+            clientSecret: process.env.MICROSOFT_CLIENT_SECRET || process.env.AZURE_AD_CLIENT_SECRET,
+            issuer: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID || process.env.AZURE_AD_TENANT_ID || "common"}/v2.0`,
         })] : []),
         Credentials({
             credentials: {
