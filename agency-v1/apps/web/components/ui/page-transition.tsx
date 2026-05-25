@@ -12,11 +12,15 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         setIsMounted(true);
     }, []);
 
+    if (!isMounted) {
+        return <>{children}</>;
+    }
+
     return (
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
             <motion.div
                 key={pathname}
-                initial={isMounted ? { opacity: 0, y: 20 } : false}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
