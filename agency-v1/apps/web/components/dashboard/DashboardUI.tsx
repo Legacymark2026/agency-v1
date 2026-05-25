@@ -4,6 +4,7 @@ import { ReactNode, useRef, useState, useEffect } from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { InteractiveSpotlight } from './InteractiveSpotlight';
 
 
 // ─── Page wrapper ─────────────────────────────────────────────────────────────
@@ -78,7 +79,7 @@ interface DashboardSectionProps {
 }
 export function DashboardSection({ children, title, subtitle, code, actions, className, dense }: DashboardSectionProps) {
     return (
-        <div className={cn('ds-section', className)} style={{ padding: dense ? '1rem' : undefined }}>
+        <InteractiveSpotlight className={cn('ds-section', className)} style={{ padding: dense ? '1rem' : undefined }}>
             {(title || code || actions) && (
                 <div className="flex items-start justify-between mb-6 gap-3">
                     <div>
@@ -92,7 +93,7 @@ export function DashboardSection({ children, title, subtitle, code, actions, cla
                 </div>
             )}
             {children}
-        </div>
+        </InteractiveSpotlight>
     );
 }
 

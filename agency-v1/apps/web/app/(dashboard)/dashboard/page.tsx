@@ -3,6 +3,8 @@ import { AnalyticsOverview } from "@/modules/analytics/components/overview";
 import { getAnalyticsOverview } from "@/modules/analytics/actions/analytics";
 import { prisma } from "@/lib/prisma";
 import { Activity, ShieldCheck, Sparkles, Clock, Terminal } from "lucide-react";
+import { InteractiveSpotlight } from "@/components/dashboard/InteractiveSpotlight";
+
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -28,7 +30,7 @@ export default async function DashboardPage() {
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.025] pointer-events-none mix-blend-screen" />
 
             {/* ── Header ── */}
-            <div className="relative z-10 ds-card group"
+            <InteractiveSpotlight className="relative z-10 ds-card group"
                 style={{ padding: '2rem 2.5rem' }}>
                 {/* Ambient glow */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.07),transparent_70%)] pointer-events-none" />
@@ -70,7 +72,8 @@ export default async function DashboardPage() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </InteractiveSpotlight>
+
 
             {/* ── Analytics Overview ── */}
             <div className="relative z-10 space-y-4">
@@ -84,7 +87,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* ── Recent Activity ── */}
-            <div className="relative z-10 ds-section">
+            <InteractiveSpotlight className="relative z-10 ds-section">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 mb-6"
                     style={{ borderBottom: '1px solid rgba(30,41,59,0.8)' }}>
@@ -143,7 +146,7 @@ export default async function DashboardPage() {
                         </div>
                     )}
                 </div>
-            </div>
+            </InteractiveSpotlight>
         </div>
     );
 }

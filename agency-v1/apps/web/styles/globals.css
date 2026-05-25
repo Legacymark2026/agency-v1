@@ -251,7 +251,9 @@ body {
     background: var(--ds-surface);
     border: 1px solid var(--ds-border);
     padding: var(--ds-padding-card, 2rem);
-    transition: all 0.5s ease;
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .ds-card::after {
@@ -264,7 +266,7 @@ body {
     background: linear-gradient(90deg, #14b8a6, #10b981);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.7s ease;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .ds-card:hover {
@@ -283,9 +285,11 @@ body {
     border-radius: 0.15rem;
     background: var(--ds-surface);
     border: 1px solid var(--ds-border);
-    transition: all 0.4s ease;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .ds-card-sm:hover {
@@ -299,9 +303,11 @@ body {
     border-radius: 0.15rem;
     background: var(--ds-surface);
     border: 1px solid var(--ds-border);
-    transition: all 0.4s ease;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   .ds-kpi::after {
@@ -333,6 +339,8 @@ body {
     background: var(--ds-surface);
     border: 1px solid var(--ds-border);
     padding: var(--ds-padding-kpi, 1.5rem);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   /* ── Badges — HUD style (home: border-teal-900/50 bg-slate-900/60) ── */
