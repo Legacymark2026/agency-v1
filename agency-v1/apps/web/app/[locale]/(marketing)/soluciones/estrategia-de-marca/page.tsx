@@ -1,1 +1,1 @@
-export { default } from '@/app/(marketing)/soluciones/estrategia-de-marca/page';
+export { default } from '@/app/_marketing/soluciones/estrategia-de-marca/page';

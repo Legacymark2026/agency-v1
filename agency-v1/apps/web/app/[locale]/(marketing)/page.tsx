@@ -36,4 +36,4 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 // Re-export the main marketing page — content is i18n-aware via NextIntlClientProvider in layout
-export { default } from '@/app/(marketing)/page';
+export { default } from '@/app/_marketing/page';

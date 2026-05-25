@@ -1,2 +1,2 @@
-export { default } from '@/app/(marketing)/suscripcion/page';
-export { generateMetadata } from '@/app/(marketing)/suscripcion/page';
+export { default } from '@/app/_marketing/suscripcion/page';
+export { generateMetadata } from '@/app/_marketing/suscripcion/page';

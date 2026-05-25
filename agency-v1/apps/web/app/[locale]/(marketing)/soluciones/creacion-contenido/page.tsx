@@ -1,1 +1,1 @@
-export { default } from '@/app/(marketing)/soluciones/creacion-contenido/page';
+export { default } from '@/app/_marketing/soluciones/creacion-contenido/page';
