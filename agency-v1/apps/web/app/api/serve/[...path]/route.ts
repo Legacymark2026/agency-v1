@@ -11,8 +11,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
         }
 
         // Reconstruct the file path from the array
-        const fileName = path.join('/');
-        const filePath = join(process.cwd(), 'public', 'uploads', fileName);
+        // Since path captures everything after /api/serve/, it will include "uploads" if the URL is /api/serve/uploads/...
+        // The root directory we join to is already 'public/uploads', so we should strip 'uploads' if it is the first element.
+        const pathParts = path[0] === 'uploads' ? path.slice(1) : path;
+        const filePath = join(process.cwd(), 'public', 'uploads', ...pathParts);
+        const fileName = pathParts.join('/');
 
         let file: Buffer;
         try {

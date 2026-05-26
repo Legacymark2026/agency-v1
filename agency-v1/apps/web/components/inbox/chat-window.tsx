@@ -431,25 +431,51 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     const isAudio = file.type.includes('audio');
                     const mediaType = isAudio ? 'AUDIO' : (file.type.includes('image') ? 'IMAGE' : 'DOCUMENT');
 
-                    // Try WhatsApp upload first
+                    // Try WhatsApp upload first if WhatsApp channel
+                    const isWhatsAppChannel = conversation?.channel === 'WHATSAPP';
                     let uploaded = false;
-                    try {
-                        const res = await fetch("/api/media/whatsapp-upload", { method: "POST", body: formData });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data.id) {
-                                uploadedAttachments.push({
-                                    url: `/api/media/whatsapp/${data.id}`,
-                                    type: mediaType
-                                });
-                                uploaded = true;
+
+                    if (isWhatsAppChannel) {
+                        try {
+                            const res = await fetch("/api/media/whatsapp-upload", { method: "POST", body: formData });
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.id) {
+                                    uploadedAttachments.push({
+                                        url: `/api/media/whatsapp/${data.id}`,
+                                        type: mediaType
+                                    });
+                                    uploaded = true;
+                                }
                             }
+                        } catch (err) {
+                            console.warn("WhatsApp media upload failed, trying local fallback...", err);
                         }
-                    } catch (err) {
-                        console.warn("WhatsApp media upload failed, trying Cloudinary fallback...", err);
                     }
 
-                    // Fallback: upload to Cloudinary if WhatsApp upload didn't work
+                    // Fallback to local database/filesystem media upload
+                    if (!uploaded) {
+                        try {
+                            const localRes = await fetch("/api/media/upload", {
+                                method: "POST",
+                                body: formData
+                            });
+                            if (localRes.ok) {
+                                const localData = await localRes.json();
+                                if (localData.success && localData.asset) {
+                                    uploadedAttachments.push({
+                                        url: localData.asset.url,
+                                        type: mediaType
+                                    });
+                                    uploaded = true;
+                                }
+                            }
+                        } catch (localErr) {
+                            console.warn("Local media upload fallback failed, trying Cloudinary...", localErr);
+                        }
+                    }
+
+                    // Last resort fallback: upload to Cloudinary if local upload didn't work
                     if (!uploaded) {
                         try {
                             const cloudinaryForm = new FormData();
