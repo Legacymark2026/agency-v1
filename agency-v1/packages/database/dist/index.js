@@ -9,25 +9,24 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.prisma = exports.getPrismaAnalytics = exports.getPrismaMedia = exports.getPrismaCore = exports.getPrismaAuth = exports.Prisma = exports.PrismaClient = void 0;
-const auth_1 = require("@prisma/client/auth");
-const core_1 = require("@prisma/client/core");
-const media_1 = require("@prisma/client/media");
-const analytics_1 = require("@prisma/client/analytics");
+const client_1 = require("@prisma/client");
 // Re-export everything from the main Prisma Client for type safety and backward compatibility
-var client_1 = require("@prisma/client");
-Object.defineProperty(exports, "PrismaClient", { enumerable: true, get: function () { return client_1.PrismaClient; } });
 var client_2 = require("@prisma/client");
-Object.defineProperty(exports, "Prisma", { enumerable: true, get: function () { return client_2.Prisma; } });
+Object.defineProperty(exports, "PrismaClient", { enumerable: true, get: function () { return client_2.PrismaClient; } });
+var client_3 = require("@prisma/client");
+Object.defineProperty(exports, "Prisma", { enumerable: true, get: function () { return client_3.Prisma; } });
 // Instancias de singleton cargadas de manera perezosa (lazy)
 let _prismaAuth = null;
 let _prismaCore = null;
 let _prismaMedia = null;
 let _prismaAnalytics = null;
+const logConfig = process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"];
 const getPrismaAuth = () => {
     if (!_prismaAuth) {
-        _prismaAuth = new auth_1.PrismaClient({
-            log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-            datasources: { db: { url: process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL } },
+        const url = process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaAuth = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
         });
     }
     return _prismaAuth;
@@ -35,9 +34,10 @@ const getPrismaAuth = () => {
 exports.getPrismaAuth = getPrismaAuth;
 const getPrismaCore = () => {
     if (!_prismaCore) {
-        _prismaCore = new core_1.PrismaClient({
-            log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-            datasources: { db: { url: process.env.CORE_DATABASE_URL || process.env.DATABASE_URL } },
+        const url = process.env.CORE_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaCore = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
         });
     }
     return _prismaCore;
@@ -45,9 +45,10 @@ const getPrismaCore = () => {
 exports.getPrismaCore = getPrismaCore;
 const getPrismaMedia = () => {
     if (!_prismaMedia) {
-        _prismaMedia = new media_1.PrismaClient({
-            log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-            datasources: { db: { url: process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL } },
+        const url = process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaMedia = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
         });
     }
     return _prismaMedia;
@@ -55,9 +56,10 @@ const getPrismaMedia = () => {
 exports.getPrismaMedia = getPrismaMedia;
 const getPrismaAnalytics = () => {
     if (!_prismaAnalytics) {
-        _prismaAnalytics = new analytics_1.PrismaClient({
-            log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-            datasources: { db: { url: process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL } },
+        const url = process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaAnalytics = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
         });
     }
     return _prismaAnalytics;
@@ -106,7 +108,7 @@ const modelToClientGetter = {
     integrationLog: exports.getPrismaAnalytics,
     notificationDeliveryLog: exports.getPrismaAnalytics,
 };
-// Singleton global para compatibilidad con hot-reload en Next.js
+// Singleton global para Next.js hot-reload
 const globalForPrisma = globalThis;
 exports.prisma = globalForPrisma.prisma ??
     new Proxy({}, {
