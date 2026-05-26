@@ -6,7 +6,8 @@
 #   docker compose --profile all up -d      # All services
 #   docker compose --profile monitoring up -d  # With monitoring
 #
-# Services: 16 microservices + PostgreSQL + Redis + Next.js Web App
+# Services: 16 microservices + PostgreSQL + Redis + Next.js Web App + Traefik Gateway
+#
 
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────
@@ -17,7 +18,6 @@ services:
       POSTGRES_USER: legacymark
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
       POSTGRES_DB: legacymark
-    # ports: ["5433:5432"] # Commented out to avoid host port conflicts and enhance security
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infrastructure/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
@@ -30,7 +30,6 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    # ports: ["6380:6379"] # Commented out to avoid host port conflicts and enhance security
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:
       - redisdata:/data
@@ -49,6 +48,24 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
+
+  # ── Traefik API Gateway ────────────────────────────────────────────────────
+  traefik:
+    image: traefik:v3.0
+    container_name: agency-v1-traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8082:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    depends_on:
+      redis: { condition: service_healthy }
 
   # ── Next.js Web App ────────────────────────────────────────────────────────
   web:
@@ -72,8 +89,13 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
-      api-gateway: { condition: service_healthy }
     profiles: ["all"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+      - "traefik.http.routers.web.priority=1"
 
   # ── API Gateway ───────────────────────────────────────────────────────────
   api-gateway:
@@ -81,7 +103,6 @@ services:
       context: .
       dockerfile: services/api-gateway/Dockerfile
     restart: unless-stopped
-    ports: ["8081:8080"]
     environment:
       PORT: "8080"
       REDIS_URL: redis://redis:6379
@@ -112,6 +133,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=PathPrefix(`/graphql`)"
+      - "traefik.http.routers.api-gateway.entrypoints=web"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
 
   # ── Auth Service ──────────────────────────────────────────────────────────
   auth-service:
@@ -119,7 +145,6 @@ services:
       context: .
       dockerfile: services/auth-service/Dockerfile
     restart: unless-stopped
-    ports: ["4001:4001"]
     environment:
       PORT: "4001"
       REDIS_URL: redis://redis:6379
@@ -139,6 +164,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=4001"
 
   # ── CRM Service ──────────────────────────────────────────────────────────
   crm-service:
@@ -146,7 +176,6 @@ services:
       context: .
       dockerfile: services/crm-service/Dockerfile
     restart: unless-stopped
-    ports: ["4002:4002"]
     environment: &common-env
       PORT: "4002"
       REDIS_URL: redis://redis:6379
@@ -166,6 +195,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm.rule=PathPrefix(`/api/leads`) || PathPrefix(`/api/deals`) || PathPrefix(`/api/crm`)"
+      - "traefik.http.routers.crm.entrypoints=web"
+      - "traefik.http.services.crm.loadbalancer.server.port=4002"
 
   # ── Automation Service ────────────────────────────────────────────────────
   automation-service:
@@ -173,7 +207,6 @@ services:
       context: .
       dockerfile: services/automation-service/Dockerfile
     restart: unless-stopped
-    ports: ["4003:4003"]
     environment:
       <<: *common-env
       PORT: "4003"
@@ -189,6 +222,11 @@ services:
     deploy:
       resources:
         limits: { cpus: "2.0", memory: 2G }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.automation.rule=PathPrefix(`/api/workflows`) || PathPrefix(`/api/automation`) || PathPrefix(`/api/cron/run-automation`) || PathPrefix(`/api/cron/social-publisher`) || PathPrefix(`/api/cron/process-sequences`)"
+      - "traefik.http.routers.automation.entrypoints=web"
+      - "traefik.http.services.automation.loadbalancer.server.port=4003"
 
   # ── AI Engine ─────────────────────────────────────────────────────────────
   ai-engine:
@@ -196,7 +234,6 @@ services:
       context: .
       dockerfile: services/ai-engine/Dockerfile
     restart: unless-stopped
-    ports: ["4004:4004"]
     environment:
       <<: *common-env
       PORT: "4004"
@@ -214,6 +251,11 @@ services:
     deploy:
       resources:
         limits: { cpus: "4.0", memory: 4G }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai.rule=PathPrefix(`/api/agents`) || PathPrefix(`/api/ai`) || PathPrefix(`/api/knowledge-bases`)"
+      - "traefik.http.routers.ai.entrypoints=web"
+      - "traefik.http.services.ai.loadbalancer.server.port=4004"
 
   # ── Inbox Service ─────────────────────────────────────────────────────────
   inbox-service:
@@ -221,7 +263,6 @@ services:
       context: .
       dockerfile: services/inbox-service/Dockerfile
     restart: unless-stopped
-    ports: ["4005:4005"]
     environment:
       <<: *common-env
       PORT: "4005"
@@ -233,6 +274,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inbox.rule=PathPrefix(`/api/inbox`) || PathPrefix(`/api/webhooks/whatsapp`) || PathPrefix(`/api/webhooks/meta`) || PathPrefix(`/api/webhooks/channels`) || PathPrefix(`/api/cron/email-worker`)"
+      - "traefik.http.routers.inbox.entrypoints=web"
+      - "traefik.http.services.inbox.loadbalancer.server.port=4005"
 
   # ── Finance Service ───────────────────────────────────────────────────────
   finance-service:
@@ -240,7 +286,6 @@ services:
       context: .
       dockerfile: services/finance-service/Dockerfile
     restart: unless-stopped
-    ports: ["4006:4006"]
     environment:
       <<: *common-env
       PORT: "4006"
@@ -254,6 +299,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.finance.rule=PathPrefix(`/api/invoices`) || PathPrefix(`/api/payroll`) || PathPrefix(`/api/expenses`) || PathPrefix(`/api/webhooks/stripe`) || PathPrefix(`/api/webhooks/paypal`) || PathPrefix(`/api/cron/subscriptions`)"
+      - "traefik.http.routers.finance.entrypoints=web"
+      - "traefik.http.services.finance.loadbalancer.server.port=4006"
 
   # ── Video Service ─────────────────────────────────────────────────────────
   video-service:
@@ -261,7 +311,6 @@ services:
       context: .
       dockerfile: services/video-service/Dockerfile
     restart: unless-stopped
-    ports: ["4007:4007"]
     environment:
       <<: *common-env
       PORT: "4007"
@@ -282,6 +331,11 @@ services:
     deploy:
       resources:
         limits: { cpus: "2.0", memory: 2G }
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.video.rule=PathPrefix(`/api/video`) || PathPrefix(`/api/media`)"
+      - "traefik.http.routers.video.entrypoints=web"
+      - "traefik.http.services.video.loadbalancer.server.port=4007"
 
   # ── Calendar Service ──────────────────────────────────────────────────────
   calendar-service:
@@ -289,7 +343,6 @@ services:
       context: .
       dockerfile: services/calendar-service/Dockerfile
     restart: unless-stopped
-    ports: ["4008:4008"]
     environment:
       <<: *common-env
       PORT: "4008"
@@ -301,6 +354,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.calendar.rule=PathPrefix(`/api/calendar`) || PathPrefix(`/api/scheduling`)"
+      - "traefik.http.routers.calendar.entrypoints=web"
+      - "traefik.http.services.calendar.loadbalancer.server.port=4008"
 
   # ── Marketing Service ─────────────────────────────────────────────────────
   marketing-service:
@@ -308,7 +366,6 @@ services:
       context: .
       dockerfile: services/marketing-service/Dockerfile
     restart: unless-stopped
-    ports: ["4009:4009"]
     environment:
       <<: *common-env
       PORT: "4009"
@@ -321,6 +378,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.marketing.rule=PathPrefix(`/api/marketing`) || PathPrefix(`/api/campaigns`) || PathPrefix(`/api/email-blast`) || PathPrefix(`/api/creative`)"
+      - "traefik.http.routers.marketing.entrypoints=web"
+      - "traefik.http.services.marketing.loadbalancer.server.port=4009"
 
   # ── Integration Service ───────────────────────────────────────────────────
   integration-service:
@@ -328,7 +390,6 @@ services:
       context: .
       dockerfile: services/integration-service/Dockerfile
     restart: unless-stopped
-    ports: ["4010:4010"]
     environment:
       <<: *common-env
       PORT: "4010"
@@ -340,6 +401,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.integration.rule=PathPrefix(`/api/integrations`) || PathPrefix(`/api/webhooks/shopify`) || PathPrefix(`/api/webhooks/wix`)"
+      - "traefik.http.routers.integration.entrypoints=web"
+      - "traefik.http.services.integration.loadbalancer.server.port=4010"
 
   # ── Document Service ──────────────────────────────────────────────────────
   document-service:
@@ -347,7 +413,6 @@ services:
       context: .
       dockerfile: services/document-service/Dockerfile
     restart: unless-stopped
-    ports: ["4011:4011"]
     environment:
       <<: *common-env
       PORT: "4011"
@@ -359,6 +424,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.document.rule=PathPrefix(`/api/proposals`) || PathPrefix(`/api/propuesta`) || PathPrefix(`/api/kb`)"
+      - "traefik.http.routers.document.entrypoints=web"
+      - "traefik.http.services.document.loadbalancer.server.port=4011"
 
   # ── Agent Team Engine ─────────────────────────────────────────────────────
   agent-team-engine:
@@ -366,7 +436,6 @@ services:
       context: .
       dockerfile: services/agent-team-engine/Dockerfile
     restart: unless-stopped
-    ports: ["4012:4012"]
     environment:
       <<: *common-env
       PORT: "4012"
@@ -378,6 +447,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.agentTeam.rule=PathPrefix(`/api/agent`) || PathPrefix(`/api/test-flow`)"
+      - "traefik.http.routers.agentTeam.entrypoints=web"
+      - "traefik.http.services.agentTeam.loadbalancer.server.port=4012"
 
   # ── Analytics Service ─────────────────────────────────────────────────────
   analytics-service:
@@ -385,7 +459,6 @@ services:
       context: .
       dockerfile: services/analytics-service/Dockerfile
     restart: unless-stopped
-    ports: ["4013:4013"]
     environment:
       <<: *common-env
       PORT: "4013"
@@ -398,6 +471,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.analytics.rule=PathPrefix(`/api/analytics`) || PathPrefix(`/api/track`)"
+      - "traefik.http.routers.analytics.entrypoints=web"
+      - "traefik.http.services.analytics.loadbalancer.server.port=4013"
 
   # ── Admin Service ─────────────────────────────────────────────────────────
   admin-service:
@@ -405,7 +483,6 @@ services:
       context: .
       dockerfile: services/admin-service/Dockerfile
     restart: unless-stopped
-    ports: ["4014:4014"]
     environment:
       <<: *common-env
       PORT: "4014"
@@ -417,6 +494,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`) || PathPrefix(`/api/diagnostics`) || PathPrefix(`/api/debug`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.services.admin.loadbalancer.server.port=4014"
 
   # ── Public API Service ────────────────────────────────────────────────────
   public-api-service:
@@ -424,7 +506,6 @@ services:
       context: .
       dockerfile: services/public-api-service/Dockerfile
     restart: unless-stopped
-    ports: ["4015:4015"]
     environment:
       <<: *common-env
       PORT: "4015"
@@ -436,6 +517,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.publicApi.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/public`) || PathPrefix(`/api/serve`)"
+      - "traefik.http.routers.publicApi.entrypoints=web"
+      - "traefik.http.services.publicApi.loadbalancer.server.port=4015"
 
   # ── Notification Service ──────────────────────────────────────────────────
   notification-service:
@@ -443,7 +529,6 @@ services:
       context: .
       dockerfile: services/notification-service/Dockerfile
     restart: unless-stopped
-    ports: ["4016:4016"]
     environment:
       <<: *common-env
       PORT: "4016"
@@ -456,6 +541,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification.rule=PathPrefix(`/api/notifications`) || PathPrefix(`/api/notification-preferences`)"
+      - "traefik.http.routers.notification.entrypoints=web"
+      - "traefik.http.services.notification.loadbalancer.server.port=4016"
 
   # ── HR Service ────────────────────────────────────────────────────────────
   hr-service:
@@ -463,7 +553,6 @@ services:
       context: .
       dockerfile: services/hr-service/Dockerfile
     restart: unless-stopped
-    ports: ["4017:4017"]
     environment:
       <<: *common-env
       PORT: "4017"
@@ -475,6 +564,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hr.rule=PathPrefix(`/api/employees`) || PathPrefix(`/api/hr`) || PathPrefix(`/api/time-tracking`) || PathPrefix(`/api/payroll-hr`)"
+      - "traefik.http.routers.hr.entrypoints=web"
+      - "traefik.http.services.hr.loadbalancer.server.port=4017"
 
   # ── Project Service ───────────────────────────────────────────────────────
   project-service:
@@ -482,7 +576,6 @@ services:
       context: .
       dockerfile: services/project-service/Dockerfile
     restart: unless-stopped
-    ports: ["4018:4018"]
     environment:
       <<: *common-env
       PORT: "4018"
@@ -494,6 +587,11 @@ services:
       interval: 15s
       timeout: 5s
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.project.rule=PathPrefix(`/api/projects`) || PathPrefix(`/api/kanban`) || PathPrefix(`/api/tasks`)"
+      - "traefik.http.routers.project.entrypoints=web"
+      - "traefik.http.services.project.loadbalancer.server.port=4018"
 
 volumes:
   pgdata:
