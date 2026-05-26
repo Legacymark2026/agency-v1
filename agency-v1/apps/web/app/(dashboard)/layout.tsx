@@ -12,6 +12,7 @@ import { canCustomRoleAccess } from "@/lib/role-config";
 import { OnboardingWizard } from "@/components/onboarding/wizard";
 import { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
+import { NotificationListener } from "@/components/dashboard/notification-listener";
 
 export const dynamic = 'force-dynamic';
 
@@ -194,6 +195,9 @@ export default async function DashboardLayout({
 
                 {/* Agente de IA Flotante Nivel C-Level */}
                 <CognitiveAgentChat />
+
+                {/* Listener global de notificaciones */}
+                <NotificationListener />
 
                 {/* Global Operations Timer */}
                 <GlobalTimer />
