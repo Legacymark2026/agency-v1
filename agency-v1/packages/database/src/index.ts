@@ -8,10 +8,6 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { PrismaClient as PrismaClientAuth } from "@prisma/client/auth";
-import { PrismaClient as PrismaClientCore } from "@prisma/client/core";
-import { PrismaClient as PrismaClientMedia } from "@prisma/client/media";
-import { PrismaClient as PrismaClientAnalytics } from "@prisma/client/analytics";
 
 // Re-export everything from the main Prisma Client for type safety and backward compatibility
 export { PrismaClient } from "@prisma/client";
@@ -19,53 +15,59 @@ export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
 // Instancias de singleton cargadas de manera perezosa (lazy)
-let _prismaAuth: any = null;
-let _prismaCore: any = null;
-let _prismaMedia: any = null;
-let _prismaAnalytics: any = null;
+let _prismaAuth: PrismaClient | null = null;
+let _prismaCore: PrismaClient | null = null;
+let _prismaMedia: PrismaClient | null = null;
+let _prismaAnalytics: PrismaClient | null = null;
 
-export const getPrismaAuth = () => {
+const logConfig = process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"];
+
+export const getPrismaAuth = (): PrismaClient => {
   if (!_prismaAuth) {
-    _prismaAuth = new PrismaClientAuth({
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-      datasources: { db: { url: process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL } },
+    const url = process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
+    _prismaAuth = new PrismaClient({
+      log: logConfig as any,
+      datasources: url ? { db: { url } } : undefined,
     });
   }
   return _prismaAuth;
 };
 
-export const getPrismaCore = () => {
+export const getPrismaCore = (): PrismaClient => {
   if (!_prismaCore) {
-    _prismaCore = new PrismaClientCore({
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-      datasources: { db: { url: process.env.CORE_DATABASE_URL || process.env.DATABASE_URL } },
+    const url = process.env.CORE_DATABASE_URL || process.env.DATABASE_URL;
+    _prismaCore = new PrismaClient({
+      log: logConfig as any,
+      datasources: url ? { db: { url } } : undefined,
     });
   }
   return _prismaCore;
 };
 
-export const getPrismaMedia = () => {
+export const getPrismaMedia = (): PrismaClient => {
   if (!_prismaMedia) {
-    _prismaMedia = new PrismaClientMedia({
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-      datasources: { db: { url: process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL } },
+    const url = process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL;
+    _prismaMedia = new PrismaClient({
+      log: logConfig as any,
+      datasources: url ? { db: { url } } : undefined,
     });
   }
   return _prismaMedia;
 };
 
-export const getPrismaAnalytics = () => {
+export const getPrismaAnalytics = (): PrismaClient => {
   if (!_prismaAnalytics) {
-    _prismaAnalytics = new PrismaClientAnalytics({
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-      datasources: { db: { url: process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL } },
+    const url = process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL;
+    _prismaAnalytics = new PrismaClient({
+      log: logConfig as any,
+      datasources: url ? { db: { url } } : undefined,
     });
   }
   return _prismaAnalytics;
 };
 
 // Mapa para asociar cada modelo con su cliente de base de datos específico
-const modelToClientGetter: Record<string, () => any> = {
+const modelToClientGetter: Record<string, () => PrismaClient> = {
   // Auth & RBAC
   user: getPrismaAuth,
   userProfile: getPrismaAuth,
@@ -111,7 +113,7 @@ const modelToClientGetter: Record<string, () => any> = {
   notificationDeliveryLog: getPrismaAnalytics,
 };
 
-// Singleton global para compatibilidad con hot-reload en Next.js
+// Singleton global para Next.js hot-reload
 const globalForPrisma = globalThis as unknown as {
   prisma: any;
 };
@@ -123,9 +125,9 @@ export const prisma =
       if (typeof prop === "symbol") return (target as any)[prop];
 
       // Redirigir el acceso al modelo correspondiente si está mapeado
-      const clientGetter = modelToClientGetter[prop];
+      const clientGetter = modelToClientGetter[prop as string];
       if (clientGetter) {
-        return clientGetter()[prop];
+        return clientGetter()[prop as any];
       }
 
       // Por defecto, delegar métodos de utilidad ($queryRaw, $connect, etc.) al cliente core
@@ -147,9 +149,9 @@ export const prisma =
             const txProxy = new Proxy({} as any, {
               get(txTarget, txProp: string | symbol) {
                 if (typeof txProp === "symbol") return (txTarget as any)[txProp];
-                const getter = modelToClientGetter[txProp];
+                const getter = modelToClientGetter[txProp as string];
                 if (getter) {
-                  return getter()[txProp];
+                  return getter()[txProp as any];
                 }
                 return (coreClient as any)[txProp];
               }
@@ -174,4 +176,3 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default prisma;
-
