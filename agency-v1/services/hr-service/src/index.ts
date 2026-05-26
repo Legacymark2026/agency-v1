@@ -140,9 +140,9 @@ app.get("/api/payroll", async (req, res) => {
     });
 
     const summary = {
-      totalEarnings: payrolls.reduce((sum, p) => sum + (p.totalEarnings || 0), 0),
-      totalNet: payrolls.reduce((sum, p) => sum + (p.netPay || 0), 0),
-      totalDeductions: payrolls.reduce((sum, p) => sum + (p.totalDeductions || 0), 0),
+      totalEarnings: payrolls.reduce((sum: number, p: typeof payrolls[number]) => sum + Number(p.totalEarnings ?? 0), 0),
+      totalNet: payrolls.reduce((sum: number, p: typeof payrolls[number]) => sum + Number(p.netPay ?? 0), 0),
+      totalDeductions: payrolls.reduce((sum: number, p: typeof payrolls[number]) => sum + Number(p.totalDeductions ?? 0), 0),
       count: payrolls.length,
     };
 
@@ -336,7 +336,7 @@ app.get("/api/hr/pila-export", async (req, res) => {
     });
 
     const headers = "TipoDocumento,NumeroDocumento,Nombres,Apellidos,IBC,Salud,Pension,ARL,CCF";
-    const rows = payrolls.map((p) => {
+    const rows = payrolls.map((p: typeof payrolls[number]) => {
       const ibc = p.totalEarnings || 0;
       return [
         p.employee.documentType || "CC",
