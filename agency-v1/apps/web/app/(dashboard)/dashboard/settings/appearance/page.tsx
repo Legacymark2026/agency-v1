@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { Palette, Moon, Sun, Monitor, Zap, AlignJustify, Type, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
@@ -65,6 +65,7 @@ export default function AppearancePage() {
         animationsEnabled, setAnimationsEnabled 
     } = useUIStore();
     
+    const [isPending, startTransition] = useTransition();
     const [mounted, setMounted] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -97,7 +98,7 @@ export default function AppearancePage() {
             <SectionCard title="Tema de la Interfaz" icon={<Moon className="w-4 h-4 text-[var(--ds-teal)]" />}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {THEMES.map(t => (
-                        <button key={t.key} onClick={() => setTheme(t.key)}
+                        <button key={t.key} onClick={() => startTransition(() => setTheme(t.key))}
                             className={`relative p-4 rounded-[0.15rem] border text-left transition-all ${theme === t.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-[var(--ds-border)] hover:border-[var(--ds-border-glow)] bg-[var(--ds-surface-2)]/20"}`}>
                             {/* Preview */}
                             <div className={`h-16 rounded-[0.15rem] ${t.preview} border mb-3 flex items-center justify-center`}>
@@ -119,7 +120,7 @@ export default function AppearancePage() {
             <SectionCard title="Tema de Fondo" icon={<Palette className="w-4 h-4 text-[var(--ds-teal)]" />}>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     {BG_THEMES.map(b => (
-                        <button key={b.key} onClick={() => setBgTheme(b.key as BgTheme)}
+                        <button key={b.key} onClick={() => startTransition(() => setBgTheme(b.key as BgTheme))}
                             className={`relative p-3 rounded-[0.15rem] border text-left transition-all ${bgTheme === b.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-[var(--ds-border)] hover:border-[var(--ds-border-glow)] bg-[var(--ds-surface-2)]/20"}`}>
                             {/* Preview */}
                             <div className={`h-12 rounded-[0.15rem] ${b.preview} border mb-2 flex items-center justify-center`} />
@@ -139,7 +140,7 @@ export default function AppearancePage() {
             <SectionCard title="Color de Acento" icon={<Palette className="w-4 h-4 text-[var(--ds-teal)]" />}>
                 <div className="flex flex-wrap gap-3">
                     {ACCENT_COLORS.map(c => (
-                        <button key={c.key} onClick={() => setAccent(c.key as AccentColor)} className="group flex flex-col items-center gap-2">
+                        <button key={c.key} onClick={() => startTransition(() => setAccent(c.key as AccentColor))} className="group flex flex-col items-center gap-2">
                             <div className={`w-9 h-9 rounded-[0.15rem] ${c.bg} transition-all group-hover:scale-110 ${accent === c.key ? "ring-2 ring-offset-2 ring-offset-[var(--ds-bg)] " + c.ring : ""}`}>
                                 {accent === c.key && <div className="w-full h-full flex items-center justify-center"><Check className="w-4 h-4 text-white" /></div>}
                             </div>
@@ -153,7 +154,7 @@ export default function AppearancePage() {
             <SectionCard title="Densidad de la UI" icon={<AlignJustify className="w-4 h-4 text-[var(--ds-teal)]" />}>
                 <div className="grid grid-cols-3 gap-3">
                     {DENSITIES.map(d => (
-                        <button key={d.key} onClick={() => setDensity(d.key as Density)}
+                        <button key={d.key} onClick={() => startTransition(() => setDensity(d.key as Density))}
                             className={`p-4 rounded-[0.15rem] border text-left transition-all ${density === d.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-[var(--ds-border)] hover:border-[var(--ds-border-glow)] bg-[var(--ds-surface-2)]/20"}`}>
                             <div className="flex items-center gap-2 mb-2">
                                 <div className={`flex flex-col gap-0.5 ${d.key === "compact" ? "gap-0.5" : d.key === "comfortable" ? "gap-2" : "gap-1"}`}>
@@ -172,7 +173,7 @@ export default function AppearancePage() {
             <SectionCard title="Tipografía" icon={<Type className="w-4 h-4 text-[var(--ds-teal)]" />}>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {FONTS.map(f => (
-                        <button key={f.key} onClick={() => setFont(f.key as FontType)}
+                        <button key={f.key} onClick={() => startTransition(() => setFont(f.key as FontType))}
                             className={`p-4 rounded-[0.15rem] border text-left transition-all ${font === f.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-[var(--ds-border)] hover:border-[var(--ds-border-glow)] bg-[var(--ds-surface-2)]/20"}`}>
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-2xl font-bold text-[var(--ds-text-primary)]">Aa</span>
@@ -197,7 +198,7 @@ export default function AppearancePage() {
                                 <p className="text-sm text-[var(--ds-text-primary)]">{opt.label}</p>
                                 <p className="text-xs text-[var(--ds-text-muted)] mt-0.5">{opt.desc}</p>
                             </div>
-                            <button onClick={() => opt.set(!opt.val)}
+                            <button onClick={() => startTransition(() => opt.set(!opt.val))}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${opt.val ? "bg-[var(--ds-teal-md)]" : "bg-[var(--ds-surface-2)] border border-[var(--ds-border)]"}`}>
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${opt.val ? "translate-x-6" : "translate-x-1"}`} />
                             </button>

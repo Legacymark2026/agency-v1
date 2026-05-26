@@ -1,13 +1,13 @@
 
 import { PrismaClient } from "@prisma/client";
-import { MetaSyncService } from "../lib/services/meta-sync"; // Adjust relative import based on script location
+import { MetaSyncService } from "../../lib/services/meta-sync";
 
 const prisma = new PrismaClient();
 
 async function verifyRealSync() {
     console.log("🔍 Verifying Real Meta Sync process...\n");
 
-    const email = 'administrador@legacymark.com';
+    const email = 'administrador@legacymarksas.com';
 
     // 1. Get Admin User
     const user = await prisma.user.findUnique({

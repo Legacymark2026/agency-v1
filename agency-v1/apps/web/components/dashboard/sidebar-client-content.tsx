@@ -8,7 +8,7 @@ import {
     LogOut, PanelLeftClose, PanelLeft, Palette, Check
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { NotificationBell } from "./notification-bell";
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; code?: string; }
@@ -27,6 +27,7 @@ interface SidebarContentProps {
 
 export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: SidebarContentProps) {
     const { sidebarCollapsed, toggleSidebar, accent, setAccent } = useUIStore();
+    const [isPending, startTransition] = useTransition();
     const [showColorPicker, setShowColorPicker] = useState(false);
     const pathname = usePathname();
     const accessibleSet = new Set(accessibleRoutes);
@@ -129,7 +130,9 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                                             <button
                                                 key={c.key}
                                                 onClick={() => {
-                                                    setAccent(c.key as any);
+                                                    startTransition(() => {
+                                                        setAccent(c.key as any);
+                                                    });
                                                     setShowColorPicker(false);
                                                 }}
                                                 className={`w-7 h-7 rounded-full ${c.bg} hover:scale-110 active:scale-95 transition-all duration-200 relative flex items-center justify-center cursor-pointer shadow-md ${

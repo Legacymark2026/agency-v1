@@ -333,7 +333,7 @@ services:
         limits: { cpus: "2.0", memory: 2G }
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.video.rule=PathPrefix(`/api/video`) || PathPrefix(`/api/media`)"
+      - "traefik.http.routers.video.rule=PathPrefix(`/api/video`)"
       - "traefik.http.routers.video.entrypoints=web"
       - "traefik.http.services.video.loadbalancer.server.port=4007"
 
@@ -519,7 +519,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.publicApi.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/public`) || PathPrefix(`/api/serve`)"
+      - "traefik.http.routers.publicApi.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/public`)"
       - "traefik.http.routers.publicApi.entrypoints=web"
       - "traefik.http.services.publicApi.loadbalancer.server.port=4015"
 

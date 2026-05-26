@@ -14,6 +14,7 @@ interface NodeConfigPanelProps {
     selectedNode: any;
     onChange: (nodeId: string, newData: any) => void;
     onClose: () => void;
+    integrationsStatus?: Record<string, boolean>;
 }
 
 function Section({ title, icon, children, defaultOpen = true, color = "blue" }: any) {
@@ -44,9 +45,28 @@ function Field({ label, hint, children }: any) {
     );
 }
 
-export default function NodeConfigPanel({ selectedNode, onChange, onClose }: NodeConfigPanelProps) {
+export default function NodeConfigPanel({ selectedNode, onChange, onClose, integrationsStatus = {} }: NodeConfigPanelProps) {
     const { id, type, data } = selectedNode;
     const h = (key: string, value: any) => onChange(id, { ...data, [key]: value });
+
+    const renderConnectionBadge = (provider: string) => {
+        const isConnected = integrationsStatus[provider];
+        if (isConnected) {
+            return (
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-900/40 px-2 py-0.5 rounded-full mt-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Conectado
+                </div>
+            );
+        } else {
+            return (
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-400 bg-amber-950/40 border border-amber-900/40 px-2 py-0.5 rounded-full mt-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Desconectado (Configurar en Ajustes → Integraciones)
+                </div>
+            );
+        }
+    };
 
     const renderContent = () => {
         // TRIGGER NODE
@@ -115,7 +135,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                     {(a === 'ADD_TAG' || a === 'REMOVE_TAG') && <Field label="Nombre de la etiqueta"><Input value={data.tagName||''} onChange={e=>h('tagName',e.target.value)} placeholder="VIP, Hot Lead, etc."/></Field>}
                     {a === 'ASSIGN_USER' && <Field label="ID de Usuario / Round Robin"><Input value={data.userId||''} onChange={e=>h('userId',e.target.value)} placeholder="user_uuid o {{round_robin}}"/></Field>}
                     {a === 'ADJUST_SCORE' && <Field label="Ajuste de Score (+/-)" hint="Use negativo para restar"><Input type="number" value={data.scoreAdj||10} onChange={e=>h('scoreAdj',e.target.value)}/></Field>}
-                    {a === 'META_AUDIENCE' && <Field label="Custom Audience ID"><Input value={data.audienceId||''} onChange={e=>h('audienceId',e.target.value)} placeholder="aud_xxxx"/></Field>}
+                    {a === 'META_AUDIENCE' && <><Field label="Custom Audience ID"><Input value={data.audienceId||''} onChange={e=>h('audienceId',e.target.value)} placeholder="aud_xxxx"/></Field>{renderConnectionBadge('meta-app')}</>}
                     {a === 'GENERATE_INVOICE' && <Field label="Monto (USD)"><Input type="number" value={data.amount||''} onChange={e=>h('amount',e.target.value)} placeholder="99.00"/></Field>}
                     {a === 'VALIDATE_DATA' && <Field label="Campo a validar"><Select value={data.validateField||'EMAIL'} onValueChange={v=>h('validateField',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="EMAIL">Email</SelectItem><SelectItem value="PHONE">Teléfono</SelectItem><SelectItem value="BOTH">Ambos</SelectItem></SelectContent></Select></Field>}
                     {a === 'UPDATE_DEAL' && <><Field label="Propiedad a actualizar"><Input value={data.dealProperty||''} onChange={e=>h('dealProperty',e.target.value)} placeholder="stage, amount, closeDate..."/></Field><Field label="Nuevo valor"><Input value={data.dealValue||''} onChange={e=>h('dealValue',e.target.value)} placeholder="WON, 5000, {{date}}"/></Field></>}
@@ -137,6 +157,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Asunto"><Input value={data.subject||''} onChange={e=>h('subject',e.target.value)} placeholder="Hola {{lead.name}}!"/></Field>
+                        {renderConnectionBadge('resend')}
                         <Field label="Template"><Select value={data.templateId||'blank'} onValueChange={v=>h('templateId',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="blank">HTML Libre</SelectItem><SelectItem value="welcome">Bienvenida</SelectItem><SelectItem value="followup">Seguimiento</SelectItem><SelectItem value="newsletter">Newsletter</SelectItem></SelectContent></Select></Field>
                         <Field label="Cuerpo del Email"><Textarea value={data.body||''} onChange={e=>h('body',e.target.value)} placeholder="Hola {{lead.name}}, ..." className="h-28 font-mono text-xs"/></Field>
                         <Field label="📎 Adjuntar Archivo (PDF URL)" hint="Pega el enlace directo a tu PDF o súbelo al gestor primero"><Input type="url" value={data.pdfAttachmentUrl||''} onChange={e=>h('pdfAttachmentUrl',e.target.value)} placeholder="https://legacymark.com/files/catalogo.pdf" className="text-teal-900 bg-teal-50/50 border-teal-200"/></Field>
@@ -155,6 +176,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Project Key"><Input value={data.projectKey||''} onChange={e=>h('projectKey',e.target.value)} placeholder="PROJ"/></Field>
+                        {renderConnectionBadge('jira')}
                         <Field label="Issue Type"><Select value={data.issueType||'Task'} onValueChange={v=>h('issueType',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Task">Task</SelectItem><SelectItem value="Bug">Bug</SelectItem><SelectItem value="Story">Story</SelectItem></SelectContent></Select></Field>
                         <Field label="Resumen (Summary)"><Input value={data.summary||''} onChange={e=>h('summary',e.target.value)} placeholder="Nuevo lead: {{lead.name}}"/></Field>
                     </Section>
@@ -167,6 +189,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Para (To)"><Input value={data.to||'{{lead.email}}'} onChange={e=>h('to',e.target.value)} placeholder="ejemplo@correo.com o {{lead.email}}"/></Field>
+                        {renderConnectionBadge('google')}
                         <Field label="Asunto"><Input value={data.subject||''} onChange={e=>h('subject',e.target.value)} placeholder="Asunto del correo"/></Field>
                         <Field label="Cuerpo del correo"><Textarea value={data.body||''} onChange={e=>h('body',e.target.value)} className="h-28" placeholder="Escribe el mensaje..."/></Field>
                     </Section>
@@ -176,6 +199,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Título de Reunión"><Input value={data.meetingTitle||''} onChange={e=>h('meetingTitle',e.target.value)} placeholder="Reunión con {{lead.name}}"/></Field>
+                        {renderConnectionBadge('google')}
                         <Field label="Fecha y Hora (ISO)"><Input value={data.startTime||''} onChange={e=>h('startTime',e.target.value)} placeholder="{{trigger.date}} o 2025-10-10T10:00:00Z"/></Field>
                         <Field label="Participantes (Emails)"><Input value={data.attendees||'{{lead.email}}'} onChange={e=>h('attendees',e.target.value)} placeholder="email1, email2..."/></Field>
                     </Section>
@@ -185,6 +209,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Survey ID (SurveyMonkey)"><Input value={data.surveyId||''} onChange={e=>h('surveyId',e.target.value)} placeholder="123456789"/></Field>
+                        {renderConnectionBadge('surveymonkey')}
                         <Field label="Email Destino"><Input value={data.recipient||'{{lead.email}}'} onChange={e=>h('recipient',e.target.value)} placeholder="{{lead.email}}"/></Field>
                     </Section>
                 </>);
@@ -193,6 +218,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Folder ID (Opcional)"><Input value={data.folderId||''} onChange={e=>h('folderId',e.target.value)} placeholder="Dejar vacío para raíz"/></Field>
+                        {renderConnectionBadge('google')}
                         <Field label="Nombre del Archivo"><Input value={data.fileName||''} onChange={e=>h('fileName',e.target.value)} placeholder="Reporte_{{lead.name}}.pdf"/></Field>
                         <Field label="Contenido/URL"><Input value={data.fileContent||''} onChange={e=>h('fileContent',e.target.value)} placeholder="URL del documento o texto"/></Field>
                     </Section>
@@ -202,6 +228,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Webinar ID"><Input value={data.webinarId||''} onChange={e=>h('webinarId',e.target.value)} placeholder="ID del Webinar"/></Field>
+                        {renderConnectionBadge('gotowebinar')}
                         <Field label="Email del Asistente"><Input value={data.attendeeEmail||'{{lead.email}}'} onChange={e=>h('attendeeEmail',e.target.value)}/></Field>
                         <Field label="Nombre del Asistente"><Input value={data.attendeeName||'{{lead.name}}'} onChange={e=>h('attendeeName',e.target.value)}/></Field>
                     </Section>
@@ -211,6 +238,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
                 return (<>
                     <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                         <Field label="Event ID"><Input value={data.eventId||''} onChange={e=>h('eventId',e.target.value)} placeholder="ID del Evento"/></Field>
+                        {renderConnectionBadge('eventbrite')}
                         <Field label="Email del Invitado"><Input value={data.attendeeEmail||'{{lead.email}}'} onChange={e=>h('attendeeEmail',e.target.value)}/></Field>
                     </Section>
                 </>);
@@ -223,6 +251,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
             return (<>
                 <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                     <Field label="Número destino"><Input value={data.phoneNumber||'{{lead.phone}}'} onChange={e=>h('phoneNumber',e.target.value)} placeholder="+1234567890 o {{lead.phone}}" className="font-mono text-xs"/></Field>
+                    {isWA && renderConnectionBadge('whatsapp')}
                     {isWA && <Field label="Template de WhatsApp (HSM)"><Input value={data.templateName||''} onChange={e=>h('templateName',e.target.value)} placeholder="welcome_v2"/></Field>}
                     <Field label="Mensaje"><Textarea value={data.message||''} onChange={e=>h('message',e.target.value)} placeholder="Hola {{lead.name}}..." className="h-24"/></Field>
                 </Section>
@@ -429,6 +458,7 @@ export default function NodeConfigPanel({ selectedNode, onChange, onClose }: Nod
             return (<>
                 <Section title="Básico" icon={<Zap size={12}/>} color="blue">
                     <Field label="Tarea de IA"><Select value={data.aiTask||'SENTIMENT'} onValueChange={v=>h('aiTask',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="SENTIMENT">Análisis de Sentimiento</SelectItem><SelectItem value="GENERATION">Generar Texto (Respuesta)</SelectItem><SelectItem value="SUMMARIZE">Resumir Datos</SelectItem><SelectItem value="EXTRACTION">Extraer Info Clave</SelectItem><SelectItem value="CLASSIFY_INTENT">Clasificar Intención</SelectItem><SelectItem value="TRANSLATOR">Traductor</SelectItem></SelectContent></Select></Field>
+                    {renderConnectionBadge('ai-models')}
                     <Field label="Prompt / Instrucción al Agente"><Textarea value={data.promptContext||''} onChange={e=>h('promptContext',e.target.value)} placeholder="Instrucciones adicionales para la IA..." className="h-24 text-xs"/></Field>
                     {data.aiTask === 'TRANSLATOR' && <Field label="Idioma destino"><Select value={data.targetLang||'es'} onValueChange={v=>h('targetLang',v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="es">Español</SelectItem><SelectItem value="en">Inglés</SelectItem><SelectItem value="pt">Portugués</SelectItem><SelectItem value="fr">Francés</SelectItem></SelectContent></Select></Field>}
                 </Section>

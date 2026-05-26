@@ -26,7 +26,7 @@ import dagre from 'dagre';
 import Sidebar from '../../../../../../components/automation/Sidebar';
 import { nodeTypes } from '../../../../../../components/automation/CustomNodes';
 import NodeConfigPanel from '../../../../../../components/automation/NodeConfigPanel';
-import { saveUserWorkflow, getLatestWorkflow, getWorkflowById } from '@/actions/automation';
+import { saveUserWorkflow, getLatestWorkflow, getWorkflowById, getIntegrationsStatusMap } from '@/actions/automation';
 import { saveWorkflowVersion, getWorkflowVersions, rollbackWorkflowToVersion } from '@/actions/workflow-versions';
 
 const initialNodes = [
@@ -91,6 +91,9 @@ function AutomationBuilder() {
     const [workflowName, setWorkflowName] = useState('New Workflow');
     const [isSimulating, setIsSimulating] = useState(false);
 
+    // Integrations Config Status
+    const [integrationsStatusMap, setIntegrationsStatusMap] = useState<Record<string, boolean>>({});
+
     // Test Mode State
     const [isTestPanelOpen, setIsTestPanelOpen] = useState(false);
     const [testPayload, setTestPayload] = useState('{\n  "email": "cliente@empresa.com",\n  "name": "Juan García",\n  "phone": "+573001234567",\n  "companyName": "Empresa XYZ",\n  "leadScore": 85,\n  "stage": "PROPOSAL",\n  "tier": "VIP"\n}');
@@ -113,6 +116,21 @@ function AutomationBuilder() {
 
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    // --- Fetch Integrations connection map ---
+    useEffect(() => {
+        async function fetchIntegrations() {
+            try {
+                const res = await getIntegrationsStatusMap();
+                if (res.success && res.statusMap) {
+                    setIntegrationsStatusMap(res.statusMap);
+                }
+            } catch (e) {
+                console.error("Failed to load integrations status:", e);
+            }
+        }
+        fetchIntegrations();
+    }, [workflowId]);
 
     // --- Load Workflow on Mount ---
     useEffect(() => {
@@ -653,7 +671,7 @@ function AutomationBuilder() {
                     </ReactFlow>
 
                     {selectedNode && (
-                        <NodeConfigPanel selectedNode={selectedNode} onChange={onNodeDataChange} onClose={() => setSelectedNode(null)} />
+                        <NodeConfigPanel selectedNode={selectedNode} onChange={onNodeDataChange} onClose={() => setSelectedNode(null)} integrationsStatus={integrationsStatusMap} />
                     )}
 
                     {/* ── TEST MODE PANEL ─────────────────────────────────── */}

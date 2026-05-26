@@ -41,10 +41,31 @@ async function executeRealAction(
     context: Record<string, any>,
     companyId: string
 ): Promise<string> {
+    // Query active integration configs for this company
+    const configs = companyId ? await prisma.integrationConfig.findMany({
+        where: { companyId, isEnabled: true }
+    }) : [];
+    const configProviders = new Set(configs.map(c => c.provider));
+
+    // Also check WhatsAppIntegration model
+    let hasWhatsAppIntegration = false;
+    if (companyId) {
+        const waIntegration = await prisma.whatsAppIntegration.findFirst({
+            where: { companyId, status: "active" }
+        });
+        if (waIntegration) hasWhatsAppIntegration = true;
+    }
+
     switch (actionType) {
         case "SEND_EMAIL": {
             const to = context[config.toVariable || "email"] || config.to;
             if (!to) return "SKIPPED: no recipient email in context";
+
+            const hasGlobal = !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_123456789';
+            const hasDB = configProviders.has('RESEND') || configProviders.has('resend');
+            if (!hasGlobal && !hasDB) {
+                return "FAILED: Credenciales de Resend no conectadas (RESEND_API_KEY no configurado)";
+            }
 
             let html = config.htmlBody || config.body || "<p>Email automático</p>";
             let subject = config.subject || "Mensaje de LegacyMark";
@@ -131,6 +152,11 @@ async function executeRealAction(
         case "SEND_WHATSAPP": {
             const phone = context[config.phoneVariable || "phone"] || config.phone;
             if (!phone) return "SKIPPED: no phone";
+
+            if (!configProviders.has('whatsapp') && !hasWhatsAppIntegration) {
+                return "FAILED: Credenciales de WhatsApp no conectadas";
+            }
+
             try {
                 // Dynamic import — WhatsApp service may not be available in all envs
                 const waService = await import("@/lib/whatsapp-service");
@@ -148,6 +174,11 @@ async function executeRealAction(
             const projectKey = Handlebars.compile(config.projectKey || "")(context);
             const summary = Handlebars.compile(config.summary || "")(context);
             if (!projectKey || !summary) return "SKIPPED: missing Jira projectKey or summary";
+
+            if (!configProviders.has('jira') && !configProviders.has('atlassian')) {
+                return "FAILED: Credenciales de Jira / Atlassian no conectadas";
+            }
+
             // TODO: Integrar con API real de Atlassian usando tokens en IntegrationConfig
             return `JIRA_TICKET_CREATED: [${projectKey}] ${summary}`;
         }
@@ -156,6 +187,11 @@ async function executeRealAction(
             const to = Handlebars.compile(config.to || "{{lead.email}}")(context);
             const subject = Handlebars.compile(config.subject || "")(context);
             if (!to || !subject) return "SKIPPED: missing Gmail recipient or subject";
+
+            if (!configProviders.has('google') && !configProviders.has('google-analytics')) {
+                return "FAILED: Credenciales de Gmail (Google Account) no conectadas";
+            }
+
             // TODO: Integrar con Gmail API (OAuth) usando token de IntegrationConfig
             return `GMAIL_SENT to ${to}`;
         }
@@ -164,6 +200,10 @@ async function executeRealAction(
             const title = Handlebars.compile(config.meetingTitle || "Meet")(context);
             const attendees = Handlebars.compile(config.attendees || "")(context).split(',').map((s: string) => s.trim());
             
+            if (!configProviders.has('google') && !configProviders.has('google-analytics')) {
+                return "FAILED: Credenciales de Google Calendar / Meet no conectadas";
+            }
+
             // Simulación de creación de evento en Google Calendar
             const meetLink = `https://meet.google.com/${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 5)}`;
             
@@ -178,12 +218,22 @@ async function executeRealAction(
             const surveyId = Handlebars.compile(config.surveyId || "")(context);
             const recipient = Handlebars.compile(config.recipient || "")(context);
             if (!surveyId || !recipient) return "SKIPPED: missing surveyId or recipient";
+
+            if (!configProviders.has('surveymonkey')) {
+                return "FAILED: Credenciales de SurveyMonkey no conectadas";
+            }
+
             // TODO: Invocar SurveyMonkey API
             return `SURVEY_SENT (${surveyId}) to ${recipient}`;
         }
 
         case "UPLOAD_GDRIVE": {
             const fileName = Handlebars.compile(config.fileName || "document.pdf")(context);
+            
+            if (!configProviders.has('google') && !configProviders.has('google-analytics')) {
+                return "FAILED: Credenciales de Google Drive no conectadas";
+            }
+
             // TODO: Implementar subida a Google Drive API con Service Account JSON
             return `GDRIVE_UPLOADED: ${fileName}`;
         }
@@ -192,6 +242,11 @@ async function executeRealAction(
             const webinarId = Handlebars.compile(config.webinarId || "")(context);
             const email = Handlebars.compile(config.attendeeEmail || "")(context);
             if (!webinarId || !email) return "SKIPPED: missing webinarId or email";
+
+            if (!configProviders.has('gotowebinar')) {
+                return "FAILED: Credenciales de GoToWebinar no conectadas";
+            }
+
             // TODO: Implementar registro en GoToWebinar API
             return `GOTOWEBINAR_REGISTERED: ${email} -> ${webinarId}`;
         }
@@ -200,12 +255,24 @@ async function executeRealAction(
             const eventId = Handlebars.compile(config.eventId || "")(context);
             const email = Handlebars.compile(config.attendeeEmail || "")(context);
             if (!eventId || !email) return "SKIPPED: missing eventId or email";
+
+            if (!configProviders.has('eventbrite')) {
+                return "FAILED: Credenciales de Eventbrite no conectadas";
+            }
+
             // TODO: Implementar invitación Eventbrite API
             return `EVENTBRITE_INVITED: ${email} -> ${eventId}`;
         }
 
         case "AI_AGENT": {
             if (!config.agentId) return "SKIPPED: no agentId";
+
+            const hasGlobal = !!process.env.GEMINI_API_KEY || !!process.env.OPENAI_API_KEY;
+            const hasDB = configProviders.has('ai-models') || configProviders.has('gemini');
+            if (!hasGlobal && !hasDB) {
+                return "FAILED: API Key de IA no configurada (GEMINI_API_KEY o similar)";
+            }
+
             const { runAIAgent } = await import("@/lib/agent-runner");
             // Acepta `prompt`, `promptContext` (del seed) o usa el contexto completo
             const userPrompt = config.prompt || config.promptContext || "Analiza este contexto";
@@ -919,6 +986,52 @@ export async function bulkToggleWorkflows(ids: string[], isActive: boolean) {
             data: { isActive }
         });
         return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function getIntegrationsStatusMap() {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+
+    try {
+        const companyUser = await prisma.companyUser.findFirst({
+            where: { userId: session.user.id },
+            select: { companyId: true }
+        });
+        if (!companyUser) return { success: false, error: "Company not found" };
+
+        const companyId = companyUser.companyId;
+
+        // Fetch all integration configs for this company
+        const configs = await prisma.integrationConfig.findMany({
+            where: { companyId }
+        });
+
+        const statusMap: Record<string, boolean> = {};
+        for (const c of configs) {
+            statusMap[c.provider] = c.isEnabled;
+        }
+
+        // Also check WhatsAppIntegration table
+        const wa = await prisma.whatsAppIntegration.findFirst({
+            where: { companyId, status: 'active' }
+        });
+        if (wa) {
+            statusMap['whatsapp'] = true;
+        }
+
+        // Check Resend config
+        statusMap['resend'] = !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_123456789';
+        if (configs.some(c => (c.provider === 'RESEND' || c.provider === 'resend') && c.isEnabled)) {
+            statusMap['resend'] = true;
+        }
+
+        // Check IA model APIs
+        statusMap['ai-models'] = !!process.env.GEMINI_API_KEY || !!process.env.OPENAI_API_KEY || configs.some(c => (c.provider === 'ai-models' || c.provider === 'gemini') && c.isEnabled);
+
+        return { success: true, statusMap };
     } catch (e: any) {
         return { success: false, error: e.message };
     }
