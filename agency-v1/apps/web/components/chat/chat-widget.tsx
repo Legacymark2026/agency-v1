@@ -19,7 +19,7 @@ export function ChatWidget() {
     const [isMobile, setIsMobile] = useState(false);
 
     // Si estamos en el panel de control (rutas de dashboard), no renderizar el widget de chat flotante
-    if (pathname?.startsWith("/dashboard")) {
+    if (pathname?.includes("/dashboard") || pathname?.startsWith("/dashboard")) {
         return null;
     }
     
