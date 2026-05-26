@@ -23,6 +23,15 @@ COPY services/video-service/ ./services/video-service/
 WORKDIR /app/services/video-service
 RUN npx tsc --outDir dist
 
+
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY packages/database/package.json ./packages/database/
+COPY packages/events/package.json ./packages/events/
+COPY services/video-service/package.json ./services/video-service/
+RUN npm ci --omit=dev --workspace=@agency/video-service --ignore-scripts || npm install --omit=dev --workspace=@agency/video-service --ignore-scripts
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -36,7 +45,8 @@ COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
 COPY --from=builder /app/services/video-service/dist ./dist
 COPY --from=builder /app/services/video-service/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Create output directory for rendered videos
 RUN mkdir -p /app/renders

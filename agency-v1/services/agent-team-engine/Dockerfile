@@ -23,6 +23,15 @@ COPY services/agent-team-engine/ ./services/agent-team-engine/
 WORKDIR /app/services/agent-team-engine
 RUN npx tsc --outDir dist
 
+
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY packages/database/package.json ./packages/database/
+COPY packages/events/package.json ./packages/events/
+COPY services/agent-team-engine/package.json ./services/agent-team-engine/
+RUN npm ci --omit=dev --workspace=@agency/agent-team-engine --ignore-scripts || npm install --omit=dev --workspace=@agency/agent-team-engine --ignore-scripts
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -33,7 +42,8 @@ COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
 COPY --from=builder /app/services/agent-team-engine/dist ./dist
 COPY --from=builder /app/services/agent-team-engine/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 4012
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4012/health || exit 1

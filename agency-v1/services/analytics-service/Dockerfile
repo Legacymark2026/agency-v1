@@ -23,6 +23,15 @@ COPY services/analytics-service/ ./services/analytics-service/
 WORKDIR /app/services/analytics-service
 RUN npx tsc --outDir dist
 
+
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY packages/database/package.json ./packages/database/
+COPY packages/events/package.json ./packages/events/
+COPY services/analytics-service/package.json ./services/analytics-service/
+RUN npm ci --omit=dev --workspace=@agency/analytics-service --ignore-scripts || npm install --omit=dev --workspace=@agency/analytics-service --ignore-scripts
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -33,7 +42,8 @@ COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
 COPY --from=builder /app/services/analytics-service/dist ./dist
 COPY --from=builder /app/services/analytics-service/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 4013
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4013/health || exit 1
