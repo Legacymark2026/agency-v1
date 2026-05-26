@@ -13,6 +13,7 @@ function AppearanceEnforcer() {
     const accent = useUIStore((state) => state.accent);
     const density = useUIStore((state) => state.density);
     const font = useUIStore((state) => state.font);
+    const bgTheme = useUIStore((state) => state.bgTheme);
     const animationsEnabled = useUIStore((state) => state.animationsEnabled);
 
     useEffect(() => {
@@ -20,7 +21,7 @@ function AppearanceEnforcer() {
 
         // Remove old classes
         root.classList.forEach((cls) => {
-            if (cls.startsWith('theme-') || cls.startsWith('density-') || cls.startsWith('font-')) {
+            if (cls.startsWith('theme-') || cls.startsWith('density-') || cls.startsWith('font-') || cls.startsWith('bg-')) {
                 root.classList.remove(cls);
             }
         });
@@ -29,13 +30,14 @@ function AppearanceEnforcer() {
         root.classList.add(`theme-${accent}`);
         root.classList.add(`density-${density}`);
         root.classList.add(`font-${font}`);
+        root.classList.add(`bg-${bgTheme}`);
 
         if (!animationsEnabled) {
             root.classList.add('disable-animations');
         } else {
             root.classList.remove('disable-animations');
         }
-    }, [accent, density, font, animationsEnabled]);
+    }, [accent, density, font, bgTheme, animationsEnabled]);
 
     return null;
 }

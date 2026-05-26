@@ -187,6 +187,132 @@
   --ds-glow-teal: 0 0 60px -15px rgba(5, 150, 105, 0.4);
 }
 
+/* ── Dynamic Backgrounds ── */
+/* Dark Mode Overrides */
+.dark.bg-slate {
+  --background: 222 47% 4%;
+  --ds-bg: #020617;
+  --ds-bg-deep: #010409;
+  --ds-sidebar-bg: #010409;
+  --ds-surface: rgba(15, 23, 42, 0.5);
+  --ds-surface-2: rgba(15, 23, 42, 0.7);
+  --card: 223 47% 6%;
+  --popover: 223 47% 5%;
+}
+
+.dark.bg-amoled {
+  --background: 0 0% 0%;
+  --ds-bg: #000000;
+  --ds-bg-deep: #000000;
+  --ds-sidebar-bg: #000000;
+  --ds-surface: rgba(10, 10, 10, 0.6);
+  --ds-surface-2: rgba(20, 20, 20, 0.8);
+  --card: 240 10% 3.9%;
+  --popover: 240 10% 3.9%;
+  --border: 240 5.9% 10%;
+  --input: 240 5.9% 10%;
+}
+
+.dark.bg-zinc {
+  --background: 240 10% 3.9%;
+  --ds-bg: #09090b;
+  --ds-bg-deep: #040405;
+  --ds-sidebar-bg: #040405;
+  --ds-surface: rgba(24, 24, 27, 0.5);
+  --ds-surface-2: rgba(39, 39, 42, 0.7);
+  --card: 240 10% 6%;
+  --popover: 240 10% 5%;
+  --border: 240 5.9% 15%;
+  --input: 240 5.9% 15%;
+}
+
+.dark.bg-indigo {
+  --background: 244 55% 4.1%;
+  --ds-bg: #030314;
+  --ds-bg-deep: #01010a;
+  --ds-sidebar-bg: #01010a;
+  --ds-surface: rgba(12, 12, 36, 0.5);
+  --ds-surface-2: rgba(24, 24, 64, 0.7);
+  --card: 244 55% 6%;
+  --popover: 244 55% 5%;
+  --border: 244 30% 15%;
+  --input: 244 30% 15%;
+}
+
+.dark.bg-forest {
+  --background: 142 80% 3%;
+  --ds-bg: #020804;
+  --ds-bg-deep: #010402;
+  --ds-sidebar-bg: #010402;
+  --ds-surface: rgba(6, 18, 10, 0.5);
+  --ds-surface-2: rgba(10, 32, 16, 0.7);
+  --card: 142 80% 4%;
+  --popover: 142 80% 3.5%;
+  --border: 142 30% 12%;
+  --input: 142 30% 12%;
+}
+
+/* Light Mode Overrides */
+.light.bg-slate {
+  --background: 0 0% 100%;
+  --ds-bg: #ffffff;
+  --ds-bg-deep: #f8fafc;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #f1f5f9;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+}
+
+.light.bg-amoled {
+  --background: 0 0% 100%;
+  --ds-bg: #ffffff;
+  --ds-bg-deep: #ffffff;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #f8fafc;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --border: 214.3 31.8% 90%;
+  --input: 214.3 31.8% 90%;
+}
+
+.light.bg-zinc {
+  --background: 0 0% 98%;
+  --ds-bg: #fafafa;
+  --ds-bg-deep: #f4f4f5;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #e4e4e7;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+}
+
+.light.bg-indigo {
+  --background: 220 14% 96%;
+  --ds-bg: #f5f6fa;
+  --ds-bg-deep: #ebedf5;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #e0e4f2;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --border: 220 14% 88%;
+  --input: 220 14% 88%;
+}
+
+.light.bg-forest {
+  --background: 120 15% 97%;
+  --ds-bg: #f6faf7;
+  --ds-bg-deep: #ecf5ee;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #e2f0e6;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --border: 120 15% 88%;
+  --input: 120 15% 88%;
+}
+
 /* ── Dynamic Densities ── */
 .density-compact {
   --ds-padding-card: 1rem;

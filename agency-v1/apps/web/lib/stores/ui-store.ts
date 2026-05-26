@@ -6,6 +6,7 @@ import { persist } from 'zustand/middleware';
 export type AccentColor = 'teal' | 'violet' | 'blue' | 'amber' | 'rose' | 'emerald';
 export type Density = 'compact' | 'normal' | 'comfortable';
 export type FontType = 'inter' | 'roboto' | 'jetbrains' | 'geist';
+export type BgTheme = 'slate' | 'amoled' | 'zinc' | 'indigo' | 'forest';
 
 interface UIState {
   // Sidebar
@@ -22,6 +23,9 @@ interface UIState {
   
   font: FontType;
   setFont: (font: FontType) => void;
+  
+  bgTheme: BgTheme;
+  setBgTheme: (bgTheme: BgTheme) => void;
   
   animationsEnabled: boolean;
   setAnimationsEnabled: (enabled: boolean) => void;
@@ -47,6 +51,9 @@ export const useUIStore = create<UIState>()(
       font: 'inter',
       setFont: (font) => set({ font }),
 
+      bgTheme: 'slate',
+      setBgTheme: (bgTheme) => set({ bgTheme }),
+
       animationsEnabled: true,
       setAnimationsEnabled: (enabled) => set({ animationsEnabled: enabled }),
     }),
@@ -57,6 +64,7 @@ export const useUIStore = create<UIState>()(
         accent: state.accent,
         density: state.density,
         font: state.font,
+        bgTheme: state.bgTheme,
         animationsEnabled: state.animationsEnabled,
       }),
     }

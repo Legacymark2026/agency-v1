@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Palette, Moon, Sun, Monitor, Zap, AlignJustify, Type, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
-import { useUIStore, AccentColor, Density, FontType } from "@/lib/stores/ui-store";
+import { useUIStore, AccentColor, Density, FontType, BgTheme } from "@/lib/stores/ui-store";
 
 const THEMES = [
     { key: "dark", label: "HUD Dark", desc: "Slate-950 background, teal accents", icon: <Moon className="w-4 h-4" />, preview: "bg-slate-950 border-teal-500/40" },
@@ -34,6 +34,14 @@ const FONTS = [
     { key: "geist", label: "Geist", preview: "Developer-first" },
 ];
 
+const BG_THEMES = [
+    { key: "slate", label: "Sleek Slate", desc: "Gris azulado (Predeterminado)", preview: "bg-slate-950 border-slate-800" },
+    { key: "amoled", label: "AMOLED Black", desc: "Negro absoluto de alto contraste", preview: "bg-black border-zinc-900" },
+    { key: "zinc", label: "Carbon Zinc", desc: "Gris carbón neutro moderno", preview: "bg-zinc-950 border-zinc-800" },
+    { key: "indigo", label: "Midnight Indigo", desc: "Azul noche con tintes cósmicos", preview: "bg-[rgb(3,3,20)] border-indigo-950" },
+    { key: "forest", label: "Obsidian Forest", desc: "Verde oliva profundo orgánico", preview: "bg-[rgb(2,8,4)] border-emerald-950" },
+];
+
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
     return (
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
@@ -52,6 +60,7 @@ export default function AppearancePage() {
         accent, setAccent, 
         density, setDensity, 
         font, setFont, 
+        bgTheme, setBgTheme,
         sidebarCollapsed, setSidebarCollapsed, 
         animationsEnabled, setAnimationsEnabled 
     } = useUIStore();
@@ -100,6 +109,26 @@ export default function AppearancePage() {
                                     <p className="text-xs text-slate-500 mt-0.5">{t.desc}</p>
                                 </div>
                                 {theme === t.key && <Check className="w-4 h-4 text-[var(--ds-teal-bright)] shrink-0" />}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </SectionCard>
+
+            {/* Background Theme */}
+            <SectionCard title="Tema de Fondo" icon={<Palette className="w-4 h-4 text-slate-400" />}>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    {BG_THEMES.map(b => (
+                        <button key={b.key} onClick={() => setBgTheme(b.key as BgTheme)}
+                            className={`relative p-3 rounded-xl border text-left transition-all ${bgTheme === b.key ? "border-[var(--ds-teal-md)] bg-[var(--ds-teal-dim)] ring-1 ring-[var(--ds-teal-md)]" : "border-slate-700 hover:border-slate-600 bg-slate-950/40"}`}>
+                            {/* Preview */}
+                            <div className={`h-12 rounded-lg ${b.preview} border mb-2 flex items-center justify-center`} />
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-200">{b.label}</p>
+                                    <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{b.desc}</p>
+                                </div>
+                                {bgTheme === b.key && <Check className="w-3.5 h-3.5 text-[var(--ds-teal-bright)] shrink-0 ml-1" />}
                             </div>
                         </button>
                     ))}
