@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Esperar a que Postgres esté listo para recibir conexiones
+until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+  echo "Waiting for PostgreSQL to be ready..."
+  sleep 1
+done
+
 # Función para crear una base de datos si no existe
 create_db() {
   local db=$1
