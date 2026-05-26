@@ -20,7 +20,9 @@ let worker = null;
 function getQueue() {
     if (!queue) {
         queue = new bullmq_1.Queue('video-renders', {
-            connection: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+            connection: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+                maxRetriesPerRequest: null,
+            }),
             defaultJobOptions: {
                 attempts: 3,
                 backoff: {
@@ -118,7 +120,9 @@ function createWorker(outputDir) {
         (0, websocket_1.broadcastComplete)(jobId, result);
         return result;
     }, {
-        connection: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+        connection: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+            maxRetriesPerRequest: null,
+        }),
         concurrency: parseInt(process.env.RENDER_CONCURRENCY || '2'),
     });
     worker.on('failed', (job, err) => {

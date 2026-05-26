@@ -34,7 +34,9 @@ let worker: Worker | null = null;
 export function getQueue(): Queue {
   if (!queue) {
     queue = new Queue('video-renders', {
-      connection: new Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+      connection: new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+        maxRetriesPerRequest: null,
+      }),
       defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -156,7 +158,9 @@ export function createWorker(outputDir: string): Worker {
       return result;
     },
     {
-      connection: new Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+      connection: new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+        maxRetriesPerRequest: null,
+      }),
       concurrency: parseInt(process.env.RENDER_CONCURRENCY || '2'),
     },
   );

@@ -49,6 +49,11 @@ const templates_1 = require("./templates");
 const lut_1 = require("./lut");
 const presets_1 = require("./presets");
 const rate_limit_1 = require("./middleware/rate-limit");
+const captioning_1 = require("./captioning");
+const beat_detection_1 = require("./beat-detection");
+const transitions_1 = require("./transitions");
+const color_match_1 = require("./color-match");
+const thumbnails_1 = require("./thumbnails");
 const app = (0, express_1.default)();
 const server = (0, http_1.createServer)(app);
 const port = process.env.PORT || 4007;
@@ -295,6 +300,198 @@ app.post('/api/video/render/:jobId/webhook', async (req, res) => {
     }
     res.json({ success: true, message: 'Webhook registered (not yet implemented)' });
 });
+// ─── POST /api/video/caption/transcribe — Transcribe audio ────────────────────
+app.post('/api/video/caption/transcribe', requireInternalSecret, async (req, res) => {
+    try {
+        const { audioPath, language } = req.body;
+        const result = await (0, captioning_1.transcribeAudio)(audioPath, { language });
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/caption/export — Export captions ─────────────────────────
+app.post('/api/video/caption/export', async (req, res) => {
+    try {
+        const { segments, format } = req.body;
+        let output;
+        switch (format) {
+            case 'srt':
+                output = (0, captioning_1.exportSRT)(segments);
+                break;
+            case 'vtt':
+                output = (0, captioning_1.exportVTT)(segments);
+                break;
+            case 'ass':
+                output = (0, captioning_1.exportASS)(segments);
+                break;
+            default: return res.status(400).json({ error: 'Unsupported format' });
+        }
+        res.json({ format, content: output });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/caption/extract-audio — Extract audio from video ─────────
+app.post('/api/video/caption/extract-audio', requireInternalSecret, async (req, res) => {
+    try {
+        const { videoPath, outputPath } = req.body;
+        await (0, captioning_1.extractAudioFromVideo)(videoPath, outputPath);
+        res.json({ success: true, outputPath });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/beat/detect — Detect beats ──────────────────────────────
+app.post('/api/video/beat/detect', requireInternalSecret, async (req, res) => {
+    try {
+        const { audioPath, options } = req.body;
+        const result = await (0, beat_detection_1.detectBeats)(audioPath, options);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/beat/snap — Snap to nearest beat ────────────────────────
+app.post('/api/video/beat/snap', async (req, res) => {
+    try {
+        const { time, beats } = req.body;
+        const snapped = (0, beat_detection_1.snapToNearestBeat)(time, beats);
+        res.json({ original: time, snapped });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/beat/cut-points — Generate cut points ───────────────────
+app.post('/api/video/beat/cut-points', async (req, res) => {
+    try {
+        const { beats, intervalBeats } = req.body;
+        const cuts = (0, beat_detection_1.generateCutPoints)(beats, intervalBeats || 4);
+        res.json({ cuts });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── GET /api/video/transitions/presets — List transition presets ────────────
+app.get('/api/video/transitions/presets', (_req, res) => {
+    res.json({ presets: (0, transitions_1.getAllTransitionPresets)() });
+});
+// ─── GET /api/video/transitions/presets/:id — Get transition preset ──────────
+app.get('/api/video/transitions/presets/:id', (req, res) => {
+    const preset = (0, transitions_1.getTransitionPresetById)(req.params.id);
+    if (!preset)
+        return res.status(404).json({ error: 'Preset not found' });
+    res.json({ preset });
+});
+// ─── POST /api/video/transitions/suggest — Suggest transitions ──────────────
+app.post('/api/video/transitions/suggest', (req, res) => {
+    try {
+        const { fromClip, toClip, options } = req.body;
+        const suggestions = (0, transitions_1.suggestTransition)(fromClip, toClip, options);
+        res.json({ suggestions });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/transitions/auto-suggest — Auto-suggest all transitions ─
+app.post('/api/video/transitions/auto-suggest', (req, res) => {
+    try {
+        const { clips, options } = req.body;
+        const suggestions = (0, transitions_1.autoSuggestAllTransitions)(clips, options);
+        res.json({ suggestions });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/color/match — Match colors between clips ───────────────
+app.post('/api/video/color/match', requireInternalSecret, (req, res) => {
+    try {
+        const { sourceImg, targetImg, sourceId, targetId, options } = req.body;
+        const suggestion = (0, color_match_1.suggestColorMatch)(sourceImg, targetImg, sourceId, targetId, options);
+        res.json(suggestion);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/color/batch-match — Batch color match ──────────────────
+app.post('/api/video/color/batch-match', requireInternalSecret, (req, res) => {
+    try {
+        const { clips, referenceId, options } = req.body;
+        const suggestions = (0, color_match_1.batchColorMatch)(clips, referenceId, options);
+        res.json({ suggestions });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/color/analyze — Analyze image histogram ────────────────
+app.post('/api/video/color/analyze', (req, res) => {
+    try {
+        const { imagePath } = req.body;
+        const histogram = (0, color_match_1.extractHistogram)(imagePath);
+        res.json(histogram);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── GET /api/video/color/luts — Get default LUTs ───────────────────────────
+app.get('/api/video/color/luts', (_req, res) => {
+    res.json({ luts: (0, color_match_1.getDefaultLUTs)() });
+});
+// ─── POST /api/video/color/ffmpeg-filter — Generate FFmpeg color filter ────
+app.post('/api/video/color/ffmpeg-filter', (req, res) => {
+    try {
+        const { adjustments } = req.body;
+        const filter = (0, color_match_1.generateColorMatchFFmpegFilter)(adjustments);
+        res.json({ filter });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/thumbnails/generate — Generate thumbnails ──────────────
+app.post('/api/video/thumbnails/generate', requireInternalSecret, async (req, res) => {
+    try {
+        const { videoPath, outputDir, options } = req.body;
+        const result = await (0, thumbnails_1.extractBestFrames)(videoPath, outputDir, options);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/thumbnails/extract-frame — Extract single frame ────────
+app.post('/api/video/thumbnails/extract-frame', requireInternalSecret, async (req, res) => {
+    try {
+        const { videoPath, outputPath, timestamp, width, height } = req.body;
+        await (0, thumbnails_1.extractFrameAtTimestamp)(videoPath, outputPath, timestamp, width, height);
+        res.json({ success: true, outputPath });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── POST /api/video/thumbnails/grid — Generate thumbnail grid ───────────────
+app.post('/api/video/thumbnails/grid', requireInternalSecret, async (req, res) => {
+    try {
+        const { thumbnails, outputPath, cols, rows } = req.body;
+        await (0, thumbnails_1.generateThumbnailGrid)(thumbnails, outputPath, cols, rows);
+        res.json({ success: true, outputPath });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // ─── POST /api/media/upload-vps ─────────────────────────────────────────────
 app.post('/api/media/upload-vps', async (req, res) => {
     res.status(200).json({ message: 'Use /api/media/upload from the Next.js app' });
@@ -320,16 +517,33 @@ async function updateJobInNextApp(jobId, data) {
 server.listen(port, () => {
     console.log(`Video Service v3.0 listening at http://localhost:${port}`);
     console.log(`   Routes:`);
-    console.log(`   POST /api/video/render        — Start a render job (with queue)`);
-    console.log(`   GET  /api/video/render/:jobId — Get job status`);
-    console.log(`   POST /api/video/render/:jobId/cancel — Cancel a render job`);
-    console.log(`   GET  /api/video/jobs          — Queue stats`);
-    console.log(`   GET  /api/video/templates     — List video templates`);
-    console.log(`   GET  /api/video/presets       — List render presets`);
-    console.log(`   GET  /api/video/luts          — List LUT presets`);
-    console.log(`   GET  /api/video/stats         — Full stats`);
-    console.log(`   GET  /health                  — Healthcheck`);
-    console.log(`   WS   /ws/video               — WebSocket for real-time updates`);
+    console.log(`   POST /api/video/render                    — Start a render job (with queue)`);
+    console.log(`   GET  /api/video/render/:jobId             — Get job status`);
+    console.log(`   POST /api/video/render/:jobId/cancel      — Cancel a render job`);
+    console.log(`   GET  /api/video/jobs                      — Queue stats`);
+    console.log(`   GET  /api/video/templates                 — List video templates`);
+    console.log(`   GET  /api/video/presets                   — List render presets`);
+    console.log(`   GET  /api/video/luts                      — List LUT presets`);
+    console.log(`   POST /api/video/caption/transcribe        — Transcribe audio with Whisper`);
+    console.log(`   POST /api/video/caption/export            — Export captions (SRT/VTT/ASS)`);
+    console.log(`   POST /api/video/caption/extract-audio     — Extract audio from video`);
+    console.log(`   POST /api/video/beat/detect               — Detect audio beats/BPM`);
+    console.log(`   POST /api/video/beat/snap                 — Snap time to nearest beat`);
+    console.log(`   POST /api/video/beat/cut-points           — Generate beat-synced cut points`);
+    console.log(`   GET  /api/video/transitions/presets       — List transition presets`);
+    console.log(`   POST /api/video/transitions/suggest       — Suggest transition between clips`);
+    console.log(`   POST /api/video/transitions/auto-suggest  — Auto-suggest all transitions`);
+    console.log(`   POST /api/video/color/match               — Match colors between clips`);
+    console.log(`   POST /api/video/color/batch-match         — Batch color match`);
+    console.log(`   POST /api/video/color/analyze             — Analyze image histogram`);
+    console.log(`   GET  /api/video/color/luts                — Get default LUT presets`);
+    console.log(`   POST /api/video/color/ffmpeg-filter       — Generate FFmpeg color filter`);
+    console.log(`   POST /api/video/thumbnails/generate       — Generate best thumbnails`);
+    console.log(`   POST /api/video/thumbnails/extract-frame  — Extract frame at timestamp`);
+    console.log(`   POST /api/video/thumbnails/grid           — Generate thumbnail grid`);
+    console.log(`   GET  /api/video/stats                     — Full stats`);
+    console.log(`   GET  /health                              — Healthcheck`);
+    console.log(`   WS   /ws/video                           — WebSocket for real-time updates`);
 });
 // ─── Graceful shutdown ──────────────────────────────────────────────────────
 process.on('SIGTERM', async () => {
