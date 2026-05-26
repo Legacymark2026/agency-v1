@@ -15,7 +15,10 @@ import {
   Rocket, Bot, ShieldAlert, FileText, CircleDollarSign, AlertCircle,
   Wallet, BadgeCheck, Ban, Share2, Send, CalendarPlus, AlarmClock,
   BookOpen, MessageCircle, Shield, Wrench, Sparkles, Settings,
-  DollarSign, Megaphone, Calendar, Workflow, Users, Filter, SlidersHorizontal
+  DollarSign, Megaphone, Calendar, Workflow, Users, Filter, SlidersHorizontal,
+  Briefcase, TrendingDown, Lock, Award, ClipboardList, GraduationCap,
+  UserMinus, Key, Download, ServerCrash, Unplug, PlugZap, RefreshCw,
+  Flag, Timer, PauseCircle, Eye, Video, HardDrive, AtSign
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -63,6 +66,10 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
   CONTENT: FileText,
   IAM: Shield,
   SYSTEM: Settings,
+  OPERATIONS: Briefcase,
+  HR: Users,
+  SALES: TrendingUp,
+  SECURITY: ShieldAlert,
 };
 
 const LEGACY_TYPE_MAP: Record<string, { icon: React.ElementType; color: string }> = {

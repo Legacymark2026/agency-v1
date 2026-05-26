@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useTransition } from "react";
 import {
   Bell, Mail, MessageSquare, Zap, Slack, Check, Loader2, Save,
   Users, Workflow, Bot, DollarSign, Megaphone, Calendar, FileText,
-  Shield, Settings, Play, Volume2, VolumeX, SlidersHorizontal, AlertTriangle, Info
+  Shield, Settings, Play, Volume2, VolumeX, SlidersHorizontal, AlertTriangle, Info,
+  Briefcase, TrendingUp, ShieldAlert, Trophy, AlarmClock, HardDrive, UserMinus
 } from "lucide-react";
 import {
   getNotificationPreferences,
@@ -29,21 +30,24 @@ const CHANNELS = [
 ] as const;
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  // Original groups (from developer.ts keys)
   CRM: Users,
-  Ventas: DollarSign,
-  Finanzas: WalletIcon, // defined below
+  Ventas: Trophy,
+  Finanzas: DollarSign,
   Inbox: MessageSquare,
-  Operaciones: Workflow,
-  RRHH: Shield,
   Soporte: AlertTriangle,
+  Operaciones: Briefcase,
+  "Agentes IA": Bot,
+  RRHH: Users,
   Marketing: Megaphone,
+  Contenido: FileText,
   Equipo: Users,
+  Seguridad: ShieldAlert,
   Sistema: Settings,
+  // Fallback aliases
+  Workflow,
+  Automation: Workflow,
 };
-
-function WalletIcon(props: any) {
-  return <DollarSign {...props} />;
-}
 
 // ─── Component: Matrix Toggle Cell (Clean Icon Button) ─────────────────────
 

@@ -334,28 +334,125 @@ export async function getWebhookDeliveryLogs(webhookId: string) {
 // ═══════════════════════════════════════════════════════════
 
 const NOTIFICATION_EVENTS = [
-    { key: "NEW_LEAD", label: "Nuevo Lead", group: "CRM" },
-    { key: "DEAL_WON", label: "Negocio Ganado", group: "CRM" },
-    { key: "DEAL_LOST", label: "Negocio Perdido", group: "CRM" },
-    { key: "PROPOSAL_VIEWED", label: "Cotización Vista", group: "Ventas" },
-    { key: "PROPOSAL_SIGNED", label: "Cotización Firmada", group: "Ventas" },
-    { key: "PROPOSAL_REJECTED", label: "Cotización Rechazada", group: "Ventas" },
-    { key: "PAYMENT_RECEIVED", label: "Pago Recibido", group: "Finanzas" },
-    { key: "PAYROLL_DUE", label: "Nómina por Vencer", group: "Finanzas" },
-    { key: "INVOICE_OVERDUE", label: "Factura Vencida", group: "Finanzas" },
-    { key: "EXPENSE_PENDING", label: "Egreso Pendiente Aprobación", group: "Finanzas" },
-    { key: "NEW_CONVERSATION", label: "Nueva Conversación", group: "Inbox" },
-    { key: "MENTION", label: "Mención en Comentario", group: "Inbox" },
-    { key: "MESSAGE_RECEIVED", label: "Mensaje Directo", group: "Inbox" },
-    { key: "TASK_ASSIGNED", label: "Tarea Asignada", group: "Operaciones" },
-    { key: "TASK_COMPLETED", label: "Tarea Completada", group: "Operaciones" },
-    { key: "TIME_OFF_REQUESTED", label: "Permiso Ausencia Solicitado", group: "RRHH" },
-    { key: "TIME_OFF_APPROVED", label: "Permiso Ausencia Aprobado", group: "RRHH" },
-    { key: "SLA_BREACH", label: "SLA Incumplido", group: "Soporte" },
-    { key: "CAMPAIGN_LAUNCHED", label: "Campaña Lanzada", group: "Marketing" },
-    { key: "AUTOMATION_ERROR", label: "Error en Automatización", group: "Marketing" },
-    { key: "MEMBER_JOINED", label: "Nuevo Miembro del Equipo", group: "Equipo" },
-    { key: "SYSTEM_ALERT", label: "Alerta del Sistema", group: "Sistema" },
+    // ── CRM ──────────────────────────────────────────────────────
+    { key: "NEW_LEAD",               label: "Nuevo Lead Creado",               group: "CRM" },
+    { key: "LEAD_ASSIGNED",          label: "Lead Asignado a Agente",          group: "CRM" },
+    { key: "LEAD_STAGE_CHANGED",     label: "Etapa del Lead Cambiada",         group: "CRM" },
+    { key: "LEAD_SCORED",            label: "Lead Score Actualizado",          group: "CRM" },
+    { key: "LEAD_STALE",             label: "Lead Sin Actividad (Inactivo)",   group: "CRM" },
+    { key: "CONTACT_MERGED",         label: "Contactos Fusionados",            group: "CRM" },
+    { key: "CONTACT_BLACKLISTED",    label: "Contacto en Lista Negra",         group: "CRM" },
+
+    // ── Ventas ────────────────────────────────────────────────────
+    { key: "DEAL_WON",               label: "Negocio Ganado 🎉",              group: "Ventas" },
+    { key: "DEAL_LOST",              label: "Negocio Perdido",                group: "Ventas" },
+    { key: "DEAL_STAGNANT",          label: "Negocio Sin Movimiento",         group: "Ventas" },
+    { key: "PROPOSAL_VIEWED",        label: "Cotización Vista por Cliente",   group: "Ventas" },
+    { key: "PROPOSAL_SIGNED",        label: "Cotización Firmada ✅",          group: "Ventas" },
+    { key: "PROPOSAL_REJECTED",      label: "Cotización Rechazada",           group: "Ventas" },
+    { key: "PROPOSAL_EXPIRING",      label: "Cotización por Vencer",         group: "Ventas" },
+    { key: "GOAL_REACHED",           label: "Meta de Ventas Alcanzada",       group: "Ventas" },
+    { key: "GOAL_AT_RISK",           label: "Meta de Ventas en Riesgo",       group: "Ventas" },
+    { key: "COMMISSION_APPROVED",    label: "Comisión Aprobada",              group: "Ventas" },
+
+    // ── Finanzas ──────────────────────────────────────────────────
+    { key: "PAYMENT_RECEIVED",       label: "Pago Recibido",                  group: "Finanzas" },
+    { key: "PAYMENT_FAILED",         label: "Pago Rechazado / Fallido",       group: "Finanzas" },
+    { key: "INVOICE_CREATED",        label: "Factura Generada",               group: "Finanzas" },
+    { key: "INVOICE_OVERDUE",        label: "Factura Vencida",                group: "Finanzas" },
+    { key: "INVOICE_DUE_SOON",       label: "Factura por Vencer (48h)",       group: "Finanzas" },
+    { key: "PAYROLL_DUE",            label: "Nómina por Procesar",            group: "Finanzas" },
+    { key: "PAYROLL_PROCESSED",      label: "Nómina Procesada",               group: "Finanzas" },
+    { key: "EXPENSE_PENDING",        label: "Gasto Pendiente de Aprobación",  group: "Finanzas" },
+    { key: "EXPENSE_APPROVED",       label: "Gasto Aprobado",                 group: "Finanzas" },
+    { key: "EXPENSE_REJECTED",       label: "Gasto Rechazado",                group: "Finanzas" },
+    { key: "BUDGET_EXCEEDED",        label: "Presupuesto Excedido",           group: "Finanzas" },
+    { key: "TREASURY_LOW_BALANCE",   label: "Saldo Bajo en Tesorería",        group: "Finanzas" },
+
+    // ── Inbox ─────────────────────────────────────────────────────
+    { key: "NEW_CONVERSATION",       label: "Nueva Conversación",             group: "Inbox" },
+    { key: "MESSAGE_RECEIVED",       label: "Mensaje Directo Recibido",       group: "Inbox" },
+    { key: "MENTION",                label: "Mención en Comentario",          group: "Inbox" },
+    { key: "CONVERSATION_ASSIGNED",  label: "Conversación Asignada",          group: "Inbox" },
+    { key: "CONVERSATION_RESOLVED",  label: "Conversación Resuelta",          group: "Inbox" },
+    { key: "CONVERSATION_REOPENED",  label: "Conversación Reabierta",         group: "Inbox" },
+
+    // ── Soporte ───────────────────────────────────────────────────
+    { key: "SLA_BREACH",             label: "⚠️ SLA Incumplido",              group: "Soporte" },
+    { key: "SLA_WARNING",            label: "SLA en Riesgo (80%)",            group: "Soporte" },
+    { key: "HUMAN_TRANSFER",         label: "Transferencia a Agente Humano",  group: "Soporte" },
+    { key: "CSAT_NEGATIVE",          label: "Reseña Negativa CSAT",          group: "Soporte" },
+    { key: "TICKET_ESCALATED",       label: "Ticket Escalado",                group: "Soporte" },
+    { key: "TICKET_OVERDUE",         label: "Ticket Sin Respuesta",           group: "Soporte" },
+
+    // ── Operaciones ───────────────────────────────────────────────
+    { key: "TASK_ASSIGNED",          label: "Tarea Asignada",                 group: "Operaciones" },
+    { key: "TASK_COMPLETED",         label: "Tarea Completada",               group: "Operaciones" },
+    { key: "TASK_OVERDUE",           label: "Tarea Vencida",                  group: "Operaciones" },
+    { key: "TASK_DUE_SOON",          label: "Tarea por Vencer Hoy",          group: "Operaciones" },
+    { key: "PROJECT_MILESTONE",      label: "Milestone de Proyecto Alcanzado",group: "Operaciones" },
+    { key: "PROJECT_DELAYED",        label: "Proyecto Retrasado",             group: "Operaciones" },
+    { key: "KANBAN_BLOCKED",         label: "Tarjeta Bloqueada en Kanban",    group: "Operaciones" },
+    { key: "TIMER_STARTED",          label: "Temporizador de Tarea Iniciado", group: "Operaciones" },
+    { key: "TIMER_LIMIT_REACHED",    label: "Límite de Tiempo Alcanzado",     group: "Operaciones" },
+
+    // ── RRHH ──────────────────────────────────────────────────────
+    { key: "TIME_OFF_REQUESTED",     label: "Permiso de Ausencia Solicitado", group: "RRHH" },
+    { key: "TIME_OFF_APPROVED",      label: "Permiso de Ausencia Aprobado",   group: "RRHH" },
+    { key: "TIME_OFF_REJECTED",      label: "Permiso de Ausencia Rechazado",  group: "RRHH" },
+    { key: "EMPLOYEE_ONBOARDED",     label: "Nuevo Empleado Incorporado",     group: "RRHH" },
+    { key: "EMPLOYEE_OFFBOARDED",    label: "Empleado Dado de Baja",         group: "RRHH" },
+    { key: "CONTRACT_EXPIRING",      label: "Contrato por Expirar",          group: "RRHH" },
+    { key: "PERFORMANCE_REVIEW_DUE", label: "Evaluación de Desempeño Pendiente", group: "RRHH" },
+
+    // ── Marketing ─────────────────────────────────────────────────
+    { key: "CAMPAIGN_LAUNCHED",      label: "Campaña Lanzada",                group: "Marketing" },
+    { key: "CAMPAIGN_COMPLETED",     label: "Campaña Completada",             group: "Marketing" },
+    { key: "CAMPAIGN_PAUSED",        label: "Campaña Pausada",                group: "Marketing" },
+    { key: "EMAIL_BLAST_SENT",       label: "Email Masivo Enviado",           group: "Marketing" },
+    { key: "EMAIL_BOUNCE_HIGH",      label: "Alta Tasa de Rebote en Email",   group: "Marketing" },
+    { key: "SOCIAL_PUBLISHED",       label: "Post Publicado en Redes",        group: "Marketing" },
+    { key: "SOCIAL_FAILED",          label: "Error al Publicar en Redes",     group: "Marketing" },
+    { key: "AD_BUDGET_DEPLETED",     label: "Presupuesto Publicitario Agotado", group: "Marketing" },
+    { key: "AUTOMATION_ERROR",       label: "Error en Automatización",        group: "Marketing" },
+    { key: "AUTOMATION_COMPLETED",   label: "Automatización Completada",      group: "Marketing" },
+
+    // ── Agentes IA ────────────────────────────────────────────────
+    { key: "AI_AGENT_SUSPENDED",     label: "Agente IA Suspendido",           group: "Agentes IA" },
+    { key: "AI_CIRCUIT_BREAKER",     label: "Circuit Breaker Activado",       group: "Agentes IA" },
+    { key: "AI_QUOTA_EXCEEDED",      label: "Cuota de Tokens IA Excedida",    group: "Agentes IA" },
+    { key: "AI_HALLUCINATION_FLAG",  label: "Respuesta IA Marcada (Flag)",    group: "Agentes IA" },
+    { key: "AI_AGENT_TRAINED",       label: "Agente IA Entrenado / Listo",    group: "Agentes IA" },
+    { key: "AI_KB_UPDATED",          label: "Base de Conocimiento Actualizada", group: "Agentes IA" },
+
+    // ── Contenido ─────────────────────────────────────────────────
+    { key: "POST_PUBLISHED",         label: "Artículo Publicado",             group: "Contenido" },
+    { key: "POST_COMMENT",           label: "Nuevo Comentario en Post",       group: "Contenido" },
+    { key: "VIDEO_RENDER_COMPLETE",  label: "Video Renderizado Listo",        group: "Contenido" },
+    { key: "VIDEO_RENDER_FAILED",    label: "Error al Renderizar Video",      group: "Contenido" },
+    { key: "MEDIA_STORAGE_WARN",     label: "Almacenamiento Multimedia al 80%", group: "Contenido" },
+
+    // ── Equipo ────────────────────────────────────────────────────
+    { key: "MEMBER_JOINED",          label: "Nuevo Miembro del Equipo",       group: "Equipo" },
+    { key: "MEMBER_REMOVED",         label: "Miembro Eliminado del Equipo",   group: "Equipo" },
+    { key: "ROLE_CHANGED",           label: "Rol / Permisos Modificados",     group: "Equipo" },
+    { key: "TEAM_INVITATION",        label: "Invitación Enviada al Equipo",   group: "Equipo" },
+
+    // ── Seguridad ─────────────────────────────────────────────────
+    { key: "SECURITY_LOGIN_UNUSUAL", label: "Inicio de Sesión Inusual",       group: "Seguridad" },
+    { key: "SECURITY_MFA_DISABLED",  label: "MFA Desactivado en Cuenta",      group: "Seguridad" },
+    { key: "SECURITY_API_KEY_USED",  label: "Clave API Utilizada",            group: "Seguridad" },
+    { key: "SECURITY_PASSWORD_CHANGED", label: "Contraseña Cambiada",         group: "Seguridad" },
+    { key: "SECURITY_EXPORT_DATA",   label: "Exportación de Datos Realizada", group: "Seguridad" },
+
+    // ── Sistema ───────────────────────────────────────────────────
+    { key: "SYSTEM_ALERT",           label: "Alerta Crítica del Sistema",     group: "Sistema" },
+    { key: "SYSTEM_MAINTENANCE",     label: "Mantenimiento Programado",       group: "Sistema" },
+    { key: "SYSTEM_UPDATE",          label: "Actualización de Plataforma",    group: "Sistema" },
+    { key: "SYSTEM_BACKUP_DONE",     label: "Respaldo Automático Completado", group: "Sistema" },
+    { key: "SYSTEM_BACKUP_FAILED",   label: "Error en Respaldo del Sistema",  group: "Sistema" },
+    { key: "INTEGRATION_DOWN",       label: "Integración Externa Caída",      group: "Sistema" },
+    { key: "INTEGRATION_RECOVERED",  label: "Integración Externa Recuperada", group: "Sistema" },
 ];
 
 const CHANNELS = ["EMAIL", "WHATSAPP", "PUSH", "SLACK"] as const;

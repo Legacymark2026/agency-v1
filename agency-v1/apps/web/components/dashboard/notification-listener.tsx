@@ -4,7 +4,11 @@ import { useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Bell, Users, MessageSquare, Workflow, Bot, DollarSign,
-  Megaphone, Calendar, FileText, Shield, Settings, X
+  Megaphone, Calendar, FileText, Shield, Settings, X,
+  Briefcase, TrendingUp, ShieldAlert, AlertTriangle, CheckCircle2,
+  Trophy, UserPlus, AlarmClock, Send, Share2, Wrench, RefreshCw,
+  HardDrive, ServerCrash, Unplug, PlugZap, Key, Lock, Download,
+  Timer, Video, BookOpen, MessageCircle, AtSign, Flag, Eye
 } from "lucide-react";
 import { getNotifications, markNotificationAsRead } from "@/actions/notifications";
 import { CATEGORY_META, type NotificationCategory } from "@/lib/notifications/notification-types";
@@ -95,6 +99,10 @@ const CATEGORY_ICON_MAP: Record<string, React.ElementType> = {
   CONTENT: FileText,
   IAM: Shield,
   SYSTEM: Settings,
+  OPERATIONS: Briefcase,
+  HR: Users,
+  SALES: TrendingUp,
+  SECURITY: ShieldAlert,
 };
 
 // ─── Legacy/Custom Notification Type Mappings ────────────────────────────────

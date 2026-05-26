@@ -539,7 +539,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
 
         // ─── Enterprise Notifications — Stage Changed ─────────────────────────
         if (status === "WON") {
-            notifyUsers("CRM.DEAL_WON", {
+            notifyUsers("SALES.DEAL_WON", {
                 companyId: lead.companyId,
                 title: "¡Deal Cerrado! 🎉",
                 message: `${lead.name || lead.email} — ${status}`,
@@ -547,7 +547,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
                 data: { dealId: dealId || "", leadId: lead.id },
             }).catch(() => {});
         } else if (status === "LOST") {
-            notifyUsers("CRM.DEAL_LOST", {
+            notifyUsers("SALES.DEAL_LOST", {
                 companyId: lead.companyId,
                 title: "Deal Perdido",
                 message: `${lead.name || lead.email} — marcado como perdido`,
