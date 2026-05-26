@@ -7,14 +7,21 @@ import { LeadForm } from "./lead-form";
 import { ChatWindow } from "./chat-window";
 import { cn } from "@/lib/utils";
 import { safeStorage } from "@/lib/utils/storage";
+import { usePathname } from "next/navigation";
 
 export function ChatWidget() {
+    const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [visitorId, setVisitorId] = useState<string | null>(null);
     const [isHovered, setIsHovered] = useState(false);
     const [hasUnread, setHasUnread] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+
+    // Si estamos en el panel de control (rutas de dashboard), no renderizar el widget de chat flotante
+    if (pathname?.startsWith("/dashboard")) {
+        return null;
+    }
     
     // Drag state
     const [position, setPosition] = useState({ x: 0, y: 0 });
