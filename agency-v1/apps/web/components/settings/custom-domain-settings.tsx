@@ -7,16 +7,46 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { updateCustomDomain } from "@/app/actions/settings";
 
+function sanitizeDomain(val: string): string {
+    let clean = val.trim();
+    // Eliminar protocolos http://, https:// y subdominio www. si existen
+    clean = clean.replace(/^(https?:\/\/)?(www\.)?/, "");
+    // Eliminar rutas, hashes o queries
+    clean = clean.split('/')[0].split('?')[0].split('#')[0];
+    return clean.toLowerCase();
+}
+
+function isValidDomain(val: string): boolean {
+    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+    return domainRegex.test(val);
+}
+
 export function CustomDomainSettings({ initialData }: { initialData?: any }) {
     const [domain, setDomain] = useState(initialData?.whiteLabeling?.domain || "app.miempresa.com");
     const [status, setStatus] = useState<"pending" | "active" | "error">("active");
     const [isVerifying, setIsVerifying] = useState(false);
 
     const handleVerify = async () => {
+        const cleanDomain = sanitizeDomain(domain);
+        setDomain(cleanDomain);
+
+        if (!cleanDomain) {
+            toast.error("Por favor ingresa un dominio.");
+            return;
+        }
+
+        if (!isValidDomain(cleanDomain)) {
+            setStatus("error");
+            toast.error("El formato del dominio no es válido.", {
+                description: "Ejemplo correcto: crm.tuempresa.com o tuempresa.com"
+            });
+            return;
+        }
+
         setIsVerifying(true);
         setStatus("pending");
 
-        const result = await updateCustomDomain(domain);
+        const result = await updateCustomDomain(cleanDomain);
         
         if (result.success) {
             setStatus("active");
@@ -29,6 +59,17 @@ export function CustomDomainSettings({ initialData }: { initialData?: any }) {
         }
         setIsVerifying(false);
     };
+
+    // Determinar tipo de registro DNS de forma inteligente
+    const cleanDomain = sanitizeDomain(domain || "");
+    const parts = cleanDomain.split('.');
+    
+    // Si tiene más de 2 partes (ej: crm.empresa.com o app.empresa.com.co), es un subdominio
+    const isSubdomain = parts.length > 2 && !(parts.length === 3 && parts[parts.length - 1].length === 2 && parts[parts.length - 2].length <= 3);
+    
+    const dnsType = isSubdomain ? "CNAME" : "A";
+    const dnsHost = isSubdomain ? parts.slice(0, -2).join('.') : "@";
+    const dnsValue = isSubdomain ? "cname.legacymark.com" : "76.76.21.21";
 
     return (
         <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-sm mt-6">
@@ -87,7 +128,7 @@ export function CustomDomainSettings({ initialData }: { initialData?: any }) {
                         </div>
 
                         <p className="text-sm text-slate-400 mb-4">
-                            Para conectar tu dominio, añade el siguiente registro CNAME en la configuración DNS de tu proveedor (GoDaddy, Cloudflare, Namecheap, etc).
+                            Para conectar tu dominio, añade el siguiente registro en la configuración DNS de tu proveedor (GoDaddy, Cloudflare, Namecheap, etc).
                         </p>
 
                         <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
@@ -101,9 +142,9 @@ export function CustomDomainSettings({ initialData }: { initialData?: any }) {
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td className="px-4 py-3 font-mono text-white font-semibold">CNAME</td>
-                                        <td className="px-4 py-3 font-mono text-slate-300">{domain.split('.')[0] || 'crm'}</td>
-                                        <td className="px-4 py-3 font-mono text-sky-400 select-all">cname.legacymark.com</td>
+                                        <td className="px-4 py-3 font-mono text-white font-semibold">{dnsType}</td>
+                                        <td className="px-4 py-3 font-mono text-slate-300">{dnsHost}</td>
+                                        <td className="px-4 py-3 font-mono text-sky-400 select-all">{dnsValue}</td>
                                     </tr>
                                 </tbody>
                             </table>
