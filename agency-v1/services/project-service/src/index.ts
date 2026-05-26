@@ -59,7 +59,7 @@ app.get("/api/projects", async (req, res) => {
 
     // Get task counts per project
     const projectsWithCounts = await Promise.all(
-      projects.map(async (p) => {
+      projects.map(async (p: typeof projects[number]) => {
         const taskCount = await prisma.kanbanTask.count({ where: { projectId: p.id } });
         return { ...p, taskCount };
       })
@@ -409,8 +409,8 @@ app.get("/api/projects/:id/stats", async (req, res) => {
       completedTasks,
       overdueTasks,
       completionRate: totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(1) + "%" : "0%",
-      byPriority: byPriority.map((p) => ({ priority: p.priority, count: p._count })),
-      byAssignee: byAssignee.map((a) => ({ assigneeId: a.assigneeId, count: a._count })),
+      byPriority: byPriority.map((p: typeof byPriority[number]) => ({ priority: p.priority, count: p._count })),
+      byAssignee: byAssignee.map((a: typeof byAssignee[number]) => ({ assigneeId: a.assigneeId, count: a._count })),
     });
   } catch (err) {
     res.status(500).json({ error: String(err) });
