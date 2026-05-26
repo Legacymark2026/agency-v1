@@ -9,6 +9,7 @@ import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { HologramGlobe } from "@/components/auth/hologram-globe";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -128,16 +129,7 @@ export default function LoginPage() {
                         <div className="absolute w-[280px] h-[280px] xl:w-[340px] xl:h-[340px] border border-teal-500/20 rounded-full animate-[spin_40s_linear_infinite]" />
                         <div className="absolute w-[300px] h-[300px] xl:w-[360px] xl:h-[360px] border border-dashed border-purple-500/15 rounded-full animate-[spin_60s_linear_infinite_reverse]" />
                         
-                        <div className="relative w-[260px] h-[260px] xl:w-[320px] xl:h-[320px] rounded-full border border-teal-500/30 p-1 bg-slate-950/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_0_50px_rgba(20,184,166,0.15)]">
-                            <Image
-                                src="/images/hologram_globe_login.png"
-                                alt="Digital Globe Hologram"
-                                width={320}
-                                height={320}
-                                className="object-cover rounded-full mix-blend-lighten"
-                                priority
-                            />
-                        </div>
+                        <HologramGlobe />
                     </motion.div>
                 </div>
             </div>
