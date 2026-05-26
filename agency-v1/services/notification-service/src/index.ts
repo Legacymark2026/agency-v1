@@ -129,7 +129,7 @@ app.post("/api/notifications", async (req, res) => {
         },
         select: { userId: true },
       });
-      targetUserIds = companyUsers.map((u) => u.userId);
+      targetUserIds = companyUsers.map((u: typeof companyUsers[number]) => u.userId);
     }
 
     if (targetUserIds.length === 0) {
@@ -321,7 +321,7 @@ app.get("/api/notifications/stats", async (req, res) => {
       total,
       unread,
       readRate: total > 0 ? ((total - unread) / total * 100).toFixed(1) + "%" : "0%",
-      byType: byType.map((t) => ({ type: t.type, count: t._count })),
+      byType: byType.map((t: typeof byType[number]) => ({ type: t.type, count: t._count })),
       emailQueueLength,
     });
   } catch (err) {
@@ -404,7 +404,7 @@ for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
 
       if (admins.length > 0) {
         await prisma.notification.createMany({
-          data: admins.map((a) => ({
+          data: admins.map((a: typeof admins[number]) => ({
             userId: a.userId,
             companyId,
             title: mapping.titleFn(payload.data),
