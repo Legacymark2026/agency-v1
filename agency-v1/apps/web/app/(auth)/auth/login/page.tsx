@@ -78,9 +78,9 @@ export default function LoginPage() {
             </div>
 
             {/* Lado Izquierdo: Branding (Oculto en móviles) */}
-            <div className="hidden lg:flex flex-col flex-1 px-16 py-12 relative z-10">
-                <div className="flex-1">
-                    <Link href="/" className="inline-block relative w-24 h-24 hover:scale-105 transition-transform">
+            <div className="hidden lg:flex flex-col flex-1 px-16 py-12 relative z-10 max-w-[50%] xl:max-w-[60%]">
+                <div className="flex-none">
+                    <Link href="/" className="inline-block relative w-16 h-16 hover:scale-105 transition-transform">
                         <Image
                             src="/favicon.ico"
                             alt="LegacyMark"
@@ -92,17 +92,18 @@ export default function LoginPage() {
                     </Link>
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center">
+                <div className="flex-1 grid grid-cols-1 xl:grid-cols-2 gap-8 items-center mt-6">
                     <motion.div
                         initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="flex flex-col justify-center"
                     >
-                        <h1 className="text-7xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        <h1 className="text-5xl xl:text-6xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                             Welcome!
                         </h1>
                         <div className="w-16 h-1 bg-teal-500 mb-8 rounded-full" />
-                        <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+                        <p className="text-slate-400 text-sm xl:text-base max-w-sm leading-relaxed">
                             Gestiona tus proyectos, agiliza tus operaciones y domina el ecosistema digital desde tu nuevo panel de control.
                         </p>
 
@@ -111,6 +112,32 @@ export default function LoginPage() {
                                 Crear Cuenta Nueva
                             </Button>
                         </Link>
+                    </motion.div>
+
+                    {/* Holograma del Globo Terráqueo Digital */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                        className="relative w-full h-[320px] xl:h-[400px] flex items-center justify-center"
+                    >
+                        {/* Glow effect surrounding the hologram container */}
+                        <div className="absolute w-[240px] h-[240px] xl:w-[300px] xl:h-[300px] bg-teal-500/10 blur-[80px] rounded-full animate-pulse" />
+                        
+                        {/* Tech Ring HUD styling */}
+                        <div className="absolute w-[280px] h-[280px] xl:w-[340px] xl:h-[340px] border border-teal-500/20 rounded-full animate-[spin_40s_linear_infinite]" />
+                        <div className="absolute w-[300px] h-[300px] xl:w-[360px] xl:h-[360px] border border-dashed border-purple-500/15 rounded-full animate-[spin_60s_linear_infinite_reverse]" />
+                        
+                        <div className="relative w-[260px] h-[260px] xl:w-[320px] xl:h-[320px] rounded-full border border-teal-500/30 p-1 bg-slate-950/40 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-[0_0_50px_rgba(20,184,166,0.15)]">
+                            <Image
+                                src="/images/hologram_globe_login.png"
+                                alt="Digital Globe Hologram"
+                                width={320}
+                                height={320}
+                                className="object-cover rounded-full mix-blend-lighten"
+                                priority
+                            />
+                        </div>
                     </motion.div>
                 </div>
             </div>
