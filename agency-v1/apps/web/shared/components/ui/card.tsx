@@ -8,7 +8,7 @@ const Card = React.forwardRef<
     <div
         ref={ref}
         className={cn(
-            "rounded-xl border bg-card text-card-foreground shadow",
+            "rounded-[0.15rem] border border-[var(--ds-border)] bg-[var(--ds-surface)] text-[var(--ds-text-primary)] shadow-lg backdrop-blur-md transition-all duration-300 hover:border-[var(--ds-border-glow)] hover:shadow-[var(--ds-shadow-teal)]",
             className
         )}
         {...props}
@@ -22,7 +22,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("flex flex-col space-y-1.5 p-6", className)}
+        className={cn("flex flex-col space-y-1.5 p-[var(--ds-padding-card,1.5rem)]", className)}
         {...props}
     />
 ))
@@ -34,7 +34,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <h3
         ref={ref}
-        className={cn("font-semibold leading-none tracking-tight", className)}
+        className={cn("font-black leading-none tracking-tight text-[var(--ds-text-primary)]", className)}
         {...props}
     />
 ))
@@ -46,7 +46,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <p
         ref={ref}
-        className={cn("text-sm text-muted-foreground", className)}
+        className={cn("font-mono text-xs text-[var(--ds-text-muted)] uppercase tracking-wider", className)}
         {...props}
     />
 ))
@@ -56,7 +56,7 @@ const CardContent = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+    <div ref={ref} className={cn("p-[var(--ds-padding-card,1.5rem)] pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
@@ -66,7 +66,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("flex items-center p-6 pt-0", className)}
+        className={cn("flex items-center p-[var(--ds-padding-card,1.5rem)] pt-0", className)}
         {...props}
     />
 ))

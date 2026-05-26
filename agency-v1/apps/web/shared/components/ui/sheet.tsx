@@ -62,8 +62,8 @@ const SheetContent = React.forwardRef<
             ref={ref}
             className={cn(sheetVariants({ side }), className)}
             style={{
-                background: 'rgba(10,17,35,0.97)',
-                borderColor: 'rgba(30,41,59,0.9)',
+                background: 'var(--ds-bg-deep)',
+                borderColor: 'var(--ds-border)',
             }}
             {...props}
         >
@@ -75,12 +75,12 @@ const SheetContent = React.forwardRef<
             <SheetPrimitive.Close
                 className="absolute right-4 top-4 z-20 w-7 h-7 flex items-center justify-center transition-all opacity-60 hover:opacity-100"
                 style={{
-                    background: 'rgba(15,23,42,0.8)',
-                    border: '1px solid rgba(30,41,59,0.8)',
+                    background: 'var(--ds-surface-2)',
+                    border: '1px solid var(--ds-border)',
                     borderRadius: '0.15rem',
                 }}
             >
-                <X className="h-3 w-3 text-slate-400 hover:text-teal-400 transition-colors" />
+                <X className="h-3 w-3 text-[var(--ds-text-muted)] hover:text-[var(--ds-teal-bright)] transition-colors" />
                 <span className="sr-only">Close</span>
             </SheetPrimitive.Close>
             {children}
@@ -117,7 +117,7 @@ const SheetTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <SheetPrimitive.Title
         ref={ref}
-        className={cn("text-base font-black tracking-[-0.03em] text-slate-100", className)}
+        className={cn("text-base font-black tracking-[-0.03em] text-[var(--ds-text-primary)]", className)}
         {...props}
     />
 ))
@@ -129,7 +129,7 @@ const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <SheetPrimitive.Description
         ref={ref}
-        className={cn("font-mono text-xs text-slate-500 uppercase tracking-[0.1em]", className)}
+        className={cn("font-mono text-xs text-[var(--ds-text-muted)] uppercase tracking-[0.1em]", className)}
         {...props}
     />
 ))
