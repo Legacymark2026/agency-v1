@@ -144,19 +144,19 @@ export default async function IntegrationsPage() {
             <Suspense fallback={null}><IntegrationsToastHandler /></Suspense>
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/80 pb-6 relative">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[var(--ds-border)] pb-6 relative">
                 {/* Decorative glow */}
-                <div className="absolute -top-10 -left-10 w-40 h-40 bg-teal-500/10 blur-3xl rounded-full pointer-events-none" />
+                <div className="absolute -top-10 -left-10 w-40 h-40 bg-[var(--ds-teal-dim)]/50 blur-3xl rounded-full pointer-events-none" />
                 
                 <div className="relative">
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs uppercase font-mono tracking-widest mb-3">
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-[0.15rem] bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] text-xs uppercase font-mono tracking-widest mb-3">
                         <Plug2 className="w-3.5 h-3.5" /> App Store — Biblioteca
                     </div>
                     <div className="flex items-center gap-4">
-                      <h2 className="text-3xl font-bold text-white tracking-tight leading-tight">Biblioteca de Integraciones</h2>
+                      <h2 className="text-3xl font-bold text-[var(--ds-text-primary)] tracking-tight leading-tight">Biblioteca de Integraciones</h2>
                       <AudienceSyncButton />
                     </div>
-                    <p className="text-slate-400 text-sm mt-2 max-w-xl leading-relaxed">
+                    <p className="text-[var(--ds-text-secondary)] text-sm mt-2 max-w-xl leading-relaxed">
                         Explora, conecta y orquesta todo el ecosistema de integraciones operativas de LegacyMark. Centraliza credenciales, filtra por categorías y monitorea el estado de salud de cada conexión.
                     </p>
                 </div>

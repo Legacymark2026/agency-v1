@@ -14,15 +14,15 @@ export default async function SettingsProfilePage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
             <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 border-b border-slate-200 pb-4">
+                <h2 className="text-xl font-bold tracking-tight text-[var(--ds-text-primary)] border-b border-[var(--ds-border)] pb-4">
                     Perfil y Preferencias de la Cuenta
                 </h2>
-                <p className="text-sm text-slate-500 mt-2">
+                <p className="text-sm text-[var(--ds-text-secondary)] mt-2">
                     Actualiza tu foto, nombre público y zona horaria para personalizar la experiencia.
                 </p>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <div className="bg-[var(--ds-surface)] rounded-[0.15rem] border border-[var(--ds-border)] shadow-[var(--ds-shadow-card)] p-6 sm:p-8">
                 <SettingsForm initialData={{ ...settings, language: (settings as any).language || "es" }} />
             </div>
         </div>

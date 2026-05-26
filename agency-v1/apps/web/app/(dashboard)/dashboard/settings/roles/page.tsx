@@ -195,20 +195,20 @@ export default function RolesPage() {
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="ds-card">
-            <div className="text-2xl font-bold text-white">{stats.totalRoles}</div>
-            <div className="text-sm text-slate-400">Roles activos</div>
+            <div className="text-2xl font-bold text-[var(--ds-text-primary)]">{stats.totalRoles}</div>
+            <div className="text-sm text-[var(--ds-text-secondary)]">Roles activos</div>
           </div>
           <div className="ds-card">
-            <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
-            <div className="text-sm text-slate-400">Total usuarios</div>
+            <div className="text-2xl font-bold text-[var(--ds-text-primary)]">{stats.totalUsers}</div>
+            <div className="text-sm text-[var(--ds-text-secondary)]">Total usuarios</div>
           </div>
           <div className="ds-card">
-            <div className="text-2xl font-bold text-teal-400">{stats.usersWithRoles}</div>
-            <div className="text-sm text-slate-400">Con rol asignado</div>
+            <div className="text-2xl font-bold text-[var(--ds-teal-md)]">{stats.usersWithRoles}</div>
+            <div className="text-sm text-[var(--ds-text-secondary)]">Con rol asignado</div>
           </div>
           <div className="ds-card">
-            <div className="text-2xl font-bold text-amber-400">{stats.usersWithoutRole}</div>
-            <div className="text-sm text-slate-400">Sin rol</div>
+            <div className="text-2xl font-bold text-amber-500">{stats.usersWithoutRole}</div>
+            <div className="text-sm text-[var(--ds-text-secondary)]">Sin rol</div>
           </div>
         </div>
       )}
@@ -279,41 +279,41 @@ export default function RolesPage() {
                           )}
                         </div>
                       </td>
-                      <td className="text-slate-400">{role.description || "-"}</td>
+                      <td className="text-[var(--ds-text-secondary)]">{role.description || "-"}</td>
                       <td>
-                        <span className="text-sm text-slate-300">
+                        <span className="text-sm text-[var(--ds-text-secondary)]">
                           {role.permissions.length} permisos
                         </span>
                       </td>
                       <td>
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-slate-400" />
-                          <span>{role._count.users}</span>
+                          <Users className="w-4 h-4 text-[var(--ds-text-muted)]" />
+                          <span className="text-[var(--ds-text-primary)]">{role._count.users}</span>
                         </div>
                       </td>
                       <td>
                         {role.isActive ? (
-                          <span className="text-emerald-400">Activo</span>
+                          <span className="text-emerald-500 font-medium">Activo</span>
                         ) : (
-                          <span className="text-slate-400">Inactivo</span>
+                          <span className="text-[var(--ds-text-muted)]">Inactivo</span>
                         )}
                       </td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => setEditingRole(role)}
-                            className="p-1.5 hover:bg-slate-700 rounded"
+                            className="p-1.5 hover:bg-[var(--ds-surface-2)] rounded transition-colors"
                             title="Editar"
                           >
-                            <Edit className="w-4 h-4 text-slate-400" />
+                            <Edit className="w-4 h-4 text-[var(--ds-text-secondary)]" />
                           </button>
                           <button
                             onClick={() => handleDeleteRole(role.id)}
-                            className="p-1.5 hover:bg-slate-700 rounded"
+                            className="p-1.5 hover:bg-[var(--ds-surface-2)] rounded transition-colors"
                             title="Eliminar"
                             disabled={role._count.users > 0}
                           >
-                            <Trash2 className={`w-4 h-4 ${role._count.users > 0 ? "text-slate-600" : "text-red-400"}`} />
+                            <Trash2 className={`w-4 h-4 ${role._count.users > 0 ? "text-[var(--ds-text-dim)]" : "text-red-500 hover:text-red-400"}`} />
                           </button>
                         </div>
                       </td>
@@ -330,17 +330,17 @@ export default function RolesPage() {
         <div className="space-y-6">
           {permissions.map((group) => (
             <div key={group.module} className="ds-card">
-              <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-[var(--ds-text-primary)] mb-3 flex items-center gap-2">
                 {MODULE_LABELS[group.module] || group.module}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {group.permissions.map((perm) => (
                   <div 
                     key={perm.id}
-                    className="text-sm p-2 bg-slate-800/50 rounded border border-slate-700"
+                    className="text-sm p-2 bg-[var(--ds-surface-2)]/60 rounded border border-[var(--ds-border)]"
                   >
-                    <div className="font-mono text-teal-400 text-xs">{perm.name}</div>
-                    <div className="text-slate-400 text-xs">{perm.description}</div>
+                    <div className="font-mono text-[var(--ds-teal-md)] text-xs">{perm.name}</div>
+                    <div className="text-[var(--ds-text-secondary)] text-xs">{perm.description}</div>
                   </div>
                 ))}
               </div>
@@ -363,13 +363,13 @@ export default function RolesPage() {
             <tbody>
               {users.map((user) => (
                 <tr key={user.id}>
-                  <td className="font-medium">{user.user.name || "Sin nombre"}</td>
-                  <td className="text-slate-400">{user.user.email}</td>
+                  <td className="font-medium text-[var(--ds-text-primary)]">{user.user.name || "Sin nombre"}</td>
+                  <td className="text-[var(--ds-text-secondary)]">{user.user.email}</td>
                   <td>
                     {user.role ? (
-                      <span className="text-teal-400">{user.role.name}</span>
+                      <span className="text-[var(--ds-teal-md)] font-semibold">{user.role.name}</span>
                     ) : (
-                      <span className="text-amber-400">Sin rol</span>
+                      <span className="text-amber-500 font-semibold">Sin rol</span>
                     )}
                   </td>
                   <td>
@@ -438,29 +438,29 @@ function AssignRoleModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="ds-card max-w-md w-full">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">Asignar Rol</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded">
+          <h2 className="text-xl font-bold text-[var(--ds-text-primary)]">Asignar Rol</h2>
+          <button onClick={onClose} className="p-2 hover:bg-[var(--ds-surface-2)] rounded transition-colors text-[var(--ds-text-muted)] hover:text-[var(--ds-text-primary)]">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <p className="text-sm text-slate-300 mb-4">
-              Selecciona el rol para <span className="font-semibold text-white">{user.user.name || user.user.email}</span>.
+            <p className="text-sm text-[var(--ds-text-secondary)] mb-4">
+              Selecciona el rol para <span className="font-semibold text-[var(--ds-text-primary)]">{user.user.name || user.user.email}</span>.
             </p>
             <label className="ds-label">Rol</label>
             <select
               value={selectedRoleId}
               onChange={(e) => setSelectedRoleId(e.target.value)}
-              className="ds-input w-full bg-slate-900"
+              className="ds-input w-full bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text-primary)] focus:border-[var(--ds-teal-md)] focus:outline-none"
             >
-              <option value="">Sin rol</option>
+              <option value="" className="bg-[var(--ds-bg-deep)] text-[var(--ds-text-primary)]">Sin rol</option>
               {roles.map(r => (
-                <option key={r.id} value={r.id}>{r.name}</option>
+                <option key={r.id} value={r.id} className="bg-[var(--ds-bg-deep)] text-[var(--ds-text-primary)]">{r.name}</option>
               ))}
             </select>
           </div>
@@ -518,13 +518,13 @@ function RoleFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="ds-card max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold text-[var(--ds-text-primary)]">
             {role ? "Editar Rol" : "Crear Nuevo Rol"}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-700 rounded">
+          <button onClick={onClose} className="p-2 hover:bg-[var(--ds-surface-2)] rounded transition-colors text-[var(--ds-text-muted)] hover:text-[var(--ds-text-primary)]">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -536,7 +536,7 @@ function RoleFormModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="ds-input w-full"
+              className="ds-input w-full bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text-primary)] focus:border-[var(--ds-teal-md)]"
               placeholder="Ej: Admin de Ventas"
               required
             />
@@ -547,7 +547,7 @@ function RoleFormModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="ds-input w-full h-20"
+              className="ds-input w-full h-20 bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text-primary)] focus:border-[var(--ds-teal-md)]"
               placeholder="Describe las responsabilidades de este rol..."
             />
           </div>
@@ -558,19 +558,19 @@ function RoleFormModal({
               id="isDefault"
               checked={isDefault}
               onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-400"
+              className="w-4 h-4 rounded border-[var(--ds-border)] bg-[var(--ds-surface-2)] text-[var(--ds-teal)] focus:ring-[var(--ds-teal-md)]"
             />
-            <label htmlFor="isDefault" className="text-sm text-slate-300">
+            <label htmlFor="isDefault" className="text-sm text-[var(--ds-text-secondary)]">
               Establecer como rol por defecto para nuevos usuarios
             </label>
           </div>
 
           <div>
             <label className="ds-label block mb-3">Permisos ({selectedPerms.length} seleccionados)</label>
-            <div className="space-y-4 max-h-64 overflow-y-auto p-2 border border-slate-700 rounded-lg">
+            <div className="space-y-4 max-h-64 overflow-y-auto p-2 border border-[var(--ds-border)] rounded-lg bg-[var(--ds-surface-2)]/30">
               {permissions.map((group) => (
-                <div key={group.module} className="border border-slate-600 rounded-lg p-3">
-                  <h4 className="text-sm font-medium text-teal-400 mb-2">
+                <div key={group.module} className="border border-[var(--ds-border)] rounded-lg p-3 bg-[var(--ds-surface)]">
+                  <h4 className="text-sm font-medium text-[var(--ds-teal-md)] mb-2">
                     {MODULE_LABELS[group.module] || group.module} ({group.permissions.length})
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -580,16 +580,16 @@ function RoleFormModal({
                         onClick={(e) => togglePerm(perm.id, e)}
                         className={`flex items-center gap-2 text-xs cursor-pointer p-2 rounded border transition-all ${
                           selectedPerms.includes(perm.id)
-                            ? "bg-teal-500/20 border-teal-500 text-teal-300"
-                            : "hover:bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600"
+                            ? "bg-[var(--ds-teal-dim)] border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] font-medium"
+                            : "hover:bg-[var(--ds-surface-2)] border-[var(--ds-border)] text-[var(--ds-text-secondary)] hover:border-[var(--ds-border-glow)]"
                         }`}
                       >
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
                           selectedPerms.includes(perm.id)
-                            ? "bg-teal-500 border-teal-500"
-                            : "border-slate-500"
+                            ? "bg-[var(--ds-teal)] border-[var(--ds-border-glow)] text-white"
+                            : "border-[var(--ds-border)]"
                         }`}>
-                          {selectedPerms.includes(perm.id) && <Check className="w-3 h-3 text-white" />}
+                          {selectedPerms.includes(perm.id) && <Check className="w-3 h-3" />}
                         </div>
                         <span className="truncate">{perm.description}</span>
                       </div>

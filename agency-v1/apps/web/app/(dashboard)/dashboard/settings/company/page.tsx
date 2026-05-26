@@ -12,10 +12,10 @@ export default async function SettingsCompanyPage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-300 pb-10">
             <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900 border-b border-slate-200 pb-4">
+                <h2 className="text-xl font-bold tracking-tight text-[var(--ds-text-primary)] border-b border-[var(--ds-border)] pb-4">
                     Compañía y Marca Blanca
                 </h2>
-                <p className="text-sm text-slate-500 mt-2">
+                <p className="text-sm text-[var(--ds-text-secondary)] mt-2">
                     Configura la apariencia global del sistema para tu equipo y establece las preferencias regionales por defecto.
                 </p>
             </div>

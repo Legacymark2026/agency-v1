@@ -23,10 +23,10 @@ export function SettingsSidebar() {
     return (
         <aside className="w-full lg:w-64 shrink-0 flex flex-col space-y-6">
             <div className="flex items-center gap-2 mb-2 lg:mb-4 lg:hidden">
-                <Link href="/dashboard" className="p-2 -ml-2 text-slate-400 hover:text-slate-900 transition-colors">
+                <Link href="/dashboard" className="p-2 -ml-2 text-[var(--ds-text-muted)] hover:text-[var(--ds-text-primary)] transition-colors">
                     <ArrowLeft className="w-5 h-5" />
                 </Link>
-                <h2 className="text-xl font-bold tracking-tight text-slate-900">Configuración</h2>
+                <h2 className="text-xl font-bold tracking-tight text-[var(--ds-text-primary)]">Configuración</h2>
             </div>
 
             <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 scrollbar-hide">
@@ -36,12 +36,12 @@ export function SettingsSidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${isActive
-                                ? "bg-slate-900 text-white shadow-md shadow-slate-900/10"
-                                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-[0.15rem] border font-medium text-sm transition-all whitespace-nowrap ${isActive
+                                ? "bg-[var(--ds-teal-dim)] text-[var(--ds-teal)] border-[var(--ds-border-glow)] shadow-sm"
+                                : "border-transparent text-[var(--ds-text-secondary)] hover:bg-[var(--ds-surface-2)] hover:text-[var(--ds-text-primary)]"
                                 }`}
                         >
-                            <item.icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
+                            <item.icon className={`w-4 h-4 ${isActive ? "text-[var(--ds-teal)]" : "text-[var(--ds-text-muted)]"}`} />
                             {item.name}
                         </Link>
                     )
