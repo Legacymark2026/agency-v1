@@ -6,10 +6,13 @@
  * Usage in any service:
  *   import { prisma, Prisma } from "@agency/database";
  */
-import { PrismaClient } from "@prisma/client";
-export declare const prisma: PrismaClient<import(".prisma/client").Prisma.PrismaClientOptions, never, import("@prisma/client/runtime/library").DefaultArgs>;
 export { PrismaClient } from "@prisma/client";
 export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
+export declare const getPrismaAuth: () => any;
+export declare const getPrismaCore: () => any;
+export declare const getPrismaMedia: () => any;
+export declare const getPrismaAnalytics: () => any;
+export declare const prisma: any;
 export default prisma;
 //# sourceMappingURL=index.d.ts.map

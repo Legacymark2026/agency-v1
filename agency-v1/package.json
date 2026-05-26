@@ -23,6 +23,7 @@
     "k8s:prod": "kubectl apply -k infrastructure/k8s/overlays/production",
     "db:generate": "npm run generate --workspace=packages/database",
     "db:migrate": "npm run migrate:deploy --workspace=packages/database",
+    "db:migrate:segregated": "node scripts/migrate-segregated-dbs.js",
     "db:studio": "npm run studio --workspace=packages/database",
     "doctor": "npx react-doctor --project web --full --verbose"
   },

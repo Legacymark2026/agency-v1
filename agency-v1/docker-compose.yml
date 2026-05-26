@@ -20,6 +20,7 @@ services:
     # ports: ["5433:5432"] # Commented out to avoid host port conflicts and enhance security
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U legacymark"]
       interval: 10s
@@ -57,7 +58,11 @@ services:
     ports: ["3000:3000"]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
       REDIS_URL: redis://redis:6379
       API_GATEWAY_URL: http://api-gateway:8080
       VIDEO_SERVICE_URL: http://video-service:4007
@@ -115,11 +120,15 @@ services:
       dockerfile: services/auth-service/Dockerfile
     restart: unless-stopped
     ports: ["4001:4001"]
-    environment: &common-env
+    environment:
       PORT: "4001"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
@@ -138,9 +147,17 @@ services:
       dockerfile: services/crm-service/Dockerfile
     restart: unless-stopped
     ports: ["4002:4002"]
-    environment:
-      <<: *common-env
+    environment: &common-env
       PORT: "4002"
+      REDIS_URL: redis://redis:6379
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -160,6 +177,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4003"
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -182,6 +200,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4004"
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
       GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
@@ -293,6 +312,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4009"
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -369,6 +389,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4013"
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
