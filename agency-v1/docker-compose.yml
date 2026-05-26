@@ -593,8 +593,43 @@ services:
       - "traefik.http.routers.project.entrypoints=web"
       - "traefik.http.services.project.loadbalancer.server.port=4018"
 
+  # ── Observability & Monitoring ─────────────────────────────────────────────
+  loki:
+    image: grafana/loki:3.0.0
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/monitoring/loki-config.yml:/etc/loki/local-config.yaml
+      - lokidata:/tmp/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    profiles: ["monitoring"]
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/monitoring/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      loki: { condition: service_started }
+    profiles: ["monitoring"]
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./infrastructure/monitoring/grafana/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      loki: { condition: service_started }
+    profiles: ["monitoring"]
+
 volumes:
   pgdata:
   redisdata:
   redisqueuedata:
   render-data:
+  lokidata:
+  grafanadata:
