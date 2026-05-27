@@ -1,8 +1,14 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { EmailSequence, EmailSequenceEnrollment } from "@prisma/client";
+
+export interface EmailSequenceWithEnrollments extends EmailSequence {
+    enrollments: EmailSequenceEnrollment[];
+}
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 async function getSession() {
     const session = await auth();
@@ -31,75 +37,84 @@ export async function createEmailSequence(data: {
     steps: SequenceStep[];
 }) {
     await getSession();
-    const seq = await prisma.emailSequence.create({
-        data: {
-            companyId: data.companyId,
-            name: data.name,
-            description: data.description,
-            triggerStage: data.triggerStage,
-            steps: data.steps as any,
-        },
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
     });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to create email sequence");
     revalidatePath("/dashboard/admin/crm/sequences");
-    return { success: true, data: seq };
+    return resData;
 }
 
 export async function updateEmailSequence(id: string, data: Partial<{
     name: string; description: string; triggerStage: string; isActive: boolean; steps: SequenceStep[];
 }>) {
     await getSession();
-    const seq = await prisma.emailSequence.update({ where: { id }, data: data as any });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to update email sequence");
     revalidatePath("/dashboard/admin/crm/sequences");
-    return { success: true, data: seq };
+    return resData;
 }
 
 export async function deleteEmailSequence(id: string) {
     await getSession();
-    await prisma.emailSequence.delete({ where: { id } });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences/${id}`, {
+        method: "DELETE",
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to delete email sequence");
     revalidatePath("/dashboard/admin/crm/sequences");
     return { success: true };
 }
 
-export async function listEmailSequences(companyId: string) {
-    return prisma.emailSequence.findMany({
-        where: { companyId },
-        include: { enrollments: { select: { id: true, status: true } } },
-        orderBy: { createdAt: "desc" },
-    });
+export async function listEmailSequences(companyId: string): Promise<EmailSequenceWithEnrollments[]> {
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences?companyId=${companyId}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to list email sequences");
+    return resData.data as EmailSequenceWithEnrollments[];
 }
 
 // ─── ENROLLAR DEAL EN SECUENCIA ───────────────────────────────────────────────
 
 export async function enrollDealInSequence(dealId: string, sequenceId: string) {
     await getSession();
-    const sequence = await prisma.emailSequence.findUnique({ where: { id: sequenceId } });
-    if (!sequence) return { success: false, error: "Secuencia no encontrada" };
-
-    const steps = sequence.steps as unknown as SequenceStep[];
-    if (!steps || steps.length === 0) return { success: false, error: "La secuencia no tiene pasos" };
-
-    const firstRunAt = new Date();
-    firstRunAt.setDate(firstRunAt.getDate() + (steps[0]?.delayDays ?? 0));
-
-    const enrollment = await prisma.emailSequenceEnrollment.upsert({
-        where: { sequenceId_dealId: { sequenceId, dealId } },
-        update: { status: "ACTIVE", currentStep: 0, nextRunAt: firstRunAt, completedAt: null },
-        create: { sequenceId, dealId, currentStep: 0, status: "ACTIVE", nextRunAt: firstRunAt },
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences/enroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dealId, sequenceId }),
     });
-
+    const resData = await res.json();
+    if (!res.ok) return { success: false, error: resData.error || "Failed to enroll deal in sequence" };
     revalidatePath("/dashboard/admin/crm");
-    return { success: true, data: enrollment };
+    return { success: true, data: resData.data };
 }
 
 export async function pauseEnrollment(enrollmentId: string) {
     await getSession();
-    await prisma.emailSequenceEnrollment.update({ where: { id: enrollmentId }, data: { status: "PAUSED" } });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences/enrollments/${enrollmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "PAUSED" }),
+    });
+    if (!res.ok) throw new Error("Failed to pause enrollment");
     return { success: true };
 }
 
 export async function cancelEnrollment(enrollmentId: string) {
     await getSession();
-    await prisma.emailSequenceEnrollment.update({ where: { id: enrollmentId }, data: { status: "CANCELLED" } });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences/enrollments/${enrollmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+    });
+    if (!res.ok) throw new Error("Failed to cancel enrollment");
     return { success: true };
 }
 
@@ -112,22 +127,11 @@ export async function cancelEnrollment(enrollmentId: string) {
 export async function processEmailSequences(companyId: string) {
     const now = new Date();
 
-    const dueEnrollments = await prisma.emailSequenceEnrollment.findMany({
-        where: {
-            status: "ACTIVE",
-            nextRunAt: { lte: now },
-            sequence: { companyId, isActive: true },
-        },
-        include: {
-            sequence: true,
-            deal: {
-                select: {
-                    id: true, title: true, contactEmail: true, contactName: true,
-                    assignedTo: true, value: true, stage: true,
-                },
-            },
-        },
-    });
+    // Fetch due enrollments from Gateway
+    const dueRes = await fetch(`${GATEWAY_URL}/api/crm/sequences/due-enrollments?companyId=${companyId}`);
+    const dueData = await dueRes.json();
+    if (!dueRes.ok) throw new Error(dueData.error || "Failed to fetch due enrollments");
+    const dueEnrollments = dueData.data || [];
 
     const results: { enrollmentId: string; dealId: string; stepIndex: number; result: string }[] = [];
 
@@ -138,9 +142,10 @@ export async function processEmailSequences(companyId: string) {
 
         if (!step) {
             // No more steps — mark as completed
-            await prisma.emailSequenceEnrollment.update({
-                where: { id: enrollment.id },
-                data: { status: "COMPLETED", completedAt: now },
+            await fetch(`${GATEWAY_URL}/api/crm/sequences/enrollments/${enrollment.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "COMPLETED", completedAt: now }),
             });
             results.push({ enrollmentId: enrollment.id, dealId: enrollment.dealId, stepIndex, result: "COMPLETED" });
             continue;
@@ -185,15 +190,17 @@ export async function processEmailSequences(companyId: string) {
                     }
                 }
 
-                // Audit trail — log the activity regardless
-                if (enrollment.deal.assignedTo) {
-                    await prisma.cRMActivity.create({
-                        data: {
-                            dealId: enrollment.dealId,
-                            userId: enrollment.deal.assignedTo,
+                // Audit trail — log the activity regardless via Gateway
+                const assignedTo = enrollment.deal.assignedTo || enrollment.deal.assignedToUserId;
+                if (assignedTo) {
+                    await fetch(`${GATEWAY_URL}/api/deals/${enrollment.dealId}/activities`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
                             type: "SEQUENCE_EMAIL",
                             content: `[Secuencia] "${step.subject ?? "Email Automático"}" enviado a ${to ?? "contacto"}`,
-                        },
+                            userId: assignedTo,
+                        }),
                     });
                 }
             }
@@ -208,14 +215,15 @@ export async function processEmailSequences(companyId: string) {
                 nextRunAt.setDate(nextRunAt.getDate() + nextStep.delayDays);
             }
 
-            await prisma.emailSequenceEnrollment.update({
-                where: { id: enrollment.id },
-                data: {
+            await fetch(`${GATEWAY_URL}/api/crm/sequences/enrollments/${enrollment.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
                     currentStep: nextStepIndex,
                     nextRunAt,
                     status: nextStep ? "ACTIVE" : "COMPLETED",
                     completedAt: nextStep ? null : now,
-                },
+                }),
             });
 
             results.push({ enrollmentId: enrollment.id, dealId: enrollment.dealId, stepIndex, result: "SENT" });
@@ -228,9 +236,8 @@ export async function processEmailSequences(companyId: string) {
 }
 
 export async function getEnrollmentsByDeal(dealId: string) {
-    return prisma.emailSequenceEnrollment.findMany({
-        where: { dealId },
-        include: { sequence: { select: { id: true, name: true, steps: true } } },
-        orderBy: { createdAt: "desc" },
-    });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sequences?dealId=${dealId}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to get enrollments by deal");
+    return resData.data;
 }

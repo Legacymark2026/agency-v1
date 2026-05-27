@@ -1,9 +1,10 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { STAGES as BASE_STAGES } from "@/lib/crm-config";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 async function getSession() {
     const session = await auth();
@@ -15,21 +16,37 @@ async function getSession() {
 
 export async function assignDeal(dealId: string, userId: string | null) {
     const session = await getSession();
-    const oldDeal = await prisma.deal.findUnique({ where: { id: dealId }, select: { assignedTo: true } });
-    
-    await prisma.deal.update({
-        where: { id: dealId },
-        data: { assignedTo: userId, updatedAt: new Date() }
+    // Update assignedTo via Gateway
+    const patchRes = await fetch(`${GATEWAY_URL}/api/deals/${dealId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedTo: userId })
     });
+    if (!patchRes.ok) throw new Error("Failed to assign deal");
 
-    // Log the assignment as an activity
-    const targetUser = userId ? await prisma.user.findUnique({ where: { id: userId }, select: { name: true } }) : null;
+    // Log the assignment as an activity via Gateway
+    let targetUserName = userId;
+    if (userId) {
+        try {
+            const companyUsers = await getCompanyUsers(session.user.companyId ?? "");
+            const targetUser = companyUsers.find((u: any) => u.id === userId);
+            if (targetUser) targetUserName = targetUser.name;
+        } catch (e) {
+            console.error("Failed to retrieve target user name", e);
+        }
+    }
     const content = userId 
-        ? `Deal asignado a ${targetUser?.name ?? userId}`
+        ? `Deal asignado a ${targetUserName ?? userId}`
         : `Deal desasignado`;
     
-    await prisma.cRMActivity.create({
-        data: { dealId, type: 'ASSIGNED', content, userId: session.user.id }
+    await fetch(`${GATEWAY_URL}/api/deals/${dealId}/activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            type: 'ASSIGNED',
+            content,
+            userId: session.user.id
+        })
     });
 
     revalidatePath(`/dashboard/admin/crm/deals/${dealId}`);
@@ -38,21 +55,22 @@ export async function assignDeal(dealId: string, userId: string | null) {
 }
 
 export async function getCompanyUsers(companyId: string) {
-    const companyUsers = await prisma.companyUser.findMany({
-        where: { companyId },
-        include: { user: { select: { id: true, name: true, email: true, image: true } } }
-    });
-    return companyUsers.map(cu => cu.user);
+    const response = await fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}/users`);
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to fetch company users");
+    return resData.data || [];
 }
 
 // ─── F5: HISTORIAL DE ETAPAS ───────────────────────────────────────────────────
 
 export async function getDealStageHistory(dealId: string) {
-    return prisma.dealStageHistory.findMany({
-        where: { dealId },
-        orderBy: { createdAt: 'desc' },
-        include: { user: { select: { id: true, name: true, image: true } } }
-    });
+    const response = await fetch(`${GATEWAY_URL}/api/crm/deals/${dealId}/stage-history`);
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to fetch stage history");
+    return (resData.data || []).map((h: any) => ({
+        ...h,
+        createdAt: new Date(h.createdAt),
+    }));
 }
 
 // ─── F4: COTIZADOR / PROPUESTAS ────────────────────────────────────────────────
@@ -70,42 +88,34 @@ export async function createProposal(dealId: string, data: {
     lineItems: ProposalLineItem[];
 }) {
     const session = await getSession();
-    const deal = await prisma.deal.findUnique({ where: { id: dealId }, select: { companyId: true, title: true } });
-    if (!deal) return { error: "Deal not found" };
-
-    const total = data.lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-
     try {
-        const proposal = await prisma.proposal.create({
-            data: {
+        const response = await fetch(`${GATEWAY_URL}/api/crm/deals/${dealId}/proposals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 title: data.title,
-                dealId,
-                companyId: deal.companyId,
-                status: 'DRAFT',
-                value: total,
-                validUntil: data.validUntil ? new Date(data.validUntil) : undefined,
+                validUntil: data.validUntil,
                 notes: data.notes,
-                items: {
-                    create: data.lineItems.map(item => ({
-                        title: item.description,
-                        quantity: item.quantity,
-                        price: item.unitPrice,
-                    }))
-                },
-                creatorId: session.user.id,
-            } as any
+                lineItems: data.lineItems,
+                creatorId: session.user.id
+            })
         });
+        const resData = await response.json();
+        if (!response.ok) return { error: resData.error || "Failed to create proposal" };
 
-        await prisma.cRMActivity.create({
-            data: {
-                dealId, type: 'PROPOSAL_CREATED',
+        const total = data.lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+        await fetch(`${GATEWAY_URL}/api/deals/${dealId}/activities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'PROPOSAL_CREATED',
                 content: `Propuesta "${data.title}" creada por $${total.toLocaleString()}`,
                 userId: session.user.id
-            }
+            })
         });
 
         revalidatePath(`/dashboard/admin/crm/deals/${dealId}`);
-        return { success: true, id: proposal.id };
+        return { success: true, id: resData.data.id };
     } catch (error) {
         console.error(error);
         return { error: "Failed to create proposal" };
@@ -114,10 +124,15 @@ export async function createProposal(dealId: string, data: {
 
 export async function getProposalsByDeal(dealId: string) {
     try {
-        return await prisma.proposal.findMany({
-            where: { dealId },
-            orderBy: { createdAt: 'desc' },
-        });
+        const response = await fetch(`${GATEWAY_URL}/api/crm/deals/${dealId}/proposals`);
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to fetch proposals");
+        return (resData.data || []).map((p: any) => ({
+            ...p,
+            createdAt: new Date(p.createdAt),
+            updatedAt: new Date(p.updatedAt),
+            validUntil: p.validUntil ? new Date(p.validUntil) : null,
+        }));
     } catch {
         return [];
     }
@@ -125,66 +140,56 @@ export async function getProposalsByDeal(dealId: string) {
 
 export async function updateProposalStatus(proposalId: string, status: 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED') {
     const session = await getSession();
-    const proposal = await prisma.proposal.findUnique({ where: { id: proposalId }, select: { dealId: true, title: true } });
-    if (!proposal) return { error: "Not found" };
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/crm/proposals/${proposalId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        const resData = await response.json();
+        if (!response.ok) return { error: resData.error || "Not found" };
+        const proposal = resData.data;
 
-    await prisma.proposal.update({ where: { id: proposalId }, data: { status } });
-    
-    const statusLabels: Record<string, string> = { DRAFT: 'Borrador', SENT: 'Enviada', ACCEPTED: 'Aceptada', REJECTED: 'Rechazada' };
-    await prisma.cRMActivity.create({
-        data: {
-            dealId: proposal.dealId ?? undefined, type: 'PROPOSAL_STATUS',
-            content: `Propuesta "${proposal.title}" → ${statusLabels[status]}`,
-            userId: session.user.id
-        } as any
-    });
+        const statusLabels: Record<string, string> = { DRAFT: 'Borrador', SENT: 'Enviada', ACCEPTED: 'Aceptada', REJECTED: 'Rechazada' };
+        await fetch(`${GATEWAY_URL}/api/deals/${proposal.dealId}/activities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'PROPOSAL_STATUS',
+                content: `Propuesta "${proposal.title}" → ${statusLabels[status]}`,
+                userId: session.user.id
+            })
+        });
 
-    revalidatePath(`/dashboard/admin/crm/deals/${proposal.dealId}`);
-    return { success: true };
+        revalidatePath(`/dashboard/admin/crm/deals/${proposal.dealId}`);
+        return { success: true };
+    } catch {
+        return { error: "Failed to update proposal status" };
+    }
 }
 
 // ─── F7: VINCULACIÓN DEAL ↔ FACTURA ───────────────────────────────────────────
 
 export async function createInvoiceFromDeal(dealId: string) {
     const session = await getSession();
-    const deal = await prisma.deal.findUnique({
-        where: { id: dealId },
-        select: { id: true, title: true, value: true, companyId: true, contactEmail: true, contactName: true }
-    });
-    if (!deal) return { error: "Deal not found" };
-
     try {
-        const invoice = await prisma.invoice.create({
-            data: {
-                clientName: deal.contactName || 'Cliente',
-                serviceDescription: deal.title,
-                subtotalAmount: deal.value,
-                taxAmount: 0,
-                totalAmount: deal.value,
-                advanceAmount: 0,
-                finalAmount: deal.value,
-                status: 'DRAFT_AWAITING_PAYMENT',
-                companyId: deal.companyId,
-                dealId: deal.id,
-                currency: 'USD',
-                dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                items: {
-                    create: [{
-                        title: deal.title,
-                        quantity: 1,
-                        unitPrice: deal.value,
-                        totalAmount: deal.value,
-                    }]
-                }
-            }
+        const response = await fetch(`${GATEWAY_URL}/api/crm/deals/${dealId}/invoices`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
         });
+        const resData = await response.json();
+        if (!response.ok) return { error: resData.error || "Failed to create invoice" };
+        const invoice = resData.data;
 
-        await prisma.cRMActivity.create({
-            data: {
-                dealId, type: 'INVOICE_CREATED',
-                content: `Factura #${invoice.id.slice(0, 8)} creada por $${deal.value.toLocaleString()}`,
+        await fetch(`${GATEWAY_URL}/api/deals/${dealId}/activities`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'INVOICE_CREATED',
+                content: `Factura #${invoice.id.slice(0, 8)} creada por $${invoice.totalAmount.toLocaleString()}`,
                 userId: session.user.id
-            }
+            })
         });
 
         revalidatePath(`/dashboard/admin/crm/deals/${dealId}`);
@@ -197,11 +202,14 @@ export async function createInvoiceFromDeal(dealId: string) {
 
 export async function getInvoicesByDeal(dealId: string) {
     try {
-        return await prisma.invoice.findMany({
-            where: { dealId },
-            orderBy: { createdAt: 'desc' },
-            select: { id: true, serviceDescription: true, status: true, totalAmount: true, dueDate: true, createdAt: true }
-        });
+        const response = await fetch(`${GATEWAY_URL}/api/crm/deals/${dealId}/invoices`);
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to fetch invoices");
+        return (resData.data || []).map((inv: any) => ({
+            ...inv,
+            createdAt: new Date(inv.createdAt),
+            dueDate: inv.dueDate ? new Date(inv.dueDate) : null,
+        }));
     } catch {
         return [];
     }
@@ -210,51 +218,27 @@ export async function getInvoicesByDeal(dealId: string) {
 // ─── F2/F6: ALERTAS DE STAGNACIÓN + REPORTE DE EMBUDO ─────────────────────────
 
 export async function getStagnantDeals(companyId: string, thresholdDays = 7) {
-    const cutoff = new Date(Date.now() - thresholdDays * 24 * 60 * 60 * 1000);
-    return prisma.deal.findMany({
-        where: {
-            companyId,
-            stage: { notIn: ['WON', 'LOST'] },
-            lastActivity: { lt: cutoff }
-        },
-        select: { id: true, title: true, value: true, stage: true, lastActivity: true, contactName: true, assignedUser: { select: { name: true } } },
-        orderBy: { lastActivity: 'asc' }
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/crm/closing/stagnant-deals?companyId=${companyId}&thresholdDays=${thresholdDays}`);
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to fetch stagnant deals");
+        return (resData.data || []).map((deal: any) => ({
+            ...deal,
+            lastActivity: deal.lastActivity ? new Date(deal.lastActivity) : null,
+        }));
+    } catch {
+        return [];
+    }
 }
 
 export async function getFunnelConversionReport(companyId: string) {
-    const STAGES = [...BASE_STAGES.map(s => s.id), 'LOST'];
-    
-    // Count deals per stage
-    const stageCounts = await prisma.deal.groupBy({
-        by: ['stage'],
-        where: { companyId },
-        _count: { stage: true },
-        _sum: { value: true },
-    });
-
-    // Avg days in each stage from stage history
-    let avgDaysByStage: Record<string, number> = {};
     try {
-        const historyData = await prisma.dealStageHistory.groupBy({
-            by: ['toStage'],
-            where: { deal: { companyId } },
-            _count: { toStage: true },
-        });
-        // Simple approximation: time from entry to exit for each stage
-        avgDaysByStage = Object.fromEntries(STAGES.map(s => [s, 0]));
+        const STAGES = [...BASE_STAGES.map(s => s.id), 'LOST'];
+        const response = await fetch(`${GATEWAY_URL}/api/crm/closing/funnel-conversion-report?companyId=${companyId}&stages=${STAGES.join(',')}`);
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to fetch conversion report");
+        return resData.data || [];
     } catch {
-        avgDaysByStage = Object.fromEntries(STAGES.map(s => [s, 0]));
+        return [];
     }
-
-    const stageData = STAGES.map((stage, i) => {
-        const row = stageCounts.find(r => r.stage === stage);
-        const count = row?._count.stage ?? 0;
-        const value = row?._sum.value ?? 0;
-        const prevCount = i > 0 ? (stageCounts.find(r => r.stage === STAGES[i - 1])?._count.stage ?? 0) : count;
-        const conversionRate = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
-        return { stage, count, value, conversionRate, avgDays: avgDaysByStage[stage] ?? 0 };
-    });
-
-    return stageData;
 }

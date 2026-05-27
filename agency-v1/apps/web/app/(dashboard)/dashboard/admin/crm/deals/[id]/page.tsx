@@ -244,7 +244,7 @@ export default async function DealDetailPage(props: PageProps) {
                                 {deal.tags?.length > 0 && (
                                     <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                                         <Tag style={{ width: 12, height: 12, color: "#475569" }} />
-                                        {deal.tags.map((tag) => (
+                                        {deal.tags.map((tag: string) => (
                                             <span key={tag} style={{
                                                 fontSize: 10, fontWeight: 700, padding: "2px 8px",
                                                 background: "rgba(13,148,136,0.1)", color: "#2dd4bf",

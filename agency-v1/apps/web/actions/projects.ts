@@ -1,13 +1,24 @@
 // @ts-nocheck
 'use server';
 
-import { prisma } from '@/lib/prisma';
-import { safeTableQuery } from '@/lib/db-utils';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { ProjectSchema, type ProjectFormData } from '@/lib/schemas';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `Gateway error ${res.status}`);
+  }
+  return res.json();
+}
 
 // --- Project CRUD Actions ---
 
@@ -20,93 +31,49 @@ export async function getProjects(options?: {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const where: any /* eslint-disable-line @typescript-eslint/no-explicit-any */ = {};
+    const params = new URLSearchParams();
+    if (options?.categoryId) params.set('categoryId', options.categoryId);
+    if (options?.status) params.set('status', options.status);
+    if (options?.featured !== undefined) params.set('featured', String(options.featured));
+    if (options?.search) params.set('search', options.search);
 
-    if (options?.categoryId) {
-        where.categoryId = options.categoryId;
+    try {
+        const res = await gw(`/api/portfolio/projects?${params.toString()}`);
+        return res.projects || [];
+    } catch (error) {
+        console.error("Failed to get projects:", error);
+        return [];
     }
-    if (options?.status) {
-        where.status = options.status;
-    }
-    if (options?.featured !== undefined) {
-        where.featured = options.featured;
-    }
-    if (options?.search) {
-        where.OR = [
-            { title: { contains: options.search, mode: 'insensitive' } },
-            { client: { contains: options.search, mode: 'insensitive' } },
-            { description: { contains: options.search, mode: 'insensitive' } },
-        ];
-    }
-
-    return safeTableQuery("tbl_projects", async () =>
-        prisma.project.findMany({
-            where,
-            orderBy: [
-                { featured: 'desc' },
-                { displayOrder: 'asc' },
-                { createdAt: 'desc' }
-            ],
-            include: {
-                category: true,
-                _count: {
-                    select: { views: true }
-                }
-            }
-        }),
-        []
-    );
 }
 
 export async function getProject(id: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    return safeTableQuery("tbl_projects", async () =>
-        prisma.project.findUnique({
-            where: { id },
-            include: {
-                category: true,
-                // relatedProjects: {
-                //     select: { id: true, title: true, slug: true, coverImage: true }
-                // }
-            }
-        }),
-        null
-    );
+    try {
+        const res = await gw(`/api/portfolio/projects/${id}`);
+        return res;
+    } catch (error) {
+        console.error("Failed to get project:", error);
+        return null;
+    }
 }
 
 export async function getPublicProjects(options?: {
     categorySlug?: string;
     limit?: number;
 }) {
-    const where: any /* eslint-disable-line @typescript-eslint/no-explicit-any */ = {
-        status: 'published',
-        published: true
-    };
+    const params = new URLSearchParams();
+    if (options?.categorySlug) params.set('categorySlug', options.categorySlug);
+    if (options?.limit) params.set('limit', String(options.limit));
 
-    if (options?.categorySlug) {
-        where.category = { slug: options.categorySlug };
+    try {
+        const res = await gw(`/api/portfolio/projects/public?${params.toString()}`);
+        return res.projects || [];
+    } catch (error) {
+        console.error("Failed to get public projects:", error);
+        return [];
     }
-
-    return safeTableQuery("tbl_projects", async () =>
-        prisma.project.findMany({
-            where,
-            take: options?.limit,
-            orderBy: [
-                { featured: 'desc' },
-                { displayOrder: 'asc' },
-                { createdAt: 'desc' }
-            ],
-            include: {
-                category: true,
-                _count: {
-                    select: { views: true }
-                }
-            }
-        }),
-        []
-    );
 }
 
 export async function createProject(data: ProjectFormData) {
@@ -115,10 +82,6 @@ export async function createProject(data: ProjectFormData) {
 
     const validated = ProjectSchema.parse(data);
     const { tagNames, categoryId, scheduledDate, startDate, endDate, results, gallery, techStack, team, ...projectData } = validated;
-
-    // Handle new fields safely
-    const isTemplate = (data as any).isTemplate || false;
-    const relatedProjects = (data as any).relatedProjects || [];
 
     try {
         // Tag connections (Explicit join table)
@@ -152,8 +115,9 @@ export async function createProject(data: ProjectFormData) {
             createData.category = { connect: { id: categoryId } };
         }
 
-        await (prisma.project as any).create({
-            data: createData
+        await gw('/api/portfolio/projects', {
+            method: 'POST',
+            body: JSON.stringify(createData)
         });
 
         revalidatePath('/dashboard/projects');
@@ -171,10 +135,6 @@ export async function updateProject(id: string, data: ProjectFormData) {
 
     const validated = ProjectSchema.parse(data);
     const { tagNames, categoryId, scheduledDate, startDate, endDate, results, gallery, techStack, team, ...projectData } = validated;
-
-    // Handle new fields safely
-    const isTemplate = (data as any).isTemplate || false;
-    const relatedProjects = (data as any).relatedProjects || [];
 
     try {
         // Tag connections (Explicit join table)
@@ -211,9 +171,9 @@ export async function updateProject(id: string, data: ProjectFormData) {
             updateData.category = { disconnect: true };
         }
 
-        await (prisma.project as any).update({
-            where: { id },
-            data: updateData
+        await gw(`/api/portfolio/projects/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updateData)
         });
 
         revalidatePath('/dashboard/projects');
@@ -231,37 +191,9 @@ export async function duplicateProject(id: string) {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        const project = await prisma.project.findUnique({
-            where: { id },
-            include: {}
+        await gw(`/api/portfolio/projects/${id}/duplicate`, {
+            method: 'POST'
         });
-
-        if (!project) return { success: false, error: "Project not found" };
-
-        const newSlug = `${project.slug}-copy-${Date.now()}`;
-        const newTitle = `${project.title} (Copy)`;
-
-        // Destructure to exclude unique/auto fields
-        const { id: _id, createdAt, updatedAt, slug, title, ...dataToCopy } = project;
-
-        await prisma.project.create({
-            data: {
-                ...dataToCopy,
-                gallery: dataToCopy.gallery as any,
-                results: dataToCopy.results as any,
-                techStack: dataToCopy.techStack as any,
-                team: dataToCopy.team as any,
-                title: newTitle,
-                slug: newSlug,
-                status: 'draft',
-                published: false,
-                displayOrder: 0,
-                // Skip related projects or copy them? Copying them seems better but strictly they are new relations.
-                // Let's copy them.
-                // relatedProjects: { connect: ... } // Complexity. Skip for now.
-            }
-        });
-
         revalidatePath('/dashboard/projects');
         return { success: true };
     } catch (error) {
@@ -275,7 +207,9 @@ export async function deleteProject(id: string) {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await prisma.project.delete({ where: { id } });
+        await gw(`/api/portfolio/projects/${id}`, {
+            method: 'DELETE'
+        });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
         return { success: true };
@@ -286,29 +220,26 @@ export async function deleteProject(id: string) {
 
 // --- Category Actions ---
 
-export async function getProjectCategories() {
-    return safeTableQuery("tbl_project_categories", async () =>
-        prisma.projectCategory.findMany({
-            orderBy: { name: 'asc' }
-        }),
-        []
-    );
+export async function getProjectCategories(): Promise<{ id: string; name: string; slug: string; color?: string | null }[]> {
+    try {
+        const res = await gw('/api/portfolio/categories');
+        return (res.categories || []) as { id: string; name: string; slug: string; color?: string | null }[];
+    } catch (error) {
+        console.error("Failed to get categories:", error);
+        return [];
+    }
 }
 
 export async function createProjectCategory(name: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
     try {
-        const category = await prisma.projectCategory.create({
-            data: { name, slug }
+        const res = await gw('/api/portfolio/categories', {
+            method: 'POST',
+            body: JSON.stringify({ name })
         });
-        return { success: true, category };
+        return { success: true, category: res.category };
     } catch (error) {
         console.error(error);
         return { success: false, error: "Failed to create category" };
@@ -319,17 +250,12 @@ export async function updateProjectCategory(id: string, name: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
     try {
-        const category = await prisma.projectCategory.update({
-            where: { id },
-            data: { name, slug }
+        const res = await gw(`/api/portfolio/categories/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ name })
         });
-        return { success: true, category };
+        return { success: true, category: res.category };
     } catch (error) {
         console.error(error);
         return { success: false, error: "Failed to update category" };
@@ -341,8 +267,8 @@ export async function deleteProjectCategory(id: string) {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await prisma.projectCategory.delete({
-            where: { id }
+        await gw(`/api/portfolio/categories/${id}`, {
+            method: 'DELETE'
         });
         return { success: true };
     } catch (error) {
@@ -353,11 +279,14 @@ export async function deleteProjectCategory(id: string) {
 
 // --- Tag Actions ---
 
-export async function getProjectTags() {
-    return prisma.projectTag.findMany({
-        orderBy: { name: 'asc' },
-        select: { name: true }
-    });
+export async function getProjectTags(): Promise<{ name: string }[]> {
+    try {
+        const res = await gw('/api/portfolio/tags');
+        return (res.tags || []) as { name: string }[];
+    } catch (error) {
+        console.error("Failed to get tags:", error);
+        return [];
+    }
 }
 
 // --- Analytics Actions ---
@@ -372,29 +301,30 @@ export async function recordProjectView(projectId: string) {
         // Hash IP for privacy
         const ipHash = crypto.createHash('sha256').update(ip).digest('hex').substring(0, 32);
 
-        // Try to create view (unique constraint prevents duplicates per day)
-        await prisma.projectView.create({
-            data: {
-                projectId,
+        await gw(`/api/portfolio/projects/${projectId}/view`, {
+            method: 'POST',
+            body: JSON.stringify({
                 ipHash,
                 userAgent,
                 referer
-            }
+            })
         });
 
         return { success: true };
     } catch (error) {
         console.error(error);
-        // Likely duplicate - ignore
         return { success: false };
     }
 }
 
 export async function getProjectViewCount(projectId: string) {
-    const count = await prisma.projectView.count({
-        where: { projectId }
-    });
-    return count;
+    try {
+        const res = await gw(`/api/portfolio/projects/${projectId}/views`);
+        return res.count || 0;
+    } catch (error) {
+        console.error("Failed to get view count:", error);
+        return 0;
+    }
 }
 
 // --- Bulk Actions ---
@@ -404,9 +334,9 @@ export async function updateProjectsStatus(ids: string[], status: string, publis
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await prisma.project.updateMany({
-            where: { id: { in: ids } },
-            data: { status, published }
+        await gw('/api/portfolio/projects/bulk-status', {
+            method: 'PATCH',
+            body: JSON.stringify({ ids, status, published })
         });
 
         revalidatePath('/dashboard/projects');
@@ -423,9 +353,9 @@ export async function updateProjectOrder(id: string, displayOrder: number) {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await prisma.project.update({
-            where: { id },
-            data: { displayOrder }
+        await gw(`/api/portfolio/projects/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ displayOrder })
         });
         return { success: true };
     } catch (error) {
@@ -439,13 +369,10 @@ export async function reorderProjects(items: { id: string; displayOrder: number 
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        const transaction = items.map((item) =>
-            prisma.project.update({
-                where: { id: item.id },
-                data: { displayOrder: item.displayOrder },
-            })
-        );
-        await prisma.$transaction(transaction);
+        await gw('/api/portfolio/projects/reorder', {
+            method: 'POST',
+            body: JSON.stringify({ items })
+        });
         revalidatePath('/dashboard/projects');
         revalidatePath('/portfolio');
         return { success: true };

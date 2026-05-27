@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { useEditorStore } from './stores/editor-store';
+import { useEditorStore } from '@/lib/stores/editor-store';
 
 interface WSMessage {
   type: string;
@@ -30,8 +30,8 @@ export function useHybridWebSocket(options: UseHybridWebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const store = useEditorStore();
 
@@ -54,7 +54,7 @@ export function useHybridWebSocket(options: UseHybridWebSocketOptions = {}) {
   }, [sessionId, sendMessage]);
 
   const sendPresenceUpdate = useCallback(() => {
-    const state = useEditorStore.getState();
+    const state = useEditorStore.getState() as any;
     sendMessage({
       type: 'presence_update',
       userId,

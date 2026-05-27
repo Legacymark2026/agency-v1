@@ -1,6 +1,5 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -33,6 +32,8 @@ const DEFAULT_CATEGORIES = [
     { name: "Otros", code: "OTR", color: "#a3a3a3" },
 ];
 
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
+
 // ─── Expense Categories ───────────────────────────────────────────────────────
 
 export async function getExpenseCategories() {
@@ -40,27 +41,11 @@ export async function getExpenseCategories() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: [] };
 
-        let categories = await prisma.expenseCategory.findMany({
-            where: { companyId: session.user.companyId, isActive: true },
-            orderBy: { name: "asc" },
-        });
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/categories?companyId=${session.user.companyId}`);
+        const resData = await response.json();
+        if (!response.ok) return { success: false, data: [] };
 
-        // Auto-seed default categories for new companies
-        if (categories.length === 0) {
-            await prisma.expenseCategory.createMany({
-                data: DEFAULT_CATEGORIES.map((c) => ({
-                    ...c,
-                    companyId: session.user!.companyId!,
-                })),
-                skipDuplicates: true,
-            });
-            categories = await prisma.expenseCategory.findMany({
-                where: { companyId: session.user.companyId, isActive: true },
-                orderBy: { name: "asc" },
-            });
-        }
-
-        return { success: true, data: categories };
+        return { success: true, data: resData.data };
     } catch (error) {
         return { success: false, data: [] };
     }
@@ -71,12 +56,16 @@ export async function createExpenseCategory(data: { name: string; code?: string;
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const category = await prisma.expenseCategory.create({
-            data: { ...data, companyId: session.user.companyId },
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/categories`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, companyId: session.user.companyId })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to create category" };
 
         revalidatePath("/dashboard/admin/payroll");
-        return { success: true, data: category };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -89,27 +78,20 @@ export async function createExpense(input: CreateExpenseInput) {
         const session = await auth();
         if (!session?.user?.companyId || !session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const expense = await prisma.expense.create({
-            data: {
+        const response = await fetch(`${GATEWAY_URL}/api/expenses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...input,
                 companyId: session.user.companyId,
                 createdById: session.user.id,
-                title: input.title,
-                amount: input.amount,
-                date: new Date(input.date),
-                categoryId: input.categoryId || null,
-                vendor: input.vendor || null,
-                description: input.description || null,
-                reference: input.reference || null,
-                paymentMethod: input.paymentMethod || "TRANSFER",
-                accountId: input.accountId || null,
-                notes: input.notes || null,
-                status: "PENDING",
-            },
-            include: { category: true },
+            })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to create expense" };
 
         revalidatePath("/dashboard/admin/payroll");
-        return { success: true, data: expense };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         console.error("[CREATE_EXPENSE]", error);
         return { success: false, error: error.message };
@@ -129,34 +111,20 @@ export async function getExpenses(filter?: GetExpensesFilter) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: [] };
 
-        const where: any = { companyId: session.user.companyId };
-
-        if (filter?.status) where.status = filter.status;
-        if (filter?.categoryId) where.categoryId = filter.categoryId;
-        if (filter?.dateFrom || filter?.dateTo) {
-            where.date = {};
-            if (filter.dateFrom) where.date.gte = new Date(filter.dateFrom);
-            if (filter.dateTo) where.date.lte = new Date(filter.dateTo);
-        }
-        if (filter?.search) {
-            where.OR = [
-                { title: { contains: filter.search, mode: "insensitive" } },
-                { vendor: { contains: filter.search, mode: "insensitive" } },
-            ];
-        }
-
-        const expenses = await prisma.expense.findMany({
-            where,
-            include: {
-                category: { select: { name: true, color: true, code: true } },
-                createdBy: { select: { name: true, firstName: true } },
-                approvedBy: { select: { name: true, firstName: true } },
-            },
-            orderBy: { date: "desc" },
-            take: 200,
+        const queryParams = new URLSearchParams({
+            companyId: session.user.companyId,
+            ...(filter?.status && { status: filter.status }),
+            ...(filter?.categoryId && { categoryId: filter.categoryId }),
+            ...(filter?.dateFrom && { dateFrom: filter.dateFrom }),
+            ...(filter?.dateTo && { dateTo: filter.dateTo }),
+            ...(filter?.search && { search: filter.search }),
         });
 
-        return { success: true, data: expenses };
+        const response = await fetch(`${GATEWAY_URL}/api/expenses?${queryParams.toString()}`);
+        const resData = await response.json();
+        if (!response.ok) return { success: false, data: [] };
+
+        return { success: true, data: resData.data };
     } catch (error) {
         return { success: false, data: [] };
     }
@@ -167,23 +135,16 @@ export async function updateExpense(id: string, data: Partial<CreateExpenseInput
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const expense = await prisma.expense.update({
-            where: { id, companyId: session.user.companyId },
-            data: {
-                ...(data.title && { title: data.title }),
-                ...(data.amount !== undefined && { amount: data.amount }),
-                ...(data.date && { date: new Date(data.date) }),
-                ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
-                ...(data.vendor !== undefined && { vendor: data.vendor }),
-                ...(data.description !== undefined && { description: data.description }),
-                ...(data.reference !== undefined && { reference: data.reference }),
-                ...(data.accountId !== undefined && { accountId: data.accountId }),
-                ...(data.notes !== undefined && { notes: data.notes }),
-            },
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to update expense" };
 
         revalidatePath("/dashboard/admin/payroll");
-        return { success: true, data: expense };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -194,17 +155,20 @@ export async function approveExpense(id: string) {
         const session = await auth();
         if (!session?.user?.companyId || !session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const expense = await prisma.expense.update({
-            where: { id, companyId: session.user.companyId },
-            data: {
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 status: "APPROVED",
                 approvedById: session.user.id,
-                approvedAt: new Date(),
-            },
+                approvedAt: new Date().toISOString(),
+            })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to approve expense" };
 
         revalidatePath("/dashboard/admin/payroll");
-        return { success: true, data: expense };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -215,13 +179,16 @@ export async function rejectExpense(id: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const expense = await prisma.expense.update({
-            where: { id, companyId: session.user.companyId },
-            data: { status: "REJECTED" },
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: "REJECTED" })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to reject expense" };
 
         revalidatePath("/dashboard/admin/payroll");
-        return { success: true, data: expense };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -232,17 +199,20 @@ export async function markExpensePaid(id: string, accountId?: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const expense = await prisma.expense.update({
-            where: { id, companyId: session.user.companyId },
-            data: {
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 status: "PAID",
-                paidAt: new Date(),
+                paidAt: new Date().toISOString(),
                 ...(accountId && { accountId }),
-            },
+            })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to mark expense as paid" };
 
         revalidatePath("/dashboard/admin/payroll");
-        return { success: true, data: expense };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -253,12 +223,11 @@ export async function deleteExpense(id: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        // Only allow deleting PENDING or REJECTED expenses
-        const expense = await prisma.expense.findUnique({ where: { id, companyId: session.user.companyId } });
-        if (!expense) return { success: false, error: "Gasto no encontrado" };
-        if (expense.status === "PAID") return { success: false, error: "No se puede eliminar un gasto pagado" };
-
-        await prisma.expense.delete({ where: { id, companyId: session.user.companyId } });
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/${id}?companyId=${session.user.companyId}`, {
+            method: 'DELETE'
+        });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to delete expense" };
 
         revalidatePath("/dashboard/admin/payroll");
         return { success: true };
@@ -274,75 +243,11 @@ export async function getExpenseStats() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: null };
 
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        const response = await fetch(`${GATEWAY_URL}/api/expenses/stats?companyId=${session.user.companyId}`);
+        const resData = await response.json();
+        if (!response.ok) return { success: false, data: null };
 
-        const [allExpenses, currentMonthExpenses, lastMonthExpenses, byCategory] = await Promise.all([
-            prisma.expense.findMany({
-                where: { companyId: session.user.companyId },
-                select: { amount: true, status: true, categoryId: true },
-            }),
-            prisma.expense.aggregate({
-                where: { companyId: session.user.companyId, date: { gte: startOfMonth } },
-                _sum: { amount: true },
-                _count: true,
-            }),
-            prisma.expense.aggregate({
-                where: {
-                    companyId: session.user.companyId,
-                    date: { gte: startOfLastMonth, lte: endOfLastMonth },
-                },
-                _sum: { amount: true },
-            }),
-            prisma.expense.groupBy({
-                by: ["categoryId"],
-                where: { companyId: session.user.companyId },
-                _sum: { amount: true },
-                _count: true,
-            }),
-        ]);
-
-        // Fetch category names
-        const categoryIds = byCategory.map((c) => c.categoryId).filter(Boolean) as string[];
-        const categories = await prisma.expenseCategory.findMany({
-            where: { id: { in: categoryIds } },
-        });
-        const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
-
-        const totalAmount = allExpenses.reduce((sum, e) => sum + e.amount, 0);
-        const pendingAmount = allExpenses.filter((e) => e.status === "PENDING").reduce((sum, e) => sum + e.amount, 0);
-        const paidAmount = allExpenses.filter((e) => e.status === "PAID").reduce((sum, e) => sum + e.amount, 0);
-
-        const monthlyChange =
-            lastMonthExpenses._sum.amount && lastMonthExpenses._sum.amount > 0
-                ? (((currentMonthExpenses._sum.amount || 0) - lastMonthExpenses._sum.amount) /
-                      lastMonthExpenses._sum.amount) *
-                  100
-                : 0;
-
-        const byCategoryFormatted = byCategory.map((c) => ({
-            categoryId: c.categoryId,
-            categoryName: c.categoryId ? categoryMap[c.categoryId]?.name || "Sin categoría" : "Sin categoría",
-            categoryColor: c.categoryId ? categoryMap[c.categoryId]?.color || "#a3a3a3" : "#a3a3a3",
-            total: c._sum.amount || 0,
-            count: c._count,
-        }));
-
-        return {
-            success: true,
-            data: {
-                totalAmount,
-                pendingAmount,
-                paidAmount,
-                currentMonthTotal: currentMonthExpenses._sum.amount || 0,
-                currentMonthCount: currentMonthExpenses._count,
-                lastMonthTotal: lastMonthExpenses._sum.amount || 0,
-                monthlyChange,
-                byCategory: byCategoryFormatted.sort((a, b) => b.total - a.total),
-            },
-        };
+        return { success: true, data: resData.data };
     } catch (error) {
         console.error("[GET_EXPENSE_STATS]", error);
         return { success: false, data: null };
@@ -356,18 +261,17 @@ export async function exportExpensesCSV() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, csv: "" };
 
-        const expenses = await prisma.expense.findMany({
-            where: { companyId: session.user.companyId },
-            include: {
-                category: { select: { name: true } },
-                createdBy: { select: { name: true } },
-            },
-            orderBy: { date: "desc" },
+        const queryParams = new URLSearchParams({
+            companyId: session.user.companyId,
         });
+        const response = await fetch(`${GATEWAY_URL}/api/expenses?${queryParams.toString()}`);
+        const resData = await response.json();
+        if (!response.ok) return { success: false, csv: "" };
+        const expenses = resData.data || [];
 
         const headers = ["Fecha", "Título", "Categoría", "Proveedor", "Referencia", "Monto", "Estado", "Método Pago", "Creado Por"];
-        const rows = expenses.map((e) => [
-            e.date.toISOString().split("T")[0],
+        const rows = expenses.map((e: any) => [
+            new Date(e.date).toISOString().split("T")[0],
             `"${e.title}"`,
             `"${e.category?.name || "Sin categoría"}"`,
             `"${e.vendor || ""}"`,
@@ -378,7 +282,7 @@ export async function exportExpensesCSV() {
             `"${e.createdBy?.name || ""}"`,
         ]);
 
-        const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+        const csv = [headers.join(","), ...rows.map((r: any[]) => r.join(","))].join("\n");
         return { success: true, csv };
     } catch (error) {
         return { success: false, csv: "" };

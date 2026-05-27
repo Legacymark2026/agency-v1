@@ -201,7 +201,7 @@ const initialState = {
   showProposalReview: false,
   showVersionHistory: false,
   showConflictResolver: false,
-  filterByAuthor: 'all',
+  filterByAuthor: 'all' as EditAuthor | 'all',
 
   aiWorking: false,
   aiCurrentTask: '',

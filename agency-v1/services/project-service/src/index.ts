@@ -436,6 +436,343 @@ eventBus.subscribe("deal.stage_changed", async (payload) => {
   }
 });
 
+
+// ─── Portfolio Projects ───────────────────────────────────────────────────────
+app.get('/api/portfolio/projects', async (req, res) => {
+  try {
+    const { companyId, status, categoryId, search, featured, page = '1', limit = '50' } = req.query;
+    const where: any = {};
+    if (companyId) where.companyId = String(companyId);
+    if (status) where.status = String(status);
+    if (categoryId) where.categoryId = String(categoryId);
+    if (featured !== undefined) where.featured = featured === 'true';
+    if (search) {
+      where.OR = [
+        { title: { contains: String(search), mode: 'insensitive' } },
+        { client: { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } }
+      ];
+    }
+    const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
+    const projects = await (prisma as any).project.findMany({
+      where,
+      orderBy: [{ featured: 'desc' }, { displayOrder: 'asc' }, { createdAt: 'desc' }],
+      take: parseInt(String(limit)),
+      skip,
+      include: { category: true, _count: { select: { views: true } } }
+    });
+    res.json({ projects });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/portfolio/projects/public', async (req, res) => {
+  try {
+    const { categorySlug, limit } = req.query;
+    const where: any = { status: 'published', published: true };
+    if (categorySlug) where.category = { slug: String(categorySlug) };
+    const projects = await (prisma as any).project.findMany({
+      where,
+      take: limit ? parseInt(String(limit)) : undefined,
+      orderBy: [{ featured: 'desc' }, { displayOrder: 'asc' }, { createdAt: 'desc' }],
+      include: { category: true, _count: { select: { views: true } } }
+    });
+    res.json({ projects });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/portfolio/projects/:id', async (req, res) => {
+  try {
+    const project = await (prisma as any).project.findUnique({
+      where: { id: req.params.id },
+      include: { category: true }
+    });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    res.json(project);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/portfolio/projects', async (req, res) => {
+  try {
+    const project = await (prisma as any).project.create({ data: req.body });
+    res.status(201).json({ success: true, project });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.patch('/api/portfolio/projects/bulk-status', async (req, res) => {
+  try {
+    const { ids, status, published } = req.body;
+    if (!ids?.length) return res.status(400).json({ error: 'ids required' });
+    await (prisma as any).project.updateMany({ where: { id: { in: ids } }, data: { status, published } });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/portfolio/projects/reorder', async (req, res) => {
+  try {
+    const { items } = req.body;
+    const transaction = items.map((item: { id: string; displayOrder: number }) =>
+      (prisma as any).project.update({ where: { id: item.id }, data: { displayOrder: item.displayOrder } })
+    );
+    await prisma.$transaction(transaction);
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.patch('/api/portfolio/projects/:id', async (req, res) => {
+  try {
+    const project = await (prisma as any).project.update({ where: { id: req.params.id }, data: req.body });
+    res.json({ success: true, project });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/portfolio/projects/:id', async (req, res) => {
+  try {
+    await (prisma as any).project.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/portfolio/projects/:id/duplicate', async (req, res) => {
+  try {
+    const project = await (prisma as any).project.findUnique({ where: { id: req.params.id } });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const { id: _id, createdAt, updatedAt, slug, title, ...dataToCopy } = project;
+    const newProject = await (prisma as any).project.create({
+      data: {
+        ...dataToCopy,
+        title: `${title} (Copy)`,
+        slug: `${slug}-copy-${Date.now()}`,
+        status: 'draft',
+        published: false,
+        displayOrder: 0
+      }
+    });
+    res.status(201).json({ success: true, project: newProject });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/portfolio/projects/:id/view', async (req, res) => {
+  try {
+    const { ipHash, userAgent, referer } = req.body;
+    await (prisma as any).projectView.create({
+      data: {
+        projectId: req.params.id,
+        ipHash,
+        userAgent,
+        referer
+      }
+    });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ success: false }); }
+});
+
+app.get('/api/portfolio/projects/:id/views', async (req, res) => {
+  try {
+    const count = await (prisma as any).projectView.count({ where: { projectId: req.params.id } });
+    res.json({ count });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+// ─── Portfolio Categories & Tags ──────────────────────────────────────────────
+app.get('/api/portfolio/categories', async (req, res) => {
+  try {
+    const categories = await (prisma as any).projectCategory.findMany({ orderBy: { name: 'asc' } });
+    res.json({ categories });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/portfolio/categories', async (req, res) => {
+  try {
+    const { name } = req.body;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const category = await (prisma as any).projectCategory.create({ data: { name, slug } });
+    res.status(201).json({ success: true, category });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.patch('/api/portfolio/categories/:id', async (req, res) => {
+  try {
+    const { name } = req.body;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    const category = await (prisma as any).projectCategory.update({ where: { id: req.params.id }, data: { name, slug } });
+    res.json({ success: true, category });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/portfolio/categories/:id', async (req, res) => {
+  try {
+    await (prisma as any).projectCategory.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: 'Cannot delete category. It may have projects attached.' }); }
+});
+
+app.get('/api/portfolio/tags', async (req, res) => {
+  try {
+    const tags = await (prisma as any).projectTag.findMany({ orderBy: { name: 'asc' }, select: { name: true } });
+    res.json({ tags });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+// ─── CMS Posts ────────────────────────────────────────────────────────────────
+app.get('/api/cms/posts', async (req, res) => {
+  try {
+    const posts = await (prisma as any).post.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: { select: { name: true, email: true } },
+        categories: true,
+        tags: true
+      }
+    });
+    res.json(posts);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/cms/posts/:id', async (req, res) => {
+  try {
+    const post = await (prisma as any).post.findUnique({
+      where: { id: req.params.id },
+      include: { categories: true, tags: true }
+    });
+    res.json(post);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/cms/posts', async (req, res) => {
+  try {
+    const post = await (prisma as any).post.create({ data: req.body });
+    res.status(201).json(post);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.patch('/api/cms/posts/:id', async (req, res) => {
+  try {
+    const post = await (prisma as any).post.update({
+      where: { id: req.params.id },
+      data: req.body
+    });
+    res.json(post);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/cms/posts/:id', async (req, res) => {
+  try {
+    await (prisma as any).post.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+// ─── CMS Categories & Tags ────────────────────────────────────────────────────
+app.get('/api/cms/categories', async (req, res) => {
+  try {
+    const categories = await (prisma as any).category.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { posts: true } } }
+    });
+    res.json(categories);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/cms/categories', async (req, res) => {
+  try {
+    const category = await (prisma as any).category.create({ data: req.body });
+    res.status(201).json(category);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.patch('/api/cms/categories/:id', async (req, res) => {
+  try {
+    const category = await (prisma as any).category.update({
+      where: { id: req.params.id },
+      data: req.body
+    });
+    res.json(category);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/cms/categories/:id', async (req, res) => {
+  try {
+    await (prisma as any).category.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/cms/tags', async (req, res) => {
+  try {
+    const tags = await (prisma as any).tag.findMany({
+      orderBy: { name: 'asc' },
+      select: { name: true }
+    });
+    res.json(tags);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+// ─── Media Assets ─────────────────────────────────────────────────────────────
+app.get('/api/cms/media', async (req, res) => {
+  try {
+    const { companyId, type } = req.query;
+    if (!companyId) return res.status(400).json({ error: 'companyId required' });
+    const assets = await (prisma as any).mediaAsset.findMany({
+      where: { companyId: String(companyId), ...(type ? { type: String(type) } : {}) },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, name: true, originalName: true, url: true,
+        mimeType: true, type: true, sizeBytes: true, duration: true,
+        width: true, height: true, fps: true, resolution: true,
+        tags: true, createdAt: true,
+      }
+    });
+    res.json(assets);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/cms/media/:id', async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    const where: any = { id: req.params.id };
+    if (companyId) where.companyId = String(companyId);
+    const asset = await (prisma as any).mediaAsset.findFirst({ where });
+    if (!asset) return res.status(404).json({ error: 'Asset not found' });
+    res.json(asset);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/cms/media', async (req, res) => {
+  try {
+    const asset = await (prisma as any).mediaAsset.create({ data: req.body });
+    res.status(201).json(asset);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.patch('/api/cms/media/:id', async (req, res) => {
+  try {
+    const asset = await (prisma as any).mediaAsset.update({
+      where: { id: req.params.id },
+      data: req.body
+    });
+    res.json(asset);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.delete('/api/cms/media/:id', async (req, res) => {
+  try {
+    await (prisma as any).mediaAsset.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/cms/media-stats', async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) return res.status(400).json({ error: 'companyId required' });
+    const assets = await (prisma as any).mediaAsset.findMany({
+      where: { companyId: String(companyId) },
+      select: { type: true, sizeBytes: true }
+    });
+    res.json(assets);
+  } catch (error: any) { res.status(500).json({ error: error.message }); }
+});
+
 // ── Start ────────────────────────────────────────────────────────────────────
 
 app.listen(PORT, "0.0.0.0", () => {

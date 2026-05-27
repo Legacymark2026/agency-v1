@@ -1,35 +1,32 @@
 'use server';
 
 import { after } from 'next/server';
-
-import { db as prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { Campaign } from '@prisma/client';
 import { getFacebookCampaigns, getFacebookInsights } from './marketing/facebook-ads';
 import { getGoogleCampaigns, getGoogleInsights } from './marketing/google-ads';
 import { getTikTokCampaigns, getTikTokInsights } from './marketing/tiktok-ads';
 import { getLinkedInCampaigns, getLinkedInInsights } from './marketing/linkedin-ads';
 
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+
 /**
  * Returns aggregated campaigns directly from the local DB, 
  * enriched with live API sync if required.
  */
-export async function getCampaignsList() {
+export async function getCampaignsList(): Promise<Campaign[]> {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    const companyUser = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true }
-    });
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("Company not found");
+    const companyId = cuData.data.companyId;
 
-    if (!companyUser) throw new Error("Company not found");
-
-    const campaigns = await prisma.campaign.findMany({
-        where: { companyId: companyUser.companyId },
-        orderBy: { createdAt: 'desc' }
-    });
-
-    return campaigns;
+    const res = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${companyId}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to fetch campaigns");
+    return (resData.data || []) as Campaign[];
 }
 
 /**
@@ -39,68 +36,53 @@ export async function syncLiveCampaigns() {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    const companyUser = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true }
-    });
-    if (!companyUser) throw new Error("Company not found");
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("Company not found");
+    const companyId = cuData.data.companyId;
 
-    const companyId = companyUser.companyId;
     let syncedCount = 0;
 
     // 1. Sync Meta Ads
     try {
         const fbCampaigns = await getFacebookCampaigns();
         if (fbCampaigns && fbCampaigns.length > 0) {
-            for (const fbCamp of fbCampaigns) {
-                // Upsert into DB
-                await prisma.campaign.upsert({
-                    where: { code: fbCamp.id }, // Using platform ID as unique code
-                    update: {
-                        name: fbCamp.name,
-                        status: fbCamp.status === 'ACTIVE' ? 'ACTIVE' : (fbCamp.status === 'PAUSED' ? 'PAUSED' : 'COMPLETED'),
-                        budget: fbCamp.daily_budget ? parseFloat(fbCamp.daily_budget) / 100 : null, // Meta budget comes in cents
-                    },
-                    create: {
-                        name: fbCamp.name,
-                        code: fbCamp.id,
-                        platform: 'FACEBOOK_ADS',
-                        status: fbCamp.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED',
-                        budget: fbCamp.daily_budget ? parseFloat(fbCamp.daily_budget) / 100 : null,
-                        companyId: companyId
-                    }
-                });
-                syncedCount++;
-            }
+            const mapped = fbCampaigns.map((fbCamp: any) => ({
+                code: fbCamp.id,
+                name: fbCamp.name,
+                status: fbCamp.status === 'ACTIVE' ? 'ACTIVE' : (fbCamp.status === 'PAUSED' ? 'PAUSED' : 'COMPLETED'),
+                budget: fbCamp.daily_budget ? parseFloat(fbCamp.daily_budget) / 100 : null,
+            }));
+            const syncRes = await fetch(`${GATEWAY_URL}/api/campaigns/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId, platform: 'FACEBOOK_ADS', campaigns: mapped })
+            });
+            if (syncRes.ok) syncedCount += fbCampaigns.length;
         }
     } catch (error) {
         after(() => console.warn("Skipping Meta Sync or Error Occurred:", error));
     }
 
-    // 2. Sync Google Ads (If implemented completely)
+    // 2. Sync Google Ads
     try {
         const ggCampaignsResponse = await getGoogleCampaigns();
-        // Assuming response structure has a data array of items
         const ggCampaigns = ggCampaignsResponse?.results || [];
-        for (const row of ggCampaigns) {
-            if (!row.campaign) continue;
-            const ggCamp = row.campaign;
-
-            await prisma.campaign.upsert({
-                where: { code: ggCamp.id.toString() },
-                update: {
+        if (ggCampaigns.length > 0) {
+            const mapped = ggCampaigns.filter((row: any) => row.campaign).map((row: any) => {
+                const ggCamp = row.campaign;
+                return {
+                    code: ggCamp.id.toString(),
                     name: ggCamp.name,
                     status: ggCamp.status === 'ENABLED' ? 'ACTIVE' : 'PAUSED'
-                },
-                create: {
-                    name: ggCamp.name,
-                    code: ggCamp.id.toString(),
-                    platform: 'GOOGLE_ADS',
-                    status: ggCamp.status === 'ENABLED' ? 'ACTIVE' : 'PAUSED',
-                    companyId: companyId
-                }
+                };
             });
-            syncedCount++;
+            const syncRes = await fetch(`${GATEWAY_URL}/api/campaigns/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId, platform: 'GOOGLE_ADS', campaigns: mapped })
+            });
+            if (syncRes.ok) syncedCount += mapped.length;
         }
     } catch (error) {
         after(() => console.warn("Skipping Google Sync or Error Occurred:", error));
@@ -110,23 +92,17 @@ export async function syncLiveCampaigns() {
     try {
         const tkCampaigns = await getTikTokCampaigns();
         if (tkCampaigns && tkCampaigns.length > 0) {
-            for (const tkCamp of tkCampaigns) {
-                await prisma.campaign.upsert({
-                    where: { code: tkCamp.campaign_id },
-                    update: {
-                        name: tkCamp.campaign_name,
-                        status: tkCamp.operation_status === 'ENABLE' ? 'ACTIVE' : 'PAUSED'
-                    },
-                    create: {
-                        name: tkCamp.campaign_name,
-                        code: tkCamp.campaign_id,
-                        platform: 'TIKTOK_ADS',
-                        status: tkCamp.operation_status === 'ENABLE' ? 'ACTIVE' : 'PAUSED',
-                        companyId: companyId
-                    }
-                });
-                syncedCount++;
-            }
+            const mapped = tkCampaigns.map((tkCamp: any) => ({
+                code: tkCamp.campaign_id,
+                name: tkCamp.campaign_name,
+                status: tkCamp.operation_status === 'ENABLE' ? 'ACTIVE' : 'PAUSED'
+            }));
+            const syncRes = await fetch(`${GATEWAY_URL}/api/campaigns/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId, platform: 'TIKTOK_ADS', campaigns: mapped })
+            });
+            if (syncRes.ok) syncedCount += tkCampaigns.length;
         }
     } catch (error) {
         after(() => console.warn("Skipping TikTok Sync or Error Occurred:", error));
@@ -136,24 +112,17 @@ export async function syncLiveCampaigns() {
     try {
         const liCampaigns = await getLinkedInCampaigns();
         if (liCampaigns && liCampaigns.length > 0) {
-            for (const liCamp of liCampaigns) {
-                const idStr = liCamp.id.toString();
-                await prisma.campaign.upsert({
-                    where: { code: idStr },
-                    update: {
-                        name: liCamp.name,
-                        status: liCamp.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED'
-                    },
-                    create: {
-                        name: liCamp.name,
-                        code: idStr,
-                        platform: 'LINKEDIN_ADS',
-                        status: liCamp.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED',
-                        companyId: companyId
-                    }
-                });
-                syncedCount++;
-            }
+            const mapped = liCampaigns.map((liCamp: any) => ({
+                code: liCamp.id.toString(),
+                name: liCamp.name,
+                status: liCamp.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED'
+            }));
+            const syncRes = await fetch(`${GATEWAY_URL}/api/campaigns/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId, platform: 'LINKEDIN_ADS', campaigns: mapped })
+            });
+            if (syncRes.ok) syncedCount += liCampaigns.length;
         }
     } catch (error) {
         after(() => console.warn("Skipping LinkedIn Sync or Error Occurred:", error));
@@ -163,16 +132,25 @@ export async function syncLiveCampaigns() {
     try {
         const fbInsights = await getFacebookInsights('last_30d');
         if (fbInsights && fbInsights.length > 0) {
-            for (const insight of fbInsights) {
-                await prisma.campaign.update({
-                    where: { code: insight.campaign_id },
-                    data: {
-                        spend: parseFloat(insight.spend || "0"),
-                        impressions: parseInt(insight.impressions || "0"),
-                        clicks: parseInt(insight.clicks || "0"),
-                        conversions: parseInt(insight.actions?.find((a: any) => a.action_type === 'offsite_conversion')?.value || "0")
+            const campsRes = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${companyId}`);
+            if (campsRes.ok) {
+                const campsData = await campsRes.json();
+                const campMap = new Map((campsData.data || []).map((c: any) => [c.code, c.id]));
+                for (const insight of fbInsights) {
+                    const campId = campMap.get(insight.campaign_id);
+                    if (campId) {
+                        await fetch(`${GATEWAY_URL}/api/campaigns/${campId}/metrics`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                spend: parseFloat(insight.spend || "0"),
+                                impressions: parseInt(insight.impressions || "0"),
+                                clicks: parseInt(insight.clicks || "0"),
+                                conversions: parseInt(insight.actions?.find((a: any) => a.action_type === 'offsite_conversion')?.value || "0")
+                            })
+                        });
                     }
-                });
+                }
             }
         }
     } catch (error) {
@@ -189,29 +167,23 @@ export async function getAggregatedSpend() {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    // In a real scenario, we might sum the `campaign` table or `ad_spend` table
-    const companyUser = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true }
-    });
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("Company not found");
+    const companyId = cuData.data.companyId;
 
-    const stats = await prisma.campaign.aggregate({
-        where: { companyId: companyUser?.companyId },
-        _sum: {
-            spend: true,
-            impressions: true,
-            clicks: true,
-            conversions: true
-        }
-    });
+    const res = await fetch(`${GATEWAY_URL}/api/campaigns/spend-stats?companyId=${companyId}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to fetch spend stats");
 
-    const totalSpend = stats._sum.spend || 0;
-    const totalConversions = stats._sum.conversions || 0;
+    const stats = resData.data || {};
+    const totalSpend = stats.spend || 0;
+    const totalConversions = stats.conversions || 0;
 
     return {
         totalSpend,
-        totalImpressions: stats._sum.impressions || 0,
-        totalClicks: stats._sum.clicks || 0,
+        totalImpressions: stats.impressions || 0,
+        totalClicks: stats.clicks || 0,
         totalConversions,
         cpa: totalConversions > 0 ? (totalSpend / totalConversions) : 0
     };
@@ -224,32 +196,18 @@ export async function getCampaignChartData() {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    const companyUser = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true }
-    });
-    if (!companyUser) return [];
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) return [];
+    const companyId = cuData.data.companyId;
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const res = await fetch(`${GATEWAY_URL}/api/campaigns/chart-data?companyId=${companyId}&days=7`);
+    const resData = await res.json();
+    if (!res.ok) return [];
 
-    const spends = await prisma.adSpend.groupBy({
-        by: ['date'],
-        where: {
-            companyId: companyUser.companyId,
-            date: { gte: sevenDaysAgo }
-        },
-        _sum: {
-            amount: true,
-            conversions: true
-        },
-        orderBy: {
-            date: 'asc'
-        }
-    });
-
-    return spends.map(s => ({
-        day: s.date.toLocaleDateString('en-US', { weekday: 'short' }),
+    const spends = resData.data || [];
+    return spends.map((s: any) => ({
+        day: new Date(s.date).toLocaleDateString('en-US', { weekday: 'short' }),
         spend: s._sum.amount || 0,
         conversions: s._sum.conversions || 0,
     }));
@@ -263,40 +221,38 @@ export async function getCampaignAnalytics(campaignId?: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
-    const companyUser = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true }
-    });
-    if (!companyUser) throw new Error("Company not found");
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("Company not found");
+    const companyId = cuData.data.companyId;
 
-    const where: any = { companyId: companyUser.companyId };
-    if (campaignId) where.id = campaignId;
-
-    const campaigns = await prisma.campaign.findMany({
-        where,
-        select: {
-            id: true,
-            platform: true,
-            impressions: true,
-            clicks: true,
-            conversions: true,
-            spend: true,
-            budget: true,
-            status: true,
+    let campaigns: any[] = [];
+    if (campaignId) {
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns/${campaignId}/metrics`);
+        const resData = await res.json();
+        if (res.ok && resData.data) {
+            campaigns = [resData.data];
         }
-    });
+    } else {
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${companyId}`);
+        const resData = await res.json();
+        if (res.ok && resData.data) {
+            campaigns = resData.data;
+        }
+    }
 
     // Aggregate totals
     const totals = campaigns.reduce((acc, c) => ({
-        impressions: acc.impressions + c.impressions,
-        clicks: acc.clicks + c.clicks,
-        conversions: acc.conversions + c.conversions,
-        spend: acc.spend + c.spend,
+        impressions: acc.impressions + (c.impressions || 0),
+        clicks: acc.clicks + (c.clicks || 0),
+        conversions: acc.conversions + (c.conversions || 0),
+        spend: acc.spend + (c.spend || 0),
     }), { impressions: 0, clicks: 0, conversions: 0, spend: 0 });
 
     // Break down by platform
     const platformData: Record<string, { impressions: number; clicks: number; conversions: number; spend: number }> = {};
     for (const c of campaigns) {
+        if (!c.platform) continue;
         const platforms = c.platform.split(',');
         for (const p of platforms) {
             const key = p.trim();
@@ -305,10 +261,10 @@ export async function getCampaignAnalytics(campaignId?: string) {
             }
             // Distribute evenly across platforms if multi-platform
             const factor = 1 / platforms.length;
-            platformData[key].impressions += Math.round(c.impressions * factor);
-            platformData[key].clicks += Math.round(c.clicks * factor);
-            platformData[key].conversions += Math.round(c.conversions * factor);
-            platformData[key].spend += c.spend * factor;
+            platformData[key].impressions += Math.round((c.impressions || 0) * factor);
+            platformData[key].clicks += Math.round((c.clicks || 0) * factor);
+            platformData[key].conversions += Math.round((c.conversions || 0) * factor);
+            platformData[key].spend += (c.spend || 0) * factor;
         }
     }
 

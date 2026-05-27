@@ -5,6 +5,19 @@ import { auth } from '@/lib/auth';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
 
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `Gateway error ${res.status}`);
+  }
+  return res.json();
+}
+
 async function getCompanyId(): Promise<string | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
@@ -38,37 +51,37 @@ export async function getMediaAssets(type?: string): Promise<MediaAsset[]> {
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  const assets = await prisma.mediaAsset.findMany({
-    where: { companyId, ...(type ? { type } : {}) },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true, name: true, originalName: true, url: true,
-      mimeType: true, type: true, sizeBytes: true, duration: true,
-      width: true, height: true, fps: true, resolution: true,
-      tags: true, createdAt: true,
-    },
-  });
-
-  return assets as MediaAsset[];
+  try {
+    const assets = await gw(`/api/cms/media?companyId=${companyId}${type ? `&type=${type}` : ''}`);
+    return assets as MediaAsset[];
+  } catch (error) {
+    console.error("Failed to get media assets:", error);
+    return [];
+  }
 }
 
 export async function getMediaAsset(id: string): Promise<MediaAsset | null> {
   const companyId = await getCompanyId();
   if (!companyId) return null;
-  const asset = await prisma.mediaAsset.findFirst({ where: { id, companyId } });
-  return asset as MediaAsset | null;
+
+  try {
+    const asset = await gw(`/api/cms/media/${id}?companyId=${companyId}`);
+    return asset as MediaAsset;
+  } catch (error) {
+    console.error("Failed to get media asset:", error);
+    return null;
+  }
 }
 
 export async function deleteMediaAsset(id: string): Promise<{ success: boolean }> {
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const asset = await prisma.mediaAsset.findFirst({ where: { id, companyId } });
+  const asset = await getMediaAsset(id);
   if (!asset) throw new Error('Asset not found');
 
   // Eliminar archivo físico del VPS
   try {
-    // URL: /api/serve/uploads/{companyId}/{type}/{file}
     const urlPath = asset.url.replace('/api/serve/', '');
     const filePath = join(process.cwd(), 'public', urlPath);
     await unlink(filePath);
@@ -76,15 +89,31 @@ export async function deleteMediaAsset(id: string): Promise<{ success: boolean }
     // Si el archivo ya no existe en disco, continuar
   }
 
-  await prisma.mediaAsset.delete({ where: { id } });
-  return { success: true };
+  try {
+    await gw(`/api/cms/media/${id}`, {
+      method: 'DELETE'
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete media asset from DB:", error);
+    return { success: false };
+  }
 }
 
 export async function updateMediaAssetTags(id: string, tags: string[]): Promise<MediaAsset> {
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
-  const asset = await prisma.mediaAsset.update({ where: { id }, data: { tags } });
-  return asset as MediaAsset;
+
+  try {
+    const asset = await gw(`/api/cms/media/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ tags })
+    });
+    return asset as MediaAsset;
+  } catch (error) {
+    console.error("Failed to update media tags:", error);
+    throw error;
+  }
 }
 
 export async function getMediaStats(): Promise<{
@@ -95,18 +124,19 @@ export async function getMediaStats(): Promise<{
   const companyId = await getCompanyId();
   if (!companyId) return { total: 0, byType: {}, totalSizeBytes: 0 };
 
-  const assets = await prisma.mediaAsset.findMany({
-    where: { companyId },
-    select: { type: true, sizeBytes: true },
-  });
+  try {
+    const assets = await gw(`/api/cms/media-stats?companyId=${companyId}`);
+    const byType: Record<string, number> = {};
+    let totalSizeBytes = 0;
 
-  const byType: Record<string, number> = {};
-  let totalSizeBytes = 0;
+    for (const a of assets) {
+      byType[a.type] = (byType[a.type] ?? 0) + 1;
+      totalSizeBytes += a.sizeBytes;
+    }
 
-  for (const a of assets) {
-    byType[a.type] = (byType[a.type] ?? 0) + 1;
-    totalSizeBytes += a.sizeBytes;
+    return { total: assets.length, byType, totalSizeBytes };
+  } catch (error) {
+    console.error("Failed to get media stats:", error);
+    return { total: 0, byType: {}, totalSizeBytes: 0 };
   }
-
-  return { total: assets.length, byType, totalSizeBytes };
 }

@@ -1,8 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 async function requireAuth() {
   const session = await auth();
@@ -19,22 +20,28 @@ export async function createSalesGoal(data: {
 }) {
   try {
     const user = await requireAuth();
-    const cu = await prisma.companyUser.findFirst({ where: { userId: user.id }});
-    if (!cu) throw new Error("No company linked");
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("No company linked");
+    const companyId = cuData.data.companyId;
 
-    const goal = await (prisma as any).salesGoal.create({
-      data: {
-        companyId: cu.companyId,
+    const res = await fetch(`${GATEWAY_URL}/api/crm/goals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyId,
         level: data.level,
         period: data.period,
         targetAmount: data.targetAmount,
         departmentId: data.departmentId,
         userId: data.userId
-      }
+      })
     });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to create sales goal");
 
     revalidatePath("/dashboard/admin/sales/goals");
-    return { success: true, goal };
+    return { success: true, goal: resData.data };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
@@ -43,36 +50,24 @@ export async function createSalesGoal(data: {
 export async function getHierarchicalGoals(period: string) {
   try {
     const user = await requireAuth();
-    const cu = await prisma.companyUser.findFirst({ where: { userId: user.id }});
-    if (!cu) throw new Error("No company linked");
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("No company linked");
+    const companyId = cuData.data.companyId;
 
-    const goals = await (prisma as any).salesGoal.findMany({
-      where: { companyId: cu.companyId, period },
-      include: {
-        user: { select: { id: true, name: true, image: true, firstName: true, lastName: true } }
-      },
-      orderBy: [
-        { level: "asc" },
-        { targetAmount: "desc" }
-      ]
-    });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/goals/hierarchical?companyId=${companyId}&period=${period}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to fetch hierarchical goals");
 
-    const [year, month] = period.split("-").map(Number);
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59);
-
-    const wonDeals = await prisma.deal.findMany({
-      where: {
-        companyId: cu.companyId,
-        probability: 100, // WON
-        updatedAt: { gte: start, lte: end }
-      },
-      select: {
-        id: true, value: true, assignedTo: true, probability: true
-      }
-    });
-
-    return { success: true, goals, wonDeals };
+    return {
+      success: true,
+      goals: (resData.data.goals || []).map((g: any) => ({
+        ...g,
+        createdAt: new Date(g.createdAt),
+        updatedAt: new Date(g.updatedAt),
+      })),
+      wonDeals: resData.data.wonDeals || []
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

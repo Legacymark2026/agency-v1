@@ -8,8 +8,24 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { invalidateRoleCache } from "@/lib/role-config";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+
+async function fetchGateway(path: string, options?: RequestInit) {
+  const response = await fetch(`${GATEWAY_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
 
 /** Verifica que el usuario actual es SUPER_ADMIN */
 async function requireSuperAdmin() {
@@ -33,19 +49,14 @@ export async function upsertRoleConfig(data: {
     const roleName = data.roleName.trim().toLowerCase();
     if (!roleName) throw new Error("El nombre del rol no puede estar vacío.");
 
-    const config = await prisma.roleConfig.upsert({
-        where: { roleName },
-        create: {
+    const config = await fetchGateway('/api/auth/role-configs', {
+        method: 'POST',
+        body: JSON.stringify({
             roleName,
             allowedRoutes: data.allowedRoutes,
-            description: data.description ?? null,
-            isActive: data.isActive ?? true,
-        },
-        update: {
-            allowedRoutes: data.allowedRoutes,
-            description: data.description ?? null,
-            isActive: data.isActive ?? true,
-        },
+            description: data.description,
+            isActive: data.isActive,
+        }),
     });
 
     // Invalidar cache para que el cambio tome efecto inmediatamente
@@ -62,7 +73,9 @@ export async function deleteRoleConfig(roleName: string) {
     await requireSuperAdmin();
 
     const name = roleName.trim().toLowerCase();
-    await prisma.roleConfig.delete({ where: { roleName: name } });
+    await fetchGateway(`/api/auth/role-configs/${name}`, {
+        method: 'DELETE',
+    });
 
     invalidateRoleCache(name);
     revalidatePath("/dashboard/users");
@@ -73,22 +86,13 @@ export async function deleteRoleConfig(roleName: string) {
 /** Obtiene todos los RoleConfigs (para la UI) */
 export async function getRoleConfigs() {
     await requireSuperAdmin();
-    return prisma.roleConfig.findMany({ orderBy: { roleName: 'asc' } });
+    return fetchGateway('/api/auth/role-configs');
 }
 
 /** Obtiene todos los usuarios con sus roles (para la UI de asignación) */
 export async function getUsersWithRoles() {
     await requireSuperAdmin();
-    return prisma.user.findMany({
-        select: {
-            id: true,
-            email: true,
-            name: true,
-            role: true,
-            deactivatedAt: true,
-        },
-        orderBy: { role: 'asc' },
-    });
+    return fetchGateway('/api/auth/global-users');
 }
 
 /** Actualiza el rol de un usuario */
@@ -98,9 +102,9 @@ export async function updateUserRole(userId: string, newRole: string) {
     const role = newRole.trim().toLowerCase();
     if (!role) throw new Error("El rol no puede estar vacío.");
 
-    await prisma.user.update({
-        where: { id: userId },
-        data: { role },
+    await fetchGateway(`/api/auth/global-users/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
     });
 
     revalidatePath("/dashboard/users");

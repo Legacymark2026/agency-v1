@@ -1,8 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 async function getSession() {
     const session = await auth();
@@ -21,83 +22,105 @@ export async function createCommissionRule(data: {
     label?: string;
 }) {
     await getSession();
-    const rule = await prisma.commissionRule.create({
-        data: {
-            companyId: data.companyId,
-            userId: data.userId ?? null,
-            rate: data.rate,
-            minDealValue: data.minDealValue ?? 0,
-            capAmount: data.capAmount ?? null,
-            label: data.label,
-        },
+    const res = await fetch(`${GATEWAY_URL}/api/crm/commissions/rules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
     });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to create commission rule");
     revalidatePath("/dashboard/admin/crm/commissions");
-    return { success: true, data: rule };
+    return resData;
 }
 
 export async function updateCommissionRule(id: string, data: Partial<{
     rate: number; minDealValue: number; capAmount: number | null; isActive: boolean; label: string;
 }>) {
     await getSession();
-    const rule = await prisma.commissionRule.update({ where: { id }, data });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/commissions/rules/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to update commission rule");
     revalidatePath("/dashboard/admin/crm/commissions");
-    return { success: true, data: rule };
+    return resData;
 }
 
 export async function deleteCommissionRule(id: string) {
     await getSession();
-    await prisma.commissionRule.delete({ where: { id } });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/commissions/rules/${id}`, {
+        method: "DELETE",
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to delete commission rule");
     revalidatePath("/dashboard/admin/crm/commissions");
     return { success: true };
 }
 
 export async function listCommissionRules(companyId: string) {
-    return prisma.commissionRule.findMany({
-        where: { companyId },
-        include: { user: { select: { id: true, name: true, email: true } } },
-        orderBy: { rate: "desc" },
-    });
+    const res = await fetch(`${GATEWAY_URL}/api/crm/commissions/rules?companyId=${companyId}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to list commission rules");
+    return resData.data;
 }
 
 // ─── PAGOS DE COMISIÓN ────────────────────────────────────────────────────────
 
 /**
- * Calcular y crear automáticamente una ComissionPayment cuando un deal pasa a WON.
+ * Calcular y crear automáticamente una CommissionPayment cuando un deal pasa a WON.
  * Busca la regla más específica (user-specific > global).
  */
 export async function autoCreateCommission(dealId: string, companyId: string, assignedUserId: string | null) {
     if (!assignedUserId) return null;
 
-    const deal = await prisma.deal.findUnique({ where: { id: dealId } });
-    if (!deal) return null;
+    // Fetch deal from Gateway
+    const dealRes = await fetch(`${GATEWAY_URL}/api/deals/${dealId}`);
+    const dealData = await dealRes.json();
+    if (!dealRes.ok || !dealData.deal) return null;
+    const deal = dealData.deal;
 
-    // Buscar regla: primero específica del user, luego global
-    const rule = await prisma.commissionRule.findFirst({
-        where: {
-            companyId,
-            isActive: true,
-            minDealValue: { lte: deal.value },
-            OR: [{ userId: assignedUserId }, { userId: null }],
-        },
-        orderBy: [
-            { userId: "desc" }, // user-specific first
-            { rate: "desc" },
-        ],
+    // Fetch rules from Gateway
+    const rulesRes = await fetch(`${GATEWAY_URL}/api/crm/commissions/rules?companyId=${companyId}`);
+    const rulesData = await rulesRes.json();
+    if (!rulesRes.ok || !rulesData.data) return null;
+    const rules = rulesData.data;
+
+    // Filter and find matching rule in memory
+    const matchingRules = rules.filter((r: any) =>
+        r.isActive &&
+        (r.minDealValue ?? 0) <= deal.value &&
+        (r.userId === assignedUserId || r.userId === null)
+    );
+
+    // Sort: user-specific first (r.userId !== null first), then rate desc
+    matchingRules.sort((a: any, b: any) => {
+        const aUser = a.userId ? 1 : 0;
+        const bUser = b.userId ? 1 : 0;
+        if (aUser !== bUser) return bUser - aUser; // user-specific first
+        return b.rate - a.rate;
     });
 
+    const rule = matchingRules[0];
     if (!rule) return null;
 
-    // Verificar si ya existe pago para este deal + user
-    const existing = await prisma.commissionPayment.findFirst({
-        where: { dealId, userId: assignedUserId },
-    });
+    // Verify if already exists: fetch payments and check in-memory
+    const paymentsRes = await fetch(`${GATEWAY_URL}/api/crm/commissions/payments?companyId=${companyId}`);
+    const paymentsData = await paymentsRes.json();
+    if (!paymentsRes.ok || !paymentsData.data) return null;
+    const payments = paymentsData.data;
+
+    const existing = payments.find((p: any) => p.dealId === dealId && p.userId === assignedUserId);
     if (existing) return existing;
 
     let amount = deal.value * rule.rate;
     if (rule.capAmount && amount > rule.capAmount) amount = rule.capAmount;
 
-    const payment = await prisma.commissionPayment.create({
-        data: {
+    const createRes = await fetch(`${GATEWAY_URL}/api/crm/commissions/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
             companyId,
             dealId,
             userId: assignedUserId,
@@ -105,52 +128,53 @@ export async function autoCreateCommission(dealId: string, companyId: string, as
             amount,
             rate: rule.rate,
             status: "PENDING",
-        },
+        }),
     });
+    const createdData = await createRes.json();
+    if (!createRes.ok) return null;
 
     revalidatePath("/dashboard/admin/crm/commissions");
-    return payment;
+    return createdData.data;
 }
 
 export async function updateCommissionStatus(id: string, status: "PENDING" | "APPROVED" | "PAID" | "CANCELLED") {
     await getSession();
-    const payment = await prisma.commissionPayment.update({
-        where: { id },
-        data: {
+    const res = await fetch(`${GATEWAY_URL}/api/crm/commissions/payments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
             status,
             paidAt: status === "PAID" ? new Date() : null,
-        },
+        }),
     });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to update commission status");
     revalidatePath("/dashboard/admin/crm/commissions");
-    return { success: true, data: payment };
+    return resData;
 }
 
 export async function getCommissionDashboard(companyId: string) {
-    const [rules, payments, users] = await Promise.all([
-        prisma.commissionRule.findMany({
-            where: { companyId },
-            include: { user: { select: { id: true, name: true } } },
-        }),
-        prisma.commissionPayment.findMany({
-            where: { companyId },
-            include: {
-                user: { select: { id: true, name: true, email: true, image: true } },
-                deal: { select: { id: true, title: true, value: true, stage: true } },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 100,
-        }),
-        prisma.companyUser.findMany({
-            where: { companyId },
-            include: { user: { select: { id: true, name: true } } },
-        }),
+    const [rulesRes, paymentsRes, usersRes] = await Promise.all([
+        fetch(`${GATEWAY_URL}/api/crm/commissions/rules?companyId=${companyId}`),
+        fetch(`${GATEWAY_URL}/api/crm/commissions/payments?companyId=${companyId}`),
+        fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}/users`),
     ]);
+
+    const [rulesData, paymentsData, usersData] = await Promise.all([
+        rulesRes.json(),
+        paymentsRes.json(),
+        usersRes.json(),
+    ]);
+
+    const rules = rulesData.data || [];
+    const payments = paymentsData.data || [];
+    const teamUsers = usersData.data || [];
 
     // Totales por vendedor
     const byUser: Record<string, { name: string; total: number; pending: number; paid: number; count: number }> = {};
     for (const p of payments) {
         if (!byUser[p.userId]) {
-            byUser[p.userId] = { name: p.user.name ?? p.user.email ?? "?", total: 0, pending: 0, paid: 0, count: 0 };
+            byUser[p.userId] = { name: p.user?.name ?? p.user?.email ?? "?", total: 0, pending: 0, paid: 0, count: 0 };
         }
         byUser[p.userId].total += p.amount;
         byUser[p.userId].count++;
@@ -159,10 +183,10 @@ export async function getCommissionDashboard(companyId: string) {
     }
 
     const totals = {
-        totalAmount: payments.reduce((s, p) => s + p.amount, 0),
-        pendingAmount: payments.filter(p => p.status === "PENDING").reduce((s, p) => s + p.amount, 0),
-        paidAmount: payments.filter(p => p.status === "PAID").reduce((s, p) => s + p.amount, 0),
+        totalAmount: payments.reduce((s: number, p: any) => s + p.amount, 0),
+        pendingAmount: payments.filter((p: any) => p.status === "PENDING").reduce((s: number, p: any) => s + p.amount, 0),
+        paidAmount: payments.filter((p: any) => p.status === "PAID").reduce((s: number, p: any) => s + p.amount, 0),
     };
 
-    return { rules, payments, byUser, totals, teamUsers: users.map(u => u.user) };
+    return { rules, payments, byUser, totals, teamUsers };
 }

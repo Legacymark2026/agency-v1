@@ -4,8 +4,8 @@ import { getPublicProjects, getProjectCategories } from "@/actions/projects";
 // Next.js 15 Server Component
 export default async function PortfolioPage() {
     // Fetch live data directly from the DB to completely eliminate ghosting
-    let projects = [];
-    let categories = [];
+    let projects: any[] = [];
+    let categories: any[] = [];
 
     try {
         [projects, categories] = await Promise.all([

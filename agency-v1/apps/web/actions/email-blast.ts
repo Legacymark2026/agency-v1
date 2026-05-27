@@ -1,16 +1,20 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { enforceQuota } from '@/lib/quotas';
 
-import { Resend } from 'resend';
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
-// Lazy getter — avoids running Resend() at module level during Next.js build
-function getResend() {
-    const key = process.env.RESEND_API_KEY;
-    if (!key) throw new Error('RESEND_API_KEY not configured');
-    return new Resend(key);
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `Gateway error ${res.status}`);
+  }
+  return res.json();
 }
 
 export interface RecipientInput {
@@ -39,15 +43,13 @@ async function getCompanyId(): Promise<string> {
     const session = await auth();
     if (!session?.user?.id) throw new Error('No autenticado');
 
-    const cu = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true },
-    });
-    if (!cu) throw new Error('Sin empresa asignada');
-    return cu.companyId;
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error('Sin empresa asignada');
+    return cuData.data.companyId;
 }
 
-// ── Crear un blast (guardarlo en BD como DRAFT o QUEUED si está programado) ──
+// ── Crear un blast ──
 
 export async function createEmailBlast(input: CreateEmailBlastInput) {
     const session = await auth();
@@ -55,11 +57,9 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
     const companyId = await getCompanyId();
 
     // ── Verificar cuota de emails del plan ────────────────────────────────
-    const company = await prisma.company.findUnique({
-        where: { id: companyId },
-        select: { subscriptionTier: true },
-    });
-    const tier = company?.subscriptionTier || 'free';
+    const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}`);
+    const companyData = await companyRes.json();
+    const tier = companyData?.data?.subscriptionTier || 'free';
 
     // Verificar cuota de campañas (número de blasts)
     const campaignQuota = await enforceQuota(companyId, 'campaigns', tier);
@@ -79,35 +79,13 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
         );
     }
 
-    const blast = await prisma.emailBlast.create({
-        data: {
-            name: input.name,
-            subject: input.subject,
-            htmlBody: input.htmlBody,
-            designJson: input.designJson ?? null,
-            isAbTest: input.isAbTest ?? false,
-            subjectB: input.subjectB ?? null,
-            htmlBodyB: input.htmlBodyB ?? null,
-            fromName: input.fromName ?? 'LegacyMark',
-            fromEmail: input.fromEmail ?? 'noreply@legacymarksas.com',
-            status: input.scheduledAt ? 'QUEUED' : 'DRAFT',
-            scheduledAt: input.scheduledAt ?? null,
-            totalRecipients: input.recipients.length,
+    const blast = await gw('/api/email-blast', {
+        method: 'POST',
+        body: JSON.stringify({
+            ...input,
             companyId,
-            createdById: session.user.id,
-            recipients: {
-                create: input.recipients.map((r, i) => ({
-                    email: r.email,
-                    name: r.name,
-                    variant: input.isAbTest ? (i % 2 === 0 ? 'A' : 'B') : 'A',
-                    variables: Object.fromEntries(
-                        Object.entries(r).filter(([k]) => !['email', 'name'].includes(k))
-                    ),
-                    status: 'PENDING',
-                })),
-            },
-        },
-        include: { recipients: true },
+            createdById: session.user.id
+        })
     });
 
     return blast;
@@ -117,178 +95,112 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
 
 export async function getEmailBlasts() {
     const companyId = await getCompanyId();
-
-    const blasts = await prisma.emailBlast.findMany({
-        where: { companyId },
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            name: true,
-            subject: true,
-            status: true,
-            totalRecipients: true,
-            sent: true,
-            failed: true,
-            sentAt: true,
-            createdAt: true,
-            createdById: true,
-        },
-    });
-
-    // Resolve creator names
-    const userIds = Array.from(new Set(blasts.map((b) => b.createdById).filter(Boolean)));
-    const users = await prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, name: true, email: true },
-    });
-    const userMap = new Map(users.map((u) => [u.id, u.name || u.email || 'Sistema']));
-
-    return blasts.map((b) => ({
-        ...b,
-        creatorName: b.createdById ? userMap.get(b.createdById) || 'Desconocido' : 'Sistema',
-    }));
+    try {
+        const blasts = await gw(`/api/email-blast?companyId=${companyId}`);
+        return blasts;
+    } catch (error) {
+        console.error("Failed to get email blasts:", error);
+        return [];
+    }
 }
 
-// ── Enviar un blast (procesado chunk-by-chunk) ────────────────────────────
+// ── Enviar un blast ───────────────────────────────────────────────────────
 
 export async function sendEmailBlast(blastId: string) {
     const companyId = await getCompanyId();
-
-    const blast = await prisma.emailBlast.findFirst({
-        where: { id: blastId, companyId },
-        include: { recipients: { where: { status: 'PENDING' } } },
-    });
-
-    if (!blast) throw new Error('Blast no encontrado');
-    if (blast.status === 'SENDING' || blast.status === 'QUEUED') throw new Error('Ya está procesándose');
-
-    // Ahora simplemente lo marcamos como QUEUED y estipulamos la fecha de envío (si no la tiene, es AHORA)
-    await prisma.emailBlast.update({
-        where: { id: blastId },
-        data: { 
-            status: 'QUEUED',
-            scheduledAt: blast.scheduledAt ?? new Date()
-        },
-    });
-
-    return { queued: true, message: 'La campaña ha sido encolada para su envío.' };
+    try {
+        await gw(`/api/email-blast/${blastId}/send`, {
+            method: 'POST',
+            body: JSON.stringify({ companyId })
+        });
+        return { queued: true, message: 'La campaña ha sido encolada para su envío.' };
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al enviar la campaña');
+    }
 }
 
 // ── Reintentar envío a fallidos / pendientes ──────────────────────────────
 
 export async function retryFailedEmailBlast(blastId: string) {
     const companyId = await getCompanyId();
-
-    const blast = await prisma.emailBlast.findFirst({
-        where: { id: blastId, companyId },
-        include: { recipients: { where: { status: { in: ['FAILED', 'PENDING'] } } } },
-    });
-
-    if (!blast) throw new Error('Blast no encontrado');
-    if (blast.recipients.length === 0) throw new Error('No hay contactos fallidos o pendientes para reenviar');
-
-    // 1. Reseteamos los recipientes a PENDING
-    await prisma.emailBlastRecipient.updateMany({
-        where: { blastId, status: { in: ['FAILED', 'PENDING'] } },
-        data: { status: 'PENDING', errorMessage: null }
-    });
-
-    // 2. Reactivamos la campaña para el cron
-    await prisma.emailBlast.update({
-        where: { id: blastId },
-        data: { 
-            status: 'QUEUED',
-            scheduledAt: new Date() // Enviar lo antes posible
-        },
-    });
-
-    return { queued: true, message: `Reencolados ${blast.recipients.length} contactos para reintento.` };
+    try {
+        await gw(`/api/email-blast/${blastId}/retry`, {
+            method: 'POST',
+            body: JSON.stringify({ companyId })
+        });
+        return { queued: true, message: 'Contactos reencolados para reintento.' };
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al reintentar la campaña');
+    }
 }
 
 // ── Estadísticas de un blast ──────────────────────────────────────────────
 
 export async function getEmailBlastStats(blastId: string) {
     const companyId = await getCompanyId();
-
-    const blast = await prisma.emailBlast.findFirst({
-        where: { id: blastId, companyId },
-        include: {
-            recipients: {
-                select: { email: true, name: true, status: true, errorMessage: true, sentAt: true },
-                orderBy: { status: 'asc' },
-            },
-        },
-    });
-    if (!blast) throw new Error('Blast no encontrado');
-    return blast;
+    try {
+        const blast = await gw(`/api/email-blast/${blastId}?companyId=${companyId}`);
+        return blast;
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al obtener estadísticas');
+    }
 }
 
 // ── Eliminar un blast ─────────────────────────────────────────────────────
 
 export async function deleteEmailBlast(blastId: string) {
     const companyId = await getCompanyId();
-    await prisma.emailBlast.delete({ where: { id: blastId, companyId } });
-    return { success: true };
+    try {
+        await gw(`/api/email-blast/${blastId}?companyId=${companyId}`, {
+            method: 'DELETE'
+        });
+        return { success: true };
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al eliminar campaña');
+    }
 }
 
 export async function deleteEmailBlasts(blastIds: string[]) {
     const companyId = await getCompanyId();
-    await prisma.emailBlast.deleteMany({
-        where: { id: { in: blastIds }, companyId },
-    });
-    return { success: true };
+    try {
+        await gw('/api/email-blast/bulk-delete', {
+            method: 'POST',
+            body: JSON.stringify({ blastIds, companyId })
+        });
+        return { success: true };
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al eliminar campañas');
+    }
 }
 
-// ── Clonar un blast (crea un DRAFT con el mismo contenido) ────────────────
+// ── Clonar un blast ───────────────────────────────────────────────────────
 
 export async function cloneEmailBlast(blastId: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error('No autenticado');
     const companyId = await getCompanyId();
 
-    const original = await prisma.emailBlast.findFirst({
-        where: { id: blastId, companyId },
-        include: {
-            recipients: {
-                select: { email: true, name: true, variables: true },
-            },
-        },
-    });
-    if (!original) throw new Error('Blast no encontrado');
-
-    const clone = await prisma.emailBlast.create({
-        data: {
-            name: `${original.name} (Copia)`,
-            subject: original.subject,
-            htmlBody: original.htmlBody,
-            fromName: original.fromName,
-            fromEmail: original.fromEmail,
-            status: 'DRAFT',
-            totalRecipients: original.totalRecipients,
-            companyId,
-            createdById: session.user.id,
-            recipients: {
-                create: original.recipients.map((r) => ({
-                    email: r.email,
-                    name: r.name,
-                    variables: r.variables ?? {},
-                    status: 'PENDING',
-                })),
-            },
-        },
-    });
-
-    return clone;
+    try {
+        const clone = await gw(`/api/email-blast/${blastId}/clone`, {
+            method: 'POST',
+            body: JSON.stringify({ companyId, userId: session.user.id })
+        });
+        return clone;
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al clonar campaña');
+    }
 }
 
 // ── Enviar email de prueba ────────────────────────────────────────────────
 
 export async function sendTestEmail(subject: string, html: string, toEmail: string) {
-    const result = await getResend().emails.send({
-        from: 'LegacyMark <noreply@legacymarksas.com>',
-        to: toEmail,
-        subject: `[PRUEBA] ${subject}`,
-        html,
-    });
-    return { success: !!result.data?.id, id: result.data?.id };
+    try {
+        const res = await gw('/api/email-blast/test', {
+            method: 'POST',
+            body: JSON.stringify({ subject, html, toEmail })
+        });
+        return res;
+    } catch (error: any) {
+        throw new Error(error.message || 'Error al enviar email de prueba');
+    }
 }

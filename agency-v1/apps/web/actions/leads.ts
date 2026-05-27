@@ -1,6 +1,5 @@
 'use server';
 
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { detectLeadSource, parseUTMParams, calculateLeadScore, type UTMParams } from "@/lib/lead-source-detector";
 import { sendGa4Event } from "@/lib/ga4-mp";
@@ -11,6 +10,8 @@ import { notifyUsers } from "@/lib/notifications/notification-engine";
 import { enforceQuota } from "@/lib/quotas";
 import crypto from "crypto";
 import { predictLeadConversion, LeadFeatures } from "@/lib/ml/lead-scoring-model";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 /**
  * CRM Stage → Ad Platform Event mapping.
@@ -149,48 +150,13 @@ export interface CreateLeadInput {
     tags?: string[];
 
     // ─── Click IDs & Cookies (First-Party Data) ─────────────────────────────────
-    /**
-     * Meta click ID from ?fbclid= URL param.
-     * Capture client-side: new URLSearchParams(window.location.search).get('fbclid')
-     */
     fbclid?: string;
-    /**
-     * Meta browser cookie (_fbp) — set automatically by the Meta Pixel.
-     * Capture: document.cookie.match(/_fbp=([^;]+)/)?.[1]
-     */
     fbp?: string;
-    /**
-     * Meta click ID cookie (_fbc) — derived from fbclid.
-     * Capture: document.cookie.match(/_fbc=([^;]+)/)?.[1]
-     *   or build it: `fb.1.${Date.now()}.${fbclid}`
-     */
     fbc?: string;
-    /**
-     * Google click ID from ?gclid= URL param.
-     * Capture: new URLSearchParams(window.location.search).get('gclid')
-     */
     gclid?: string;
-    /**
-     * TikTok click ID from ?ttclid= URL param.
-     * Capture: new URLSearchParams(window.location.search).get('ttclid')
-     */
     ttclid?: string;
-    /**
-     * TikTok Pixel cookie (_ttp) — CRITICAL for iOS/Safari attribution.
-     * Capture: document.cookie.match(/_ttp=([^;]+)/)?.[1]
-     */
     ttp?: string;
-    /**
-     * LinkedIn First-Party Ads Tracking UUID (li_fat_id URL param).
-     * Capture: new URLSearchParams(window.location.search).get('li_fat_id')
-     */
     li_fat_id?: string;
-    /**
-     * Google Analytics client_id (_ga cookie) — ties server events to the browser session.
-     * Capture: document.cookie.match(/_ga=GA1\.\d+\.([^;]+)/)?.[1]
-     *   or via gtag: gtag('get', GA_MEASUREMENT_ID, 'client_id', (id) => { clientId = id })
-     * IMPORTANT: Without this, GA4 Measurement Protocol events are NOT joined to the user session.
-     */
     gaClientId?: string;
 }
 
@@ -200,11 +166,10 @@ export interface CreateLeadInput {
 export async function createLead(input: CreateLeadInput) {
     try {
         // ─ Verificar cuota de leads del plan ────────────────────────────────
-        const company = await prisma.company.findUnique({
-            where: { id: input.companyId },
-            select: { subscriptionTier: true },
-        });
-        const tier = company?.subscriptionTier || 'free';
+        const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${input.companyId}`);
+        const companyData = await companyRes.json();
+        const tier = companyData.data?.subscriptionTier || 'free';
+
         const leadQuota = await enforceQuota(input.companyId, 'leads', tier);
         if (!leadQuota.allowed) {
             return {
@@ -230,21 +195,19 @@ export async function createLead(input: CreateLeadInput) {
         const campaignCode = input.campaignCode || input.utmCampaign;
 
         if (campaignCode) {
-            const campaign = await prisma.campaign.findFirst({
-                where: {
-                    OR: [
-                        { code: campaignCode },
-                        { code: { contains: campaignCode, mode: 'insensitive' } }
-                    ],
-                    companyId: input.companyId
-                }
-            });
+            const campaignsRes = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${input.companyId}`);
+            const campaignsData = await campaignsRes.json();
+            const campaigns = campaignsData.data || [];
+            const campaign = campaigns.find((c: any) =>
+                c.code.toLowerCase() === campaignCode.toLowerCase()
+            );
             if (campaign) {
                 campaignId = campaign.id;
                 // Increment campaign conversions
-                await prisma.campaign.update({
-                    where: { id: campaign.id },
-                    data: { conversions: { increment: 1 } }
+                await fetch(`${GATEWAY_URL}/api/campaigns/${campaign.id}/metrics`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ conversions: (campaign.conversions || 0) + 1 })
                 });
             }
         }
@@ -273,17 +236,17 @@ export async function createLead(input: CreateLeadInput) {
         };
         const mlPrediction = predictLeadConversion(mlFeatures);
 
-        // Create the lead
-        const lead = await prisma.lead.create({
-            data: {
+        // Create the lead via API Gateway workload
+        const response = await fetch(`${GATEWAY_URL}/api/leads`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 email: input.email,
                 name: input.name,
                 phone: input.phone,
                 company: input.company,
                 jobTitle: input.jobTitle,
                 message: input.message,
-
-                // Source tracking
                 source: sourceResult.source,
                 medium: sourceResult.medium,
                 utmSource: sourceResult.utmSource || input.utmSource,
@@ -293,44 +256,32 @@ export async function createLead(input: CreateLeadInput) {
                 utmContent: sourceResult.utmContent || input.utmContent,
                 referer: input.referer,
                 landingPage: input.landingPage,
-
-                // Campaign
                 campaignId,
-
-                // Device & server fingerprint
                 ipAddress: input.ipAddress,
                 userAgent: input.userAgent,
                 formId: input.formId,
                 formData: input.formData,
                 tags: input.tags || [],
                 score,
-
-                // ─── First-Party Click IDs & Cookies ────────────────────────────────
-                // These are the raw values captured client-side and persisted to the DB
-                // so that later CRM stage events (QUALIFIED, WON) can re-send them
-                // to ad platforms for proper attribution weeks after the original click.
                 fbclid: input.fbclid,
                 fbp:    input.fbp,
                 fbc:    input.fbc || (input.fbclid ? `fb.1.${Date.now()}.${input.fbclid}` : undefined),
                 gclid:  input.gclid,
                 ttclid: input.ttclid,
                 li_fat_id: input.li_fat_id,
-
-                // Machine Learning Factors
                 conversionProbability: mlPrediction.probability,
                 predictionFactors: mlPrediction.factors,
-
-                // Company
                 companyId: input.companyId,
-            },
-            include: {
-                campaign: true,
-            }
+            })
         });
 
+        const resData = await response.json();
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to create lead via gateway" };
+        }
+        const lead = resData.lead;
+
         // ─── S2S Conversion Dispatch — Lead Created ──────────────────────────────
-        // Use the canonical dispatchConversion() which handles all 4 platforms
-        // concurrently with retry logic. Fire-and-forget: does NOT block the response.
         dispatchConversion({
             leadId: lead.id,
             eventName: 'Lead',
@@ -344,7 +295,6 @@ export async function createLead(input: CreateLeadInput) {
                 lastName:  input.name ? input.name.split(' ').slice(1).join(' ') : undefined,
                 ip:        input.ipAddress,
                 userAgent: input.userAgent,
-                // Click IDs — enable attribution weeks after the original click
                 fbclid:    input.fbclid,
                 fbc:       input.fbc || (input.fbclid ? `fb.1.${Date.now()}.${input.fbclid}` : undefined),
                 fbp:       input.fbp,
@@ -357,11 +307,9 @@ export async function createLead(input: CreateLeadInput) {
         );
 
         // ─── GA4 Measurement Protocol — generate_lead ────────────────────────────
-        // Requires gaClientId from the _ga cookie to join this server event with
-        // the user's browser session in GA4. Without it, GA4 creates a phantom user.
         sendGa4Event(input.companyId, {
             eventName: 'generate_lead',
-            clientId: input.gaClientId, // _ga cookie captured client-side
+            clientId: input.gaClientId,
             userData: {
                 email:     input.email,
                 phone:     input.phone || undefined,
@@ -386,7 +334,7 @@ export async function createLead(input: CreateLeadInput) {
 
         revalidatePath('/dashboard/admin/crm/leads');
         return { success: true, data: lead };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+    } catch (error: any) {
         console.error("Error creating lead:", error);
         return { success: false, error: error.message };
     }
@@ -402,23 +350,17 @@ export async function getLeads(companyId: string, options?: {
     limit?: number;
 }) {
     try {
-        const leads = await prisma.lead.findMany({
-            where: {
-                companyId,
-                ...(options?.source && { source: options.source }),
-                ...(options?.status && { status: options.status }),
-                ...(options?.campaignId && { campaignId: options.campaignId }),
-            },
-            include: {
-                campaign: {
-                    select: { id: true, name: true, code: true, platform: true }
-                }
-            },
-            orderBy: { createdAt: 'desc' },
-            take: options?.limit,
+        const queryParams = new URLSearchParams({
+            companyId,
+            ...(options?.status && { status: options.status }),
+            ...(options?.source && { source: options.source }),
+            ...(options?.limit && { pageSize: options.limit.toString() }),
         });
-        return { success: true, data: leads };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+        const response = await fetch(`${GATEWAY_URL}/api/leads?${queryParams.toString()}`);
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to fetch leads");
+        return { success: true, data: resData.leads };
+    } catch (error: any) {
         console.error("Error fetching leads:", error);
         return { success: false, error: error.message };
     }
@@ -432,18 +374,19 @@ export async function updateLeadStatus(leadId: string, status: string) {
         const hasPermission = await checkLeadPermission('edit');
         if (!hasPermission) return { success: false, error: "Unauthorized to manage leads" };
 
-        const lead = await prisma.lead.findUnique({ where: { id: leadId } });
-        if (!lead) return { success: false, error: "Lead not found" };
+        const leadResponse = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`);
+        const leadData = await leadResponse.json();
+        if (!leadResponse.ok) return { success: false, error: leadData.error || "Lead not found" };
+        const lead = leadData.lead;
 
         let dealId = lead.convertedToDealId;
-
-        // Auto-create or Auto-sync Deal if status implies pipeline progress
         const dealStages = ['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'];
 
         if (dealStages.includes(status) && !dealId) {
-            // Auto-create deal to maintain complete sync with Sales Channel
-            const deal = await prisma.deal.create({
-                data: {
+            const dealResponse = await fetch(`${GATEWAY_URL}/api/deals`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     title: `Deal - ${lead.name || lead.email}`,
                     value: 0,
                     stage: status,
@@ -452,14 +395,17 @@ export async function updateLeadStatus(leadId: string, status: string) {
                     source: lead.source,
                     priority: lead.score >= 70 ? 'HIGH' : lead.score >= 40 ? 'MEDIUM' : 'LOW',
                     companyId: lead.companyId,
-                }
+                })
             });
-            dealId = deal.id;
+            const dealRes = await dealResponse.json();
+            if (dealResponse.ok) {
+                dealId = dealRes.id;
+            }
         } else if (dealId && dealStages.includes(status)) {
-            // Sync status to the existing deal
-            await prisma.deal.update({
-                where: { id: dealId },
-                data: { stage: status }
+            await fetch(`${GATEWAY_URL}/api/deals/${dealId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stage: status })
             });
         }
 
@@ -469,24 +415,27 @@ export async function updateLeadStatus(leadId: string, status: string) {
             dataToUpdate.convertedAt = new Date();
         }
 
-        const updatedLead = await prisma.lead.update({
-            where: { id: leadId },
-            data: dataToUpdate
+        const updateResponse = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToUpdate)
         });
+        const updateRes = await updateResponse.json();
+        if (!updateResponse.ok) return { success: false, error: updateRes.error || "Failed to update lead status" };
+        const updatedLead = updateRes.lead;
 
         // Trigger S2S Conversions if status maps to VBO Stage
         const vboStage = CRM_VBO_STAGES[status];
         if (vboStage) {
             let eventValue = vboStage.value;
 
-            // If it's closed WON and there's a deal, use actual Deal value for exact ROAS
             if (status === 'WON' && dealId) {
-                const deal = await prisma.deal.findUnique({ where: { id: dealId } });
+                const dealResponse = await fetch(`${GATEWAY_URL}/api/deals?companyId=${lead.companyId}`);
+                const dealsData = await dealResponse.json();
+                const deal = dealsData.deals?.find((d: any) => d.id === dealId);
                 if (deal) eventValue = deal.value;
             }
 
-            // ── Multi-platform S2S dispatch (Meta, TikTok, LinkedIn, Google) ──────
-            // Fire-and-forget: does NOT block the UI response
             dispatchConversion({
                 leadId: lead.id,
                 eventName: vboStage.event,
@@ -500,8 +449,6 @@ export async function updateLeadStatus(leadId: string, status: string) {
                     lastName:  lead.name ? lead.name.split(' ').slice(1).join(' ') : undefined,
                     ip:        lead.ipAddress,
                     userAgent: lead.userAgent,
-                    // Re-send stored click IDs — these link back to the original ad click
-                    // even if weeks have passed since the lead was created
                     gclid:     lead.gclid,
                     fbclid:    lead.fbclid,
                     li_fat_id: lead.li_fat_id,
@@ -511,10 +458,6 @@ export async function updateLeadStatus(leadId: string, status: string) {
                 }
             }, lead.companyId).catch(e => console.error("[S2S Dispatcher] Background error:", e));
 
-            // ── GA4 Measurement Protocol — stage-specific event name ─────────────
-            // GA4 uses snake_case events (qualify_lead, purchase) per spec.
-            // This is separate from the Meta/TikTok dispatch above to ensure
-            // the correct GA4 event name is used for audience building in Google Ads.
             sendGa4Event(lead.companyId, {
                 eventName: vboStage.ga4Event,
                 eventParams: {
@@ -522,7 +465,6 @@ export async function updateLeadStatus(leadId: string, status: string) {
                     lead_score:  lead.score,
                     value:       eventValue,
                     currency:    'USD',
-                    // gclid ties this server event to a Google Ads click
                     ...(lead.gclid && { gclid: lead.gclid }),
                 },
                 userData: {
@@ -537,7 +479,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
         revalidatePath('/dashboard/admin/crm/leads');
         revalidatePath('/dashboard/admin/crm/pipeline');
 
-        // ─── Enterprise Notifications — Stage Changed ─────────────────────────
+        // Enterprise Notifications — Stage Changed
         if (status === "WON") {
             notifyUsers("SALES.DEAL_WON", {
                 companyId: lead.companyId,
@@ -565,7 +507,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
         }
 
         return { success: true, data: updatedLead };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+    } catch (error: any) {
         console.error(error);
         return { success: false, error: error.message };
     }
@@ -579,14 +521,18 @@ export async function updateLeadScore(leadId: string, score: number) {
         const hasPermission = await checkLeadPermission('edit');
         if (!hasPermission) return { success: false, error: "Unauthorized to manage leads" };
 
-        const lead = await prisma.lead.update({
-            where: { id: leadId },
-            data: { score }
+        const response = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to update score" };
+
         revalidatePath('/dashboard/admin/crm/leads');
         revalidatePath(`/dashboard/admin/crm/leads/${leadId}`);
-        return { success: true, data: lead };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+        return { success: true, data: resData.lead };
+    } catch (error: any) {
         console.error(error);
         return { success: false, error: error.message };
     }
@@ -604,39 +550,30 @@ export async function convertLeadToDeal(leadId: string, dealData: {
         const hasPermission = await checkLeadPermission('edit');
         if (!hasPermission) return { success: false, error: "Unauthorized to manage leads" };
 
-        const lead = await prisma.lead.findUnique({ where: { id: leadId } });
-        if (!lead) {
-            return { success: false, error: "Lead not found" };
-        }
+        const leadResponse = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`);
+        const leadDataRes = await leadResponse.json();
+        if (!leadResponse.ok) return { success: false, error: leadDataRes.error || "Lead not found" };
+        const lead = leadDataRes.lead;
 
-        // Create deal from lead
-        const deal = await prisma.deal.create({
-            data: {
-                title: dealData.title,
-                value: dealData.value,
-                stage: dealData.stage || 'NEW',
-                contactName: lead.name,
-                contactEmail: lead.email,
-                source: lead.source,
-                priority: lead.score >= 70 ? 'HIGH' : lead.score >= 40 ? 'MEDIUM' : 'LOW',
-                companyId: lead.companyId,
-            }
+        const response = await fetch(`${GATEWAY_URL}/api/leads/convert-to-deal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                leadId,
+                dealData: {
+                    title: dealData.title,
+                    value: dealData.value,
+                    stage: dealData.stage || 'NEW',
+                    companyId: lead.companyId,
+                }
+            })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to convert lead" };
 
-        // Update lead as converted
-        const updatedLead = await prisma.lead.update({
-            where: { id: leadId },
-            data: {
-                status: 'CONVERTED',
-                convertedToDealId: deal.id,
-                convertedAt: new Date(),
-            }
-        });
-
-        // Trigger VBO S2S Conversion for deal creation
         dispatchConversion({
             leadId: lead.id,
-            eventName: 'Purchase', // Using Purchase or Lead as appropriate
+            eventName: 'Purchase',
             value: dealData.value,
             currency: "USD",
             timestamp: Date.now(),
@@ -656,8 +593,8 @@ export async function convertLeadToDeal(leadId: string, dealData: {
 
         revalidatePath('/dashboard/admin/crm/leads');
         revalidatePath('/dashboard/admin/crm/pipeline');
-        return { success: true, data: deal };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+        return { success: true, data: { id: resData.dealId } };
+    } catch (error: any) {
         console.error(error);
         return { success: false, error: error.message };
     }
@@ -671,30 +608,17 @@ export async function deleteLead(leadId: string) {
         const hasPermission = await checkLeadPermission('delete');
         if (!hasPermission) return { success: false, error: "Unauthorized to delete leads" };
 
-        const lead = await prisma.lead.findUnique({
-            where: { id: leadId },
-            select: { email: true, companyId: true, name: true }
+        const response = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`, {
+            method: 'DELETE'
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to delete lead" };
 
-        if (lead) {
-            // ELIMINACIÓN EN CASCADA: Borrar Deals asociados a este correo en esta empresa
-            await prisma.deal.deleteMany({
-                where: {
-                    companyId: lead.companyId,
-                    contactEmail: lead.email,
-                }
-            });
-            revalidatePath('/dashboard/admin/crm/pipeline');
-            revalidatePath('/dashboard/admin/crm');
-        }
-
-        await prisma.lead.delete({
-            where: { id: leadId }
-        });
-
+        revalidatePath('/dashboard/admin/crm/pipeline');
+        revalidatePath('/dashboard/admin/crm');
         revalidatePath('/dashboard/admin/crm/leads');
         return { success: true };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+    } catch (error: any) {
         console.error(error);
         return { success: false, error: error.message };
     }
@@ -705,21 +629,11 @@ export async function deleteLead(leadId: string) {
  */
 export async function getLeadAnalyticsBySource(companyId: string) {
     try {
-        const analytics = await prisma.lead.groupBy({
-            by: ['source'],
-            where: { companyId },
-            _count: { id: true },
-            _avg: { score: true },
-        });
-
-        const result = analytics.map(a => ({
-            source: a.source,
-            count: a._count.id,
-            avgScore: Math.round(a._avg.score || 0),
-        }));
-
-        return { success: true, data: result };
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+        const response = await fetch(`${GATEWAY_URL}/api/leads/analytics/source?companyId=${companyId}`);
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to fetch analytics" };
+        return resData;
+    } catch (error: any) {
         console.error(error);
         return { success: false, error: error.message };
     }
@@ -744,11 +658,10 @@ export interface CreateCampaignInput {
 export async function createCampaign(input: CreateCampaignInput) {
     try {
         // ─ Verificar cuota de campañas del plan ───────────────────────────
-        const company = await prisma.company.findUnique({
-            where: { id: input.companyId },
-            select: { subscriptionTier: true },
-        });
-        const tier = company?.subscriptionTier || 'free';
+        const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${input.companyId}`);
+        const companyData = await companyRes.json();
+        const tier = companyData.data?.subscriptionTier || 'free';
+
         const campaignQuota = await enforceQuota(input.companyId, 'campaigns', tier);
         if (!campaignQuota.allowed) {
             return {
@@ -757,18 +670,24 @@ export async function createCampaign(input: CreateCampaignInput) {
             };
         }
 
-        const campaign = await prisma.campaign.create({
-            data: {
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 name: input.name,
-                code: input.code.toUpperCase(),
+                code: input.code,
                 platform: input.platform,
                 description: input.description,
                 budget: input.budget,
                 startDate: input.startDate,
                 endDate: input.endDate,
                 companyId: input.companyId,
-            }
+            })
         });
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || "Failed to create campaign");
+        const campaign = resData.data;
+
         revalidatePath('/dashboard/admin/crm/campaigns');
         return { success: true, data: campaign };
     } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
@@ -782,16 +701,10 @@ export async function createCampaign(input: CreateCampaignInput) {
  */
 export async function getCampaigns(companyId: string, status?: string) {
     try {
-        const campaigns = await prisma.campaign.findMany({
-            where: {
-                companyId,
-                ...(status && { status }),
-            },
-            include: {
-                _count: { select: { leads: true } }
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${companyId}${status ? `&status=${status}` : ''}`);
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || "Failed to list campaigns");
+        const campaigns = resData.data || [];
         return { success: true, data: campaigns };
     } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
         console.error(error);
@@ -804,10 +717,15 @@ export async function getCampaigns(companyId: string, status?: string) {
  */
 export async function updateCampaign(campaignId: string, data: Partial<Campaign>) {
     try {
-        const campaign = await prisma.campaign.update({
-            where: { id: campaignId },
-            data
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns/${campaignId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || "Failed to update campaign");
+        const campaign = resData.data;
+
         revalidatePath('/dashboard/admin/crm/campaigns');
         return { success: true, data: campaign };
     } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
@@ -821,7 +739,12 @@ export async function updateCampaign(campaignId: string, data: Partial<Campaign>
  */
 export async function deleteCampaign(campaignId: string) {
     try {
-        await prisma.campaign.delete({ where: { id: campaignId } });
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns/${campaignId}`, {
+            method: 'DELETE'
+        });
+        const resData = await res.json();
+        if (!res.ok) throw new Error(resData.error || "Failed to delete campaign");
+
         revalidatePath('/dashboard/admin/crm/campaigns');
         return { success: true };
     } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
@@ -835,31 +758,10 @@ export async function deleteCampaign(campaignId: string) {
  */
 export async function getCampaignMetrics(campaignId: string) {
     try {
-        const campaign = await prisma.campaign.findUnique({
-            where: { id: campaignId },
-            include: {
-                leads: {
-                    select: { id: true, status: true, score: true, createdAt: true }
-                }
-            }
-        });
-
-        if (!campaign) {
-            return { success: false, error: "Campaign not found" };
-        }
-
-        const metrics = {
-            ...campaign,
-            leadCount: campaign.leads.length,
-            convertedLeads: campaign.leads.filter(l => l.status === 'CONVERTED').length,
-            avgLeadScore: campaign.leads.length > 0
-                ? Math.round(campaign.leads.reduce((sum, l) => sum + l.score, 0) / campaign.leads.length)
-                : 0,
-            costPerLead: campaign.spend > 0 && campaign.leads.length > 0
-                ? (campaign.spend / campaign.leads.length).toFixed(2)
-                : null,
-        };
-
+        const res = await fetch(`${GATEWAY_URL}/api/campaigns/${campaignId}/metrics`);
+        const resData = await res.json();
+        if (!res.ok) return { success: false, error: resData.error || "Campaign not found" };
+        const metrics = resData.data;
         return { success: true, data: metrics };
     } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
         console.error(error);

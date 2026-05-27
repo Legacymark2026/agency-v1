@@ -1,14 +1,11 @@
-'use server';
+"use server";
 
-import { db } from "@/lib/db";
-import { prisma } from "@/lib/prisma"; // A-2: static import (no dynamic)
-import { auth } from "@/lib/auth";    // A-2: static import (no dynamic)
+import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { ChannelType } from "@/types/inbox";
-import { rateLimit } from "@/lib/rate-limit"; // A-5: rate limiting
-import { createLead } from "@/modules/leads/actions/leads";
+import { rateLimit } from "@/lib/rate-limit";
 import { notifyUsers } from "@/lib/notifications/notification-engine";
-// --- Types ---
+
 export interface GetConversationsParams {
     companyId: string;
     status?: string;
@@ -19,7 +16,7 @@ export interface GetConversationsParams {
     limit?: number;
 }
 
-// --- Actions ---
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 export async function getConversations({
     status,
@@ -31,93 +28,48 @@ export async function getConversations({
 }: Omit<GetConversationsParams, 'companyId'>) {
     try {
         const session = await auth();
-
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
+        let companyId = session.user.companyId;
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: { companies: true }
-        });
-        let companyId = user?.companies[0]?.companyId;
-
-        // Fallback for single-tenant / reset scenarios: Use default company
+        // Fallback for single-tenant / reset scenarios
         if (!companyId) {
-            const defaultCompany = await prisma.company.findFirst();
-            if (defaultCompany) {
-                companyId = defaultCompany.id;
+            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`); // or equivalent public endpoint
+            if (companyRes.ok) {
+                const compData = await companyRes.json();
+                if (compData.companies && compData.companies.length > 0) {
+                    companyId = compData.companies[0].id;
+                }
             }
         }
 
         if (!companyId) return { success: false, error: "No company found" };
-        const skip = (page - 1) * limit;
 
-        const where: any /* eslint-disable-line @typescript-eslint/no-explicit-any */ = {
+        const queryParams = new URLSearchParams({
             companyId,
+            page: String(page),
+            limit: String(limit),
             ...(status && { status }),
             ...(channel && { channel }),
             ...(assignedTo && { assignedTo }),
-        };
+            ...(search && { search }),
+        });
 
-        if (search) {
-            where.OR = [
-                { lead: { name: { contains: search, mode: 'insensitive' } } },
-                { lead: { email: { contains: search, mode: 'insensitive' } } },
-                { messages: { some: { content: { contains: search, mode: 'insensitive' } } } }
-            ];
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
+        const resData = await response.json();
+
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to fetch conversations" };
         }
-
-        const [conversations, total] = await Promise.all([
-            db.conversation.findMany({
-                where,
-                include: {
-                    lead: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                        }
-                    },
-                    assignee: {
-                        select: {
-                            id: true,
-                            name: true,
-                            image: true
-                        }
-                    },
-                    slaConfig: {
-                        select: {
-                            status: true,
-                            firstResponseMinutes: true,
-                            resolutionMinutes: true,
-                            firstResponseAt: true,
-                            resolvedAt: true,
-                            breachedAt: true,
-                            createdAt: true,
-                            pausedMinutes: true,
-                        }
-                    },
-                    _count: {
-                        select: { messages: true }
-                    }
-                },
-                orderBy: {
-                    lastMessageAt: 'desc'
-                },
-                skip,
-                take: limit
-            }),
-            db.conversation.count({ where })
-        ]);
 
         return {
             success: true,
-            data: conversations,
+            data: resData.conversations,
             pagination: {
-                total,
+                total: resData.total,
                 page,
                 limit,
-                totalPages: Math.ceil(total / limit)
+                totalPages: Math.ceil(resData.total / limit)
             }
         };
     } catch (error) {
@@ -128,61 +80,37 @@ export async function getConversations({
 
 export async function getMessages(conversationId: string) {
     try {
-        const messages = await db.message.findMany({
-            where: { conversationId },
-            orderBy: { createdAt: 'asc' },
-            select: {
-                id: true,
-                content: true,
-                direction: true,
-                createdAt: true,
-                senderId: true,
-                status: true,
-                type: true,
-                mediaUrl: true,
-                mediaType: true,
-                metadata: true,
-                inReplyToId: true,
-                attachments: {
-                    select: {
-                        id: true,
-                        fileName: true,
-                        mediaUrl: true,
-                        mediaType: true,
-                        fileSize: true,
-                    }
-                },
-                conversation: {
-                    select: {
-                        channel: true,
-                        lead: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
+        const resData = await response.json();
 
-        return { success: true, data: messages };
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to fetch messages" };
+        }
+
+        const messagesWithAttachments = (resData.messages || []).map((m: any) => ({
+            ...m,
+            attachments: m.attachments && m.attachments.length > 0
+                ? m.attachments
+                : m.mediaUrl ? [{ url: m.mediaUrl, type: m.mediaType || 'DOCUMENT', name: 'Archivo' }] : []
+        }));
+
+        return { success: true, data: messagesWithAttachments };
     } catch (error) {
         console.error("Error fetching messages:", error);
         return { success: false, error: "Failed to fetch messages" };
     }
 }
 
-// Explicit read-marker. Called when the user *opens* a conversation,
-// not as a side-effect of any polling read of getMessages — which used to
-// race against incrementing webhooks and lose unread counts.
 export async function markConversationAsRead(conversationId: string) {
     try {
-        await db.conversation.update({
-            where: { id: conversationId },
-            data: { unreadCount: 0 }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unreadCount: 0 })
         });
+        if (!response.ok) {
+            return { success: false, error: "Failed to mark as read" };
+        }
         return { success: true };
     } catch (error) {
         console.error("Error marking conversation as read:", error);
@@ -196,56 +124,40 @@ export interface SendTemplate {
     components?: any[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function sendMessage(conversationId: string, content: string, userId: string, attachments: any[] = [], template?: SendTemplate) {
     try {
         if (!content && (!attachments || attachments.length === 0) && !template) {
             return { success: false, error: "Message content or attachment required" };
         }
 
-        // 1. Create the message in DB
-        const message = await db.message.create({
-            data: {
-                conversationId,
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 content,
                 direction: 'OUTBOUND',
                 senderId: userId,
                 status: 'SENT',
-                // For MVP, handling first attachment as mediaUrl if present
-                mediaUrl: attachments.length > 0 ? attachments[0].url : null,
-                mediaType: attachments.length > 0 ? attachments[0].type : null,
-            }
+                attachments,
+                type: content ? "TEXT" : "MEDIA"
+            })
         });
 
-        // 2. Update Conversation (last message, preview)
-        const preview = content
-            ? content.substring(0, 50) + (content.length > 50 ? '...' : '')
-            : attachments.length > 0 ? '🎤 Nota de voz' : '...';
-        await db.conversation.update({
-            where: { id: conversationId },
-            data: {
-                lastMessageAt: new Date(),
-                lastMessagePreview: preview,
-                status: 'OPEN' // Re-open if closed
-            }
-        });
+        const resData = await response.json();
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to send message" };
+        }
+        const message = resData.message;
 
-        // 3. Integrate with Meta API
-        const conversation = await db.conversation.findUnique({
-            where: { id: conversationId },
-            include: { lead: true }
-        });
+        // Fetch conversation details for channel info
+        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        const convoData = await convoRes.json();
+        const conversation = convoData.conversation;
 
         if (conversation && (conversation.channel === 'MESSENGER' || conversation.channel === 'INSTAGRAM') && conversation.metadata) {
-
-            // Dynamic Import to avoid cycle
             const { MetaService } = await import("@/lib/services/meta-sync");
-
-            const meta = conversation.metadata as any; // Cast JSON to expected shape
-
-            // We need the page access token.
+            const meta = conversation.metadata as any;
             const { pages } = await MetaService.getConnectedPages(userId, conversation.companyId);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const page = pages.find((p: any) => p.id === meta.pageId);
 
             if (page && meta.recipientId) {
@@ -256,30 +168,40 @@ export async function sendMessage(conversationId: string, content: string, userI
                     page.access_token
                 );
                 if (result && result.success === false) {
-                    await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
+                    await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'FAILED' })
+                    });
                     return { success: false, error: "Meta API falló: " + JSON.stringify(result.error) };
                 }
             } else {
-                await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
-                console.warn("[Inbox] Cannot send Meta reply: Missing Page Context or Recipient ID in metadata");
+                await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'FAILED' })
+                });
                 return { success: false, error: "Falta configuración de la página o ID del destinatario en la metadata del Lead." };
             }
         } else if (conversation && conversation.channel === 'WHATSAPP') {
-            // P0-2: Check WhatsApp 24h Window Rule — bypass if a template is provided.
-            // Templates are the only path Meta allows past the 24h window.
             if (!template) {
-                const lastInboundMsg = await db.message.findFirst({
-                    where: { conversationId, direction: 'INBOUND' },
-                    orderBy: { createdAt: 'desc' }
-                });
+                const messagesRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
+                const messagesData = await messagesRes.json();
+                const lastInboundMsg = (messagesData.messages || [])
+                    .reverse()
+                    .find((m: any) => m.direction === 'INBOUND');
 
                 if (lastInboundMsg) {
-                    const hoursSinceLastMessage = (Date.now() - lastInboundMsg.createdAt.getTime()) / (1000 * 60 * 60);
+                    const hoursSinceLastMessage = (Date.now() - new Date(lastInboundMsg.createdAt).getTime()) / (1000 * 60 * 60);
                     if (hoursSinceLastMessage >= 24) {
-                        await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
+                        await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'FAILED' })
+                        });
                         return {
                             success: false,
-                            error: "Ventana de 24h de WhatsApp expirada. Para reanudar el contacto debes enviar una Plantilla pre-aprobada (HSM). Usa el selector de plantillas o pasa { template: { name, language, components } } a sendMessage.",
+                            error: "Ventana de 24h de WhatsApp expirada. Para reanudar el contacto debes enviar una Plantilla pre-aprobada (HSM).",
                             requiresTemplate: true,
                         };
                     }
@@ -296,34 +218,34 @@ export async function sendMessage(conversationId: string, content: string, userI
                         template,
                     });
                     if (tplResult && tplResult.success === false) {
-                        await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
-                        return { success: false, error: "WhatsApp Template falló: " + (typeof tplResult.error === 'string' ? tplResult.error : JSON.stringify(tplResult.error)) };
+                        await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'FAILED' })
+                        });
+                        return { success: false, error: "WhatsApp Template falló: " + JSON.stringify(tplResult.error) };
                     }
                     revalidatePath(`/dashboard/inbox`);
                     return { success: true, data: message };
                 }
+
                 const audioAttachment = attachments.find((a: any) => a.type === 'AUDIO');
                 let waResult;
                 if (audioAttachment) {
                     const audioUrl = audioAttachment.url || '';
                     const isWhatsAppMedia = audioUrl.includes('/api/media/whatsapp/');
-                    
+
                     if (isWhatsAppMedia) {
-                        // Extract media ID from proxy URL
-                        const mediaId = audioUrl.split('/').pop();
-                        if (mediaId) {
-                            waResult = await waProvider.sendMessage({
-                                conversationId: conversation.platformId || conversation.lead?.phone || '',
-                                content: '',
-                                attachments: [{ type: 'audio', url: audioUrl }]
-                            });
-                        }
+                        waResult = await waProvider.sendMessage({
+                            conversationId: conversation.platformId || conversation.lead?.phone || '',
+                            content: '',
+                            attachments: [{ type: 'audio', url: audioUrl }]
+                        });
                     }
-                    
-                    // If WhatsApp media send failed or URL is Cloudinary, send the audio as a link
+
                     if (!waResult || waResult.success === false) {
-                        const linkContent = audioUrl.startsWith('http') 
-                            ? `🎤 Nota de Voz: ${audioUrl}` 
+                        const linkContent = audioUrl.startsWith('http')
+                            ? `🎤 Nota de Voz: ${audioUrl}`
                             : content;
                         waResult = await waProvider.sendMessage({
                             conversationId: conversation.platformId || conversation.lead?.phone || '',
@@ -338,37 +260,36 @@ export async function sendMessage(conversationId: string, content: string, userI
                         attachments: attachments
                     });
                 }
-                
+
                 if (waResult && waResult.success === false) {
-                    await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
-                    return { success: false, error: "WhatsApp API falló: " + (typeof waResult.error === 'string' ? waResult.error : JSON.stringify(waResult.error)) };
+                    await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'FAILED' })
+                    });
+                    return { success: false, error: "WhatsApp API falló: " + JSON.stringify(waResult.error) };
                 }
             } else {
-                await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
+                await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'FAILED' })
+                });
                 return { success: false, error: "Proveedor de WhatsApp no configurado o inactivo." };
             }
-        } else if (conversation && (conversation.channel === 'TIKTOK' || conversation.channel === 'LINKEDIN' || conversation.channel === 'TWITTER' || conversation.channel === 'YOUTUBE' || conversation.channel === 'SMS')) {
-            // Generic channel outbound via automationHub
+        } else if (conversation && ['TIKTOK', 'LINKEDIN', 'TWITTER', 'YOUTUBE', 'SMS'].includes(conversation.channel)) {
             try {
                 const { automationHub } = await import("@/lib/integrations/providers");
                 const provider = automationHub.get(conversation.channel as any);
                 if (provider && typeof provider.sendMessage === 'function') {
-                    const result = await provider.sendMessage({
+                    await provider.sendMessage({
                         conversationId: conversation.platformId || '',
                         content: content,
                         attachments: attachments
                     });
-                    if (result && result.success === false) {
-                        await db.message.update({ where: { id: message.id }, data: { status: 'FAILED' } });
-                        console.warn(`[Inbox] ${conversation.channel} API send failed:`, result.error);
-                        // Don't return error — message is saved in DB, just external delivery failed
-                    }
-                } else {
-                    console.log(`[Inbox] No sendMessage provider for ${conversation.channel}, message saved locally only.`);
                 }
             } catch (channelErr) {
                 console.warn(`[Inbox] Error sending via ${conversation.channel}:`, channelErr);
-                // Message is still saved in DB, just external delivery failed
             }
         }
 
@@ -385,19 +306,23 @@ export async function updateLeadStatusFromInbox(conversationId: string, newStatu
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const conversation = await db.conversation.findUnique({
-            where: { id: conversationId },
-            select: { leadId: true }
-        });
+        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        const convoData = await convoRes.json();
+        const conversation = convoData.conversation;
 
         if (!conversation || !conversation.leadId) {
             return { success: false, error: "Lead no encontrado en la conversación" };
         }
 
-        await db.lead.update({
-            where: { id: conversation.leadId },
-            data: { status: newStatus }
+        const leadUpdateRes = await fetch(`${GATEWAY_URL}/api/leads/${conversation.leadId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
         });
+
+        if (!leadUpdateRes.ok) {
+            return { success: false, error: "Fallo actualizando status del lead" };
+        }
 
         revalidatePath(`/dashboard/inbox`);
         return { success: true };
@@ -409,44 +334,18 @@ export async function updateLeadStatusFromInbox(conversationId: string, newStatu
 
 export async function createConversation(companyId: string, leadId: string, channel: string) {
     try {
-        // Match any existing conversation in this (company, lead, channel) tuple,
-        // including ARCHIVED/CLOSED ones. Reopen rather than create a duplicate
-        // that would race against [platformId, channel] unique or the inbound
-        // webhook's upsert.
-        const existing = await db.conversation.findFirst({
-            where: { companyId, leadId, channel },
-            orderBy: { lastMessageAt: 'desc' },
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId, leadId, channel })
         });
-
-        if (existing) {
-            if (existing.status === 'OPEN') {
-                return { success: true, data: existing, isNew: false };
-            }
-            const reopened = await db.conversation.update({
-                where: { id: existing.id },
-                data: {
-                    status: 'OPEN',
-                    lastMessageAt: new Date(),
-                    lastMessagePreview: 'Conversation reopened',
-                },
-            });
-            revalidatePath(`/dashboard/inbox`);
-            return { success: true, data: reopened, isNew: false };
+        const resData = await response.json();
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to create conversation" };
         }
 
-        const conversation = await db.conversation.create({
-            data: {
-                companyId,
-                leadId,
-                channel,
-                status: 'OPEN',
-                lastMessageAt: new Date(),
-                lastMessagePreview: 'New conversation started'
-            }
-        });
-
         revalidatePath(`/dashboard/inbox`);
-        return { success: true, data: conversation, isNew: true };
+        return { success: true, data: resData.data, isNew: resData.isNew };
     } catch (error) {
         console.error("Error creating conversation:", error);
         return { success: false, error: "Failed to create conversation" };
@@ -455,72 +354,41 @@ export async function createConversation(companyId: string, leadId: string, chan
 
 export async function updateConversationStatus(conversationId: string, status: string) {
     try {
-        const conversation = await db.conversation.update({
-            where: { id: conversationId },
-            data: { status }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
         });
+        const resData = await response.json();
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to update status" };
+        }
 
         revalidatePath(`/dashboard/inbox`);
-        return { success: true, data: conversation };
+        return { success: true, data: resData.data };
     } catch (error) {
         console.error("Error updating status:", error);
         return { success: false, error: "Failed to update status" };
     }
 }
 
-/**
- * Logs a contact attempt from the CRM Lead profile into the Inbox
- * by creating or ensuring an open conversation exists for the channel.
- */
 export async function logLeadContact(leadId: string, channel: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const lead = await db.lead.findUnique({
-            where: { id: leadId },
-            select: { companyId: true, email: true, phone: true }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/log-contact`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leadId, channel })
         });
-
-        if (!lead) return { success: false, error: "Lead not found" };
-
-        // 1. Ensure conversation exists
-        let conversation = await db.conversation.findFirst({
-            where: {
-                companyId: lead.companyId,
-                leadId: leadId,
-                channel: channel
-            }
-        });
-
-        if (!conversation) {
-            let platformId = undefined;
-            if (channel === 'WHATSAPP' || channel === 'SMS') platformId = lead.phone;
-            if (channel === 'EMAIL') platformId = lead.email;
-
-            conversation = await db.conversation.create({
-                data: {
-                    companyId: lead.companyId,
-                    leadId: leadId,
-                    channel: channel,
-                    status: 'OPEN',
-                    platformId: platformId,
-                    lastMessageAt: new Date(),
-                    lastMessagePreview: `Contact initiated via ${channel}`
-                }
-            });
-        } else if (conversation.status === 'ARCHIVED' || conversation.status === 'CLOSED') {
-            conversation = await db.conversation.update({
-                where: { id: conversation.id },
-                data: { status: 'OPEN', lastMessageAt: new Date(), lastMessagePreview: `Contact initiated via ${channel} (Reopened)` }
-            });
+        const resData = await response.json();
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to log contact" };
         }
 
-        // Note: For a true OmniChannel feeling, we could also log a system message here.
-        // But simply creating the conversation is enough for the inbox to track it.
-
         revalidatePath('/dashboard/inbox');
-        return { success: true, conversationId: conversation.id };
+        return { success: true, conversationId: resData.conversationId };
     } catch (error: any) {
         console.error("Error logging lead contact:", error);
         return { success: false, error: error?.message || "Failed to log contact" };
@@ -537,116 +405,93 @@ export async function simulateIncomingMessage(params: {
     try {
         let { channel, senderName, senderHandle, content, companyId } = params;
 
-        // Auto-detect company from session if creating a simulation manually
         if (companyId === 'default-company-id' || !companyId) {
             const session = await auth();
             if (session?.user?.id) {
-                // A-5: Rate limit para simulación de mensajes entrantes (10/min)
                 const allowed = rateLimit(`simulate_msg:${session.user.id}`, 10, 60_000);
                 if (!allowed) return { success: false, error: "Rate limit: demasiadas simulaciones. Espera un momento." };
+                companyId = session.user.companyId || "";
+            }
+        }
 
-                const userCompany = await prisma.companyUser.findFirst({
-                    where: { userId: session.user.id },
-                    select: { companyId: true }
-                });
-                if (userCompany) {
-                    companyId = userCompany.companyId;
+        if (!companyId) {
+            // Find a default company via gateway
+            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`);
+            if (companyRes.ok) {
+                const compData = await companyRes.json();
+                if (compData.companies && compData.companies.length > 0) {
+                    companyId = compData.companies[0].id;
                 }
             }
         }
 
-        // 1. Find or Create Lead
-        let lead = await db.lead.findFirst({
-            where: {
-                companyId,
-                OR: [
-                    { email: senderHandle.includes('@') ? senderHandle : undefined },
-                    { phone: !senderHandle.includes('@') ? senderHandle : undefined }
-                ]
+        if (!companyId) throw new Error("Company ID is required for simulation");
+
+        // 1. Find or Create Lead via CRM REST API
+        let lead;
+        const leadSearchRes = await fetch(`${GATEWAY_URL}/api/leads?companyId=${companyId}&search=${senderHandle}`);
+        if (leadSearchRes.ok) {
+            const searchData = await leadSearchRes.json();
+            if (searchData.leads && searchData.leads.length > 0) {
+                lead = searchData.leads[0];
             }
-        });
+        }
 
         if (!lead) {
-            const result = await createLead({
-                companyId,
-                name: senderName || 'Social User',
-                email: senderHandle.includes('@') ? senderHandle : `temp-${Date.now()}@example.com`,
-                phone: !senderHandle.includes('@') ? senderHandle : undefined,
-                utmSource: channel,
-                tags: [`${channel.toLowerCase()}-inbound`, 'simulated']
+            const leadCreateRes = await fetch(`${GATEWAY_URL}/api/leads`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    companyId,
+                    name: senderName || 'Social User',
+                    email: senderHandle.includes('@') ? senderHandle : `temp-${Date.now()}@example.com`,
+                    phone: !senderHandle.includes('@') ? senderHandle : undefined,
+                    utmSource: channel,
+                    tags: [`${channel.toLowerCase()}-inbound`, 'simulated']
+                })
             });
-
-            if (result.success && result.data) {
-                lead = result.data as any;
-            } else {
-                console.error("[simulateIncomingMessage] Could not use createLead, falling back to manual prisma insertion:", result.error);
-                lead = await db.lead.create({
-                    data: {
-                        companyId,
-                        name: senderName,
-                        email: senderHandle.includes('@') ? senderHandle : `temp-${Date.now()}@example.com`,
-                        phone: !senderHandle.includes('@') ? senderHandle : undefined,
-                        status: 'NEW',
-                        source: channel
-                    }
-                });
+            const leadCreateData = await leadCreateRes.json();
+            if (leadCreateRes.ok) {
+                lead = leadCreateData.lead;
             }
         }
-        
+
         if (!lead) throw new Error("Could not find or create lead");
 
-        // 2. Find or Create Conversation
-        let conversation = await db.conversation.findFirst({
-            where: {
-                companyId,
-                leadId: lead.id,
-                channel,
-                status: { not: 'ARCHIVED' }
-            }
+        // 2. Create/Reopen Conversation
+        const convoResponse = await fetch(`${GATEWAY_URL}/api/inbox/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId, leadId: lead.id, channel })
         });
+        const convoData = await convoResponse.json();
+        if (!convoResponse.ok) throw new Error(convoData.error || "Failed to create conversation");
+        const conversation = convoData.data;
 
-        if (!conversation) {
-            conversation = await db.conversation.create({
-                data: {
-                    companyId,
-                    leadId: lead.id,
-                    channel,
-                    status: 'OPEN',
-                    lastMessageAt: new Date(),
-                    lastMessagePreview: content.substring(0, 50)
-                }
-            });
-        } else {
-            await db.conversation.update({
-                where: { id: conversation.id },
-                data: {
-                    status: 'OPEN',
-                    lastMessageAt: new Date(),
-                    lastMessagePreview: content.substring(0, 50)
-                }
-            });
-        }
-
-        // 3. Create Message
-        await db.message.create({
-            data: {
-                conversationId: conversation.id,
+        // 3. Create Inbound Message
+        const msgResponse = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 content,
                 direction: 'INBOUND',
                 status: 'RECEIVED',
-                senderId: lead.id
-            }
+                senderId: lead.id,
+                type: 'TEXT'
+            })
         });
+
+        if (!msgResponse.ok) throw new Error("Failed to create simulated message");
 
         revalidatePath('/dashboard/inbox');
 
-        // 4. Trigger Omnichannel AI Agent (Copilot) in the background
+        // 4. Trigger AI Copilot in background
         const { triggerOmnichannelAgent } = await import("@/lib/services/ai-inbox");
-        triggerOmnichannelAgent(conversation.id, companyId).catch(err => 
+        triggerOmnichannelAgent(conversation.id, companyId).catch(err =>
              console.error("[simulateIncomingMessage] Error in background AI dispatch:", err)
         );
 
-        // 5. Enterprise Notification — Message Received
+        // 5. Send notifications
         const channelLabel = channel === 'WHATSAPP' ? 'WhatsApp' : channel === 'INSTAGRAM' ? 'Instagram' : channel === 'MESSENGER' ? 'Messenger' : channel === 'EMAIL' ? 'Email' : 'Mensaje';
         notifyUsers("INBOX.MESSAGE_RECEIVED", {
             companyId,
@@ -657,51 +502,32 @@ export async function simulateIncomingMessage(params: {
         }).catch(() => {});
 
         return { success: true };
-
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+    } catch (error: any) {
         console.error("Simulation error:", error);
         return { success: false, error: error.message };
     }
 }
 
-// ==================== META INBOX INTEGRATION ====================
-
 export async function syncMetaConversations() {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-        console.error("[syncMetaConversations] Unauthorized. No session.");
-        return { success: false, error: "Unauthorized" };
-    }
-    console.log(`[syncMetaConversations] Caller: ${session.user.id}`);
-
-    // A-5: Rate limit para sincronización Meta (5 veces por minuto)
-    const allowed = rateLimit(`sync_meta:${session.user.id}`, 5, 60_000);
-    if (!allowed) return { success: false, error: "Rate limit: espera antes de sincronizar de nuevo." };
-
-    // Get user's company
-    const userCompany = await prisma.companyUser.findFirst({
-        where: { userId: session.user.id },
-        select: { companyId: true }
-    });
-
-    if (!userCompany) {
-        return { success: false, error: "No company found for user" };
-    }
-
     try {
-        console.log(`[syncMetaConversations] Executing for user ${session.user.id}, company ${userCompany.companyId}`);
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+
+        const allowed = rateLimit(`sync_meta:${session.user.id}`, 5, 60_000);
+        if (!allowed) return { success: false, error: "Rate limit: espera antes de sincronizar de nuevo." };
+
+        const companyId = session.user.companyId;
+        if (!companyId) return { success: false, error: "No company found for user" };
+
         const { MetaSyncService } = await import("@/lib/services/meta-sync");
         const result = await MetaSyncService.syncAllConversations(
             session.user.id,
-            userCompany.companyId
+            companyId
         );
 
-        // Revalidate inbox page to show new conversations
         revalidatePath('/dashboard/inbox');
-
         return result;
-    } catch (error: any) /* eslint-disable-line @typescript-eslint/no-explicit-any */ {
+    } catch (error: any) {
         console.error("[syncMetaConversations] Error:", error);
         return {
             success: false,
@@ -714,30 +540,10 @@ export async function syncMetaConversations() {
 
 export async function getLeadDetails(leadId: string) {
     try {
-        const lead = await prisma.lead.findUnique({
-            where: { id: leadId },
-            include: {
-                marketingEvents: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 10
-                },
-                campaign: true,
-                conversations: {
-                    orderBy: { lastMessageAt: 'desc' },
-                    take: 5,
-                    select: {
-                        id: true,
-                        channel: true,
-                        status: true,
-                        lastMessageAt: true
-                    }
-                }
-            }
-        });
-
-        if (!lead) return null;
-
-        return lead;
+        const response = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`);
+        if (!response.ok) return null;
+        const resData = await response.json();
+        return resData.lead;
     } catch (error) {
         console.error("Error fetching lead details:", error);
         return null;
@@ -751,7 +557,7 @@ export async function draftCopilotServerAction(conversationId: string) {
 
         const { draftCopilotReply } = await import("@/lib/services/ai-inbox");
         const reply = await draftCopilotReply(conversationId);
-        
+
         return { success: true, draft: reply };
     } catch (error: any) {
         console.error("Error drafting reply:", error);
@@ -763,31 +569,27 @@ export async function executeMacro(conversationId: string, macroId: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-        
-        // 1. Get Conversation & Macro
-        const conversation = await db.conversation.findUnique({
-            where: { id: conversationId },
-            include: { lead: true }
-        });
+
+        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        const convoData = await convoRes.json();
+        const conversation = convoData.conversation;
         if (!conversation) return { success: false, error: "Conversation not found" };
 
-        const macro: any = await db.inboxMacro.findUnique({
-            where: { id: macroId }
-        });
+        const macroRes = await fetch(`${GATEWAY_URL}/api/inbox/macros`);
+        const macrosData = await macroRes.json();
+        const macro = (macrosData.data || []).find((m: any) => m.id === macroId);
 
         if (!macro || !macro.isActive || macro.companyId !== conversation.companyId) {
             return { success: false, error: "Macro not available" };
         }
 
-        const payload = macro.payload as any || {};
+        const payload = macro.payload || {};
         let systemNoteText = '';
         let messageToSend = '';
 
-        // 2. Execute Logic based on ActionType
         switch (macro.actionType) {
             case 'TEXT_REPLY': {
                 messageToSend = payload.textTemplate || 'Respuesta rápida de macro';
-                // Very basic variable replacement
                 if (conversation.lead?.name) {
                     messageToSend = messageToSend.replace('{{lead.name}}', conversation.lead.name.split(' ')[0]);
                 }
@@ -795,14 +597,14 @@ export async function executeMacro(conversationId: string, macroId: string) {
                 break;
             }
             case 'ASSIGN_TAG': {
+                const currentTags = Array.isArray(conversation.tags) ? conversation.tags : [];
                 const newTags = payload.tagsToAdd || [];
-                // Update Conversation Tags (Assuming we store tags as array)
-                const currentTags = Array.isArray((conversation as any).tags) ? (conversation as any).tags : [];
                 const mergedTags = Array.from(new Set([...currentTags, ...newTags]));
-                
-                await db.conversation.update({
-                    where: { id: conversation.id },
-                    data: { tags: mergedTags } as any
+
+                await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tags: mergedTags })
                 });
                 systemNoteText = `🤖 [MACRO: ${macro.title}] Agregó etiquetas: ${newTags.join(', ')}`;
                 break;
@@ -810,13 +612,12 @@ export async function executeMacro(conversationId: string, macroId: string) {
             case 'ESCALATE': {
                 const targetUserId = payload.assignToId;
                 if (targetUserId) {
-                    // Pre-validate that the agent exists to avoid foreign key failures
-                    const targetUser = await db.user.findUnique({ where: { id: targetUserId } });
-                    
-                    if (targetUser) {
-                        await db.conversation.update({
-                            where: { id: conversation.id },
-                            data: { assignedTo: targetUserId }
+                    const userRes = await fetch(`${GATEWAY_URL}/api/admin/users/${targetUserId}`); // or public equivalent
+                    if (userRes.ok) {
+                        await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ assignedTo: targetUserId })
                         });
                         systemNoteText = `🤖 [MACRO: ${macro.title}] Derivó la conversación al agente ${targetUserId}`;
                     } else {
@@ -828,63 +629,60 @@ export async function executeMacro(conversationId: string, macroId: string) {
                 break;
             }
             case 'SEND_PAYMENT_LINK': {
-                const leadInvoice = await db.invoice.findFirst({
-                    where: { leadId: conversation.leadId || undefined },
-                    orderBy: { createdAt: 'desc' }
-                });
-                
+                const invoicesRes = await fetch(`${GATEWAY_URL}/api/invoices?companyId=${conversation.companyId}`);
+                const invoicesData = await invoicesRes.json();
+                const leadInvoice = (invoicesData.invoices || []).find((inv: any) => inv.leadId === conversation.leadId);
+
                 let payUrl = '';
                 if (leadInvoice) {
                     payUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://legacymark.com'}/es/invoice/${leadInvoice.token}`;
                 } else {
                     payUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://legacymark.com'}/checkout`;
                 }
-                
-                messageToSend = `Por favor, realiza tu pago seguro a través de este enlace de PayU:\n${payUrl}`;
-                systemNoteText = `🤖 [MACRO: ${macro.title}] Generó y envió enlace de PayU.`;
+
+                messageToSend = `Por favor, realiza tu pago seguro a través de este enlace:\n${payUrl}`;
+                systemNoteText = `🤖 [MACRO: ${macro.title}] Generó y envió enlace de pago.`;
                 break;
             }
             case 'WEBHOOK': {
-                // Mock webhook simulation
                 systemNoteText = `🤖 [MACRO: ${macro.title}] Llamó al Webhook en ${payload.webhookUrl}`;
+                // Optional: Execute webhook via backend/node logic
                 break;
             }
             default:
                 systemNoteText = `🤖 [MACRO: ${macro.title}] Acción ejecutada.`;
         }
-        
-        // 3. Send out the message to lead if required
+
         if (messageToSend) {
-             const result = await sendMessage(conversation.id, messageToSend, session.user.id, []);
-             if (!result.success) {
-                  return { success: false, error: "Failed to send macro message" };
-             }
+            const result = await sendMessage(conversation.id, messageToSend, session.user.id, []);
+            if (!result.success) {
+                return { success: false, error: "Failed to send macro message" };
+            }
         }
 
-        // 4. Record the internal macro event if we have a systemNoteText
         if (systemNoteText && !messageToSend) {
-            await db.message.create({
-                data: {
-                    conversationId,
+            await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     content: systemNoteText,
                     direction: 'INTERNAL',
                     senderId: session.user.id,
-                    status: 'SENT'
-                }
+                    status: 'SENT',
+                    type: 'TEXT'
+                })
             });
         }
 
-        // 5. Re-open / Update Status
-        await db.conversation.update({
-            where: { id: conversationId },
-            data: {
+        await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 status: 'OPEN',
-                lastMessageAt: new Date(),
-                // Keep the preview as message or note
                 lastMessagePreview: messageToSend ? messageToSend.substring(0, 50) : systemNoteText.substring(0, 50)
-            }
+            })
         });
-        
+
         revalidatePath('/dashboard/inbox');
         return { success: true };
     } catch (error: any) {
@@ -897,13 +695,12 @@ export async function deleteMessage(messageId: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-        
-        // Ensure user is authorized to delete, here we assume any authenticated user or we could check for roles
-        
-        await db.message.delete({
-            where: { id: messageId }
+
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/messages/${messageId}`, {
+            method: 'DELETE'
         });
-        
+        if (!response.ok) return { success: false, error: "Failed to delete message" };
+
         revalidatePath(`/dashboard/inbox`);
         return { success: true };
     } catch (error: any) {
@@ -916,17 +713,12 @@ export async function deleteConversation(conversationId: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
-        
-        // Cascading delete might be configured in DB, but let's be safe and delete messages first if necessary,
-        // Prisma handles cascading auto if defined, let's assume it's defined or we do it manually safely:
-        await db.message.deleteMany({
-            where: { conversationId }
+
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+            method: 'DELETE'
         });
-        
-        await db.conversation.delete({
-            where: { id: conversationId }
-        });
-        
+        if (!response.ok) return { success: false, error: "Failed to delete conversation" };
+
         revalidatePath(`/dashboard/inbox`);
         return { success: true };
     } catch (error: any) {

@@ -1,7 +1,8 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 async function requireAuth() {
   const session = await auth();
@@ -12,29 +13,22 @@ async function requireAuth() {
 export async function getSalesForecast(period: string) {
   try {
     const user = await requireAuth();
-    const cu = await prisma.companyUser.findFirst({ where: { userId: user.id }});
-    if (!cu) throw new Error("No company linked");
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("No company linked");
+    const companyId = cuData.data.companyId;
 
-    const [year, month] = period.split("-").map(Number);
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59);
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sales/forecast?companyId=${companyId}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to fetch sales forecast");
 
-    const openDeals = await prisma.deal.findMany({
-      where: {
-        companyId: cu.companyId,
-        probability: { lt: 100, gt: 0 }
-      },
-      select: {
-        id: true, title: true, value: true, probability: true, stage: true, assignedTo: true
-      }
-    });
-
+    const openDeals = resData.data || [];
     let weightedPipeline = 0;
     let totalPipeline = 0;
 
-    openDeals.forEach(deal => {
+    openDeals.forEach((deal: any) => {
       totalPipeline += deal.value;
-      weightedPipeline += (deal.value * (deal.probability / 100));
+      weightedPipeline += (deal.value * ((deal.probability || 0) / 100));
     });
 
     return { success: true, totalPipeline, weightedPipeline, deals: openDeals };
@@ -46,40 +40,22 @@ export async function getSalesForecast(period: string) {
 export async function getLeaderboard(period: string) {
   try {
     const user = await requireAuth();
-    const cu = await prisma.companyUser.findFirst({ where: { userId: user.id }});
-    if (!cu) throw new Error("No company linked");
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${user.id}/company`);
+    const cuData = await cuRes.json();
+    if (!cuRes.ok || !cuData.data) throw new Error("No company linked");
+    const companyId = cuData.data.companyId;
 
-    const [year, month] = period.split("-").map(Number);
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0, 23, 59, 59);
+    const res = await fetch(`${GATEWAY_URL}/api/crm/sales/leaderboard?companyId=${companyId}&period=${period}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error || "Failed to fetch leaderboard");
 
-    // Sum won deals by User
-    const aggs = await prisma.deal.groupBy({
-      by: ['assignedTo'],
-      where: {
-        companyId: cu.companyId,
-        probability: 100, // WON
-        updatedAt: { gte: start, lte: end }
-      },
-      _sum: { value: true }
-    });
-
-    // Populate user info
-    const leaderboard = await Promise.all(
-      aggs.filter(a => a.assignedTo).map(async (agg) => {
-        const u = await prisma.user.findUnique({ where: { id: agg.assignedTo! }, select: { id: true, name: true, image: true, firstName: true, lastName: true } });
-        return {
-          user: u,
-          totalSold: agg._sum.value || 0
-        };
-      })
-    );
+    const leaderboard = resData.data || [];
 
     // Sort descending by total sold
-    leaderboard.sort((a, b) => b.totalSold - a.totalSold);
+    leaderboard.sort((a: any, b: any) => b.totalSold - a.totalSold);
 
     // Give badges
-    const ranked = leaderboard.map((item, index) => {
+    const ranked = leaderboard.map((item: any, index: number) => {
       let badge = null;
       if (index === 0) badge = "🥇 Top Closer";
       else if (item.totalSold > 100000) badge = "💎 Rainmaker";
@@ -93,4 +69,3 @@ export async function getLeaderboard(period: string) {
     return { success: false, error: error.message };
   }
 }
-

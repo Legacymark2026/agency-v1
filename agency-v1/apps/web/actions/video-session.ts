@@ -1,12 +1,19 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaDb } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+  if (!res.ok) { const err = await res.json().catch(() => ({ error: res.statusText })); throw new Error(err.error || `Gateway error ${res.status}`); }
+  return res.json();
+}
 
 async function getCompanyId(): Promise<string | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const cu = await prisma.companyUser.findFirst({
+  const cu = await prismaDb.companyUser.findFirst({
     where: { userId: session.user.id },
     select: { companyId: true },
   });
@@ -23,24 +30,25 @@ export async function createVideoAISession(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const project = await prisma.videoEditorProject.findFirst({
-    where: { id: projectId, companyId },
-  });
-
+  const project = await gw(`/api/video/projects/${projectId}?companyId=${companyId}`);
   if (!project) throw new Error('Project not found');
 
-  const aiSession = await prisma.videoAISession.create({
-    data: {
+  const aiSession = await gw('/api/video/sessions', {
+    method: 'POST',
+    body: JSON.stringify({
       companyId,
       projectId,
       prompt,
       status: 'ACTIVE',
-    },
+    })
   });
 
-  await prisma.videoEditorProject.update({
-    where: { id: projectId },
-    data: { activeSessionId: aiSession.id },
+  await gw(`/api/video/projects/${projectId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      companyId,
+      activeSessionId: aiSession.id
+    })
   });
 
   return { sessionId: aiSession.id };
@@ -56,24 +64,19 @@ export async function addAIMessage(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const aiSession = await prisma.videoAISession.findFirst({
-    where: { id: sessionId, companyId },
-  });
-
+  const aiSession = await gw(`/api/video/sessions/${sessionId}`);
   if (!aiSession) throw new Error('Session not found');
   if (aiSession.status !== 'ACTIVE') throw new Error('Session is not active');
 
-  const message = await prisma.videoAIMessage.create({
-    data: {
-      sessionId,
+  return await gw(`/api/video/sessions/${sessionId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({
       role,
       content,
       toolCalls,
-      toolResults,
-    },
+      toolResults
+    })
   });
-
-  return { messageId: message.id };
 }
 
 export async function getAISessionMessages(
@@ -83,25 +86,11 @@ export async function getAISessionMessages(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  const aiSession = await prisma.videoAISession.findFirst({
-    where: { id: sessionId, companyId },
-  });
-
-  if (!aiSession) return [];
-
-  return prisma.videoAIMessage.findMany({
-    where: { sessionId },
-    orderBy: { createdAt: 'asc' },
-    take: limit,
-    select: {
-      id: true,
-      role: true,
-      content: true,
-      toolCalls: true,
-      toolResults: true,
-      createdAt: true,
-    },
-  });
+  try {
+    return await gw(`/api/video/sessions/${sessionId}/messages?limit=${limit}`);
+  } catch {
+    return [];
+  }
 }
 
 export async function getActiveAISession(
@@ -110,29 +99,28 @@ export async function getActiveAISession(
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
-  return prisma.videoAISession.findFirst({
-    where: {
-      projectId,
-      companyId,
-      status: 'ACTIVE',
-    },
-    include: {
-      messages: {
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      },
-    },
-  });
+  try {
+    const res = await gw(`/api/video/sessions?projectId=${projectId}&companyId=${companyId}`);
+    const active = res.sessions?.find((s: any) => s.status === 'ACTIVE');
+    if (!active) return null;
+    return await gw(`/api/video/sessions/${active.id}`);
+  } catch {
+    return null;
+  }
 }
 
 export async function completeAISession(sessionId: string): Promise<void> {
   const companyId = await getCompanyId();
   if (!companyId) return;
 
-  await prisma.videoAISession.updateMany({
-    where: { id: sessionId, companyId },
-    data: { status: 'COMPLETED' },
-  });
+  try {
+    await gw(`/api/video/sessions/${sessionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'COMPLETED' })
+    });
+  } catch (err) {
+    console.error('Error completing AI session:', err);
+  }
 }
 
 export async function getEditHistory(
@@ -142,67 +130,38 @@ export async function getEditHistory(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  const aiSession = await prisma.videoAISession.findFirst({
-    where: { id: sessionId, companyId },
-  });
-
-  if (!aiSession) return [];
-
-  return prisma.videoEditHistory.findMany({
-    where: { sessionId },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
+  try {
+    const res = await gw(`/api/video/sessions/${sessionId}/edit-history`);
+    return res.history || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function undoLastEdit(sessionId: string): Promise<any | null> {
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
-  const aiSession = await prisma.videoAISession.findFirst({
-    where: { id: sessionId, companyId },
-  });
-
-  if (!aiSession) return null;
-
-  const lastEdit = await prisma.videoEditHistory.findFirst({
-    where: { sessionId, undone: false },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  if (!lastEdit) return null;
-
-  await prisma.videoEditHistory.update({
-    where: { id: lastEdit.id },
-    data: { undone: true },
-  });
-
-  return (lastEdit.beforeState as any) || null;
+  try {
+    return await gw(`/api/video/sessions/${sessionId}/undo`, {
+      method: 'POST'
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function redoLastEdit(sessionId: string): Promise<any | null> {
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
-  const aiSession = await prisma.videoAISession.findFirst({
-    where: { id: sessionId, companyId },
-  });
-
-  if (!aiSession) return null;
-
-  const lastUndone = await prisma.videoEditHistory.findFirst({
-    where: { sessionId, undone: true },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  if (!lastUndone) return null;
-
-  await prisma.videoEditHistory.update({
-    where: { id: lastUndone.id },
-    data: { undone: false },
-  });
-
-  return (lastUndone.afterState as any) || null;
+  try {
+    return await gw(`/api/video/sessions/${sessionId}/redo`, {
+      method: 'POST'
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function logEditAction(
@@ -215,21 +174,13 @@ export async function logEditAction(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const aiSession = await prisma.videoAISession.findFirst({
-    where: { id: sessionId, companyId },
-  });
-
-  if (!aiSession) throw new Error('Session not found');
-
-  const history = await prisma.videoEditHistory.create({
-    data: {
-      sessionId,
+  return await gw(`/api/video/sessions/${sessionId}/history`, {
+    method: 'POST',
+    body: JSON.stringify({
       action,
       description,
       beforeState,
-      afterState,
-    },
+      afterState
+    })
   });
-
-  return { historyId: history.id };
 }

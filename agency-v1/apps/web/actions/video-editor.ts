@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaDb } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { 
   VideoEditorModule, 
@@ -13,6 +13,13 @@ import {
   SoundLayer as BaseSoundLayer,
   RenderOutput as BaseRenderOutput
 } from '@agency/video-editor';
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+  if (!res.ok) { const err = await res.json().catch(() => ({ error: res.statusText })); throw new Error(err.error || `Gateway error ${res.status}`); }
+  return res.json();
+}
 
 // ============================================
 // EXTENDED TYPES FOR UI COMPATIBILITY
@@ -101,7 +108,7 @@ async function getCompanyId(): Promise<string | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
   
-  const companyUser = await prisma.companyUser.findFirst({
+  const companyUser = await prismaDb.companyUser.findFirst({
     where: { userId: session.user.id },
     select: { companyId: true }
   });
@@ -120,21 +127,20 @@ export async function createVideoProject(data: Partial<VideoProject>): Promise<V
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const project = await prisma.videoEditorProject.create({
-    data: {
+  return await gw('/api/video/projects', {
+    method: 'POST',
+    body: JSON.stringify({
       companyId,
-      name: data.name || 'Untitled',
-      config: (data.config || {}) as any,
-      clips: (data.clips || []) as any,
-      audioTracks: (data.audioTracks || []) as any,
-      textOverlays: (data.textOverlays || []) as any,
-      colorGrades: (data.colorGrades || []) as any,
-      speedRamps: (data.speedRamps || []) as any,
-      soundLayers: (data.soundLayers || []) as any,
-    }
+      name: data.name,
+      config: data.config,
+      clips: data.clips,
+      audioTracks: data.audioTracks,
+      textOverlays: data.textOverlays,
+      colorGrades: data.colorGrades,
+      speedRamps: data.speedRamps,
+      soundLayers: data.soundLayers,
+    })
   });
-
-  return project as any;
 }
 
 export async function getVideoProjects(): Promise<VideoProject[]> {
@@ -144,12 +150,8 @@ export async function getVideoProjects(): Promise<VideoProject[]> {
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  const projects = await prisma.videoEditorProject.findMany({
-    where: { companyId },
-    orderBy: { updatedAt: 'desc' }
-  });
-
-  return projects as any;
+  const res = await gw(`/api/video/projects?companyId=${companyId}`);
+  return res.projects || [];
 }
 
 export async function getVideoProject(id: string): Promise<VideoProject | null> {
@@ -159,11 +161,11 @@ export async function getVideoProject(id: string): Promise<VideoProject | null> 
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
-  const project = await prisma.videoEditorProject.findFirst({
-    where: { id, companyId }
-  });
-
-  return project as any;
+  try {
+    return await gw(`/api/video/projects/${id}?companyId=${companyId}`);
+  } catch {
+    return null;
+  }
 }
 
 export async function updateVideoProject(id: string, data: Partial<VideoProject>): Promise<VideoProject> {
@@ -173,15 +175,13 @@ export async function updateVideoProject(id: string, data: Partial<VideoProject>
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const project = await prisma.videoEditorProject.update({
-    where: { id, companyId },
-    data: {
+  return await gw(`/api/video/projects/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
       ...data,
-      updatedAt: new Date()
-    } as any
+      companyId
+    })
   });
-
-  return project as any;
 }
 
 export async function deleteVideoProject(id: string): Promise<void> {
@@ -191,8 +191,8 @@ export async function deleteVideoProject(id: string): Promise<void> {
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  await prisma.videoEditorProject.delete({
-    where: { id, companyId }
+  await gw(`/api/video/projects/${id}?companyId=${companyId}`, {
+    method: 'DELETE'
   });
 }
 
@@ -269,9 +269,7 @@ export async function executeAIAgentWorkflow(projectId: string): Promise<any> {
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const project = await prisma.videoEditorProject.findFirst({
-    where: { id: projectId, companyId }
-  });
+  const project = await getVideoProject(projectId);
 
   if (!project) throw new Error('Project not found');
 
@@ -279,7 +277,7 @@ export async function executeAIAgentWorkflow(projectId: string): Promise<any> {
   if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
 
   // Initialize DB for the agent
-  initDatabase(prisma as any);
+  initDatabase(prismaDb as any);
   
   const coordinator = createCoordinator(companyId, apiKey);
   const config = project.config as unknown as ProjectConfig;
@@ -375,9 +373,7 @@ export async function runSynthesisAudit(projectId: string): Promise<any> {
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const project = await prisma.videoEditorProject.findFirst({
-    where: { id: projectId, companyId }
-  });
+  const project = await getVideoProject(projectId);
 
   if (!project) throw new Error('Project not found');
 
@@ -452,9 +448,7 @@ export async function approveSynthesisProposal(projectId: string, audit: any, pr
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const project = await prisma.videoEditorProject.findFirst({
-    where: { id: projectId, companyId }
-  });
+  const project = await getVideoProject(projectId);
 
   if (!project) throw new Error('Project not found');
 

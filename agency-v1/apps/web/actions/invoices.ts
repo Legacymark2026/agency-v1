@@ -1,6 +1,5 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { UserRole } from "@/types/auth";
 import { getStripeSession } from "@/lib/stripe";
@@ -35,6 +34,8 @@ export type InvoiceInput = {
     }[];
 };
 
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
+
 export async function createInvoice(data: InvoiceInput) {
     try {
         const session = await auth();
@@ -45,39 +46,17 @@ export async function createInvoice(data: InvoiceInput) {
             return { success: false, error: "Forbidden" };
         }
 
-        const invoice = await prisma.invoice.create({
-            data: {
-                clientName: data.clientName,
-                clientNit: data.clientNit,
-                clientAddress: data.clientAddress,
-                clientCity: data.clientCity,
-                clientPhone: data.clientPhone,
-                subtotalAmount: data.subtotalAmount,
-                taxAmount: data.taxAmount,
-                discountAmount: data.discountAmount,
-                totalAmount: data.totalAmount,
-                advanceAmount: data.advanceAmount,
-                finalAmount: data.finalAmount,
-                dueDate: data.dueDate,
-                notes: data.notes,
-                terms: data.terms,
-                leadId: data.leadId,
-                dealId: data.dealId,
+        const response = await fetch(`${GATEWAY_URL}/api/invoices`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...data,
                 companyId: session.user.companyId,
-                isElectronic: data.isElectronic ?? true,
-                status: "DRAFT_AWAITING_PAYMENT",
-                items: {
-                    create: data.items.map(item => ({
-                        title: item.title,
-                        description: item.description,
-                        quantity: item.quantity,
-                        unitPrice: item.unitPrice,
-                        taxRate: item.taxRate,
-                        totalAmount: item.totalAmount
-                    }))
-                }
-            }
+            })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to create invoice" };
+        const invoice = resData.invoice;
 
         // Generar Stripe Session para el Final Amount (es lo que se va a cobrar)
         // Usamos el token generado para la URL de retorno
@@ -96,9 +75,10 @@ export async function createInvoice(data: InvoiceInput) {
             );
 
             if (stripeSession && stripeSession.url) {
-                await prisma.invoice.update({
-                    where: { id: invoice.id },
-                    data: { paymentUrl: stripeSession.url, stripeInvoiceId: stripeSession.id }
+                await fetch(`${GATEWAY_URL}/api/invoices/${invoice.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentUrl: stripeSession.url, stripeInvoiceId: stripeSession.id })
                 });
             }
         } catch (stripeError) {
@@ -130,11 +110,14 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const invoice = await prisma.invoice.update({
-            where: { id: invoiceId, companyId: session.user.companyId },
-            data: { status },
-            select: { id: true, clientName: true, totalAmount: true }
+        const response = await fetch(`${GATEWAY_URL}/api/invoices/${invoiceId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to update status" };
+        const invoice = resData.invoice;
 
         // ─── Enterprise Notification — Invoice Status ─────────────────────────
         if (status === "PAID") {
@@ -159,9 +142,11 @@ export async function deleteInvoice(invoiceId: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        await prisma.invoice.delete({
-            where: { id: invoiceId, companyId: session.user.companyId }
+        const response = await fetch(`${GATEWAY_URL}/api/invoices/${invoiceId}`, {
+            method: 'DELETE'
         });
+        const resData = await response.json();
+        if (!response.ok) return { success: false, error: resData.error || "Failed to delete" };
 
         revalidatePath("/dashboard/admin/invoices");
         return { success: true };
@@ -180,11 +165,14 @@ export async function sendInvoiceEmail(invoiceId: string) {
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Actualizamos estado si estaba en draft
-        const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId }});
+        const invoicesRes = await fetch(`${GATEWAY_URL}/api/invoices?companyId=${session.user.companyId}`);
+        const invoicesData = await invoicesRes.json();
+        const invoice = (invoicesData.invoices || []).find((inv: any) => inv.id === invoiceId);
         if (invoice && invoice.status === 'DRAFT_AWAITING_PAYMENT') {
-            await prisma.invoice.update({
-                where: { id: invoiceId },
-                data: { status: 'SENT' }
+            await fetch(`${GATEWAY_URL}/api/invoices/${invoiceId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'SENT' })
             });
         }
 
@@ -200,40 +188,13 @@ export async function getInvoiceStats() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: null };
 
-        const invoices = await prisma.invoice.findMany({
-            where: { companyId: session.user.companyId },
-            select: { totalAmount: true, status: true, dueDate: true }
-        });
-
-        const now = new Date();
-        let billed = 0;
-        let outstanding = 0;
-        let overdue = 0;
-        let paidCount = 0;
-        let totalCount = invoices.length;
-
-        invoices.forEach(inv => {
-            if (inv.status === 'PAID') {
-                billed += inv.totalAmount;
-                paidCount++;
-            } else if (inv.status !== 'CANCELLED') {
-                outstanding += inv.totalAmount;
-                if (inv.dueDate && new Date(inv.dueDate) < now) {
-                    overdue += inv.totalAmount;
-                }
-            }
-        });
-
-        const successRate = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+        const response = await fetch(`${GATEWAY_URL}/api/invoices/stats?companyId=${session.user.companyId}`);
+        const resData = await response.json();
+        if (!response.ok) return { success: false, data: null };
 
         return {
             success: true,
-            data: {
-                billed,
-                outstanding,
-                overdue,
-                successRate
-            }
+            data: resData.data
         };
     } catch (error) {
         return { success: false, data: null };

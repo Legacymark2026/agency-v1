@@ -17,13 +17,13 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     const currentUser = session?.user;
 
     const metrics = {
-        unassigned: conversations?.filter(c => !c.assignedTo).length || 0,
-        mine: conversations?.filter(c => c.assignedTo === currentUser?.id).length || 0,
-        pending: conversations?.filter(c => c.status === 'OPEN').length || 0,
-        resolved: conversations?.filter(c => c.status === 'CLOSED').length || 0,
-        vip: conversations?.filter(c => (c.tags as string[])?.includes('Soporte VIP')).length || 0,
-        sales: conversations?.filter(c => (c.tags as string[])?.includes('Ventas')).length || 0,
-        questions: conversations?.filter(c => (c.tags as string[])?.includes('Dudas')).length || 0,
+        unassigned: conversations?.filter((c: any) => !c.assignedTo).length || 0,
+        mine: conversations?.filter((c: any) => c.assignedTo === currentUser?.id).length || 0,
+        pending: conversations?.filter((c: any) => c.status === 'OPEN').length || 0,
+        resolved: conversations?.filter((c: any) => c.status === 'CLOSED').length || 0,
+        vip: conversations?.filter((c: any) => (c.tags as string[])?.includes('Soporte VIP')).length || 0,
+        sales: conversations?.filter((c: any) => (c.tags as string[])?.includes('Ventas')).length || 0,
+        questions: conversations?.filter((c: any) => (c.tags as string[])?.includes('Dudas')).length || 0,
     };
 
     return (

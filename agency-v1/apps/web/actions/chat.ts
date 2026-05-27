@@ -1,8 +1,10 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { createLocalNotification } from "./notifications";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 const safeRevalidate = (path: string) => {
     try {
@@ -13,9 +15,6 @@ const safeRevalidate = (path: string) => {
 };
 
 // Initialize Chat (Start Conversation)
-// 1. Find or Create Lead based on email
-// 2. Create Conversation (channel: WEB_CHAT) linked to Lead
-// 3. Create Initial Message
 export async function initializeChat(data: {
     name: string;
     email: string;
@@ -26,125 +25,156 @@ export async function initializeChat(data: {
     const { name, email, message, visitorId, companyId: providedCompanyId } = data;
 
     try {
-        // 0. Get Company
+        // 0. Get CompanyId or default
         let companyId = providedCompanyId;
         if (!companyId) {
-            const company = await prisma.company.findFirst();
-            if (!company) throw new Error("No default company found");
-            companyId = company.id;
+            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`); // default check if any public endpoint exists
+            if (companyRes.ok) {
+                const compData = await companyRes.json();
+                if (compData.companies && compData.companies.length > 0) {
+                    companyId = compData.companies[0].id;
+                }
+            }
         }
 
-        // 1. Find existing conversation by platformId/channel (Unique identifier for the session)
-        let conversation = await prisma.conversation.findFirst({
-            where: {
-                platformId: visitorId,
-                channel: "WEB_CHAT",
-            },
-            include: { lead: true }
-        });
+        // 1. Find existing conversation by platformId/channel
+        let conversation;
+        if (companyId) {
+            const searchConvoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations?companyId=${companyId}&platformId=${visitorId}&channel=WEB_CHAT`);
+            if (searchConvoRes.ok) {
+                const searchConvoData = await searchConvoRes.json();
+                if (searchConvoData.conversations && searchConvoData.conversations.length > 0) {
+                    conversation = searchConvoData.conversations[0];
+                }
+            }
+        }
 
         let lead;
         if (conversation?.lead) {
-            // Re-use lead linked to this session
             lead = conversation.lead;
-            
-            // Update name/email if provided and lead is missing them
             if ((!lead.name && name) || (!lead.email && email)) {
-                lead = await prisma.lead.update({
-                    where: { id: lead.id },
-                    data: { 
+                // Update lead details in CRM service
+                const updateLeadRes = await fetch(`${GATEWAY_URL}/api/leads/${lead.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         name: lead.name || name,
                         email: lead.email || email
-                    }
+                    })
                 });
+                if (updateLeadRes.ok) {
+                    const leadData = await updateLeadRes.json();
+                    lead = leadData.lead;
+                }
             }
         } else {
-            // 2. No conversation found or not linked to a lead. Try to find lead by email.
-            lead = await prisma.lead.findFirst({
-                where: { email: email },
-            });
+            // Try to find lead by email in CRM service
+            if (companyId) {
+                const leadSearchRes = await fetch(`${GATEWAY_URL}/api/leads?companyId=${companyId}&search=${email}`);
+                if (leadSearchRes.ok) {
+                    const searchData = await leadSearchRes.json();
+                    if (searchData.leads && searchData.leads.length > 0) {
+                        lead = searchData.leads[0];
+                    }
+                }
+            }
 
-            if (!lead) {
-                // 3. Create new lead
-                lead = await prisma.lead.create({
-                    data: {
+            if (!lead && companyId) {
+                // Create new lead in CRM service
+                const createLeadRes = await fetch(`${GATEWAY_URL}/api/leads`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         name,
                         email,
                         source: "WEB_CHAT",
                         status: "NEW",
                         companyId,
-                    }
+                    })
                 });
+                if (createLeadRes.ok) {
+                    const leadData = await createLeadRes.json();
+                    lead = leadData.lead;
+                }
             }
         }
 
+        if (!lead) throw new Error("Could not initialize lead for chat");
+        if (!companyId) companyId = lead.companyId;
+
         // 4. Create or Update Conversation
         if (!conversation) {
-            conversation = await prisma.conversation.create({
-                data: {
-                    channel: "WEB_CHAT",
-                    platformId: visitorId,
-                    leadId: lead.id,
-                    status: "OPEN",
-                    unreadCount: 1,
-                    companyId,
-                },
-                include: { lead: true },
+            const createConvoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId, leadId: lead.id, channel: "WEB_CHAT" })
             });
+            const convoData = await createConvoRes.json();
+            if (!createConvoRes.ok) throw new Error(convoData.error || "Failed to create conversation");
+            conversation = convoData.data;
+
+            // Patch platformId and unreadCount
+            const patchConvoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ platformId: visitorId, unreadCount: 1 })
+            });
+            if (patchConvoRes.ok) {
+                const patchData = await patchConvoRes.json();
+                conversation = patchData.data;
+            }
 
             // Notify admins only for COMPLETELY NEW conversations
             try {
-                const admins = await prisma.user.findMany({
-                    where: {
-                        companies: {
-                            some: {
-                                companyId,
-                                roleName: { in: ['super_admin', 'admin', 'content_manager'] }
-                            }
-                        }
-                    },
-                    select: { id: true }
-                });
-
-                const notificationPromises = admins.map(admin => 
-                    createLocalNotification({
-                        companyId,
-                        userId: admin.id,
-                        type: 'NEW_MESSAGE',
-                        title: `Nuevo chat de ${name || lead.name || email}`,
-                        message: message.substring(0, 100),
-                        link: `/dashboard/inbox?conversation=${conversation!.id}`
-                    })
-                );
-
-                await Promise.all(notificationPromises);
+                // Fetch admins from admin-service or public list
+                const adminsRes = await fetch(`${GATEWAY_URL}/api/admin/users?companyId=${companyId}&roles=admin,super_admin,content_manager`);
+                if (adminsRes.ok) {
+                    const adminsData = await adminsRes.json();
+                    const admins = adminsData.users || [];
+                    const notificationPromises = admins.map((admin: any) =>
+                        createLocalNotification({
+                            companyId: companyId!,
+                            userId: admin.id,
+                            type: 'NEW_MESSAGE',
+                            title: `Nuevo chat de ${name || lead.name || email}`,
+                            message: message.substring(0, 100),
+                            link: `/dashboard/inbox?conversation=${conversation!.id}`
+                        })
+                    );
+                    await Promise.all(notificationPromises);
+                }
             } catch (notifError) {
                 console.error("[chat] Failed to create notification:", notifError);
             }
         } else {
-            // Re-open and link to lead if needed
-            conversation = await prisma.conversation.update({
-                where: { id: conversation.id },
-                data: {
+            // Re-open and link to lead
+            const patchConvoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     status: "OPEN",
                     leadId: lead.id,
-                    unreadCount: { increment: 1 }
-                },
-                include: { lead: true },
+                    unreadCount: (conversation.unreadCount || 0) + 1
+                })
             });
+            if (patchConvoRes.ok) {
+                const patchData = await patchConvoRes.json();
+                conversation = patchData.data;
+            }
         }
 
         if (!conversation) throw new Error("Conversation should exist after if/else");
 
         // 5. Create the initial message
-        await prisma.message.create({
-            data: {
-                conversationId: conversation.id,
+        await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 content: message,
                 direction: "INBOUND",
                 status: "SENT",
                 type: "TEXT",
-            },
+            })
         });
 
         safeRevalidate("/dashboard/inbox");
@@ -157,44 +187,36 @@ export async function initializeChat(data: {
         console.error("Error initializing chat:", error);
         return { success: false, error: "Failed to start chat" };
     }
-
 }
 
 // Send Message (Ongoing)
 export async function sendMessage(conversationId: string, content: string, senderId?: string, mediaUrl?: string, mediaType?: string) {
     try {
-        // Verify conversation exists
-        const conversation = await prisma.conversation.findUnique({
-            where: { id: conversationId }
-        });
-
-        if (!conversation) {
+        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        if (!convoRes.ok) {
             console.error("[sendMessage] Conversation not found:", conversationId);
             return { success: false, error: "Conversation not found" };
         }
 
         const direction = senderId ? "OUTBOUND" : "INBOUND";
 
-        await prisma.message.create({
-            data: {
-                conversationId,
+        const msgRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
                 content,
                 direction,
                 senderId,
                 status: "SENT",
                 mediaUrl,
                 mediaType,
-            },
+                type: content ? "TEXT" : "MEDIA"
+            })
         });
 
-        await prisma.conversation.update({
-            where: { id: conversationId },
-            data: {
-                lastMessageAt: new Date(),
-                unreadCount: { increment: direction === "INBOUND" ? 1 : 0 },
-                lastMessagePreview: content ? content.substring(0, 50) : (mediaType === 'AUDIO' ? '🎤 Nota de voz' : '📎 Archivo')
-            }
-        });
+        if (!msgRes.ok) {
+            return { success: false, error: "Failed to send message" };
+        }
 
         safeRevalidate(`/dashboard/inbox/${conversationId}`);
         return { success: true };
@@ -207,24 +229,19 @@ export async function sendMessage(conversationId: string, content: string, sende
 // Get Messages (Polling)
 export async function getMessages(conversationId: string) {
     try {
-        const messages = await prisma.message.findMany({
-            where: { conversationId },
-            orderBy: { createdAt: 'asc' },
-            select: {
-                id: true,
-                content: true,
-                direction: true,
-                createdAt: true,
-                senderId: true,
-                status: true,
-                mediaUrl: true,
-                mediaType: true,
-            }
-        });
-        const messagesWithAttachments = messages.map(m => ({
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
+        const resData = await response.json();
+
+        if (!response.ok) {
+            return { success: false, data: [] };
+        }
+
+        const messages = resData.messages || [];
+        const messagesWithAttachments = messages.map((m: any) => ({
             ...m,
             attachments: m.mediaUrl ? [{ url: m.mediaUrl, type: m.mediaType || 'DOCUMENT', name: 'Archivo' }] : []
         }));
+
         return { success: true, data: messagesWithAttachments };
     } catch (error) {
         console.error("Error getting messages:", error);
@@ -235,10 +252,8 @@ export async function getMessages(conversationId: string) {
 // Verify Conversation Exists
 export async function verifyConversation(conversationId: string): Promise<boolean> {
     try {
-        const conversation = await prisma.conversation.findUnique({
-            where: { id: conversationId }
-        });
-        return !!conversation;
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        return response.ok;
     } catch {
         return false;
     }

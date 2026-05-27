@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Bot, User, Lock, Edit3, MousePointer2, Wifi, WifiOff } from 'lucide-react';
+import { Bot, User, Lock, Edit3, MousePointer2, Wifi, WifiOff, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorStore, type PresenceInfo } from '@/lib/stores/editor-store';
 

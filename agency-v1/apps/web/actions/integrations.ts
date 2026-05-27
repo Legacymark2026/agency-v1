@@ -1,97 +1,70 @@
 'use server';
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { revalidatePath, unstable_noStore as noStore } from "next/cache";
+
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
 export async function getConnectedIntegrations() {
     noStore(); // Disable caching for this server action
     const session = await auth();
     if (!session?.user) return [];
 
-    const accounts = await prisma.account.findMany({
-        where: { userId: session.user.id },
-        select: {
-            provider: true,
-            providerAccountId: true,
-            // createdAt: true, // Field does not exist on Account model
+    try {
+        const response = await fetch(`${API_GATEWAY_URL}/api/integrations/accounts?userId=${session.user.id}`, {
+            cache: 'no-store'
+        });
+        if (!response.ok) {
+            console.error("[getConnectedIntegrations] Failed to fetch accounts from gateway:", response.statusText);
+            return [];
         }
-    });
+        
+        const { accounts } = await response.json();
 
-    // Map to a cleaner structure
-    const providers = [
-        {
-            id: 'facebook',
-            name: 'Meta (Facebook)',
-            isConfigured: !!process.env.FACEBOOK_CLIENT_ID && !!process.env.FACEBOOK_CLIENT_SECRET
-        }
-    ];
+        // Map to a cleaner structure
+        const providers = [
+            {
+                id: 'facebook',
+                name: 'Meta (Facebook)',
+                isConfigured: !!process.env.FACEBOOK_CLIENT_ID && !!process.env.FACEBOOK_CLIENT_SECRET
+            }
+        ];
 
-    return providers.map(p => {
-        const account = accounts.find(a => a.provider === p.id);
-        return {
-            provider: p.id,
-            name: p.name,
-            connected: !!account,
-            accountId: account?.providerAccountId,
-            isConfigured: p.isConfigured
-        };
-    });
+        return providers.map(p => {
+            const account = accounts.find((a: any) => a.provider === p.id);
+            return {
+                provider: p.id,
+                name: p.name,
+                connected: !!account,
+                accountId: account?.providerAccountId,
+                isConfigured: p.isConfigured
+            };
+        });
+    } catch (e) {
+        console.error("[getConnectedIntegrations] Error:", e);
+        return [];
+    }
 }
 
 export async function disconnectIntegration(provider: string) {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    const PROVIDER_ALIASES: Record<string, string[]> = {
-        'facebook': ['facebook', 'facebook-page', 'meta-app', 'instagram-page'],
-        'facebook-pixel': ['facebook-pixel', 'meta-pixel'],
-        'tiktok-pixel': ['tiktok-pixel', 'tiktok-ads'],
-        'tiktok-messages': ['tiktok-messages'],
-        'linkedin-insight': ['linkedin-insight', 'linkedin-ads'],
-        'linkedin-webhook': ['linkedin-webhook'],
-        'whatsapp': ['whatsapp'],
-        'google-ads': ['google-ads'],
-        'google-analytics': ['google-analytics'],
-        'google-tag-manager': ['google-tag-manager'],
-        'google-search-console': ['google-search-console'],
-        'hotjar': ['hotjar'],
-    };
-
-    const providersToDelete = PROVIDER_ALIASES[provider] || [provider];
-
-    // Delete from Account table (NextAuth)
-    await prisma.account.deleteMany({
-        where: {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/accounts`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
             userId: session.user.id,
-            provider: { in: providersToDelete }
-        }
+            provider,
+            companyId: session.user.companyId
+        })
     });
 
-    // Also delete from IntegrationConfig (stores the accessToken)
-    const activeCompanyId = session.user.companyId;
-    
-    if (activeCompanyId) {
-        await prisma.integrationConfig.deleteMany({
-            where: {
-                companyId: activeCompanyId,
-                provider: { in: providersToDelete }
-            }
-        });
-    } else {
-        const companyUser = await prisma.companyUser.findFirst({
-            where: { userId: session.user.id },
-            select: { companyId: true }
-        });
-
-        if (companyUser) {
-            await prisma.integrationConfig.deleteMany({
-                where: {
-                    companyId: companyUser.companyId,
-                    provider: { in: providersToDelete }
-                }
-            });
-        }
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to disconnect integration");
     }
 
     revalidatePath('/dashboard/settings/integrations');
@@ -102,16 +75,22 @@ export async function saveIntegration(provider: string, config: any) {
     const session = await auth();
     if (!session?.user?.companyId) throw new Error("Unauthorized");
     
-    await prisma.integrationConfig.upsert({
-        where: { companyId_provider: { companyId: session.user.companyId, provider } },
-        update: { config, isEnabled: true },
-        create: {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
             companyId: session.user.companyId,
             provider,
-            config,
-            isEnabled: true
-        }
+            config
+        })
     });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save integration");
+    }
 
     revalidatePath('/dashboard/settings/integrations');
     return { success: true };
@@ -126,24 +105,24 @@ export async function connectWhatsApp(data: { wabaId: string; phoneNumberId: str
     if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
     try {
-        await prisma.whatsAppIntegration.upsert({
-            where: { phoneNumberId: data.phoneNumberId },
-            update: {
-                companyId: session.user.companyId,
-                wabaId: data.wabaId,
-                phoneNumber: data.phoneNumber,
-                accessToken: data.accessToken,
-                status: 'active'
+        const response = await fetch(`${API_GATEWAY_URL}/api/integrations/whatsapp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             },
-            create: {
+            body: JSON.stringify({
                 companyId: session.user.companyId,
                 wabaId: data.wabaId,
                 phoneNumberId: data.phoneNumberId,
                 phoneNumber: data.phoneNumber,
-                accessToken: data.accessToken,
-                status: 'active'
-            }
+                accessToken: data.accessToken
+            })
         });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            return { success: false, error: err.error || "Failed to connect WhatsApp" };
+        }
 
         revalidatePath('/dashboard/settings/integrations');
         return { success: true };
@@ -157,9 +136,16 @@ export async function createEmailDomainVerification(domain: string) {
     if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
     try {
-        const existing = await prisma.emailDomainVerification.findUnique({ where: { domain } });
-        if (existing && existing.companyId !== session.user.companyId) {
-            return { success: false, error: "Este dominio ya está en uso por otra empresa." };
+        // Check domain existence
+        const checkResponse = await fetch(`${API_GATEWAY_URL}/api/integrations/domains/${domain}`, {
+            cache: 'no-store'
+        });
+        
+        if (checkResponse.ok) {
+            const existing = await checkResponse.json();
+            if (existing && existing.companyId !== session.user.companyId) {
+                return { success: false, error: "Este dominio ya está en uso por otra empresa." };
+            }
         }
 
         // Mocking DNS records that the user should add. 
@@ -169,16 +155,23 @@ export async function createEmailDomainVerification(domain: string) {
             { type: 'TXT', host: domain, value: 'v=spf1 include:resend.com ~all' }
         ];
 
-        await prisma.emailDomainVerification.upsert({
-            where: { domain },
-            update: { dnsRecords: mockDnsRecords, status: 'pending' },
-            create: {
+        const response = await fetch(`${API_GATEWAY_URL}/api/integrations/domains`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
                 companyId: session.user.companyId,
                 domain,
                 dnsRecords: mockDnsRecords,
                 status: 'pending'
-            }
+            })
         });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            return { success: false, error: err.error || "Failed to create email domain verification" };
+        }
 
         revalidatePath('/dashboard/settings/integrations');
         return { success: true, records: mockDnsRecords };
@@ -186,3 +179,4 @@ export async function createEmailDomainVerification(domain: string) {
         return { success: false, error: e.message };
     }
 }
+

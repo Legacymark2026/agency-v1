@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Trash2,
   CheckCircle2,
+  XCircle,
   Camera,
   ChevronRight,
   Star,

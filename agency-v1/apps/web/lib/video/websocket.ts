@@ -7,6 +7,7 @@ interface WSMessage {
   jobId?: string;
   projectId?: string;
   sessionId?: string;
+  clientId?: string;
   progress?: number;
   status?: string;
   result?: any;
@@ -46,7 +47,7 @@ export function useVideoWebSocket(options: UseVideoWebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const subscribeToJob = useCallback((jobId: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

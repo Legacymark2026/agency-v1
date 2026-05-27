@@ -14,7 +14,6 @@
  */
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { 
   generateSecret, 
   generateQRCode, 
@@ -26,6 +25,23 @@ import {
 import { fail, ok, ActionResult } from "@/types/actions";
 import { revalidatePath } from "next/cache";
 
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+
+async function fetchGateway(path: string, options?: RequestInit) {
+  const response = await fetch(`${GATEWAY_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
 export async function setupMFA(): Promise<ActionResult<{ secret: string; qrCode: string }>> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -33,10 +49,7 @@ export async function setupMFA(): Promise<ActionResult<{ secret: string; qrCode:
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true, mfaEnabled: true },
-    });
+    const user = await fetchGateway(`/api/auth/users/${session.user.id}/mfa`);
 
     if (!user) return fail("Usuario no encontrado", 404);
     if (user.mfaEnabled) return fail("MFA ya está habilitado");
@@ -44,9 +57,9 @@ export async function setupMFA(): Promise<ActionResult<{ secret: string; qrCode:
     const { secret, otpauthUrl } = generateSecret(user.email!);
     const qrCode = await generateQRCode(otpauthUrl);
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { mfaSecret: secret },
+    await fetchGateway(`/api/auth/users/${session.user.id}/mfa`, {
+      method: 'PATCH',
+      body: JSON.stringify({ mfaSecret: secret }),
     });
 
     revalidatePath("/dashboard/settings");
@@ -66,10 +79,7 @@ export async function enableMFA(
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true, mfaSecret: true, mfaEnabled: true, backupCodes: true },
-    });
+    const user = await fetchGateway(`/api/auth/users/${session.user.id}/mfa`);
 
     if (!user) return fail("Usuario no encontrado", 404);
     if (user.mfaEnabled) return fail("MFA ya está habilitado");
@@ -81,12 +91,12 @@ export async function enableMFA(
     const backupCodes = generateBackupCodes(10);
     const hashedCodes = backupCodes.map(c => c.replace(/-/g, ""));
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
+    await fetchGateway(`/api/auth/users/${session.user.id}/mfa`, {
+      method: 'PATCH',
+      body: JSON.stringify({
         mfaEnabled: true,
         backupCodes: hashedCodes,
-      },
+      }),
     });
 
     revalidatePath("/dashboard/settings");
@@ -106,10 +116,7 @@ export async function disableMFA(
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { mfaEnabled: true, mfaSecret: true, backupCodes: true },
-    });
+    const user = await fetchGateway(`/api/auth/users/${session.user.id}/mfa`);
 
     if (!user || !user.mfaEnabled) return fail("MFA no está habilitado");
 
@@ -126,13 +133,13 @@ export async function disableMFA(
 
     if (!isValid) return fail("Código inválido");
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
+    await fetchGateway(`/api/auth/users/${session.user.id}/mfa`, {
+      method: 'PATCH',
+      body: JSON.stringify({
         mfaEnabled: false,
         mfaSecret: null,
         backupCodes: [],
-      },
+      }),
     });
 
     revalidatePath("/dashboard/settings");
@@ -148,19 +155,16 @@ export async function regenerateBackupCodes(): Promise<ActionResult<{ backupCode
   if (!session?.user?.id) return fail("No autenticado", 401);
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { mfaEnabled: true },
-    });
+    const user = await fetchGateway(`/api/auth/users/${session.user.id}/mfa`);
 
     if (!user?.mfaEnabled) return fail("MFA no está habilitado");
 
     const backupCodes = generateBackupCodes(10);
     const hashedCodes = backupCodes.map(c => c.replace(/-/g, ""));
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { backupCodes: hashedCodes },
+    await fetchGateway(`/api/auth/users/${session.user.id}/mfa`, {
+      method: 'PATCH',
+      body: JSON.stringify({ backupCodes: hashedCodes }),
     });
 
     return ok({ backupCodes });
@@ -175,10 +179,7 @@ export async function verifyMFAForSession(
   code: string
 ): Promise<{ valid: boolean; reason?: string }> {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { mfaEnabled: true, mfaSecret: true, backupCodes: true },
-    });
+    const user = await fetchGateway(`/api/auth/users/${userId}/mfa`);
 
     if (!user?.mfaEnabled || !user.mfaSecret) {
       return { valid: true };
@@ -215,10 +216,7 @@ export async function getMFAStatus(): Promise<ActionResult<{
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { mfaEnabled: true, mfaSecret: true, backupCodes: true },
-    });
+    const user = await fetchGateway(`/api/auth/users/${session.user.id}/mfa`);
 
     const methods: string[] = [];
     if (user?.mfaEnabled) {

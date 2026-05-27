@@ -1,10 +1,22 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
-import { PostSchema, ProjectSchema, PostFormData, ProjectFormData } from '@/lib/schemas';
+import { PostSchema, PostFormData } from '@/lib/schemas';
 import { ok, fail, type ActionResult } from '@/types/actions';
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || `Gateway error ${res.status}`);
+  }
+  return res.json();
+}
 
 // --- Post Actions ---
 
@@ -12,26 +24,26 @@ export async function getPosts() {
     const session = await auth();
     if (!session?.user) return fail('Unauthorized', 401);
 
-    const posts = await prisma.post.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: {
-            author: { select: { name: true, email: true } },
-            categories: true,
-            tags: true
-        }
-    });
-    return ok(posts);
+    try {
+        const posts = await gw('/api/cms/posts');
+        return ok(posts);
+    } catch (error) {
+        console.error('Failed to get posts:', error);
+        return fail('Failed to fetch posts', 500);
+    }
 }
 
 export async function getPost(id: string) {
     const session = await auth();
     if (!session?.user) return fail('Unauthorized', 401);
 
-    const post = await prisma.post.findUnique({
-        where: { id },
-        include: { categories: true, tags: true }
-    });
-    return ok(post);
+    try {
+        const post = await gw(`/api/cms/posts/${id}`);
+        return ok(post);
+    } catch (error) {
+        console.error('Failed to get post:', error);
+        return fail('Failed to fetch post', 500);
+    }
 }
 
 export async function createPost(data: PostFormData): Promise<ActionResult<{ id: string }>> {
@@ -53,8 +65,9 @@ export async function createPost(data: PostFormData): Promise<ActionResult<{ id:
             connect: categoryIds.map(id => ({ id }))
         } : undefined;
 
-        const post = await prisma.post.create({
-            data: {
+        const post = await gw('/api/cms/posts', {
+            method: 'POST',
+            body: JSON.stringify({
                 title: postData.title,
                 slug: postData.slug,
                 excerpt: postData.excerpt,
@@ -70,8 +83,9 @@ export async function createPost(data: PostFormData): Promise<ActionResult<{ id:
                 tags: tagConnections,
                 categories: categoryConnections,
                 faqs: faqs || [],
-            }
+            })
         });
+
         revalidatePath('/dashboard/posts');
         revalidatePath('/blog');
         revalidatePath(`/blog/${postData.slug}`, 'page');
@@ -90,15 +104,8 @@ export async function updatePost(id: string, data: PostFormData) {
     const { categoryIds, tagNames, scheduledDate, faqs, ...postData } = validated;
 
     try {
-        // Get current post to manage relationships
-        const currentPost = await prisma.post.findUnique({
-            where: { id },
-            include: { tags: true, categories: true }
-        });
-
-        if (!currentPost) {
-            return { success: false, error: "Post not found" };
-        }
+        // Fetch current post first via gateway to manage paths during revalidation
+        const currentPost = await gw(`/api/cms/posts/${id}`).catch(() => null);
 
         // Process tags
         const tagConnections = tagNames?.length ? {
@@ -114,9 +121,9 @@ export async function updatePost(id: string, data: PostFormData) {
             set: categoryIds.map(id => ({ id }))
         } : { set: [] };
 
-        await prisma.post.update({
-            where: { id },
-            data: {
+        await gw(`/api/cms/posts/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
                 title: postData.title,
                 slug: postData.slug,
                 excerpt: postData.excerpt,
@@ -131,12 +138,13 @@ export async function updatePost(id: string, data: PostFormData) {
                 tags: tagConnections,
                 categories: categoryConnections,
                 faqs: faqs || [],
-            }
+            })
         });
+
         revalidatePath('/dashboard/posts');
         revalidatePath('/blog'); // Revalidate blog listing
         revalidatePath(`/blog/${postData.slug}`, 'page'); // Revalidate specific new slug
-        if (currentPost.slug !== postData.slug) {
+        if (currentPost && currentPost.slug !== postData.slug) {
             revalidatePath(`/blog/${currentPost.slug}`, 'page'); // Invalidar el viejo también
         }
         return { success: true };
@@ -151,7 +159,9 @@ export async function deletePost(id: string): Promise<ActionResult<void>> {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
-        await prisma.post.delete({ where: { id } });
+        await gw(`/api/cms/posts/${id}`, {
+            method: 'DELETE'
+        });
         revalidatePath('/dashboard/posts');
         return ok(undefined);
     } catch (error) {
@@ -166,14 +176,13 @@ export async function getCategories() {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    return prisma.category.findMany({
-        orderBy: { name: 'asc' },
-        include: {
-            _count: {
-                select: { posts: true }
-            }
-        }
-    });
+    try {
+        const categories = await gw('/api/cms/categories');
+        return categories;
+    } catch (error) {
+        console.error("Failed to get categories:", error);
+        return [];
+    }
 }
 
 export async function createCategory(data: { name: string, slug: string }) {
@@ -181,11 +190,12 @@ export async function createCategory(data: { name: string, slug: string }) {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await prisma.category.create({
-            data: {
+        await gw('/api/cms/categories', {
+            method: 'POST',
+            body: JSON.stringify({
                 name: data.name,
                 slug: data.slug,
-            }
+            })
         });
         revalidatePath('/dashboard/posts/categories');
         return { success: true };
@@ -200,12 +210,12 @@ export async function updateCategory(id: string, data: { name: string, slug: str
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await prisma.category.update({
-            where: { id },
-            data: {
+        await gw(`/api/cms/categories/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
                 name: data.name,
                 slug: data.slug,
-            }
+            })
         });
         revalidatePath('/dashboard/posts/categories');
         return { success: true };
@@ -220,7 +230,9 @@ export async function deleteCategory(id: string): Promise<ActionResult<void>> {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
-        await prisma.category.delete({ where: { id } });
+        await gw(`/api/cms/categories/${id}`, {
+            method: 'DELETE'
+        });
         revalidatePath('/dashboard/posts/categories');
         return ok(undefined);
     } catch (error) {
@@ -233,100 +245,11 @@ export async function getTags() {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
 
-    return prisma.tag.findMany({
-        orderBy: { name: 'asc' },
-        select: { name: true }
-    });
-}
-
-// --- Project Actions ---
-
-export async function getProjects() {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
-
-    return prisma.project.findMany({
-        orderBy: { createdAt: 'desc' }
-    });
-}
-
-export async function getProject(id: string) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
-
-    return prisma.project.findUnique({ where: { id } });
-}
-
-export async function createProject(data: ProjectFormData): Promise<ActionResult<{ id: string }>> {
-    const session = await auth();
-    if (!session?.user) return fail('Unauthorized', 401);
-
-    const validated = ProjectSchema.parse(data);
-    const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
-
     try {
-        const { categoryId, ...restData } = projectData;
-        const project = await prisma.project.create({
-            data: {
-                ...restData,
-                scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-                startDate: startDate ? new Date(startDate) : null,
-                endDate: endDate ? new Date(endDate) : null,
-                ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
-            }
-        });
-        revalidatePath('/dashboard/projects');
-        revalidatePath('/portfolio');
-        revalidatePath(`/portfolio/${validated.slug}`, 'page');
-        return ok({ id: project.id });
+        const tags = await gw('/api/cms/tags');
+        return tags;
     } catch (error) {
-        console.error(error);
-        return fail('No se pudo crear el proyecto', 500);
-    }
-}
-
-export async function updateProject(id: string, data: ProjectFormData) {
-    const session = await auth();
-    if (!session?.user) throw new Error("Unauthorized");
-
-    const validated = ProjectSchema.parse(data);
-    const { tagNames, scheduledDate, startDate, endDate, ...projectData } = validated;
-
-    try {
-        const currentProject = await prisma.project.findUnique({ where: { id } });
-
-        await prisma.project.update({
-            where: { id },
-            data: {
-                ...projectData,
-                scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-                startDate: startDate ? new Date(startDate) : null,
-                endDate: endDate ? new Date(endDate) : null,
-            } as any
-        });
-        revalidatePath('/dashboard/projects');
-        revalidatePath('/portfolio');
-        revalidatePath(`/portfolio/${validated.slug}`, 'page');
-        if (currentProject && currentProject.slug !== validated.slug) {
-            revalidatePath(`/portfolio/${currentProject.slug}`, 'page');
-        }
-        return { success: true };
-    } catch (error) {
-        console.error(error);
-        return { success: false, error: "Failed to update project" };
-    }
-}
-
-export async function deleteProject(id: string): Promise<ActionResult<void>> {
-    const session = await auth();
-    if (!session?.user) return fail('Unauthorized', 401);
-
-    try {
-        await prisma.project.delete({ where: { id } });
-        revalidatePath('/dashboard/projects');
-        return ok(undefined);
-    } catch (error) {
-        console.error(error);
-        return fail('No se pudo eliminar el proyecto', 500);
+        console.error("Failed to get tags:", error);
+        return [];
     }
 }

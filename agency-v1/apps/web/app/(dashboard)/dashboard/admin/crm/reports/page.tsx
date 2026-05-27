@@ -14,6 +14,45 @@ const STAGE_LABELS: Record<string, { label: string; color: string; accent: strin
     LOST: { label: "Perdido", color: "#ef4444", accent: "#f87171" },
 };
 
+interface RevenueMonthData {
+    month: string;
+    revenue: number;
+    leads: number;
+}
+
+interface WinRateMonthData {
+    month: string;
+    winRate: number;
+}
+
+interface ConversionSourceData {
+    source: string;
+    rate: number;
+    converted: number;
+    total: number;
+}
+
+interface SalesRepData {
+    name: string;
+    won: number;
+    value: number;
+}
+
+interface FunnelStageData {
+    stage: string;
+    count: number;
+    value: number;
+    conversionRate: number;
+}
+
+interface StagnantDealData {
+    id: string;
+    title: string;
+    stage: string;
+    value: number;
+    lastActivity: string | Date | null;
+}
+
 export default async function ReportsPage() {
     const company = await prisma.company.findFirst();
     if (!company) return (
@@ -22,17 +61,32 @@ export default async function ReportsPage() {
         </div>
     );
 
-    const [data, funnelData, stagnantDeals] = await Promise.all([
+    const [dataRaw, funnelDataRaw, stagnantDealsRaw] = await Promise.all([
         getCRMReports(company.id),
         getFunnelConversionReport(company.id).catch(() => []),
         getStagnantDeals(company.id, 7).catch(() => []),
     ]);
 
-    if ("error" in data) return (
+    if ("error" in dataRaw) return (
         <div className="ds-page flex items-center justify-center">
             <p className="font-mono text-xs text-red-500 uppercase tracking-widest">&gt; Error al cargar reportes_</p>
         </div>
     );
+
+    const data = dataRaw as {
+        revenueByMonth: RevenueMonthData[];
+        winRateByMonth: WinRateMonthData[];
+        conversionBySource: ConversionSourceData[];
+        stageRevenue: Record<string, number>;
+        salesReps: SalesRepData[];
+        avgDaysToClose: number;
+        totalRevenue: number;
+        totalLeads: number;
+        totalDeals: number;
+        winRate: number;
+    };
+    const funnelData = funnelDataRaw as FunnelStageData[];
+    const stagnantDeals = stagnantDealsRaw as StagnantDealData[];
 
     const { revenueByMonth, winRateByMonth, conversionBySource, stageRevenue, salesReps, avgDaysToClose, totalRevenue, totalLeads, totalDeals, winRate } = data;
     const maxRevenue = Math.max(...revenueByMonth.map(r => r.revenue), 1);

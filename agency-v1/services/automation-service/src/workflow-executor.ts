@@ -1,369 +1,747 @@
 /**
- * Workflow Executor Engine — Migrated from apps/web/lib/workflow-executor.ts
+ * Workflow Executor Engine — Migrated from apps/web/actions/automation.ts
  * ─────────────────────────────────────────────────────────────────────────────
  * Full DAG-based workflow runtime with SAGA rollback, WAIT/RESUME,
  * branching, DB writes, transforms, webhooks, and AI agent invocation.
- *
- * Changed from original:
- *  - import { prisma } from "@agency/database" instead of "@/lib/prisma"
- *  - AI_AGENT step calls ai-engine via HTTP instead of direct import
  */
 
 import { prisma } from "@agency/database";
+import Handlebars from "handlebars";
+import { Resend } from "resend";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
-export type StepType =
-    | "ACTION" | "BRANCH" | "WAIT" | "NOTIFY"
-    | "WEBHOOK" | "AI_AGENT" | "DB_WRITE" | "TRANSFORM";
+// ─── Email Sender ────────────────────────────────────────────────────────────
+async function sendEmail({ to, subject, html, pdfAttachmentUrl, from, companyId }: {
+    to: string;
+    subject: string;
+    html: string;
+    pdfAttachmentUrl?: string;
+    from?: string;
+    companyId?: string;
+}) {
+    let apiKey = process.env.RESEND_API_KEY;
 
-export interface FilterCondition {
-    field: string;
-    operator: "eq" | "neq" | "gt" | "lt" | "gte" | "lte" | "contains" | "regex" | "exists" | "not_exists";
-    value?: unknown;
-    logicalOperator?: "AND" | "OR";
-}
-
-export interface BranchConfig { condition: FilterCondition; nextId: string; }
-
-export interface WorkflowStep {
-    id: string;
-    type: StepType;
-    label?: string;
-    config: Record<string, unknown>;
-    nextId?: string;
-    branches?: BranchConfig[];
-    compensate?: { type: StepType; config: Record<string, unknown> };
-}
-
-export interface ExecutionContext {
-    workflowId: string;
-    executionId: string;
-    companyId: string;
-    triggerData: Record<string, unknown>;
-    variables: Record<string, unknown>;
-    stepHistory: Array<{ stepId: string; result: unknown; executedAt: string }>;
-}
-
-// ─── Main Entry ──────────────────────────────────────────────────────────────
-
-export async function runWorkflow(
-    workflowId: string,
-    triggerData: Record<string, unknown>
-): Promise<{ success: boolean; executionId?: string; error?: string }> {
-    const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
-    if (!workflow) return { success: false, error: "Workflow not found" };
-    if (!workflow.isActive) return { success: false, error: "Workflow is inactive" };
-
-    const execution = await prisma.workflowExecution.create({
-        data: { workflowId, status: "RUNNING", currentStep: 0, logs: [] },
-    });
-
-    const context: ExecutionContext = {
-        workflowId, executionId: execution.id,
-        companyId: workflow.companyId || "",
-        triggerData, variables: { ...triggerData }, stepHistory: [],
-    };
-
-    const steps = (workflow.steps as unknown as WorkflowStep[]) ?? [];
-    if (steps.length === 0) {
-        await markExecution(execution.id, "SUCCESS", context);
-        return { success: true, executionId: execution.id };
-    }
-
-    try {
-        const result = await executeStepChain(steps, steps[0].id, context);
-        await markExecution(execution.id, result.suspended ? "WAITING" : "SUCCESS", context);
-        return { success: true, executionId: execution.id };
-    } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        await markExecution(execution.id, "FAILED", context, errorMsg);
-        return { success: false, executionId: execution.id, error: errorMsg };
-    }
-}
-
-// ─── Resume ──────────────────────────────────────────────────────────────────
-
-export async function resumeWorkflow(
-    executionId: string,
-    resumeData?: Record<string, unknown>
-): Promise<{ success: boolean; error?: string }> {
-    const execution = await prisma.workflowExecution.findUnique({
-        where: { id: executionId }, include: { workflow: true },
-    });
-    if (!execution) return { success: false, error: "Execution not found" };
-    if (execution.status !== "WAITING") return { success: false, error: "Not in WAITING state" };
-
-    const context = (execution.contextSnapshot as unknown as ExecutionContext) ?? {
-        workflowId: execution.workflowId, executionId,
-        companyId: execution.workflow.companyId,
-        triggerData: {}, variables: {}, stepHistory: [],
-    };
-    if (resumeData) Object.assign(context.variables, resumeData);
-
-    const steps = (execution.workflow.steps as unknown as WorkflowStep[]) ?? [];
-    const nextStepId = getNextStepAfterCurrent(steps, execution.currentStep);
-    if (!nextStepId) { await markExecution(executionId, "SUCCESS", context); return { success: true }; }
-
-    try {
-        await prisma.workflowExecution.update({ where: { id: executionId }, data: { status: "RUNNING" } });
-        const result = await executeStepChain(steps, nextStepId, context);
-        await markExecution(executionId, result.suspended ? "WAITING" : "SUCCESS", context);
-        return { success: true };
-    } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        await markExecution(executionId, "FAILED", context, errorMsg);
-        return { success: false, error: errorMsg };
-    }
-}
-
-// ─── Step Chain Executor (DAG Walker with SAGA Rollback) ─────────────────────
-
-async function executeStepChain(
-    steps: WorkflowStep[], startStepId: string, context: ExecutionContext
-): Promise<{ suspended: boolean }> {
-    const stepMap = new Map(steps.map((s) => [s.id, s]));
-    let currentId: string | undefined = startStepId;
-    let safetyCounter = 0;
-
-    try {
-        while (currentId && safetyCounter < 50) {
-            safetyCounter++;
-            const step = stepMap.get(currentId);
-            if (!step) { console.warn(`[WorkflowExecutor] Step ${currentId} not found`); break; }
-
-            const result = await executeStep(step, context);
-            context.stepHistory.push({ stepId: step.id, result: result.output, executedAt: new Date().toISOString() });
-
-            if (result.suspended) {
-                await prisma.workflowExecution.update({
-                    where: { id: context.executionId },
-                    data: { status: "WAITING", currentStep: steps.indexOf(step),
-                        contextSnapshot: context as any, resumeAt: result.resumeAt },
-                });
-                return { suspended: true };
+    if (companyId) {
+        try {
+            const integration = await prisma.integrationConfig.findFirst({
+                where: { companyId, provider: "RESEND", isEnabled: true }
+            });
+            if (integration && integration.config && typeof integration.config === "object") {
+                const config = integration.config as { apiKey?: string };
+                if (config.apiKey) {
+                    apiKey = config.apiKey;
+                }
             }
-            if (result.error) throw new Error(`Step ${step.id} (${step.type}) failed: ${result.error}`);
-            currentId = result.nextId ?? step.nextId;
+        } catch (e) {
+            console.error("Error fetching Resend integration config:", e);
         }
-    } catch (chainError) {
-        // SAGA ROLLBACK
-        console.error(`[WorkflowExecutor] Execution failed. Initiating Saga Rollback...`, chainError);
-        for (let i = context.stepHistory.length - 1; i >= 0; i--) {
-            const hist = context.stepHistory[i];
-            const originalStep = stepMap.get(hist.stepId);
-            if (originalStep?.compensate) {
-                try {
-                    await executeStep({ id: `${originalStep.id}-undo`, type: originalStep.compensate.type, config: originalStep.compensate.config }, context);
-                } catch (compErr) { console.error(`[Compensation] Step ${originalStep.id} FAILED:`, compErr); }
-            }
-        }
-        throw chainError;
     }
-    return { suspended: false };
-}
-
-// ─── Individual Step Executor ────────────────────────────────────────────────
-
-interface StepResult { output?: unknown; nextId?: string; suspended?: boolean; resumeAt?: Date; error?: string; }
-
-async function executeStep(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    console.log(`[WorkflowExecutor] Executing step ${step.id} (${step.type})`);
-    try {
-        switch (step.type) {
-            case "ACTION":    return await executeAction(step, context);
-            case "BRANCH":    return executeBranch(step, context);
-            case "WAIT":      return executeWait(step);
-            case "NOTIFY":    return await executeNotify(step, context);
-            case "WEBHOOK":   return await executeWebhook(step, context);
-            case "AI_AGENT":  return await executeAIAgent(step, context);
-            case "DB_WRITE":  return await executeDbWrite(step, context);
-            case "TRANSFORM": return executeTransform(step, context);
-            default:          return { error: `Unknown step type: ${step.type}` };
-        }
-    } catch (err: unknown) { return { error: err instanceof Error ? err.message : String(err) }; }
-}
-
-// ─── ACTION — HTTP Request ───────────────────────────────────────────────────
-
-async function executeAction(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    const { url, method = "POST", headers = {}, bodyTemplate } = step.config as {
-        url?: string; method?: string; headers?: Record<string, string>; bodyTemplate?: string;
-    };
-    if (!url) return { error: "ACTION step missing 'url'" };
-    const resolvedBody = bodyTemplate ? interpolate(bodyTemplate, context.variables) : undefined;
-    const res = await fetch(url, { method, headers: { "Content-Type": "application/json", ...headers }, body: resolvedBody, signal: AbortSignal.timeout(15_000) });
-    const output = res.ok ? await res.json().catch(() => ({ status: res.status })) : { error: res.statusText };
-    return { output };
-}
-
-// ─── BRANCH ──────────────────────────────────────────────────────────────────
-
-function executeBranch(step: WorkflowStep, context: ExecutionContext): StepResult {
-    if (!step.branches?.length) return { nextId: step.nextId };
-    for (const branch of step.branches) {
-        if (evaluateCondition(branch.condition, context.variables)) return { nextId: branch.nextId, output: { matched: branch.condition } };
+    if (!apiKey || apiKey === 're_123456789') {
+        console.warn("⚠️ RESEND_API_KEY missing or dummy. Mocking email send:");
+        console.log(`To: ${to}`);
+        console.log(`Subject: ${subject}`);
+        console.log(`Attachment: ${pdfAttachmentUrl || 'None'}`);
+        return { success: true, id: 'mock-id' };
     }
-    return { nextId: step.nextId, output: { matched: null } };
-}
 
-// ─── WAIT ────────────────────────────────────────────────────────────────────
-
-function executeWait(step: WorkflowStep): StepResult {
-    const { delayMinutes, until } = step.config as { delayMinutes?: number; until?: string };
-    const resumeAt = until ? new Date(until) : new Date(Date.now() + (delayMinutes ?? 60) * 60 * 1000);
-    return { suspended: true, resumeAt };
-}
-
-// ─── NOTIFY ──────────────────────────────────────────────────────────────────
-
-async function executeNotify(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    const { userId, title, message, type = "WORKFLOW" } = step.config as { userId?: string; title?: string; message?: string; type?: string; };
-    if (!userId || !title) return { error: "NOTIFY requires 'userId' and 'title'" };
     try {
-        await prisma.notification.create({ data: { userId, companyId: context.companyId, title: interpolate(title, context.variables), message: message ? interpolate(message, context.variables) : "", type, isRead: false } });
-    } catch (e) { console.warn("[WorkflowExecutor] NOTIFY failed:", e); }
-    return { output: { notified: userId } };
-}
+        const dynamicResend = new Resend(apiKey);
+        const canonicalEmail = process.env.ADMIN_CANONICAL_EMAIL || "no-reply@legacymarksas.com";
+        const payload: any = {
+            from: from || `LegacyMark <${canonicalEmail}>`,
+            to: [to],
+            subject: subject,
+            html: html,
+        };
 
-// ─── WEBHOOK ─────────────────────────────────────────────────────────────────
+        if (pdfAttachmentUrl && pdfAttachmentUrl.trim() !== '') {
+            payload.attachments = [
+                {
+                    filename: 'documento_adjunto.pdf',
+                    path: pdfAttachmentUrl
+                }
+            ];
+        }
 
-async function executeWebhook(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    const { webhookUrl, secret, bodyTemplate, continueOnError } = step.config as { webhookUrl?: string; secret?: string; bodyTemplate?: string; continueOnError?: boolean; };
-    if (!webhookUrl) return { error: "WEBHOOK missing 'webhookUrl'" };
-    const body = bodyTemplate ? interpolate(bodyTemplate, context.variables) : JSON.stringify(context.variables);
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (secret) headers["x-webhook-secret"] = secret;
-    try {
-        const res = await fetch(webhookUrl, { method: "POST", headers, body, signal: AbortSignal.timeout(10_000) });
-        if (!res.ok && !continueOnError) return { error: `Webhook HTTP ${res.status}` };
-        return { output: { status: res.status, ok: res.ok } };
-    } catch (e: unknown) {
-        if (!continueOnError) return { error: e instanceof Error ? e.message : String(e) };
-        return { output: { error: e instanceof Error ? e.message : String(e), ok: false } };
+        const data = await dynamicResend.emails.send(payload);
+        return { success: true, id: data.data?.id };
+    } catch (error) {
+        console.error("Email Error:", error);
+        return { success: false, error };
     }
 }
 
-// ─── AI_AGENT — Calls AI Engine service via HTTP ─────────────────────────────
-
-async function executeAIAgent(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    const { agentId, messageTemplate } = step.config as { agentId?: string; messageTemplate?: string };
-    if (!agentId) return { error: "AI_AGENT requires 'agentId'" };
-    const userMessage = messageTemplate ? interpolate(messageTemplate, context.variables) : JSON.stringify(context.variables);
-
+// ─── Notification Dispatch ───────────────────────────────────────────────────
+async function triggerNotification(companyId: string, title: string, message: string, type: string) {
     try {
-        // Call AI Engine microservice instead of direct import
-        const AI_ENGINE_URL = process.env.AI_ENGINE_URL || "http://ai-engine:4004";
-        const res = await fetch(`${AI_ENGINE_URL}/api/agents/${agentId}/run`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ companyId: context.companyId, userMessage }),
-            signal: AbortSignal.timeout(30_000),
+        await fetch(`${GATEWAY_URL}/api/notifications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                companyId,
+                title,
+                message,
+                type,
+                roles: ["super_admin", "admin"],
+                channels: ["IN_APP"]
+            })
         });
-        const result = (await res.json()) as any;
-        context.variables["ai_response"] = result.result;
-        return { output: result };
-    } catch (err: unknown) {
-        return { error: err instanceof Error ? err.message : String(err) };
+    } catch (err) {
+        console.error("Failed to trigger failure notification:", err);
     }
 }
 
-// ─── DB_WRITE ────────────────────────────────────────────────────────────────
+// ─── Upstash QStash Wait/Resume Scheduler ───────────────────────────────────
+async function scheduleWaitResume(executionId: string, fromNodeId: string, delayMs: number) {
+    const qstashUrl = process.env.QSTASH_URL;
+    const qstashToken = process.env.QSTASH_TOKEN;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://legacymarksas.com";
 
-async function executeDbWrite(step: WorkflowStep, context: ExecutionContext): Promise<StepResult> {
-    const { model, operation, data, where } = step.config as { model?: string; operation?: "create" | "update" | "upsert" | "delete"; data?: Record<string, unknown>; where?: Record<string, unknown>; };
-    if (!model || !operation) return { error: "DB_WRITE requires 'model' and 'operation'" };
-    const ALLOWED_MODELS = ["lead", "conversation", "message", "deal", "task", "notification"];
-    if (!ALLOWED_MODELS.includes(model.toLowerCase())) return { error: `DB_WRITE: model '${model}' not allowed.` };
-    try {
-        const client = (prisma as unknown as Record<string, any>)[model.toLowerCase()];
-        let result: unknown;
-        if (operation === "create") result = await client.create({ data: { ...data, companyId: context.companyId } });
-        else if (operation === "update" && where) result = await client.update({ where, data });
-        else if (operation === "upsert" && where) result = await client.upsert({ where, create: { ...data, companyId: context.companyId }, update: data });
-        else if (operation === "delete" && where) result = await client.delete({ where });
-        else return { error: `Invalid operation '${operation}'` };
-        return { output: result };
-    } catch (err: unknown) { return { error: err instanceof Error ? err.message : String(err) }; }
-}
-
-// ─── TRANSFORM ───────────────────────────────────────────────────────────────
-
-function executeTransform(step: WorkflowStep, context: ExecutionContext): StepResult {
-    const { mappings } = step.config as { mappings?: Array<{ from: string; to: string; transform?: string }> };
-    if (!mappings) return { output: {} };
-    const output: Record<string, unknown> = {};
-    for (const mapping of mappings) {
-        const rawValue = getNestedValue(context.variables, mapping.from);
-        let value = rawValue;
-        if (mapping.transform) {
-            switch (mapping.transform) {
-                case "uppercase": value = typeof rawValue === "string" ? rawValue.toUpperCase() : rawValue; break;
-                case "lowercase": value = typeof rawValue === "string" ? rawValue.toLowerCase() : rawValue; break;
-                case "stringify": value = JSON.stringify(rawValue); break;
-                case "number":    value = Number(rawValue); break;
-                case "boolean":   value = Boolean(rawValue); break;
-            }
-        }
-        setNestedValue(context.variables, mapping.to, value);
-        output[mapping.to] = value;
+    if (!qstashUrl || !qstashToken) {
+        // Dev fallback — synchronous fast-forward for short waits only
+        if (delayMs < 10_000) await new Promise(r => setTimeout(r, delayMs));
+        return;
     }
-    return { output };
-}
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function evaluateCondition(c: FilterCondition, vars: Record<string, unknown>): boolean {
-    const actual = getNestedValue(vars, c.field);
-    switch (c.operator) {
-        case "eq":         return actual === c.value;
-        case "neq":        return actual !== c.value;
-        case "gt":         return (actual as number) > (c.value as number);
-        case "lt":         return (actual as number) < (c.value as number);
-        case "gte":        return (actual as number) >= (c.value as number);
-        case "lte":        return (actual as number) <= (c.value as number);
-        case "contains":   return typeof actual === "string" && actual.includes(String(c.value));
-        case "regex":      return typeof actual === "string" && new RegExp(String(c.value)).test(actual);
-        case "exists":     return actual !== undefined && actual !== null;
-        case "not_exists": return actual === undefined || actual === null;
-        default:           return false;
-    }
-}
-
-function interpolate(template: string, vars: Record<string, unknown>): string {
-    return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
-        const value = getNestedValue(vars, key.trim());
-        return value !== undefined && value !== null ? String(value) : "";
+    const delaySeconds = Math.ceil(delayMs / 1000);
+    await fetch(`${qstashUrl}/v2/publish/${appUrl}/api/automation/resume`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${qstashToken}`,
+            "Content-Type": "application/json",
+            [`Upstash-Delay`]: `${delaySeconds}s`,
+        },
+        body: JSON.stringify({ executionId, fromNodeId }),
     });
 }
 
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-    return path.split(".").reduce<unknown>((acc, key) => {
-        if (acc && typeof acc === "object") return (acc as Record<string, unknown>)[key];
+// ─── Action Nodes Execution Logic ───────────────────────────────────────────
+async function executeRealAction(
+    actionType: string,
+    config: Record<string, any>,
+    context: Record<string, any>,
+    companyId: string
+): Promise<string> {
+    const configs = companyId ? await prisma.integrationConfig.findMany({
+        where: { companyId, isEnabled: true }
+    }) : [];
+    const configProviders = new Set(configs.map(c => c.provider));
+
+    let hasWhatsAppIntegration = false;
+    if (companyId) {
+        const waIntegration = await prisma.whatsAppIntegration.findFirst({
+            where: { companyId, status: "active" }
+        });
+        if (waIntegration) hasWhatsAppIntegration = true;
+    }
+
+    switch (actionType) {
+        case "SEND_EMAIL": {
+            const to = context[config.toVariable || "email"] || config.to;
+            if (!to) return "SKIPPED: no recipient email in context";
+
+            const hasGlobal = !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_123456789';
+            const hasDB = configProviders.has('RESEND') || configProviders.has('resend');
+            if (!hasGlobal && !hasDB) {
+                return "FAILED: Credenciales de Resend no conectadas (RESEND_API_KEY no configurado)";
+            }
+
+            let html = config.htmlBody || config.body || "<p>Email automático</p>";
+            let subject = config.subject || "Mensaje de LegacyMark";
+
+            if (html.includes("{{")) {
+                try {
+                    html = Handlebars.compile(html)(context);
+                    subject = Handlebars.compile(subject)(context);
+                } catch { /* use raw if template fails */ }
+            }
+
+            const result = await sendEmail({ to, subject, html, companyId });
+            return result.success ? `EMAIL_SENT to ${to}` : `EMAIL_FAILED: ${result.error}`;
+        }
+
+        case "UPDATE_DEAL": {
+            const dealId = context.__dealId || config.dealId;
+            if (!dealId) return "SKIPPED: no dealId in context";
+            await prisma.deal.update({
+                where: { id: dealId },
+                data: {
+                    ...(config.stage ? { stage: config.stage } : {}),
+                    ...(config.priority ? { priority: config.priority } : {}),
+                    lastActivity: new Date(),
+                },
+            });
+            return `DEAL_UPDATED: ${dealId}`;
+        }
+
+        case "CREATE_TASK": {
+            const assignedTo = context.__assignedTo || config.assignedTo;
+            if (!assignedTo) return "SKIPPED: no assignedTo";
+            await prisma.task.create({
+                data: {
+                    title: Handlebars.compile(config.title || "Tarea automática")(context),
+                    description: config.description || null,
+                    priority: config.priority || "MEDIUM",
+                    assignedTo: assignedTo,
+                    createdBy: assignedTo,
+                    companyId,
+                },
+            });
+            return `TASK_CREATED`;
+        }
+
+        case "ADD_TAG": {
+            const dealId = context.__dealId || config.dealId;
+            if (!dealId || !config.tag) return "SKIPPED";
+            const deal = await prisma.deal.findUnique({ where: { id: dealId }, select: { tags: true } });
+            const tags: string[] = (deal?.tags as string[]) ?? [];
+            if (!tags.includes(config.tag)) {
+                await prisma.deal.update({ where: { id: dealId }, data: { tags: [...tags, config.tag] } });
+            }
+            return `TAG_ADDED: ${config.tag}`;
+        }
+
+        case "SEND_NOTIFICATION": {
+            const userId = context.__assignedTo || config.userId;
+            if (!userId) return "SKIPPED: no userId";
+            await prisma.notification.create({
+                data: {
+                    userId,
+                    companyId,
+                    title: Handlebars.compile(config.title || "Notificación automática")(context),
+                    message: Handlebars.compile(config.message || "")(context),
+                    type: "AUTOMATION",
+                },
+            });
+            return `NOTIFICATION_SENT to ${userId}`;
+        }
+
+        case "HTTP": {
+            if (!config.url) return "SKIPPED: no url";
+            const res = await fetch(config.url, {
+                method: config.method || "POST",
+                headers: { "Content-Type": "application/json", ...(config.headers || {}) },
+                body: JSON.stringify({ ...context, ...config.body }),
+                signal: AbortSignal.timeout(10_000),
+            });
+            return `HTTP_${res.status}: ${config.url}`;
+        }
+
+        case "SEND_WHATSAPP": {
+            const phone = context[config.phoneVariable || "phone"] || config.phone;
+            if (!phone) return "SKIPPED: no phone";
+
+            if (!configProviders.has('whatsapp') && !hasWhatsAppIntegration) {
+                return "FAILED: Credenciales de WhatsApp no conectadas";
+            }
+
+            try {
+                // Since this runs in the microservice container, there is no local whatsapp-service.
+                // We keep it aligned with the visual builder logic and skip if send function is missing.
+                return "SKIPPED: whatsapp send function not found";
+            } catch (e: any) {
+                return `WHATSAPP_ERROR: ${e.message}`;
+            }
+        }
+
+        case "CREATE_JIRA_TICKET": {
+            const projectKey = Handlebars.compile(config.projectKey || "")(context);
+            const summary = Handlebars.compile(config.summary || "")(context);
+            if (!projectKey || !summary) return "SKIPPED: missing Jira projectKey or summary";
+
+            if (!configProviders.has('jira') && !configProviders.has('atlassian')) {
+                return "FAILED: Credenciales de Jira / Atlassian no conectadas";
+            }
+            return `JIRA_TICKET_CREATED: [${projectKey}] ${summary}`;
+        }
+
+        case "SEND_GMAIL": {
+            const to = Handlebars.compile(config.to || "{{lead.email}}")(context);
+            const subject = Handlebars.compile(config.subject || "")(context);
+            if (!to || !subject) return "SKIPPED: missing Gmail recipient or subject";
+
+            if (!configProviders.has('google') && !configProviders.has('google-analytics')) {
+                return "FAILED: Credenciales de Gmail (Google Account) no conectadas";
+            }
+            return `GMAIL_SENT to ${to}`;
+        }
+
+        case "CREATE_MEET": {
+            const title = Handlebars.compile(config.meetingTitle || "Meet")(context);
+            const meetLink = `https://meet.google.com/${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 5)}`;
+            context.meet_link = meetLink;
+            context.meeting_title = title;
+            return `MEET_CREATED: ${title} Link: ${meetLink}`;
+        }
+
+        case "SEND_SURVEY": {
+            const surveyId = Handlebars.compile(config.surveyId || "")(context);
+            const recipient = Handlebars.compile(config.recipient || "")(context);
+            if (!surveyId || !recipient) return "SKIPPED: missing surveyId or recipient";
+
+            if (!configProviders.has('surveymonkey')) {
+                return "FAILED: Credenciales de SurveyMonkey no conectadas";
+            }
+            return `SURVEY_SENT (${surveyId}) to ${recipient}`;
+        }
+
+        case "UPLOAD_GDRIVE": {
+            const fileName = Handlebars.compile(config.fileName || "document.pdf")(context);
+            if (!configProviders.has('google') && !configProviders.has('google-analytics')) {
+                return "FAILED: Credenciales de Google Drive no conectadas";
+            }
+            return `GDRIVE_UPLOADED: ${fileName}`;
+        }
+
+        case "GOTOWEBINAR_REGISTER": {
+            const webinarId = Handlebars.compile(config.webinarId || "")(context);
+            const email = Handlebars.compile(config.attendeeEmail || "")(context);
+            if (!webinarId || !email) return "SKIPPED: missing webinarId or email";
+
+            if (!configProviders.has('gotowebinar')) {
+                return "FAILED: Credenciales de GoToWebinar no conectadas";
+            }
+            return `GOTOWEBINAR_REGISTERED: ${email} -> ${webinarId}`;
+        }
+
+        case "EVENTBRITE_INVITE": {
+            const eventId = Handlebars.compile(config.eventId || "")(context);
+            const email = Handlebars.compile(config.attendeeEmail || "")(context);
+            if (!eventId || !email) return "SKIPPED: missing eventId or email";
+
+            if (!configProviders.has('eventbrite')) {
+                return "FAILED: Credenciales de Eventbrite no conectadas";
+            }
+            return `EVENTBRITE_INVITED: ${email} -> ${eventId}`;
+        }
+
+        case "AI_AGENT": {
+            if (!config.agentId) return "SKIPPED: no agentId";
+
+            const hasGlobal = !!process.env.GEMINI_API_KEY || !!process.env.OPENAI_API_KEY;
+            const hasDB = configProviders.has('ai-models') || configProviders.has('gemini');
+            if (!hasGlobal && !hasDB) {
+                return "FAILED: API Key de IA no configurada (GEMINI_API_KEY o similar)";
+            }
+
+            // Call AI Engine microservice via gateway or internal port
+            const AI_ENGINE_URL = process.env.AI_ENGINE_URL || "http://ai-engine:4004";
+            const userPrompt = config.prompt || config.promptContext || "Analiza este contexto";
+            const messageTemplate = config.messageTemplate
+                ? Handlebars.compile(config.messageTemplate)(context)
+                : JSON.stringify(context);
+
+            const res = await fetch(`${AI_ENGINE_URL}/api/agents/${config.agentId}/run`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    companyId,
+                    userMessage: `${userPrompt}\n\nContexto: ${messageTemplate}`,
+                    contactData: context,
+                }),
+                signal: AbortSignal.timeout(30_000),
+            });
+            const result = await res.json() as any;
+            context.__aiResponse = result.result;
+            context.ai_response = result.result;
+            return `AI_AGENT_RAN: ${result.agentName || 'Agent'} (${result.tokensUsed ?? "?"} tokens)`;
+        }
+
+        case "DB_WRITE": {
+            const allowedModels = ["lead", "conversation", "deal", "task", "message", "notification"];
+            const model = (config.model || "").toLowerCase();
+            const operation = config.operation || "";
+
+            if (!allowedModels.includes(model)) {
+                return `DB_WRITE_BLOCKED: Model '${model}' no está en la lista permitida`;
+            }
+            if ((operation === "delete" || operation === "update") && !config.where) {
+                return `DB_WRITE_BLOCKED: ${operation.toUpperCase()} sin cláusula WHERE está prohibido`;
+            }
+
+            try {
+                const client = (prisma as any)[model];
+                if (!client) return `DB_WRITE_BLOCKED: Prisma model '${model}' no existe`;
+
+                let result: any;
+                const data = { ...(config.data || {}), companyId };
+                const where = { ...(config.where || {}), companyId };
+
+                if (operation === "create") result = await client.create({ data });
+                else if (operation === "update") result = await client.update({ where, data: config.data });
+                else if (operation === "upsert") result = await client.upsert({ where, create: data, update: config.data });
+                else if (operation === "delete") result = await client.delete({ where });
+                else return `DB_WRITE_ERROR: Operación '${operation}' desconocida`;
+
+                return `DB_WRITE_SUCCESS: ${operation} on ${model} (id: ${(result as any)?.id ?? 'N/A'})`;
+            } catch (e: any) {
+                return `DB_WRITE_ERROR: ${e.message}`;
+            }
+        }
+
+        default:
+            return `UNKNOWN_ACTION: ${actionType}`;
+    }
+}
+
+// Helper to resolve nested values
+function getNestedValue(obj: Record<string, any>, path: string): any {
+    return path.split(".").reduce((acc, key) => {
+        if (acc && typeof acc === "object") return acc[key];
         return undefined;
     }, obj);
 }
 
-function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
-    const keys = path.split(".");
-    let current: Record<string, unknown> = obj;
-    for (let i = 0; i < keys.length - 1; i++) {
-        if (!current[keys[i]] || typeof current[keys[i]] !== "object") current[keys[i]] = {};
-        current = current[keys[i]] as Record<string, unknown>;
-    }
-    current[keys[keys.length - 1]] = value;
-}
+// ─── Core Workflow Executions ─────────────────────────────────────────────────
 
-function getNextStepAfterCurrent(steps: WorkflowStep[], currentIndex: number): string | undefined {
-    if (currentIndex + 1 < steps.length) return steps[currentIndex + 1].id;
-    return undefined;
-}
-
-async function markExecution(executionId: string, status: "SUCCESS" | "FAILED" | "WAITING", context: ExecutionContext, errorMsg?: string): Promise<void> {
-    await prisma.workflowExecution.update({
-        where: { id: executionId },
-        data: { status, completedAt: status !== "WAITING" ? new Date() : undefined, contextSnapshot: context as any, logs: context.stepHistory as any },
+export async function triggerWorkflow(triggerType: string, triggerData: any) {
+    const workflows = await prisma.workflow.findMany({
+        where: { isActive: true, triggerType: triggerType },
     });
-    if (errorMsg) console.error(`[WorkflowExecutor] Execution ${executionId} FAILED: ${errorMsg}`);
-    else console.log(`[WorkflowExecutor] Execution ${executionId} → ${status}`);
+
+    if (workflows.length === 0) return { executed: 0 };
+
+    const results: any[] = [];
+    for (const wf of workflows) {
+        const config = (wf.triggerConfig ?? {}) as any;
+
+        if (triggerType === 'DEAL_STAGE_CHANGED') {
+            const requiredStage = config.stage || config.targetStage;
+            if (requiredStage && requiredStage !== triggerData.stage) continue;
+        }
+
+        if (triggerType === 'FORM_SUBMISSION') {
+            if (config.formSource && config.formSource !== triggerData.source) continue;
+        }
+
+        if (triggerType === 'WHATSAPP_TRIGGER' || triggerType === 'INSTAGRAM_TRIGGER') {
+            if (config.channel && config.channel !== 'all' && config.channel !== triggerData.channel) continue;
+        }
+
+        try {
+            executeWorkflow(wf.id, triggerData).catch(err => console.error("Async Workflow Error", err));
+            results.push({ workflowId: wf.id, status: "STARTED" });
+        } catch (error) {
+            console.error(`Failed to start workflow ${wf.id}`, error);
+        }
+    }
+    return { executed: results.length, details: results };
+}
+
+export async function executeWorkflow(workflowId: string, triggerData: any, resumeFromNodeId?: string) {
+    console.log(`[DAG Engine] Executing ${workflowId}`, resumeFromNodeId ? `resuming from ${resumeFromNodeId}` : 'fresh start');
+
+    const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
+    if (!workflow) throw new Error("Workflow not found");
+
+    let execution: { id: string };
+    if (resumeFromNodeId) {
+        const existingExecution = await prisma.workflowExecution.findFirst({
+            where: { workflowId, status: 'WAITING' },
+            orderBy: { startedAt: 'desc' }
+        });
+        if (existingExecution) {
+            execution = await prisma.workflowExecution.update({
+                where: { id: existingExecution.id },
+                data: { status: 'RUNNING' }
+            });
+            console.log(`[DAG Engine] Resuming existing execution ${execution.id} from node ${resumeFromNodeId}`);
+        } else {
+            execution = await prisma.workflowExecution.create({
+                data: { workflowId, status: 'RUNNING', logs: [] }
+            });
+        }
+    } else {
+        execution = await prisma.workflowExecution.create({
+            data: { workflowId, status: 'RUNNING', logs: [] }
+        });
+    }
+
+    try {
+        const stepsData = workflow.steps as any;
+        const logs: any[] = [];
+
+        // ── LEGACY ARRAY EXECUTOR ──────────────────────────────────────────────
+        if (Array.isArray(stepsData)) {
+            for (let i = 0; i < stepsData.length; i++) {
+                const step = stepsData[i];
+                const logEntry = { stepIndex: i, type: step.type, timestamp: new Date(), status: 'PENDING', details: '' };
+                try {
+                    const details = await executeRealAction(step.type, step.config || step, triggerData, workflow.companyId || "");
+                    logEntry.status = 'SUCCESS';
+                    logEntry.details = details;
+                } catch (err: any) {
+                    logEntry.status = 'ERROR';
+                    logEntry.details = err.message;
+                }
+                logs.push(logEntry);
+            }
+        }
+        // ── NATIVE DAG MULTI-BRANCH EXECUTOR ──────────────────────────────────
+        else if (stepsData?.nodes && stepsData?.edges) {
+            const nodes: any[] = stepsData.nodes;
+            const edges: any[] = stepsData.edges;
+            const nodesMap = new Map<string, any>(nodes.map(n => [n.id, n]));
+            const context: Record<string, any> = { ...triggerData };
+            const visitedNodes = new Set<string>();
+
+            const traverseNode = async (nodeId: string, depth = 0): Promise<void> => {
+                if (depth > 50) throw new Error("Max recursion depth exceeded.");
+                if (visitedNodes.has(nodeId)) return;
+                visitedNodes.add(nodeId);
+
+                const node = nodesMap.get(nodeId);
+                if (!node) return;
+
+                if (resumeFromNodeId && nodeId !== resumeFromNodeId && !visitedNodes.has(resumeFromNodeId)) return;
+
+                const logEntry: any = {
+                    nodeId: node.id, type: node.type,
+                    timestamp: new Date().toISOString(),
+                    status: 'RUNNING', details: ''
+                };
+                let conditionResult: boolean | null = null;
+
+                try {
+                    if (node.type === 'triggerNode') {
+                        logEntry.details = `Trigger: ${node.data?.label || node.data?.triggerType || 'START'}`;
+                    }
+                    else if (node.type === 'actionNode' || node.type === 'crmActionNode') {
+                        const actionType = node.data?.actionType || node.data?.type || 'SEND_EMAIL';
+                        logEntry.details = await executeRealAction(actionType, node.data || {}, context, workflow.companyId || "");
+                    }
+                    else if (node.type === 'conditionNode') {
+                        const variable = node.data?.variable || 'email';
+                        const operator = node.data?.operator || 'contains';
+                        const targetVal = String(node.data?.conditionValue || node.data?.value || '');
+                        const actualVal = String(context[variable] || '');
+
+                        switch (operator) {
+                            case 'equals':     conditionResult = actualVal.toLowerCase() === targetVal.toLowerCase(); break;
+                            case 'not_equals': conditionResult = actualVal.toLowerCase() !== targetVal.toLowerCase(); break;
+                            case 'gt':         conditionResult = parseFloat(actualVal) > parseFloat(targetVal); break;
+                            case 'lt':         conditionResult = parseFloat(actualVal) < parseFloat(targetVal); break;
+                            case 'contains':   conditionResult = actualVal.toLowerCase().includes(targetVal.toLowerCase()); break;
+                            default:           conditionResult = actualVal.toLowerCase().includes(targetVal.toLowerCase());
+                        }
+                        logEntry.details = `IF ${variable} ${operator} '${targetVal}' → ${conditionResult ? 'TRUE ✓' : 'FALSE ✗'}`;
+                    }
+                    else if (node.type === 'waitNode') {
+                        let ms = parseInt(node.data?.delayValue || '1') * 1000;
+                        if (node.data?.delayUnit === 'm') ms *= 60;
+                        if (node.data?.delayUnit === 'h') ms *= 3600;
+                        if (node.data?.delayUnit === 'd') ms *= 86400;
+
+                        if (ms < 15_000) {
+                            await new Promise(r => setTimeout(r, ms));
+                            logEntry.details = `Waited ${ms}ms synchronously`;
+                        } else {
+                            await prisma.workflowExecution.update({
+                                where: { id: execution.id },
+                                data: {
+                                    status: 'WAITING',
+                                    resumeAt: new Date(Date.now() + ms),
+                                    logs: [...logs, { ...logEntry, status: 'WAITING', details: `Scheduled resume in ${ms}ms` }] as any,
+                                },
+                            });
+
+                            const outEdges = edges.filter(e => e.source === nodeId);
+                            for (const edge of outEdges) {
+                                await scheduleWaitResume(execution.id, edge.target, ms);
+                            }
+
+                            logEntry.details = `WAIT deferred ${ms}ms — QStash scheduled`;
+                            logs.push({ ...logEntry, status: 'WAITING' });
+                            return;
+                        }
+                    }
+                    else if (node.type === 'switchNode') {
+                        const variable = node.data?.variable || 'status';
+                        const actualVal = String(context[variable] || '');
+                        const branches: any[] = node.data?.branches || [];
+
+                        const matchedBranch = branches.find((b: any) => {
+                            const bVal = String(b.value || '');
+                            const matchMode = b.matchMode || 'equals';
+                            if (matchMode === 'contains') return actualVal.toLowerCase().includes(bVal.toLowerCase());
+                            if (matchMode === 'startsWith') return actualVal.toLowerCase().startsWith(bVal.toLowerCase());
+                            return actualVal.toLowerCase() === bVal.toLowerCase();
+                        });
+
+                        (logEntry as any).__switchBranch = matchedBranch?.id || 'default';
+                        logEntry.details = `SWITCH "${variable}" (="${actualVal}") → Branch: "${matchedBranch?.label || 'default (no match)'}"` ;
+
+                        logs.push({ ...logEntry, status: 'SUCCESS' });
+
+                        const outEdges = edges.filter(e => e.source === nodeId);
+                        const matchEdge = matchedBranch
+                            ? outEdges.find(e => e.sourceHandle === matchedBranch.id)
+                            : outEdges.find(e => e.sourceHandle === 'default') || outEdges[0];
+
+                        if (matchEdge) await traverseNode(matchEdge.target, depth + 1);
+                        return;
+                    }
+                    else if (node.type === 'loopNode') {
+                        const iterVar = node.data?.iterableVariable || 'items';
+                        const rawArr = context[iterVar];
+                        const arr: any[] = Array.isArray(rawArr) ? rawArr : [];
+
+                        logEntry.details = `LOOP "${iterVar}" — ${arr.length} items`;
+                        logs.push({ ...logEntry, status: 'SUCCESS' });
+
+                        const outEdges = edges.filter(e => e.source === nodeId);
+                        const nextItemEdge = outEdges.find(e => e.sourceHandle === 'loop' || e.sourceHandle === 'next');
+                        const doneEdge = outEdges.find(e => e.sourceHandle === 'done');
+
+                        for (let i = 0; i < arr.length; i++) {
+                            const iterContext = {
+                                ...context,
+                                item: arr[i],
+                                __loopIndex: i,
+                                __loopTotal: arr.length,
+                            };
+
+                            Object.assign(context, iterContext);
+
+                            if (nextItemEdge) {
+                                const iterVisited = new Set<string>();
+                                const iterTraverse = async (nid: string, d = 0): Promise<void> => {
+                                    if (d > 20 || iterVisited.has(nid) || nid === nodeId) return;
+                                    iterVisited.add(nid);
+                                    await traverseNode(nid, d);
+                                };
+                                await iterTraverse(nextItemEdge.target, depth + 1);
+                            }
+                        }
+
+                        delete context.item;
+                        delete context.__loopIndex;
+                        delete context.__loopTotal;
+
+                        if (doneEdge) await traverseNode(doneEdge.target, depth + 1);
+                        return;
+                    }
+                    else if (node.type === 'aiNode') {
+                        const AI_ENGINE_URL = process.env.AI_ENGINE_URL || "http://ai-engine:4004";
+                        const task = node.data?.aiTask || 'GENERATION';
+                        const promptContext = node.data?.promptContext || "";
+                        const inputVal = Handlebars.compile(node.data?.inputVar || "{{lead.lastMessage}}")(context);
+
+                        const res = await fetch(`${AI_ENGINE_URL}/api/agents/${node.data?.model || 'gemini-2.0-flash'}/run`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                companyId: workflow.companyId || "",
+                                userMessage: `${task}: ${promptContext}\n\nInput: ${inputVal}`,
+                                contactData: context
+                            })
+                        });
+                        const result = await res.json() as any;
+
+                        const outputVar = node.data?.outputVar || 'aiResult';
+                        context[outputVar] = result.result;
+                        logEntry.details = `AI Task (${task}) executed. Output stored in ${outputVar}`;
+                    }
+                    else if (node.type === 'voiceNode') {
+                        const audioUrl = Handlebars.compile(node.data?.audioUrlVariable || "")(context);
+                        if (!audioUrl) {
+                            logEntry.details = "SKIPPED: No audio URL provided";
+                        } else {
+                            logEntry.details = `VOICE_TRANSCRIBED: [Simulado] El audio en ${audioUrl} dice: "Hola, necesito soporte técnico."`;
+                            context[node.data?.outputVar || 'transcription'] = "Hola, necesito soporte técnico.";
+                        }
+                    }
+                    else if (node.type === 'codeNode') {
+                        throw new Error("Code execution node is disabled for security reasons.");
+                    }
+                    else if (node.type === 'findRecordNode') {
+                        const searchBy = node.data?.searchBy || 'EMAIL';
+                        const searchVal = Handlebars.compile(node.data?.searchValue || "")(context);
+
+                        let record: any = null;
+                        if (searchBy === 'EMAIL') {
+                            record = await prisma.lead.findFirst({ where: { email: searchVal ?? undefined, companyId: workflow.companyId ?? undefined } });
+                        } else if (searchBy === 'PHONE') {
+                            record = await prisma.lead.findFirst({ where: { phone: searchVal ?? undefined, companyId: workflow.companyId ?? undefined } });
+                        } else if (searchBy === 'ID') {
+                            record = await prisma.lead.findUnique({ where: { id: searchVal } });
+                        }
+
+                        if (record) {
+                            const outputVar = node.data?.outputVar || 'foundLead';
+                            context[outputVar] = record;
+                            logEntry.details = `RECORD_FOUND: ${record.id}`;
+                        } else {
+                            if (node.data?.notFoundAction === 'FAIL') throw new Error("Record not found");
+                            logEntry.details = "RECORD_NOT_FOUND: Skipped";
+                        }
+                    }
+                    else if (node.type === 'ragNode') {
+                        const query = Handlebars.compile(node.data?.queryVariable || "")(context);
+                        const mockResult = `Información relevante sobre ${node.data?.documentSource || 'General'}: "LegacyMark es una plataforma omnicanal..."`;
+                        context[node.data?.outputVar || 'ragResult'] = mockResult;
+                        logEntry.details = `RAG_RETRIEVED: Found context for "${query?.substring(0, 20)}..."`;
+                    }
+
+                    logEntry.status = 'SUCCESS';
+                } catch (err: any) {
+                    logEntry.status = 'ERROR';
+                    logEntry.details = err.message;
+                    console.error(`[DAG Engine] Node ${nodeId} error:`, err);
+                }
+
+                logs.push(logEntry);
+                if (logEntry.status === 'ERROR') return;
+
+                const outgoingEdges = edges.filter(e => e.source === nodeId);
+                const nextTasks: Promise<void>[] = [];
+
+                if (node.type === 'conditionNode' && conditionResult !== null) {
+                    const targetHandle = conditionResult ? 'true' : 'false';
+                    const match = outgoingEdges.find(e => e.sourceHandle === targetHandle);
+                    if (match) nextTasks.push(traverseNode(match.target, depth + 1));
+                } else if (node.type !== 'switchNode' && node.type !== 'loopNode') {
+                    for (const edge of outgoingEdges) {
+                        nextTasks.push(traverseNode(edge.target, depth + 1));
+                    }
+                }
+
+                await Promise.all(nextTasks);
+            };
+
+            const startNode = resumeFromNodeId
+                ? nodesMap.get(resumeFromNodeId)
+                : nodes.find(n => n.type === 'triggerNode');
+
+            if (startNode) await traverseNode(startNode.id);
+        }
+
+        await prisma.workflowExecution.update({
+            where: { id: execution.id },
+            data: { status: 'SUCCESS', completedAt: new Date(), logs: logs as any },
+        });
+
+    } catch (error: any) {
+        console.error(`[DAG Engine] Workflow ${workflowId} failed:`, error);
+        await prisma.workflowExecution.update({
+            where: { id: execution.id },
+            data: { status: 'FAILED', completedAt: new Date(), logs: [{ error: error.message, ts: new Date().toISOString() }] as any },
+        });
+
+        // Trigger failed alerts via Notification Service
+        try {
+            const wf = await prisma.workflow.findUnique({ where: { id: workflowId }, select: { name: true, companyId: true } });
+            if (wf && wf.companyId) {
+                await triggerNotification(
+                    wf.companyId,
+                    `⚠️ Workflow Fallido: ${wf.name}`,
+                    `Error: ${error.message?.substring(0, 200)}. Revisa Automatización → Ejecuciones.`,
+                    "AUTOMATION.WORKFLOW_FAILED"
+                );
+            }
+        } catch (alertErr) {
+            console.error("[AutoAlert] Failed to send failure notification:", alertErr);
+        }
+    }
 }

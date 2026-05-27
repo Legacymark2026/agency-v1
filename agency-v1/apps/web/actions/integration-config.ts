@@ -302,35 +302,52 @@ async function migrateLegacyConfig(companyId: string, oldProvider: string, oldDa
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS & PROXIES
 // ============================================================================
+
+const API_GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
 // Get shared Meta app credentials
 export async function getMetaAppConfig(companyId: string): Promise<MetaAppConfig | null> {
-  const config = await prisma.integrationConfig.findUnique({
-    where: { companyId_provider: { companyId, provider: 'meta-app' } }
-  });
-  return config?.config as MetaAppConfig || null;
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?companyId=${companyId}&provider=meta-app`, {
+      cache: 'no-store'
+    });
+    if (!response.ok) return null;
+    return await response.json() as MetaAppConfig;
+  } catch {
+    return null;
+  }
 }
 
 // Get Facebook page config
 export async function getFacebookPageConfig(companyId: string): Promise<FacebookPageConfig | null> {
-  const config = await prisma.integrationConfig.findUnique({
-    where: { companyId_provider: { companyId, provider: 'facebook-page' } }
-  });
-  return config?.config as FacebookPageConfig || null;
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?companyId=${companyId}&provider=facebook-page`, {
+      cache: 'no-store'
+    });
+    if (!response.ok) return null;
+    return await response.json() as FacebookPageConfig;
+  } catch {
+    return null;
+  }
 }
 
 // Get WhatsApp config
 export async function getWhatsAppConfig(companyId: string): Promise<WhatsAppConfig | null> {
-  const config = await prisma.integrationConfig.findUnique({
-    where: { companyId_provider: { companyId, provider: 'whatsapp' } }
-  });
-  return config?.config as WhatsAppConfig || null;
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?companyId=${companyId}&provider=whatsapp`, {
+      cache: 'no-store'
+    });
+    if (!response.ok) return null;
+    return await response.json() as WhatsAppConfig;
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================================
-// MAIN FUNCTIONS (Adapted from original)
+// MAIN FUNCTIONS
 // ============================================================================
 
 export async function getIntegrationConfig(provider: IntegrationProvider): Promise<IntegrationConfigData | null> {
@@ -341,41 +358,15 @@ export async function getIntegrationConfig(provider: IntegrationProvider): Promi
       return null;
     }
 
-    const companyUser = await prisma.companyUser.findFirst({
-      where: { userId: session.user.id },
-      select: { companyId: true }
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?userId=${session.user.id}&provider=${provider}`, {
+      cache: 'no-store'
     });
-
-    if (!companyUser) {
-      console.log(`[IntegrationConfig] No companyUser for user ${session.user.id}`);
+    if (!response.ok) {
       return null;
     }
 
-    // Check if legacy config exists and migrate if needed
-    const legacyProvider = Object.keys(PROVIDER_MIGRATION_MAP).find(k => PROVIDER_MIGRATION_MAP[k] === provider);
-    if (legacyProvider) {
-      const legacyConfig = await prisma.integrationConfig.findUnique({
-        where: { companyId_provider: { companyId: companyUser.companyId, provider: legacyProvider } }
-      });
-      
-      if (legacyConfig && legacyConfig.config && Object.keys(legacyConfig.config).length > 0) {
-        console.log(`[IntegrationConfig] Legacy config found for ${legacyProvider}, migrating...`);
-        await migrateLegacyConfig(companyUser.companyId, legacyProvider, legacyConfig.config);
-      }
-    }
-
-    const config = await prisma.integrationConfig.findUnique({
-      where: {
-        companyId_provider: {
-          companyId: companyUser.companyId,
-          provider
-        }
-      }
-    });
-
-    if (!config || !config.config) return null;
-
-    return config.config as unknown as IntegrationConfigData;
+    const data = await response.json();
+    return data as unknown as IntegrationConfigData;
   } catch (error: any) {
     console.error(`[IntegrationConfig] Error in getIntegrationConfig(${provider}):`, error);
     return null;
@@ -393,71 +384,24 @@ export async function updateIntegrationConfig(provider: IntegrationProvider, dat
 
     console.log(`[IntegrationConfig] User ID: ${session.user.id}, provider: ${provider}`);
 
-    const companyUser = await prisma.companyUser.findFirst({
-      where: { userId: session.user.id },
-      select: { companyId: true }
-    });
-
-    let companyId = companyUser?.companyId;
-
-    // If no company user link, find or create company
-    if (!companyId) {
-      console.log(`[IntegrationConfig] User ID: ${session.user.id}`);
-      const firstCompany = await prisma.company.findFirst();
-      if (firstCompany) {
-        console.log(`[IntegrationConfig] Linking user to existing company: ${firstCompany.id}`);
-        companyId = firstCompany.id;
-      } else {
-        companyId = (await prisma.company.create({
-          data: { name: "Default Company", slug: "default-company" },
-          select: { id: true }
-        })).id;
-        console.log(`[IntegrationConfig] Created new company: ${companyId}`);
-      }
-    }
-
-    // Create CompanyUser link if needed
-    const existingLink = await prisma.companyUser.findUnique({
-      where: {
-        userId_companyId: {
-          userId: session.user.id,
-          companyId: companyId!
-        }
-      }
-    });
-
-    if (!existingLink) {
-      // FIX #7: Cast to any to bypass TS2559 — Prisma role field is a relation in schema
-      // but runtime accepts "admin" string. Until schema is updated, this suppresses the
-      // error without changing behavior.
-      await (prisma.companyUser.create as any)({
-        data: {
-          userId: session.user.id,
-          companyId: companyId!,
-          role: "admin"
-        }
-      });
-      console.log(`[IntegrationConfig] Linked user to company: ${companyId}`);
-    }
-
-    // Save config
-    const result = await prisma.integrationConfig.upsert({
-      where: {
-        companyId_provider: {
-          companyId: companyId!,
-          provider
-        }
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-      update: { config: data as any },
-      create: {
-        companyId: companyId!,
+      body: JSON.stringify({
+        userId: session.user.id,
+        companyId: session.user.companyId,
         provider,
-        config: data as any
-      }
+        config: data
+      })
     });
 
-    console.log(`[IntegrationConfig] Saved successfully. ID: ${result.id}`);
-    
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return { success: false, error: err.error || "Failed to save configuration" };
+    }
+
     revalidatePath('/dashboard/settings/integrations');
     return { success: true };
   } catch (error) {
@@ -471,21 +415,32 @@ export async function getIntegrationAppConfig(provider: IntegrationProvider): Pr
   const session = await auth();
   if (!session?.user?.email) return null;
   
-  const companyUser = await prisma.companyUser.findFirst({
-    where: { userId: session.user.id },
-    select: { companyId: true }
-  });
-  if (!companyUser) return null;
-  
-  // Try new meta-app first
-  const metaApp = await getMetaAppConfig(companyUser.companyId);
-  if (metaApp?.appId && metaApp?.appSecret) {
-    return { appId: metaApp.appId, appSecret: metaApp.appSecret };
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?userId=${session.user.id}&provider=meta-app`, {
+      cache: 'no-store'
+    });
+    if (response.ok) {
+      const metaApp = await response.json();
+      if (metaApp?.appId && metaApp?.appSecret) {
+        return { appId: metaApp.appId, appSecret: metaApp.appSecret };
+      }
+    }
+  } catch (error) {
+    console.error("[getIntegrationAppConfig] Error fetching meta-app config:", error);
   }
-  
+
   // Fallback to legacy facebook config
-  const legacy = await prisma.integrationConfig.findUnique({
-    where: { companyId_provider: { companyId: companyUser.companyId, provider: 'facebook' } }
-  });
-  return legacy?.config as any || null;
-}
+  try {
+    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?userId=${session.user.id}&provider=facebook`, {
+      cache: 'no-store'
+    });
+    if (response.ok) {
+      const legacy = await response.json();
+      if (legacy) return legacy;
+    }
+  } catch (error) {
+    console.error("[getIntegrationAppConfig] Error fetching legacy facebook config:", error);
+  }
+
+  return null;
+}

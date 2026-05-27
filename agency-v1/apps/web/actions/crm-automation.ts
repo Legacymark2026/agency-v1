@@ -1,8 +1,14 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { DealAutomationRule, AutomationLog } from "@prisma/client";
+
+export type AutomationRuleWithLogs = DealAutomationRule & {
+    logs: AutomationLog[];
+};
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 async function getSession() {
     const session = await auth();
@@ -27,20 +33,15 @@ export async function createAutomationRule(data: {
     actionPayload: Record<string, unknown>;
 }) {
     await getSession();
-    const rule = await prisma.dealAutomationRule.create({
-        data: {
-            companyId: data.companyId,
-            name: data.name,
-            description: data.description,
-            triggerType: data.triggerType,
-            triggerStage: data.triggerStage,
-            triggerDays: data.triggerDays,
-            actionType: data.actionType,
-            actionPayload: data.actionPayload as any,
-        },
+    const response = await fetch(`${GATEWAY_URL}/api/crm/automation/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     });
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to create rule");
     revalidatePath("/dashboard/admin/crm/automation");
-    return { success: true, data: rule };
+    return { success: true, data: resData.data };
 }
 
 export async function updateAutomationRule(id: string, data: Partial<{
@@ -49,24 +50,42 @@ export async function updateAutomationRule(id: string, data: Partial<{
     actionType: string; actionPayload: Record<string, unknown>;
 }>) {
     await getSession();
-    const rule = await prisma.dealAutomationRule.update({ where: { id }, data: data as any });
+    const response = await fetch(`${GATEWAY_URL}/api/crm/automation/rules/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to update rule");
     revalidatePath("/dashboard/admin/crm/automation");
-    return { success: true, data: rule };
+    return { success: true, data: resData.data };
 }
 
 export async function deleteAutomationRule(id: string) {
     await getSession();
-    await prisma.dealAutomationRule.delete({ where: { id } });
+    const response = await fetch(`${GATEWAY_URL}/api/crm/automation/rules/${id}`, {
+        method: 'DELETE'
+    });
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to delete rule");
     revalidatePath("/dashboard/admin/crm/automation");
     return { success: true };
 }
 
-export async function listAutomationRules(companyId: string) {
-    return prisma.dealAutomationRule.findMany({
-        where: { companyId },
-        include: { logs: { orderBy: { createdAt: "desc" }, take: 3 } },
-        orderBy: { createdAt: "desc" },
-    });
+export async function listAutomationRules(companyId: string): Promise<AutomationRuleWithLogs[]> {
+    const response = await fetch(`${GATEWAY_URL}/api/crm/automation/rules?companyId=${companyId}`);
+    const resData = await response.json();
+    if (!response.ok) throw new Error(resData.error || "Failed to list rules");
+    return (resData.data || []).map((rule: any) => ({
+        ...rule,
+        createdAt: new Date(rule.createdAt),
+        updatedAt: new Date(rule.updatedAt),
+        lastRunAt: rule.lastRunAt ? new Date(rule.lastRunAt) : null,
+        logs: (rule.logs || []).map((l: any) => ({
+            ...l,
+            createdAt: new Date(l.createdAt),
+        }))
+    })) as AutomationRuleWithLogs[];
 }
 
 // ─── MOTOR DE EJECUCIÓN ───────────────────────────────────────────────────────
@@ -76,60 +95,79 @@ export async function listAutomationRules(companyId: string) {
  * Llamado desde el cron endpoint /api/crm/run-automation (cada hora).
  */
 export async function runAutomationEngine(companyId: string) {
-    const rules = await prisma.dealAutomationRule.findMany({
-        where: { companyId, isActive: true },
-    });
+    try {
+        const rulesRes = await fetch(`${GATEWAY_URL}/api/crm/automation/rules?companyId=${companyId}`);
+        const rulesData = await rulesRes.json();
+        if (!rulesRes.ok) throw new Error(rulesData.error || "Failed to fetch rules");
+        const rules = rulesData.data || [];
+        const activeRules = rules.filter((r: any) => r.isActive);
 
-    const results: { ruleId: string; name: string; dealsAffected: number; errors: number }[] = [];
+        const results: { ruleId: string; name: string; dealsAffected: number; errors: number }[] = [];
 
-    for (const rule of rules) {
-        let dealsAffected = 0;
-        let errors = 0;
+        for (const rule of activeRules) {
+            let dealsAffected = 0;
+            let errors = 0;
 
-        try {
-            if (rule.triggerType === "STAGE_STUCK_X_DAYS" && rule.triggerStage && rule.triggerDays) {
-                const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - rule.triggerDays);
+            try {
+                if (rule.triggerType === "STAGE_STUCK_X_DAYS" && rule.triggerStage && rule.triggerDays) {
+                    const cutoff = new Date();
+                    cutoff.setDate(cutoff.getDate() - rule.triggerDays);
 
-                const stagnantDeals = await prisma.deal.findMany({
-                    where: {
-                        companyId,
-                        stage: rule.triggerStage,
-                        lastActivity: { lte: cutoff },
-                        stage_not: "WON" as any,
-                    } as any,
-                    include: { assignedUser: { select: { id: true, email: true, name: true } } },
-                });
+                    const stagnantRes = await fetch(`${GATEWAY_URL}/api/crm/automation/stagnant-deals?companyId=${companyId}&triggerStage=${rule.triggerStage}&cutoffDate=${cutoff.toISOString()}`);
+                    const stagnantData = await stagnantRes.json();
+                    if (!stagnantRes.ok) throw new Error(stagnantData.error || "Failed to fetch stagnant deals");
+                    const stagnantDeals = stagnantData.data || [];
 
-                for (const deal of stagnantDeals) {
-                    try {
-                        await executeAction(rule.actionType as ActionType, rule.actionPayload as any, deal);
-                        await prisma.automationLog.create({
-                            data: { ruleId: rule.id, dealId: deal.id, result: "SUCCESS", message: `Acción ${rule.actionType} ejecutada` },
-                        });
-                        dealsAffected++;
-                    } catch (e) {
-                        await prisma.automationLog.create({
-                            data: { ruleId: rule.id, dealId: deal.id, result: "ERROR", message: String(e) },
-                        });
-                        errors++;
+                    for (const deal of stagnantDeals) {
+                        try {
+                            await executeAction(rule.actionType as ActionType, rule.actionPayload as any, deal);
+                            await fetch(`${GATEWAY_URL}/api/crm/automation/logs`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    ruleId: rule.id,
+                                    dealId: deal.id,
+                                    result: "SUCCESS",
+                                    message: `Acción ${rule.actionType} ejecutada`
+                                })
+                            });
+                            dealsAffected++;
+                        } catch (e) {
+                            await fetch(`${GATEWAY_URL}/api/crm/automation/logs`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    ruleId: rule.id,
+                                    dealId: deal.id,
+                                    result: "ERROR",
+                                    message: String(e)
+                                })
+                            });
+                            errors++;
+                        }
                     }
                 }
+
+                // Update rule count and lastRunAt
+                await fetch(`${GATEWAY_URL}/api/crm/automation/rules/${rule.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lastRunAt: new Date(),
+                        executionCount: (rule.executionCount || 0) + 1
+                    })
+                });
+            } catch (e) {
+                errors++;
             }
 
-            // Actualizar conteo y lastRunAt
-            await prisma.dealAutomationRule.update({
-                where: { id: rule.id },
-                data: { lastRunAt: new Date(), executionCount: { increment: 1 } },
-            });
-        } catch (e) {
-            errors++;
+            results.push({ ruleId: rule.id, name: rule.name, dealsAffected, errors });
         }
 
-        results.push({ ruleId: rule.id, name: rule.name, dealsAffected, errors });
+        return { success: true, results };
+    } catch (e: any) {
+        return { success: false, error: e.message };
     }
-
-    return { success: true, results };
 }
 
 /** Ejecutar una acción sobre un deal */
@@ -139,13 +177,21 @@ async function executeAction(actionType: ActionType, payload: {
     switch (actionType) {
         case "CHANGE_PRIORITY":
             if (payload.priority) {
-                await prisma.deal.update({ where: { id: deal.id }, data: { priority: payload.priority } });
+                await fetch(`${GATEWAY_URL}/api/deals/${deal.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ priority: payload.priority })
+                });
             }
             break;
 
         case "MOVE_STAGE":
             if (payload.stage) {
-                await prisma.deal.update({ where: { id: deal.id }, data: { stage: payload.stage, lastActivity: new Date() } });
+                await fetch(`${GATEWAY_URL}/api/deals/${deal.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stage: payload.stage })
+                });
             }
             break;
 
@@ -153,7 +199,11 @@ async function executeAction(actionType: ActionType, payload: {
             if (payload.tag) {
                 const currentTags: string[] = deal.tags ?? [];
                 if (!currentTags.includes(payload.tag)) {
-                    await prisma.deal.update({ where: { id: deal.id }, data: { tags: [...currentTags, payload.tag] } });
+                    await fetch(`${GATEWAY_URL}/api/deals/${deal.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tags: [...currentTags, payload.tag] })
+                    });
                 }
             }
             break;
@@ -189,27 +239,30 @@ async function executeAction(actionType: ActionType, payload: {
             // 2. In-app notification
             const notifyUserId = deal.assignedTo;
             if (notifyUserId) {
-                await prisma.notification.create({
-                    data: {
+                await fetch(`${GATEWAY_URL}/api/crm/notifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         userId: notifyUserId,
                         companyId: deal.companyId,
                         title: `⚠️ Alerta: Deal "${deal.title}"`,
                         message,
                         type: "AUTOMATION_ALERT",
-                    },
-                }).catch(() => {}); // non-fatal if notification table missing
+                    })
+                }).catch(() => {});
             }
 
             // 3. CRM activity log
             if (deal.assignedTo) {
-                await prisma.cRMActivity.create({
-                    data: {
-                        dealId: deal.id,
+                await fetch(`${GATEWAY_URL}/api/deals/${deal.id}/activities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         userId: deal.assignedTo,
                         type: "AUTOMATION_ALERT",
                         content: message,
-                    },
-                });
+                    })
+                }).catch(() => {});
             }
             break;
         }
@@ -227,9 +280,16 @@ async function executeAction(actionType: ActionType, payload: {
 }
 
 export async function getAutomationLogs(ruleId: string, take = 50) {
-    return prisma.automationLog.findMany({
-        where: { ruleId },
-        orderBy: { createdAt: "desc" },
-        take,
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/crm/automation/rules/${ruleId}/logs?take=${take}`);
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to fetch logs");
+        return (resData.data || []).map((l: any) => ({
+            ...l,
+            createdAt: new Date(l.createdAt)
+        }));
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
 }

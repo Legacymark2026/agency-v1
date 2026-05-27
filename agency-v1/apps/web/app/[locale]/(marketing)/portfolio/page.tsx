@@ -9,9 +9,9 @@ export const revalidate = 3600;
 // Next.js 15 Server Component
 export default async function PortfolioPage() {
     // Fetch live data directly from the DB
-    let projects = [];
-    let categories = [];
-    let socialProfiles = [];
+    let projects: any[] = [];
+    let categories: any[] = [];
+    let socialProfiles: any[] = [];
 
     try {
         [projects, categories, socialProfiles] = await Promise.all([

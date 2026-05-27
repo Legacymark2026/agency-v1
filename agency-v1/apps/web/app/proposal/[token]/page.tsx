@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { token } = await params;
     
     try {
-        const proposal = await prisma.proposal.findUnique({
+        const proposal = await (prisma.proposal as any).findUnique({
             where: { token },
             select: {
                 title: true,
@@ -76,7 +76,7 @@ export default async function PublicProposalPage({ params }: Props) {
         if (proposal.status === "DRAFT" || proposal.status === "SENT") {
             try {
                 // Note: This is non-blocking. We don't await it to keep page fast
-                await prisma.proposal.update({
+                await (prisma.proposal as any).update({
                     where: { id: proposal.id },
                     data: { viewedAt: new Date() }
                 }).catch(() => {
@@ -96,14 +96,14 @@ export default async function PublicProposalPage({ params }: Props) {
                     status: proposal.status,
                     value: proposal.value,
                     currency: proposal.currency,
-                    contactName: proposal.contactName,
-                    contactEmail: proposal.contactEmail,
+                    contactName: proposal.contactName || undefined,
+                    contactEmail: proposal.contactEmail || undefined,
                     createdAt: proposal.createdAt.toISOString(),
                     company: proposal.company ? {
                         name: proposal.company.name,
                         logoUrl: proposal.company.logoUrl || undefined
                     } : undefined,
-                    content: proposal.description || undefined,
+                    content: (proposal as any).description || undefined,
                     items: proposal.items.map(item => ({
                         id: item.id,
                         title: item.title,

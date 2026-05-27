@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
 const REVALIDATE_TIMEOFF = "/dashboard/admin/payroll/time-off";
 const REVALIDATE_TIMESHEETS = "/dashboard/admin/payroll/timesheets";
@@ -18,29 +19,38 @@ async function getSession() {
 // ══════════════════════════════════════════════════════════════
 
 export async function getTimeOffRequests(companyId: string) {
-    return prisma.timeOffRequest.findMany({
-        where: { employee: { companyId } },
-        include: { 
-            employee: { select: { id: true, firstName: true, lastName: true, position: true } },
-            approvedBy: { select: { id: true, firstName: true, lastName: true, name: true } }
-        },
-        orderBy: { createdAt: "desc" },
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/hr/time-off?companyId=${companyId}`);
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (error) {
+        console.error("[GET_TIME_OFF_REQUESTS]", error);
+        return [];
+    }
 }
 
 export async function updateTimeOffStatus(id: string, status: "APPROVED" | "REJECTED") {
     const session = await getSession();
     
-    const request = await prisma.timeOffRequest.update({
-        where: { id },
-        data: { 
-            status,
-            approvedById: session.user.id
-        }
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/hr/time-off/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                status,
+                approvedById: session.user.id
+            })
+        });
 
-    revalidatePath(REVALIDATE_TIMEOFF);
-    return { success: true, request };
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to update time off status");
+
+        revalidatePath(REVALIDATE_TIMEOFF);
+        return { success: true, request: resData.request };
+    } catch (error: any) {
+        console.error("[UPDATE_TIME_OFF_STATUS]", error);
+        return { success: false, error: error.message };
+    }
 }
 
 export async function createTimeOffRequest(data: {
@@ -52,19 +62,22 @@ export async function createTimeOffRequest(data: {
 }) {
     await getSession();
     
-    const request = await prisma.timeOffRequest.create({
-        data: {
-            employeeId: data.employeeId,
-            type: data.type,
-            startDate: new Date(data.startDate),
-            endDate: new Date(data.endDate),
-            reason: data.reason,
-            status: "PENDING"
-        }
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/hr/time-off`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
 
-    revalidatePath(REVALIDATE_TIMEOFF);
-    return { success: true, request };
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to create time off request");
+
+        revalidatePath(REVALIDATE_TIMEOFF);
+        return { success: true, request: resData.request };
+    } catch (error: any) {
+        console.error("[CREATE_TIME_OFF_REQUEST]", error);
+        return { success: false, error: error.message };
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -72,30 +85,39 @@ export async function createTimeOffRequest(data: {
 // ══════════════════════════════════════════════════════════════
 
 export async function getTimesheets(companyId: string) {
-    return prisma.timesheet.findMany({
-        where: { employee: { companyId } },
-        include: { 
-            employee: { select: { id: true, firstName: true, lastName: true, position: true } },
-            approvedBy: { select: { id: true, firstName: true, lastName: true, name: true } },
-            _count: { select: { timeEntries: true } }
-        },
-        orderBy: { periodStart: "desc" },
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/hr/timesheets?companyId=${companyId}`);
+        if (!response.ok) return [];
+        const resData = await response.json();
+        return resData.timesheets || [];
+    } catch (error) {
+        console.error("[GET_TIMESHEETS]", error);
+        return [];
+    }
 }
 
 export async function updateTimesheetStatus(id: string, status: "APPROVED" | "REJECTED" | "SUBMITTED") {
     const session = await getSession();
     
-    const data: any = { status };
+    const body: any = { status };
     if (status === "APPROVED" || status === "REJECTED") {
-        data.approvedById = session.user.id;
+        body.approvedById = session.user.id;
     }
     
-    const sheet = await prisma.timesheet.update({
-        where: { id },
-        data
-    });
+    try {
+        const response = await fetch(`${GATEWAY_URL}/api/hr/timesheets/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
 
-    revalidatePath(REVALIDATE_TIMESHEETS);
-    return { success: true, sheet };
+        const resData = await response.json();
+        if (!response.ok) throw new Error(resData.error || "Failed to update timesheet status");
+
+        revalidatePath(REVALIDATE_TIMESHEETS);
+        return { success: true, sheet: resData.sheet };
+    } catch (error: any) {
+        console.error("[UPDATE_TIMESHEET_STATUS]", error);
+        return { success: false, error: error.message };
+    }
 }

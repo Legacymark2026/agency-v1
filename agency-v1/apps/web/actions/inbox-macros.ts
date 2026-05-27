@@ -1,9 +1,7 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { auth } from '@/lib/auth';
-import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
+import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export type InboxMacroActionType = 'TEXT_REPLY' | 'ASSIGN_TAG' | 'ESCALATE' | 'SEND_PAYMENT_LINK' | 'WEBHOOK';
 
@@ -17,17 +15,21 @@ export interface InboxMacroPayload {
     [key: string]: any;
 }
 
+const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
+
 export async function getInboxMacros(companyId: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const macros = await db.inboxMacro.findMany({
-            where: { companyId },
-            orderBy: { createdAt: 'desc' }
-        });
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/macros?companyId=${companyId}`);
+        const resData = await response.json();
 
-        return { success: true, data: macros };
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to fetch inbox macros" };
+        }
+
+        return { success: true, data: resData.data };
     } catch (error: any) {
         console.error("Error fetching inbox macros:", error);
         return { success: false, error: error.message };
@@ -48,22 +50,20 @@ export async function createInboxMacro(data: {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const macro = await db.inboxMacro.create({
-            data: {
-                companyId: data.companyId,
-                title: data.title,
-                description: data.description,
-                icon: data.icon || 'Wand2',
-                color: data.color || '#10b981',
-                actionType: data.actionType,
-                payload: data.payload as any,
-                isActive: data.isActive ?? true
-            }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/macros`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
+        const resData = await response.json();
+
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to create macro" };
+        }
 
         revalidatePath('/dashboard/settings/inbox/macros');
         revalidatePath('/dashboard/inbox');
-        return { success: true, data: macro };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         console.error("Error creating inbox macro:", error);
         return { success: false, error: error.message };
@@ -83,17 +83,20 @@ export async function updateInboxMacro(id: string, data: Partial<{
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const macro = await db.inboxMacro.update({
-            where: { id },
-            data: {
-                ...data,
-                payload: data.payload as any
-            }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/macros/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
+        const resData = await response.json();
+
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to update macro" };
+        }
 
         revalidatePath('/dashboard/settings/inbox/macros');
         revalidatePath('/dashboard/inbox');
-        return { success: true, data: macro };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         console.error("Error updating inbox macro:", error);
         return { success: false, error: error.message };
@@ -105,9 +108,13 @@ export async function deleteInboxMacro(id: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        await db.inboxMacro.delete({
-            where: { id }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/macros/${id}`, {
+            method: 'DELETE'
         });
+
+        if (!response.ok) {
+            return { success: false, error: "Failed to delete macro" };
+        }
 
         revalidatePath('/dashboard/settings/inbox/macros');
         revalidatePath('/dashboard/inbox');
@@ -123,14 +130,20 @@ export async function toggleInboxMacro(id: string, isActive: boolean) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const macro = await db.inboxMacro.update({
-            where: { id },
-            data: { isActive }
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/macros/${id}/toggle`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isActive })
         });
+        const resData = await response.json();
+
+        if (!response.ok) {
+            return { success: false, error: resData.error || "Failed to toggle macro" };
+        }
 
         revalidatePath('/dashboard/settings/inbox/macros');
         revalidatePath('/dashboard/inbox');
-        return { success: true, data: macro };
+        return { success: true, data: resData.data };
     } catch (error: any) {
         console.error("Error toggling inbox macro:", error);
         return { success: false, error: error.message };

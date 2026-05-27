@@ -17,7 +17,7 @@ export default async function AutomationPage() {
     ]);
 
     // Serialization for client component
-    const serializedWorkflows = workflows.map(w => ({
+    const serializedWorkflows = workflows.map((w: any) => ({
         ...w,
         createdAt: w.createdAt,
         updatedAt: w.updatedAt

@@ -1,12 +1,19 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaDb } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+  if (!res.ok) { const err = await res.json().catch(() => ({ error: res.statusText })); throw new Error(err.error || `Gateway error ${res.status}`); }
+  return res.json();
+}
 
 async function getCompanyId(): Promise<string | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const cu = await prisma.companyUser.findFirst({
+  const cu = await prismaDb.companyUser.findFirst({
     where: { userId: session.user.id },
     select: { companyId: true },
   });
@@ -32,45 +39,56 @@ export async function createOrUpdateBrandStyle(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Company not found');
 
-  const style = await prisma.brandStyle.upsert({
-    where: { companyId },
-    update: {
-      clientName: data.clientName,
-      primaryColor: data.primaryColor,
-      secondaryColor: data.secondaryColor,
-      accentColor: data.accentColor,
-      fontFamily: data.fontFamily,
-      subtitlePreset: data.subtitlePreset,
-      preferences: data.preferences,
-    },
-    create: {
-      companyId,
-      clientName: data.clientName,
-      primaryColor: data.primaryColor || '#6D28D9',
-      secondaryColor: data.secondaryColor || '#FFFFFF',
-      accentColor: data.accentColor || '#10B981',
-      fontFamily: data.fontFamily || 'Inter',
-      subtitlePreset: data.subtitlePreset || {
-        size: 40,
-        color: '#FFFFFF',
-        shadow: true,
-        animation: 'fade',
-        position: 'bottom',
-      },
-      preferences: data.preferences || {},
-    },
-  });
+  const existing = await getBrandStyle();
+  let brand;
 
-  return { id: style.id };
+  if (existing) {
+    brand = await gw(`/api/video/brand/${existing.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        clientName: data.clientName,
+        primaryColor: data.primaryColor,
+        secondaryColor: data.secondaryColor,
+        accentColor: data.accentColor,
+        fontFamily: data.fontFamily,
+        subtitlePreset: data.subtitlePreset,
+        preferences: data.preferences,
+      }),
+    });
+  } else {
+    brand = await gw('/api/video/brand', {
+      method: 'POST',
+      body: JSON.stringify({
+        companyId,
+        clientName: data.clientName,
+        primaryColor: data.primaryColor || '#6D28D9',
+        secondaryColor: data.secondaryColor || '#FFFFFF',
+        accentColor: data.accentColor || '#10B981',
+        fontFamily: data.fontFamily || 'Inter',
+        subtitlePreset: data.subtitlePreset || {
+          size: 40,
+          color: '#FFFFFF',
+          shadow: true,
+          animation: 'fade',
+          position: 'bottom',
+        },
+        preferences: data.preferences || {},
+      }),
+    });
+  }
+
+  return { id: brand.id };
 }
 
 export async function getBrandStyle(): Promise<any | null> {
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
-  return prisma.brandStyle.findUnique({
-    where: { companyId },
-  });
+  try {
+    return await gw(`/api/video/brand?companyId=${companyId}`);
+  } catch {
+    return null;
+  }
 }
 
 export async function learnBrandPreference(
@@ -83,9 +101,7 @@ export async function learnBrandPreference(
   const companyId = await getCompanyId();
   if (!companyId) return;
 
-  const existing = await prisma.brandStyle.findUnique({
-    where: { companyId },
-  });
+  const existing = await getBrandStyle();
 
   const currentPreferences = (existing?.preferences as any) || {};
   const corrections = currentPreferences.corrections || [];
@@ -103,18 +119,24 @@ export async function learnBrandPreference(
     lastLearnedAt: new Date().toISOString(),
   };
 
-  await prisma.brandStyle.upsert({
-    where: { companyId },
-    update: {
-      preferences: updatedPreferences,
-    },
-    create: {
-      companyId,
-      clientName: 'Default',
-      subtitlePreset: correction.afterStyle,
-      preferences: updatedPreferences,
-    },
-  });
+  if (existing) {
+    await gw(`/api/video/brand/${existing.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        preferences: updatedPreferences,
+      }),
+    });
+  } else {
+    await gw('/api/video/brand', {
+      method: 'POST',
+      body: JSON.stringify({
+        companyId,
+        clientName: 'Default',
+        subtitlePreset: correction.afterStyle,
+        preferences: updatedPreferences,
+      }),
+    });
+  }
 }
 
 export async function getBrandStyleForAgent(): Promise<{
@@ -126,18 +148,7 @@ export async function getBrandStyleForAgent(): Promise<{
   const companyId = await getCompanyId();
   if (!companyId) return null;
 
-  const style = await prisma.brandStyle.findUnique({
-    where: { companyId },
-    select: {
-      primaryColor: true,
-      secondaryColor: true,
-      accentColor: true,
-      fontFamily: true,
-      subtitlePreset: true,
-      preferences: true,
-    },
-  });
-
+  const style = await getBrandStyle();
   if (!style) return null;
 
   return {
@@ -159,18 +170,17 @@ export async function searchSimilarBrandStyles(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  const embeddingStr = JSON.stringify(targetEmbedding);
-
-  const results = await prisma.$queryRaw`
-    SELECT id, client_name, primary_color, secondary_color, font_family,
-           subtitle_preset, preferences,
-           style_embedding <=> ${embeddingStr}::vector AS similarity
-    FROM tbl_brand_styles
-    WHERE style_embedding IS NOT NULL
-      AND company_id != ${companyId}
-    ORDER BY similarity ASC
-    LIMIT ${limit}
-  `;
-
-  return results as any[];
+  try {
+    const res = await gw('/api/video/brand/similar', {
+      method: 'POST',
+      body: JSON.stringify({
+        companyId,
+        targetEmbedding,
+        limit,
+      }),
+    });
+    return res.results || [];
+  } catch {
+    return [];
+  }
 }

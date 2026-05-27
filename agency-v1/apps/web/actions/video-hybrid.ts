@@ -1,12 +1,19 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma as prismaDb } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+
+const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
+async function gw(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${GATEWAY_URL}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+  if (!res.ok) { const err = await res.json().catch(() => ({ error: res.statusText })); throw new Error(err.error || `Gateway error ${res.status}`); }
+  return res.json();
+}
 
 async function getCompanyId(): Promise<string | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const cu = await prisma.companyUser.findFirst({
+  const cu = await prismaDb.companyUser.findFirst({
     where: { userId: session.user.id },
     select: { companyId: true },
   });
@@ -31,22 +38,11 @@ export async function createEditProposal(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const proposal = await prisma.editProposal.create({
-    data: {
-      sessionId: data.sessionId,
-      projectId: data.projectId,
-      type: data.type,
-      title: data.title,
-      description: data.description,
-      confidence: data.confidence,
-      beforeState: data.beforeState,
-      afterState: data.afterState,
-      metadata: data.metadata,
-      status: 'pending',
-    },
+  const res = await gw('/api/video/proposals', {
+    method: 'POST',
+    body: JSON.stringify(data)
   });
-
-  return { proposalId: proposal.id };
+  return { proposalId: res.id };
 }
 
 export async function getPendingProposals(
@@ -55,13 +51,8 @@ export async function getPendingProposals(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  return prisma.editProposal.findMany({
-    where: {
-      sessionId,
-      status: 'pending',
-    },
-    orderBy: { confidence: 'desc' },
-  });
+  const res = await gw(`/api/video/sessions/${sessionId}/proposals`);
+  return res.proposals || [];
 }
 
 export async function approveProposal(
@@ -70,31 +61,9 @@ export async function approveProposal(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const proposal = await prisma.editProposal.findFirst({
-    where: { id: proposalId },
-    include: { session: { select: { projectId: true } } },
-  });
-
-  if (!proposal) throw new Error('Proposal not found');
-
-  await prisma.editProposal.update({
-    where: { id: proposalId },
-    data: {
-      status: 'approved',
-      respondedAt: new Date(),
-    },
-  });
-
-  await prisma.videoEditHistory.create({
-    data: {
-      sessionId: proposal.sessionId,
-      action: proposal.type,
-      author: 'merged',
-      confidence: proposal.confidence,
-      description: `AI proposal approved: ${proposal.title}`,
-      beforeState: proposal.beforeState,
-      afterState: proposal.afterState,
-    },
+  await gw(`/api/video/proposals/${proposalId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'approve' })
   });
 }
 
@@ -105,15 +74,9 @@ export async function rejectProposal(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  await prisma.editProposal.update({
-    where: { id: proposalId },
-    data: {
-      status: 'rejected',
-      respondedAt: new Date(),
-      metadata: {
-        rejectionReason: reason,
-      },
-    },
+  await gw(`/api/video/proposals/${proposalId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'reject', reason })
   });
 }
 
@@ -128,19 +91,18 @@ export async function detectEditConflict(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const conflict = await prisma.editConflict.create({
-    data: {
+  const res = await gw('/api/video/conflicts', {
+    method: 'POST',
+    body: JSON.stringify({
       sessionId,
       projectId,
       elementId,
       elementType,
       aiEdit,
-      humanEdit,
-      resolved: false,
-    },
+      humanEdit
+    })
   });
-
-  return { conflictId: conflict.id };
+  return { conflictId: res.conflictId };
 }
 
 export async function resolveConflict(
@@ -151,14 +113,9 @@ export async function resolveConflict(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  await prisma.editConflict.update({
-    where: { id: conflictId },
-    data: {
-      resolved: true,
-      resolution,
-      resolutionNote: note,
-      resolvedAt: new Date(),
-    },
+  await gw(`/api/video/conflicts/${conflictId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ resolution, note })
   });
 }
 
@@ -168,13 +125,8 @@ export async function getUnresolvedConflicts(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  return prisma.editConflict.findMany({
-    where: {
-      sessionId,
-      resolved: false,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const res = await gw(`/api/video/sessions/${sessionId}/conflicts`);
+  return res.conflicts || [];
 }
 
 export async function createVersionSnapshot(
@@ -186,25 +138,22 @@ export async function createVersionSnapshot(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const project = await prisma.videoEditorProject.findFirst({
-    where: { id: projectId, companyId },
-  });
-
+  const project = await gw(`/api/video/projects/${projectId}?companyId=${companyId}`);
   if (!project) throw new Error('Project not found');
 
-  const version = await prisma.versionSnapshot.create({
-    data: {
-      projectId,
+  const res = await gw(`/api/video/projects/${projectId}/versions`, {
+    method: 'POST',
+    body: JSON.stringify({
       name,
       description,
       state,
       author: 'human',
       clipCount: (project.clips as any[])?.length || 0,
       duration: (project.timeline as any)?.totalDuration || 0,
-    },
+    })
   });
 
-  return { versionId: version.id };
+  return { versionId: res.id };
 }
 
 export async function getVersionHistory(
@@ -213,11 +162,8 @@ export async function getVersionHistory(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  return prisma.versionSnapshot.findMany({
-    where: { projectId },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  });
+  const res = await gw(`/api/video/projects/${projectId}/versions`);
+  return res.versions || [];
 }
 
 export async function restoreVersion(
@@ -226,34 +172,51 @@ export async function restoreVersion(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  const version = await prisma.versionSnapshot.findUnique({
-    where: { id: versionId },
-    include: {
-      project: {
-        select: { companyId: true },
-      },
-    },
+  // get the version snapshot to get the projectId
+  // Wait, let's fetch version snapshot via projects versions? We can query restore endpoint which does the restore on video service
+  // Wait, restore endpoint does:
+  // POST /api/video/projects/:id/versions/:vId/restore
+  // But wait, the video service restore endpoint needs to know project ID, but in Next.js Server Action we don't have projectId.
+  // Wait, we can get version snapshot in Next.js server action first, or let's search if video-service restore endpoint can find it.
+  // Wait, in services/video-service/src/index.ts we implemented:
+  // app.post('/api/video/projects/:id/versions/:vId/restore', async (req, res) => { ... })
+  // So it needs projectId. Let's find projectId.
+  // Wait, since versionSnapshot is in the database, we can find it via a gateway endpoint or database search?
+  // Wait, does next.js server action have access to database? No, we are separating it.
+  // Wait! Let's check how services/video-service/src/index.ts implements the restore endpoint:
+  // It fetches the versionSnapshot using findUnique, then updates VideoEditorProject.
+  // Wait! Let's check:
+  // `const version = await (prisma as any).versionSnapshot.findUnique({ where: { id: req.params.vId } });`
+  // `await prisma.videoEditorProject.update({ where: { id: req.params.id }, ... })`
+  // Yes! So it can fetch the version snapshot by versionId, and then updates the project.
+  // But how does next.js action know which project ID to pass in the URL?
+  // Ah! Next.js action `restoreVersion(versionId)` originally did:
+  // `const version = await prisma.versionSnapshot.findUnique({ where: { id: versionId }, include: { project: { select: { companyId: true } } } })`
+  // So next.js action can get the projectId from the version itself!
+  // Wait, we can add a specific endpoint to `video-service` to get a version snapshot by ID, or we can just fetch the projectId.
+  // Let's check: did we add `GET /api/video/versions/:versionId`? No.
+  // Let's add `/api/video/versions/:versionId` to `services/video-service/src/index.ts` so we can get it, or let's update restore version in video-service to NOT require projectId in the path, or let's look at what we can do.
+  // Actually, we can add:
+  // `app.get('/api/video/versions/:versionId', async (req, res) => { ... })`
+  // Let's see:
+  // ```typescript
+  // app.get('/api/video/versions/:vId', async (req, res) => {
+  //   try {
+  //     const version = await (prisma as any).versionSnapshot.findUnique({ where: { id: req.params.vId } });
+  //     if (!version) return res.status(404).json({ error: 'Version not found' });
+  //     res.json(version);
+  //   } catch (error: any) { res.status(500).json({ error: error.message }); }
+  // });
+  // ```
+  // That is super easy and clean! Let's add it to index.ts in video-service.
+  // Wait, let's first finish writing the restoreVersion implementation in video-hybrid.ts:
+  const version = await gw(`/api/video/versions/${versionId}`);
+  if (!version) throw new Error('Version not found');
+
+  const res = await gw(`/api/video/projects/${version.projectId}/versions/${versionId}/restore`, {
+    method: 'POST'
   });
-
-  if (!version || version.project.companyId !== companyId) {
-    throw new Error('Version not found');
-  }
-
-  await prisma.videoEditorProject.update({
-    where: { id: version.projectId },
-    data: {
-      clips: version.state.clips,
-      audioTracks: version.state.audioTracks,
-      textOverlays: version.state.textOverlays,
-      colorGrades: version.state.colorGrades,
-      speedRamps: version.state.speedRamps,
-      soundLayers: version.state.soundLayers,
-      timeline: version.state.timeline,
-      config: version.state.config,
-    },
-  });
-
-  return version.state;
+  return res.version.state;
 }
 
 export async function deleteVersion(
@@ -262,8 +225,11 @@ export async function deleteVersion(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  await prisma.versionSnapshot.deleteMany({
-    where: { id: versionId },
+  const version = await gw(`/api/video/versions/${versionId}`);
+  if (!version) throw new Error('Version not found');
+
+  await gw(`/api/video/projects/${version.projectId}/versions/${versionId}`, {
+    method: 'DELETE'
   });
 }
 
@@ -281,17 +247,12 @@ export async function recordAICorrection(
   const companyId = await getCompanyId();
   if (!companyId) return;
 
-  await prisma.aICorrection.create({
-    data: {
-      companyId,
-      sessionId: data.sessionId,
-      actionType: data.actionType,
-      aiSuggestion: data.aiSuggestion,
-      userCorrection: data.userCorrection,
-      category: data.category,
-      pattern: data.pattern,
-      confidenceDelta: data.confidenceDelta,
-    },
+  await gw('/api/video/corrections', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...data,
+      companyId
+    })
   });
 }
 
@@ -301,16 +262,8 @@ export async function getCorrectionPatterns(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  return prisma.aICorrection.groupBy({
-    by: ['actionType', 'category', 'pattern'],
-    where: {
-      companyId,
-      ...(actionType ? { actionType } : {}),
-    },
-    _count: true,
-    orderBy: { _count: { pattern: 'desc' } },
-    take: 20,
-  });
+  const res = await gw(`/api/video/corrections?companyId=${companyId}${actionType ? `&actionType=${actionType}` : ''}`);
+  return res.patterns || [];
 }
 
 export async function addVideoComment(
@@ -325,19 +278,18 @@ export async function addVideoComment(
   const session = await auth();
   if (!session?.user?.id) throw new Error('Unauthorized');
 
-  const comment = await prisma.videoComment.create({
-    data: {
-      projectId,
+  const res = await gw(`/api/video/projects/${projectId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({
       authorId: session.user.id,
       authorName: session.user.name || 'Anonymous',
       content,
       clipId: options?.clipId,
       timestamp: options?.timestamp,
       parentId: options?.parentId,
-    },
+    })
   });
-
-  return { commentId: comment.id };
+  return { commentId: res.commentId };
 }
 
 export async function getVideoComments(
@@ -346,10 +298,8 @@ export async function getVideoComments(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  return prisma.videoComment.findMany({
-    where: { projectId },
-    orderBy: { createdAt: 'asc' },
-  });
+  const res = await gw(`/api/video/projects/${projectId}/comments`);
+  return res.comments || [];
 }
 
 export async function resolveComment(
@@ -358,9 +308,8 @@ export async function resolveComment(
   const companyId = await getCompanyId();
   if (!companyId) throw new Error('Unauthorized');
 
-  await prisma.videoComment.update({
-    where: { id: commentId },
-    data: { resolved: true },
+  await gw(`/api/video/comments/${commentId}/resolve`, {
+    method: 'PATCH'
   });
 }
 
@@ -371,12 +320,6 @@ export async function getEditHistoryByAuthor(
   const companyId = await getCompanyId();
   if (!companyId) return [];
 
-  return prisma.videoEditHistory.findMany({
-    where: {
-      sessionId,
-      ...(author ? { author } : {}),
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
+  const res = await gw(`/api/video/sessions/${sessionId}/edit-history${author ? `?author=${author}` : ''}`);
+  return res.history || [];
 }
