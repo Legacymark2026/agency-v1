@@ -119,7 +119,8 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/settings/agents": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 
     // ── Video Editor ──────────────────────────────────────
-    "/dashboard/admin/video-editor": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/tools/video-editor": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/video": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
 
     // ── Preferencias de Notificaciones ────────────────────
     "/dashboard/settings/notifications": [
@@ -308,8 +309,8 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "agents.manage", routes: ["/dashboard/settings/agents"] },
     { perm: "agents.deploy", routes: ["/dashboard/settings/agents"] },
     // Video Editor
-    { perm: "video.view", routes: ["/dashboard/admin/video-editor"] },
-    { perm: "video.manage", routes: ["/dashboard/admin/video-editor"] },
+    { perm: "video.view", routes: ["/dashboard/tools/video-editor", "/dashboard/video"] },
+    { perm: "video.manage", routes: ["/dashboard/tools/video-editor", "/dashboard/video"] },
     // Notificaciones
     { perm: "notifications.view", routes: ["/dashboard/settings/notifications"] },
     { perm: "notifications.manage", routes: ["/dashboard/settings/notifications"] },

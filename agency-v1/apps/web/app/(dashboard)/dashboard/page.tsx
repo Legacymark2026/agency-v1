@@ -1,8 +1,6 @@
 import { auth } from "@/lib/auth";
-import { AnalyticsOverview } from "@/modules/analytics/components/overview";
-import { getAnalyticsOverview } from "@/modules/analytics/actions/analytics";
 import { prisma } from "@/lib/prisma";
-import { Activity, ShieldCheck, Sparkles, Clock, Terminal } from "lucide-react";
+import { ShieldCheck, Sparkles, Clock, Terminal } from "lucide-react";
 import { InteractiveSpotlight } from "@/components/dashboard/InteractiveSpotlight";
 
 
@@ -21,8 +19,6 @@ export default async function DashboardPage() {
         orderBy: { createdAt: 'desc' },
         take: 5
     }) : [];
-
-    const analyticsData = await getAnalyticsOverview(30);
 
     return (
         <div className="ds-page space-y-8">
@@ -66,25 +62,13 @@ export default async function DashboardPage() {
                     {/* Role badge */}
                     <div className="flex items-center gap-2 shrink-0">
                         <div className="flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-xs text-teal-400 uppercase tracking-widest"
-                            style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)' }}>
+                           style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)' }}>
                             <ShieldCheck size={12} className="text-teal-500" />
                             {currentRole}
                         </div>
                     </div>
                 </div>
             </InteractiveSpotlight>
-
-
-            {/* ── Analytics Overview ── */}
-            <div className="relative z-10 space-y-4">
-                <div className="flex items-center gap-2.5 px-1">
-                    <div className="ds-icon-box w-6 h-6">
-                        <Activity size={12} strokeWidth={1.5} className="text-teal-400" />
-                    </div>
-                    <h2 className="font-mono text-xs font-bold text-slate-500 uppercase tracking-[0.14em]">Métricas Estratégicas</h2>
-                </div>
-                <AnalyticsOverview data={analyticsData} />
-            </div>
 
             {/* ── Recent Activity ── */}
             <InteractiveSpotlight className="relative z-10 ds-section">
