@@ -104,6 +104,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/admin/crm/commissions": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/automation": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/sequences": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/admin/crm/assignment": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
 
     // ── Finanzas y Operaciones ────────────────────────────
     "/dashboard/admin/treasury": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
@@ -247,9 +248,9 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "calendar.create", routes: ["/dashboard/events"] },
     { perm: "calendar.delete", routes: ["/dashboard/events"] },
     // CRM
-    { perm: "crm.view_own", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences"] },
-    { perm: "crm.view_all", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences"] },
-    { perm: "crm.edit", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences"] },
+    { perm: "crm.view_own", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.view_all", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.edit", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
     { perm: "crm.delete", routes: ["/dashboard/admin/crm/leads"] },
     { perm: "crm.export", routes: ["/dashboard/admin/crm"] },
     { perm: "crm.pipeline", routes: ["/dashboard/admin/crm/pipeline"] },
@@ -325,7 +326,7 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "crm.templates", routes: ["/dashboard/admin/crm/templates"] },
     { perm: "crm.commissions", routes: ["/dashboard/admin/crm/commissions"] },
     { perm: "crm.sequences", routes: ["/dashboard/admin/crm/sequences"] },
-    { perm: "crm.automation", routes: ["/dashboard/admin/crm/automation"] },
+    { perm: "crm.automation", routes: ["/dashboard/admin/crm/automation", "/dashboard/admin/crm/assignment"] },
 ];
 
 // ─── Master Permission List (for seed scripts) ──────────────────────────────

@@ -26,6 +26,7 @@ export const ALL_DASHBOARD_ROUTES: { route: string; label: string }[] = [
     { route: "/dashboard/admin/crm/leads", label: "CRM → Leads" },
     { route: "/dashboard/admin/crm/pipeline", label: "CRM → Pipeline" },
     { route: "/dashboard/admin/crm/campaigns", label: "CRM → Campañas" },
+    { route: "/dashboard/admin/crm/assignment", label: "CRM → Asignación de Leads" },
     { route: "/dashboard/events", label: "Calendario / Eventos" },
     { route: "/dashboard/roles", label: "Gestión de Roles" },
 ];
