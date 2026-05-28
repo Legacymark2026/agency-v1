@@ -346,6 +346,7 @@ model Company {
   videoRenderJobs           VideoRenderJob[]
   brandStyles               BrandStyle[]
   assetCatalogs             AssetCatalog[]
+  leadAssignmentRules       LeadAssignmentRule[]
 
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -1347,6 +1348,39 @@ model Lead {
   @@map("tbl_leads")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
+}
+
+model LeadAssignmentRule {
+  id                String                           @id @default(uuid())
+  name              String
+  priority          Int                              @default(0)
+  isActive          Boolean                          @default(true) @map("is_active")
+  conditions        Json                             // Array of { field: string, operator: string, value: string }
+  assignedUserId    String?                          @map("assigned_user_id")
+  teamId            String?                          @map("team_id")
+  roundRobinEnabled Boolean                          @default(false) @map("round_robin_enabled")
+  companyId         String                           @map("company_id")
+  createdAt         DateTime                         @default(now()) @map("created_at")
+  updatedAt         DateTime                         @updatedAt @map("updated_at")
+  company           Company                          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  roundRobinStates  LeadAssignmentRoundRobinState[]
+
+  @@index([companyId])
+  @@map("tbl_lead_assignment_rules")
+}
+
+model LeadAssignmentRoundRobinState {
+  id                 String             @id @default(uuid())
+  ruleId             String?            @map("rule_id")
+  teamId             String?            @map("team_id")
+  lastAssignedUserId String             @map("last_assigned_user_id")
+  companyId          String             @map("company_id")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  rule               LeadAssignmentRule? @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, ruleId])
+  @@unique([companyId, teamId])
+  @@map("tbl_lead_assignment_round_robin_states")
 }
 
 model MarketingEvent {

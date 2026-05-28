@@ -92,6 +92,8 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   expense: getPrismaCore,
   servicePrice: getPrismaCore,
   kanbanProject: getPrismaCore,
+  leadAssignmentRule: getPrismaCore,
+  leadAssignmentRoundRobinState: getPrismaCore,
 
   // Media, AI & Workflows
   post: getPrismaMedia,

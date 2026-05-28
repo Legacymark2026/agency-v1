@@ -12,6 +12,7 @@ import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
 import Redis from "ioredis";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { routeLead } from "./assignment-engine";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4002", 10);
@@ -175,8 +176,15 @@ app.post("/api/leads", async (req, res) => {
   try {
     const correlationId = (req.headers["x-correlation-id"] || `trace-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`) as string;
 
+    // Run rule assignment and round-robin distribution
+    const assigneeId = await routeLead(req.body);
+    const leadData = {
+      ...req.body,
+      assignedTo: assigneeId || req.body.assignedTo || null,
+    };
+
     const lead = await prisma.$transaction(async (tx: any) => {
-      const createdLead = await tx.lead.create({ data: req.body });
+      const createdLead = await tx.lead.create({ data: leadData });
       await tx.outboxEvent.create({
         data: {
           eventName: "lead.created",
@@ -995,7 +1003,7 @@ app.post('/api/campaigns/sync', async (req, res) => {
     if (!companyId || !platform || !Array.isArray(campaigns)) {
       return res.status(400).json({ error: 'companyId, platform, and campaigns array required' });
     }
-    const results = [];
+    const results: any[] = [];
     for (const c of campaigns) {
       const code = c.code || c.id;
       const name = c.name;
