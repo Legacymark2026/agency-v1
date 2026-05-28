@@ -4,19 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { PostSchema, PostFormData } from '@/lib/schemas';
 import { ok, fail, type ActionResult } from '@/types/actions';
-
-const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
-async function gw(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers }
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `Gateway error ${res.status}`);
-  }
-  return res.json();
-}
+import { prisma } from '@/lib/prisma';
 
 // --- Post Actions ---
 
@@ -25,7 +13,14 @@ export async function getPosts() {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
-        const posts = await gw('/api/cms/posts');
+        const posts = await prisma.post.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                author: { select: { name: true, email: true } },
+                categories: true,
+                tags: true
+            }
+        });
         return ok(posts);
     } catch (error) {
         console.error('Failed to get posts:', error);
@@ -38,7 +33,10 @@ export async function getPost(id: string) {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
-        const post = await gw(`/api/cms/posts/${id}`);
+        const post = await prisma.post.findUnique({
+            where: { id },
+            include: { categories: true, tags: true }
+        });
         return ok(post);
     } catch (error) {
         console.error('Failed to get post:', error);
@@ -65,9 +63,8 @@ export async function createPost(data: PostFormData): Promise<ActionResult<{ id:
             connect: categoryIds.map(id => ({ id }))
         } : undefined;
 
-        const post = await gw('/api/cms/posts', {
-            method: 'POST',
-            body: JSON.stringify({
+        const post = await prisma.post.create({
+            data: {
                 title: postData.title,
                 slug: postData.slug,
                 excerpt: postData.excerpt,
@@ -83,7 +80,7 @@ export async function createPost(data: PostFormData): Promise<ActionResult<{ id:
                 tags: tagConnections,
                 categories: categoryConnections,
                 faqs: faqs || [],
-            })
+            }
         });
 
         revalidatePath('/dashboard/posts');
@@ -104,8 +101,10 @@ export async function updatePost(id: string, data: PostFormData) {
     const { categoryIds, tagNames, scheduledDate, faqs, ...postData } = validated;
 
     try {
-        // Fetch current post first via gateway to manage paths during revalidation
-        const currentPost = await gw(`/api/cms/posts/${id}`).catch(() => null);
+        // Fetch current post first via prisma to manage paths during revalidation
+        const currentPost = await prisma.post.findUnique({
+            where: { id }
+        }).catch(() => null);
 
         // Process tags
         const tagConnections = tagNames?.length ? {
@@ -121,9 +120,9 @@ export async function updatePost(id: string, data: PostFormData) {
             set: categoryIds.map(id => ({ id }))
         } : { set: [] };
 
-        await gw(`/api/cms/posts/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
+        await prisma.post.update({
+            where: { id },
+            data: {
                 title: postData.title,
                 slug: postData.slug,
                 excerpt: postData.excerpt,
@@ -138,7 +137,7 @@ export async function updatePost(id: string, data: PostFormData) {
                 tags: tagConnections,
                 categories: categoryConnections,
                 faqs: faqs || [],
-            })
+            }
         });
 
         revalidatePath('/dashboard/posts');
@@ -159,8 +158,8 @@ export async function deletePost(id: string): Promise<ActionResult<void>> {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
-        await gw(`/api/cms/posts/${id}`, {
-            method: 'DELETE'
+        await prisma.post.delete({
+            where: { id }
         });
         revalidatePath('/dashboard/posts');
         return ok(undefined);
@@ -177,7 +176,10 @@ export async function getCategories() {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        const categories = await gw('/api/cms/categories');
+        const categories = await prisma.category.findMany({
+            orderBy: { name: 'asc' },
+            include: { _count: { select: { posts: true } } }
+        });
         return categories;
     } catch (error) {
         console.error("Failed to get categories:", error);
@@ -190,12 +192,11 @@ export async function createCategory(data: { name: string, slug: string }) {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await gw('/api/cms/categories', {
-            method: 'POST',
-            body: JSON.stringify({
+        await prisma.category.create({
+            data: {
                 name: data.name,
                 slug: data.slug,
-            })
+            }
         });
         revalidatePath('/dashboard/posts/categories');
         return { success: true };
@@ -210,12 +211,12 @@ export async function updateCategory(id: string, data: { name: string, slug: str
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        await gw(`/api/cms/categories/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
+        await prisma.category.update({
+            where: { id },
+            data: {
                 name: data.name,
                 slug: data.slug,
-            })
+            }
         });
         revalidatePath('/dashboard/posts/categories');
         return { success: true };
@@ -230,8 +231,8 @@ export async function deleteCategory(id: string): Promise<ActionResult<void>> {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
-        await gw(`/api/cms/categories/${id}`, {
-            method: 'DELETE'
+        await prisma.category.delete({
+            where: { id }
         });
         revalidatePath('/dashboard/posts/categories');
         return ok(undefined);
@@ -246,7 +247,10 @@ export async function getTags() {
     if (!session?.user) throw new Error("Unauthorized");
 
     try {
-        const tags = await gw('/api/cms/tags');
+        const tags = await prisma.tag.findMany({
+            orderBy: { name: 'asc' },
+            select: { name: true }
+        });
         return tags;
     } catch (error) {
         console.error("Failed to get tags:", error);

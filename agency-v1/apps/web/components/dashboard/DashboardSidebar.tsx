@@ -61,7 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/projects", label: "Portafolio", icon: <Briefcase size={14} />, code: "PRJ" },
             { href: "/dashboard/media", label: "Media", icon: <ImageIcon size={14} />, code: "MED" },
             { href: "/dashboard/marketing/pricing", label: "Tarifario", icon: <Building2 size={14} />, code: "PRC" },
-            { href: "/dashboard/admin/marketing/links", label: "Link Tracker", icon: <Link2 size={14} />, code: "TRK" },
+            { href: "/dashboard/marketing/links", label: "Link Tracker", icon: <Link2 size={14} />, code: "TRK" },
         ],
     },
     {
@@ -107,7 +107,7 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/admin/automation", label: "Automatización", icon: <Workflow size={14} />, code: "BOT" },
             { href: "/dashboard/admin/marketing/settings", label: "APIs & Config", icon: <Settings size={14} />, code: "API" },
-            { href: "/dashboard/admin/marketing/spend", label: "Ad Spend (ROI)", icon: <DollarSign size={14} />, code: "ROI" },
+            { href: "/dashboard/marketing/spend", label: "Ad Spend (ROI)", icon: <DollarSign size={14} />, code: "ROI" },
         ],
     },
     {
