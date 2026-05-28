@@ -235,7 +235,7 @@ app.post('/api/email-blast/test', async (req: Request, res: Response) => {
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ from: 'LegacyMark <noreply@legacymarksas.com>', to: toEmail, subject: `[PRUEBA] ${subject}`, html })
     });
-    const data = await result.json();
+    const data = await result.json() as { id?: string };
     res.json({ success: !!data.id, id: data.id });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
