@@ -541,33 +541,50 @@ export async function getIntegrationHealthDashboard() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: [] };
 
-        // Read from real IntegrationConfig table instead of empty IntegrationLog
+        // Read all integration configs for this company from DB
         const configs = await prisma.integrationConfig.findMany({
             where: { companyId: session.user.companyId },
-            select: { provider: true, isEnabled: true }
+            select: { provider: true, isEnabled: true, updatedAt: true }
         });
 
         const configMap = new Map(configs.map(c => [c.provider, c]));
 
-        // All known providers in the platform
+        // Canonical provider list — uses the current family provider IDs
         const ALL_PROVIDERS = [
-            'facebook-pixel', 'tiktok-pixel', 'linkedin-insight', 'google-analytics',
-            'google-tag-manager', 'google-ads', 'hotjar', 'whatsapp',
-            'facebook', 'instagram', 'gemini', 'google-search-console',
-            // New integration card names (not yet configured)
-            'HUBSPOT', 'MAILCHIMP', 'TWILIO', 'SLACK', 'RESEND',
-            'OPENAI', 'ZAPIER', 'AWS_S3', 'ZOHO', 'DYNAMICS365',
+            // Meta Family
+            'meta-pixel', 'facebook-page', 'instagram-page', 'whatsapp',
+            // Advertising
+            'tiktok-ads', 'tiktok-messages',
+            'linkedin-ads', 'linkedin-webhook',
+            'google-ads', 'google-analytics', 'google-tag-manager', 'google-search-console',
+            // Analytics / SEO
+            'hotjar', 'ahrefs',
+            // AI
+            'ai-models',
+            // Payments
+            'payu',
+            // Coming soon (library addons — stored with their own keys once connected)
+            'hubspot', 'mailchimp',
         ];
 
         const result = ALL_PROVIDERS.map(key => {
-            const config = configMap.get(key) as any;
-            return {
-                key,
-                status: config ? (config.isEnabled ? 'OK' : 'DEGRADED') : 'UNCONFIGURED',
-                checkedAt: new Date(),
-                message: config ? (config.isEnabled ? 'Conectada y activa' : 'Configurada pero desactivada') : null,
-                latencyMs: null
-            };
+            // Also check legacy keys (e.g. 'facebook', 'tiktok-pixel')
+            const config = configMap.get(key) || configMap.get(legacyKey(key));
+            let status: 'OK' | 'DEGRADED' | 'UNCONFIGURED' | 'ERROR';
+            let message: string | null;
+
+            if (!config) {
+                status = 'UNCONFIGURED';
+                message = null;
+            } else if (config.isEnabled) {
+                status = 'OK';
+                message = `Configurada y activa · última actualización ${formatRelative(config.updatedAt)}`;
+            } else {
+                status = 'DEGRADED';
+                message = 'Configurada pero desactivada';
+            }
+
+            return { key, status, checkedAt: new Date(), message, latencyMs: null };
         });
 
         return { success: true, data: result };
@@ -575,6 +592,28 @@ export async function getIntegrationHealthDashboard() {
         return { success: false, data: [], error: error.message };
     }
 }
+
+function legacyKey(provider: string): string {
+    const map: Record<string, string> = {
+        'meta-pixel': 'facebook-pixel',
+        'facebook-page': 'facebook',
+        'tiktok-ads': 'tiktok-pixel',
+        'linkedin-ads': 'linkedin-insight',
+    };
+    return map[provider] || provider;
+}
+
+function formatRelative(date: Date): string {
+    const diff = Date.now() - new Date(date).getTime();
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    if (days > 0) return `hace ${days}d`;
+    if (hours > 0) return `hace ${hours}h`;
+    if (mins > 0) return `hace ${mins}m`;
+    return 'ahora mismo';
+}
+
 
 export async function testIntegrationConnection(integration: string) {
     try {
@@ -689,21 +728,62 @@ export async function getInvoices() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: [] };
 
-        // In a real app this would come from Stripe
-        // For now return from company settings/DB
         const company = await prisma.company.findUnique({
             where: { id: session.user.companyId },
-            select: { defaultCompanySettings: true, name: true },
+            select: { defaultCompanySettings: true, name: true, stripeCustomerId: true } as any,
         });
 
-        // Mock invoices that would come from Stripe
-        const invoices = [
-            { id: "inv_001", date: new Date(), amount: 4900, currency: "USD", status: "PAID", downloadUrl: "#" },
-            { id: "inv_002", date: new Date(Date.now() - 30 * 86400000), amount: 4900, currency: "USD", status: "PAID", downloadUrl: "#" },
-            { id: "inv_003", date: new Date(Date.now() - 60 * 86400000), amount: 4900, currency: "USD", status: "PAID", downloadUrl: "#" },
-        ];
+        const stripeKey = process.env.STRIPE_SECRET_KEY;
+        const customerId = (company as any)?.stripeCustomerId;
 
-        return { success: true, data: invoices, company };
+        // ── Real Stripe invoices ───────────────────────────────────────────────
+        if (stripeKey && customerId) {
+            try {
+                const stripeRes = await fetch(
+                    `https://api.stripe.com/v1/invoices?customer=${customerId}&limit=24&status=paid`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${stripeKey}`,
+                            'Stripe-Version': '2024-04-10',
+                        },
+                        cache: 'no-store',
+                    }
+                );
+
+                if (stripeRes.ok) {
+                    const stripeData = await stripeRes.json();
+                    const invoices = (stripeData.data || []).map((inv: any) => ({
+                        id: inv.id,
+                        date: new Date(inv.created * 1000),
+                        amount: inv.amount_paid,          // in cents
+                        currency: (inv.currency || 'usd').toUpperCase(),
+                        status: inv.status === 'paid' ? 'PAID' : inv.status?.toUpperCase() ?? 'UNKNOWN',
+                        downloadUrl: inv.invoice_pdf || inv.hosted_invoice_url || '#',
+                        number: inv.number,
+                        description: inv.description || inv.lines?.data?.[0]?.description,
+                    }));
+                    return { success: true, data: invoices, company };
+                }
+
+                const errBody = await stripeRes.json().catch(() => ({}));
+                console.error('[getInvoices] Stripe API error:', stripeRes.status, errBody);
+            } catch (e) {
+                console.error('[getInvoices] Failed to fetch from Stripe:', e);
+            }
+        }
+
+        // ── Stripe not configured or no customer ID ───────────────────────────
+        // Return empty array — the billing UI should explain the situation honestly
+        return {
+            success: true,
+            data: [],
+            company,
+            notice: !stripeKey
+                ? 'Stripe no está configurado en el servidor (STRIPE_SECRET_KEY faltante).'
+                : !customerId
+                ? 'Esta empresa aún no tiene un Customer ID de Stripe. Las facturas aparecerán aquí una vez que se realice el primer pago.'
+                : null,
+        };
     } catch (error: any) {
         return { success: false, data: [], error: error.message };
     }

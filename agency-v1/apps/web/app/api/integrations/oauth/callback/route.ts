@@ -63,9 +63,38 @@ export async function GET(req: NextRequest) {
             accessToken = data.access_token;
             refreshToken = data.refresh_token;
         } else if (provider === "mailchimp") {
-            // Mailchimp logic
-            // (Similar real logic)
-            accessToken = "mock_mailchimp_token_" + code;
+            const mcClientId = process.env.MAILCHIMP_CLIENT_ID;
+            const mcClientSecret = process.env.MAILCHIMP_CLIENT_SECRET;
+
+            if (!mcClientId || !mcClientSecret) {
+                return NextResponse.redirect(
+                    `${req.nextUrl.origin}/dashboard/settings/integrations?error=mailchimp_not_configured&detail=${encodeURIComponent('MAILCHIMP_CLIENT_ID y MAILCHIMP_CLIENT_SECRET no están configurados en el servidor.')}`
+                );
+            }
+
+            const tokenRes = await fetch("https://login.mailchimp.com/oauth2/token", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({
+                    grant_type: "authorization_code",
+                    client_id: mcClientId,
+                    client_secret: mcClientSecret,
+                    redirect_uri: redirectUri,
+                    code: code,
+                }),
+            });
+
+            const data = await tokenRes.json();
+            if (!tokenRes.ok || !data.access_token) {
+                console.error("[Mailchimp Token Error]", data);
+                return NextResponse.redirect(
+                    `${req.nextUrl.origin}/dashboard/settings/integrations?error=mailchimp_token_failed&detail=${encodeURIComponent(data.error_description || data.error || 'Token exchange failed')}`
+                );
+            }
+
+            accessToken = data.access_token;
+            // Mailchimp uses OAuth2 without refresh tokens (tokens don't expire unless revoked)
+
         } else {
             return new NextResponse(`Provider ${provider} exchange not implemented`, { status: 400 });
         }

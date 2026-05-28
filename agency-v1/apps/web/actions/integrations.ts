@@ -136,7 +136,7 @@ export async function createEmailDomainVerification(domain: string) {
     if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
     try {
-        // Check domain existence
+        // Check domain existence in our DB
         const checkResponse = await fetch(`${API_GATEWAY_URL}/api/integrations/domains/${domain}`, {
             cache: 'no-store'
         });
@@ -148,33 +148,92 @@ export async function createEmailDomainVerification(domain: string) {
             }
         }
 
-        // Mocking DNS records that the user should add. 
-        // In a real scenario, this would call Resend/AWS SES API.
-        const mockDnsRecords = [
-            { type: 'TXT', host: `_resend.${domain}`, value: 'resend-k123abc' },
-            { type: 'TXT', host: domain, value: 'v=spf1 include:resend.com ~all' }
-        ];
+        const resendApiKey = process.env.RESEND_API_KEY;
 
-        const response = await fetch(`${API_GATEWAY_URL}/api/integrations/domains`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                companyId: session.user.companyId,
-                domain,
-                dnsRecords: mockDnsRecords,
-                status: 'pending'
-            })
-        });
-
-        if (!response.ok) {
-            const err = await response.json().catch(() => ({}));
-            return { success: false, error: err.error || "Failed to create email domain verification" };
+        if (!resendApiKey) {
+            return {
+                success: false,
+                error: "La verificación de dominios de email requiere una API Key de Resend. Configura RESEND_API_KEY en las variables de entorno del servidor para habilitar esta funcionalidad.",
+            };
         }
 
-        revalidatePath('/dashboard/settings/integrations');
-        return { success: true, records: mockDnsRecords };
+        // ── Real Resend API call ──────────────────────────────────────────────
+        // Try to create the domain in Resend (idempotent — returns existing if already registered)
+        const resendRes = await fetch('https://api.resend.com/domains', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: domain }),
+        });
+
+        const resendData = await resendRes.json();
+
+        if (!resendRes.ok) {
+            // Domain may already exist — try to get it
+            if (resendRes.status === 422 || resendData?.name === 'already_exists') {
+                // Fetch existing domain details
+                const listRes = await fetch('https://api.resend.com/domains', {
+                    headers: { Authorization: `Bearer ${resendApiKey}` },
+                });
+                if (listRes.ok) {
+                    const listData = await listRes.json();
+                    const existingDomain = listData?.data?.find((d: any) => d.name === domain);
+                    if (existingDomain) {
+                        // Fetch full domain details with DNS records
+                        const detailRes = await fetch(`https://api.resend.com/domains/${existingDomain.id}`, {
+                            headers: { Authorization: `Bearer ${resendApiKey}` },
+                        });
+                        if (detailRes.ok) {
+                            const detail = await detailRes.json();
+                            const dnsRecords = (detail.records || []).map((r: any) => ({
+                                type: r.type,
+                                host: r.name,
+                                value: r.value,
+                                ttl: r.ttl,
+                                priority: r.priority,
+                                status: r.status,
+                            }));
+                            await saveAndReturn(dnsRecords, detail.status || 'pending');
+                            return { success: true, records: dnsRecords, resendId: existingDomain.id, status: detail.status };
+                        }
+                    }
+                }
+            }
+
+            const errMsg = resendData?.message || resendData?.error || `Error de Resend: HTTP ${resendRes.status}`;
+            return { success: false, error: errMsg };
+        }
+
+        // Map Resend DNS records to our format
+        const dnsRecords = (resendData.records || []).map((r: any) => ({
+            type: r.type,
+            host: r.name,
+            value: r.value,
+            ttl: r.ttl,
+            priority: r.priority,
+            status: r.status,
+        }));
+
+        await saveAndReturn(dnsRecords, resendData.status || 'pending');
+        return { success: true, records: dnsRecords, resendId: resendData.id, status: resendData.status };
+
+        // ─────────────────────────────────────────────────────────────────────
+        async function saveAndReturn(records: any[], status: string) {
+            await fetch(`${API_GATEWAY_URL}/api/integrations/domains`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    companyId: session!.user!.companyId,
+                    domain,
+                    dnsRecords: records,
+                    status,
+                }),
+            });
+            revalidatePath('/dashboard/settings/integrations');
+        }
+
     } catch (e: any) {
         return { success: false, error: e.message };
     }
