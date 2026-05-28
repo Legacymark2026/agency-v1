@@ -12,15 +12,19 @@ import { getSettingsOverview, getUsageStats, getIntegrationHealthDashboard } fro
 const fmt = (n: number) => new Intl.NumberFormat("es-CO").format(n);
 const pct = (val: number, limit: number) => Math.min(Math.round((val / limit) * 100), 100);
 
-const SECTIONS = [
-    { href: "/dashboard/settings/company", icon: <Globe className="w-5 h-5 text-teal-400" />, label: "Empresa & Marca", desc: "Logo, dominio, datos fiscales, localización" },
-    { href: "/dashboard/settings/security", icon: <Shield className="w-5 h-5 text-blue-400" />, label: "Seguridad", desc: "2FA, sesiones, IP whitelist, audit log" },
-    { href: "/dashboard/settings/integrations", icon: <Plug2 className="w-5 h-5 text-violet-400" />, label: "Integraciones", desc: "Google, Meta, Stripe, Twilio, OpenAI y más" },
-    { href: "/dashboard/settings/billing", icon: <CreditCard className="w-5 h-5 text-amber-400" />, label: "Facturación", desc: "Plan, uso, facturas, método de pago" },
-    { href: "/dashboard/settings/members", icon: <Users className="w-5 h-5 text-emerald-400" />, label: "Equipo & Roles", desc: "Miembros, permisos RBAC, invitaciones" },
-    { href: "/dashboard/settings/notifications", icon: <Bell className="w-5 h-5 text-rose-400" />, label: "Notificaciones", desc: "Email, WhatsApp, Push, Slack por evento" },
-    { href: "/dashboard/settings/developer", icon: <Code2 className="w-5 h-5 text-cyan-400" />, label: "Developer & API", desc: "API keys, webhooks, request logs" },
-    { href: "/dashboard/settings/appearance", icon: <Palette className="w-5 h-5 text-pink-400" />, label: "Apariencia", desc: "Tema, acento, densidad de UI" },
+const ORG_SECTIONS = [
+    { href: "/dashboard/settings/company", icon: <Globe className="w-5 h-5 text-teal-400" />, label: "Empresa & Marca Blanca", desc: "Logo, dominio, datos fiscales y personalización de marca" },
+    { href: "/dashboard/settings/members", icon: <Users className="w-5 h-5 text-emerald-400" />, label: "Equipo & Roles", desc: "Gestión de miembros, invitaciones y permisos de acceso" },
+    { href: "/dashboard/admin/marketing/settings", icon: <Plug2 className="w-5 h-5 text-violet-400" />, label: "Biblioteca de Integraciones", desc: "Google, Meta, Stripe, Twilio, OpenAI y APIs" },
+    { href: "/dashboard/settings/billing", icon: <CreditCard className="w-5 h-5 text-amber-400" />, label: "Facturación & Plan", desc: "Plan contratado, consumos de cuota, facturas y método de pago" },
+    { href: "/dashboard/settings/developer", icon: <Code2 className="w-5 h-5 text-cyan-400" />, label: "Developer & API", desc: "Claves de API, webhooks y registros de solicitudes" },
+];
+
+const PERSONAL_SECTIONS = [
+    { href: "/dashboard/settings/profile", icon: <Users className="w-5 h-5 text-blue-400" />, label: "Mi Perfil", desc: "Foto de perfil, datos públicos, idioma y zona horaria" },
+    { href: "/dashboard/settings/notifications", icon: <Bell className="w-5 h-5 text-rose-400" />, label: "Notificaciones", desc: "Preferencias de alertas por Email, WhatsApp, Slack y Push" },
+    { href: "/dashboard/settings/appearance", icon: <Palette className="w-5 h-5 text-pink-400" />, label: "Apariencia & UI", desc: "Temas visuales, colores de acento y densidad de interfaz" },
+    { href: "/dashboard/settings/security", icon: <Shield className="w-5 h-5 text-red-400" />, label: "Seguridad y Auditoría", desc: "Autenticación 2FA, historial de sesiones y bitácora de seguridad" },
 ];
 
 const STATUS_CFG: Record<string, { cls: string; dot: string; label: string }> = {
@@ -51,19 +55,18 @@ export default function SettingsHubPage() {
 
     useEffect(() => { load(); }, [load]);
 
-    const errorIntegrations = health.filter(h => h.status === "ERROR" || h.status === "DEGRADED");
     const healthyCount = health.filter(h => h.status === "OK").length;
 
     return (
-        <div className="space-y-6 pb-10 max-w-5xl">
+        <div className="space-y-8 pb-10 max-w-5xl">
             {/* Header */}
             <div>
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] text-xs font-mono mb-3">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] text-xs font-mono mb-3">
                     <Activity className="w-3.5 h-3.5" />
-                    <span>CENTRO DE CONTROL — CONFIGURACIÓN DEL SISTEMA</span>
+                    <span>CENTRO DE CONTROL — CONFIGURACIÓN GLOBAL</span>
                 </div>
-                <h1 className="text-2xl font-bold text-[var(--ds-text-primary)] tracking-tight">Panel de Configuración</h1>
-                <p className="text-[var(--ds-text-secondary)] text-sm mt-1">Visión general del sistema, alertas activas y acceso rápido a todos los módulos de configuración.</p>
+                <h1 className="text-3xl font-black tracking-tight text-white">Panel de Configuración</h1>
+                <p className="text-[var(--ds-text-secondary)] text-sm mt-1">Configura las propiedades de tu organización y tus preferencias de perfil personal.</p>
             </div>
 
             {/* Alerts */}
@@ -138,12 +141,12 @@ export default function SettingsHubPage() {
                         <h3 className="text-sm font-semibold text-[var(--ds-text-primary)] flex items-center gap-2">
                             <Server className="w-4 h-4 text-blue-400" /> Estado de Integraciones
                         </h3>
-                        <Link href="/dashboard/settings/integrations" className="text-xs text-[var(--ds-teal-md)] hover:text-[var(--ds-teal-bright)] flex items-center gap-1">
+                        <Link href="/dashboard/admin/marketing/settings" className="text-xs text-[var(--ds-teal-md)] hover:text-[var(--ds-teal-bright)] flex items-center gap-1">
                             Ver todas <ArrowRight className="w-3 h-3" />
                         </Link>
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        {health.slice(0, 10).map((h: any) => {
+                        {health.slice(0, 5).map((h: any) => {
                             const cfg = STATUS_CFG[h.status] || STATUS_CFG.UNCONFIGURED;
                             return (
                                 <div key={h.key} className="flex flex-col items-center gap-1.5 p-2.5 bg-[var(--ds-surface-2)]/60 rounded-lg border border-[var(--ds-border)]/60">
@@ -160,22 +163,44 @@ export default function SettingsHubPage() {
                 </div>
             )}
 
-            {/* Navigation Grid */}
-            <div>
-                <h3 className="text-xs font-mono font-bold text-[var(--ds-text-muted)] uppercase tracking-widest mb-4">MÓDULOS DE CONFIGURACIÓN</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {SECTIONS.map(s => (
-                        <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
-                            <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
-                                {s.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
-                                <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-[var(--ds-teal-md)] group-hover:translate-x-0.5 transition-all shrink-0" />
-                        </Link>
-                    ))}
+            {/* Navigation Grid by Categories */}
+            <div className="space-y-6">
+                {/* 1. System/Organization Settings */}
+                <div className="space-y-4">
+                    <h3 className="text-xs font-mono font-bold text-[var(--ds-teal-md)] uppercase tracking-widest border-b border-[var(--ds-border)] pb-2">Configuración de la Organización</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {ORG_SECTIONS.map(s => (
+                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                    {s.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-[var(--ds-teal-md)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 2. Personal Settings */}
+                <div className="space-y-4 pt-4">
+                    <h3 className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest border-b border-[var(--ds-border)] pb-2">Ajustes Personales de Cuenta</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {PERSONAL_SECTIONS.map(s => (
+                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                    {s.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                            </Link>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
