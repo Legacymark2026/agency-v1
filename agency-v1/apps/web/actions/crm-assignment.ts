@@ -35,7 +35,7 @@ export async function getTeamsAndAgents(companyId: string) {
         const agents = companyUsers
             .map(cu => cu.user)
             .filter(u => u && !u.deactivatedAt)
-            .map(u => ({ id: u.id, name: u.name || u.email }));
+            .map(u => ({ id: u.id, name: u.name || u.email || "Agente sin nombre" }));
 
         return { teams, agents };
     } catch (error) {
