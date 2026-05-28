@@ -152,7 +152,7 @@ function askQuestion(rl, questionText) {
 
     console.log('\n✅ ¡Vinculación completada con éxito!');
     console.log(`Las credenciales con el Refresh Token se han guardado en: ${outputPath}`);
-    console.log('\nAhora puedes ejecutar "node gsc-monitor.js" para generar tu reporte diario de indexación.');
+    console.log('\nAhora puedes ejecutar "node scripts/gsc-monitor.js" para generar tu reporte diario de indexación.');
 
   } catch (err) {
     console.error('\n❌ Ocurrió un error inesperado durante la vinculación:', err.message);

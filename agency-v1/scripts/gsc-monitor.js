@@ -4,9 +4,19 @@ const https = require('https');
 const crypto = require('crypto');
 
 // Load User GSC Credentials
-const credsPath = path.join(__dirname, 'gsc-credentials.json');
-if (!fs.existsSync(credsPath)) {
-  console.error(`Error: Credentials file not found at ${credsPath}. Please run "node gsc-authorize.js" first!`);
+const searchPaths = [
+  path.join(__dirname, 'gsc-credentials.json'),
+  path.join(__dirname, '..', 'gsc-credentials.json')
+];
+let credsPath = null;
+for (const p of searchPaths) {
+  if (fs.existsSync(p)) {
+    credsPath = p;
+    break;
+  }
+}
+if (!credsPath) {
+  console.error(`Error: Credentials file not found. Please run "node scripts/gsc-authorize.js" first!`);
   process.exit(1);
 }
 const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
@@ -210,12 +220,22 @@ async function inspectUrl(accessToken, targetUrl) {
     }
     reportMarkdown += `3. **Monitoreo Continuo:** Ejecutar este reporte diariamente para detectar discrepancias SEO antes de que impacten el tráfico orgánico.\n`;
 
-    // Save report to the artifacts directory so the user can easily view it
-    const artifactsDir = 'C:\\Users\\hboho\\.gemini\\antigravity\\brain\\3c41967e-5ef6-4589-bb13-40265ababe40';
-    const reportPath = path.join(artifactsDir, 'gsc_indexation_report.md');
+    // Save report to the scripts directory
+    const reportPath = path.join(__dirname, 'gsc_indexation_report.md');
     fs.writeFileSync(reportPath, reportMarkdown, 'utf8');
 
-    console.log(`\n🎉 Report generated successfully! Saved to: ${reportPath}`);
+    // Also try to save to the current conversation brain directory if available
+    const currentConversationDir = 'C:\\Users\\hboho\\.gemini\\antigravity\\brain\\dcc46c88-b821-4b44-8c4c-c0dbdb606053';
+    let savedToBrain = '';
+    if (fs.existsSync(currentConversationDir)) {
+      try {
+        const brainReportPath = path.join(currentConversationDir, 'gsc_indexation_report.md');
+        fs.writeFileSync(brainReportPath, reportMarkdown, 'utf8');
+        savedToBrain = ` and brain: ${brainReportPath}`;
+      } catch (e) {}
+    }
+
+    console.log(`\n🎉 Report generated successfully! Saved to: ${reportPath}${savedToBrain}`);
     console.log('==================================================');
     console.log(reportMarkdown);
 

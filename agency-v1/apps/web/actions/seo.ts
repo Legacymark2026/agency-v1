@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import fs from 'fs';
 import path from 'path';
 import { getIntegrationConfig } from "@/actions/integration-config";
+import sitemap from "@/app/sitemap";
 
 // Types
 export interface GSCResult {
@@ -29,10 +30,16 @@ export interface GSCReport {
 function findCredentialsPath(): string | null {
     const searchPaths = [
         path.join(process.cwd(), 'gsc-credentials.json'),
+        path.join(process.cwd(), 'scripts/gsc-credentials.json'),
+        path.join(process.cwd(), 'scripts', 'gsc-credentials.json'),
         path.join(process.cwd(), 'apps/web', 'gsc-credentials.json'),
+        path.join(process.cwd(), 'apps/web/scripts', 'gsc-credentials.json'),
         path.join(process.cwd(), '../../gsc-credentials.json'),
+        path.join(process.cwd(), '../../scripts', 'gsc-credentials.json'),
         path.join(process.cwd(), '../..', 'gsc-credentials.json'),
-        'C:\\Users\\hboho\\.gemini\\antigravity\\scratch\\agency-v1\\gsc-credentials.json'
+        path.join(process.cwd(), '../..', 'scripts', 'gsc-credentials.json'),
+        'C:\\Users\\hboho\\.gemini\\antigravity\\scratch\\agency-v1\\gsc-credentials.json',
+        'C:\\Users\\hboho\\.gemini\\antigravity\\scratch\\agency-v1\\scripts\\gsc-credentials.json'
     ];
     for (const p of searchPaths) {
         if (fs.existsSync(p)) {
@@ -158,6 +165,15 @@ export async function getLatestReport(): Promise<GSCReport | null> {
 export async function fetchSitemapUrlsAction(): Promise<string[]> {
     const session = await auth();
     if (!session?.user) throw new Error("Unauthorized");
+
+    try {
+        const localEntries = await sitemap();
+        if (localEntries && localEntries.length > 0) {
+            return localEntries.map(e => e.url);
+        }
+    } catch (sitemapErr) {
+        console.error("Local sitemap execution failed, falling back to remote/static:", sitemapErr);
+    }
 
     const sitemapUrl = 'https://legacymarksas.com/sitemap.xml';
     

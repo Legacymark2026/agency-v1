@@ -494,7 +494,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                             </div>
                                             <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5 leading-normal">
                                                 <Info className="h-3.5 w-3.5 text-teal-500 shrink-0" />
-                                                <span>Puedes obtener el token de refresco ejecutando el asistente <code className="text-teal-400 font-mono bg-teal-500/5 px-1 rounded">node gsc-authorize.js</code> en el servidor con tu ID y Secreto de cliente.</span>
+                                                <span>Puedes obtener el token de refresco ejecutando el asistente <code className="text-teal-400 font-mono bg-teal-500/5 px-1 rounded">node scripts/gsc-authorize.js</code> en el servidor con tu ID y Secreto de cliente.</span>
                                             </p>
                                         </div>
                                     </>

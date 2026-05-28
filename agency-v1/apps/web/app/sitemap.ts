@@ -1,15 +1,21 @@
 import { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site-config";
-import { getAllPosts } from "@/lib/data";
+import { getAllPosts, getAllProjects } from "@/lib/data";
 import { routing } from "@/i18n/routing";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const posts = await getAllPosts();
+    const [posts, projects] = await Promise.all([
+        getAllPosts(),
+        getAllProjects()
+    ]);
 
     const staticRoutes = [
         "",
         "/servicios",
         "/soluciones/automatizacion",
+        "/soluciones/creacion-contenido",
+        "/soluciones/estrategia",
+        "/soluciones/estrategia-de-marca",
         "/soluciones/web-dev",
         "/portfolio",
         "/metodologia",
@@ -19,6 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         "/politica-privacidad",
         "/politica-cookies",
         "/terms",
+        "/tarifario",
+        "/vip",
     ];
 
     const sitemapEntries: MetadataRoute.Sitemap = [];
@@ -70,6 +78,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                 lastModified: (post as any).updatedAt ? new Date((post as any).updatedAt) : new Date(),
                 changeFrequency: "weekly",
                 priority: 0.6,
+                alternates: buildAlternates(route),
+            });
+        });
+    });
+
+    // 3. Dynamic Portfolio Routes across locales
+    projects.forEach((project) => {
+        routing.locales.forEach((locale) => {
+            const route = `/portfolio/${project.slug}`;
+            sitemapEntries.push({
+                url: `${baseUrl}/${locale}${route}`,
+                lastModified: (project as any).updatedAt ? new Date((project as any).updatedAt) : new Date(),
+                changeFrequency: "weekly",
+                priority: 0.7,
                 alternates: buildAlternates(route),
             });
         });

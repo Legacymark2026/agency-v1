@@ -55,6 +55,7 @@ debug-whatsapp.log
 # credentials
 google-credentials.json
 gsc-credentials.json
+scripts/gsc-credentials.json
 
 # old archive
 .logs_archive/
@@ -62,10 +63,11 @@ gsc-credentials.json
 .vercel
 
 # debug scripts and screenshots
-debug-page.js
-debug-all-pages.js
-debug-local.js
-check-sitemap.js
+scripts/debug-page.js
+scripts/debug-all-pages.js
+scripts/debug-local.js
+scripts/check-sitemap.js
+screenshots/
 live-screenshot*.png
 local-dev-screenshot.png
 *screenshot*.png

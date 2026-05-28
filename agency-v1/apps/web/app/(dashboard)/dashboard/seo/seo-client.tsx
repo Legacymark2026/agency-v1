@@ -22,7 +22,7 @@ export function SeoDashboardClient({ initialCredsStatus, initialReport, sitemapU
     const [scanProgress, setScanProgress] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [verdictFilter, setVerdictFilter] = useState('ALL');
-    const [batchSize, setBatchSize] = useState(6);
+    const [batchSize, setBatchSize] = useState<number | 'all'>(6);
     
     // Single URL inspection state
     const [singleUrlInput, setSingleUrlInput] = useState('');
@@ -55,14 +55,19 @@ export function SeoDashboardClient({ initialCredsStatus, initialReport, sitemapU
         
         try {
             setScanProgress('Filtrando URLs del sitemap...');
-            // Sample main routes and some blog posts
-            const mainUrls = sitemapUrls.filter(u => !u.includes('/blog/')).slice(0, Math.ceil(batchSize / 2));
-            const blogUrls = sitemapUrls.filter(u => u.includes('/blog/')).slice(0, Math.floor(batchSize / 2));
-            const urlsToScan = [...mainUrls, ...blogUrls].slice(0, batchSize);
+            let urlsToScan: string[] = [];
+            if (batchSize === 'all') {
+                urlsToScan = [...sitemapUrls];
+            } else {
+                // Sample main routes, blog posts, and portfolio projects
+                const mainUrls = sitemapUrls.filter(u => !u.includes('/blog/') && !u.includes('/portfolio/')).slice(0, Math.ceil(batchSize / 2));
+                const dynamicUrls = sitemapUrls.filter(u => u.includes('/blog/') || u.includes('/portfolio/')).slice(0, Math.floor(batchSize / 2));
+                urlsToScan = [...mainUrls, ...dynamicUrls].slice(0, batchSize);
 
-            if (urlsToScan.length === 0) {
-                // fallback to first N urls
-                urlsToScan.push(...sitemapUrls.slice(0, batchSize));
+                if (urlsToScan.length === 0) {
+                    // fallback to first N urls
+                    urlsToScan.push(...sitemapUrls.slice(0, batchSize));
+                }
             }
 
             setScanProgress(`Iniciando inspección de ${urlsToScan.length} URLs seleccionadas...`);
@@ -169,7 +174,7 @@ export function SeoDashboardClient({ initialCredsStatus, initialReport, sitemapU
                             <div className="flex items-start gap-3">
                                 <span className="text-teal-400 font-bold shrink-0">2.</span>
                                 <span>Ejecuta el script de autorización:
-                                    <pre className="mt-2 p-2.5 rounded bg-slate-950 text-teal-300 border border-slate-800 text-xs overflow-x-auto select-all">node gsc-authorize.js</pre>
+                                    <pre className="mt-2 p-2.5 rounded bg-slate-950 text-teal-300 border border-slate-800 text-xs overflow-x-auto select-all">node scripts/gsc-authorize.js</pre>
                                 </span>
                             </div>
                             <div className="flex items-start gap-3">
@@ -227,14 +232,14 @@ export function SeoDashboardClient({ initialCredsStatus, initialReport, sitemapU
                 <div className="flex flex-wrap items-center gap-3 shrink-0">
                     <div className="flex items-center gap-2 p-1 bg-slate-900/60 border border-slate-800 rounded-lg">
                         <span className="text-[10px] uppercase font-mono text-slate-500 px-2">Lote:</span>
-                        {[6, 12, 20].map(sz => (
+                        {[6, 12, 20, 50, 'all'].map(sz => (
                             <button
                                 key={sz}
-                                onClick={() => setBatchSize(sz)}
+                                onClick={() => setBatchSize(sz as any)}
                                 className={`px-2.5 py-1 text-xs font-mono rounded ${batchSize === sz ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30' : 'text-slate-400 hover:text-white'}`}
                                 disabled={isScanning}
                             >
-                                {sz}
+                                {sz === 'all' ? 'Todos' : sz}
                             </button>
                         ))}
                     </div>
