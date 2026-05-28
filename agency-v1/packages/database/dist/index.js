@@ -90,6 +90,8 @@ const modelToClientGetter = {
     expense: exports.getPrismaCore,
     servicePrice: exports.getPrismaCore,
     kanbanProject: exports.getPrismaCore,
+    leadAssignmentRule: exports.getPrismaCore,
+    leadAssignmentRoundRobinState: exports.getPrismaCore,
     // Media, AI & Workflows
     post: exports.getPrismaMedia,
     category: exports.getPrismaMedia,

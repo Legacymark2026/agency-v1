@@ -274,6 +274,9 @@ app.use("/api/marketing", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/campaigns", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/email-blast", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/creative", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/email-templates", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/mailing-lists", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/suppression-lists", resilientProxy("marketing", SERVICES.marketing));
 // Integration Service
 app.use("/api/integrations", resilientProxy("integration", SERVICES.integration));
 app.use("/api/webhooks/shopify", resilientProxy("integration", SERVICES.integration));
@@ -308,6 +311,8 @@ app.use("/api/payroll-hr", resilientProxy("hr", SERVICES.hr));
 app.use("/api/projects", resilientProxy("project", SERVICES.project));
 app.use("/api/kanban", resilientProxy("project", SERVICES.project));
 app.use("/api/tasks", resilientProxy("project", SERVICES.project));
+app.use("/api/portfolio", resilientProxy("project", SERVICES.project));
+app.use("/api/cms", resilientProxy("project", SERVICES.project));
 // ── Fallback ─────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ error: "Route not found", hint: "Check the API Gateway route table" });
