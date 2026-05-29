@@ -10,7 +10,7 @@ const cspHeader = `
     script-src 'self' 'unsafe-inline' ${isProd ? '' : "'unsafe-eval'"} https://www.googletagmanager.com https://connect.facebook.net https://static.hotjar.com https://script.hotjar.com https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://vercel.live;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com;
     img-src 'self' blob: data: https: http: https://vercel.live;
-    font-src 'self' data: https://fonts.gstatic.com;
+    font-src 'self' data: https://fonts.gstatic.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
     form-action 'self' https://*.stripe.com https://*.facebook.com https://*.hubspot.com;
