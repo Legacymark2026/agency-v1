@@ -594,7 +594,7 @@ function generateFallbackReport(data: any): AuditReport {
                 titleVerdict,
                 description: data.description || "No detectado",
                 descriptionLength: data.descriptionLength,
-                descriptionVerdict,
+                descriptionVerdict: descVerdict,
                 h1Count: data.h1Count,
                 h1Verdict,
                 imagesCount: data.imagesCount,
