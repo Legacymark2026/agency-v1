@@ -17,11 +17,6 @@ export function ChatWidget() {
     const [isHovered, setIsHovered] = useState(false);
     const [hasUnread, setHasUnread] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-
-    // Si estamos en el panel de control (rutas de dashboard), no renderizar el widget de chat flotante
-    if (pathname?.includes("/dashboard") || pathname?.startsWith("/dashboard")) {
-        return null;
-    }
     
     // Drag state
     const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -29,14 +24,18 @@ export function ChatWidget() {
     const dragStartRef = useRef({ x: 0, y: 0 });
     const positionRef = useRef({ x: 0, y: 0 });
 
+    const isDashboard = pathname?.includes("/dashboard") || pathname?.startsWith("/dashboard");
+
     useEffect(() => {
+        if (isDashboard) return;
         const checkMobile = () => setIsMobile(window.innerWidth < 480);
         checkMobile();
         window.addEventListener("resize", checkMobile);
         return () => window.removeEventListener("resize", checkMobile);
-    }, []);
+    }, [isDashboard]);
 
     useEffect(() => {
+        if (isDashboard) return;
         const checkExistingChat = async () => {
             const storedVid = safeStorage.getItem("chat_visitor_id");
             const storedCid = safeStorage.getItem("chat_conversation_id");
@@ -70,7 +69,7 @@ export function ChatWidget() {
         };
         
         checkExistingChat();
-    }, [isOpen]);
+    }, [isOpen, isDashboard]);
 
     const handleChatStarted = (cid: string, vid: string) => {
         setConversationId(cid);
@@ -155,6 +154,11 @@ export function ChatWidget() {
     // Mobile: show as floating button at bottom-right, not full screen overlay
     const mobileChatWidth = "sm:max-w-sm w-[85vw] max-h-[70vh]";
     const mobileButtonSize = "h-14 w-14";
+
+    // Si estamos en el panel de control (rutas de dashboard), no renderizar el widget de chat flotante
+    if (isDashboard) {
+        return null;
+    }
 
     return (
         <div 
