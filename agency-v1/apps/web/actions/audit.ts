@@ -12,6 +12,7 @@ export interface AuditReport {
     score: number; // 0-100
     status: "success" | "warning" | "error";
     screenshot?: string; // base64 string
+    screenshotError?: string; // debug info
     details: {
         speed: {
             score: number;
@@ -152,7 +153,7 @@ async function checkUrlStatus(url: string): Promise<boolean> {
 }
 
 // 2.5 Puppeteer screenshot capturer to bypass X-Frame-Options
-async function captureScreenshot(url: string): Promise<string | undefined> {
+async function captureScreenshot(url: string): Promise<{ screenshot?: string; error?: string }> {
     let browser;
     try {
         console.log(`📸 Launching Puppeteer to capture screenshot of ${url}...`);
@@ -176,10 +177,10 @@ async function captureScreenshot(url: string): Promise<string | undefined> {
             encoding: "base64"
         });
         console.log(`📸 Screenshot captured successfully for ${url}`);
-        return buffer.toString();
-    } catch (err) {
+        return { screenshot: buffer.toString() };
+    } catch (err: any) {
         console.error(`❌ Puppeteer screenshot failed for ${url}:`, err);
-        return undefined;
+        return { error: err.message || String(err) };
     } finally {
         if (browser) {
             await browser.close();
@@ -436,7 +437,9 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
             const report = JSON.parse(cleanJsonText) as AuditReport;
             
             // Capture visual screenshot
-            report.screenshot = await captureScreenshot(url);
+            const capture = await captureScreenshot(url);
+            report.screenshot = capture.screenshot;
+            report.screenshotError = capture.error;
             
             return { success: true, report };
 
@@ -447,7 +450,9 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
             const report = generateFallbackReport(rawData);
             
             // Capture visual screenshot
-            report.screenshot = await captureScreenshot(url);
+            const capture = await captureScreenshot(url);
+            report.screenshot = capture.screenshot;
+            report.screenshotError = capture.error;
             
             return { success: true, report };
         }

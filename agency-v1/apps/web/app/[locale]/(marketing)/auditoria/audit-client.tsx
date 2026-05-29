@@ -697,12 +697,25 @@ export function AuditClient() {
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 text-[11px] text-slate-400 text-center flex items-center justify-center gap-2">
-                                                        <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                                        <span>
-                                                            Nota: Si no carga o se ve en blanco, tu hosting bloquea el iframe mediante cabeceras X-Frame-Options por seguridad. Puedes usar la <strong>Vista SEO</strong>.
-                                                        </span>
-                                                    </div>
+                                                    {report.screenshotError ? (
+                                                        <div className="p-4 bg-rose-500/10 border-b border-rose-500/20 text-xs text-rose-300 text-center flex flex-col md:flex-row items-center justify-center gap-2">
+                                                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                                                            <span>
+                                                                <strong>Captura de pantalla fallida:</strong> {report.screenshotError}
+                                                            </span>
+                                                            <span className="text-slate-500 hidden md:inline">|</span>
+                                                            <span className="text-slate-400">
+                                                                Usando iframe de respaldo (puede bloquearse por seguridad).
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 text-[11px] text-slate-400 text-center flex items-center justify-center gap-2">
+                                                            <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                            <span>
+                                                                Nota: Si no carga o se ve en blanco, tu hosting bloquea el iframe mediante cabeceras X-Frame-Options por seguridad. Puedes usar la <strong>Vista SEO</strong>.
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <iframe
                                                         src={report.url}
                                                         className="w-full h-[450px] border-none bg-white flex-1"
