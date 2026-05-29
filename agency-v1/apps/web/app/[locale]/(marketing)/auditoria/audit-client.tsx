@@ -49,6 +49,7 @@ export function AuditClient() {
     const [tempReport, setTempReport] = useState<AuditReport | null>(null);
     const [report, setReport] = useState<AuditReport | null>(null);
     const [activeTab, setActiveTab] = useState<"seo" | "speed" | "usability" | "security" | "local">("seo");
+    const [previewMode, setPreviewMode] = useState<"simulated" | "live">("simulated");
     
     const [isSubmittingLead, setIsSubmittingLead] = useState(false);
 
@@ -568,6 +569,135 @@ export function AuditClient() {
                                         {report.details.localSeo.score}%
                                     </span>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* 5. Browser Mockup Window */}
+                        <div className="rounded-3xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-2xl">
+                            {/* Window Header */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 border-b border-slate-800 bg-slate-950/40">
+                                {/* Window buttons and Tab */}
+                                <div className="flex items-center gap-3">
+                                    {/* OS window dots */}
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <div className="w-3 h-3 rounded-full bg-rose-500/80" />
+                                        <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                                        <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                                    </div>
+                                    <div className="h-4 w-px bg-slate-800 mx-1" />
+                                    {/* Mock tab */}
+                                    <div className="px-3.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono flex items-center gap-2 max-w-[150px] sm:max-w-[200px] truncate">
+                                        <Globe className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                        <span className="truncate">{report.domain}</span>
+                                    </div>
+                                </div>
+
+                                {/* URL address bar */}
+                                <div className="flex-1 max-w-xl mx-auto w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800/80 text-xs text-slate-400 font-mono flex items-center justify-between gap-2 shadow-inner">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                        <span className="text-slate-500 text-[10px] shrink-0">https://</span>
+                                        <span className="text-slate-300 truncate font-semibold">{report.domain}/</span>
+                                    </div>
+                                    <RefreshCw className="w-3.5 h-3.5 text-slate-500 hover:text-slate-300 transition-colors shrink-0 cursor-pointer" />
+                                </div>
+
+                                {/* View Switcher Buttons */}
+                                <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1 shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPreviewMode("simulated")}
+                                        className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all uppercase tracking-wider ${
+                                            previewMode === "simulated"
+                                                ? "bg-slate-900 text-teal-400 shadow-md border border-slate-800"
+                                                : "text-slate-500 hover:text-slate-300"
+                                        }`}
+                                    >
+                                        Vista SEO
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPreviewMode("live")}
+                                        className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all uppercase tracking-wider ${
+                                            previewMode === "live"
+                                                ? "bg-slate-900 text-teal-400 shadow-md border border-slate-800"
+                                                : "text-slate-500 hover:text-slate-300"
+                                        }`}
+                                    >
+                                        Sitio en Vivo
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Window content */}
+                            <div className="relative min-h-[380px] bg-slate-950 flex flex-col justify-stretch">
+                                <AnimatePresence mode="wait">
+                                    {previewMode === "simulated" ? (
+                                        <motion.div
+                                            key="simulated"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex-1 p-6 md:p-12 flex flex-col justify-center text-center relative overflow-hidden"
+                                        >
+                                            {/* Grid overlay to look like a template */}
+                                            <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                                            
+                                            <div className="max-w-2xl mx-auto space-y-6 relative z-10">
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-teal-500/20 bg-teal-500/5 text-[10px] font-mono text-teal-400 uppercase tracking-widest">
+                                                    <Sparkles className="w-3.5 h-3.5" />
+                                                    Vista previa estructurada (Google SEO Rendering)
+                                                </div>
+
+                                                <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
+                                                    {report.details.seo.title || "Sin título configurado"}
+                                                </h1>
+                                                
+                                                <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-lg mx-auto">
+                                                    {report.details.seo.description || "Este sitio web no cuenta con una meta descripción configurada. Recomendamos redactar una descripción persuasiva y optimizada con palabras clave principales."}
+                                                </p>
+
+                                                <div className="pt-4 flex justify-center gap-3">
+                                                    <a 
+                                                        href={report.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono font-bold text-slate-300 hover:text-teal-400 transition-colors"
+                                                    >
+                                                        Visitar Web Real <ExternalLink className="w-3.5 h-3.5" />
+                                                    </a>
+                                                    <a 
+                                                        href="#cta-agenda"
+                                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-xs font-mono font-bold text-white hover:scale-105 active:scale-95 transition-all shadow-md shadow-teal-500/10"
+                                                    >
+                                                        Optimizar este sitio
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="live"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex-grow flex flex-col items-stretch"
+                                        >
+                                            <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 text-[11px] text-slate-400 text-center flex items-center justify-center gap-2">
+                                                <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                <span>
+                                                    Nota: Si no carga o se ve en blanco, tu hosting bloquea el iframe mediante cabeceras X-Frame-Options por seguridad. Puedes usar la <strong>Vista SEO</strong>.
+                                                </span>
+                                            </div>
+                                            <iframe
+                                                src={report.url}
+                                                className="w-full h-[450px] border-none bg-white flex-1"
+                                                sandbox="allow-scripts allow-same-origin allow-forms"
+                                                title={`Preview of ${report.domain}`}
+                                            />
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
 
