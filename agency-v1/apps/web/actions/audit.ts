@@ -3,6 +3,7 @@
 import https from "https";
 import { generateText } from "ai";
 import { geminiFlashModel } from "@/lib/ai-provider";
+import puppeteer from "puppeteer";
 
 // Define the interface for the Audit Report
 export interface AuditReport {
@@ -10,6 +11,7 @@ export interface AuditReport {
     url: string;
     score: number; // 0-100
     status: "success" | "warning" | "error";
+    screenshot?: string; // base64 string
     details: {
         speed: {
             score: number;
@@ -145,6 +147,37 @@ async function checkUrlStatus(url: string): Promise<boolean> {
             return res.status < 400;
         } catch {
             return false;
+        }
+    }
+}
+
+// 2.5 Puppeteer screenshot capturer to bypass X-Frame-Options
+async function captureScreenshot(url: string): Promise<string | undefined> {
+    let browser;
+    try {
+        console.log(`📸 Launching Puppeteer to capture screenshot of ${url}...`);
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+        });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 1280, height: 800 });
+        await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        await page.goto(url, { waitUntil: "networkidle2", timeout: 15000 });
+        
+        const buffer = await page.screenshot({
+            type: "jpeg",
+            quality: 70,
+            encoding: "base64"
+        });
+        console.log(`📸 Screenshot captured successfully for ${url}`);
+        return buffer.toString();
+    } catch (err) {
+        console.error(`❌ Puppeteer screenshot failed for ${url}:`, err);
+        return undefined;
+    } finally {
+        if (browser) {
+            await browser.close();
         }
     }
 }
@@ -397,6 +430,9 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
             const cleanJsonText = responseText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
             const report = JSON.parse(cleanJsonText) as AuditReport;
             
+            // Capture visual screenshot
+            report.screenshot = await captureScreenshot(url);
+            
             return { success: true, report };
 
         } catch (aiErr) {
@@ -404,6 +440,10 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
             
             // Build fallback report using rule-based calculations
             const report = generateFallbackReport(rawData);
+            
+            // Capture visual screenshot
+            report.screenshot = await captureScreenshot(url);
+            
             return { success: true, report };
         }
 

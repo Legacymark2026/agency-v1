@@ -687,18 +687,30 @@ export function AuditClient() {
                                             exit={{ opacity: 0 }}
                                             className="flex-grow flex flex-col items-stretch"
                                         >
-                                            <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 text-[11px] text-slate-400 text-center flex items-center justify-center gap-2">
-                                                <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                                <span>
-                                                    Nota: Si no carga o se ve en blanco, tu hosting bloquea el iframe mediante cabeceras X-Frame-Options por seguridad. Puedes usar la <strong>Vista SEO</strong>.
-                                                </span>
-                                            </div>
-                                            <iframe
-                                                src={report.url}
-                                                className="w-full h-[450px] border-none bg-white flex-1"
-                                                sandbox="allow-scripts allow-same-origin allow-forms"
-                                                title={`Preview of ${report.domain}`}
-                                            />
+                                            {report.screenshot ? (
+                                                <div className="relative w-full h-[450px] overflow-y-auto bg-slate-950 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                                                    <img 
+                                                        src={`data:image/jpeg;base64,${report.screenshot}`} 
+                                                        alt={`Visualización en vivo de ${report.domain}`}
+                                                        className="w-full h-auto object-cover object-top select-none pointer-events-none"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="p-3 bg-slate-900/60 border-b border-slate-800/80 text-[11px] text-slate-400 text-center flex items-center justify-center gap-2">
+                                                        <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                        <span>
+                                                            Nota: Si no carga o se ve en blanco, tu hosting bloquea el iframe mediante cabeceras X-Frame-Options por seguridad. Puedes usar la <strong>Vista SEO</strong>.
+                                                        </span>
+                                                    </div>
+                                                    <iframe
+                                                        src={report.url}
+                                                        className="w-full h-[450px] border-none bg-white flex-1"
+                                                        sandbox="allow-scripts allow-same-origin allow-forms"
+                                                        title={`Preview of ${report.domain}`}
+                                                    />
+                                                </>
+                                            )}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
