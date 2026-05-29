@@ -650,11 +650,15 @@ export function AuditClient() {
                                                 </div>
 
                                                 <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
-                                                    {report.details.seo.title || "Sin título configurado"}
+                                                    {!report.details.seo.title || ["no detectado", "no encontrado", "no configurado", ""].includes(report.details.seo.title.toLowerCase().trim())
+                                                        ? "Sin Título Detectado"
+                                                        : report.details.seo.title}
                                                 </h1>
                                                 
                                                 <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-lg mx-auto">
-                                                    {report.details.seo.description || "Este sitio web no cuenta con una meta descripción configurada. Recomendamos redactar una descripción persuasiva y optimizada con palabras clave principales."}
+                                                    {!report.details.seo.description || ["no detectado", "no encontrado", "no configurado", ""].includes(report.details.seo.description.toLowerCase().trim())
+                                                        ? "Este sitio web no cuenta con una meta descripción configurada. Recomendamos redactar una descripción persuasiva y optimizada con palabras clave principales para posicionar en Google."
+                                                        : report.details.seo.description}
                                                 </p>
 
                                                 <div className="pt-4 flex justify-center gap-3">
