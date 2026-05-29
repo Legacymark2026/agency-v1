@@ -38,7 +38,7 @@ const QUICK_REPLIES = [
 
 const AGENT = {
     name: "LegacyMark AI",
-    avatar: "/images/support-agent.png",
+    avatar: "/logo.png",
     initials: "LM",
 };
 
@@ -235,8 +235,8 @@ function SettingsPanel({ onClose, soundEnabled, onSoundToggle }: {
 
                 <div className="p-4 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30 rounded-xl border border-teal-100 dark:border-teal-900/50">
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center shadow-lg">
-                            <span className="text-white font-bold text-sm">LM</span>
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 flex items-center justify-center shadow-lg p-1 border border-zinc-100 dark:border-zinc-700">
+                            <img src="/logo.png" alt="LegacyMark Logo" className="w-full h-full object-contain rounded-lg" />
                         </div>
                         <div>
                             <p className="font-bold text-sm">LegacyMark AI</p>
@@ -544,6 +544,7 @@ export function ChatWindow({ conversationId, visitorId, onClose }: ChatWindowPro
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-end gap-2">
                         <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage src={AGENT.avatar} />
                             <AvatarFallback className="text-xs bg-gradient-to-br from-teal-500 to-emerald-500 text-white font-bold">
                                 LM
                             </AvatarFallback>

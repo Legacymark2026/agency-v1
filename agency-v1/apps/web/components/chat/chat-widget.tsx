@@ -198,8 +198,8 @@ export function ChatWidget() {
                                     <div className="relative z-10">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2 sm:gap-3">
-                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                                                    <span className="text-white font-bold text-base sm:text-lg">LM</span>
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center border border-white/20 p-1">
+                                                    <img src="/logo.png" alt="LegacyMark Logo" className="w-full h-full object-contain rounded-lg" />
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-base sm:text-lg tracking-tight">LegacyMark AI</h3>

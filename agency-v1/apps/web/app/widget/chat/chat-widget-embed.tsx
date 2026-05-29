@@ -44,8 +44,8 @@ export function ChatWidgetEmbed({ apiKey, companyId, visitorId: initialVisitorId
                     <div className="bg-gradient-to-br from-teal-600 via-teal-600 to-emerald-600 p-6 text-white shrink-0">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                                    <span className="text-white font-bold text-lg">LM</span>
+                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center border border-white/20 p-1">
+                                    <img src="/logo.png" alt="LegacyMark Logo" className="w-full h-full object-contain rounded-lg" />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg tracking-tight">LegacyMark AI</h3>
