@@ -163,7 +163,12 @@ async function captureScreenshot(url: string): Promise<string | undefined> {
         const page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 800 });
         await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-        await page.goto(url, { waitUntil: "networkidle2", timeout: 15000 });
+        
+        try {
+            await page.goto(url, { waitUntil: "load", timeout: 20000 });
+        } catch (gotoErr: any) {
+            console.warn(`⚠️ Puppeteer page.goto warning/timeout for ${url}:`, gotoErr.message);
+        }
         
         const buffer = await page.screenshot({
             type: "jpeg",
