@@ -64,6 +64,15 @@ export default function WorkflowListClient({ initialWorkflows, analytics, recent
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<"list" | "grid">("list");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    
+    const safeAnalytics = useMemo(() => analytics || {
+        totalWorkflows: 0,
+        activeWorkflows: 0,
+        totalExecutions: 0,
+        successRate: 0,
+        recentActivity: [],
+        topWorkflows: []
+    }, [analytics]);
 
     // --- FILTERING & SEARCH ---
     const filteredWorkflows = useMemo(() => {
@@ -186,9 +195,9 @@ export default function WorkflowListClient({ initialWorkflows, analytics, recent
             {/* KEY METRICS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: "Flujos Totales", value: analytics.totalWorkflows, sub: `${analytics.activeWorkflows} activos`, icon: <Activity size={15} />, color: "#6366f1" },
-                    { label: "Ejecuciones", value: (analytics.totalExecutions || 0).toLocaleString(), sub: "disparos totales", icon: <TrendingUp size={15} />, color: "#2dd4bf" },
-                    { label: "Tasa de Éxito", value: `${analytics.successRate}%`, sub: analytics.successRate > 90 ? "Excelente" : "Revisar", icon: <CheckCircle2 size={15} />, color: analytics.successRate > 90 ? "#34d399" : "#fbbf24" },
+                    { label: "Flujos Totales", value: safeAnalytics.totalWorkflows, sub: `${safeAnalytics.activeWorkflows} activos`, icon: <Activity size={15} />, color: "#6366f1" },
+                    { label: "Ejecuciones", value: (safeAnalytics.totalExecutions || 0).toLocaleString(), sub: "disparos totales", icon: <TrendingUp size={15} />, color: "#2dd4bf" },
+                    { label: "Tasa de Éxito", value: `${safeAnalytics.successRate}%`, sub: safeAnalytics.successRate > 90 ? "Excelente" : "Revisar", icon: <CheckCircle2 size={15} />, color: safeAnalytics.successRate > 90 ? "#34d399" : "#fbbf24" },
                     { label: "Fallos Recientes", value: recentExecutions.filter(e => e.status === 'FAILED').length, sub: "últimos 10 disparos", icon: <AlertCircle size={15} />, color: "#f87171" },
                 ].map((m, i) => (
                     <div key={i} style={{ background: "rgba(15,20,35,0.7)", border: "1px solid rgba(30,41,59,0.8)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
