@@ -38,7 +38,7 @@ const QUICK_REPLIES = [
 
 const AGENT = {
     name: "LegacyMark AI",
-    avatar: "/logo.png",
+    avatar: "/favicon.ico",
     initials: "LM",
 };
 
@@ -236,7 +236,7 @@ function SettingsPanel({ onClose, soundEnabled, onSoundToggle }: {
                 <div className="p-4 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/30 dark:to-emerald-950/30 rounded-xl border border-teal-100 dark:border-teal-900/50">
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 flex items-center justify-center shadow-lg p-1 border border-zinc-100 dark:border-zinc-700">
-                            <img src="/logo.png" alt="LegacyMark Logo" className="w-full h-full object-contain rounded-lg" />
+                            <img src="/favicon.ico" alt="LegacyMark Logo" className="w-full h-full object-contain rounded-lg" />
                         </div>
                         <div>
                             <p className="font-bold text-sm">LegacyMark AI</p>
