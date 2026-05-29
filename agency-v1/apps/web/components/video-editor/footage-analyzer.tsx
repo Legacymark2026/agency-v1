@@ -8,10 +8,12 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { 
   Upload, Film, Trash2, Zap, Star, AlertCircle, CheckCircle, 
-  GripVertical, Plus, Tag, Clock, ChevronDown, ChevronUp
+  GripVertical, Plus, Tag, Clock, ChevronDown, ChevronUp, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Clip, ClipAnalysis } from '@/actions/video-editor';
+import { executeAutoReframing, generateAssetViaAI } from '@/actions/video-editor';
+import { toast } from 'sonner';
 
 interface FootageAnalyzerProps {
   clips: Clip[];
@@ -83,6 +85,35 @@ export function FootageAnalyzer({ clips, analysis, onClipsChange, onAnalysisComp
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingAIAsset, setIsGeneratingAIAsset] = useState(false);
+
+  const handleGenerateAIAsset = async () => {
+    if (!aiPrompt.trim()) return;
+    setIsGeneratingAIAsset(true);
+    try {
+      const newAsset = await generateAssetViaAI('demo', aiPrompt, 'video');
+      onClipsChange([...clips, {
+        id: newAsset.id,
+        type: 'b-roll',
+        duration: newAsset.duration,
+        resolution: newAsset.resolution,
+        fps: newAsset.fps,
+        quality: newAsset.quality as any,
+        focus: newAsset.focus,
+        stability: newAsset.stability,
+        lighting: newAsset.lighting,
+        semanticTags: newAsset.semanticTags,
+      }]);
+      setAiPrompt('');
+      toast.success('Clip de relleno generativo creado con éxito');
+    } catch {
+      toast.error('Error al generar clip con IA');
+    } finally {
+      setIsGeneratingAIAsset(false);
+    }
+  };
 
   const addClip = useCallback(() => {
     const types: Clip['type'][] = ['b-roll', 'close-up', 'macro', 'hero', 'branding', 'transition'];
@@ -488,6 +519,34 @@ export function FootageAnalyzer({ clips, analysis, onClipsChange, onAnalysisComp
                         </div>
                       </div>
 
+                      {/* Auto-Reframing */}
+                      <div className="p-3 bg-slate-900 rounded-lg border border-slate-700/50 space-y-2">
+                        <label className="text-xs text-slate-400 font-medium block">Auto-Reframing Inteligente</label>
+                        <div className="flex gap-2">
+                          {(['9:16', '16:9', '1:1'] as const).map(fmt => (
+                            <Button
+                              key={fmt}
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                try {
+                                  const res = await executeAutoReframing(clip.id, fmt);
+                                  if (res.success) {
+                                    toast.success(`Reframing aplicado: ${res.message}`);
+                                    updateClip(clip.id, { resolution: fmt === '9:16' ? '1080x1920' : fmt === '16:9' ? '1920x1080' : '1080x1080' });
+                                  }
+                                } catch {
+                                  toast.error('Error al aplicar auto-reframing');
+                                }
+                              }}
+                              className="text-xs flex-1 border-slate-700 hover:border-teal-500 hover:text-teal-400"
+                            >
+                              {fmt}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Analysis result */}
                       {clipAnalysis && (
                         <div className="p-3 bg-slate-950 rounded-lg">
@@ -524,6 +583,47 @@ export function FootageAnalyzer({ clips, analysis, onClipsChange, onAnalysisComp
           </CardContent>
         </Card>
       )}
+
+      {/* Relleno Generativo AI B-Roll */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-purple-400" />
+            Relleno Generativo (AI B-Roll)
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            Genera clips sintéticos con descripciones de texto para rellenar vacíos narrativos.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="Ej: Un atardecer cinemático sobre montañas nevadas..."
+              className="flex-1 bg-slate-900 border-slate-700 text-white"
+              onKeyDown={(e) => e.key === 'Enter' && handleGenerateAIAsset()}
+            />
+            <Button
+              onClick={handleGenerateAIAsset}
+              disabled={isGeneratingAIAsset || !aiPrompt.trim()}
+              className="bg-purple-600 hover:bg-purple-700 text-xs shrink-0 font-medium"
+            >
+              {isGeneratingAIAsset ? (
+                <>
+                  <Zap className="w-3.5 h-3.5 mr-1.5 animate-pulse inline-block" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5 inline-block" />
+                  Generar
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {clips.length === 0 && (
         <Card className="bg-slate-800/20 border-slate-800 border-dashed">

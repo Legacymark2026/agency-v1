@@ -46,6 +46,7 @@ interface CaptionSegment {
 interface AutoCaptionPanelProps {
   captions?: CaptionSegment[];
   onGenerate?: (language: string) => void;
+  onTranslate?: (language: string) => void;
   onUpdate?: (segmentId: string, text: string) => void;
   onExport?: (format: 'srt' | 'vtt' | 'ass') => void;
   isGenerating?: boolean;
@@ -55,12 +56,19 @@ interface AutoCaptionPanelProps {
 export function AutoCaptionPanel({
   captions = [],
   onGenerate,
+  onTranslate,
   onUpdate,
   onExport,
   isGenerating = false,
   language = 'es',
 }: AutoCaptionPanelProps) {
   const [showCaptions, setShowCaptions] = useState(true);
+  const [selLanguage, setSelLanguage] = useState(language);
+
+  const handleLanguageChange = (val: string) => {
+    setSelLanguage(val);
+  };
+
   const [fontSize, setFontSize] = useState(24);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const [bold, setBold] = useState(false);
@@ -124,7 +132,8 @@ export function AutoCaptionPanel({
       <CardContent className="px-4 pb-4 space-y-4">
         <div className="flex items-center gap-2">
           <select
-            value={language}
+            value={selLanguage}
+            onChange={(e) => handleLanguageChange(e.target.value)}
             className="flex-1 bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-white text-sm"
           >
             {languages.map((l) => (
@@ -135,7 +144,7 @@ export function AutoCaptionPanel({
           </select>
           <Button
             size="sm"
-            onClick={() => onGenerate?.(language)}
+            onClick={() => onGenerate?.(selLanguage)}
             disabled={isGenerating}
             className="bg-cyan-600 hover:bg-cyan-700 text-xs"
           >
@@ -146,6 +155,18 @@ export function AutoCaptionPanel({
             )}
             {isGenerating ? 'Transcribiendo...' : 'Generar'}
           </Button>
+          {captions.length > 0 && onTranslate && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onTranslate?.(selLanguage)}
+              disabled={isGenerating}
+              className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 text-xs"
+            >
+              <Languages className="w-3 h-3 mr-1" />
+              Traducir
+            </Button>
+          )}
         </div>
 
         <div className="p-3 bg-slate-900/50 rounded-lg space-y-3">

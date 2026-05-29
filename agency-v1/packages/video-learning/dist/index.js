@@ -79,6 +79,7 @@ export class LearningEngine {
     constructor() {
         this.profiles = new Map();
         this.rules = [];
+        this.corrections = [];
         this.initializeDefaultRules();
     }
     initializeDefaultRules() {
@@ -92,8 +93,8 @@ export class LearningEngine {
             actionType: pattern.actionType,
             pattern: pattern.pattern,
             condition: () => true,
-            adjustment: (suggestion) => {
-                const lastCorrections = this.getLastCorrectionsForAction(pattern.actionType, 5);
+            adjustment: (suggestion, companyId) => {
+                const lastCorrections = this.getLastCorrectionsForAction(pattern.actionType, 5, companyId);
                 if (lastCorrections.length === 0)
                     return suggestion;
                 const avgCorrection = this.averageCorrections(lastCorrections);
@@ -106,6 +107,7 @@ export class LearningEngine {
         return rule;
     }
     recordCorrection(correction) {
+        this.corrections.push(correction);
         let profile = this.profiles.get(correction.companyId);
         if (!profile) {
             profile = {
@@ -243,7 +245,7 @@ export class LearningEngine {
                 similarities: new Map(),
             };
             if (rule.condition(context)) {
-                adjustedSuggestion = rule.adjustment(adjustedSuggestion);
+                adjustedSuggestion = rule.adjustment(adjustedSuggestion, companyId);
                 totalDelta += rule.confidence * 0.1;
                 rulesApplied.push(rule.pattern);
                 rule.lastApplied = Date.now();
@@ -277,11 +279,16 @@ export class LearningEngine {
         return [...this.rules];
     }
     getCorrectionsForCompany(companyId) {
-        const profile = this.profiles.get(companyId);
-        return profile ? [] : [];
+        return this.corrections.filter((c) => c.companyId === companyId);
     }
-    getLastCorrectionsForAction(actionType, count) {
-        return [];
+    getLastCorrectionsForAction(actionType, count, companyId) {
+        let filtered = this.corrections.filter((c) => c.actionType === actionType);
+        if (companyId) {
+            filtered = filtered.filter((c) => c.companyId === companyId);
+        }
+        return filtered
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, count);
     }
     getActionTrend(companyId, actionType) {
         const profile = this.profiles.get(companyId);

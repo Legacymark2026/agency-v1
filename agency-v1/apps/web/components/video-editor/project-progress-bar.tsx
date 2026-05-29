@@ -34,9 +34,9 @@ export function ProjectProgressBar({
     { label: 'Config', done: !!(config.name && config.type && config.format), warn: false },
     { label: 'Clips', done: clips.length > 0, warn: clips.length === 0 },
     { label: 'Timeline', done: !!timeline, warn: clips.length > 0 && !timeline },
-    { label: 'Color', done: colorGrades.length > 0, warn: false },
     { label: 'Audio', done: audioTracks.length > 0, warn: false },
     { label: 'Texto', done: textOverlays.length > 0, warn: false },
+    { label: 'Color', done: colorGrades.length > 0, warn: false },
     { label: 'Calidad', done: qualityPassed, warn: timeline !== null && !qualityPassed },
   ], [config, clips, timeline, colorGrades, audioTracks, textOverlays, qualityPassed]);
 

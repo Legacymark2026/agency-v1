@@ -30,6 +30,9 @@ import { AudioMixer } from './audio-mixer';
 import { TextOverlaysEditor } from './text-overlays-editor';
 import { QualityChecklist } from './quality-checklist';
 import { ExportPanel } from './export-panel';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AutoCaptionPanel } from './auto-caption';
+import { ColorMatchPanel } from './color-match';
 import type { 
   ProjectConfig, 
   Clip, 
@@ -41,16 +44,24 @@ import type {
   ClipAnalysis,
   RenderOutput
 } from '@/actions/video-editor';
-import { createVideoProject, getVideoProject, updateVideoProject } from '@/actions/video-editor';
+import { 
+  createVideoProject, 
+  getVideoProject, 
+  updateVideoProject,
+  generateAutoCaptions,
+  translateCaptions,
+  getColorMatchSuggestions
+} from '@/actions/video-editor';
+import { toast } from 'sonner';
 
 const STEPS = [
   { id: 1, name: 'Config', icon: Settings, label: 'Configuración' },
   { id: 2, name: 'Footage', icon: Film, label: 'Footage' },
   { id: 3, name: 'Timeline', icon: ListTodo, label: 'Timeline' },
   { id: 4, name: 'Speed', icon: Zap, label: 'Speed Ramp' },
-  { id: 5, name: 'Color', icon: Palette, label: 'Color' },
-  { id: 6, name: 'Audio', icon: Volume2, label: 'Audio' },
-  { id: 7, name: 'Text', icon: Type, label: 'Texto' },
+  { id: 5, name: 'Audio', icon: Volume2, label: 'Audio' },
+  { id: 6, name: 'Text', icon: Type, label: 'Texto' },
+  { id: 7, name: 'Color', icon: Palette, label: 'Color' },
   { id: 8, name: 'Quality', icon: CheckCircle, label: 'Calidad' },
   { id: 9, name: 'Export', icon: Download, label: 'Exportar' },
 ] as const;
@@ -74,6 +85,132 @@ export function VideoEditorWizard({ projectId, onSave }: VideoEditorWizardProps)
   const [qualityIssues, setQualityIssues] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [captions, setCaptions] = useState<any[]>([]);
+  const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
+  const [colorMatchSuggestions, setColorMatchSuggestions] = useState<any[]>([]);
+  const [isAnalyzingColor, setIsAnalyzingColor] = useState(false);
+
+  const handleGenerateCaptions = async (lang: string) => {
+    setIsGeneratingCaptions(true);
+    try {
+      const generated = await generateAutoCaptions(projectId || 'demo', lang);
+      setCaptions(generated);
+      
+      const overlaysFromCaptions = generated.map((seg: any) => ({
+        id: seg.id,
+        text: seg.text,
+        position: 'bottom' as const,
+        animation: 'none' as const,
+        font: 'Inter',
+        color: '#FFFFFF',
+        safeZone: true,
+        duration: seg.endTime - seg.startTime,
+        startTime: seg.startTime,
+      }));
+      const otherOverlays = textOverlays.filter(o => !o.id.startsWith('seg_'));
+      setTextOverlays([...otherOverlays, ...overlaysFromCaptions]);
+      toast.success('Subtítulos generados con éxito');
+    } catch {
+      toast.error('Error al generar subtítulos');
+    } finally {
+      setIsGeneratingCaptions(false);
+    }
+  };
+
+  const handleTranslateCaptions = async (lang: string) => {
+    setIsGeneratingCaptions(true);
+    try {
+      const translated = await translateCaptions(captions, lang);
+      setCaptions(translated);
+      
+      const updatedOverlays = textOverlays.map(o => {
+        if (o.id.startsWith('seg_')) {
+          const match = translated.find(t => t.id === o.id);
+          if (match) return { ...o, text: match.text };
+        }
+        return o;
+      });
+      setTextOverlays(updatedOverlays);
+      toast.success(`Subtítulos traducidos al ${lang}`);
+    } catch {
+      toast.error('Error al traducir subtítulos');
+    } finally {
+      setIsGeneratingCaptions(false);
+    }
+  };
+
+  const handleUpdateCaption = (segmentId: string, text: string) => {
+    const updatedCaptions = captions.map(c => c.id === segmentId ? { ...c, text } : c);
+    setCaptions(updatedCaptions);
+
+    const updatedOverlays = textOverlays.map(o => o.id === segmentId ? { ...o, text } : o);
+    setTextOverlays(updatedOverlays);
+  };
+
+  const handleExportCaptions = (format: 'srt' | 'vtt' | 'ass') => {
+    const text = captions.map((c, i) => `${i+1}\n00:00:${c.startTime.toFixed(2)} --> 00:00:${c.endTime.toFixed(2)}\n${c.text}\n`).join('\n');
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `subtitles.${format}`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exportado como ${format.toUpperCase()}`);
+  };
+
+  const handleAnalyzeColor = async () => {
+    setIsAnalyzingColor(true);
+    try {
+      const suggestions = await getColorMatchSuggestions(clips);
+      setColorMatchSuggestions(suggestions);
+      toast.success('Análisis de color completado');
+    } catch {
+      toast.error('Error al analizar color');
+    } finally {
+      setIsAnalyzingColor(false);
+    }
+  };
+
+  const handleApplyColorSuggestion = (suggestionId: string) => {
+    const suggestion = colorMatchSuggestions.find(s => s.id === suggestionId);
+    if (!suggestion) return;
+
+    const updatedGrades = [...colorGrades];
+    const targetGradeIndex = updatedGrades.findIndex(g => g.clipId === suggestion.targetClip);
+
+    const newGrade: ColorGrade = {
+      clipId: suggestion.targetClip,
+      style: 'cinematic',
+      lut: 'Film-EM',
+      temperature: 5600 + (suggestion.adjustments.temperature || 0),
+      contrast: suggestion.adjustments.contrast || 1.2,
+      highlights: suggestion.adjustments.highlights || -10,
+      shadows: suggestion.adjustments.shadows || 15,
+      saturation: suggestion.adjustments.saturation || 0.9,
+      tint: suggestion.adjustments.tint || 5,
+      midtones: 5,
+    };
+
+    if (targetGradeIndex > -1) {
+      updatedGrades[targetGradeIndex] = newGrade;
+    } else {
+      updatedGrades.push(newGrade);
+    }
+
+    setColorGrades(updatedGrades);
+    toast.success('Ajustes de color aplicados');
+  };
+
+  const handleRejectColorSuggestion = (suggestionId: string) => {
+    setColorMatchSuggestions(colorMatchSuggestions.filter(s => s.id !== suggestionId));
+    toast.info('Sugerencia rechazada');
+  };
+
+  const handlePreviewColorSuggestion = (suggestionId: string) => {
+    toast.info('Previsualizando ajuste de color...');
+  };
 
   // Load project if projectId is provided
   useEffect(() => {
@@ -179,27 +316,63 @@ export function VideoEditorWizard({ projectId, onSave }: VideoEditorWizardProps)
         );
       case 5:
         return (
-          <ColorGradingPanel 
-            clips={clips}
-            colorGrades={colorGrades}
-            onColorGradesChange={setColorGrades}
-          />
-        );
-      case 6:
-        return (
           <AudioMixer 
             audioTracks={audioTracks}
             onAudioTracksChange={setAudioTracks}
           />
         );
+      case 6:
+        return (
+          <Tabs defaultValue="manual" className="w-full">
+            <TabsList className="grid grid-cols-2 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
+              <TabsTrigger value="manual" className="text-xs">Edición Manual</TabsTrigger>
+              <TabsTrigger value="auto" className="text-xs">Subtítulos IA</TabsTrigger>
+            </TabsList>
+            <TabsContent value="manual" className="mt-0">
+              <TextOverlaysEditor 
+                textOverlays={textOverlays}
+                onTextOverlaysChange={setTextOverlays}
+                format={config.format}
+                platform={config.platform}
+              />
+            </TabsContent>
+            <TabsContent value="auto" className="mt-0">
+              <AutoCaptionPanel
+                captions={captions}
+                onGenerate={handleGenerateCaptions}
+                onTranslate={handleTranslateCaptions}
+                onUpdate={handleUpdateCaption}
+                onExport={handleExportCaptions}
+                isGenerating={isGeneratingCaptions}
+              />
+            </TabsContent>
+          </Tabs>
+        );
       case 7:
         return (
-          <TextOverlaysEditor 
-            textOverlays={textOverlays}
-            onTextOverlaysChange={setTextOverlays}
-            format={config.format}
-            platform={config.platform}
-          />
+          <Tabs defaultValue="manual" className="w-full">
+            <TabsList className="grid grid-cols-2 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
+              <TabsTrigger value="manual" className="text-xs">Grading Manual</TabsTrigger>
+              <TabsTrigger value="match" className="text-xs">Color Match IA</TabsTrigger>
+            </TabsList>
+            <TabsContent value="manual" className="mt-0">
+              <ColorGradingPanel 
+                clips={clips}
+                colorGrades={colorGrades}
+                onColorGradesChange={setColorGrades}
+              />
+            </TabsContent>
+            <TabsContent value="match" className="mt-0">
+              <ColorMatchPanel
+                suggestions={colorMatchSuggestions}
+                onApply={handleApplyColorSuggestion}
+                onReject={handleRejectColorSuggestion}
+                onAnalyze={handleAnalyzeColor}
+                onPreview={handlePreviewColorSuggestion}
+                isAnalyzing={isAnalyzingColor}
+              />
+            </TabsContent>
+          </Tabs>
         );
       case 8:
         return (

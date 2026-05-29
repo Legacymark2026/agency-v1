@@ -227,7 +227,7 @@ export function AISuggestionsPanel({
           title: 'Voiceover recomendado',
           description: `${config.platform === 'youtube' ? 'YouTube' : 'Facebook'} recomienda narración en off para mayor retención`,
           actionLabel: 'Añadir Voiceover',
-          onAction: () => onNavigate(6),
+          onAction: () => onNavigate(5),
         });
       } else if (needsVoice && hasVoice) {
         all.push({
@@ -247,7 +247,7 @@ export function AISuggestionsPanel({
         title: 'Sin color grading',
         description: 'Aplica un preset de color para dar identidad visual al video.',
         actionLabel: 'Ir a Color',
-        onAction: () => onNavigate(5),
+        onAction: () => onNavigate(7),
       });
     }
 
@@ -259,7 +259,7 @@ export function AISuggestionsPanel({
         title: `${ungradedClips.length} clips sin color grading`,
         description: 'La inconsistencia de color entre clips reduce la calidad percibida del video.',
         actionLabel: 'Corregir',
-        onAction: () => onNavigate(5),
+        onAction: () => onNavigate(7),
       });
     }
 
@@ -271,7 +271,7 @@ export function AISuggestionsPanel({
         title: 'Sin track de audio',
         description: 'Añade música de fondo para aumentar el tiempo de reproducción hasta un 80%.',
         actionLabel: 'Ir a Audio',
-        onAction: () => onNavigate(6),
+        onAction: () => onNavigate(5),
       });
     }
 

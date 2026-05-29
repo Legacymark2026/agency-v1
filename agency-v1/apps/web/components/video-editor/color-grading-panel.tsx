@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Film, Palette, Sun, Contrast, Droplets, Sparkles, X, Layers, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { recordUserCorrection } from '@/actions/video-editor';
 import type { Clip, ColorGrade } from '@/actions/video-editor';
 
 interface ColorGradingPanelProps {
@@ -93,6 +94,19 @@ export function ColorGradingPanel({ clips, colorGrades, onColorGradesChange }: C
     const values = getPresetValues(preset);
     const clipIds = toAll ? clips.map(c => c.id) : [clipId];
     const existing = colorGrades.filter(g => !clipIds.includes(g.clipId));
+
+    // Record learning engine corrections
+    clipIds.forEach(id => {
+      const prev = colorGrades.find(g => g.clipId === id);
+      const newGrade = { ...values, clipId: id, style: preset };
+      if (prev) {
+        recordUserCorrection('color', prev, newGrade).catch(console.error);
+      } else {
+        const defaultGrade = getPresetValues('corporate');
+        recordUserCorrection('color', defaultGrade, newGrade).catch(console.error);
+      }
+    });
+
     const newGrades: ColorGrade[] = clipIds.map(id => ({
       ...values, clipId: id, style: preset,
     }));
@@ -105,6 +119,11 @@ export function ColorGradingPanel({ clips, colorGrades, onColorGradesChange }: C
   };
 
   const updateGradeField = (clipId: string, field: keyof ColorGrade, value: number | string) => {
+    const current = colorGrades.find(g => g.clipId === clipId);
+    if (current) {
+      const updated = { ...current, [field]: value };
+      recordUserCorrection('color', current, updated).catch(console.error);
+    }
     onColorGradesChange(
       colorGrades.map(g => g.clipId === clipId ? { ...g, [field]: value } : g)
     );

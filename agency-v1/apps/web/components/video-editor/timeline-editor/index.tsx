@@ -23,6 +23,8 @@ interface TimelineEditorProps {
   onClipsChange?: (clips: TimelineClip[]) => void;
   onClipSelect?: (clipId: string) => void;
   selectedClipId?: string;
+  playheadPosition?: number;
+  onPlayheadChange?: (pos: number) => void;
 }
 
 const TRACK_COLORS = {
@@ -45,6 +47,8 @@ export function TimelineEditor({
   onClipsChange,
   onClipSelect,
   selectedClipId,
+  playheadPosition = 0,
+  onPlayheadChange,
 }: TimelineEditorProps) {
   const [draggingClip, setDraggingClip] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -84,6 +88,19 @@ export function TimelineEditor({
     onClipsChange?.(clips.filter(c => c.id !== clipId));
   }, [clips, onClipsChange]);
 
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+    // Avoid seeking if clicking directly on a clip, button, or while dragging
+    if (draggingClip) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.cursor-move') || target.closest('button')) return;
+
+    if (!timelineRef.current || !onPlayheadChange) return;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left + timelineRef.current.scrollLeft;
+    const seekTime = Math.max(0, Math.min(totalDuration, x / pixelsPerSecond));
+    onPlayheadChange(parseFloat(seekTime.toFixed(1)));
+  }, [draggingClip, totalDuration, pixelsPerSecond, onPlayheadChange]);
+
   const groupedByType = {
     video: clips.filter(c => c.type === 'video'),
     audio: clips.filter(c => c.type === 'audio'),
@@ -113,13 +130,14 @@ export function TimelineEditor({
       <CardContent className="px-4 pb-4">
         <div
           ref={timelineRef}
-          className="relative overflow-x-auto overflow-y-hidden"
+          className="relative overflow-x-auto overflow-y-hidden cursor-pointer"
           onMouseMove={handleDragMove}
           onMouseUp={handleDragEnd}
           onMouseLeave={handleDragEnd}
+          onClick={handleTimelineClick}
         >
           {/* Time ruler */}
-          <div className="flex items-center mb-2 border-b border-slate-700 pb-1" style={{ width: timelineWidth }}>
+          <div className="flex items-center mb-2 border-b border-slate-700 pb-1 h-6 relative" style={{ width: timelineWidth }}>
             {Array.from({ length: Math.ceil(totalDuration) + 1 }).map((_, i) => (
               <div
                 key={i}
@@ -132,7 +150,7 @@ export function TimelineEditor({
           </div>
 
           {/* Tracks */}
-          <div className="space-y-2" style={{ width: timelineWidth }}>
+          <div className="space-y-2 relative" style={{ width: timelineWidth }}>
             {(['video', 'audio', 'text', 'transition'] as const).map((trackType) => {
               const trackClips = groupedByType[trackType];
               const Icon = TRACK_ICONS[trackType];
@@ -156,7 +174,10 @@ export function TimelineEditor({
                         left: clip.startTime * pixelsPerSecond,
                         width: clip.duration * pixelsPerSecond,
                       }}
-                      onClick={() => onClipSelect?.(clip.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClipSelect?.(clip.id);
+                      }}
                       onMouseDown={(e) => handleDragStart(clip.id, e)}
                     >
                       <GripVertical className="w-3 h-3 mr-1 opacity-50" />
@@ -186,10 +207,10 @@ export function TimelineEditor({
 
           {/* Playhead */}
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30 pointer-events-none"
-            style={{ left: 0 }}
+            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30 pointer-events-none transition-all duration-75"
+            style={{ left: playheadPosition * pixelsPerSecond }}
           >
-            <div className="absolute -top-1 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full" />
+            <div className="absolute -top-1 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full shadow-md" />
           </div>
         </div>
       </CardContent>

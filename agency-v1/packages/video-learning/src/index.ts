@@ -28,7 +28,7 @@ export interface PatternRule {
   actionType: ActionType;
   pattern: string;
   condition: (context: CorrectionContext) => boolean;
-  adjustment: (suggestion: Record<string, any>) => Record<string, any>;
+  adjustment: (suggestion: Record<string, any>, companyId?: string) => Record<string, any>;
   confidence: number;
   occurrences: number;
   lastApplied: number;
@@ -154,6 +154,7 @@ const DEFAULT_PATTERNS: Array<{
 export class LearningEngine {
   private profiles: Map<string, LearningProfile> = new Map();
   private rules: PatternRule[] = [];
+  private corrections: AICorrection[] = [];
 
   constructor() {
     this.initializeDefaultRules();
@@ -171,10 +172,11 @@ export class LearningEngine {
       actionType: pattern.actionType,
       pattern: pattern.pattern,
       condition: () => true,
-      adjustment: (suggestion: Record<string, any>) => {
+      adjustment: (suggestion: Record<string, any>, companyId?: string) => {
         const lastCorrections = this.getLastCorrectionsForAction(
           pattern.actionType,
           5,
+          companyId,
         );
         if (lastCorrections.length === 0) return suggestion;
 
@@ -189,6 +191,7 @@ export class LearningEngine {
   }
 
   recordCorrection(correction: AICorrection): void {
+    this.corrections.push(correction);
     let profile = this.profiles.get(correction.companyId);
     if (!profile) {
       profile = {
@@ -372,7 +375,7 @@ export class LearningEngine {
       };
 
       if (rule.condition(context)) {
-        adjustedSuggestion = rule.adjustment(adjustedSuggestion);
+        adjustedSuggestion = rule.adjustment(adjustedSuggestion, companyId);
         totalDelta += rule.confidence * 0.1;
         rulesApplied.push(rule.pattern);
         rule.lastApplied = Date.now();
@@ -417,15 +420,21 @@ export class LearningEngine {
   }
 
   getCorrectionsForCompany(companyId: string): AICorrection[] {
-    const profile = this.profiles.get(companyId);
-    return profile ? [] : [];
+    return this.corrections.filter((c) => c.companyId === companyId);
   }
 
   private getLastCorrectionsForAction(
     actionType: ActionType,
     count: number,
+    companyId?: string,
   ): AICorrection[] {
-    return [];
+    let filtered = this.corrections.filter((c) => c.actionType === actionType);
+    if (companyId) {
+      filtered = filtered.filter((c) => c.companyId === companyId);
+    }
+    return filtered
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, count);
   }
 
   getActionTrend(

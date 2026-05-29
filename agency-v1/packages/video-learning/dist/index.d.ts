@@ -16,7 +16,7 @@ export interface PatternRule {
     actionType: ActionType;
     pattern: string;
     condition: (context: CorrectionContext) => boolean;
-    adjustment: (suggestion: Record<string, any>) => Record<string, any>;
+    adjustment: (suggestion: Record<string, any>, companyId?: string) => Record<string, any>;
     confidence: number;
     occurrences: number;
     lastApplied: number;
@@ -48,6 +48,7 @@ export interface ActionStats {
 export declare class LearningEngine {
     private profiles;
     private rules;
+    private corrections;
     constructor();
     private initializeDefaultRules;
     private createRuleFromPattern;
