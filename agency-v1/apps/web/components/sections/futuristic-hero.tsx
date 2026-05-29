@@ -5,6 +5,7 @@ import { MouseEvent, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Activity, Wifi, ShieldCheck, Rocket } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { HologramGlobe } from "@/components/auth/hologram-globe";
 
 const GLITCH_MSGS = ["INNOVATION", "DISRUPTION", "EVOLUTION", "DOMINATION", "GROWTH"];
 
@@ -169,67 +170,21 @@ export function FuturisticHero() {
                         </Button>
                     </div>
 
-                    {/* 6. 3D Parallax Dashboard - Hidden on mobile for performance */}
+                    {/* 6. Hologram Globe - Hidden on mobile for performance */}
                     {enable3D && (
                         <div className="w-full max-w-6xl mt-12 sm:mt-20 perspective-[2000px] relative z-10 group/dashboard hidden sm:block">
                             <motion.div
                                 style={{ rotateX, rotateY }}
-                                className="relative aspect-[16/9] md:aspect-[21/9] bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden"
+                                className="relative w-full h-[640px] xl:h-[800px] flex items-center justify-center overflow-hidden"
                             >
-                                {/* Layer 0: Grid Background */}
-                                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
-                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white" />
-
-                                {/* Layer 1: Base UI */}
-                                <motion.div style={{ x: layer1X, y: layer1Y }} className="absolute inset-0 p-8 flex flex-col justify-between">
-                                    {/* Header */}
-                                    <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-                                        <div className="flex gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-red-400" />
-                                            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                                            <div className="w-3 h-3 rounded-full bg-green-400" />
-                                        </div>
-                                        <div className="font-mono text-xs text-slate-400">DASHBOARD_V4.2.0_STABLE</div>
-                                    </div>
-                                    {/* Footer Graph Lines (Teal) */}
-                                    <div className="flex gap-1 items-end h-16 opacity-30">
-                                        {[40, 60, 35, 80, 50, 90, 20, 70, 45, 60, 80, 50].map((h, i) => (
-                                            <div key={i} className="flex-1 bg-teal-500 rounded-t-sm" style={{ height: `${h}%` }} />
-                                        ))}
-                                    </div>
-                                </motion.div>
-
-                                {/* Layer 2: Floating Cards */}
-                                <motion.div style={{ x: layer2X, y: layer2Y }} className="absolute inset-0 pointer-events-none">
-                                    {/* Card 1: Activity */}
-                                    <div className="absolute top-1/4 left-1/4 -translate-x-1/2 p-4 rounded-xl bg-white border border-gray-100 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] max-w-xs transform hover:scale-105 transition-transform duration-300 pointer-events-auto cursor-help">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 bg-teal-50 rounded-lg text-teal-600"><Activity size={18} /></div>
-                                            <div>
-                                                <div className="text-xs text-gray-500 font-medium">Rendimiento</div>
-                                                <div className="text-lg font-bold text-slate-900">+245%</div>
-                                            </div>
-                                        </div>
-                                        <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-teal-500 w-[75%]" />
-                                        </div>
-                                    </div>
-
-                                    {/* Card 2: Code Snippet */}
-                                    <div className="absolute top-1/3 right-1/4 translate-x-1/2 p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl max-w-xs hidden md:block transform hover:scale-105 transition-transform duration-300 pointer-events-auto">
-                                        <div className="font-mono text-xs text-emerald-400 leading-tight">
-                                            <p>{"> initializing_core..."}</p>
-                                            <p>{"> loading_modules [OK]"}</p>
-                                            <p className="animate-pulse">{"> awaiting_user_input_"}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Card 3: Security Badge */}
-                                    <div className="absolute bottom-1/4 left-1/3 p-3 rounded-lg bg-white border border-teal-100 flex items-center gap-3 shadow-lg">
-                                        <ShieldCheck size={16} className="text-teal-600" />
-                                        <span className="text-xs font-bold text-slate-700">ENCRYPTED</span>
-                                    </div>
-                                </motion.div>
+                                {/* Glow effect surrounding the hologram container */}
+                                <div className="absolute w-[480px] h-[480px] xl:w-[600px] xl:h-[600px] bg-teal-500/10 blur-[100px] rounded-full animate-pulse" />
+                                
+                                {/* Tech Ring HUD styling */}
+                                <div className="absolute w-[560px] h-[560px] xl:w-[680px] xl:h-[680px] border border-teal-500/20 rounded-full animate-[spin_40s_linear_infinite]" />
+                                <div className="absolute w-[600px] h-[600px] xl:w-[720px] xl:h-[720px] border border-dashed border-purple-500/15 rounded-full animate-[spin_60s_linear_infinite_reverse]" />
+                                
+                                <HologramGlobe />
                             </motion.div>
                         </div>
                     )}

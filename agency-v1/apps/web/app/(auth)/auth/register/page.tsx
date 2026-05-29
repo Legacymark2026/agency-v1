@@ -10,6 +10,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { HologramGlobe } from "@/components/auth/hologram-globe";
 
 const schema = z.object({
     firstName: z.string().min(2, "Mínimo 2 caracteres"),
@@ -59,9 +61,9 @@ export default function RegisterPage() {
             </div>
 
             {/* Lado izquierdo — Branding */}
-            <div className="hidden lg:flex flex-col flex-1 px-16 py-12 relative z-10">
-                <div className="flex-1">
-                    <Link href="/" className="inline-block relative w-24 h-24 hover:scale-105 transition-transform">
+            <div className="hidden lg:flex flex-col flex-1 px-16 py-12 relative z-10 max-w-[50%] xl:max-w-[60%]">
+                <div className="flex-none">
+                    <Link href="/" className="inline-block relative w-16 h-16 hover:scale-105 transition-transform">
                         <Image
                             src="/favicon.ico"
                             alt="LegacyMark"
@@ -72,24 +74,42 @@ export default function RegisterPage() {
                         />
                     </Link>
                 </div>
-                <div className="flex-1 flex flex-col justify-center">
+                <div className="flex-1 grid grid-cols-1 xl:grid-cols-2 gap-8 items-center mt-6">
                     <motion.div
                         initial={{ opacity: 0, x: -30 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
+                        className="flex flex-col justify-center"
                     >
-                        <h1 className="text-7xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        <h1 className="text-5xl xl:text-6xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                             Únete!
                         </h1>
                         <div className="w-16 h-1 bg-teal-500 mb-8 rounded-full" />
-                        <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+                        <p className="text-slate-400 text-sm xl:text-base max-w-sm leading-relaxed">
                             Crea tu cuenta y empieza a gestionar proyectos, leads y campañas desde un único panel de control.
                         </p>
                         <Link href="/auth/login">
-                            <button className="mt-8 border border-white/10 text-white hover:bg-white/5 rounded-full px-8 py-2 w-fit text-sm transition-all">
+                            <Button variant="outline" className="mt-8 border-white/10 text-white hover:bg-white/5 hover:text-white bg-transparent rounded-full px-8 py-2 w-fit">
                                 Ya tengo cuenta
-                            </button>
+                            </Button>
                         </Link>
+                    </motion.div>
+
+                    {/* Holograma del Globo Terráqueo Digital */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                        className="relative w-full h-[640px] xl:h-[800px] flex items-center justify-center"
+                    >
+                        {/* Glow effect surrounding the hologram container */}
+                        <div className="absolute w-[480px] h-[480px] xl:w-[600px] xl:h-[600px] bg-teal-500/10 blur-[80px] rounded-full animate-pulse" />
+                        
+                        {/* Tech Ring HUD styling */}
+                        <div className="absolute w-[560px] h-[560px] xl:w-[680px] xl:h-[680px] border border-teal-500/20 rounded-full animate-[spin_40s_linear_infinite]" />
+                        <div className="absolute w-[600px] h-[600px] xl:w-[720px] xl:h-[720px] border border-dashed border-purple-500/15 rounded-full animate-[spin_60s_linear_infinite_reverse]" />
+                        
+                        <HologramGlobe />
                     </motion.div>
                 </div>
             </div>

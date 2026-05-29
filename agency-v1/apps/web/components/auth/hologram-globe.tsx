@@ -53,8 +53,8 @@ export function HologramGlobe() {
         if (!ctx) return;
 
         let animationFrameId: number;
-        const width = canvas.width = 400;
-        const height = canvas.height = 400;
+        const width = canvas.width = 800;
+        const height = canvas.height = 800;
 
         // Spherical coordinates distribution (Fibonacci spiral)
         const points: Point3D[] = [];
@@ -102,7 +102,7 @@ export function HologramGlobe() {
             const sinX = Math.sin(angleX);
 
             const distance = 2.4;
-            const radiusScale = 110;
+            const radiusScale = 220;
 
             // Project and draw connection lines first (wireframe mesh)
             const projected: { sx: number; sy: number; sz: number; opacity: number }[] = [];
@@ -224,7 +224,7 @@ export function HologramGlobe() {
 
             // Draw HUD target crosshairs in center (sci-fi background details)
             ctx.beginPath();
-            ctx.arc(width / 2, height / 2, 160, 0, Math.PI * 2);
+            ctx.arc(width / 2, height / 2, 320, 0, Math.PI * 2);
             ctx.strokeStyle = "rgba(20, 184, 166, 0.05)";
             ctx.stroke();
             
@@ -232,7 +232,7 @@ export function HologramGlobe() {
             const radarAngle = (Date.now() * 0.0005) % (Math.PI * 2);
             ctx.beginPath();
             ctx.moveTo(width / 2, height / 2);
-            ctx.lineTo(width / 2 + Math.cos(radarAngle) * 160, height / 2 + Math.sin(radarAngle) * 160);
+            ctx.lineTo(width / 2 + Math.cos(radarAngle) * 320, height / 2 + Math.sin(radarAngle) * 320);
             ctx.strokeStyle = "rgba(20, 184, 166, 0.03)";
             ctx.stroke();
 
@@ -250,22 +250,22 @@ export function HologramGlobe() {
     if (!mounted) return null;
 
     return (
-        <div className="relative w-full h-[400px] flex items-center justify-center select-none">
+        <div className="relative w-full h-[800px] flex items-center justify-center select-none">
             {/* Ambient Background Spotlights */}
-            <div className="absolute w-[280px] h-[280px] bg-teal-500/5 blur-[90px] rounded-full pointer-events-none" />
-            <div className="absolute w-[200px] h-[200px] bg-purple-500/5 blur-[90px] rounded-full pointer-events-none" />
+            <div className="absolute w-[560px] h-[560px] bg-teal-500/5 blur-[180px] rounded-full pointer-events-none" />
+            <div className="absolute w-[400px] h-[400px] bg-purple-500/5 blur-[180px] rounded-full pointer-events-none" />
 
             {/* Core HTML5 3D Sphere Canvas */}
             <canvas
                 ref={canvasRef}
                 className="relative z-10 cursor-pointer"
-                style={{ width: "400px", height: "400px" }}
+                style={{ width: "800px", height: "800px" }}
             />
 
             {/* Orbiting Tech Badges / Floating Icons with CSS orbits */}
             
             {/* AI Node (Top Left) */}
-            <div className="absolute top-8 left-4 z-20 flex items-center gap-3 bg-slate-950/70 border border-teal-500/20 px-3 py-1.5 rounded-[0.15rem] backdrop-blur-md shadow-[0_0_15px_rgba(20,184,166,0.1)]">
+            <div className="absolute top-16 left-12 z-20 flex items-center gap-3 bg-slate-950/70 border border-teal-500/20 px-3 py-1.5 rounded-[0.15rem] backdrop-blur-md shadow-[0_0_15px_rgba(20,184,166,0.1)]">
                 <div className="w-6 h-6 rounded bg-teal-500/10 flex items-center justify-center border border-teal-500/20 text-teal-400">
                     <Cpu className="w-3.5 h-3.5 animate-pulse" />
                 </div>
@@ -276,7 +276,7 @@ export function HologramGlobe() {
             </div>
 
             {/* Marketing Stats Node (Bottom Right) */}
-            <div className="absolute bottom-8 right-4 z-20 flex items-center gap-3 bg-slate-950/70 border border-purple-500/20 px-3 py-1.5 rounded-[0.15rem] backdrop-blur-md shadow-[0_0_15px_rgba(167,139,250,0.1)]">
+            <div className="absolute bottom-16 right-12 z-20 flex items-center gap-3 bg-slate-950/70 border border-purple-500/20 px-3 py-1.5 rounded-[0.15rem] backdrop-blur-md shadow-[0_0_15px_rgba(167,139,250,0.1)]">
                 <div className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-400">
                     <TrendingUp className="w-3.5 h-3.5" />
                 </div>
@@ -287,7 +287,7 @@ export function HologramGlobe() {
             </div>
 
             {/* Live Chart HUD overlay (Bottom Left) */}
-            <div className="absolute bottom-10 left-4 z-20 w-24 space-y-1.5 bg-slate-950/50 border border-slate-900 rounded-[0.15rem] p-2 backdrop-blur-sm pointer-events-none">
+            <div className="absolute bottom-20 left-12 z-20 w-24 space-y-1.5 bg-slate-950/50 border border-slate-900 rounded-[0.15rem] p-2 backdrop-blur-sm pointer-events-none">
                 <p className="text-[8px] font-mono text-slate-500 uppercase tracking-wider leading-none">AGENT STREAM</p>
                 <div className="flex items-end gap-1 h-8 pt-2">
                     {CHART_ITEMS.map((item, i) => (
@@ -311,7 +311,7 @@ export function HologramGlobe() {
             <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-10 right-12 z-20 w-8 h-8 rounded-full border border-purple-500/30 bg-purple-950/50 flex items-center justify-center text-purple-400 shadow-[0_0_15px_rgba(167,139,250,0.2)]"
+                className="absolute top-20 right-24 z-20 w-8 h-8 rounded-full border border-purple-500/30 bg-purple-950/50 flex items-center justify-center text-purple-400 shadow-[0_0_15px_rgba(167,139,250,0.2)]"
             >
                 <Brain className="w-4 h-4" />
             </motion.div>
@@ -319,7 +319,7 @@ export function HologramGlobe() {
             <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-[45%] right-2 z-20 w-8 h-8 rounded-full border border-teal-500/30 bg-teal-950/50 flex items-center justify-center text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                className="absolute top-[45%] right-8 z-20 w-8 h-8 rounded-full border border-teal-500/30 bg-teal-950/50 flex items-center justify-center text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]"
             >
                 <Megaphone className="w-4 h-4" />
             </motion.div>
@@ -327,7 +327,7 @@ export function HologramGlobe() {
             <motion.div
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-[35%] left-1 z-20 w-8 h-8 rounded-full border border-teal-500/20 bg-teal-950/30 flex items-center justify-center text-teal-500"
+                className="absolute bottom-[35%] left-8 z-20 w-8 h-8 rounded-full border border-teal-500/20 bg-teal-950/30 flex items-center justify-center text-teal-500"
             >
                 <Share2 className="w-4 h-4" />
             </motion.div>

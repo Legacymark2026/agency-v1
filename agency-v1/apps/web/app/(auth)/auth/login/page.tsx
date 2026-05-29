@@ -120,14 +120,14 @@ export default function LoginPage() {
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1.2, ease: "easeOut" }}
-                        className="relative w-full h-[320px] xl:h-[400px] flex items-center justify-center"
+                        className="relative w-full h-[640px] xl:h-[800px] flex items-center justify-center"
                     >
                         {/* Glow effect surrounding the hologram container */}
-                        <div className="absolute w-[240px] h-[240px] xl:w-[300px] xl:h-[300px] bg-teal-500/10 blur-[80px] rounded-full animate-pulse" />
+                        <div className="absolute w-[480px] h-[480px] xl:w-[600px] xl:h-[600px] bg-teal-500/10 blur-[80px] rounded-full animate-pulse" />
                         
                         {/* Tech Ring HUD styling */}
-                        <div className="absolute w-[280px] h-[280px] xl:w-[340px] xl:h-[340px] border border-teal-500/20 rounded-full animate-[spin_40s_linear_infinite]" />
-                        <div className="absolute w-[300px] h-[300px] xl:w-[360px] xl:h-[360px] border border-dashed border-purple-500/15 rounded-full animate-[spin_60s_linear_infinite_reverse]" />
+                        <div className="absolute w-[560px] h-[560px] xl:w-[680px] xl:h-[680px] border border-teal-500/20 rounded-full animate-[spin_40s_linear_infinite]" />
+                        <div className="absolute w-[600px] h-[600px] xl:w-[720px] xl:h-[720px] border border-dashed border-purple-500/15 rounded-full animate-[spin_60s_linear_infinite_reverse]" />
                         
                         <HologramGlobe />
                     </motion.div>
