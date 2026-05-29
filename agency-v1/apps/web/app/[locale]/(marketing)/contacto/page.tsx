@@ -201,14 +201,14 @@ export default async function ContactPage() {
                                     <a
                                         key={m.key}
                                         href={m.href}
-                                        className="card-lift group flex items-start gap-4 p-5 rounded-2xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/40 hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-300 relative overflow-hidden no-underline backdrop-blur-sm"
+                                        className="card-lift group flex items-start gap-4 p-5 rounded-2xl border border-white/5 bg-slate-900/40 hover:border-teal-500/20 hover:bg-slate-900/60 hover:shadow-lg hover:shadow-teal-500/2 transition-all duration-300 relative overflow-hidden no-underline backdrop-blur-md"
                                     >
                                         <div className={`absolute inset-0 bg-gradient-to-br ${m.color} opacity-0 group-hover:opacity-[0.04] transition-opacity`} />
                                         <div className={`relative z-10 w-12 h-12 rounded-xl bg-gradient-to-br ${m.color} flex items-center justify-center text-xl shadow-md flex-shrink-0`}>
                                             {m.icon}
                                         </div>
                                         <div className="relative z-10 min-w-0">
-                                            <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-0.5">{t(`methods.${m.key}.label`)}</p>
+                                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500 mb-1">{t(`methods.${m.key}.label`)}</p>
                                             <p className="font-bold text-white text-sm truncate">{m.value || t(`methods.${m.key}.val`)}</p>
                                             <p className="text-xs text-teal-400 font-medium mt-0.5">{t(`methods.${m.key}.sub`)}</p>
                                         </div>
@@ -218,18 +218,18 @@ export default async function ContactPage() {
                             </div>
 
                             {/* Response time card */}
-                            <div className="relative p-6 rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden backdrop-blur-sm">
+                            <div className="relative p-6 rounded-2xl border border-white/5 bg-slate-900/40 overflow-hidden backdrop-blur-md shadow-lg">
                                 <PulseRings />
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-                                        <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">{t('info.responseTime.badge')}</span>
+                                        <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">{t('info.responseTime.badge')}</span>
                                     </div>
                                     <div className="flex items-end gap-2 mb-2">
-                                        <span className="text-5xl font-black text-white">{t('info.responseTime.val')}</span>
-                                        <span className="text-xl font-bold text-slate-500 mb-2">{t('info.responseTime.unit')}</span>
+                                        <span className="text-5xl font-black text-white leading-none">{t('info.responseTime.val')}</span>
+                                        <span className="text-sm font-mono font-bold text-slate-500 mb-1">{t('info.responseTime.unit')}</span>
                                     </div>
-                                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-slate-950 rounded-full overflow-hidden">
                                         <div className="h-2 bg-gradient-to-r from-teal-400 to-emerald-500 rounded-full" style={{ width: '85%' }} />
                                     </div>
                                     <p className="text-xs text-slate-500 mt-2">{t('info.responseTime.desc')}</p>
@@ -237,11 +237,14 @@ export default async function ContactPage() {
                             </div>
 
                             {/* FAQs */}
-                            <div className="space-y-4">
-                                <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">{t('info.faq.badge')}</h3>
+                            <div className="space-y-4 pt-4">
+                                <h3 className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-teal-50" />
+                                    {t('info.faq.badge')}
+                                </h3>
                                 {faqsConfig.map((faqKey, i) => (
-                                    <div key={i} className="p-5 rounded-xl border border-slate-800 bg-slate-900/50 hover:border-teal-500/30 hover:shadow-sm hover:shadow-teal-500/5 transition-all backdrop-blur-sm">
-                                        <p className="font-bold text-white text-sm mb-1">{t(`info.faq.${faqKey}.q`)}</p>
+                                    <div key={i} className="p-5 rounded-2xl border border-white/5 bg-slate-900/40 hover:border-teal-500/20 hover:bg-slate-900/60 hover:shadow-lg hover:shadow-teal-500/2 transition-all duration-300 backdrop-blur-md">
+                                        <p className="font-bold text-white text-sm mb-1.5">{t(`info.faq.${faqKey}.q`)}</p>
                                         <p className="text-slate-400 text-xs leading-relaxed">{t(`info.faq.${faqKey}.a`)}</p>
                                     </div>
                                 ))}
@@ -251,31 +254,23 @@ export default async function ContactPage() {
                         {/* ─── RIGHT COLUMN: Form ─── */}
                         <div className="lg:col-span-3">
                             {/* Form wrapper with premium feel */}
-                            <div className="relative rounded-2xl sm:rounded-3xl border border-slate-800 bg-slate-900/80 shadow-xl shadow-teal-500/5 overflow-hidden mx-auto max-w-full backdrop-blur-sm">
+                            <div className="relative rounded-3xl border border-white/10 bg-slate-900/80 shadow-2xl overflow-hidden mx-auto max-w-full backdrop-blur-md">
                                 {/* Gradient top bar */}
                                 <div className="h-1.5 bg-gradient-to-r from-teal-400 via-sky-500 to-violet-500" />
 
                                 {/* Form header */}
-                                <div className="px-5 sm:px-8 pt-6 sm:pt-8 pb-4 border-b border-slate-800">
-                                    <div className="flex items-center justify-between">
+                                <div className="px-5 sm:px-8 py-6 border-b border-slate-800">
+                                    <div className="flex items-center justify-between gap-4">
                                         <div>
-                                            <h2 className="text-xl font-black text-white">{t('form.title')}</h2>
-                                            <p className="text-slate-400 text-sm mt-0.5">{t('form.desc')}</p>
+                                            <h2 className="text-lg font-black text-white font-mono uppercase tracking-wider">{t('form.title')}</h2>
+                                            <p className="text-slate-400 text-xs mt-1 leading-relaxed">{t('form.desc')}</p>
                                         </div>
                                         {/* Security badge */}
-                                        <div className="flex flex-col items-center gap-1 p-3 rounded-xl border border-slate-700 bg-slate-800/50">
-                                            <span className="text-xl">🔒</span>
-                                            <span className="text-xs font-black text-slate-500 uppercase tracking-wider">{t('form.secure')}</span>
+                                        <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-slate-850 bg-slate-950/60 shadow-inner shrink-0">
+                                            <span className="text-base">🔒</span>
+                                            <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">{t('form.secure')}</span>
                                         </div>
                                     </div>
-
-                                    {/* Form progress hint */}
-                                    <div className="flex gap-1 mt-5">
-                                        {[1, 2, 3].map((s) => (
-                                            <div key={s} className={`h-1 flex-1 rounded-full ${s === 1 ? 'bg-gradient-to-r from-teal-400 to-sky-400' : 'bg-slate-700'}`} />
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-1">{t('form.step')}</p>
                                 </div>
 
                                 {/* The form itself */}

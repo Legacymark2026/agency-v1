@@ -71,7 +71,7 @@ function StepDot({ active, done }: { active: boolean; done: boolean }) {
     return (
         <div 
             aria-hidden="true"
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${done ? 'bg-teal-500 scale-100' : active ? 'bg-teal-400 scale-125 ring-4 ring-teal-100' : 'bg-slate-200'}`} 
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${done ? 'bg-teal-500 scale-100' : active ? 'bg-teal-400 scale-125 ring-4 ring-teal-500/25' : 'bg-slate-800'}`} 
         />
     );
 }
@@ -84,18 +84,27 @@ function SelectField({ label, id, options, error, register }: {
 }) {
     return (
         <div className="space-y-2">
-            <label htmlFor={id} className="text-sm font-semibold text-slate-700">{label}</label>
-            <select
-                id={id}
-                {...register(id as keyof FormValues)}
-                aria-invalid={!!error}
-                aria-describedby={error ? `${id}-error` : undefined}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-all appearance-none cursor-pointer"
-            >
-                <option value="">— Selecciona —</option>
-                {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            {error && <p id={`${id}-error`} className="text-xs text-red-500">{error}</p>}
+            <label htmlFor={id} className="text-xs font-mono text-slate-400 uppercase tracking-widest block">{label}</label>
+            <div className="relative">
+                <select
+                    id={id}
+                    {...register(id as keyof FormValues)}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? `${id}-error` : undefined}
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-800 bg-slate-950/80 text-white text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/25 transition-all appearance-none cursor-pointer"
+                >
+                    <option value="" className="bg-slate-950 text-slate-500">— Selecciona —</option>
+                    {options.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-slate-950 text-white">
+                            {o.label}
+                        </option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                    ▼
+                </div>
+            </div>
+            {error && <p id={`${id}-error`} className="text-xs text-rose-400">{error}</p>}
         </div>
     );
 }
@@ -106,13 +115,13 @@ function StepCard({ step, total, title, children }: { step: number; total: numbe
     return (
         <div className="space-y-5">
             <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-sky-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0">{step}</div>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-500 to-sky-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-lg shadow-teal-500/10">{step}</div>
                 <div>
-                    <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">Paso {step} de {total}</p>
-                    <h3 className="text-sm font-black text-slate-900">{title}</h3>
+                    <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Paso {step} de {total}</p>
+                    <h3 className="text-sm font-black text-white font-mono uppercase tracking-wider">{title}</h3>
                 </div>
             </div>
-            <div className="space-y-4 pl-10">{children}</div>
+            <div className="space-y-4 pl-11">{children}</div>
         </div>
     );
 }
@@ -209,14 +218,17 @@ function ContactFormContent() {
     if (isSuccess) {
         return (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div role="img" aria-label="Éxito" className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-4xl mb-6 shadow-xl shadow-teal-200">✅</div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2">¡Solicitud Recibida!</h3>
-                <p className="text-slate-500 max-w-xs">Nuestro equipo revisará tu caso y se pondrá en contacto en <strong className="text-slate-700">menos de 24 horas</strong>.</p>
-                <div className="mt-8 p-4 bg-teal-50 rounded-2xl border border-teal-100 text-left max-w-xs w-full">
-                    <p className="text-xs font-black text-teal-700 uppercase tracking-wider mb-2">Mientras tanto puedes:</p>
-                    <a href="https://wa.me/573223047353" className="text-sm text-teal-600 font-medium hover:underline block">💬 Escríbenos por WhatsApp ahora →</a>
+                <div role="img" aria-label="Éxito" className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-4xl mb-6 shadow-xl shadow-teal-500/25 animate-bounce">✅</div>
+                <h3 className="text-2xl font-black text-white mb-2">¡Solicitud Recibida!</h3>
+                <p className="text-slate-400 max-w-xs text-sm leading-relaxed">Nuestro equipo revisará tu caso y se pondrá en contacto en <strong className="text-teal-400">menos de 24 horas</strong>.</p>
+                <div className="mt-8 p-5 rounded-2xl border border-teal-500/20 bg-teal-500/5 text-left max-w-xs w-full backdrop-blur-md">
+                    <p className="text-xs font-mono font-bold text-teal-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 animate-ping rounded-full bg-teal-400" />
+                        Mientras tanto puedes:
+                    </p>
+                    <a href="https://wa.me/573223047353" className="text-xs font-mono font-black text-white hover:text-teal-400 transition-colors uppercase tracking-wider block">💬 Escríbenos por WhatsApp ahora →</a>
                 </div>
-                <button onClick={() => setIsSuccess(false)} className="mt-6 text-sm text-slate-400 hover:text-slate-600 underline">Enviar otra consulta</button>
+                <button onClick={() => setIsSuccess(false)} className="mt-8 text-xs font-mono text-slate-500 hover:text-slate-400 underline">Enviar otra consulta</button>
             </div>
         );
     }
@@ -237,7 +249,7 @@ function ContactFormContent() {
                     </div>
                     <span className="text-xs font-mono text-slate-400">{currentStep}/{TOTAL_STEPS} · ~2 min</span>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-teal-400 to-sky-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
             </div>
@@ -246,20 +258,20 @@ function ContactFormContent() {
             {currentStep === 1 && (
                 <StepCard step={1} total={TOTAL_STEPS} title="¿Quién eres?">
                     <div className="space-y-2">
-                        <label htmlFor="name" className="text-sm font-semibold text-slate-700">Nombre completo <span className="text-red-400">*</span></label>
+                        <label htmlFor="name" className="text-xs font-mono text-slate-400 uppercase tracking-widest block">Nombre completo <span className="text-teal-400">*</span></label>
                         <Input 
                             id="name" 
                             placeholder="Ana García" 
                             {...register("name")} 
                             aria-invalid={!!errors.name}
                             aria-describedby={errors.name ? "name-error" : undefined}
-                            className="bg-slate-50 border-slate-200 focus:ring-teal-400" 
+                            className="bg-slate-950/80 border-slate-800 text-white focus:border-teal-500 focus:ring-teal-500/20 placeholder-slate-600 rounded-xl" 
                         />
-                        {errors.name && <p id="name-error" className="text-xs text-red-500">{errors.name.message}</p>}
+                        {errors.name && <p id="name-error" className="text-xs text-rose-400">{errors.name.message}</p>}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email profesional <span className="text-red-400">*</span></label>
+                            <label htmlFor="email" className="text-xs font-mono text-slate-400 uppercase tracking-widest block">Email profesional <span className="text-teal-400">*</span></label>
                             <Input 
                                 id="email" 
                                 type="email" 
@@ -267,12 +279,12 @@ function ContactFormContent() {
                                 {...register("email")} 
                                 aria-invalid={!!errors.email}
                                 aria-describedby={errors.email ? "email-error" : undefined}
-                                className="bg-slate-50 border-slate-200 focus:ring-teal-400" 
+                                className="bg-slate-950/80 border-slate-800 text-white focus:border-teal-500 focus:ring-teal-500/20 placeholder-slate-600 rounded-xl" 
                             />
-                            {errors.email && <p id="email-error" className="text-xs text-red-500">{errors.email.message}</p>}
+                            {errors.email && <p id="email-error" className="text-xs text-rose-400">{errors.email.message}</p>}
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="phone" className="text-sm font-semibold text-slate-700">WhatsApp / Teléfono <span className="text-red-400">*</span></label>
+                            <label htmlFor="phone" className="text-xs font-mono text-slate-400 uppercase tracking-widest block">WhatsApp / Teléfono <span className="text-teal-400">*</span></label>
                             <Input 
                                 id="phone" 
                                 type="tel" 
@@ -280,9 +292,9 @@ function ContactFormContent() {
                                 {...register("phone")} 
                                 aria-invalid={!!errors.phone}
                                 aria-describedby={errors.phone ? "phone-error" : undefined}
-                                className="bg-slate-50 border-slate-200 focus:ring-teal-400" 
+                                className="bg-slate-950/80 border-slate-800 text-white focus:border-teal-500 focus:ring-teal-500/20 placeholder-slate-600 rounded-xl" 
                             />
-                            {errors.phone && <p id="phone-error" className="text-xs text-red-500">{errors.phone.message}</p>}
+                            {errors.phone && <p id="phone-error" className="text-xs text-rose-400">{errors.phone.message}</p>}
                         </div>
                     </div>
                 </StepCard>
@@ -290,10 +302,10 @@ function ContactFormContent() {
 
             {/* ── STEP 2: Empresa ── */}
             {currentStep === 2 && (
-                <StepCard step={2} total={TOTAL_STEPS} title="¿Cuéntanos sobre tu empresa">
+                <StepCard step={2} total={TOTAL_STEPS} title="Cuéntanos sobre tu empresa">
                     <div className="space-y-2">
-                        <label htmlFor="company" className="text-sm font-semibold text-slate-700">Nombre de la empresa <span className="text-slate-400 font-normal">(opcional)</span></label>
-                        <Input id="company" placeholder="Mi Empresa S.A.S" {...register("company")} className="bg-slate-50 border-slate-200 focus:ring-teal-400" />
+                        <label htmlFor="company" className="text-xs font-mono text-slate-400 uppercase tracking-widest block">Nombre de la empresa <span className="text-slate-600 font-normal">(opcional)</span></label>
+                        <Input id="company" placeholder="Mi Empresa S.A.S" {...register("company")} className="bg-slate-950/80 border-slate-800 text-white focus:border-teal-500 focus:ring-teal-500/20 placeholder-slate-600 rounded-xl" />
                     </div>
                     <SelectField
                         label="Tamaño de la empresa *"
@@ -330,8 +342,8 @@ function ContactFormContent() {
                         register={register}
                     />
                     {/* Budget hint */}
-                    <div className="p-3 rounded-xl bg-teal-50 border border-teal-100">
-                        <p className="text-xs text-teal-700">💡 <strong>¿No estás seguro del presupuesto?</strong> Selecciona el rango más bajo. Lo ajustamos juntos en la llamada.</p>
+                    <div className="p-4 rounded-2xl bg-teal-950/20 border border-teal-500/10">
+                        <p className="text-xs text-teal-400 leading-relaxed">💡 <strong>¿No estás seguro del presupuesto?</strong> Selecciona el rango más bajo. Lo ajustamos juntos en la llamada.</p>
                     </div>
                 </StepCard>
             )}
@@ -340,50 +352,55 @@ function ContactFormContent() {
             {currentStep === 4 && (
                 <StepCard step={4} total={TOTAL_STEPS} title="El detalle final">
                     <div className="space-y-2">
-                        <label htmlFor="goal" className="text-sm font-semibold text-slate-700">
-                            ¿Cuál es tu objetivo principal? <span className="text-red-400">*</span>
+                        <label htmlFor="goal" className="text-xs font-mono text-slate-400 uppercase tracking-widest block">
+                            ¿Cuál es tu objetivo principal? <span className="text-teal-400">*</span>
                         </label>
-                        <p className="text-xs text-slate-400">¿Qué resultado quieres lograr? (ej: "conseguir 50 leads al mes", "aumentar ventas 30%", "lanzar nueva marca")</p>
+                        <p className="text-[11px] text-slate-500 leading-normal mb-1">¿Qué resultado quieres lograr? (ej: "conseguir 50 leads al mes", "aumentar ventas 30%", "lanzar nueva marca")</p>
                         <Textarea
                             id="goal"
                             placeholder="Mi objetivo es..."
-                            className="min-h-[100px] bg-slate-50 border-slate-200 focus:ring-teal-400 text-sm"
+                            className="min-h-[100px] bg-slate-950/80 border-slate-800 text-white focus:border-teal-500 focus:ring-teal-500/20 placeholder-slate-600 rounded-xl text-sm"
                             {...register("goal")}
                             aria-invalid={!!errors.goal}
                             aria-describedby={errors.goal ? "goal-error" : undefined}
                         />
-                        {errors.goal && <p id="goal-error" className="text-xs text-red-500">{errors.goal.message}</p>}
+                        {errors.goal && <p id="goal-error" className="text-xs text-rose-400">{errors.goal.message}</p>}
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="how_found" className="text-sm font-semibold text-slate-700">
-                            ¿Cómo nos encontraste? <span className="text-slate-400 font-normal">(opcional)</span>
+                        <label htmlFor="how_found" className="text-xs font-mono text-slate-400 uppercase tracking-widest block">
+                            ¿Cómo nos encontraste? <span className="text-slate-600 font-normal">(opcional)</span>
                         </label>
-                        <select
-                            id="how_found"
-                            {...register("how_found")}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all appearance-none"
-                        >
-                            <option value="">— Selecciona —</option>
-                            {['Google', 'Instagram / Redes Sociales', 'Recomendación de un conocido', 'LinkedIn', 'YouTube', 'Otro'].map((v) => (
-                                <option key={v} value={v}>{v}</option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-slate-400">Nos ayuda mucho saber de dónde vienen nuestros mejores clientes.</p>
+                        <div className="relative">
+                            <select
+                                id="how_found"
+                                {...register("how_found")}
+                                className="w-full px-4 py-3.5 rounded-xl border border-slate-800 bg-slate-950/80 text-white text-sm focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/25 transition-all appearance-none cursor-pointer"
+                            >
+                                <option value="" className="bg-slate-950 text-slate-400">— Selecciona —</option>
+                                {['Google', 'Instagram / Redes Sociales', 'Recomendación de un conocido', 'LinkedIn', 'YouTube', 'Otro'].map((v) => (
+                                    <option key={v} value={v} className="bg-slate-950 text-white">{v}</option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+                                ▼
+                            </div>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-normal">Nos ayuda mucho saber de dónde vienen nuestros mejores clientes.</p>
                     </div>
 
                     {/* Consent */}
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-950/50 border border-slate-800/80">
                         <input
                             type="checkbox"
                             id="contact-consent"
-                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-400"
+                            className="mt-0.5 h-4 w-4 rounded border-slate-800 bg-slate-950 text-teal-600 focus:ring-teal-400"
                             {...register("consent")}
                         />
-                        <label htmlFor="contact-consent" className="text-xs text-slate-500 leading-relaxed">
-                            He leído y acepto la <a href="/politica-privacidad" className="text-teal-600 underline hover:text-teal-700">Política de Privacidad</a> y el tratamiento de mis datos personales para recibir respuesta a esta consulta.
+                        <label htmlFor="contact-consent" className="text-xs text-slate-400 leading-relaxed cursor-pointer">
+                            He leído y acepto la <a href="/politica-privacidad" className="text-teal-400 underline hover:text-teal-300">Política de Privacidad</a> y el tratamiento de mis datos personales para recibir respuesta a esta consulta.
                         </label>
                     </div>
-                    {errors.consent && <p className="text-xs text-red-500">{errors.consent.message}</p>}
+                    {errors.consent && <p className="text-xs text-rose-400">{errors.consent.message}</p>}
                 </StepCard>
             )}
 
@@ -393,7 +410,7 @@ function ContactFormContent() {
                     <button
                         type="button"
                         onClick={goBack}
-                        className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:border-slate-300 hover:bg-slate-50 transition-all"
+                        className="flex-1 py-3.5 rounded-xl border border-slate-850 text-slate-400 font-mono font-bold text-xs uppercase tracking-wider hover:border-slate-700 hover:text-white transition-all bg-slate-900/40"
                     >
                         ← Atrás
                     </button>
@@ -402,7 +419,7 @@ function ContactFormContent() {
                     <button
                         type="button"
                         onClick={goNext}
-                        className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-sky-500 text-white font-bold text-sm hover:from-teal-600 hover:to-sky-600 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-teal-200"
+                        className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-sky-500 text-white font-mono font-bold text-xs uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-teal-500/15 font-black"
                     >
                         Continuar →
                     </button>
@@ -411,7 +428,7 @@ function ContactFormContent() {
                         type="submit"
                         size="lg"
                         disabled={isSubmitting}
-                        className="flex-1 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold hover:from-teal-600 hover:to-emerald-600 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-teal-200 h-auto py-3.5"
+                        className="flex-1 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-mono font-bold text-xs uppercase tracking-widest hover:scale-[1.01] active:scale-95 transition-all shadow-lg shadow-teal-500/15 h-auto py-3.5 font-black"
                     >
                         {isSubmitting ? '⏳ Enviando...' : '🚀 Enviar Consulta'}
                     </Button>
