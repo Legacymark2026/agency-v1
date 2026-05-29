@@ -74,7 +74,7 @@ function checkSSLCertificate(hostname: string): Promise<{ valid: boolean; issuer
             port: 443,
             method: "GET",
             rejectUnauthorized: false, // Don't throw on invalid certs, so we can inspect them
-            timeout: 3000
+            timeout: 6000
         }, (res) => {
             const cert = (res.socket as any).getPeerCertificate();
             if (cert && Object.keys(cert).length > 0) {
@@ -128,7 +128,7 @@ async function checkUrlStatus(url: string): Promise<boolean> {
         const res = await fetch(url, {
             method: "HEAD",
             signal: controller.signal,
-            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebAudit/1.0" }
+            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" }
         });
         clearTimeout(timeoutId);
         return res.status < 400;
@@ -139,7 +139,7 @@ async function checkUrlStatus(url: string): Promise<boolean> {
             const res = await fetch(url, {
                 method: "GET",
                 signal: controller.signal,
-                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebAudit/1.0" }
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" }
             });
             clearTimeout(timeoutId);
             return res.status < 400;
@@ -168,6 +168,7 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
         const start = Date.now();
         let html = "";
         let fetchSuccess = false;
+        let fetchSuccessHttps = false;
         let ttfb = 0;
         let hsts = false;
         let protocol = "HTTP/1.1";
@@ -177,12 +178,13 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
             const timeoutId = setTimeout(() => controller.abort(), 5000);
             const res = await fetch(url, {
                 signal: controller.signal,
-                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebAudit/1.0" }
+                headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" }
             });
             ttfb = Date.now() - start;
             clearTimeout(timeoutId);
             html = await res.text();
             fetchSuccess = true;
+            fetchSuccessHttps = true;
             hsts = res.headers.has("strict-transport-security");
         } catch (err: any) {
             console.warn(`HTTPS fetch failed for ${domain}, retrying with HTTP... Error: ${err.message}`);
@@ -193,7 +195,7 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
                 const res = await fetch(`http://${domain}`, {
                     signal: controller.signal,
-                    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) WebAudit/1.0" }
+                    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" }
                 });
                 ttfb = Date.now() - httpStart;
                 clearTimeout(timeoutId);
@@ -288,7 +290,7 @@ export async function auditDomainAction(rawDomain: string): Promise<{ success: b
             domain,
             fetchSuccess,
             ttfb: ttfb || 450, // default if fetch failed
-            sslValid: sslData.valid,
+            sslValid: sslData.valid || fetchSuccessHttps,
             sslIssuer: sslData.issuer,
             sslExpiry: sslData.validTo,
             hsts,
