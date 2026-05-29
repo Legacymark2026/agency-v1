@@ -63,6 +63,7 @@ export function Header() {
             href: "#",
             submenu: [
                 { name: t("methodology"), href: "/metodologia" },
+                { name: t("audit"), href: "/auditoria" },
                 { name: "Tarifario", href: "/tarifario" },
                 { name: "Planes", href: "/suscripcion" },
                 { name: t("blog"), href: "/blog" },
