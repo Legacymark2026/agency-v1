@@ -132,19 +132,12 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                                         <div className="w-full h-full bg-gradient-to-r from-indigo-100 to-purple-100 opacity-50"></div>
                                     )}
 
-                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <label className="cursor-pointer">
-                                            <div className="bg-white/90 backdrop-blur text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 hover:bg-white text-gray-700">
-                                                <Camera size={14} /> Editar Portada
-                                            </div>
-                                            <div className="hidden">
-                                                <ImageUpload
-                                                    value={form.watch("coverImage") ? [form.watch("coverImage")!] : []}
-                                                    onChange={(url) => form.setValue("coverImage", url, { shouldDirty: true })}
-                                                    onRemove={() => form.setValue("coverImage", null, { shouldDirty: true })}
-                                                />
-                                            </div>
-                                        </label>
+                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity z-20 max-w-[220px]">
+                                        <ImageUpload
+                                            value={form.watch("coverImage") ? [form.watch("coverImage")!] : []}
+                                            onChange={(url) => form.setValue("coverImage", url, { shouldDirty: true })}
+                                            onRemove={() => form.setValue("coverImage", null, { shouldDirty: true })}
+                                        />
                                     </div>
 
                                     <div className="absolute -bottom-6 left-6 flex items-end gap-6">

@@ -139,11 +139,12 @@ interface DashboardSidebarProps {
     name: string | null | undefined;
     email: string | null | undefined;
     image?: string | null | undefined;
+    companyLogoUrl?: string | null;
     accessibleRoutes: string[];
     badge: { label: string; color: string };
 }
 
-export function DashboardSidebar({ role, name, email, image, accessibleRoutes, badge }: DashboardSidebarProps) {
+export function DashboardSidebar({ role, name, email, image, companyLogoUrl, accessibleRoutes, badge }: DashboardSidebarProps) {
     return (
         <aside
             className="flex flex-row h-full shrink-0 relative transition-all duration-300 ease-in-out"
@@ -157,6 +158,7 @@ export function DashboardSidebar({ role, name, email, image, accessibleRoutes, b
             <SidebarClientContent 
                 navGroups={NAV_GROUPS}
                 accessibleRoutes={accessibleRoutes}
+                companyLogoUrl={companyLogoUrl}
                 userInfo={{ name, email, image, badge }}
             />
 

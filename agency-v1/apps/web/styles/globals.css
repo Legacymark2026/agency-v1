@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700;900&family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
 
 @theme {
   --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -336,7 +338,7 @@
 .font-inter { --font-sans: "Inter", sans-serif; }
 .font-roboto { --font-sans: "Roboto", sans-serif; }
 .font-jetbrains { --font-sans: "JetBrains Mono", monospace; }
-.font-geist { --font-sans: "Geist", sans-serif; }
+.font-geist { --font-sans: "Outfit", sans-serif; }
 
 /* ── Disable Animations ── */
 .disable-animations * {

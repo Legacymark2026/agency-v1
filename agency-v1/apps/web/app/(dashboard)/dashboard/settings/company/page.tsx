@@ -3,11 +3,13 @@ import { DefaultCompanySettings } from "@/components/settings/default-company-se
 import { GlobalEmailTemplates } from "@/components/settings/global-email-templates";
 import { CustomDomainSettings } from "@/components/settings/custom-domain-settings";
 import { fetchCompanySettings } from "@/app/actions/settings";
+import { fetchEmailTemplates } from "@/app/actions/email-templates";
 
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsCompanyPage() {
     const companyData = await fetchCompanySettings();
+    const emailTemplates = companyData?.id ? await fetchEmailTemplates(companyData.id) : [];
 
     return (
         <div className="space-y-8 animate-in fade-in duration-300 pb-10">
@@ -29,7 +31,7 @@ export default async function SettingsCompanyPage() {
             </section>
 
             <section className="space-y-4 pt-4">
-                <GlobalEmailTemplates />
+                <GlobalEmailTemplates initialTemplates={emailTemplates} companyId={companyData?.id} />
             </section>
 
             <section className="space-y-4 pt-4">

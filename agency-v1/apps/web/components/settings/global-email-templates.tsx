@@ -1,33 +1,65 @@
 "use client";
 
-import { Mail, Plus, Edit2, Trash2, LayoutTemplate } from "lucide-react";
+import { useState } from "react";
+import { createEmailTemplate, deleteEmailTemplate } from "@/app/actions/email-templates";
+import { useRouter } from "next/navigation";
+import { Plus, X, Trash2, Eye, Copy, Mail, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const MOCK_TEMPLATES = [
-    {
-        id: "tpl1",
-        name: "Bienvenida a Nuevos Leads",
-        subject: "¡Hola! Gracias por tu interés en LegacyMark",
-        type: "CRM",
-        lastEdited: "hace 2 días",
-    },
-    {
-        id: "tpl2",
-        name: "Seguimiento Poscotización",
-        subject: "Seguimiento a nuestra propuesta - LegacyMark",
-        type: "Ventas",
-        lastEdited: "hace 1 semana",
-    },
-    {
-        id: "tpl3",
-        name: "Invitación a Webinar",
-        subject: "Te invitamos a nuestra próxima clase maestra",
-        type: "Marketing",
-        lastEdited: "hace 1 mes",
-    },
-];
+interface Template {
+    id: string; name: string; subject: string; body: string;
+    description: string | null; variables: string[]; category: string;
+    createdAt: Date; updatedAt: Date;
+}
 
-export function GlobalEmailTemplates() {
+const CATEGORIES = ["GENERAL", "FOLLOW_UP", "PROPOSAL", "CLOSING", "ONBOARDING", "REACTIVATION"];
+const CATEGORY_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+    GENERAL: { label: "General", color: "text-slate-600", bg: "bg-slate-100" },
+    FOLLOW_UP: { label: "Seguimiento", color: "text-sky-600", bg: "bg-sky-50" },
+    PROPOSAL: { label: "Propuesta", color: "text-violet-600", bg: "bg-violet-50" },
+    CLOSING: { label: "Cierre", color: "text-emerald-600", bg: "bg-emerald-50" },
+    ONBOARDING: { label: "Bienvenida", color: "text-teal-600", bg: "bg-teal-50" },
+    REACTIVATION: { label: "Reactivación", color: "text-amber-600", bg: "bg-amber-50" },
+};
+
+interface Props { initialTemplates?: Template[]; companyId?: string; }
+
+export function GlobalEmailTemplates({ initialTemplates = [], companyId = "" }: Props) {
+    const router = useRouter();
+    const [templates, setTemplates] = useState<Template[]>(initialTemplates as any);
+    const [showCreate, setShowCreate] = useState(false);
+    const [preview, setPreview] = useState<Template | null>(null);
+    const [creating, setCreating] = useState(false);
+    const [error, setError] = useState("");
+    const [form, setForm] = useState({ name: "", subject: "", body: "", description: "", category: "GENERAL", variables: "" });
+
+    const set = (k: string, v: string) => setForm((prev) => ({ ...prev, [k]: v }));
+
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault(); 
+        if (!companyId) return setError("No company ID");
+        setCreating(true); setError("");
+        const result = await createEmailTemplate({
+            ...form, variables: form.variables.split(",").map((v) => v.trim()).filter(Boolean), companyId,
+        });
+        setCreating(false);
+        if ("error" in result) { setError(result.error ?? "Error"); return; }
+        setShowCreate(false);
+        setForm({ name: "", subject: "", body: "", description: "", category: "GENERAL", variables: "" });
+        
+        if (result.data) {
+            setTemplates((prev) => [result.data as unknown as Template, ...prev]);
+        }
+        router.refresh();
+    };
+
+    const handleDelete = async (id: string) => {
+        setTemplates((prev) => prev.filter((t) => t.id !== id));
+        await deleteEmailTemplate(id);
+    };
+
+    const inputCls = "w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400";
+
     return (
         <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm mt-6">
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -42,47 +74,126 @@ export function GlobalEmailTemplates() {
                         </p>
                     </div>
                 </div>
-                <Button className="shrink-0 bg-violet-600 hover:bg-violet-700 text-white">
+                <Button onClick={() => setShowCreate(true)} className="shrink-0 bg-violet-600 hover:bg-violet-700 text-white">
                     <Plus className="w-4 h-4 mr-2" />
                     Nueva Plantilla
                 </Button>
             </div>
 
-            <div className="divide-y divide-slate-100">
-                {MOCK_TEMPLATES.map((template) => (
-                    <div key={template.id} className="p-6 flex flex-col sm:flex-row gap-4 sm:items-center justify-between hover:bg-slate-50/50 transition-colors">
-                        <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <span className="font-semibold text-slate-900">{template.name}</span>
-                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                    {template.type}
-                                </span>
+            <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {templates.map((tpl) => {
+                        const cfg = CATEGORY_CONFIG[tpl.category] ?? CATEGORY_CONFIG["GENERAL"];
+                        return (
+                            <div key={tpl.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:shadow-md transition-shadow">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Mail className="w-4 h-4 text-violet-500" />
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <button onClick={() => setPreview(tpl)} className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-all"><Eye className="w-3.5 h-3.5" /></button>
+                                        <button onClick={() => handleDelete(tpl.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                </div>
+                                <h3 className="font-black text-slate-900 text-sm mb-1">{tpl.name}</h3>
+                                <p className="text-xs text-slate-500 mb-2 font-medium">📌 {tpl.subject}</p>
+                                {tpl.description && <p className="text-xs text-slate-400 leading-relaxed">{tpl.description}</p>}
+                                {tpl.variables && tpl.variables.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1">
+                                        {tpl.variables.map((v: string) => <span key={v} className="px-1.5 py-0.5 text-xs font-mono font-bold bg-violet-50 text-violet-600 border border-violet-100 rounded">{"{{" + v + "}}"}</span>)}
+                                    </div>
+                                )}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span className="truncate max-w-sm"><strong>Asunto:</strong> {template.subject}</span>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-1">
-                                Editada {template.lastEdited}
-                            </p>
+                        );
+                    })}
+                    {templates.length === 0 && (
+                        <div className="md:col-span-2 xl:col-span-3 bg-white rounded-2xl border border-dashed border-slate-200 p-12 text-center">
+                            <LayoutTemplate className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                            <p className="text-slate-500 text-sm">No tienes plantillas configuradas todavía.</p>
                         </div>
+                    )}
+                </div>
+            </div>
 
-                        <div className="flex items-center gap-2 self-start sm:self-center">
-                            <Button variant="ghost" size="sm" className="text-slate-500 hover:text-indigo-600 hover:bg-indigo-50">
-                                <Edit2 className="w-4 h-4 mr-2" />
-                                Editar
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-slate-400 border border-transparent hover:border-red-200 hover:text-red-600 hover:bg-red-50">
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
+            {/* Create Dialog */}
+            {showCreate && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}>
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white rounded-t-3xl px-8 pt-8 pb-4 border-b border-slate-50 flex items-center justify-between">
+                            <h2 className="text-lg font-black text-slate-900">Nueva Plantilla de Email</h2>
+                            <button onClick={() => setShowCreate(false)}><X className="w-5 h-5 text-slate-400" /></button>
+                        </div>
+                        <form onSubmit={handleCreate} className="px-8 pb-8 pt-5 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-600">Nombre interno *</label>
+                                    <input value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="Ej: Seguimiento día 3" className={inputCls} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-600">Categoría</label>
+                                    <select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputCls}>
+                                        {CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_CONFIG[c]?.label}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Asunto del email *</label>
+                                <input value={form.subject} onChange={(e) => set("subject", e.target.value)} required placeholder="Ej: Hola {{name}}, ¿pudiste revisar la propuesta?" className={inputCls} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Cuerpo del email *</label>
+                                <textarea value={form.body} onChange={(e) => set("body", e.target.value)} required rows={8} placeholder={"Hola {{name}},\n\nEspero que estés muy bien. Quería hacer seguimiento a nuestra conversación...\n\nQuedo atento,\n{{senderName}}"} className={`${inputCls} resize-none font-mono text-xs`} />
+                                <p className="text-xs text-slate-400">Usa {"{{variable}}"} para las variables personalizables.</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Variables (separadas por coma)</label>
+                                <input value={form.variables} onChange={(e) => set("variables", e.target.value)} placeholder="name, company, dealValue, senderName" className={inputCls} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600">Descripción</label>
+                                <input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="¿Cuándo usar este template?" className={inputCls} />
+                            </div>
+                            {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
+                            <div className="flex gap-3 pt-2">
+                                <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50">Cancelar</button>
+                                <button type="submit" disabled={creating} className="flex-1 py-3 rounded-xl bg-violet-600 text-white font-bold text-sm hover:opacity-90 disabled:opacity-50">
+                                    {creating ? "Guardando…" : "Guardar Plantilla ✓"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Preview Dialog */}
+            {preview && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="font-black text-slate-900">{preview.name}</h3>
+                            <button onClick={() => setPreview(null)}><X className="w-5 h-5 text-slate-400" /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="bg-slate-50 rounded-xl p-4">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">ASUNTO</p>
+                                <p className="text-sm font-semibold text-slate-900">{preview.subject}</p>
+                            </div>
+                            <div className="bg-slate-50 rounded-xl p-4">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">CUERPO</p>
+                                <pre className="text-sm text-slate-700 font-sans whitespace-pre-wrap leading-relaxed">{preview.body}</pre>
+                            </div>
+                            {preview.variables && preview.variables.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {preview.variables.map((v: string) => (
+                                        <button key={v} onClick={() => navigator.clipboard.writeText(`{{${v}}}`)} className="flex items-center gap-1 px-2 py-1 text-xs font-mono font-bold bg-violet-50 text-violet-600 border border-violet-100 rounded-lg hover:bg-violet-100 transition-colors">
+                                            <Copy className="w-3 h-3" />{"{{" + v + "}}"}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
-                ))}
-            </div>
-            {MOCK_TEMPLATES.length === 0 && (
-                <div className="p-12 text-center text-slate-500">
-                    <LayoutTemplate className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                    <p>No tienes plantillas configuradas todavía.</p>
                 </div>
             )}
         </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { SessionProvider, useSession } from "next-auth/react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { Suspense } from "react";
 import { AnalyticsProvider } from "@/modules/analytics/components/analytics-provider";
@@ -15,6 +15,7 @@ function AppearanceEnforcer() {
     const font = useUIStore((state) => state.font);
     const bgTheme = useUIStore((state) => state.bgTheme);
     const animationsEnabled = useUIStore((state) => state.animationsEnabled);
+    const { theme } = useTheme();
 
     useEffect(() => {
         const root = document.documentElement;
@@ -37,7 +38,7 @@ function AppearanceEnforcer() {
         } else {
             root.classList.remove('disable-animations');
         }
-    }, [accent, density, font, bgTheme, animationsEnabled]);
+    }, [accent, density, font, bgTheme, animationsEnabled, theme]);
 
     return null;
 }

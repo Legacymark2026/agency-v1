@@ -63,7 +63,18 @@ export default async function DashboardLayout({
         }),
         prisma.companyUser.findFirst({
             where: { userId: session.user.id },
-            select: { permissions: true, companyId: true, company: { select: { defaultCompanySettings: true, onboardingCompleted: true } } },
+            select: { 
+                permissions: true, 
+                companyId: true, 
+                company: { 
+                    select: { 
+                        logoUrl: true, 
+                        whiteLabeling: true, 
+                        defaultCompanySettings: true, 
+                        onboardingCompleted: true 
+                    } 
+                } 
+            },
         }),
     ]);
 
@@ -116,7 +127,7 @@ export default async function DashboardLayout({
         "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment", "/dashboard/posts",
         "/dashboard/posts/comments", "/dashboard/posts/categories", "/dashboard/projects", "/dashboard/media",
         "/dashboard/users", "/dashboard/admin/team", "/dashboard/security", "/dashboard/admin/payroll",
-        "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents",
+        "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/inbox/macros",
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/video-editor",
         "/dashboard/video", "/dashboard/admin/hr",
         "/dashboard/affiliate", "/dashboard/affiliate/referrals",
@@ -164,9 +175,24 @@ export default async function DashboardLayout({
     }
 
     const badge = resolveBadge(role as string, customRoleName);
+    
+    // Retrieve White-Labeling configs
+    const brandColor = (companyUser?.company?.whiteLabeling as any)?.primaryColor || null;
+    const companyLogo = companyUser?.company?.logoUrl || null;
 
     return (
         <SidebarController>
+            {brandColor && (
+                <style dangerouslySetInnerHTML={{ __html: `
+                    :root {
+                        --ds-teal: ${brandColor} !important;
+                        --ds-teal-md: ${brandColor}e0 !important;
+                        --ds-teal-bright: ${brandColor}ff !important;
+                        --ds-border-glow: ${brandColor}4D !important; /* 30% opacity */
+                        --ds-teal-dim: ${brandColor}26 !important; /* 15% opacity */
+                    }
+                ` }} />
+            )}
             <div className="h-screen flex flex-col md:flex-row font-sans overflow-hidden"
                 style={{ background: 'var(--ds-bg)', color: 'var(--ds-text-primary)' }}>
 
@@ -183,6 +209,7 @@ export default async function DashboardLayout({
                             name={session.user.name}
                             email={session.user.email}
                             image={session.user.image}
+                            companyLogoUrl={companyLogo}
                             accessibleRoutes={Array.from(accessibleRoutesSet)}
                             badge={badge}
                         />

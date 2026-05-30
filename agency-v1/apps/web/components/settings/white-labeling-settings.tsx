@@ -83,7 +83,7 @@ export function WhiteLabelingSettings({ initialData }: { initialData?: any }) {
                             Aparecerá en el panel lateral, reportes y cotizaciones generadas en PDF.
                         </p>
                     </div>
-                    <div className="flex-1 flex items-start gap-4">
+                    <div className="flex-1 flex flex-col items-start gap-2">
                         <div className="w-48 h-24 rounded-xl border-2 border-dashed border-slate-700 bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden group">
                             {logoUrl ? (
                                 <>
@@ -108,6 +108,7 @@ export function WhiteLabelingSettings({ initialData }: { initialData?: any }) {
                                 onChange={handleLogoUpload}
                             />
                         </div>
+                        <p className="text-xs text-slate-500 mt-2 font-medium">Medidas recomendadas: 400x200px. Máx: 2MB.</p>
                     </div>
                 </div>
 

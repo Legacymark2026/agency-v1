@@ -99,7 +99,8 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   click: getPrismaCore,
   referral: getPrismaCore,
   payout: getPrismaCore,
-
+  inboxMacro: getPrismaCore,
+  emailTemplate: getPrismaCore,
 
   // Media, AI & Workflows
   post: getPrismaMedia,

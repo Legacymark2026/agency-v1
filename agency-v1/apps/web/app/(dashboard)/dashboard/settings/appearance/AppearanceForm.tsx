@@ -82,7 +82,7 @@ export function AppearanceForm({ initialData }: AppearanceFormProps) {
     const [mounted, setMounted] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Sync Zustand with DB on mount if initialData is provided
+    // Sync Zustand with DB on mount
     useEffect(() => {
         setMounted(true);
         if (initialData) {
@@ -94,7 +94,8 @@ export function AppearanceForm({ initialData }: AppearanceFormProps) {
             if (initialData.animationsEnabled !== undefined) setAnimationsEnabled(initialData.animationsEnabled);
             if (initialData.theme) setTheme(initialData.theme);
         }
-    }, [initialData, setAccent, setDensity, setFont, setBgTheme, setSidebarCollapsed, setAnimationsEnabled, setTheme]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (!mounted) return null;
 

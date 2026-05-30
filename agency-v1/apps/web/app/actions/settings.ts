@@ -181,6 +181,7 @@ export async function fetchCompanySettings() {
         if (!companyUser?.company) return null;
 
         return {
+            id: companyUser.company.id,
             logoUrl: companyUser.company.logoUrl,
             defaultSettings: companyUser.company.defaultCompanySettings || {},
             whiteLabeling: companyUser.company.whiteLabeling || {}

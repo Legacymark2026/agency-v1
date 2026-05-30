@@ -22,7 +22,11 @@ export default async function InboxMacrosPage() {
         select: { companyId: true, role: true }
     });
 
-    if (!membership?.companyId || ((membership.role as any) !== 'owner' && (membership.role as any) !== 'admin')) {
+    const roleName = typeof membership?.role === 'string' 
+        ? membership.role 
+        : (membership?.role as any)?.name;
+
+    if (!membership?.companyId || (roleName !== 'owner' && roleName !== 'admin' && roleName !== 'super_admin' && roleName !== 'ADMIN' && roleName !== 'SUPER_ADMIN')) {
         redirect('/dashboard/settings');
     }
 
