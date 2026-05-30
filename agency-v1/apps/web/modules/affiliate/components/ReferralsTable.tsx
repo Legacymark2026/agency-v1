@@ -11,8 +11,9 @@ interface Props {
     referrals: Referral[];
 }
 
-function StatusBadge({ status }: { status: Referral['status'] }) {
-    const cfg = STATUS_CONFIG[status];
+function StatusBadge({ status }: { status: string }) {
+    const key = (status || 'PENDING') as keyof typeof STATUS_CONFIG;
+    const cfg = STATUS_CONFIG[key] || STATUS_CONFIG.PENDING;
     return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm font-mono text-[11px] uppercase tracking-wider"
             style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
@@ -59,10 +60,10 @@ export function ReferralsTable({ referrals }: Props) {
                     <span className="font-mono text-xs text-slate-400 truncate" title={r.orderId}>
                         {r.orderId.slice(0, 8)}…
                     </span>
-                    <span className="font-mono text-xs text-slate-500 truncate" title={r.buyerUserId}>
-                        {r.buyerUserId.slice(0, 8)}…
+                    <span className="font-mono text-xs text-slate-500 truncate" title={r.referredUserId}>
+                        {r.referredUserId.slice(0, 8)}…
                     </span>
-                    <span className="font-mono text-sm font-bold text-slate-300">{fmtMoney(r.orderTotal)}</span>
+                    <span className="font-mono text-sm font-bold text-slate-300">{fmtMoney(r.orderAmount)}</span>
                     <span className="font-mono text-sm font-bold text-teal-400">{fmtMoney(r.commissionAmount)}</span>
                     <div className="flex flex-col gap-1">
                         <StatusBadge status={r.status} />

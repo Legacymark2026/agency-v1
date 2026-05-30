@@ -141,7 +141,7 @@ export function CommissionPlansManager({ plans: initialPlans }: Props) {
                                     </span>
                                     <span className="font-mono text-[10px] text-slate-600">·</span>
                                     <span className="font-mono text-[10px] text-slate-500 flex items-center gap-1">
-                                        <Shield size={9} /> {plan.warrantyDays} días garantía
+                                        <Shield size={9} /> Cookie: {plan.cookieLifetimeInt} días
                                     </span>
                                 </div>
                             </div>
