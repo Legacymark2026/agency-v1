@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { updateSettings } from "@/actions/settings";
 import { SettingsSchema } from "@/lib/schemas";
-import { Loader2, User, Globe, Bell, Palette, Languages, Camera, Save, X, ShieldCheck } from "lucide-react";
+import { Loader2, User, Globe, Bell, Languages, Camera, Save, X, ShieldCheck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import ImageUpload from "@/components/ui/image-upload";
@@ -227,45 +227,6 @@ export function SettingsForm({ initialData }: SettingsFormProps) {
                         <TabsContent value="preferences" className="p-6 space-y-10 animate-in fade-in duration-300">
                             {/* Sección: Preferencias */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-4 text-gray-900 font-medium">
-                                        <Palette size={18} className="text-gray-500" />
-                                        <h3>Apariencia</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                value="light"
-                                                id="theme-light"
-                                                {...form.register("theme")}
-                                                className="text-black focus:ring-black"
-                                            />
-                                            <label htmlFor="theme-light">Claro</label>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                value="dark"
-                                                id="theme-dark"
-                                                {...form.register("theme")}
-                                                className="text-black focus:ring-black"
-                                            />
-                                            <label htmlFor="theme-dark">Oscuro</label>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                value="system"
-                                                id="theme-system"
-                                                {...form.register("theme")}
-                                                className="text-black focus:ring-black"
-                                            />
-                                            <label htmlFor="theme-system">Sistema</label>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div>
                                     <div className="flex items-center gap-2 mb-4 text-gray-900 font-medium">
                                         <Bell size={18} className="text-gray-500" />

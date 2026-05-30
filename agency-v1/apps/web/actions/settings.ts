@@ -69,6 +69,12 @@ export async function getSettings() {
             linkedin: socialLinks.linkedin || "",
             github: socialLinks.github || "",
             theme: (["light", "dark", "system"].includes(preferences.theme) ? preferences.theme : "system") as "light" | "dark" | "system",
+            accent: (preferences.accent || "teal") as string,
+            density: (preferences.density || "normal") as string,
+            font: (preferences.font || "inter") as string,
+            bgTheme: (preferences.bgTheme || "slate") as string,
+            sidebarCollapsed: (preferences.sidebarCollapsed ?? false) as boolean,
+            animationsEnabled: (preferences.animationsEnabled ?? true) as boolean,
             language: (["es", "en", "pt"].includes(preferences.language) ? preferences.language : "es") as "es" | "en" | "pt",
             emailNotifications: preferences.notifications?.email ?? true,
             timezone: preferences.timezone || "America/Bogota",
@@ -404,6 +410,59 @@ export async function getMyLoginHistory() {
     } catch (error) {
         console.error("Failed to fetch login history:", error);
         return [];
+    }
+}
+
+export async function updateUserAppearance(appearance: {
+    theme?: "light" | "dark" | "system";
+    accent?: string;
+    density?: string;
+    font?: string;
+    bgTheme?: string;
+    sidebarCollapsed?: boolean;
+    animationsEnabled?: boolean;
+}) {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+
+    try {
+        // Fetch existing profile/preferences
+        const profile = await prisma.userProfile.findUnique({
+            where: { userId: session.user.id }
+        });
+
+        let preferences: any = {};
+        if (profile?.preferences) {
+            preferences = typeof profile.preferences === 'string'
+                ? JSON.parse(profile.preferences)
+                : profile.preferences;
+        }
+
+        // Merge new appearance settings
+        const updatedPreferences = {
+            ...preferences,
+            ...appearance
+        };
+
+        await prisma.userProfile.upsert({
+            where: { userId: session.user.id },
+            create: {
+                userId: session.user.id,
+                preferences: updatedPreferences,
+                socialLinks: {},
+                jobTitle: "",
+                bio: ""
+            },
+            update: {
+                preferences: updatedPreferences
+            }
+        });
+
+        revalidatePath('/dashboard/settings/appearance');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to update user appearance:", error);
+        return { success: false, error: error.message || "Failed to update" };
     }
 }
 
