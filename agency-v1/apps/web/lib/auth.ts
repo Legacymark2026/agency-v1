@@ -166,6 +166,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
 
         async jwt({ token, user, account, trigger, session }) {
+            // DEBUG COOKIE BLOAT
+            try {
+                const tokenStr = JSON.stringify(token);
+                console.log(`[JWT DEBUG START] Current token size: ${tokenStr.length} bytes`);
+                console.log("[JWT DEBUG START] Token keys:", Object.keys(token));
+                for (const key of Object.keys(token)) {
+                    const valStr = JSON.stringify((token as any)[key]);
+                    if (valStr && valStr.length > 500) {
+                        console.log(`[JWT DEBUG START] BLOATED KEY: ${key} is ${valStr.length} bytes`);
+                    }
+                }
+            } catch (e) {
+                console.error("[JWT DEBUG START] Error printing token size:", e);
+            }
+
             if (trigger === "update") {
                 const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
                 if (dbUser) {
@@ -304,6 +319,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         logger.error("JWT role refresh error:", { error: e });
                     }
                 }
+            }
+            try {
+                const tokenStr = JSON.stringify(token);
+                console.log(`[JWT DEBUG END] Final token size: ${tokenStr.length} bytes`);
+                console.log("[JWT DEBUG END] Token keys:", Object.keys(token));
+                for (const key of Object.keys(token)) {
+                    const valStr = JSON.stringify((token as any)[key]);
+                    if (valStr && valStr.length > 500) {
+                        console.log(`[JWT DEBUG END] BLOATED KEY: ${key} is ${valStr.length} bytes`);
+                    }
+                }
+            } catch (e) {
+                console.error("[JWT DEBUG END] Error printing token size:", e);
             }
 
             return token;
