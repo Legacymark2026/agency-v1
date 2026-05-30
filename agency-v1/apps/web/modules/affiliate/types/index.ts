@@ -1,18 +1,17 @@
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
 export type AffiliateStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-export type CommissionType = 'PERCENTAGE' | 'FLAT';
-export type ReferralStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED';
+export type PlanType = 'PERCENTAGE' | 'FIXED';
+export type PayoutStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID';
 
 // ─── Domain Models ────────────────────────────────────────────────────────────
 
 export interface CommissionPlan {
     id: string;
     name: string;
-    type: CommissionType;
-    value: number;  // percentage or flat amount
-    warrantyDays: number;
+    type: PlanType;
+    value: number;              // percentage or flat amount
+    cookieLifetimeInt: number;  // días
     createdAt: string;
     updatedAt: string;
 }
@@ -22,20 +21,18 @@ export interface AffiliateProfile {
     userId: string;
     code: string;
     status: AffiliateStatus;
-    commissionId: string;
-    commission: CommissionPlan;
+    commissionPlanId: string;
+    commissionPlan: CommissionPlan;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface Click {
     id: string;
-    affiliateId: string;
-    ip: string | null;
-    userAgent: string | null;
-    referrer: string | null;
-    country: string | null;
-    converted: boolean;
+    affiliateCode: string;
+    ip: string;
+    userAgent: string;
+    referer: string | null;
     createdAt: string;
 }
 
@@ -43,10 +40,11 @@ export interface Referral {
     id: string;
     affiliateId: string;
     orderId: string;
-    buyerUserId: string;
-    status: ReferralStatus;
+    referredUserId: string;
+    status: PayoutStatus;
     commissionAmount: string;   // Decimal serialized as string
-    orderTotal: string;         // Decimal serialized as string
+    orderAmount: string;        // Decimal serialized as string
+    payoutId: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -55,9 +53,7 @@ export interface Payout {
     id: string;
     affiliateId: string;
     amount: string;             // Decimal serialized as string
-    status: PayoutStatus;
-    referralIds: string[];
-    idempotencyKey: string;
+    status: string;             // PROCESSING | PAID | FAILED
     paidAt: string | null;
     createdAt: string;
     updatedAt: string;
