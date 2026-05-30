@@ -318,8 +318,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         // Silently fail — keep existing token data
                         logger.error("JWT role refresh error:", { error: e });
                     }
-                }
             }
+
+            // Prune bloated properties (like base64 image strings) to avoid massive session cookies
+            if (typeof token.picture === "string" && token.picture.length > 2000) {
+                token.picture = null;
+            }
+            if (typeof token.image === "string" && token.image.length > 2000) {
+                token.image = null;
+            }
+
             try {
                 const tokenStr = JSON.stringify(token);
                 console.log(`[JWT DEBUG END] Final token size: ${tokenStr.length} bytes`);
