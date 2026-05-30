@@ -14,6 +14,7 @@ COPY packages/events/package.json ./packages/events/
 COPY packages/rbac/package.json ./packages/rbac/
 COPY packages/video-agent/package.json ./packages/video-agent/
 COPY packages/video-editor/package.json ./packages/video-editor/
+COPY packages/video-learning/package.json ./packages/video-learning/
 COPY apps/web/package.json ./apps/web/
 
 # Install dependencies
@@ -25,6 +26,7 @@ COPY packages/events/ ./packages/events/
 COPY packages/rbac/ ./packages/rbac/
 COPY packages/video-agent/ ./packages/video-agent/
 COPY packages/video-editor/ ./packages/video-editor/
+COPY packages/video-learning/ ./packages/video-learning/
 
 # Copy web files
 COPY apps/web/ ./apps/web/
