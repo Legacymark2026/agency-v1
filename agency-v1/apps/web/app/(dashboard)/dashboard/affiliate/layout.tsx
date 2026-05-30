@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 // This is a Server Component layout — sub-nav rendered server-side
 import { auth } from '@/lib/auth';
