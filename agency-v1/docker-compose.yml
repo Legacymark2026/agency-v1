@@ -124,6 +124,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service:4016
       HR_SERVICE_URL: http://hr-service:4017
       PROJECT_SERVICE_URL: http://project-service:4018
+      AFFILIATE_SERVICE_URL: http://affiliate-service:4019
     depends_on:
       redis: { condition: service_healthy }
       auth-service: { condition: service_healthy }
@@ -592,6 +593,30 @@ services:
       - "traefik.http.routers.project.rule=PathPrefix(`/api/projects`) || PathPrefix(`/api/kanban`) || PathPrefix(`/api/tasks`)"
       - "traefik.http.routers.project.entrypoints=web"
       - "traefik.http.services.project.loadbalancer.server.port=4018"
+
+  # ── Affiliate Service ─────────────────────────────────────────────────────
+  affiliate-service:
+    build:
+      context: .
+      dockerfile: services/affiliate-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      PORT: "4019"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4019/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.affiliate.rule=PathPrefix(`/r`) || PathPrefix(`/api/affiliates`)"
+      - "traefik.http.routers.affiliate.entrypoints=web"
+      - "traefik.http.services.affiliate.loadbalancer.server.port=4019"
+
 
   # ── Observability & Monitoring ─────────────────────────────────────────────
   loki:

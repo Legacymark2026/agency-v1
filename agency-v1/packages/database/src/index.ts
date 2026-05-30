@@ -94,6 +94,12 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   kanbanProject: getPrismaCore,
   leadAssignmentRule: getPrismaCore,
   leadAssignmentRoundRobinState: getPrismaCore,
+  affiliateProfile: getPrismaCore,
+  commissionPlan: getPrismaCore,
+  click: getPrismaCore,
+  referral: getPrismaCore,
+  payout: getPrismaCore,
+
 
   // Media, AI & Workflows
   post: getPrismaMedia,

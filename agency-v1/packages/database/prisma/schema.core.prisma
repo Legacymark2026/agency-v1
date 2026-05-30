@@ -160,3 +160,116 @@ model KanbanProject {
   @@index([companyId])
   @@map("tbl_kanban_projects")
 }
+
+enum AffiliateStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PlanType {
+  FIXED
+  PERCENTAGE
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model AffiliateProfile {
+  id              String          @id @default(uuid())
+  userId          String          @unique @map("user_id") // Soft link a Auth DB (User)
+  code            String          @unique @map("code") // ej: "JUAN10"
+  status          AffiliateStatus @default(ACTIVE) @map("status")
+  commissionPlanId String         @map("commission_plan_id")
+  
+  commissionPlan  CommissionPlan  @relation(fields: [commissionPlanId], references: [id])
+  clicks          Click[]
+  referrals       Referral[]
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  schemaVersion   Int             @default(0) @map("col_schema_version")
+  deletedAt       DateTime?       @map("col_deleted_at")
+
+  @@index([code])
+  @@map("tbl_affiliate_profiles")
+}
+
+model CommissionPlan {
+  id                String             @id @default(uuid())
+  name              String             @map("name")
+  type              PlanType           @map("type")
+  value             Decimal            @db.Decimal(10, 2) @map("value")
+  cookieLifetimeInt Int                @default(30) @map("cookie_lifetime_int") // en días
+  profiles          AffiliateProfile[]
+
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  schemaVersion     Int                @default(0) @map("col_schema_version")
+  deletedAt         DateTime?          @map("col_deleted_at")
+
+  @@map("tbl_commission_plans")
+}
+
+model Click {
+  id            String           @id @default(uuid())
+  affiliateCode String           @map("affiliate_code")
+  ip            String           @map("ip")
+  userAgent     String           @map("user_agent")
+  referer       String?          @map("referer")
+  
+  affiliate     AffiliateProfile @relation(fields: [affiliateCode], references: [code])
+
+  createdAt     DateTime         @default(now()) @map("created_at")
+  schemaVersion Int              @default(0) @map("col_schema_version")
+  deletedAt     DateTime?        @map("col_deleted_at")
+
+  @@index([affiliateCode])
+  @@index([ip, affiliateCode])
+  @@map("tbl_affiliate_clicks")
+}
+
+model Referral {
+  id              String           @id @default(uuid())
+  affiliateId     String           @map("affiliate_id")
+  referredUserId  String           @unique @map("referred_user_id") // Comprador
+  orderId         String           @unique @map("order_id") // Idempotencia de orden
+  orderAmount     Decimal          @db.Decimal(10, 2) @map("order_amount")
+  commissionAmount Decimal         @db.Decimal(10, 2) @map("commission_amount")
+  status          PayoutStatus     @default(PENDING) @map("status")
+  payoutId        String?          @map("payout_id")
+
+  affiliate       AffiliateProfile @relation(fields: [affiliateId], references: [id])
+  payout          Payout?          @relation(fields: [payoutId], references: [id])
+
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  schemaVersion   Int              @default(0) @map("col_schema_version")
+  deletedAt       DateTime?        @map("col_deleted_at")
+
+  @@index([affiliateId])
+  @@index([orderId])
+  @@map("tbl_affiliate_referrals")
+}
+
+model Payout {
+  id          String     @id @default(uuid())
+  affiliateId String     @map("affiliate_id")
+  amount      Decimal    @db.Decimal(10, 2) @map("amount")
+  status      String     @default("PROCESSING") // PAID, FAILED, PROCESSING
+  paidAt      DateTime?  @map("paid_at")
+  referrals   Referral[]
+
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  schemaVersion Int      @default(0) @map("col_schema_version")
+  deletedAt   DateTime?  @map("col_deleted_at")
+
+  @@index([affiliateId])
+  @@map("tbl_affiliate_payouts")
+}
+

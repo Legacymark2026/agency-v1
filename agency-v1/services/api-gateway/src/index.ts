@@ -132,6 +132,7 @@ const SERVICES = {
   notification:  process.env.NOTIFICATION_SERVICE_URL   || "http://notification-service:4016",
   hr:            process.env.HR_SERVICE_URL             || "http://hr-service:4017",
   project:       process.env.PROJECT_SERVICE_URL        || "http://project-service:4018",
+  affiliate:     process.env.AFFILIATE_SERVICE_URL      || "http://affiliate-service:4019",
 };
 
 // ── Request Logging ──────────────────────────────────────────────────────────
@@ -348,6 +349,11 @@ app.use("/api/kanban", resilientProxy("project", SERVICES.project));
 app.use("/api/tasks", resilientProxy("project", SERVICES.project));
 app.use("/api/portfolio", resilientProxy("project", SERVICES.project));
 app.use("/api/cms", resilientProxy("project", SERVICES.project));
+
+// Affiliate Service
+app.use("/r", resilientProxy("affiliate", SERVICES.affiliate));
+app.use("/api/affiliates", resilientProxy("affiliate", SERVICES.affiliate));
+
 
 // ── Fallback ─────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

@@ -57,6 +57,12 @@ export const EVENTS = {
   "invoice.paid": { source: "finance-service" },
   "payroll.processed": { source: "finance-service" },
   "expense.approved": { source: "finance-service" },
+  "order.completed": { source: "finance-service" },
+  "order.refunded": { source: "finance-service" },
+
+  // Affiliate Service Events
+  "affiliate.click_registered": { source: "affiliate-service" },
+
 
   // Notification Service Events
   "notification.dispatched": { source: "notification-service" },
@@ -93,11 +99,14 @@ export interface EventPayload {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class EventBus {
+  private redisUrl: string;
   private publisher: Redis;
   private subscriber: Redis;
+  private localSubscribers: Redis[] = [];
   private serviceName: string;
 
   constructor(redisUrl: string, serviceName: string) {
+    this.redisUrl = redisUrl;
     this.publisher = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
     this.subscriber = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
     this.serviceName = serviceName;
@@ -130,7 +139,26 @@ export class EventBus {
           throw new Error(`[SchemaRegistry] Validation failed for 'invoice.created': invoiceId/id is required`);
         }
         break;
+      case "order.completed":
+        if (!data.orderId && !data.id) {
+          throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': orderId is required`);
+        }
+        if (!data.userId) {
+          throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': userId is required`);
+        }
+        break;
+      case "order.refunded":
+        if (!data.orderId && !data.id) {
+          throw new Error(`[SchemaRegistry] Validation failed for 'order.refunded': orderId is required`);
+        }
+        break;
+      case "affiliate.click_registered":
+        if (!data.code) {
+          throw new Error(`[SchemaRegistry] Validation failed for 'affiliate.click_registered': code is required`);
+        }
+        break;
     }
+
   }
 
   /**
@@ -176,6 +204,13 @@ export class EventBus {
     const groupName = `group:${this.serviceName}`;
     const consumerName = `${this.serviceName}-${process.pid}`;
 
+    // Create a dedicated Redis subscriber client for this subscription's blocking loop
+    const localSubscriber = new Redis(this.redisUrl, { maxRetriesPerRequest: 3 });
+    localSubscriber.on("error", (err) =>
+      console.error(`[EventBus:${this.serviceName}] Local subscriber error for ${event}:`, err.message)
+    );
+    this.localSubscribers.push(localSubscriber);
+
     // Create consumer group if it doesn't exist
     try {
       await this.subscriber.xgroup("CREATE", streamKey, groupName, "0", "MKSTREAM");
@@ -187,7 +222,7 @@ export class EventBus {
     const poll = async () => {
       while (true) {
         try {
-          const results = await this.subscriber.xreadgroup(
+          const results = await localSubscriber.xreadgroup(
             "GROUP",
             groupName,
             consumerName,
@@ -277,6 +312,9 @@ export class EventBus {
   async disconnect(): Promise<void> {
     await this.publisher.quit();
     await this.subscriber.quit();
+    for (const sub of this.localSubscribers) {
+      await sub.quit().catch(() => {});
+    }
     console.log(`[EventBus:${this.serviceName}] Disconnected`);
   }
 }

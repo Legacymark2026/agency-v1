@@ -118,7 +118,9 @@ export default async function DashboardLayout({
         "/dashboard/users", "/dashboard/admin/team", "/dashboard/security", "/dashboard/admin/payroll",
         "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents",
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/video-editor",
-        "/dashboard/video", "/dashboard/admin/hr"
+        "/dashboard/video", "/dashboard/admin/hr",
+        "/dashboard/affiliate", "/dashboard/affiliate/referrals",
+        "/dashboard/affiliate/payouts", "/dashboard/affiliate/plans"
     ];
 
     const accessibleRoutesSet = new Set<string>();

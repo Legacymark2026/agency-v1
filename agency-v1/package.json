@@ -32,6 +32,7 @@
     "turbo": "^2.0.0"
   },
   "dependencies": {
+    "@esbuild/linux-x64": "^0.28.0",
     "puppeteer": "^24.43.0",
     "puppeteer-cluster": "^0.25.0"
   }

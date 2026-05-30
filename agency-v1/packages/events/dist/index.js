@@ -55,6 +55,10 @@ exports.EVENTS = {
     "invoice.paid": { source: "finance-service" },
     "payroll.processed": { source: "finance-service" },
     "expense.approved": { source: "finance-service" },
+    "order.completed": { source: "finance-service" },
+    "order.refunded": { source: "finance-service" },
+    // Affiliate Service Events
+    "affiliate.click_registered": { source: "affiliate-service" },
     // Notification Service Events
     "notification.dispatched": { source: "notification-service" },
     "notification.preferences_updated": { source: "notification-service" },
@@ -76,10 +80,13 @@ exports.EVENTS = {
 // Event Bus — Redis Streams Implementation
 // ─────────────────────────────────────────────────────────────────────────────
 class EventBus {
+    redisUrl;
     publisher;
     subscriber;
+    localSubscribers = [];
     serviceName;
     constructor(redisUrl, serviceName) {
+        this.redisUrl = redisUrl;
         this.publisher = new ioredis_1.default(redisUrl, { maxRetriesPerRequest: 3 });
         this.subscriber = new ioredis_1.default(redisUrl, { maxRetriesPerRequest: 3 });
         this.serviceName = serviceName;
@@ -104,6 +111,24 @@ class EventBus {
             case "invoice.created":
                 if (!data.invoiceId && !data.id) {
                     throw new Error(`[SchemaRegistry] Validation failed for 'invoice.created': invoiceId/id is required`);
+                }
+                break;
+            case "order.completed":
+                if (!data.orderId && !data.id) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': orderId is required`);
+                }
+                if (!data.userId) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': userId is required`);
+                }
+                break;
+            case "order.refunded":
+                if (!data.orderId && !data.id) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'order.refunded': orderId is required`);
+                }
+                break;
+            case "affiliate.click_registered":
+                if (!data.code) {
+                    throw new Error(`[SchemaRegistry] Validation failed for 'affiliate.click_registered': code is required`);
                 }
                 break;
         }
@@ -134,6 +159,10 @@ class EventBus {
         const streamKey = `events:${event}`;
         const groupName = `group:${this.serviceName}`;
         const consumerName = `${this.serviceName}-${process.pid}`;
+        // Create a dedicated Redis subscriber client for this subscription's blocking loop
+        const localSubscriber = new ioredis_1.default(this.redisUrl, { maxRetriesPerRequest: 3 });
+        localSubscriber.on("error", (err) => console.error(`[EventBus:${this.serviceName}] Local subscriber error for ${event}:`, err.message));
+        this.localSubscribers.push(localSubscriber);
         // Create consumer group if it doesn't exist
         try {
             await this.subscriber.xgroup("CREATE", streamKey, groupName, "0", "MKSTREAM");
@@ -145,7 +174,7 @@ class EventBus {
         const poll = async () => {
             while (true) {
                 try {
-                    const results = await this.subscriber.xreadgroup("GROUP", groupName, consumerName, "COUNT", 10, "BLOCK", 5000, "STREAMS", streamKey, ">");
+                    const results = await localSubscriber.xreadgroup("GROUP", groupName, consumerName, "COUNT", 10, "BLOCK", 5000, "STREAMS", streamKey, ">");
                     if (!results)
                         continue;
                     for (const entry of results) {
@@ -208,6 +237,9 @@ class EventBus {
     async disconnect() {
         await this.publisher.quit();
         await this.subscriber.quit();
+        for (const sub of this.localSubscribers) {
+            await sub.quit().catch(() => { });
+        }
         console.log(`[EventBus:${this.serviceName}] Disconnected`);
     }
 }

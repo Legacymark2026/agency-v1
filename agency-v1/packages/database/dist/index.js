@@ -92,6 +92,11 @@ const modelToClientGetter = {
     kanbanProject: exports.getPrismaCore,
     leadAssignmentRule: exports.getPrismaCore,
     leadAssignmentRoundRobinState: exports.getPrismaCore,
+    affiliateProfile: exports.getPrismaCore,
+    commissionPlan: exports.getPrismaCore,
+    click: exports.getPrismaCore,
+    referral: exports.getPrismaCore,
+    payout: exports.getPrismaCore,
     // Media, AI & Workflows
     post: exports.getPrismaMedia,
     category: exports.getPrismaMedia,

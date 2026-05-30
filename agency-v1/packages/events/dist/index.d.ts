@@ -97,6 +97,15 @@ export declare const EVENTS: {
     readonly "expense.approved": {
         readonly source: "finance-service";
     };
+    readonly "order.completed": {
+        readonly source: "finance-service";
+    };
+    readonly "order.refunded": {
+        readonly source: "finance-service";
+    };
+    readonly "affiliate.click_registered": {
+        readonly source: "affiliate-service";
+    };
     readonly "notification.dispatched": {
         readonly source: "notification-service";
     };
@@ -146,8 +155,10 @@ export interface EventPayload {
     data: Record<string, unknown>;
 }
 export declare class EventBus {
+    private redisUrl;
     private publisher;
     private subscriber;
+    private localSubscribers;
     private serviceName;
     constructor(redisUrl: string, serviceName: string);
     /**

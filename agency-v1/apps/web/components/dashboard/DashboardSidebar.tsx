@@ -7,7 +7,7 @@ import {
     MessageSquare, Target, TrendingUp, Link2, Building2,
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
-    PanelLeftClose, PanelLeft, Image as ImageIcon
+    PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick
 } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
@@ -120,6 +120,16 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/admin/treasury", label: "Tesorería", icon: <Landmark size={14} />, code: "TRS" },
             { href: "/dashboard/users", label: "Usuarios", icon: <Users size={14} />, code: "USR" },
             { href: "/dashboard/security", label: "Security Log", icon: <Lock size={14} />, code: "SEC" },
+        ],
+    },
+    {
+        title: "Programa de Afiliados", code: "AFFILIATE_SYS",
+        accent: "teal", icon: <Share2 size={20} />,
+        items: [
+            { href: "/dashboard/affiliate", label: "Overview", icon: <Share2 size={14} />, code: "OVW" },
+            { href: "/dashboard/affiliate/referrals", label: "Mis Referidos", icon: <Users size={14} />, code: "REF" },
+            { href: "/dashboard/affiliate/payouts", label: "Mis Pagos", icon: <Landmark size={14} />, code: "PAY" },
+            { href: "/dashboard/affiliate/plans", label: "Planes de Comisión", icon: <Percent size={14} />, code: "PLN" },
         ],
     },
 ];
