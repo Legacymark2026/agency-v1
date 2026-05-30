@@ -75,6 +75,7 @@ services:
     ports: ["3000:3000"]
     environment:
       NODE_ENV: production
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
       AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
       CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
