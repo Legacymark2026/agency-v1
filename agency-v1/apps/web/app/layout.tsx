@@ -138,6 +138,35 @@ export default async function RootLayout({
     console.warn("[next-intl] getLocale failed in RootLayout (likely bypassed in middleware):", e);
   }
 
+  let userPrefs = {
+    theme: "system",
+    accent: "teal",
+    density: "normal",
+    font: "inter",
+    bgTheme: "slate",
+    animationsEnabled: true,
+  };
+
+  if (session?.user?.id) {
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      const profile = await prisma.userProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { preferences: true }
+      });
+      if (profile?.preferences) {
+        const prefs = typeof profile.preferences === 'string'
+          ? JSON.parse(profile.preferences)
+          : profile.preferences;
+        if (prefs) {
+          userPrefs = { ...userPrefs, ...prefs };
+        }
+      }
+    } catch (e) {
+      console.error("[RootLayout] Failed to load user preferences:", e);
+    }
+  }
+
   let userData: { em?: string; fn?: string; ln?: string; ph?: string } | undefined;
   if (session?.user) {
     // Advanced Matching format: strictly lowercase string, no leading/trailing spaces
@@ -150,8 +179,16 @@ export default async function RootLayout({
     Object.keys(userData).forEach(key => (userData as any)[key] === undefined && delete (userData as any)[key]);
   }
 
+  const htmlClasses = [
+    `theme-${userPrefs.accent}`,
+    `density-${userPrefs.density}`,
+    `font-${userPrefs.font}`,
+    `bg-${userPrefs.bgTheme}`,
+    !userPrefs.animationsEnabled ? 'disable-animations' : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning className={htmlClasses}>
       <body
         suppressHydrationWarning
         className={`font-sans ${jetbrainsMono.variable} antialiased selection:bg-teal-500 selection:text-white`}
