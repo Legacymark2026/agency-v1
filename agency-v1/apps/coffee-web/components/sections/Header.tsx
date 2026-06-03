@@ -46,8 +46,7 @@ const Header = () => {
       <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 md:px-20 py-4">
         {/* Logo */}
         <a href="#hero" onClick={(e) => handleClick(e, "#hero")} className="flex items-center gap-2">
-          <span className="font-cinzel text-amber text-2xl font-bold">G</span>
-          <span className="font-cinzel text-aluminum text-lg font-bold hidden sm:inline">Goldneez</span>
+          <img src="/images/logo.png" alt="Goldneez Logo" className="h-10 w-auto object-contain" />
         </a>
 
         {/* Desktop Nav */}

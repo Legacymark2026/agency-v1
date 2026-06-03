@@ -55,10 +55,7 @@ const Footer = () => {
           {/* Logo Column */}
           <div className="footer-animate opacity-0">
             <a href="#hero" onClick={(e) => handleNavClick(e, "#hero")} className="inline-block">
-              <span className="font-cinzel text-amber text-3xl sm:text-4xl font-bold">G</span>
-              <span className="font-cinzel text-aluminum text-base sm:text-lg font-bold block mt-1">
-                Goldneez
-              </span>
+              <img src="/images/logo.png" alt="Goldneez Logo" className="h-12 w-auto object-contain" />
             </a>
             <p className="font-quattrocento text-aluminum-dark text-sm mt-4 leading-[1.7]">
               {t("slogan")}
