@@ -5,7 +5,7 @@ import Footer from "@/components/sections/Footer";
 import CookieConsent from "@/components/sections/CookieConsent";
 import AuthForm from "@/components/sections/AuthForm";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ 
   params 
