@@ -2,7 +2,6 @@
  * Goldneez Coffee Web — Dedicated Prisma Client
  * ────────────────────────────────────────────────────────
  * Cliente Prisma exclusivo para coffee-web con inicialización LAZY.
- * No lanza errores al importar el módulo — solo al hacer queries.
  *
  * Prioridad de variable de entorno (de mayor a menor):
  *   1. GOLDNEEZ_DB_URL  → Variable específica para Vercel/producción
@@ -17,39 +16,70 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function getDbUrl(): string | null {
-  return (
+  const url =
     process.env.GOLDNEEZ_DB_URL ||
     process.env.DATABASE_URL ||
     process.env.POSTGRES_EXTERNAL_URL ||
-    null
-  );
+    null;
+
+  // Rechazar strings vacíos
+  return url && url.trim().length > 10 ? url : null;
+}
+
+const DB_NOT_CONFIGURED_MSG =
+  "⚠️ Goldneez: Base de datos no configurada en Vercel. " +
+  "Agrega la variable GOLDNEEZ_DB_URL en Settings → Environment Variables de tu proyecto en Vercel.";
+
+/**
+ * Crea un Proxy que devuelve errores descriptivos para TODOS los métodos
+ * de Prisma (prisma.user.findUnique, prisma.user.create, etc.)
+ * sin crashear al importar el módulo.
+ */
+function createNotConfiguredProxy(): PrismaClient {
+  const methodProxy = () =>
+    new Proxy(
+      {},
+      {
+        get(_t, methodName) {
+          if (typeof methodName === "symbol") return undefined;
+          // Métodos reales de Prisma: findUnique, findMany, create, update, delete, etc.
+          return (..._args: any[]) =>
+            Promise.reject(new Error(DB_NOT_CONFIGURED_MSG));
+        },
+      }
+    );
+
+  return new Proxy({} as PrismaClient, {
+    get(_target, prop) {
+      if (typeof prop === "symbol") return undefined;
+      // Evitar que sea tratado como Promise
+      if (prop === "then" || prop === "catch" || prop === "finally") return undefined;
+      // $connect, $disconnect, $queryRaw etc.
+      if (String(prop).startsWith("$")) {
+        return (..._args: any[]) => Promise.reject(new Error(DB_NOT_CONFIGURED_MSG));
+      }
+      // Accesos a modelos: prisma.user, prisma.session, etc.
+      // Devuelve un objeto con todos los métodos de modelo como promesas rechazadas
+      return methodProxy();
+    },
+  });
 }
 
 function createPrismaClient(): PrismaClient {
   const url = getDbUrl();
 
   if (!url) {
-    // Retorna un proxy que lanza un error descriptivo al intentar cualquier operación
-    return new Proxy({} as PrismaClient, {
-      get(_target, prop) {
-        if (typeof prop === "symbol") return undefined;
-        // Permitir métodos de inspección sin error
-        if (prop === "then" || prop === "catch" || prop === "finally") return undefined;
-        // Para cualquier operación de base de datos, lanzar error claro
-        return () =>
-          Promise.reject(
-            new Error(
-              "⚠️ Goldneez: Base de datos no configurada.\n" +
-              "Agrega GOLDNEEZ_DB_URL en las variables de entorno de Vercel:\n" +
-              "postgresql://user:pass@host:5432/legacymark?schema=goldneez&search_path=goldneez,public"
-            )
-          );
-      },
-    });
+    console.error(
+      "[coffee-web] " + DB_NOT_CONFIGURED_MSG
+    );
+    return createNotConfiguredProxy();
   }
 
   return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "error", "warn"]
+        : ["error"],
     datasources: {
       db: { url },
     },

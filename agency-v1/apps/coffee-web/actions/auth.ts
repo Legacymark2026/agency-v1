@@ -15,7 +15,10 @@ function isDbConfigError(err: any): boolean {
     msg.includes("no configurada") ||
     msg.includes("GOLDNEEZ_DB_URL") ||
     msg.includes("DATABASE_URL") ||
-    msg.includes("Environment variable not found")
+    msg.includes("Environment variable not found") ||
+    msg.includes("Goldneez") ||
+    msg.includes("is not a function") ||
+    msg.includes("Cannot read properties of undefined")
   );
 }
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:4001";
