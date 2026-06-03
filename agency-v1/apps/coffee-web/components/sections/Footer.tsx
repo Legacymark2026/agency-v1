@@ -198,6 +198,21 @@ const Footer = () => {
             </span>
           </div>
         </div>
+
+        {/* Developer Credit */}
+        <div className="footer-animate opacity-0 pt-4 flex justify-center items-center gap-2">
+          <span className="font-quattrocento text-aluminum-dark/50 text-xs tracking-widest uppercase">
+            Desarrollado por
+          </span>
+          <a
+            href="https://legacymark.co"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-quattrocento text-amber/70 hover:text-amber text-xs tracking-widest uppercase transition-colors duration-300 hover:underline underline-offset-2"
+          >
+            LegacyMark BIC S.A.S
+          </a>
+        </div>
       </div>
     </footer>
   );
