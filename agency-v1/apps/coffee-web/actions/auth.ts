@@ -1,6 +1,7 @@
 "use server";
 
-import { prisma } from "@agency/database";
+import prismaGoldneez from "../lib/prisma";
+const prisma = prismaGoldneez;
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
