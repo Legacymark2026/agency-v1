@@ -205,7 +205,7 @@ const Footer = () => {
             Desarrollado por
           </span>
           <a
-            href="https://legacymark.co"
+            href="https://legacymarksas.com/"
             target="_blank"
             rel="noopener noreferrer"
             className="font-quattrocento text-amber/70 hover:text-amber text-xs tracking-widest uppercase transition-colors duration-300 hover:underline underline-offset-2"
