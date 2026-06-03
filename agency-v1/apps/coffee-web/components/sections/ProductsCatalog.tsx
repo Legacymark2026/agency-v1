@@ -7,6 +7,7 @@ import {
   Filter, Search, ShoppingCart, Plus, Minus, Trash2, X, 
   ChevronRight, Info, Sparkles, Check, ArrowLeft, SlidersHorizontal 
 } from "lucide-react";
+import { checkoutAction } from "@/actions/checkout";
 
 // Technical specs of the 8 products
 const PRODUCTS = [
@@ -301,17 +302,72 @@ export default function ProductsCatalog() {
 
   const cartSubtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     setCheckoutLoading(true);
-    setTimeout(() => {
+    
+    // Configurar datos del cliente (intentar cargar datos reales o invitados)
+    let userDetails = {
+      name: "Invitado de Café",
+      email: "guest-checkout@goldneez.com",
+      address: "Envío a Domicilio",
+      city: "Bogotá"
+    };
+
+    const currentUser = localStorage.getItem("goldneez_current_user");
+    if (currentUser) {
+      try {
+        const parsed = JSON.parse(currentUser);
+        // Si el usuario está registrado, podemos obtener su dirección guardada si existe
+        const savedProfileJson = localStorage.getItem("goldneez_user");
+        let savedAddress = "Envío a Domicilio";
+        let savedCity = "Bogotá";
+        if (savedProfileJson) {
+          try {
+            const savedProfile = JSON.parse(savedProfileJson);
+            if (savedProfile.address) savedAddress = savedProfile.address;
+            if (savedProfile.city) savedCity = savedProfile.city;
+          } catch {}
+        }
+        
+        userDetails = {
+          name: parsed.name || "Cliente Goldneez",
+          email: parsed.email || "cliente@goldneez.com",
+          address: savedAddress,
+          city: savedCity
+        };
+      } catch {}
+    }
+
+    try {
+      const res = await checkoutAction(cart, cartSubtotal, userDetails);
+      if (res.error) {
+        alert(res.error);
+        setCheckoutLoading(false);
+      } else {
+        setCheckoutLoading(false);
+        setCheckoutSuccess(true);
+        setCart([]);
+        
+        // Actualizar puntos acumulados en la interfaz local
+        if (res.newTotalPoints !== undefined && currentUser) {
+          try {
+            const parsed = JSON.parse(currentUser);
+            const updated = { ...parsed, points: res.newTotalPoints };
+            localStorage.setItem("goldneez_current_user", JSON.stringify(updated));
+            localStorage.setItem("goldneez_user", JSON.stringify(updated));
+          } catch {}
+        }
+
+        setTimeout(() => {
+          setCheckoutSuccess(false);
+          setCartOpen(false);
+        }, 3500);
+      }
+    } catch (err) {
+      console.error("[handleCheckout] Error:", err);
+      alert("Ocurrió un error al procesar el pago. Intente nuevamente.");
       setCheckoutLoading(false);
-      setCheckoutSuccess(true);
-      setCart([]);
-      setTimeout(() => {
-        setCheckoutSuccess(false);
-        setCartOpen(false);
-      }, 3500);
-    }, 2000);
+    }
   };
 
   // Reset all filters

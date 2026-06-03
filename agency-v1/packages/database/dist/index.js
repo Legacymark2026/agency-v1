@@ -97,6 +97,8 @@ const modelToClientGetter = {
     click: exports.getPrismaCore,
     referral: exports.getPrismaCore,
     payout: exports.getPrismaCore,
+    inboxMacro: exports.getPrismaCore,
+    emailTemplate: exports.getPrismaCore,
     // Media, AI & Workflows
     post: exports.getPrismaMedia,
     category: exports.getPrismaMedia,

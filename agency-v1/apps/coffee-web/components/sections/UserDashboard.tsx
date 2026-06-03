@@ -8,6 +8,8 @@ import {
   LayoutDashboard, ShoppingBag, Calendar, UserCog, Award, 
   Package, Clock, ArrowUpRight, Power, MapPin, CheckCircle, Save
 } from "lucide-react";
+import { getMeAction, updateProfileAction, logoutUserAction } from "@/actions/auth";
+import { getUserOrdersAction } from "@/actions/checkout";
 
 // Mock initial orders
 const MOCK_ORDERS = [
@@ -42,6 +44,7 @@ export default function UserDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview, orders, subscription, settings
   const [user, setUser] = useState<{ name: string; email: string; points: number; registeredAt: string } | null>(null);
   const [sub, setSub] = useState<{ beans: string; frequency: string; status: string; nextDelivery: string } | null>(null);
+  const [ordersList, setOrdersList] = useState<any[]>(MOCK_ORDERS);
   
   // Settings Form State
   const [profileName, setProfileName] = useState("");
@@ -54,43 +57,54 @@ export default function UserDashboard() {
   const tabContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check session on mount
-    const session = localStorage.getItem("goldneez_session");
-    const currentUser = localStorage.getItem("goldneez_current_user");
-
-    if (!session || !currentUser) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const parsedUser = JSON.parse(currentUser);
-      setUser(parsedUser);
-      setProfileName(parsedUser.name);
-      setProfileEmail(parsedUser.email);
-    } catch (e) {
-      router.push("/login");
-      return;
-    }
-
-    // Load or initialize subscription
-    const savedSub = localStorage.getItem("goldneez_subscription");
-    if (savedSub) {
-      try {
-        setSub(JSON.parse(savedSub));
-      } catch (e) {
-        // ignore
+    async function loadData() {
+      const me = await getMeAction();
+      if (!me) {
+        localStorage.removeItem("goldneez_session");
+        localStorage.removeItem("goldneez_current_user");
+        router.push("/login");
+        return;
       }
-    } else {
-      const initialSub = {
-        beans: "signature-blend",
-        frequency: "30",
-        status: "active",
-        nextDelivery: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
-      };
-      setSub(initialSub);
-      localStorage.setItem("goldneez_subscription", JSON.stringify(initialSub));
+
+      setUser({
+        name: me.name,
+        email: me.email,
+        points: me.points,
+        registeredAt: me.registeredAt
+      });
+      setProfileName(me.name);
+      setProfileEmail(me.email);
+      if (me.address) {
+        setAddress(me.address);
+      }
+
+      // Load real orders from database
+      const realOrders = await getUserOrdersAction();
+      if (realOrders) {
+        setOrdersList(realOrders);
+      }
+
+      // Load or initialize subscription
+      const savedSub = localStorage.getItem("goldneez_subscription");
+      if (savedSub) {
+        try {
+          setSub(JSON.parse(savedSub));
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        const initialSub = {
+          beans: "signature-blend",
+          frequency: "30",
+          status: "active",
+          nextDelivery: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+        };
+        setSub(initialSub);
+        localStorage.setItem("goldneez_subscription", JSON.stringify(initialSub));
+      }
     }
+
+    loadData();
   }, []);
 
   // GSAP animation when changing tabs
@@ -123,7 +137,8 @@ export default function UserDashboard() {
     }
   }, [activeTab, user]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logoutUserAction();
     localStorage.removeItem("goldneez_session");
     localStorage.removeItem("goldneez_current_user");
     
@@ -133,16 +148,21 @@ export default function UserDashboard() {
     router.push("/");
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileName || !profileEmail || !user) return;
+
+    const res = await updateProfileAction(profileName, profileEmail, address, city);
+    if (res.error) {
+      alert(res.error);
+      return;
+    }
 
     const updatedUser = { ...user, name: profileName, email: profileEmail };
     setUser(updatedUser);
     localStorage.setItem("goldneez_current_user", JSON.stringify(updatedUser));
-    localStorage.setItem("goldneez_user", JSON.stringify(updatedUser));
 
-    // Simulate save delay
+    // Display save success banner
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -287,7 +307,7 @@ export default function UserDashboard() {
                 </div>
                 <div>
                   <span className="font-cinzel text-aluminum text-3xl font-bold block">
-                    {MOCK_ORDERS.length}
+                    {ordersList.length}
                   </span>
                   <span className="font-quattrocento text-[10px] text-aluminum-dark mt-1 block">
                     1 en tránsito
@@ -371,7 +391,8 @@ export default function UserDashboard() {
             </h3>
 
             <div className="flex flex-col gap-4">
-              {MOCK_ORDERS.map((order) => (
+              {ordersList.length > 0 ? (
+                ordersList.map((order) => (
                 <div 
                   key={order.id}
                   className="border border-aluminum/10 bg-black/20 hover:border-amber/20 rounded-2xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300"
@@ -408,9 +429,13 @@ export default function UserDashboard() {
                       </span>
                     </div>
                   </div>
-
                 </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-10 border border-dashed border-aluminum/10 rounded-2xl">
+                  <p className="font-quattrocento text-sm text-aluminum-dark">No tienes pedidos registrados todavía.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

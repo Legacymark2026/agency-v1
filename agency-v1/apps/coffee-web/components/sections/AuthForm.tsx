@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import gsap from "gsap";
 import { Mail, Lock, User, Coffee, Sparkles, ArrowRight, AlertCircle } from "lucide-react";
+import { loginUserAction, registerUserAction } from "@/actions/auth";
 
 export default function AuthForm() {
   const t = useTranslations("auth");
@@ -56,7 +57,7 @@ export default function AuthForm() {
     setError("");
   }, [isLogin]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -67,58 +68,56 @@ export default function AuthForm() {
 
     setLoading(true);
 
-    // Simulate Network Request
-    setTimeout(() => {
-      setLoading(false);
-      
+    try {
       if (isLogin) {
-        // Mock Login
-        const savedUserJson = localStorage.getItem("goldneez_user");
-        let userToLogIn = { name: "Carlos Barista", email: "admin@goldneez.com" };
-
-        if (savedUserJson) {
-          const savedUser = JSON.parse(savedUserJson);
-          if (savedUser.email.toLowerCase() === email.toLowerCase()) {
-            userToLogIn = savedUser;
-          }
+        const res = await loginUserAction(email, password);
+        if (res.error) {
+          setError(res.error);
+        } else if (res.success && res.user) {
+          // Set session client-side variables for UI compatibility
+          localStorage.setItem("goldneez_session", "active");
+          localStorage.setItem("goldneez_current_user", JSON.stringify(res.user));
+          
+          // Dispatch custom login event for Header
+          window.dispatchEvent(new Event("user-login"));
+          
+          router.push("/dashboard");
         }
-
-        // Set session
-        localStorage.setItem("goldneez_session", "active");
-        localStorage.setItem("goldneez_current_user", JSON.stringify(userToLogIn));
-        
-        // Dispatch custom login event for Header
-        window.dispatchEvent(new Event("user-login"));
-        
-        router.push("/dashboard");
       } else {
-        // Mock Register
-        const newUser = {
-          name,
-          email,
-          points: 500, // Gift 500 points on registration!
-          registeredAt: new Date().toLocaleDateString()
-        };
+        const res = await registerUserAction(name, email, password);
+        if (res.error) {
+          setError(res.error);
+        } else if (res.success && res.user) {
+          // Set session client-side variables
+          localStorage.setItem("goldneez_session", "active");
+          localStorage.setItem("goldneez_current_user", JSON.stringify(res.user));
 
-        // Create initial default subscription
-        const initialSub = {
-          beans: "signature-blend",
-          frequency: "30",
-          status: "active",
-          nextDelivery: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
-        };
+          // Set points and initial sub locally (compatible with existing UI mock variables)
+          const mockUser = {
+            name: res.user.name,
+            email: res.user.email,
+            points: 500,
+            registeredAt: new Date().toLocaleDateString()
+          };
+          localStorage.setItem("goldneez_user", JSON.stringify(mockUser));
+          localStorage.setItem("goldneez_subscription", JSON.stringify({
+            beans: "signature-blend",
+            frequency: "30",
+            status: "active",
+            nextDelivery: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
+          }));
 
-        localStorage.setItem("goldneez_user", JSON.stringify(newUser));
-        localStorage.setItem("goldneez_current_user", JSON.stringify(newUser));
-        localStorage.setItem("goldneez_subscription", JSON.stringify(initialSub));
-        localStorage.setItem("goldneez_session", "active");
+          // Dispatch custom login event
+          window.dispatchEvent(new Event("user-login"));
 
-        // Dispatch custom login event for Header
-        window.dispatchEvent(new Event("user-login"));
-
-        router.push("/dashboard");
+          router.push("/dashboard");
+        }
       }
-    }, 1500);
+    } catch (err) {
+      setError("Ocurrió un error inesperado al procesar la solicitud.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
