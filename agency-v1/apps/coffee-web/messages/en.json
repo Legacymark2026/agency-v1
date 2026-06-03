@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "title": "Goldneez | Specialty Coffee Artisenally Roasted",
+    "description": "Discover Goldneez, artisanal specialty coffee. We create golden memories for true lovers of authentic flavor."
+  },
+  "header": {
+    "home": "Home",
+    "products": "Products",
+    "process": "Process",
+    "experience": "Experience",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title1": "We create",
+    "title2": "golden",
+    "title3": "memories",
+    "subtitle": "Artisan roasted specialty coffee for lovers of authentic taste",
+    "cta": "Discover our coffee",
+    "stats": "satisfied customers enjoying our coffee every morning"
+  },
+  "history": {
+    "title": "Our{br}History",
+    "p1": "At Goldneez, we create golden memories through every cup. Our passion for specialty coffee leads us to select the finest single-origin beans, roasting them artisanally to highlight their most distinctive notes.",
+    "p2": "More than a coffee shop, we are a space where aroma, flavor, and company fuse into unforgettable moments.",
+    "slogan": "We create{br}golden memories"
+  },
+  "origin": {
+    "title": "Bean Origin",
+    "description": "Every bean that arrives at Goldneez is manually selected from sustainable coffee farms in the mountains of Colombia. We work directly with farmers who share our passion for quality, ensuring only the most exceptional beans make it into your next cup of coffee."
+  },
+  "products": {
+    "title": "Our Coffees",
+    "subtitle": "Single-origin selection, artisan roasted",
+    "buy": "Buy",
+    "items": [
+      {
+        "name": "Ethiopia Yirgacheffe",
+        "description": "Floral notes of jasmine and bergamot with a silky body",
+        "price": "$24.00"
+      },
+      {
+        "name": "Colombia Huila Supremo",
+        "description": "Dark chocolate, caramel, and bright citric acidity",
+        "price": "$22.00"
+      },
+      {
+        "name": "Brasil Cerrado Mineiro",
+        "description": "Roasted nuts, cocoa, and a persistent sweet finish",
+        "price": "$20.00"
+      },
+      {
+        "name": "Goldneez Signature Blend",
+        "description": "Our exclusive blend: balanced, aromatic, and memorable",
+        "price": "$26.00"
+      }
+    ]
+  },
+  "process": {
+    "title": "Roasting Art",
+    "subtitle": "Five stages of transformation",
+    "stages": [
+      {
+        "stage": "Stage 01",
+        "title": "Manual Selection",
+        "time": "30 min",
+        "temp": "20°C",
+        "description": "Each bean is visually inspected to discard defective ones"
+      },
+      {
+        "stage": "Stage 02",
+        "title": "Natural Drying",
+        "time": "12-24h",
+        "temp": "35-40°C",
+        "description": "Beans are dried in the sun to reduce humidity to 12%"
+      },
+      {
+        "stage": "Stage 03",
+        "title": "Precise Roasting",
+        "time": "12-15 min",
+        "temp": "180-220°C",
+        "description": "The heart of the process: Maillard, caramel, and development"
+      },
+      {
+        "stage": "Stage 04",
+        "title": "Rapid Cooling",
+        "time": "3-5 min",
+        "temp": "20°C",
+        "description": "Cooling with air to stop the roasting process instantly"
+      },
+      {
+        "stage": "Stage 05",
+        "title": "Rest & Degassing",
+        "time": "24-48h",
+        "temp": "20°C",
+        "description": "Coffee rests to release CO2 and develop its final profile"
+      }
+    ]
+  },
+  "experience": {
+    "title": "Sensorial{br}Experience",
+    "description": "More than just drinking coffee, we invite you to a sensory journey. From the aroma that awakens your senses to the last sip that leaves a smile, every cup at Goldneez is an experience designed to create golden memories.",
+    "cta": "Book your experience"
+  },
+  "gallery": {
+    "title": "Our Place",
+    "subtitle": "A space designed to create memorable moments",
+    "images": [
+      { "label": "Main Lounge" },
+      { "label": "Specialty Bar" },
+      { "label": "Relax Zone" },
+      { "label": "Sunset Terrace" }
+    ]
+  },
+  "testimonials": {
+    "title": "What our clients say",
+    "list": [
+      {
+        "text": "The best coffee I've ever tasted in my life. The Ethiopia Yirgacheffe has incredible floral notes. Goldneez has become my every morning ritual.",
+        "name": "María Fernández",
+        "role": "Coffee Lover"
+      },
+      {
+        "text": "More than a coffee shop, it is a sanctuary of coffee. The atmosphere, the aroma, the flavor... everything is designed to create an unforgettable experience.",
+        "name": "Carlos Mendoza",
+        "role": "Executive Chef"
+      },
+      {
+        "text": "I take all my clients to Goldneez after meetings. The Signature Blend never disappoints. It is the perfect place to create golden connections.",
+        "name": "Ana Lucía Vargas",
+        "role": "Entrepreneur"
+      },
+      {
+        "text": "As a certified barista, I can say that Goldneez's roast level is exceptional. Every bean is treated with the respect it deserves.",
+        "name": "Diego Herrera",
+        "role": "Professional Barista"
+      },
+      {
+        "text": "I discovered Goldneez a year ago and I haven't bought coffee anywhere else. The quality is consistent and the service is impeccable.",
+        "name": "Laura Jiménez",
+        "role": "Designer"
+      },
+      {
+        "text": "My partner and I have our weekly date at Goldneez. The warm atmosphere and perfect coffee make every visit special.",
+        "name": "Roberto Sánchez",
+        "role": "Architect"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Join the Goldneez family",
+    "description": "Subscribe and receive 15% off your first purchase, access to exclusive releases, and secrets of coffee art straight to your inbox.",
+    "placeholder": "Your email address",
+    "submit": "Subscribe",
+    "success_title": "Welcome to the family!",
+    "success_subtitle": "Check your email to confirm your subscription.",
+    "disclaimer": "By subscribing, you agree to our privacy policy. We do not spam."
+  },
+  "footer": {
+    "slogan": "We create golden memories through every cup of coffee.",
+    "explore_title": "Explore",
+    "products_title": "Products",
+    "contact_title": "Contact",
+    "follow_title": "Follow us",
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}

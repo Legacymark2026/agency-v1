@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@theme {
+  --font-cinzel: var(--font-cinzel), serif;
+  --font-quattrocento: var(--font-quattrocento), sans-serif;
+
+  --color-amber: #FFBF00;
+  --color-amber-dark: #FF9900;
+  --color-amber-light: #FFD966;
+
+  --color-aluminum: #E5E5E5;
+  --color-aluminum-dark: #999999;
+  --color-aluminum-light: #F5F5F5;
+
+  --animate-ticker: ticker 30s linear infinite;
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+
+  --shadow-glow: 0 0 60px rgba(255,191,0,0.3), 0 0 120px rgba(255,191,0,0.1);
+  --shadow-glow-lg: 0 0 80px rgba(255,191,0,0.5), 0 0 160px rgba(255,191,0,0.2);
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,191,0,0.3); }
+    50% { box-shadow: 0 0 40px rgba(255,191,0,0.6); }
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 90%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --radius: 0.5rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-quattrocento);
+    background-color: #000000;
+    color: #E5E5E5;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-cinzel);
+    font-weight: 700;
+  }
+
+  ::selection {
+    background-color: rgba(255, 191, 0, 0.3);
+    color: #FFBF00;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #000000;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #FFBF00;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #FF9900;
+  }
+}
+
+@layer components {
+  .dot-pattern {
+    background-image: radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .dot-pattern-light {
+    background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .text-shadow-hero {
+    text-shadow: 0 4px 80px rgba(0,0,0,0.9);
+  }
+
+  .text-shadow-sm {
+    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  }
+
+  .blend-difference {
+    mix-blend-mode: difference;
+  }
+
+  .grain-overlay {
+    position: relative;
+  }
+
+  .grain-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.08;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .gradient-overlay {
+    position: relative;
+  }
+
+  .gradient-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .btn-primary {
+    background-color: #FFBF00;
+    color: #000000;
+    font-family: var(--font-quattrocento);
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 16px 40px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #FF9900;
+    color: #FFFFFF;
+    box-shadow: 0 4px 20px rgba(255,191,0,0.4);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: #FFBF00;
+    font-family: var(--font-quattrocento);
+    font-weight: 700;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 16px 40px;
+    border: 1px solid #FFBF00;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:hover {
+    background-color: #FFBF00;
+    color: #000000;
+  }
+
+  .section-padding {
+    padding: 160px 80px;
+  }
+
+  @media (max-width: 1024px) {
+    .section-padding {
+      padding: 100px 40px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .section-padding {
+      padding: 80px 24px;
+    }
+  }
+}
+
+@layer utilities {
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .perspective-1500 {
+    perspective: 1500px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+}

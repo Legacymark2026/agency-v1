@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "title": "Goldneez | Café de Especialidad Tostado Artesanalmente",
+    "description": "Descubre Goldneez, café de especialidad tostado artesanalmente. Creamos recuerdos dorados para los verdaderos amantes del sabor auténtico."
+  },
+  "header": {
+    "home": "Inicio",
+    "products": "Productos",
+    "process": "Proceso",
+    "experience": "Experiencia",
+    "contact": "Contacto"
+  },
+  "hero": {
+    "title1": "Creamos",
+    "title2": "recuerdos",
+    "title3": "dorados",
+    "subtitle": "Café de especialidad tostado artesanalmente para los amantes del sabor auténtico",
+    "cta": "Descubre nuestro café",
+    "stats": "clientes satisfechos disfrutando de nuestro café cada mañana"
+  },
+  "history": {
+    "title": "Nuestra{br}Historia",
+    "p1": "En Goldneez, creamos recuerdos dorados a través de cada taza. Nuestra pasión por el café de especialidad nos lleva a seleccionar los mejores granos de origen único, tostándolos artesanalmente para resaltar sus notas más distintivas.",
+    "p2": "Más que una cafetería, somos un espacio donde el aroma, el sabor y la compañía se fusionan en momentos inolvidables.",
+    "slogan": "Creamos{br}recuerdos dorados"
+  },
+  "origin": {
+    "title": "Origen del Grano",
+    "description": "Cada grano que llega a Goldneez es seleccionado manualmente de fincas cafetaleras sostenibles en las montañas de Colombia. Trabajamos directamente con agricultores que comparten nuestra pasión por la calidad, garantizando que solo los granos más excepcionales se conviertan en tu próxima taza de café."
+  },
+  "products": {
+    "title": "Nuestros Cafés",
+    "subtitle": "Selección de origen único, tostados artesanalmente",
+    "buy": "Comprar",
+    "items": [
+      {
+        "name": "Ethiopia Yirgacheffe",
+        "description": "Notas florales de jazmín y bergamota con cuerpo sedoso",
+        "price": "$24.00"
+      },
+      {
+        "name": "Colombia Huila Supremo",
+        "description": "Chocolate negro, caramelo y acidez cítrica brillante",
+        "price": "$22.00"
+      },
+      {
+        "name": "Brasil Cerrado Mineiro",
+        "description": "Nueces tostadas, cacao y un final dulce persistente",
+        "price": "$20.00"
+      },
+      {
+        "name": "Goldneez Signature Blend",
+        "description": "Nuestra mezcla exclusiva: equilibrada, aromática y memorable",
+        "price": "$26.00"
+      }
+    ]
+  },
+  "process": {
+    "title": "Arte del Tostado",
+    "subtitle": "Cinco etapas de transformación",
+    "stages": [
+      {
+        "stage": "Etapa 01",
+        "title": "Selección Manual",
+        "time": "30 min",
+        "temp": "20°C",
+        "description": "Cada grano es inspeccionado visualmente para descartar defectuosos"
+      },
+      {
+        "stage": "Etapa 02",
+        "title": "Secado Natural",
+        "time": "12-24h",
+        "temp": "35-40°C",
+        "description": "Los granos se secan al sol para reducir la humedad al 12%"
+      },
+      {
+        "stage": "Etapa 03",
+        "title": "Tostión Precisa",
+        "time": "12-15 min",
+        "temp": "180-220°C",
+        "description": "El corazón del proceso: Maillard, caramelo y desarrollo"
+      },
+      {
+        "stage": "Etapa 04",
+        "title": "Enfriamiento Rápido",
+        "time": "3-5 min",
+        "temp": "20°C",
+        "description": "Enfriamiento con aire para detener la cocción instantáneamente"
+      },
+      {
+        "stage": "Etapa 05",
+        "title": "Reposo y Degustación",
+        "time": "24-48h",
+        "temp": "20°C",
+        "description": "El café descansa para liberar CO2 y desarrollar su perfil final"
+      }
+    ]
+  },
+  "experience": {
+    "title": "Experiencia{br}Sensorial",
+    "description": "Más que beber café, te invitamos a un viaje sensorial. Desde el aroma que despierta tus sentidos hasta el último sorbo que deja una sonrisa, cada taza en Goldneez es una experiencia diseñada para crear recuerdos dorados.",
+    "cta": "Reserva tu experiencia"
+  },
+  "gallery": {
+    "title": "Nuestro Local",
+    "subtitle": "Un espacio diseñado para crear momentos memorables",
+    "images": [
+      { "label": "Sala Principal" },
+      { "label": "Barra de Especialidad" },
+      { "label": "Zona de Relax" },
+      { "label": "Terraza al Atardecer" }
+    ]
+  },
+  "testimonials": {
+    "title": "Lo que dicen nuestros clientes",
+    "list": [
+      {
+        "text": "El mejor café que he probado en mi vida. El Ethiopia Yirgacheffe tiene unas notas florales increíbles. Goldneez se ha convertido en mi ritual de cada mañana.",
+        "name": "María Fernández",
+        "role": "Amante del café"
+      },
+      {
+        "text": "Más que una cafetería, es un santuario del café. El ambiente, el aroma, el sabor... todo está diseñado para crear una experiencia inolvidable.",
+        "name": "Carlos Mendoza",
+        "role": "Chef Ejecutivo"
+      },
+      {
+        "text": "Llevo a todos mis clientes a Goldneez después de las reuniones. El Signature Blend nunca decepciona. Es el lugar perfecto para crear conexiones doradas.",
+        "name": "Ana Lucía Vargas",
+        "role": "Empresaria"
+      },
+      {
+        "text": "Como barista certificado, puedo decir que el nivel de tostión de Goldneez es excepcional. Cada grano está tratado con el respeto que merece.",
+        "name": "Diego Herrera",
+        "role": "Barista Profesional"
+      },
+      {
+        "text": "Descubrí Goldneez hace un año y no he vuelto a comprar café en otro lado. La calidad es consistente y el servicio es impecable.",
+        "name": "Laura Jiménez",
+        "role": "Diseñadora"
+      },
+      {
+        "text": "Mi pareja y yo tenemos nuestra cita semanal en Goldneez. El ambiente cálido y el café perfecto hacen que cada visita sea especial.",
+        "name": "Roberto Sánchez",
+        "role": "Arquitecto"
+      }
+    ]
+  },
+  "newsletter": {
+    "title": "Únete a la familia Goldneez",
+    "description": "Suscríbete y recibe un 15% de descuento en tu primera compra, acceso a lanzamientos exclusivos y secretos del arte del café directamente en tu bandeja de entrada.",
+    "placeholder": "Tu correo electrónico",
+    "submit": "Suscribirme",
+    "success_title": "¡Bienvenido a la familia!",
+    "success_subtitle": "Revisa tu correo para confirmar tu suscripción.",
+    "disclaimer": "Al suscribirte, aceptas nuestra política de privacidad. No enviamos spam."
+  },
+  "footer": {
+    "slogan": "Creamos recuerdos dorados a través de cada taza de café.",
+    "explore_title": "Explora",
+    "products_title": "Productos",
+    "contact_title": "Contacto",
+    "follow_title": "Síguenos",
+    "rights": "Todos los derechos reservados.",
+    "privacy": "Política de privacidad",
+    "terms": "Términos de servicio"
+  }
+}
