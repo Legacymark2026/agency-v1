@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 const partners = [
   "Colombia Coffee",
@@ -99,11 +100,10 @@ const Hero = () => {
     return () => ctx.revert();
   }, []);
 
+  const router = useRouter();
+
   const handleCtaClick = () => {
-    const target = document.querySelector("#productos");
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth" });
-    }
+    router.push("/productos");
   };
 
   return (

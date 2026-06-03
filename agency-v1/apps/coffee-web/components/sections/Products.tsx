@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,6 +19,7 @@ interface ProductItem {
 const Products = () => {
   const t = useTranslations("products");
   const sectionRef = useRef<HTMLElement>(null);
+  const router = useRouter();
 
   // We map the images locally but fetch the text content from i18n JSON
   const productImages = [
@@ -40,6 +42,7 @@ const Products = () => {
       const title = sectionRef.current!.querySelector(".products-title");
       const subtitle = sectionRef.current!.querySelector(".products-subtitle");
       const cards = sectionRef.current!.querySelectorAll(".product-card");
+      const button = sectionRef.current!.querySelector(".products-button");
 
       if (title) {
         gsap.fromTo(
@@ -75,6 +78,17 @@ const Products = () => {
           }
         );
       });
+
+      if (button) {
+        gsap.fromTo(
+          button,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1, y: 0, duration: 0.8, delay: 0.8, ease: "power3.out",
+            scrollTrigger: { trigger: button, start: "top 90%", once: true },
+          }
+        );
+      }
     }, sectionRef);
 
     return () => ctx.revert();
@@ -135,6 +149,16 @@ const Products = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* View Collection Button */}
+        <div className="products-button text-center mt-12 sm:mt-16 opacity-0">
+          <button
+            onClick={() => router.push("/productos")}
+            className="bg-black text-aluminum px-8 py-3.5 rounded-lg text-xs font-quattrocento font-bold hover:bg-amber hover:text-black transition-all duration-300 cursor-pointer uppercase tracking-widest shadow-lg hover:scale-105 active:scale-95"
+          >
+            Ver Colección Completa
+          </button>
         </div>
       </div>
     </section>

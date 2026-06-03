@@ -171,5 +171,110 @@
     "accept": "Aceptar todo",
     "decline": "Rechazar",
     "settings": "Configurar"
+  },
+  "catalog": {
+    "title": "Nuestra Colección de Especialidad",
+    "subtitle": "Cafés seleccionados a mano de las mejores fincas, tostados artesanalmente en pequeños lotes.",
+    "search_placeholder": "Buscar café por nombre, origen o notas...",
+    "filter_origin": "Origen",
+    "filter_roast": "Tostado",
+    "filter_process": "Proceso",
+    "filter_all": "Todos",
+    "sort_title": "Ordenar por",
+    "sort_price_asc": "Precio: menor a mayor",
+    "sort_price_desc": "Precio: mayor a menor",
+    "sort_intensity": "Intensidad de tueste",
+    "origin_africa": "África",
+    "origin_south_america": "Sudamérica",
+    "origin_central_america": "Centroamérica",
+    "origin_asia": "Asia-Pacífico",
+    "roast_light": "Ligero",
+    "roast_medium": "Medio",
+    "roast_dark": "Oscuro",
+    "process_washed": "Lavado",
+    "process_natural": "Natural",
+    "process_honey": "Honey",
+    "process_anaerobic": "Anaeróbico",
+    "quick_view": "Vista Rápida",
+    "add_to_cart": "Añadir al Carrito",
+    "added_to_cart": "¡Añadido!",
+    "specs_altitude": "Altitud",
+    "specs_process": "Proceso",
+    "specs_origin": "Origen",
+    "specs_roast": "Tostado",
+    "specs_acidity": "Acidez",
+    "specs_body": "Cuerpo",
+    "specs_notes": "Notas de Cata",
+    "grind_title": "Tipo de Molienda",
+    "grind_whole": "Grano Entero",
+    "grind_espresso": "Espresso / Moka",
+    "grind_filter": "Filtro (V60 / Chemex)",
+    "grind_french": "Prensa Francesa",
+    "size_title": "Tamaño de Bolsa",
+    "cart_title": "Tu Carrito",
+    "cart_empty": "Tu carrito está vacío. ¡Explora nuestra colección y añade unos granos dorados!",
+    "cart_subtotal": "Subtotal",
+    "cart_checkout": "Proceder al Pago",
+    "cart_checkout_loading": "Procesando pago seguro...",
+    "cart_checkout_success": "¡Pedido realizado! Gracias por crear recuerdos dorados con Goldneez.",
+    "quiz_title": "¿No sabes cuál elegir?",
+    "quiz_subtitle": "Responde 3 preguntas sencillas y nuestro Coffee Finder seleccionará el grano ideal para ti.",
+    "quiz_start": "Iniciar Quiz",
+    "quiz_q1": "¿Cómo tomas tu café normalmente?",
+    "quiz_q1_o1": "Solo (Negro, Espresso)",
+    "quiz_q1_o2": "Con leche / Bebidas vegetales",
+    "quiz_q1_o3": "Frío (Cold Brew / Con hielo)",
+    "quiz_q2": "¿Qué perfil de sabor prefieres en tu taza?",
+    "quiz_q2_o1": "Frutal, floral y cítrico (ligero y brillante)",
+    "quiz_q2_o2": "Dulce, caramelo y chocolate (equilibrado)",
+    "quiz_q2_o3": "Intenso, terroso y especiado (cuerpo denso)",
+    "quiz_q3": "¿Qué método de preparación utilizas?",
+    "quiz_q3_o1": "Cafetera de goteo o filtro manual",
+    "quiz_q3_o2": "Cafetera Espresso o Italiana",
+    "quiz_q3_o3": "Prensa Francesa",
+    "quiz_result": "Tu Café Ideal es:",
+    "quiz_retry": "Repetir Quiz",
+    "items": {
+      "ethiopia-yirgacheffe": {
+        "name": "Ethiopia Yirgacheffe",
+        "description": "Notas florales de jazmín y bergamota con cuerpo sedoso y acidez brillante.",
+        "notes": "Jazmín, Bergamota, Té de Limón"
+      },
+      "colombia-huila": {
+        "name": "Colombia Huila Supremo",
+        "description": "Chocolate negro, caramelo y acidez cítrica brillante con final limpio.",
+        "notes": "Chocolate Negro, Caramelo, Naranja Dulce"
+      },
+      "brasil-cerrado": {
+        "name": "Brasil Cerrado Mineiro",
+        "description": "Nueces tostadas, cacao y un final dulce persistente con baja acidez.",
+        "notes": "Avellana, Cacao en Polvo, Azúcar Moreno"
+      },
+      "signature-blend": {
+        "name": "Goldneez Signature Blend",
+        "description": "Nuestra mezcla exclusiva de la casa: equilibrada, aromática y memorable.",
+        "notes": "Chocolate con Leche, Almendra, Miel"
+      },
+      "panama-geisha": {
+        "name": "Panama Geisha Reserve",
+        "description": "Un café de leyenda. Perfil extremadamente complejo con notas florales de jazmín y melocotón.",
+        "notes": "Jazmín, Melocotón, Té Negro, Mandarina"
+      },
+      "kenya-aa": {
+        "name": "Kenya AA Kirinyaga",
+        "description": "Cuerpo jugoso, notas intensas de frutos rojos y una acidez brillante.",
+        "notes": "Mora, Grosella Negra, Toronja, Ruibarbo"
+      },
+      "costa-rica": {
+        "name": "Costa Rica Tarrazú Honey",
+        "description": "Procesado por el método Honey. Dulzura almibarada con notas de vainilla y manzana.",
+        "notes": "Manzana Roja, Miel de Caña, Vainilla"
+      },
+      "sumatra-mandheling": {
+        "name": "Sumatra Mandheling",
+        "description": "Cuerpo denso y cremoso. Notas terrosas, especiadas y chocolate oscuro.",
+        "notes": "Tabaco Dulce, Cedro, Chocolate Oscuro, Clavo"
+      }
+    }
   }
 }

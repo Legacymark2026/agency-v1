@@ -171,5 +171,110 @@
     "accept": "Accept All",
     "decline": "Decline",
     "settings": "Configure"
+  },
+  "catalog": {
+    "title": "Our Specialty Collection",
+    "subtitle": "Hand-picked coffees from the finest estates, artisanally roasted in small batches.",
+    "search_placeholder": "Search coffee by name, origin, or notes...",
+    "filter_origin": "Origin",
+    "filter_roast": "Roast",
+    "filter_process": "Process",
+    "filter_all": "All",
+    "sort_title": "Sort by",
+    "sort_price_asc": "Price: low to high",
+    "sort_price_desc": "Price: high to low",
+    "sort_intensity": "Roast Intensity",
+    "origin_africa": "Africa",
+    "origin_south_america": "South America",
+    "origin_central_america": "Central America",
+    "origin_asia": "Asia-Pacific",
+    "roast_light": "Light",
+    "roast_medium": "Medium",
+    "roast_dark": "Dark",
+    "process_washed": "Washed",
+    "process_natural": "Natural",
+    "process_honey": "Honey",
+    "process_anaerobic": "Anaerobic",
+    "quick_view": "Quick View",
+    "add_to_cart": "Add to Cart",
+    "added_to_cart": "Added!",
+    "specs_altitude": "Altitude",
+    "specs_process": "Process",
+    "specs_origin": "Origin",
+    "specs_roast": "Roast Level",
+    "specs_acidity": "Acidity",
+    "specs_body": "Body",
+    "specs_notes": "Tasting Notes",
+    "grind_title": "Grind Type",
+    "grind_whole": "Whole Bean",
+    "grind_espresso": "Espresso / Moka Pot",
+    "grind_filter": "Filter (V60 / Chemex)",
+    "grind_french": "French Press",
+    "size_title": "Bag Size",
+    "cart_title": "Your Cart",
+    "cart_empty": "Your cart is empty. Explore our collection and add some golden beans!",
+    "cart_subtotal": "Subtotal",
+    "cart_checkout": "Proceed to Checkout",
+    "cart_checkout_loading": "Processing secure payment...",
+    "cart_checkout_success": "Order placed! Thank you for creating golden memories with Goldneez.",
+    "quiz_title": "Don't know which one to choose?",
+    "quiz_subtitle": "Answer 3 simple questions and our Coffee Finder will match you with the perfect beans.",
+    "quiz_start": "Start Quiz",
+    "quiz_q1": "How do you normally take your coffee?",
+    "quiz_q1_o1": "Black (Americano, Espresso)",
+    "quiz_q1_o2": "With Milk / Plant-based milk",
+    "quiz_q1_o3": "Cold (Cold Brew / Over Ice)",
+    "quiz_q2": "What flavor profile do you prefer in your cup?",
+    "quiz_q2_o1": "Fruity, floral, and citrusy (light and bright)",
+    "quiz_q2_o2": "Sweet, caramel, and chocolatey (balanced)",
+    "quiz_q2_o3": "Intense, earthy, and spicy (bold and dense)",
+    "quiz_q3": "What brewing method do you use?",
+    "quiz_q3_o1": "Drip coffee maker or manual filter",
+    "quiz_q3_o2": "Espresso machine or Moka pot",
+    "quiz_q3_o3": "French Press",
+    "quiz_result": "Your Perfect Coffee is:",
+    "quiz_retry": "Retake Quiz",
+    "items": {
+      "ethiopia-yirgacheffe": {
+        "name": "Ethiopia Yirgacheffe",
+        "description": "Floral notes of jasmine and bergamota with a silky body and bright acidity.",
+        "notes": "Jasmine, Bergamot, Lemon Tea"
+      },
+      "colombia-huila": {
+        "name": "Colombia Huila Supremo",
+        "description": "Dark chocolate, caramel, and bright citric acidity with a clean finish.",
+        "notes": "Dark Chocolate, Caramel, Sweet Orange"
+      },
+      "brasil-cerrado": {
+        "name": "Brasil Cerrado Mineiro",
+        "description": "Roasted nuts, cocoa, and a persistent sweet finish with low acidity.",
+        "notes": "Hazelnut, Cocoa Powder, Brown Sugar"
+      },
+      "signature-blend": {
+        "name": "Goldneez Signature Blend",
+        "description": "Our exclusive house blend: balanced, aromatic, and memorable.",
+        "notes": "Milk Chocolate, Almond, Honey"
+      },
+      "panama-geisha": {
+        "name": "Panama Geisha Reserve",
+        "description": "A legendary coffee. Extremely complex profile with floral notes of jasmine and peach.",
+        "notes": "Jasmine, Peach, Black Tea, Tangerine"
+      },
+      "kenya-aa": {
+        "name": "Kenya AA Kirinyaga",
+        "description": "Juicy body, intense berry notes, and a bright phosphoric acidity.",
+        "notes": "Blackberry, Blackcurrant, Grapefruit, Rhubarb"
+      },
+      "cost-rica": {
+        "name": "Costa Rica Tarrazú Honey",
+        "description": "Processed with the Honey method. Syrupy sweetness with notes of vanilla and apple.",
+        "notes": "Red Apple, Cane Honey, Vanilla"
+      },
+      "sumatra-mandheling": {
+        "name": "Sumatra Mandheling",
+        "description": "Dense and creamy body. Earthy, spicy notes and dark chocolate.",
+        "notes": "Sweet Tobacco, Cedar, Dark Chocolate, Clove"
+      }
+    }
   }
 }

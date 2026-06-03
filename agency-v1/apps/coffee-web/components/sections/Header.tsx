@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 const Header = () => {
   const t = useTranslations("header");
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   const navLinks = [
     { label: t("home"), href: "#hero" },
-    { label: t("products"), href: "#productos" },
+    { label: t("products"), href: "/productos" },
     { label: t("process"), href: "#proceso" },
     { label: t("experience"), href: "#experiencia" },
     { label: t("contact"), href: "#footer" },
@@ -28,11 +31,23 @@ const Header = () => {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setMenuOpen(false);
+
+    if (href === "/productos") {
+      router.push("/productos");
+      return;
+    }
+
+    if (pathname === "/productos") {
+      router.push(`/${href}`);
+      return;
+    }
+
     const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({ behavior: "smooth" });
     }
   };
+
 
   return (
     <header
