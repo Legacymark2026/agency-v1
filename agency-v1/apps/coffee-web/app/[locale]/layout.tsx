@@ -3,6 +3,7 @@ import { Cinzel_Decorative, Quattrocento_Sans } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import "../../styles/globals.css";
+import FloatingChats from "@/components/sections/FloatingChats";
 
 const cinzel = Cinzel_Decorative({
   weight: ["400", "700"],
@@ -52,6 +53,7 @@ export default async function RootLayout({
       <body className="bg-black text-aluminum font-quattrocento antialiased selection:bg-amber/30 selection:text-amber">
         <NextIntlClientProvider messages={messages}>
           {children}
+          <FloatingChats />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -328,5 +328,19 @@
     "orders_status_delivered": "Delivered",
     "orders_status_shipping": "In transit",
     "orders_status_pending": "Processing"
+  },
+  "chat": {
+    "bot_name": "Goldneez Assistant",
+    "bot_status": "Online",
+    "welcome_msg": "Hello! ☕ Welcome to Goldneez. How can I help you today?",
+    "option_coffee": "Learn about our coffee",
+    "option_sub": "Monthly subscription",
+    "option_human": "Speak with a human",
+    "reply_coffee": "We offer 8 exclusive single-origin specialty coffee varieties. Highlights include our floral Panama Geisha and the chocolatey Colombia Huila. You can explore all of them in our Products section!",
+    "reply_sub": "Our monthly subscription club delivers fresh coffee to your home every 15 or 30 days with custom grind and free shipping. You can configure it in your User Dashboard!",
+    "reply_human": "I'm redirecting you to our direct WhatsApp channel. A barista from our team will assist you shortly!",
+    "placeholder": "Type your question here...",
+    "send": "Send",
+    "bot_default_reply": "I'm sorry, I didn't understand your question. Try selecting one of the quick options or message us directly via WhatsApp to speak with a barista."
   }
 }

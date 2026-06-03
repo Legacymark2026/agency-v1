@@ -328,5 +328,19 @@
     "orders_status_delivered": "Entregado",
     "orders_status_shipping": "En camino",
     "orders_status_pending": "Procesando"
+  },
+  "chat": {
+    "bot_name": "Asistente Goldneez",
+    "bot_status": "En línea",
+    "welcome_msg": "¡Hola! ☕ Bienvenido a Goldneez. ¿En qué puedo ayudarte hoy?",
+    "option_coffee": "Saber de los cafés",
+    "option_sub": "Suscripción mensual",
+    "option_human": "Hablar con un humano",
+    "reply_coffee": "Ofrecemos 8 variedades exclusivas de café de especialidad de origen único. Entre ellas destacan nuestro floral Geisha de Panamá y el achocolatado Huila de Colombia. ¡Puedes explorarlos todos en nuestra sección de Productos!",
+    "reply_sub": "Nuestro club de suscripción mensual te entrega café fresco en tu casa cada 15 o 30 días con molienda personalizada y envíos gratis. ¡Puedes configurarla en tu Panel de Usuario!",
+    "reply_human": "Te estoy redirigiendo a nuestro canal directo de WhatsApp. ¡Un barista de nuestro equipo te atenderá de inmediato!",
+    "placeholder": "Escribe tu pregunta aquí...",
+    "send": "Enviar",
+    "bot_default_reply": "Lo siento, no he entendido tu pregunta. Prueba seleccionando una de las opciones rápidas o escríbenos directamente por WhatsApp para hablar con un barista."
   }
 }
