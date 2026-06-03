@@ -164,5 +164,12 @@
     "rights": "Todos los derechos reservados.",
     "privacy": "Política de privacidad",
     "terms": "Términos de servicio"
+  },
+  "cookies": {
+    "title": "Configuración de cookies",
+    "text": "Utilizamos cookies propias y de terceros para mejorar tu experiencia en nuestra web y mostrarte contenido relacionado con tus preferencias. ¿Aceptas el uso de cookies?",
+    "accept": "Aceptar todo",
+    "decline": "Rechazar",
+    "settings": "Configurar"
   }
 }

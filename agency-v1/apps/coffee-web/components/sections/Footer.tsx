@@ -187,6 +187,15 @@ const Footer = () => {
             <span className="font-quattrocento text-aluminum-dark text-xs hover:text-aluminum cursor-pointer transition-colors">
               {t("terms")}
             </span>
+            <span className="font-quattrocento text-aluminum-dark text-xs">
+              |
+            </span>
+            <span
+              onClick={() => window.dispatchEvent(new Event("open-cookie-settings"))}
+              className="font-quattrocento text-aluminum-dark text-xs hover:text-aluminum cursor-pointer transition-colors"
+            >
+              Cookies
+            </span>
           </div>
         </div>
       </div>

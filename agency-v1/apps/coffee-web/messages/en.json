@@ -164,5 +164,12 @@
     "rights": "All rights reserved.",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
+  },
+  "cookies": {
+    "title": "Cookie Settings",
+    "text": "We use our own and third-party cookies to improve your experience on our website and show you content related to your preferences. Do you accept the use of cookies?",
+    "accept": "Accept All",
+    "decline": "Decline",
+    "settings": "Configure"
   }
 }

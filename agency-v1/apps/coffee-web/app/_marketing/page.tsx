@@ -15,6 +15,7 @@ import Gallery from "@/components/sections/Gallery";
 import Testimonials from "@/components/sections/Testimonials";
 import Newsletter from "@/components/sections/Newsletter";
 import Footer from "@/components/sections/Footer";
+import CookieConsent from "@/components/sections/CookieConsent";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -58,6 +59,7 @@ export default function MarketingPage() {
         <Newsletter />
       </main>
       <Footer />
+      <CookieConsent />
     </div>
   );
 }
