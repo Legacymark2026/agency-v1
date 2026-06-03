@@ -7,6 +7,17 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 const JWT_SECRET = process.env.JWT_SECRET || "goldneez-coffee-exclusive-jwt-secret-2026";
+
+/** Detecta si el error es de configuración de base de datos (env var faltante) */
+function isDbConfigError(err: any): boolean {
+  const msg = err?.message || "";
+  return (
+    msg.includes("no configurada") ||
+    msg.includes("GOLDNEEZ_DB_URL") ||
+    msg.includes("DATABASE_URL") ||
+    msg.includes("Environment variable not found")
+  );
+}
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:4001";
 
 /**
@@ -65,6 +76,9 @@ export async function registerUserAction(name: string, email: string, password: 
 
   } catch (err: any) {
     console.error("[registerUserAction] Error:", err);
+    if (isDbConfigError(err)) {
+      return { error: "El servicio de registro no está disponible en este momento. Por favor intenta más tarde." };
+    }
     return { error: `Error en el registro: ${err.message}` };
   }
 }
@@ -159,6 +173,9 @@ export async function loginUserAction(email: string, password: string) {
       console.log("[loginUserAction] Autenticación exitosa mediante fallback directo a DB");
     } catch (dbErr: any) {
       console.error("[loginUserAction] Error en fallback de base de datos:", dbErr);
+      if (isDbConfigError(dbErr)) {
+        return { error: "El servicio de autenticación no está disponible en este momento. Por favor intenta más tarde." };
+      }
       return { error: "Error en el servidor de autenticación." };
     }
   }
