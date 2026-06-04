@@ -53,6 +53,37 @@ services:
           cpus: "2.0"
           memory: 2G
 
+  pgbouncer:
+    image: edoburu/pgbouncer:1.22.0
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      DB_USER: legacymark
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PORT: 6432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 500
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "6432", "-U", "legacymark"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks:
+      - backend-net
+      - database-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -185,12 +216,12 @@ services:
     logging: *default-logging
     environment:
       NODE_ENV: production
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
       REDIS_URL: redis://redis:6379
       API_GATEWAY_URL: http://api-gateway:8080
       VIDEO_SERVICE_URL: http://video-service:4007
@@ -198,7 +229,7 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
       INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     profiles: ["all"]
     labels:
@@ -277,16 +308,16 @@ services:
     environment:
       PORT: "4001"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/health"]
@@ -307,11 +338,11 @@ services:
       dockerfile: services/goldneez-rewards-service/Dockerfile
     environment:
       PORT: "4020"
-      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@postgres:5432/legacymark?schema=goldneez&search_path=goldneez,public&connection_limit=5
+      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@pgbouncer:6432/legacymark?schema=goldneez&search_path=goldneez,public&connection_limit=5&pgbouncer=true
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4020/health"]
       interval: 15s
@@ -332,16 +363,16 @@ services:
     environment: &common-env
       PORT: "4002"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
@@ -363,9 +394,9 @@ services:
     environment:
       <<: *common-env
       PORT: "4003"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
@@ -390,11 +421,11 @@ services:
     environment:
       <<: *common-env
       PORT: "4004"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
       GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/health"]
@@ -420,7 +451,7 @@ services:
       <<: *common-env
       PORT: "4005"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4005/health"]
@@ -445,7 +476,7 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4006/health"]
@@ -474,7 +505,7 @@ services:
     volumes:
       - render-data:/app/renders
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4007/health"]
@@ -500,7 +531,7 @@ services:
       <<: *common-env
       PORT: "4008"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4008/health"]
@@ -522,9 +553,9 @@ services:
     environment:
       <<: *common-env
       PORT: "4009"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4009/health"]
@@ -547,7 +578,7 @@ services:
       <<: *common-env
       PORT: "4010"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4010/health"]
@@ -570,7 +601,7 @@ services:
       <<: *common-env
       PORT: "4011"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4011/health"]
@@ -593,7 +624,7 @@ services:
       <<: *common-env
       PORT: "4012"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4012/health"]
@@ -615,9 +646,9 @@ services:
     environment:
       <<: *common-env
       PORT: "4013"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4013/health"]
@@ -640,7 +671,7 @@ services:
       <<: *common-env
       PORT: "4014"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4014/health"]
@@ -663,7 +694,7 @@ services:
       <<: *common-env
       PORT: "4015"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4015/health"]
@@ -687,7 +718,7 @@ services:
       PORT: "4016"
       RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4016/health"]
@@ -710,7 +741,7 @@ services:
       <<: *common-env
       PORT: "4017"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4017/health"]
@@ -733,7 +764,7 @@ services:
       <<: *common-env
       PORT: "4018"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4018/health"]
@@ -756,7 +787,7 @@ services:
       <<: *common-env
       PORT: "4019"
     depends_on:
-      postgres: { condition: service_healthy }
+      pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4019/health"]
