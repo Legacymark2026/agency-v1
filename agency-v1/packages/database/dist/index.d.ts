@@ -1,11 +1,3 @@
-/**
- * @agency/database — Shared Database Package
- * ─────────────────────────────────────────────────────────────────────────────
- * Central Prisma client and type exports for all microservices.
- *
- * Usage in any service:
- *   import { prisma, Prisma } from "@agency/database";
- */
 import { PrismaClient } from "@prisma/client";
 export { PrismaClient } from "@prisma/client";
 export { Prisma } from "@prisma/client";
@@ -14,6 +6,11 @@ export declare const getPrismaAuth: () => PrismaClient;
 export declare const getPrismaCore: () => PrismaClient;
 export declare const getPrismaMedia: () => PrismaClient;
 export declare const getPrismaAnalytics: () => PrismaClient;
+export declare const getPrismaAuthRead: () => PrismaClient;
+export declare const getPrismaCoreRead: () => PrismaClient;
+export declare const getPrismaMediaRead: () => PrismaClient;
+export declare const getPrismaAnalyticsRead: () => PrismaClient;
 export declare const prisma: any;
+export * from "./cache-helper";
 export default prisma;
 //# sourceMappingURL=index.d.ts.map

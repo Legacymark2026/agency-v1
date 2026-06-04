@@ -18,8 +18,18 @@ create_db() {
   fi
 }
 
-# Crear las bases de datos lógicas para cada subdominio
-create_db "legacymark_auth"
-create_db "legacymark_core"
-create_db "legacymark_media"
-create_db "legacymark_analytics"
+# Función para crear la extensión pg_stat_statements en una base de datos
+create_extension() {
+  local db=$1
+  echo "Enabling pg_stat_statements extension in $db..."
+  psql -U "$POSTGRES_USER" -d "$db" -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;"
+}
+
+# Crear las bases de datos lógicas para cada subdominio y habilitar la extensión
+for db in "legacymark_auth" "legacymark_core" "legacymark_media" "legacymark_analytics"; do
+  create_db "$db"
+  create_extension "$db"
+done
+
+# También habilitar la extensión en la base de datos principal legacymark
+create_extension "legacymark"

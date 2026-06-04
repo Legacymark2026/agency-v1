@@ -1,14 +1,20 @@
 "use strict";
-/**
- * @agency/database — Shared Database Package
- * ─────────────────────────────────────────────────────────────────────────────
- * Central Prisma client and type exports for all microservices.
- *
- * Usage in any service:
- *   import { prisma, Prisma } from "@agency/database";
- */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.prisma = exports.getPrismaAnalytics = exports.getPrismaMedia = exports.getPrismaCore = exports.getPrismaAuth = exports.Prisma = exports.PrismaClient = void 0;
+exports.prisma = exports.getPrismaAnalyticsRead = exports.getPrismaMediaRead = exports.getPrismaCoreRead = exports.getPrismaAuthRead = exports.getPrismaAnalytics = exports.getPrismaMedia = exports.getPrismaCore = exports.getPrismaAuth = exports.Prisma = exports.PrismaClient = void 0;
 const client_1 = require("@prisma/client");
 // Re-export everything from the main Prisma Client for type safety and backward compatibility
 var client_2 = require("@prisma/client");
@@ -20,6 +26,11 @@ let _prismaAuth = null;
 let _prismaCore = null;
 let _prismaMedia = null;
 let _prismaAnalytics = null;
+// Instancias de réplica de lectura
+let _prismaAuthRead = null;
+let _prismaCoreRead = null;
+let _prismaMediaRead = null;
+let _prismaAnalyticsRead = null;
 const logConfig = process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"];
 const getPrismaAuth = () => {
     if (!_prismaAuth) {
@@ -65,7 +76,52 @@ const getPrismaAnalytics = () => {
     return _prismaAnalytics;
 };
 exports.getPrismaAnalytics = getPrismaAnalytics;
-// Mapa para asociar cada modelo con su cliente de base de datos específico
+// Getters de réplicas de lectura
+const getPrismaAuthRead = () => {
+    if (!_prismaAuthRead) {
+        const url = process.env.AUTH_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaAuthRead = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
+        });
+    }
+    return _prismaAuthRead;
+};
+exports.getPrismaAuthRead = getPrismaAuthRead;
+const getPrismaCoreRead = () => {
+    if (!_prismaCoreRead) {
+        const url = process.env.CORE_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.CORE_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaCoreRead = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
+        });
+    }
+    return _prismaCoreRead;
+};
+exports.getPrismaCoreRead = getPrismaCoreRead;
+const getPrismaMediaRead = () => {
+    if (!_prismaMediaRead) {
+        const url = process.env.MEDIA_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaMediaRead = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
+        });
+    }
+    return _prismaMediaRead;
+};
+exports.getPrismaMediaRead = getPrismaMediaRead;
+const getPrismaAnalyticsRead = () => {
+    if (!_prismaAnalyticsRead) {
+        const url = process.env.ANALYTICS_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL;
+        _prismaAnalyticsRead = new client_1.PrismaClient({
+            log: logConfig,
+            datasources: url ? { db: { url } } : undefined,
+        });
+    }
+    return _prismaAnalyticsRead;
+};
+exports.getPrismaAnalyticsRead = getPrismaAnalyticsRead;
+// Mapa para asociar cada modelo con su cliente primario
 const modelToClientGetter = {
     // Auth & RBAC
     user: exports.getPrismaAuth,
@@ -118,6 +174,59 @@ const modelToClientGetter = {
     integrationLog: exports.getPrismaAnalytics,
     notificationDeliveryLog: exports.getPrismaAnalytics,
 };
+// Mapa para asociar cada modelo con su cliente de réplica de lectura
+const modelToReadClientGetter = {
+    // Auth & RBAC
+    user: exports.getPrismaAuthRead,
+    userProfile: exports.getPrismaAuthRead,
+    account: exports.getPrismaAuthRead,
+    session: exports.getPrismaAuthRead,
+    verificationToken: exports.getPrismaAuthRead,
+    passwordResetToken: exports.getPrismaAuthRead,
+    roleConfig: exports.getPrismaAuthRead,
+    role: exports.getPrismaAuthRead,
+    permission: exports.getPrismaAuthRead,
+    rolePermission: exports.getPrismaAuthRead,
+    resourcePermission: exports.getPrismaAuthRead,
+    apiKey: exports.getPrismaAuthRead,
+    // Core & CRM
+    company: exports.getPrismaCoreRead,
+    companyUser: exports.getPrismaCoreRead,
+    team: exports.getPrismaCoreRead,
+    lead: exports.getPrismaCoreRead,
+    deal: exports.getPrismaCoreRead,
+    invoice: exports.getPrismaCoreRead,
+    expense: exports.getPrismaCoreRead,
+    servicePrice: exports.getPrismaCoreRead,
+    kanbanProject: exports.getPrismaCoreRead,
+    leadAssignmentRule: exports.getPrismaCoreRead,
+    leadAssignmentRoundRobinState: exports.getPrismaCoreRead,
+    affiliateProfile: exports.getPrismaCoreRead,
+    commissionPlan: exports.getPrismaCoreRead,
+    click: exports.getPrismaCoreRead,
+    referral: exports.getPrismaCoreRead,
+    payout: exports.getPrismaCoreRead,
+    inboxMacro: exports.getPrismaCoreRead,
+    emailTemplate: exports.getPrismaCoreRead,
+    outboxEvent: exports.getPrismaCoreRead,
+    // Media, AI & Workflows
+    post: exports.getPrismaMediaRead,
+    category: exports.getPrismaMediaRead,
+    tag: exports.getPrismaMediaRead,
+    project: exports.getPrismaMediaRead,
+    workflow: exports.getPrismaMediaRead,
+    campaign: exports.getPrismaMediaRead,
+    socialPost: exports.getPrismaMediaRead,
+    aiAgent: exports.getPrismaMediaRead,
+    agentMemory: exports.getPrismaMediaRead,
+    // Analytics & Logs
+    userActivityLog: exports.getPrismaAnalyticsRead,
+    projectView: exports.getPrismaAnalyticsRead,
+    postView: exports.getPrismaAnalyticsRead,
+    usageLog: exports.getPrismaAnalyticsRead,
+    integrationLog: exports.getPrismaAnalyticsRead,
+    notificationDeliveryLog: exports.getPrismaAnalyticsRead,
+};
 // Singleton global para Next.js hot-reload
 const globalForPrisma = globalThis;
 exports.prisma = globalForPrisma.prisma ??
@@ -125,18 +234,38 @@ exports.prisma = globalForPrisma.prisma ??
         get(target, prop) {
             if (typeof prop === "symbol")
                 return target[prop];
+            // Redirigir consultas de lectura cruda a la réplica
+            if (prop === "$queryRaw" || prop === "$queryRawUnsafe") {
+                const readCoreClient = (0, exports.getPrismaCoreRead)();
+                return (...args) => readCoreClient[prop](...args);
+            }
             // Redirigir el acceso al modelo correspondiente si está mapeado
             const clientGetter = modelToClientGetter[prop];
             if (clientGetter) {
-                return clientGetter()[prop];
+                const primaryModel = clientGetter()[prop];
+                // Retornar un proxy sobre el modelo para interceptar lecturas
+                return new Proxy(primaryModel, {
+                    get(modelTarget, methodProp) {
+                        const readMethods = ["findMany", "findUnique", "findFirst", "count", "aggregate", "groupBy", "findRaw", "aggregateRaw"];
+                        if (typeof methodProp === "string" && readMethods.includes(methodProp)) {
+                            const readClientGetter = modelToReadClientGetter[prop];
+                            if (readClientGetter) {
+                                const readModel = readClientGetter()[prop];
+                                return readModel[methodProp].bind(readModel);
+                            }
+                        }
+                        // Ejecutar métodos de escritura o utilidad en el cliente principal (primario)
+                        const val = modelTarget[methodProp];
+                        return typeof val === "function" ? val.bind(modelTarget) : val;
+                    }
+                });
             }
-            // Por defecto, delegar métodos de utilidad ($queryRaw, $connect, etc.) al cliente core
+            // Por defecto, delegar métodos de utilidad ($connect, $disconnect, $executeRaw, etc.) al cliente core primario
             const coreClient = (0, exports.getPrismaCore)();
-            // Manejo de transacciones distribuidas en el Proxy (Best-Effort)
+            // Manejo de transacciones distribuidas en el Proxy (Best-Effort en el primario para coherencia)
             if (prop === "$transaction") {
                 return async (arg, options) => {
                     if (Array.isArray(arg)) {
-                        // Ejecutar operaciones secuenciales
                         const results = [];
                         for (const op of arg) {
                             results.push(await op);
@@ -144,14 +273,13 @@ exports.prisma = globalForPrisma.prisma ??
                         return results;
                     }
                     if (typeof arg === "function") {
-                        // Pasar un contexto Proxy para transacciones interactivas
                         const txProxy = new Proxy({}, {
                             get(txTarget, txProp) {
                                 if (typeof txProp === "symbol")
                                     return txTarget[txProp];
                                 const getter = modelToClientGetter[txProp];
                                 if (getter) {
-                                    return getter()[txProp];
+                                    return getter()[txProp]; // Sin proxy de lectura, todo va al primario
                                 }
                                 return coreClient[txProp];
                             }
@@ -161,7 +289,7 @@ exports.prisma = globalForPrisma.prisma ??
                     return await coreClient.$transaction(arg, options);
                 };
             }
-            // Delegar llamadas a funciones nativas ($queryRaw, $executeRaw, etc.)
+            // Delegar llamadas a funciones nativas en el primario por defecto
             if (typeof coreClient[prop] === "function") {
                 return (...args) => coreClient[prop](...args);
             }
@@ -171,5 +299,6 @@ exports.prisma = globalForPrisma.prisma ??
 if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = exports.prisma;
 }
+__exportStar(require("./cache-helper"), exports);
 exports.default = exports.prisma;
 //# sourceMappingURL=index.js.map

@@ -15,6 +15,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
 const events_1 = require("@agency/events");
 const ioredis_1 = __importDefault(require("ioredis"));
+const pg_1 = require("pg");
 const date_fns_1 = require("date-fns");
 const assignment_engine_1 = require("./assignment-engine");
 const app = (0, express_1.default)();
@@ -759,40 +760,54 @@ eventBus.subscribe("invoice.paid", async (payload) => {
  * This decouples the HTTP request from the Redis publish, guaranteeing
  * at-least-once delivery even if Redis was down when the lead was created.
  */
-const startMessageRelayWorker = () => {
-    const INTERVAL_MS = 2000;
+const startMessageRelayWorker = async () => {
+    let isPolling = false;
+    let pendingPoll = false;
     const poll = async () => {
+        if (isPolling) {
+            pendingPoll = true;
+            return;
+        }
+        isPolling = true;
+        pendingPoll = false;
         try {
-            const pendingEvents = await database_1.prisma.outboxEvent.findMany({
-                where: {
-                    status: { in: ["PENDING", "FAILED"] },
-                    attempts: { lt: 3 },
-                },
-                orderBy: { createdAt: "asc" },
-                take: 20,
-            });
-            for (const event of pendingEvents) {
-                try {
-                    const payloadData = event.payload;
-                    await eventBus.publish(event.eventName, payloadData, event.correlationId);
-                    await database_1.prisma.outboxEvent.update({
-                        where: { id: event.id },
-                        data: {
-                            status: "PROCESSED",
-                            processedAt: new Date(),
-                            attempts: { increment: 1 },
-                        },
-                    });
+            let hasMore = true;
+            while (hasMore) {
+                const pendingEvents = await database_1.prisma.outboxEvent.findMany({
+                    where: {
+                        status: { in: ["PENDING", "FAILED"] },
+                        attempts: { lt: 3 },
+                    },
+                    orderBy: { createdAt: "asc" },
+                    take: 20,
+                });
+                if (pendingEvents.length === 0) {
+                    hasMore = false;
+                    break;
                 }
-                catch (pubErr) {
-                    console.error(`[MessageRelayWorker] Failed to publish outbox event ${event.id}:`, pubErr);
-                    await database_1.prisma.outboxEvent.update({
-                        where: { id: event.id },
-                        data: {
-                            attempts: { increment: 1 },
-                            status: "FAILED",
-                        },
-                    });
+                for (const event of pendingEvents) {
+                    try {
+                        const payloadData = event.payload;
+                        await eventBus.publish(event.eventName, payloadData, event.correlationId);
+                        await database_1.prisma.outboxEvent.update({
+                            where: { id: event.id },
+                            data: {
+                                status: "PROCESSED",
+                                processedAt: new Date(),
+                                attempts: { increment: 1 },
+                            },
+                        });
+                    }
+                    catch (pubErr) {
+                        console.error(`[MessageRelayWorker] Failed to publish outbox event ${event.id}:`, pubErr);
+                        await database_1.prisma.outboxEvent.update({
+                            where: { id: event.id },
+                            data: {
+                                attempts: { increment: 1 },
+                                status: "FAILED",
+                            },
+                        });
+                    }
                 }
             }
         }
@@ -800,10 +815,46 @@ const startMessageRelayWorker = () => {
             console.error(`[MessageRelayWorker] Error checking outbox events:`, err);
         }
         finally {
-            setTimeout(poll, INTERVAL_MS);
+            isPolling = false;
+            if (pendingPoll) {
+                setTimeout(poll, 0);
+            }
         }
     };
-    setTimeout(poll, INTERVAL_MS);
+    // Setup Postgres client to LISTEN for notifications directly from postgres (port 5432)
+    let connectionString = process.env.CORE_DATABASE_URL || process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@postgres:5432/legacymark_core";
+    connectionString = connectionString
+        .replace("pgbouncer:6432", "postgres:5432")
+        .replace("pgbouncer=true", "pgbouncer=false");
+    const pgClient = new pg_1.Client({ connectionString });
+    const connectAndListen = async () => {
+        try {
+            await pgClient.connect();
+            await pgClient.query("LISTEN outbox_event_inserted");
+            console.log("🔔 Message Relay Worker: Pg LISTEN connected & listening on 'outbox_event_inserted'");
+            pgClient.on("notification", (msg) => {
+                console.log(`🔔 Notification received for outbox event: ${msg.payload}`);
+                poll();
+            });
+            pgClient.on("error", async (err) => {
+                console.error("🔔 PG Listener Client error:", err);
+                try {
+                    await pgClient.end();
+                }
+                catch { }
+                setTimeout(connectAndListen, 5000);
+            });
+        }
+        catch (err) {
+            console.error("🔔 Failed to connect PG Listener client, retrying in 5s:", err);
+            setTimeout(connectAndListen, 5000);
+        }
+    };
+    await connectAndListen();
+    // Fallback passive check every 30 seconds
+    setInterval(poll, 30000);
+    // Initial run
+    poll();
     console.log("📨 Message Relay Worker started");
 };
 startMessageRelayWorker();

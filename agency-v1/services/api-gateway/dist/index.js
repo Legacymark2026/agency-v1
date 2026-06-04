@@ -41,6 +41,38 @@ app.get("/health", (_req, res) => {
 // ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
 const redis = new ioredis_1.default(process.env.REDIS_URL || "redis://localhost:6379");
 const CACHE_TTL = 300; // 5 minutes
+// ── Redis-Backed Rate Limiting Middleware ────────────────────────────────────
+const rateLimitMiddleware = async (req, res, next) => {
+    if (req.path === "/health")
+        return next();
+    const clientIp = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "anonymous");
+    const rateLimitKey = `rate_limit:${clientIp}:${req.path}`;
+    try {
+        const limit = 100; // max 100 requests
+        const windowSeconds = 60; // per 60 seconds
+        const current = await redis.incr(rateLimitKey);
+        if (current === 1) {
+            await redis.expire(rateLimitKey, windowSeconds);
+        }
+        res.setHeader("X-RateLimit-Limit", limit);
+        res.setHeader("X-RateLimit-Remaining", Math.max(0, limit - current));
+        if (current > limit) {
+            res.setHeader("Retry-After", windowSeconds);
+            res.status(429).json({
+                error: "Too many requests",
+                message: `Rate limit exceeded. Maximum ${limit} requests per minute.`,
+                retryAfterSeconds: windowSeconds
+            });
+            return;
+        }
+        next();
+    }
+    catch (err) {
+        console.error(`[RateLimiter] Redis error for IP ${clientIp}:`, err.message);
+        next(); // Fail-open to avoid service outage if Redis fails
+    }
+};
+app.use(rateLimitMiddleware);
 // ── Service Discovery Config ─────────────────────────────────────────────────
 const SERVICES = {
     auth: process.env.AUTH_SERVICE_URL || "http://auth-service:4001",
@@ -145,7 +177,37 @@ const resolvers = {
         }
     }
 };
-const apolloServer = new server_1.ApolloServer({ typeDefs, resolvers });
+class RedisKeyValueCache {
+    client;
+    constructor(redisUrl) {
+        this.client = new ioredis_1.default(redisUrl, {
+            maxRetriesPerRequest: 3,
+            retryStrategy(times) {
+                return Math.min(times * 100, 3000);
+            }
+        });
+    }
+    async get(key) {
+        const val = await this.client.get(key);
+        return val === null ? undefined : val;
+    }
+    async set(key, value, options) {
+        if (options?.ttl) {
+            await this.client.set(key, value, "EX", options.ttl);
+        }
+        else {
+            await this.client.set(key, value);
+        }
+    }
+    async delete(key) {
+        await this.client.del(key);
+    }
+}
+const apolloServer = new server_1.ApolloServer({
+    typeDefs,
+    resolvers,
+    cache: new RedisKeyValueCache(process.env.REDIS_URL || "redis://redis:6379")
+});
 // Start Apollo Server asynchronously
 (async () => {
     await apolloServer.start();

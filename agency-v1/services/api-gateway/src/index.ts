@@ -42,6 +42,43 @@ app.get("/health", (_req, res) => {
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 const CACHE_TTL = 300; // 5 minutes
 
+// ── Redis-Backed Rate Limiting Middleware ────────────────────────────────────
+const rateLimitMiddleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (req.path === "/health") return next();
+
+  const clientIp = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "anonymous") as string;
+  const rateLimitKey = `rate_limit:${clientIp}:${req.path}`;
+  
+  try {
+    const limit = 100; // max 100 requests
+    const windowSeconds = 60; // per 60 seconds
+    
+    const current = await redis.incr(rateLimitKey);
+    if (current === 1) {
+      await redis.expire(rateLimitKey, windowSeconds);
+    }
+    
+    res.setHeader("X-RateLimit-Limit", limit);
+    res.setHeader("X-RateLimit-Remaining", Math.max(0, limit - current));
+    
+    if (current > limit) {
+      res.setHeader("Retry-After", windowSeconds);
+      res.status(429).json({
+        error: "Too many requests",
+        message: `Rate limit exceeded. Maximum ${limit} requests per minute.`,
+        retryAfterSeconds: windowSeconds
+      });
+      return;
+    }
+    next();
+  } catch (err: any) {
+    console.error(`[RateLimiter] Redis error for IP ${clientIp}:`, err.message);
+    next(); // Fail-open to avoid service outage if Redis fails
+  }
+};
+
+app.use(rateLimitMiddleware);
+
 // ── Service Discovery Config ─────────────────────────────────────────────────
 const SERVICES = {
   auth:       process.env.AUTH_SERVICE_URL       || "http://auth-service:4001",
