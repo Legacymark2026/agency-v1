@@ -54,7 +54,7 @@ services:
           memory: 2G
 
   pgbouncer:
-    image: edoburu/pgbouncer:1.22.0
+    image: edoburu/pgbouncer:latest
     restart: unless-stopped
     logging: *default-logging
     environment:
