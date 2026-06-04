@@ -84,7 +84,7 @@ async function run() {
       if (schema.name === 'core') {
         console.log(`🔧 Applying custom triggers for [core] database (Outbox LISTEN/NOTIFY)...`);
         try {
-          const { PrismaClient } = require(path.resolve(rootDir, 'node_modules/@prisma/client/core'));
+          const { PrismaClient } = require(path.resolve(rootDir, 'packages/database/node_modules/@prisma/client/core'));
           const prismaClient = new PrismaClient({
             datasources: {
               db: {
