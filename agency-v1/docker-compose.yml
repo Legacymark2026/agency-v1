@@ -9,11 +9,30 @@
 # Services: 16 microservices + PostgreSQL + Redis + Next.js Web App + Traefik Gateway
 #
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-microservice-base: &microservice-base
+  restart: unless-stopped
+  logging: *default-logging
+  networks:
+    - backend-net
+    - database-net
+  deploy:
+    resources:
+      limits:
+        cpus: "0.5"
+        memory: 512M
+
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────
   postgres:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_USER: legacymark
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
@@ -26,10 +45,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - database-net
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:
       - redisdata:/data
@@ -37,10 +64,18 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
 
   redis-queue:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
     command: redis-server --maxmemory 512mb --maxmemory-policy noeviction --appendonly yes
     volumes:
       - redisqueuedata:/data
@@ -48,12 +83,20 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 768M
 
   # ── Traefik API Gateway ────────────────────────────────────────────────────
   traefik:
     image: traefik:v3.0
     container_name: agency-v1-traefik
     restart: unless-stopped
+    logging: *default-logging
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -61,11 +104,19 @@ services:
       - "--entrypoints.web.address=:80"
     ports:
       - "8081:80"
-      - "8082:8080"
+      - "127.0.0.1:8082:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     depends_on:
       redis: { condition: service_healthy }
+    networks:
+      - frontend-net
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
   # ── Next.js Web App ────────────────────────────────────────────────────────
   web:
@@ -73,14 +124,16 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     ports: ["3000:3000"]
+    restart: unless-stopped
+    logging: *default-logging
     environment:
       NODE_ENV: production
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
       REDIS_URL: redis://redis:6379
       API_GATEWAY_URL: http://api-gateway:8080
       VIDEO_SERVICE_URL: http://video-service:4007
@@ -97,6 +150,15 @@ services:
       - "traefik.http.routers.web.entrypoints=web"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
       - "traefik.http.routers.web.priority=1"
+    networks:
+      - frontend-net
+      - backend-net
+      - database-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
 
   # ── API Gateway ───────────────────────────────────────────────────────────
   api-gateway:
@@ -104,6 +166,7 @@ services:
       context: .
       dockerfile: services/api-gateway/Dockerfile
     restart: unless-stopped
+    logging: *default-logging
     environment:
       PORT: "8080"
       REDIS_URL: redis://redis:6379
@@ -140,22 +203,29 @@ services:
       - "traefik.http.routers.api-gateway.rule=PathPrefix(`/graphql`)"
       - "traefik.http.routers.api-gateway.entrypoints=web"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
 
   # ── Auth Service ──────────────────────────────────────────────────────────
   auth-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/auth-service/Dockerfile
-    restart: unless-stopped
     environment:
       PORT: "4001"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
@@ -174,13 +244,13 @@ services:
 
   # ── Goldneez Rewards Service ──────────────────────────────────────────────
   goldneez-rewards-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/goldneez-rewards-service/Dockerfile
-    restart: unless-stopped
     environment:
       PORT: "4020"
-      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@postgres:5432/legacymark?schema=goldneez&search_path=goldneez,public
+      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@postgres:5432/legacymark?schema=goldneez&search_path=goldneez,public&connection_limit=5
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
@@ -196,22 +266,21 @@ services:
       - "traefik.http.routers.goldneez-rewards.entrypoints=web"
       - "traefik.http.services.goldneez-rewards.loadbalancer.server.port=4020"
 
-
   # ── CRM Service ──────────────────────────────────────────────────────────
   crm-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/crm-service/Dockerfile
-    restart: unless-stopped
     environment: &common-env
       PORT: "4002"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_auth?connection_limit=5
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_core?connection_limit=5
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
@@ -230,14 +299,14 @@ services:
 
   # ── Automation Service ────────────────────────────────────────────────────
   automation-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/automation-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4003"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -257,14 +326,14 @@ services:
 
   # ── AI Engine ─────────────────────────────────────────────────────────────
   ai-engine:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/ai-engine/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4004"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
       GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
@@ -286,10 +355,10 @@ services:
 
   # ── Inbox Service ─────────────────────────────────────────────────────────
   inbox-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/inbox-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4005"
@@ -309,10 +378,10 @@ services:
 
   # ── Finance Service ───────────────────────────────────────────────────────
   finance-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/finance-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4006"
@@ -334,10 +403,10 @@ services:
 
   # ── Video Service ─────────────────────────────────────────────────────────
   video-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/video-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4007"
@@ -366,10 +435,10 @@ services:
 
   # ── Calendar Service ──────────────────────────────────────────────────────
   calendar-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/calendar-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4008"
@@ -389,14 +458,14 @@ services:
 
   # ── Marketing Service ─────────────────────────────────────────────────────
   marketing-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/marketing-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4009"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_media?connection_limit=5
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -413,10 +482,10 @@ services:
 
   # ── Integration Service ───────────────────────────────────────────────────
   integration-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/integration-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4010"
@@ -436,10 +505,10 @@ services:
 
   # ── Document Service ──────────────────────────────────────────────────────
   document-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/document-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4011"
@@ -459,10 +528,10 @@ services:
 
   # ── Agent Team Engine ─────────────────────────────────────────────────────
   agent-team-engine:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/agent-team-engine/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4012"
@@ -482,14 +551,14 @@ services:
 
   # ── Analytics Service ─────────────────────────────────────────────────────
   analytics-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/analytics-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4013"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@postgres:5432/legacymark_analytics?connection_limit=5
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -506,10 +575,10 @@ services:
 
   # ── Admin Service ─────────────────────────────────────────────────────────
   admin-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/admin-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4014"
@@ -529,10 +598,10 @@ services:
 
   # ── Public API Service ────────────────────────────────────────────────────
   public-api-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/public-api-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4015"
@@ -552,10 +621,10 @@ services:
 
   # ── Notification Service ──────────────────────────────────────────────────
   notification-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/notification-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4016"
@@ -576,10 +645,10 @@ services:
 
   # ── HR Service ────────────────────────────────────────────────────────────
   hr-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/hr-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4017"
@@ -599,10 +668,10 @@ services:
 
   # ── Project Service ───────────────────────────────────────────────────────
   project-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/project-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4018"
@@ -622,10 +691,10 @@ services:
 
   # ── Affiliate Service ─────────────────────────────────────────────────────
   affiliate-service:
+    <<: *microservice-base
     build:
       context: .
       dockerfile: services/affiliate-service/Dockerfile
-    restart: unless-stopped
     environment:
       <<: *common-env
       PORT: "4019"
@@ -648,15 +717,24 @@ services:
   loki:
     image: grafana/loki:3.0.0
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./infrastructure/monitoring/loki-config.yml:/etc/loki/local-config.yaml
       - lokidata:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
     profiles: ["monitoring"]
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
 
   promtail:
     image: grafana/promtail:3.0.0
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - ./infrastructure/monitoring/promtail-config.yml:/etc/promtail/config.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -664,10 +742,18 @@ services:
     depends_on:
       loki: { condition: service_started }
     profiles: ["monitoring"]
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
   grafana:
     image: grafana/grafana:10.4.0
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "3002:3000"
     volumes:
@@ -676,6 +762,13 @@ services:
     depends_on:
       loki: { condition: service_started }
     profiles: ["monitoring"]
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
 
 volumes:
   pgdata:
@@ -684,3 +777,11 @@ volumes:
   render-data:
   lokidata:
   grafanadata:
+
+networks:
+  frontend-net:
+    name: agency-frontend-net
+  backend-net:
+    name: agency-backend-net
+  database-net:
+    name: agency-database-net
