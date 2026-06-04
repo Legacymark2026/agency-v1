@@ -1,0 +1,2 @@
+"legacymark" "SCRAM-SHA-256$4096:RKAGfcD2PpzZjpAuot9wxg==$UlsK15zTw/maWhu2jx2UFATsyNKZyJBEdZK4yaeeSDY=:RmwARi4msgnrPGcnDm9bHcbmgkb5Yn/LAiGOLoOFpx8="
+"legacyuser" "SCRAM-SHA-256$4096:9gJ6tQqia+4M6+6ZWw3B5g==$T62sSr6OQxX8FWXS49vTrVlSPKoumISzdfs+o0Ow31E=:7mA5apcSPXwRldh0hZqa/AN7aIho8si4yI9SZV0727c="
