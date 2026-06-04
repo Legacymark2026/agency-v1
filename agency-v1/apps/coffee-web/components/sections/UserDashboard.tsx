@@ -14,13 +14,14 @@ import {
 import { getMeAction, updateProfileAction, logoutUserAction } from "@/actions/auth";
 import { getUserOrdersAction } from "@/actions/checkout";
 import { getFlavorProfileAction, saveFlavorProfileAction } from "@/actions/flavor";
-import { getPointsHistoryAction, redeemRewardAction, getMonthlyConsumptionAction } from "@/actions/rewards";
+import { getPointsHistoryAction, redeemRewardAction, getMonthlyConsumptionAction, getRewardsCatalogAction } from "@/actions/rewards";
 import { getReferralStatsAction, applyReferralCodeAction } from "@/actions/referrals";
 import { getEventsAction, getBookingsAction, bookEventAction, cancelBookingAction } from "@/actions/events";
 import { getShippingTrackingAction } from "@/actions/tracking";
 import { getProductReviewsAction, submitReviewAction } from "@/actions/reviews";
 import { getNotificationPrefsAction, updateNotificationPrefsAction } from "@/actions/notifications";
 import { getPaymentMethodsAction, addPaymentMethodAction, deletePaymentMethodAction } from "@/actions/payments";
+import { getSubscriptionAction, updateSubscriptionAction } from "@/actions/subscription";
 
 // Recompensas catálogo mock
 const REWARDS_CATALOG = [
@@ -58,6 +59,7 @@ export default function UserDashboard() {
   const [pointsHistory, setPointsHistory] = useState<any[]>([]);
   const [pointsTier, setPointsTier] = useState("Silver");
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [rewardsCatalog, setRewardsCatalog] = useState<any[]>(REWARDS_CATALOG);
 
   // 3. Referrals
   const [referralCode, setReferralCode] = useState("");
@@ -150,22 +152,12 @@ export default function UserDashboard() {
         setOrdersList(realOrders);
       }
 
-      // Cargar suscripción
-      const savedSub = localStorage.getItem("goldneez_subscription");
-      if (savedSub) {
-        try {
-          setSub(JSON.parse(savedSub));
-        } catch (e) {}
-      } else {
-        const initialSub = {
-          beans: "signature-blend",
-          frequency: "30",
-          status: "active",
-          nextDelivery: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()
-        };
-        setSub(initialSub);
-        localStorage.setItem("goldneez_subscription", JSON.stringify(initialSub));
-      }
+      // Cargar suscripción real desde la BD
+      getSubscriptionAction().then((sData) => {
+        if (sData) {
+          setSub(sData);
+        }
+      });
 
       // Cargar otros módulos en background/paralelo
       // Perfil sabor
@@ -212,6 +204,9 @@ export default function UserDashboard() {
 
       // Consumo
       getMonthlyConsumptionAction().then(setMonthlyStats);
+
+      // Catalogo de Premios real
+      getRewardsCatalogAction().then(setRewardsCatalog);
     }
 
     loadData();
@@ -274,30 +269,35 @@ export default function UserDashboard() {
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const toggleSubscription = () => {
+  const toggleSubscription = async () => {
     if (!sub) return;
     const newStatus = sub.status === "active" ? "paused" : "active";
-    const updatedSub = { ...sub, status: newStatus };
-    setSub(updatedSub);
-    localStorage.setItem("goldneez_subscription", JSON.stringify(updatedSub));
+    const res = await updateSubscriptionAction(sub.beans, sub.frequency, newStatus);
+    if (res && res.subscription) {
+      setSub(res.subscription);
+    } else if (res && res.error) {
+      alert(res.error);
+    }
   };
 
-  const updateSubBeans = (beansId: string) => {
+  const updateSubBeans = async (beansId: string) => {
     if (!sub) return;
-    const updatedSub = { ...sub, beans: beansId };
-    setSub(updatedSub);
-    localStorage.setItem("goldneez_subscription", JSON.stringify(updatedSub));
+    const res = await updateSubscriptionAction(beansId, sub.frequency, sub.status);
+    if (res && res.subscription) {
+      setSub(res.subscription);
+    } else if (res && res.error) {
+      alert(res.error);
+    }
   };
 
-  const updateSubFrequency = (freq: string) => {
+  const updateSubFrequency = async (freq: string) => {
     if (!sub) return;
-    const updatedSub = { 
-      ...sub, 
-      frequency: freq,
-      nextDelivery: new Date(Date.now() + parseInt(freq) * 24 * 60 * 60 * 1000).toLocaleDateString()
-    };
-    setSub(updatedSub);
-    localStorage.setItem("goldneez_subscription", JSON.stringify(updatedSub));
+    const res = await updateSubscriptionAction(sub.beans, freq, sub.status);
+    if (res && res.subscription) {
+      setSub(res.subscription);
+    } else if (res && res.error) {
+      alert(res.error);
+    }
   };
 
   // 1. Lógica del Quiz de Sabor
@@ -1395,7 +1395,7 @@ export default function UserDashboard() {
             <div>
               <h4 className="font-cinzel text-aluminum text-base font-bold mb-4 tracking-wide uppercase">Catálogo de Premios</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {REWARDS_CATALOG.map((reward) => {
+                {rewardsCatalog.map((reward) => {
                   const canRedeem = user.points >= reward.cost;
                   return (
                     <div 

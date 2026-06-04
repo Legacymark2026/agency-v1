@@ -7,9 +7,9 @@ import { getMeAction } from "./auth";
 const REWARDS_SERVICE_URL = process.env.GOLDNEEZ_REWARDS_SERVICE_URL || "http://localhost:4020";
 
 const MOCK_EVENTS = [
-  { id: "evt-001", title: "Cata de Café: Orígenes de África", date: "15/06/2026", time: "18:00", capacity: 15, spotsLeft: 4, desc: "Explora la acidez frutal de Etiopía y Kenia en esta sesión guiada." },
-  { id: "evt-002", title: "Taller: Arte Latte para Principiantes", date: "22/06/2026", time: "16:00", capacity: 8, spotsLeft: 2, desc: "Aprende a texturizar leche y realizar diseños básicos como el corazón y la roseta." },
-  { id: "evt-003", title: "Curso de Barismo: Métodos de Filtro", date: "29/06/2026", time: "17:30", capacity: 12, spotsLeft: 7, desc: "Domina las extracciones en V60, Chemex y Prensa Francesa." }
+  { id: "evt-001", title: "Cata de Café: Orígenes de África", date: "15/06/2026", time: "18:00", capacity: 15, desc: "Explora la acidez frutal de Etiopía y Kenia en esta sesión guiada." },
+  { id: "evt-002", title: "Taller: Arte Latte para Principiantes", date: "22/06/2026", time: "16:00", capacity: 8, desc: "Aprende a texturizar leche y realizar designs básicos como el corazón y la roseta." },
+  { id: "evt-003", title: "Curso de Barismo: Métodos de Filtro", date: "29/06/2026", time: "17:30", capacity: 12, desc: "Domina las extracciones en V60, Chemex y Prensa Francesa." }
 ];
 
 export async function getEventsAction() {
@@ -27,6 +27,28 @@ export async function getEventsAction() {
 
   // 2. Fallback a DB
   try {
+    let events = await prisma.goldneezEvent.findMany({
+      orderBy: { createdAt: "asc" }
+    });
+
+    if (events.length === 0) {
+      console.log("[eventsAction] Sembrando eventos locales en la base de datos...");
+      await prisma.goldneezEvent.createMany({
+        data: MOCK_EVENTS.map(e => ({
+          id: e.id,
+          title: e.title,
+          description: e.desc,
+          date: e.date,
+          time: e.time,
+          capacity: e.capacity
+        }))
+      });
+      events = await prisma.goldneezEvent.findMany({
+        orderBy: { createdAt: "asc" }
+      });
+    }
+
+    // Contar las reservaciones activas para calcular spotsLeft
     const counts = await prisma.goldneezEventBooking.groupBy({
       by: ["eventId"],
       where: { estado: "booked" },
@@ -38,13 +60,18 @@ export async function getEventsAction() {
       return acc;
     }, {});
 
-    return MOCK_EVENTS.map((evt) => ({
-      ...evt,
+    return events.map((evt) => ({
+      id: evt.id,
+      title: evt.title,
+      desc: evt.description,
+      date: evt.date,
+      time: evt.time,
+      capacity: evt.capacity,
       spotsLeft: Math.max(0, evt.capacity - (bookingCounts[evt.id] || 0)),
     }));
   } catch (err) {
     console.error("[getEventsAction] Error en base de datos:", err);
-    return MOCK_EVENTS;
+    return MOCK_EVENTS.map(e => ({ ...e, spotsLeft: e.capacity }));
   }
 }
 

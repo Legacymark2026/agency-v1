@@ -285,6 +285,9 @@ export async function getUserOrdersAction() {
         } catch {}
       }
 
+      const timeDiffMs = Date.now() - deal.createdAt.getTime();
+      const status = timeDiffMs > 24 * 60 * 60 * 1000 ? "delivered" : "shipping";
+
       return {
         id: `GDN-${deal.id.slice(0, 5).toUpperCase()}`,
         date: deal.createdAt.toLocaleDateString(),
@@ -293,7 +296,7 @@ export async function getUserOrdersAction() {
         grind,
         size,
         total: deal.value,
-        status: "delivered", // Por defecto entregados ya que el deal es 'won'
+        status,
         tracking: `TRK-${deal.id.slice(0, 8).toUpperCase()}`
       };
     });

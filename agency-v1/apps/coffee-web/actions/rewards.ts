@@ -6,6 +6,62 @@ import { getMeAction } from "./auth";
 
 const REWARDS_SERVICE_URL = process.env.GOLDNEEZ_REWARDS_SERVICE_URL || "http://localhost:4020";
 
+const REWARDS_CATALOG = [
+  { id: "rwd-001", title: "Bolsa de Café de Especialidad (250g)", cost: 1000, desc: "Canjea cualquier origen de nuestra carta en presentación de 250g." },
+  { id: "rwd-002", title: "Mug de Cerámica Goldneez", cost: 800, desc: "Mug hecho a mano por artesanos locales con acabado dorado." },
+  { id: "rwd-003", title: "Molino Manual Hario Slim", cost: 3000, desc: "Molino de muelas cerámicas portátil para una molienda fresca." },
+  { id: "rwd-004", title: "Taller Privado de Barismo (1h)", cost: 5000, desc: "Clase uno a uno con nuestro Head Barista para perfeccionar tu filtrado." }
+];
+
+export async function getRewardsCatalogAction() {
+  // 1. Intentar llamar al microservicio
+  try {
+    const res = await fetch(`${REWARDS_SERVICE_URL}/api/goldneez-rewards/rewards`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err: any) {
+    console.warn("[getRewardsCatalogAction] Fallback a base de datos local:", err.message);
+  }
+
+  // 2. Fallback a DB
+  try {
+    let rewards = await prisma.goldneezReward.findMany({
+      where: { isActive: true },
+      orderBy: { cost: "asc" }
+    });
+
+    if (rewards.length === 0) {
+      console.log("[rewardsAction] Sembrando premios locales en la base de datos...");
+      await prisma.goldneezReward.createMany({
+        data: REWARDS_CATALOG.map(r => ({
+          id: r.id,
+          title: r.title,
+          cost: r.cost,
+          description: r.desc,
+          isActive: true
+        }))
+      });
+      rewards = await prisma.goldneezReward.findMany({
+        where: { isActive: true },
+        orderBy: { cost: "asc" }
+      });
+    }
+
+    return rewards.map(r => ({
+      id: r.id,
+      title: r.title,
+      cost: r.cost,
+      desc: r.description
+    }));
+  } catch (err) {
+    console.error("[getRewardsCatalogAction] Error en base de datos:", err);
+    return REWARDS_CATALOG;
+  }
+}
+
 export async function getPointsHistoryAction() {
   const me = await getMeAction();
   if (!me) return { points: 0, tier: "Silver", history: [] };
@@ -201,6 +257,8 @@ export async function getMonthlyConsumptionAction() {
   const me = await getMeAction();
   if (!me) return [];
 
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
   // 1. Intentar llamar al microservicio
   try {
     const res = await fetch(`${REWARDS_SERVICE_URL}/api/goldneez-rewards/consumption/${me.id}`, {
@@ -213,20 +271,43 @@ export async function getMonthlyConsumptionAction() {
     console.warn("[getMonthlyConsumptionAction] Fallback local:", err.message);
   }
 
-  // 2. Fallback
-  return [
-    { month: "Ene", grams: 500 },
-    { month: "Feb", grams: 250 },
-    { month: "Mar", grams: 750 },
-    { month: "Abr", grams: 500 },
-    { month: "May", grams: 250 },
-    { month: "Jun", grams: 1000 },
-    { month: "Jul", grams: 500 },
-    { month: "Ago", grams: 750 },
-    { month: "Sep", grams: 500 },
-    { month: "Oct", grams: 1000 },
-    { month: "Nov", grams: 750 },
-    { month: "Dic", grams: 1250 }
-  ];
-}
+  // 2. Fallback a DB
+  try {
+    const logs = await prisma.userActivityLog.findMany({
+      where: { userId: me.id, action: "CHECKOUT_SUCCESS" },
+      orderBy: { createdAt: "asc" }
+    });
 
+    const consumptionMap: Record<string, number> = months.reduce((acc, m) => {
+      acc[m] = 0;
+      return acc;
+    }, {} as Record<string, number>);
+
+    for (const log of logs) {
+      try {
+        const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details as any;
+        const date = new Date(log.createdAt);
+        const monthName = months[date.getMonth()];
+
+        if (details && details.items) {
+          for (const item of details.items) {
+            const match = String(item.size || "").match(/\d+/);
+            if (match) {
+              const grams = parseInt(match[0], 10);
+              const qty = parseInt(item.quantity || "1", 10);
+              consumptionMap[monthName] += grams * qty;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    return months.map((m) => ({
+      month: m,
+      grams: consumptionMap[m],
+    }));
+  } catch (err) {
+    console.error("[getMonthlyConsumptionAction] Error en base de datos:", err);
+    return months.map(m => ({ month: m, grams: 0 }));
+  }
+}
