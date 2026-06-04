@@ -8,7 +8,8 @@ import {
   LayoutDashboard, ShoppingBag, Calendar, UserCog, Award, 
   Package, Power, MapPin, CheckCircle, Save,
   CreditCard, Trash2, Heart, Gift, Users, BookOpen, Star, RefreshCw, 
-  BarChart2, Check, Thermometer, Droplet, Coffee, Sparkles, ChevronRight, X
+  BarChart2, Check, Thermometer, Droplet, Coffee, Sparkles, ChevronRight, X,
+  Clock
 } from "lucide-react";
 import { getMeAction, updateProfileAction, logoutUserAction } from "@/actions/auth";
 import { getUserOrdersAction } from "@/actions/checkout";
