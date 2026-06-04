@@ -91,6 +91,56 @@ services:
           cpus: "0.5"
           memory: 768M
 
+  # ── Autoheal (Contenedor de Autorecuperación) ──────────────────────────────
+  autoheal:
+    image: willfarrell/autoheal:latest
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: all
+      AUTOHEAL_INTERVAL: 10
+      AUTOHEAL_START_PERIOD: 30
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  # ── Postgres Backup (Copias de Seguridad Diarias) ──────────────────────────
+  postgres-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
+    volumes:
+      - ./backups:/backups
+    entrypoint: |
+      sh -c '
+      while true; do
+        echo "Starting daily pg_dump for legacymark..."
+        mkdir -p /backups
+        pg_dump -h postgres -U legacymark -F c -b -v -f "/backups/backup_$$(date +%Y%m%d_%H%M%S).dump" legacymark
+        # Mantener solo los últimos 7 días
+        find /backups -name "backup_*" -mtime +7 -delete
+        echo "Backup complete. Next backup in 24 hours."
+        sleep 86400
+      done
+      '
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks:
+      - database-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
   # ── Traefik API Gateway ────────────────────────────────────────────────────
   traefik:
     image: traefik:v3.0
@@ -102,11 +152,18 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@legacymark.com}"
+      - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.le.acme.httpchallenge=true"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
     ports:
       - "8081:80"
+      - "443:443"
       - "127.0.0.1:8082:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "letsencrypt:/letsencrypt"
     depends_on:
       redis: { condition: service_healthy }
     networks:
@@ -778,6 +835,7 @@ volumes:
   render-data:
   lokidata:
   grafanadata:
+  letsencrypt:
 
 networks:
   frontend-net:
