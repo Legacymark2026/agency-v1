@@ -53,6 +53,44 @@ services:
           cpus: "2.0"
           memory: 2G
 
+  postgres-replica:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: legacymark
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
+      PGDATA: /var/lib/postgresql/data/replica
+    volumes:
+      - pgdata-replica:/var/lib/postgresql/data
+    entrypoint: |
+      sh -c '
+      if [ ! -s "$$PGDATA/PG_VERSION" ]; then
+        echo "Initializing replica database with pg_basebackup..."
+        mkdir -p "$$PGDATA"
+        until pg_basebackup -h postgres -U legacymark -D "$$PGDATA" -Fp -Xs -P -R; do
+          echo "Waiting for primary postgres to be ready for backup..."
+          sleep 2
+        done
+      fi
+      exec docker-entrypoint.sh postgres
+      '
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacymark"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks:
+      - database-net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
   pgbouncer:
     image: edoburu/pgbouncer:latest
     restart: unless-stopped
@@ -187,13 +225,15 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http3"
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@legacymark.com}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.le.acme.httpchallenge=true"
       - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
     ports:
       - "8081:80"
-      - "8443:443"
+      - "8443:443/tcp"
+      - "8443:443/udp"
       - "127.0.0.1:8082:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -864,6 +904,7 @@ services:
 
 volumes:
   pgdata:
+  pgdata-replica:
   redisdata:
   redisqueuedata:
   render-data:

@@ -185,4 +185,5 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
+export * from "./cache-helper";
 export default prisma;

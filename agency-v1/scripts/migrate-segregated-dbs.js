@@ -60,28 +60,77 @@ const schemas = [
 
 console.log('🚀 Starting migrations on segregated databases...');
 
-for (const schema of schemas) {
-  const dbUrl = process.env[schema.envVar] || process.env.DATABASE_URL || schema.defaultUrl;
-  console.log(`\n📦 Migrating [${schema.name}] database using schema: ${schema.file}...`);
-  // Ocultar la contraseña en el log para mayor seguridad
-  const safeLogUrl = dbUrl.replace(/:[^:@/]+@/, ':****@');
-  console.log(`🔌 Connection URL: ${safeLogUrl}`);
+async function run() {
+  for (const schema of schemas) {
+    const dbUrl = process.env[schema.envVar] || process.env.DATABASE_URL || schema.defaultUrl;
+    console.log(`\n📦 Migrating [${schema.name}] database using schema: ${schema.file}...`);
+    // Ocultar la contraseña en el log para mayor seguridad
+    const safeLogUrl = dbUrl.replace(/:[^:@/]+@/, ':****@');
+    console.log(`🔌 Connection URL: ${safeLogUrl}`);
 
-  try {
-    execSync(`npx prisma db push --schema=${schema.file}`, {
-      cwd: rootDir,
-      env: {
-        ...process.env,
-        [schema.envVar]: dbUrl,
-        DATABASE_URL: dbUrl // Sobrescribir DATABASE_URL para el fallback de Prisma
-      },
-      stdio: 'inherit'
-    });
-    console.log(`✅ Database [${schema.name}] successfully synchronized.`);
-  } catch (error) {
-    console.error(`❌ Migration failed for database [${schema.name}]:`, error.message);
-    process.exit(1);
+    try {
+      execSync(`npx prisma db push --schema=${schema.file}`, {
+        cwd: rootDir,
+        env: {
+          ...process.env,
+          [schema.envVar]: dbUrl,
+          DATABASE_URL: dbUrl // Sobrescribir DATABASE_URL para el fallback de Prisma
+        },
+        stdio: 'inherit'
+      });
+      console.log(`✅ Database [${schema.name}] successfully synchronized.`);
+
+      // Aplicar trigger personalizado para LISTEN/NOTIFY en la base de datos core
+      if (schema.name === 'core') {
+        console.log(`🔧 Applying custom triggers for [core] database (Outbox LISTEN/NOTIFY)...`);
+        try {
+          const { PrismaClient } = require(path.resolve(rootDir, 'node_modules/@prisma/client/core'));
+          const prismaClient = new PrismaClient({
+            datasources: {
+              db: {
+                url: dbUrl
+              }
+            }
+          });
+
+          await prismaClient.$executeRawUnsafe(`
+            CREATE OR REPLACE FUNCTION notify_outbox_event()
+            RETURNS TRIGGER AS $$
+            BEGIN
+              PERFORM pg_notify('outbox_event_inserted', NEW.id::text);
+              RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+          `);
+
+          await prismaClient.$executeRawUnsafe(`
+            DROP TRIGGER IF EXISTS trg_notify_outbox_event ON tbl_outbox_events;
+          `);
+
+          await prismaClient.$executeRawUnsafe(`
+            CREATE TRIGGER trg_notify_outbox_event
+            AFTER INSERT ON tbl_outbox_events
+            FOR EACH ROW EXECUTE FUNCTION notify_outbox_event();
+          `);
+
+          console.log(`✅ Custom triggers applied successfully to [core] database.`);
+          await prismaClient.$disconnect();
+        } catch (triggerErr) {
+          console.error(`❌ Failed to apply custom triggers to [core] database:`, triggerErr.message);
+          process.exit(1);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Migration failed for database [${schema.name}]:`, error.message);
+      process.exit(1);
+    }
   }
+
+  console.log('\n🎉 All databases have been successfully migrated.');
 }
 
-console.log('\n🎉 All databases have been successfully migrated.');
+run().catch(err => {
+  console.error('Migration wrapper execution failed:', err);
+  process.exit(1);
+});
+

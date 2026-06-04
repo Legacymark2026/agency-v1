@@ -11,6 +11,7 @@ import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
 import Redis from "ioredis";
+import { Client } from "pg";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { routeLead } from "./assignment-engine";
 
@@ -832,53 +833,110 @@ eventBus.subscribe("invoice.paid", async (payload) => {
  * This decouples the HTTP request from the Redis publish, guaranteeing
  * at-least-once delivery even if Redis was down when the lead was created.
  */
-const startMessageRelayWorker = () => {
-  const INTERVAL_MS = 2000;
+const startMessageRelayWorker = async () => {
+  let isPolling = false;
+  let pendingPoll = false;
 
   const poll = async () => {
+    if (isPolling) {
+      pendingPoll = true;
+      return;
+    }
+    isPolling = true;
+    pendingPoll = false;
+
     try {
-      const pendingEvents = await prisma.outboxEvent.findMany({
-        where: {
-          status: { in: ["PENDING", "FAILED"] },
-          attempts: { lt: 3 },
-        },
-        orderBy: { createdAt: "asc" },
-        take: 20,
-      });
+      let hasMore = true;
+      while (hasMore) {
+        const pendingEvents = await prisma.outboxEvent.findMany({
+          where: {
+            status: { in: ["PENDING", "FAILED"] },
+            attempts: { lt: 3 },
+          },
+          orderBy: { createdAt: "asc" },
+          take: 20,
+        });
 
-      for (const event of pendingEvents) {
-        try {
-          const payloadData = event.payload as Record<string, unknown>;
-          await eventBus.publish(event.eventName as any, payloadData, event.correlationId);
+        if (pendingEvents.length === 0) {
+          hasMore = false;
+          break;
+        }
 
-          await prisma.outboxEvent.update({
-            where: { id: event.id },
-            data: {
-              status: "PROCESSED",
-              processedAt: new Date(),
-              attempts: { increment: 1 },
-            },
-          });
-        } catch (pubErr) {
-          console.error(`[MessageRelayWorker] Failed to publish outbox event ${event.id}:`, pubErr);
+        for (const event of pendingEvents) {
+          try {
+            const payloadData = event.payload as Record<string, unknown>;
+            await eventBus.publish(event.eventName as any, payloadData, event.correlationId);
 
-          await prisma.outboxEvent.update({
-            where: { id: event.id },
-            data: {
-              attempts: { increment: 1 },
-              status: "FAILED",
-            },
-          });
+            await prisma.outboxEvent.update({
+              where: { id: event.id },
+              data: {
+                status: "PROCESSED",
+                processedAt: new Date(),
+                attempts: { increment: 1 },
+              },
+            });
+          } catch (pubErr) {
+            console.error(`[MessageRelayWorker] Failed to publish outbox event ${event.id}:`, pubErr);
+
+            await prisma.outboxEvent.update({
+              where: { id: event.id },
+              data: {
+                attempts: { increment: 1 },
+                status: "FAILED",
+              },
+            });
+          }
         }
       }
     } catch (err) {
       console.error(`[MessageRelayWorker] Error checking outbox events:`, err);
     } finally {
-      setTimeout(poll, INTERVAL_MS);
+      isPolling = false;
+      if (pendingPoll) {
+        setTimeout(poll, 0);
+      }
     }
   };
 
-  setTimeout(poll, INTERVAL_MS);
+  // Setup Postgres client to LISTEN for notifications directly from postgres (port 5432)
+  let connectionString = process.env.CORE_DATABASE_URL || process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@postgres:5432/legacymark_core";
+  connectionString = connectionString
+    .replace("pgbouncer:6432", "postgres:5432")
+    .replace("pgbouncer=true", "pgbouncer=false");
+
+  const pgClient = new Client({ connectionString });
+
+  const connectAndListen = async () => {
+    try {
+      await pgClient.connect();
+      await pgClient.query("LISTEN outbox_event_inserted");
+      console.log("🔔 Message Relay Worker: Pg LISTEN connected & listening on 'outbox_event_inserted'");
+
+      pgClient.on("notification", (msg) => {
+        console.log(`🔔 Notification received for outbox event: ${msg.payload}`);
+        poll();
+      });
+
+      pgClient.on("error", async (err) => {
+        console.error("🔔 PG Listener Client error:", err);
+        try {
+          await pgClient.end();
+        } catch {}
+        setTimeout(connectAndListen, 5000);
+      });
+    } catch (err) {
+      console.error("🔔 Failed to connect PG Listener client, retrying in 5s:", err);
+      setTimeout(connectAndListen, 5000);
+    }
+  };
+
+  await connectAndListen();
+
+  // Fallback passive check every 30 seconds
+  setInterval(poll, 30000);
+
+  // Initial run
+  poll();
   console.log("📨 Message Relay Worker started");
 };
 
