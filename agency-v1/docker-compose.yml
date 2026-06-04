@@ -718,6 +718,7 @@ services:
     image: grafana/loki:3.0.0
     restart: unless-stopped
     logging: *default-logging
+    user: "0:0"
     volumes:
       - ./infrastructure/monitoring/loki-config.yml:/etc/loki/local-config.yaml
       - lokidata:/tmp/loki
