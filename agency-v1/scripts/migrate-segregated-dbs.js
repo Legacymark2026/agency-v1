@@ -120,6 +120,164 @@ async function run() {
           process.exit(1);
         }
       }
+
+      // Aplicar particionamiento de logs en la base de datos analytics
+      if (schema.name === 'analytics') {
+        console.log(`🔧 Applying table partitioning for [analytics] database (Logs range partitioning)...`);
+        try {
+          const { PrismaClient } = require(path.resolve(rootDir, 'packages/database/node_modules/@prisma/client/analytics'));
+          const prismaClient = new PrismaClient({
+            datasources: {
+              db: {
+                url: dbUrl
+              }
+            }
+          });
+
+          // 1. Verificar si tbl_user_activity_logs ya está particionada
+          const isUserActivityPartitioned = await prismaClient.$queryRawUnsafe(`
+            SELECT 1 FROM pg_partitioned_table 
+            WHERE partrelid = 'tbl_user_activity_logs'::regclass;
+          `).catch(() => []);
+
+          if (isUserActivityPartitioned.length === 0) {
+            console.log(`📦 Converting tbl_user_activity_logs to partitioned table...`);
+            
+            // Renombrar vieja tabla si existe
+            await prismaClient.$executeRawUnsafe(`DROP TABLE IF EXISTS tbl_user_activity_logs_old;`);
+            await prismaClient.$executeRawUnsafe(`ALTER TABLE tbl_user_activity_logs RENAME TO tbl_user_activity_logs_old;`);
+            
+            // Crear tabla particionada
+            await prismaClient.$executeRawUnsafe(`
+              CREATE TABLE tbl_user_activity_logs (
+                id VARCHAR(36) NOT NULL,
+                user_id VARCHAR(36),
+                action VARCHAR(255) NOT NULL,
+                details JSONB,
+                ip_address VARCHAR(45),
+                user_agent VARCHAR(255),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+                PRIMARY KEY (id, created_at)
+              ) PARTITION BY RANGE (created_at);
+            `);
+
+            // Crear particiones mensuales dinámicas
+            const now = new Date();
+            for (let i = -1; i <= 2; i++) {
+              const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const nextD = new Date(year, d.getMonth() + 1, 1);
+              const nextYear = nextD.getFullYear();
+              const nextMonth = String(nextD.getMonth() + 1).padStart(2, '0');
+              
+              const partName = `tbl_user_activity_logs_y${year}m${month}`;
+              const fromStr = `${year}-${month}-01 00:00:00+00`;
+              const toStr = `${nextYear}-${nextMonth}-01 00:00:00+00`;
+              
+              await prismaClient.$executeRawUnsafe(`
+                CREATE TABLE IF NOT EXISTS ${partName} PARTITION OF tbl_user_activity_logs
+                FOR VALUES FROM ('${fromStr}') TO ('${toStr}');
+              `);
+            }
+
+            // Crear partición por defecto
+            await prismaClient.$executeRawUnsafe(`
+              CREATE TABLE IF NOT EXISTS tbl_user_activity_logs_default 
+              PARTITION OF tbl_user_activity_logs DEFAULT;
+            `);
+
+            // Copiar datos
+            await prismaClient.$executeRawUnsafe(`
+              INSERT INTO tbl_user_activity_logs 
+              SELECT id, user_id, action, details, ip_address, user_agent, created_at FROM tbl_user_activity_logs_old;
+            `);
+
+            // Crear índices
+            await prismaClient.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS tbl_user_activity_logs_user_id_idx ON tbl_user_activity_logs (user_id);`);
+            await prismaClient.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS tbl_user_activity_logs_created_at_idx ON tbl_user_activity_logs (created_at);`);
+            
+            // Eliminar tabla vieja
+            await prismaClient.$executeRawUnsafe(`DROP TABLE tbl_user_activity_logs_old;`);
+            console.log(`✅ tbl_user_activity_logs partitioned successfully.`);
+          } else {
+            console.log(`ℹ️ tbl_user_activity_logs is already partitioned.`);
+          }
+
+          // 2. Verificar si tbl_usage_logs ya está particionada
+          const isUsagePartitioned = await prismaClient.$queryRawUnsafe(`
+            SELECT 1 FROM pg_partitioned_table 
+            WHERE partrelid = 'tbl_usage_logs'::regclass;
+          `).catch(() => []);
+
+          if (isUsagePartitioned.length === 0) {
+            console.log(`📦 Converting tbl_usage_logs to partitioned table...`);
+            
+            // Renombrar vieja tabla si existe
+            await prismaClient.$executeRawUnsafe(`DROP TABLE IF EXISTS tbl_usage_logs_old;`);
+            await prismaClient.$executeRawUnsafe(`ALTER TABLE tbl_usage_logs RENAME TO tbl_usage_logs_old;`);
+            
+            // Crear tabla particionada
+            await prismaClient.$executeRawUnsafe(`
+              CREATE TABLE tbl_usage_logs (
+                id VARCHAR(36) NOT NULL,
+                company_id VARCHAR(36) NOT NULL,
+                feature VARCHAR(255) NOT NULL,
+                metric INTEGER DEFAULT 1 NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+                PRIMARY KEY (id, created_at)
+              ) PARTITION BY RANGE (created_at);
+            `);
+
+            // Crear particiones mensuales dinámicas
+            const now = new Date();
+            for (let i = -1; i <= 2; i++) {
+              const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const nextD = new Date(year, d.getMonth() + 1, 1);
+              const nextYear = nextD.getFullYear();
+              const nextMonth = String(nextD.getMonth() + 1).padStart(2, '0');
+              
+              const partName = `tbl_usage_logs_y${year}m${month}`;
+              const fromStr = `${year}-${month}-01 00:00:00+00`;
+              const toStr = `${nextYear}-${nextMonth}-01 00:00:00+00`;
+              
+              await prismaClient.$executeRawUnsafe(`
+                CREATE TABLE IF NOT EXISTS ${partName} PARTITION OF tbl_usage_logs
+                FOR VALUES FROM ('${fromStr}') TO ('${toStr}');
+              `);
+            }
+
+            // Crear partición por defecto
+            await prismaClient.$executeRawUnsafe(`
+              CREATE TABLE IF NOT EXISTS tbl_usage_logs_default 
+              PARTITION OF tbl_usage_logs DEFAULT;
+            `);
+
+            // Copiar datos
+            await prismaClient.$executeRawUnsafe(`
+              INSERT INTO tbl_usage_logs 
+              SELECT id, company_id, feature, metric, created_at FROM tbl_usage_logs_old;
+            `);
+
+            // Crear índices
+            await prismaClient.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS tbl_usage_logs_company_id_idx ON tbl_usage_logs (company_id);`);
+            await prismaClient.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS tbl_usage_logs_created_at_idx ON tbl_usage_logs (created_at);`);
+            
+            // Eliminar tabla vieja
+            await prismaClient.$executeRawUnsafe(`DROP TABLE tbl_usage_logs_old;`);
+            console.log(`✅ tbl_usage_logs partitioned successfully.`);
+          } else {
+            console.log(`ℹ️ tbl_usage_logs is already partitioned.`);
+          }
+
+          await prismaClient.$disconnect();
+        } catch (partitionErr) {
+          console.error(`❌ Failed to apply partitioning to [analytics] database:`, partitionErr.message);
+          process.exit(1);
+        }
+      }
     } catch (error) {
       console.error(`❌ Migration failed for database [${schema.name}]:`, error.message);
       process.exit(1);

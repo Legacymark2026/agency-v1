@@ -43,6 +43,63 @@ class HybridCache {
   }
 
   /**
+   * Helper to serialize and compress large values before writing to Redis.
+   */
+  private compressValue(value: any): string {
+    const stringified = JSON.stringify(value);
+    const zlib = require("zlib");
+    
+    // Compress if payload is larger than 5 KB (5120 characters)
+    if (stringified.length > 5120) {
+      try {
+        const compressedBuffer = zlib.gzipSync(Buffer.from(stringified));
+        return JSON.stringify({
+          compressed: true,
+          data: compressedBuffer.toString("base64")
+        });
+      } catch (err: any) {
+        console.warn("🎒 Hybrid Cache: Failed to compress payload, fallback to plain text:", err.message);
+      }
+    }
+    
+    return JSON.stringify({
+      compressed: false,
+      data: stringified
+    });
+  }
+
+  /**
+   * Helper to decompress and parse values read from Redis.
+   */
+  private decompressValue(cached: string): any {
+    try {
+      const payload = JSON.parse(cached);
+      
+      // Check if it matches the compressed format wrapper
+      if (payload && typeof payload === "object" && "compressed" in payload) {
+        const zlib = require("zlib");
+        if (payload.compressed) {
+          const compressedBuffer = Buffer.from(payload.data, "base64");
+          const decompressedBuffer = zlib.gunzipSync(compressedBuffer);
+          return JSON.parse(decompressedBuffer.toString("utf-8"));
+        } else {
+          return JSON.parse(payload.data);
+        }
+      }
+      
+      // Backward compatibility for raw JSON strings
+      return payload;
+    } catch (err: any) {
+      // Fallback for non-JSON strings or parsing errors
+      try {
+        return JSON.parse(cached);
+      } catch {
+        return cached;
+      }
+    }
+  }
+
+  /**
    * Fetches data from cache L1, falling back to L2, and finally to the database/source.
    */
   async get<T>(
@@ -65,7 +122,7 @@ class HybridCache {
       try {
         const cached = await this.l2.get(key);
         if (cached) {
-          const parsed = JSON.parse(cached);
+          const parsed = this.decompressValue(cached);
           if (this.l1) {
             this.l1.set(key, parsed, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
           }
@@ -87,7 +144,8 @@ class HybridCache {
     if (this.l2 && this.redisConnected && freshVal !== undefined && freshVal !== null) {
       try {
         const ttlL2 = options?.ttlL2Seconds ?? 300; // default 5 minutes
-        await this.l2.set(key, JSON.stringify(freshVal), "EX", ttlL2);
+        const compressed = this.compressValue(freshVal);
+        await this.l2.set(key, compressed, "EX", ttlL2);
       } catch (err: any) {
         console.warn(`🎒 Hybrid Cache: Failed to write to L2 (Redis) for key ${key}:`, err.message);
       }
@@ -113,7 +171,8 @@ class HybridCache {
     if (this.l2 && this.redisConnected && value !== undefined && value !== null) {
       try {
         const ttlL2 = options?.ttlL2Seconds ?? 300;
-        await this.l2.set(key, JSON.stringify(value), "EX", ttlL2);
+        const compressed = this.compressValue(value);
+        await this.l2.set(key, compressed, "EX", ttlL2);
       } catch (err: any) {
         console.warn(`🎒 Hybrid Cache: Failed to write to L2 (Redis) for key ${key}:`, err.message);
       }

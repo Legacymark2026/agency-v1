@@ -142,7 +142,37 @@ const resolvers = {
   }
 };
 
-const apolloServer = new ApolloServer({ typeDefs, resolvers });
+class RedisKeyValueCache {
+  private client: Redis;
+  constructor(redisUrl: string) {
+    this.client = new Redis(redisUrl, {
+      maxRetriesPerRequest: 3,
+      retryStrategy(times) {
+        return Math.min(times * 100, 3000);
+      }
+    });
+  }
+  async get(key: string): Promise<string | undefined> {
+    const val = await this.client.get(key);
+    return val === null ? undefined : val;
+  }
+  async set(key: string, value: string, options?: { ttl?: number }): Promise<void> {
+    if (options?.ttl) {
+      await this.client.set(key, value, "EX", options.ttl);
+    } else {
+      await this.client.set(key, value);
+    }
+  }
+  async delete(key: string): Promise<void> {
+    await this.client.del(key);
+  }
+}
+
+const apolloServer = new ApolloServer({
+  typeDefs,
+  resolvers,
+  cache: new RedisKeyValueCache(process.env.REDIS_URL || "redis://redis:6379")
+});
 // Start Apollo Server asynchronously
 (async () => {
   await apolloServer.start();
