@@ -1,4 +1,4 @@
-import { LRUCache } from "lru-cache";
+import LRUCache from "lru-cache";
 import Redis from "ioredis";
 
 class HybridCache {
