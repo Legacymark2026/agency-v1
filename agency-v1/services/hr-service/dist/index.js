@@ -51,6 +51,10 @@ app.get("/api/employees", async (req, res) => {
                 orderBy: { lastName: "asc" },
                 take: parseInt(String(limit)),
                 skip,
+                include: {
+                    benefits: { where: { isActive: true } },
+                    _count: { select: { payrolls: true } }
+                }
             }),
             database_1.prisma.employee.count({ where }),
         ]);
@@ -131,9 +135,9 @@ app.get("/api/payroll", async (req, res) => {
             },
         });
         const summary = {
-            totalEarnings: payrolls.reduce((sum, p) => sum + (p.totalEarnings || 0), 0),
-            totalNet: payrolls.reduce((sum, p) => sum + (p.netPay || 0), 0),
-            totalDeductions: payrolls.reduce((sum, p) => sum + (p.totalDeductions || 0), 0),
+            totalEarnings: payrolls.reduce((sum, p) => sum + Number(p.totalEarnings ?? 0), 0),
+            totalNet: payrolls.reduce((sum, p) => sum + Number(p.netPay ?? 0), 0),
+            totalDeductions: payrolls.reduce((sum, p) => sum + Number(p.totalDeductions ?? 0), 0),
             count: payrolls.length,
         };
         res.json({ payrolls, summary });
@@ -331,6 +335,195 @@ app.get("/api/hr/pila-export", async (req, res) => {
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
+    }
+});
+// ── Employee Benefits CRUD ───────────────────────────────────────────────────
+app.post('/api/hr/benefits', async (req, res) => {
+    try {
+        const { startDate, endDate, ...data } = req.body;
+        const benefit = await database_1.prisma.employeeBenefit.create({
+            data: {
+                ...data,
+                startDate: startDate ? new Date(startDate) : new Date(),
+                endDate: endDate ? new Date(endDate) : null,
+            }
+        });
+        res.status(201).json({ success: true, data: benefit });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+app.patch('/api/hr/benefits/:id', async (req, res) => {
+    try {
+        const { endDate, ...data } = req.body;
+        const benefit = await database_1.prisma.employeeBenefit.update({
+            where: { id: req.params.id },
+            data: {
+                ...data,
+                ...(endDate ? { endDate: new Date(endDate) } : {}),
+            }
+        });
+        res.json({ success: true, data: benefit });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+app.delete('/api/hr/benefits/:id', async (req, res) => {
+    try {
+        await database_1.prisma.employeeBenefit.update({
+            where: { id: req.params.id },
+            data: { isActive: false }
+        });
+        res.json({ success: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// ── Time Off Requests ────────────────────────────────────────────────────────
+app.get('/api/hr/time-off', async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const requests = await database_1.prisma.timeOffRequest.findMany({
+            where: { employee: { companyId: String(companyId) } },
+            include: {
+                employee: { select: { id: true, firstName: true, lastName: true, position: true } },
+                approvedBy: { select: { id: true, firstName: true, lastName: true, name: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(requests);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+app.post('/api/hr/time-off', async (req, res) => {
+    try {
+        const { employeeId, type, startDate, endDate, reason } = req.body;
+        const request = await database_1.prisma.timeOffRequest.create({
+            data: {
+                employeeId,
+                type,
+                startDate: new Date(startDate),
+                endDate: new Date(endDate),
+                reason,
+                status: 'PENDING'
+            }
+        });
+        res.status(201).json({ success: true, request });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+app.patch('/api/hr/time-off/:id', async (req, res) => {
+    try {
+        const { status, approvedById } = req.body;
+        const request = await database_1.prisma.timeOffRequest.update({
+            where: { id: req.params.id },
+            data: { status, approvedById }
+        });
+        res.json({ success: true, request });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// ── Timesheets & Time Entries ────────────────────────────────────────────────
+app.get('/api/hr/timesheets', async (req, res) => {
+    try {
+        const { companyId, employeeId, status } = req.query;
+        const where = {};
+        if (companyId)
+            where.employee = { companyId: String(companyId) };
+        if (employeeId)
+            where.employeeId = String(employeeId);
+        if (status)
+            where.status = String(status);
+        const timesheets = await database_1.prisma.timesheet.findMany({
+            where,
+            orderBy: { periodStart: 'desc' },
+            include: {
+                employee: { select: { id: true, firstName: true, lastName: true, position: true } },
+                approvedBy: { select: { id: true, firstName: true, lastName: true, name: true } },
+                _count: { select: { timeEntries: true } }
+            }
+        });
+        res.json({ timesheets, count: timesheets.length });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+app.patch('/api/hr/timesheets/:id', async (req, res) => {
+    try {
+        const { status, approvedById } = req.body;
+        const sheet = await database_1.prisma.timesheet.update({
+            where: { id: req.params.id },
+            data: { status, approvedById }
+        });
+        res.json({ success: true, sheet });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+app.post('/api/hr/time-entries', async (req, res) => {
+    try {
+        const { userId, kanbanTaskId, duration, startedAt, endedAt } = req.body;
+        let targetTaskId = kanbanTaskId;
+        if (!targetTaskId) {
+            const firstTask = await database_1.prisma.kanbanTask.findFirst();
+            if (firstTask)
+                targetTaskId = firstTask.id;
+        }
+        if (!targetTaskId) {
+            return res.status(400).json({ error: 'No active task available to log time against.' });
+        }
+        const timeEntry = await database_1.prisma.timeEntry.create({
+            data: {
+                userId,
+                kanbanTaskId: targetTaskId,
+                duration,
+                startedAt: new Date(startedAt),
+                endedAt: new Date(endedAt),
+            }
+        });
+        res.status(201).json({ success: true, data: timeEntry });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// ── Employee Summary ─────────────────────────────────────────────────────────
+app.get('/api/employees/:id/summary', async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        const employee = await database_1.prisma.employee.findFirst({
+            where: { id: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) }
+        });
+        if (!employee)
+            return res.status(404).json({ error: 'Employee not found' });
+        const [payrollHistory, benefits] = await Promise.all([
+            database_1.prisma.payroll.findMany({
+                where: { employeeId: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) },
+                orderBy: { periodStart: 'desc' },
+                take: 12,
+                select: { netPay: true, status: true, periodStart: true, periodEnd: true, id: true }
+            }),
+            database_1.prisma.employeeBenefit.findMany({
+                where: { employeeId: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}), isActive: true }
+            })
+        ]);
+        res.json({ employee, payrollHistory, benefits });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 // ── Event Bus ────────────────────────────────────────────────────────────────

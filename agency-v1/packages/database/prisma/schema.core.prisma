@@ -273,3 +273,19 @@ model Payout {
   @@map("tbl_affiliate_payouts")
 }
 
+model OutboxEvent {
+  id            String    @id @default(uuid())
+  eventName     String    @map("col_event_name")
+  payload       Json      @map("col_payload")
+  status        String    @default("PENDING") @map("col_status")
+  attempts      Int       @default(0) @map("col_attempts")
+  correlationId String    @map("col_correlation_id")
+  createdAt     DateTime  @default(now()) @map("col_created_at")
+  processedAt   DateTime? @map("col_processed_at")
+  schemaVersion Int       @default(1) @map("col_schema_version")
+
+  @@index([status])
+  @@index([correlationId])
+  @@map("tbl_outbox_events")
+}
+

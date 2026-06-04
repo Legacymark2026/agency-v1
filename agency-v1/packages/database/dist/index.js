@@ -99,6 +99,7 @@ const modelToClientGetter = {
     payout: exports.getPrismaCore,
     inboxMacro: exports.getPrismaCore,
     emailTemplate: exports.getPrismaCore,
+    outboxEvent: exports.getPrismaCore,
     // Media, AI & Workflows
     post: exports.getPrismaMedia,
     category: exports.getPrismaMedia,

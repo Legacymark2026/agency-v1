@@ -38,6 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const database_1 = require("@agency/database");
 const helmet_1 = __importDefault(require("helmet"));
 const http_1 = require("http");
 const path_1 = require("path");
@@ -513,7 +514,513 @@ async function updateJobInNextApp(jobId, data) {
         console.warn('[render] Could not notify Next.js:', err);
     }
 }
-// ─── Start server ───────────────────────────────────────────────────────────
+// ─── VideoEditorProject CRUD ──────────────────────────────────────────────────
+app.get('/api/video/projects', async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const projects = await database_1.prisma.videoEditorProject.findMany({
+            where: { companyId: String(companyId) },
+            orderBy: { updatedAt: 'desc' }
+        });
+        res.json({ projects });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/projects/:id', async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        const project = await database_1.prisma.videoEditorProject.findFirst({
+            where: { id: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) }
+        });
+        if (!project)
+            return res.status(404).json({ error: 'Project not found' });
+        res.json(project);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/projects', async (req, res) => {
+    try {
+        const { companyId, name, config, clips, audioTracks, textOverlays, colorGrades, speedRamps, soundLayers } = req.body;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const project = await database_1.prisma.videoEditorProject.create({
+            data: { companyId, name: name || 'Untitled', config: config || {}, clips: clips || [], audioTracks: audioTracks || [], textOverlays: textOverlays || [], colorGrades: colorGrades || [], speedRamps: speedRamps || [], soundLayers: soundLayers || [] }
+        });
+        res.status(201).json(project);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/projects/:id', async (req, res) => {
+    try {
+        const { companyId, ...data } = req.body;
+        const project = await database_1.prisma.videoEditorProject.update({
+            where: { id: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) },
+            data: { ...data, updatedAt: new Date() }
+        });
+        res.json(project);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.delete('/api/video/projects/:id', async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        await database_1.prisma.videoEditorProject.delete({
+            where: { id: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) }
+        });
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Collaborative Sessions ───────────────────────────────────────────────────
+app.get('/api/video/sessions', async (req, res) => {
+    try {
+        const { projectId, companyId } = req.query;
+        const where = {};
+        if (projectId)
+            where.projectId = String(projectId);
+        if (companyId)
+            where.companyId = String(companyId);
+        const sessions = await database_1.prisma.videoAISession.findMany({ where, orderBy: { createdAt: 'desc' } });
+        res.json({ sessions });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/sessions/:id', async (req, res) => {
+    try {
+        const session = await database_1.prisma.videoAISession.findUnique({
+            where: { id: req.params.id },
+            include: {
+                messages: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 10,
+                },
+            },
+        });
+        if (!session)
+            return res.status(404).json({ error: 'Session not found' });
+        res.json(session);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/sessions', async (req, res) => {
+    try {
+        const session = await database_1.prisma.videoAISession.create({ data: req.body });
+        res.status(201).json(session);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/sessions/:id', async (req, res) => {
+    try {
+        const session = await database_1.prisma.videoAISession.update({ where: { id: req.params.id }, data: req.body });
+        res.json(session);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.delete('/api/video/sessions/:id', async (req, res) => {
+    try {
+        await database_1.prisma.videoAISession.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Session Messages ─────────────────────────────────────────────────────────
+app.post('/api/video/sessions/:id/messages', async (req, res) => {
+    try {
+        const { role, content, toolCalls, toolResults } = req.body;
+        const message = await database_1.prisma.videoAIMessage.create({
+            data: {
+                sessionId: req.params.id,
+                role,
+                content,
+                toolCalls,
+                toolResults
+            }
+        });
+        res.status(201).json({ messageId: message.id });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/sessions/:id/messages', async (req, res) => {
+    try {
+        const limit = req.query.limit ? parseInt(String(req.query.limit)) : 50;
+        const messages = await database_1.prisma.videoAIMessage.findMany({
+            where: { sessionId: req.params.id },
+            orderBy: { createdAt: 'asc' },
+            take: limit,
+            select: {
+                id: true,
+                role: true,
+                content: true,
+                toolCalls: true,
+                toolResults: true,
+                createdAt: true
+            }
+        });
+        res.json(messages);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Undo / Redo / History ────────────────────────────────────────────────────
+app.post('/api/video/sessions/:id/undo', async (req, res) => {
+    try {
+        const lastEdit = await database_1.prisma.videoEditHistory.findFirst({
+            where: { sessionId: req.params.id, undone: false },
+            orderBy: { createdAt: 'desc' }
+        });
+        if (!lastEdit)
+            return res.json(null);
+        await database_1.prisma.videoEditHistory.update({
+            where: { id: lastEdit.id },
+            data: { undone: true }
+        });
+        res.json(lastEdit.beforeState);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/sessions/:id/redo', async (req, res) => {
+    try {
+        const lastUndone = await database_1.prisma.videoEditHistory.findFirst({
+            where: { sessionId: req.params.id, undone: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        if (!lastUndone)
+            return res.json(null);
+        await database_1.prisma.videoEditHistory.update({
+            where: { id: lastUndone.id },
+            data: { undone: false }
+        });
+        res.json(lastUndone.afterState);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/sessions/:id/history', async (req, res) => {
+    try {
+        const { action, description, beforeState, afterState } = req.body;
+        const history = await database_1.prisma.videoEditHistory.create({
+            data: {
+                sessionId: req.params.id,
+                action,
+                description,
+                beforeState,
+                afterState
+            }
+        });
+        res.status(201).json({ historyId: history.id });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Version Snapshots ────────────────────────────────────────────────────────
+app.get('/api/video/projects/:id/versions', async (req, res) => {
+    try {
+        const versions = await database_1.prisma.versionSnapshot.findMany({ where: { projectId: req.params.id }, orderBy: { createdAt: 'desc' }, take: 20 });
+        res.json({ versions });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/projects/:id/versions', async (req, res) => {
+    try {
+        const version = await database_1.prisma.versionSnapshot.create({ data: { projectId: req.params.id, ...req.body } });
+        res.status(201).json(version);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/projects/:id/versions/:vId/restore', async (req, res) => {
+    try {
+        const version = await database_1.prisma.versionSnapshot.findUnique({ where: { id: req.params.vId } });
+        if (!version)
+            return res.status(404).json({ error: 'Version not found' });
+        const state = version.state;
+        await database_1.prisma.videoEditorProject.update({ where: { id: req.params.id }, data: { clips: state.clips, audioTracks: state.audioTracks, textOverlays: state.textOverlays, colorGrades: state.colorGrades, speedRamps: state.speedRamps, soundLayers: state.soundLayers, timeline: state.timeline, config: state.config } });
+        res.json({ success: true, version });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.delete('/api/video/projects/:id/versions/:vId', async (req, res) => {
+    try {
+        await database_1.prisma.versionSnapshot.deleteMany({ where: { id: req.params.vId } });
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/versions/:vId', async (req, res) => {
+    try {
+        const version = await database_1.prisma.versionSnapshot.findUnique({ where: { id: req.params.vId } });
+        if (!version)
+            return res.status(404).json({ error: 'Version not found' });
+        res.json(version);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/sessions/:id/edit-history', async (req, res) => {
+    try {
+        const { author } = req.query;
+        const where = { sessionId: req.params.id };
+        if (author)
+            where.author = String(author);
+        const history = await database_1.prisma.videoEditHistory.findMany({ where, orderBy: { createdAt: 'desc' }, take: 50 });
+        res.json({ history });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Edit Proposals ───────────────────────────────────────────────────────────
+app.post('/api/video/proposals', async (req, res) => {
+    try {
+        const proposal = await database_1.prisma.editProposal.create({ data: req.body });
+        res.status(201).json(proposal);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/sessions/:id/proposals', async (req, res) => {
+    try {
+        const proposals = await database_1.prisma.editProposal.findMany({ where: { sessionId: req.params.id, status: 'pending' }, orderBy: { confidence: 'desc' } });
+        res.json({ proposals });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/proposals/:id', async (req, res) => {
+    try {
+        const { action, reason } = req.body;
+        const proposal = await database_1.prisma.editProposal.findFirst({ where: { id: req.params.id }, include: { session: { select: { projectId: true } } } });
+        if (!proposal)
+            return res.status(404).json({ error: 'Proposal not found' });
+        const updated = await database_1.prisma.editProposal.update({ where: { id: req.params.id }, data: { status: action === 'approve' ? 'approved' : 'rejected', respondedAt: new Date(), ...(action === 'reject' && reason ? { metadata: { rejectionReason: reason } } : {}) } });
+        if (action === 'approve') {
+            await database_1.prisma.videoEditHistory.create({ data: { sessionId: proposal.sessionId, action: proposal.type, author: 'merged', confidence: proposal.confidence, description: `AI proposal approved: ${proposal.title}`, beforeState: proposal.beforeState, afterState: proposal.afterState } });
+        }
+        res.json(updated);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Edit Conflicts ────────────────────────────────────────────────────────────
+app.post('/api/video/conflicts', async (req, res) => {
+    try {
+        const conflict = await database_1.prisma.editConflict.create({ data: { ...req.body, resolved: false } });
+        res.status(201).json({ conflictId: conflict.id });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/sessions/:id/conflicts', async (req, res) => {
+    try {
+        const conflicts = await database_1.prisma.editConflict.findMany({ where: { sessionId: req.params.id, resolved: false }, orderBy: { createdAt: 'desc' } });
+        res.json({ conflicts });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/conflicts/:id', async (req, res) => {
+    try {
+        const { resolution, note } = req.body;
+        const updated = await database_1.prisma.editConflict.update({ where: { id: req.params.id }, data: { resolved: true, resolution, resolutionNote: note, resolvedAt: new Date() } });
+        res.json(updated);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Comments ─────────────────────────────────────────────────────────────────
+app.get('/api/video/projects/:id/comments', async (req, res) => {
+    try {
+        const comments = await database_1.prisma.videoComment.findMany({ where: { projectId: req.params.id }, orderBy: { createdAt: 'asc' } });
+        res.json({ comments });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/projects/:id/comments', async (req, res) => {
+    try {
+        const comment = await database_1.prisma.videoComment.create({ data: { projectId: req.params.id, ...req.body } });
+        res.status(201).json({ commentId: comment.id });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/comments/:id/resolve', async (req, res) => {
+    try {
+        await database_1.prisma.videoComment.update({ where: { id: req.params.id }, data: { resolved: true } });
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── AI Corrections ───────────────────────────────────────────────────────────
+app.post('/api/video/corrections', async (req, res) => {
+    try {
+        const { companyId, ...data } = req.body;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        await database_1.prisma.aICorrection.create({ data: { companyId, ...data } });
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/corrections', async (req, res) => {
+    try {
+        const { companyId, actionType } = req.query;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const patterns = await database_1.prisma.aICorrection.groupBy({ by: ['actionType', 'category', 'pattern'], where: { companyId: String(companyId), ...(actionType ? { actionType: String(actionType) } : {}) }, _count: true, orderBy: { _count: { pattern: 'desc' } }, take: 20 });
+        res.json({ patterns });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Brand Kit ────────────────────────────────────────────────────────────────
+app.get('/api/video/brand', async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const brand = await database_1.prisma.brandStyle.findFirst({ where: { companyId: String(companyId) } });
+        res.json(brand || null);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/brand', async (req, res) => {
+    try {
+        const brand = await database_1.prisma.brandStyle.create({ data: req.body });
+        res.status(201).json(brand);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/brand/:id', async (req, res) => {
+    try {
+        const brand = await database_1.prisma.brandStyle.update({ where: { id: req.params.id }, data: req.body });
+        res.json(brand);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/brand/similar', async (req, res) => {
+    try {
+        const { companyId, targetEmbedding, limit = 5 } = req.body;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const embeddingStr = JSON.stringify(targetEmbedding);
+        const results = await database_1.prisma.$queryRawUnsafe(`
+      SELECT id, client_name as "clientName", primary_color as "primaryColor", secondary_color as "secondaryColor", font_family as "fontFamily",
+             subtitle_preset as "subtitlePreset", preferences,
+             style_embedding <=> $1::vector AS similarity
+      FROM tbl_brand_styles
+      WHERE style_embedding IS NOT NULL
+        AND company_id != $2
+      ORDER BY similarity ASC
+      LIMIT $3
+    `, embeddingStr, String(companyId), limit);
+        res.json({ results });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// ─── Render Job DB ────────────────────────────────────────────────────────────
+app.get('/api/video/render/history', async (req, res) => {
+    try {
+        const { companyId, projectId } = req.query;
+        if (!companyId)
+            return res.status(400).json({ error: 'companyId required' });
+        const where = { companyId: String(companyId) };
+        if (projectId)
+            where.projectId = String(projectId);
+        const jobs = await database_1.prisma.videoRenderJob.findMany({ where, orderBy: { createdAt: 'desc' }, take: 50 });
+        res.json({ jobs });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.post('/api/video/render/db-job', async (req, res) => {
+    try {
+        const job = await database_1.prisma.videoRenderJob.create({ data: req.body });
+        res.status(201).json(job);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.patch('/api/video/render/db-job/:jobId', async (req, res) => {
+    try {
+        const job = await database_1.prisma.videoRenderJob.update({ where: { id: req.params.jobId }, data: req.body });
+        res.json(job);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+app.get('/api/video/render/db-job/:jobId', async (req, res) => {
+    try {
+        const job = await database_1.prisma.videoRenderJob.findUnique({ where: { id: req.params.jobId } });
+        if (!job)
+            return res.status(404).json({ error: 'Job not found' });
+        res.json(job);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 server.listen(port, () => {
     console.log(`Video Service v3.0 listening at http://localhost:${port}`);
     console.log(`   Routes:`);

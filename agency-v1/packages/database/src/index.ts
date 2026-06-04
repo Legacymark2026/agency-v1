@@ -101,6 +101,7 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   payout: getPrismaCore,
   inboxMacro: getPrismaCore,
   emailTemplate: getPrismaCore,
+  outboxEvent: getPrismaCore,
 
   // Media, AI & Workflows
   post: getPrismaMedia,

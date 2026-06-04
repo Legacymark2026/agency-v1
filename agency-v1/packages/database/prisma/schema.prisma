@@ -4112,3 +4112,5 @@ model Payout {
   @@map("tbl_affiliate_payouts")
 }
 
+
+

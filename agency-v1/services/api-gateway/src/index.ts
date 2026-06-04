@@ -38,7 +38,48 @@ app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
 
-// ── V3 Supergraph (GraphQL Federation Stub) ──────────────────────────────────
+// ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const CACHE_TTL = 300; // 5 minutes
+
+// ── Service Discovery Config ─────────────────────────────────────────────────
+const SERVICES = {
+  auth:       process.env.AUTH_SERVICE_URL       || "http://auth-service:4001",
+  crm:        process.env.CRM_SERVICE_URL        || "http://crm-service:4002",
+  automation: process.env.AUTOMATION_SERVICE_URL  || "http://automation-service:4003",
+  ai:         process.env.AI_SERVICE_URL          || "http://ai-engine:4004",
+  inbox:      process.env.INBOX_SERVICE_URL       || "http://inbox-service:4005",
+  finance:    process.env.FINANCE_SERVICE_URL     || "http://finance-service:4006",
+  video:      process.env.VIDEO_SERVICE_URL       || "http://video-service:4007",
+  calendar:   process.env.CALENDAR_SERVICE_URL    || "http://calendar-service:4008",
+  marketing:  process.env.MARKETING_SERVICE_URL   || "http://marketing-service:4009",
+  integration: process.env.INTEGRATION_SERVICE_URL || "http://integration-service:4010",
+  document:   process.env.DOCUMENT_SERVICE_URL    || "http://document-service:4011",
+  agentTeam:     process.env.AGENT_TEAM_ENGINE_URL      || "http://agent-team-engine:4012",
+  analytics:     process.env.ANALYTICS_SERVICE_URL      || "http://analytics-service:4013",
+  admin:         process.env.ADMIN_SERVICE_URL          || "http://admin-service:4014",
+  publicApi:     process.env.PUBLIC_API_SERVICE_URL     || "http://public-api-service:4015",
+  notification:  process.env.NOTIFICATION_SERVICE_URL   || "http://notification-service:4016",
+  hr:            process.env.HR_SERVICE_URL             || "http://hr-service:4017",
+  project:       process.env.PROJECT_SERVICE_URL        || "http://project-service:4018",
+  affiliate:     process.env.AFFILIATE_SERVICE_URL      || "http://affiliate-service:4019",
+};
+
+// Dynamic Service Discovery Helper
+const resolveServiceUrl = async (serviceName: keyof typeof SERVICES): Promise<string> => {
+  try {
+    const dynamicUrl = await redis.get(`service_registry:${serviceName}`);
+    if (dynamicUrl) {
+      console.log(`[ServiceDiscovery] Resolved ${serviceName} dynamically to ${dynamicUrl}`);
+      return dynamicUrl;
+    }
+  } catch (err: any) {
+    console.error(`[ServiceDiscovery] Error reading registry for ${serviceName}:`, err.message);
+  }
+  return SERVICES[serviceName];
+};
+
+// ── V3 Supergraph (GraphQL Federated Composition) ───────────────────────────
 const typeDefs = `#graphql
   type User { id: ID!, name: String, email: String, leads: [Lead] }
   type Lead { id: ID!, name: String, status: String }
@@ -49,11 +90,55 @@ const typeDefs = `#graphql
 `;
 const resolvers = {
   Query: {
-    me: () => ({ id: "1", name: "Admin", email: "admin@legacymark.com" }), // Resolver will fetch from Auth & CRM services in parallel
-    platformStats: () => "V3 Supergraph Active",
+    me: async (_parent: any, _args: any, context: any) => {
+      if (!context.token) throw new Error("Unauthorized");
+      try {
+        const serviceUrl = await resolveServiceUrl("auth");
+        const response = await fetch(`${serviceUrl}/api/auth/me`, {
+          headers: {
+            "Authorization": context.token,
+            "x-correlation-id": String(context.correlationId || "")
+          }
+        });
+        const body: any = await response.json();
+        if (!response.ok) throw new Error(body.error || "Failed to fetch current user");
+        return body.user;
+      } catch (err: any) {
+        console.error(`[Trace: ${context.correlationId}] GraphQL error resolving Query.me:`, err.message);
+        throw err;
+      }
+    },
+    platformStats: () => "V3 Supergraph Active with REST-Composition",
   },
   User: {
-    leads: () => [{ id: "100", name: "John Doe", status: "New" }], // Resolves from CRM service
+    leads: async (user: any, _args: any, context: any) => {
+      if (!context.token) return [];
+      try {
+        // Native JWT Payload Decode (Lightweight base64 url decode)
+        const tokenStr = context.token.replace("Bearer ", "");
+        const payloadBase64 = tokenStr.split(".")[1];
+        if (!payloadBase64) return [];
+        
+        const decodedPayload = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf8"));
+        const companyId = decodedPayload?.companies?.[0]?.companyId;
+        if (!companyId) return [];
+
+        const serviceUrl = await resolveServiceUrl("crm");
+        const url = `${serviceUrl}/api/leads?companyId=${companyId}&syncEmail=${user.email}`;
+        const response = await fetch(url, {
+          headers: {
+            "Authorization": context.token,
+            "x-correlation-id": String(context.correlationId || "")
+          }
+        });
+        const body: any = await response.json();
+        if (!response.ok) return [];
+        return body.leads || [];
+      } catch (err: any) {
+        console.error(`[Trace: ${context.correlationId}] GraphQL error resolving User.leads:`, err.message);
+        return [];
+      }
+    }
   }
 };
 
@@ -62,14 +147,21 @@ const apolloServer = new ApolloServer({ typeDefs, resolvers });
 (async () => {
   await apolloServer.start();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.use("/graphql", express.json(), expressMiddleware(apolloServer) as any);
-  console.log("🚀 V3 GraphQL Supergraph ready at /graphql");
+  app.use(
+    "/graphql",
+    express.json(),
+    expressMiddleware(apolloServer, {
+      context: async ({ req }) => {
+        const token = req.headers.authorization || "";
+        const correlationId = (req.headers["x-correlation-id"] || crypto.randomUUID()) as string;
+        return { token, correlationId };
+      }
+    }) as any
+  );
+  console.log("🚀 V3 GraphQL Supergraph composition ready at /graphql");
 })();
 
-// ── Edge Cache (Redis) ───────────────────────────────────────────────────────
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
-const CACHE_TTL = 300; // 5 minutes
-
+// ── Edge Cache Middleware ───────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const edgeCacheMiddleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (req.method !== "GET") return next();
@@ -111,33 +203,10 @@ const edgeCacheMiddleware = async (req: express.Request, res: express.Response, 
 // Apply Edge Cache globally (it filters by GET and skips auth/admin internally)
 app.use(edgeCacheMiddleware);
 
-
-// ── Service Discovery (K8s DNS) ──────────────────────────────────────────────
-const SERVICES = {
-  auth:       process.env.AUTH_SERVICE_URL       || "http://auth-service:4001",
-  crm:        process.env.CRM_SERVICE_URL        || "http://crm-service:4002",
-  automation: process.env.AUTOMATION_SERVICE_URL  || "http://automation-service:4003",
-  ai:         process.env.AI_SERVICE_URL          || "http://ai-engine:4004",
-  inbox:      process.env.INBOX_SERVICE_URL       || "http://inbox-service:4005",
-  finance:    process.env.FINANCE_SERVICE_URL     || "http://finance-service:4006",
-  video:      process.env.VIDEO_SERVICE_URL       || "http://video-service:4007",
-  calendar:   process.env.CALENDAR_SERVICE_URL    || "http://calendar-service:4008",
-  marketing:  process.env.MARKETING_SERVICE_URL   || "http://marketing-service:4009",
-  integration: process.env.INTEGRATION_SERVICE_URL || "http://integration-service:4010",
-  document:   process.env.DOCUMENT_SERVICE_URL    || "http://document-service:4011",
-  agentTeam:     process.env.AGENT_TEAM_ENGINE_URL      || "http://agent-team-engine:4012",
-  analytics:     process.env.ANALYTICS_SERVICE_URL      || "http://analytics-service:4013",
-  admin:         process.env.ADMIN_SERVICE_URL          || "http://admin-service:4014",
-  publicApi:     process.env.PUBLIC_API_SERVICE_URL     || "http://public-api-service:4015",
-  notification:  process.env.NOTIFICATION_SERVICE_URL   || "http://notification-service:4016",
-  hr:            process.env.HR_SERVICE_URL             || "http://hr-service:4017",
-  project:       process.env.PROJECT_SERVICE_URL        || "http://project-service:4018",
-  affiliate:     process.env.AFFILIATE_SERVICE_URL      || "http://affiliate-service:4019",
-};
-
-// ── Request Logging ──────────────────────────────────────────────────────────
+// ── Request Logging with Tracing ─────────────────────────────────────────────
 app.use((req, _res, next) => {
-  console.log(`[gateway] ${req.method} ${req.path} → routing...`);
+  const correlationId = req.headers["x-correlation-id"];
+  console.log(`[Trace: ${correlationId}] [gateway] ${req.method} ${req.path} → routing...`);
   next();
 });
 
@@ -212,10 +281,13 @@ const handleFallback = async (req: express.Request, res: express.Response, servi
   });
 };
 
-const resilientProxy = (serviceName: string, target: string) => {
+const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
   const breaker = getBreaker(serviceName);
   const proxy = createProxyMiddleware({
     target,
+    router: async () => {
+      return await resolveServiceUrl(serviceName);
+    },
     changeOrigin: true,
     on: {
       proxyReq: (proxyReq, req: any) => {
@@ -231,7 +303,8 @@ const resilientProxy = (serviceName: string, target: string) => {
         }
       },
       error: async (err, req: any, res: any) => {
-        console.error(`[CircuitBreaker] Proxy error for ${serviceName} to ${target}:`, err.message);
+        const resolvedTarget = await resolveServiceUrl(serviceName);
+        console.error(`[CircuitBreaker] Proxy error for ${serviceName} to ${resolvedTarget}:`, err.message);
         breaker.recordFailure();
         await handleFallback(req, res, serviceName, `Proxy error: ${err.message}`);
       }

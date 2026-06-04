@@ -9,6 +9,130 @@
  *   await bus.publish("lead.created", { leadId: "...", companyId: "..." });
  *   await bus.subscribe("lead.created", "crm-service", handler);
  */
+import { z } from "zod";
+export declare const leadCreatedSchema: z.ZodObject<{
+    companyId: z.ZodString;
+    name: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+    source: z.ZodOptional<z.ZodString>;
+    status: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    companyId: string;
+    name?: string | undefined;
+    email?: string | undefined;
+    phone?: string | undefined;
+    source?: string | undefined;
+    status?: string | undefined;
+}, {
+    companyId: string;
+    name?: string | undefined;
+    email?: string | undefined;
+    phone?: string | undefined;
+    source?: string | undefined;
+    status?: string | undefined;
+}>;
+export declare const userCreatedSchema: z.ZodObject<{
+    email: z.ZodString;
+    name: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    email: string;
+    name?: string | undefined;
+}, {
+    email: string;
+    name?: string | undefined;
+}>;
+export declare const invoiceCreatedSchema: z.ZodEffects<z.ZodObject<{
+    id: z.ZodOptional<z.ZodString>;
+    invoiceId: z.ZodOptional<z.ZodString>;
+    companyId: z.ZodOptional<z.ZodString>;
+    amount: z.ZodOptional<z.ZodNumber>;
+    status: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    companyId?: string | undefined;
+    status?: string | undefined;
+    id?: string | undefined;
+    invoiceId?: string | undefined;
+    amount?: number | undefined;
+}, {
+    companyId?: string | undefined;
+    status?: string | undefined;
+    id?: string | undefined;
+    invoiceId?: string | undefined;
+    amount?: number | undefined;
+}>, {
+    companyId?: string | undefined;
+    status?: string | undefined;
+    id?: string | undefined;
+    invoiceId?: string | undefined;
+    amount?: number | undefined;
+}, {
+    companyId?: string | undefined;
+    status?: string | undefined;
+    id?: string | undefined;
+    invoiceId?: string | undefined;
+    amount?: number | undefined;
+}>;
+export declare const orderCompletedSchema: z.ZodEffects<z.ZodObject<{
+    id: z.ZodOptional<z.ZodString>;
+    orderId: z.ZodOptional<z.ZodString>;
+    userId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    userId: string;
+    id?: string | undefined;
+    orderId?: string | undefined;
+}, {
+    userId: string;
+    id?: string | undefined;
+    orderId?: string | undefined;
+}>, {
+    userId: string;
+    id?: string | undefined;
+    orderId?: string | undefined;
+}, {
+    userId: string;
+    id?: string | undefined;
+    orderId?: string | undefined;
+}>;
+export declare const orderRefundedSchema: z.ZodEffects<z.ZodObject<{
+    id: z.ZodOptional<z.ZodString>;
+    orderId: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    id?: string | undefined;
+    orderId?: string | undefined;
+}, {
+    id?: string | undefined;
+    orderId?: string | undefined;
+}>, {
+    id?: string | undefined;
+    orderId?: string | undefined;
+}, {
+    id?: string | undefined;
+    orderId?: string | undefined;
+}>;
+export declare const affiliateClickRegisteredSchema: z.ZodObject<{
+    code: z.ZodString;
+    ip: z.ZodOptional<z.ZodString>;
+    userAgent: z.ZodOptional<z.ZodString>;
+    referer: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    code: string;
+    ip?: string | undefined;
+    userAgent?: string | undefined;
+    referer?: string | undefined;
+}, {
+    code: string;
+    ip?: string | undefined;
+    userAgent?: string | undefined;
+    referer?: string | undefined;
+}>;
+export declare const EVENT_SCHEMAS: Record<string, z.ZodSchema>;
+export type LeadCreatedPayload = z.infer<typeof leadCreatedSchema>;
+export type UserCreatedPayload = z.infer<typeof userCreatedSchema>;
+export type InvoiceCreatedPayload = z.infer<typeof invoiceCreatedSchema>;
+export type OrderCompletedPayload = z.infer<typeof orderCompletedSchema>;
+export type OrderRefundedPayload = z.infer<typeof orderRefundedSchema>;
+export type AffiliateClickRegisteredPayload = z.infer<typeof affiliateClickRegisteredSchema>;
 export declare const EVENTS: {
     readonly "user.created": {
         readonly source: "auth-service";
@@ -162,7 +286,7 @@ export declare class EventBus {
     private serviceName;
     constructor(redisUrl: string, serviceName: string);
     /**
-     * Validate schemas natively
+     * Validate schemas using Zod
      */
     private validateEventSchema;
     /**

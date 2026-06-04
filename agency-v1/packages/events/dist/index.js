@@ -14,8 +14,64 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventBus = exports.EVENTS = void 0;
+exports.EventBus = exports.EVENTS = exports.EVENT_SCHEMAS = exports.affiliateClickRegisteredSchema = exports.orderRefundedSchema = exports.orderCompletedSchema = exports.invoiceCreatedSchema = exports.userCreatedSchema = exports.leadCreatedSchema = void 0;
 const ioredis_1 = __importDefault(require("ioredis"));
+const zod_1 = require("zod");
+// ─────────────────────────────────────────────────────────────────────────────
+// Event Schemas using Zod
+// ─────────────────────────────────────────────────────────────────────────────
+exports.leadCreatedSchema = zod_1.z.object({
+    companyId: zod_1.z.string({ required_error: "companyId is required" }),
+    name: zod_1.z.string().optional(),
+    email: zod_1.z.string().optional(),
+    phone: zod_1.z.string().optional(),
+    source: zod_1.z.string().optional(),
+    status: zod_1.z.string().optional(),
+});
+exports.userCreatedSchema = zod_1.z.object({
+    email: zod_1.z.string({ required_error: "email is required" }),
+    name: zod_1.z.string().optional(),
+});
+exports.invoiceCreatedSchema = zod_1.z.object({
+    id: zod_1.z.string().optional(),
+    invoiceId: zod_1.z.string().optional(),
+    companyId: zod_1.z.string().optional(),
+    amount: zod_1.z.number().optional(),
+    status: zod_1.z.string().optional(),
+}).refine(data => data.id || data.invoiceId, {
+    message: "Either id or invoiceId is required",
+    path: ["id"],
+});
+exports.orderCompletedSchema = zod_1.z.object({
+    id: zod_1.z.string().optional(),
+    orderId: zod_1.z.string().optional(),
+    userId: zod_1.z.string({ required_error: "userId is required" }),
+}).refine(data => data.id || data.orderId, {
+    message: "Either id or orderId is required",
+    path: ["id"],
+});
+exports.orderRefundedSchema = zod_1.z.object({
+    id: zod_1.z.string().optional(),
+    orderId: zod_1.z.string().optional(),
+}).refine(data => data.id || data.orderId, {
+    message: "Either id or orderId is required",
+    path: ["id"],
+});
+exports.affiliateClickRegisteredSchema = zod_1.z.object({
+    code: zod_1.z.string({ required_error: "code is required" }),
+    ip: zod_1.z.string().optional(),
+    userAgent: zod_1.z.string().optional(),
+    referer: zod_1.z.string().optional(),
+});
+// Mapping of EventNames to their Zod Schema
+exports.EVENT_SCHEMAS = {
+    "lead.created": exports.leadCreatedSchema,
+    "user.created": exports.userCreatedSchema,
+    "invoice.created": exports.invoiceCreatedSchema,
+    "order.completed": exports.orderCompletedSchema,
+    "order.refunded": exports.orderRefundedSchema,
+    "affiliate.click_registered": exports.affiliateClickRegisteredSchema,
+};
 // ─────────────────────────────────────────────────────────────────────────────
 // Event Definitions — Single Source of Truth
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,43 +150,18 @@ class EventBus {
         this.subscriber.on("error", (err) => console.error(`[EventBus:${serviceName}] Subscriber error:`, err.message));
     }
     /**
-     * Validate schemas natively
+     * Validate schemas using Zod
      */
     validateEventSchema(event, data) {
-        switch (event) {
-            case "lead.created":
-                if (!data.companyId) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'lead.created': companyId is required`);
-                }
-                break;
-            case "user.created":
-                if (!data.email) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'user.created': email is required`);
-                }
-                break;
-            case "invoice.created":
-                if (!data.invoiceId && !data.id) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'invoice.created': invoiceId/id is required`);
-                }
-                break;
-            case "order.completed":
-                if (!data.orderId && !data.id) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': orderId is required`);
-                }
-                if (!data.userId) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': userId is required`);
-                }
-                break;
-            case "order.refunded":
-                if (!data.orderId && !data.id) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'order.refunded': orderId is required`);
-                }
-                break;
-            case "affiliate.click_registered":
-                if (!data.code) {
-                    throw new Error(`[SchemaRegistry] Validation failed for 'affiliate.click_registered': code is required`);
-                }
-                break;
+        const schema = exports.EVENT_SCHEMAS[event];
+        if (schema) {
+            const result = schema.safeParse(data);
+            if (!result.success) {
+                const errorMsg = result.error.errors
+                    .map((err) => `${err.path.join(".")}: ${err.message}`)
+                    .join(", ");
+                throw new Error(`[SchemaRegistry] Validation failed for '${event}': ${errorMsg}`);
+            }
         }
     }
     /**

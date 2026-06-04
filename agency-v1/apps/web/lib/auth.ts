@@ -318,6 +318,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         // Silently fail — keep existing token data
                         logger.error("JWT role refresh error:", { error: e });
                     }
+                }
             }
 
             // Prune bloated properties (like base64 image strings) to avoid massive session cookies

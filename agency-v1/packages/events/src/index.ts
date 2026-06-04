@@ -11,6 +11,78 @@
  */
 
 import Redis from "ioredis";
+import { z } from "zod";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Event Schemas using Zod
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const leadCreatedSchema = z.object({
+  companyId: z.string({ required_error: "companyId is required" }),
+  name: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  source: z.string().optional(),
+  status: z.string().optional(),
+});
+
+export const userCreatedSchema = z.object({
+  email: z.string({ required_error: "email is required" }),
+  name: z.string().optional(),
+});
+
+export const invoiceCreatedSchema = z.object({
+  id: z.string().optional(),
+  invoiceId: z.string().optional(),
+  companyId: z.string().optional(),
+  amount: z.number().optional(),
+  status: z.string().optional(),
+}).refine(data => data.id || data.invoiceId, {
+  message: "Either id or invoiceId is required",
+  path: ["id"],
+});
+
+export const orderCompletedSchema = z.object({
+  id: z.string().optional(),
+  orderId: z.string().optional(),
+  userId: z.string({ required_error: "userId is required" }),
+}).refine(data => data.id || data.orderId, {
+  message: "Either id or orderId is required",
+  path: ["id"],
+});
+
+export const orderRefundedSchema = z.object({
+  id: z.string().optional(),
+  orderId: z.string().optional(),
+}).refine(data => data.id || data.orderId, {
+  message: "Either id or orderId is required",
+  path: ["id"],
+});
+
+export const affiliateClickRegisteredSchema = z.object({
+  code: z.string({ required_error: "code is required" }),
+  ip: z.string().optional(),
+  userAgent: z.string().optional(),
+  referer: z.string().optional(),
+});
+
+// Mapping of EventNames to their Zod Schema
+export const EVENT_SCHEMAS: Record<string, z.ZodSchema> = {
+  "lead.created": leadCreatedSchema,
+  "user.created": userCreatedSchema,
+  "invoice.created": invoiceCreatedSchema,
+  "order.completed": orderCompletedSchema,
+  "order.refunded": orderRefundedSchema,
+  "affiliate.click_registered": affiliateClickRegisteredSchema,
+};
+
+// Inferred Types
+export type LeadCreatedPayload = z.infer<typeof leadCreatedSchema>;
+export type UserCreatedPayload = z.infer<typeof userCreatedSchema>;
+export type InvoiceCreatedPayload = z.infer<typeof invoiceCreatedSchema>;
+export type OrderCompletedPayload = z.infer<typeof orderCompletedSchema>;
+export type OrderRefundedPayload = z.infer<typeof orderRefundedSchema>;
+export type AffiliateClickRegisteredPayload = z.infer<typeof affiliateClickRegisteredSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Event Definitions — Single Source of Truth
@@ -120,45 +192,19 @@ export class EventBus {
   }
 
   /**
-   * Validate schemas natively
+   * Validate schemas using Zod
    */
   private validateEventSchema(event: EventName, data: Record<string, unknown>): void {
-    switch (event) {
-      case "lead.created":
-        if (!data.companyId) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'lead.created': companyId is required`);
-        }
-        break;
-      case "user.created":
-        if (!data.email) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'user.created': email is required`);
-        }
-        break;
-      case "invoice.created":
-        if (!data.invoiceId && !data.id) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'invoice.created': invoiceId/id is required`);
-        }
-        break;
-      case "order.completed":
-        if (!data.orderId && !data.id) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': orderId is required`);
-        }
-        if (!data.userId) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'order.completed': userId is required`);
-        }
-        break;
-      case "order.refunded":
-        if (!data.orderId && !data.id) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'order.refunded': orderId is required`);
-        }
-        break;
-      case "affiliate.click_registered":
-        if (!data.code) {
-          throw new Error(`[SchemaRegistry] Validation failed for 'affiliate.click_registered': code is required`);
-        }
-        break;
+    const schema = EVENT_SCHEMAS[event];
+    if (schema) {
+      const result = schema.safeParse(data);
+      if (!result.success) {
+        const errorMsg = result.error.errors
+          .map((err) => `${err.path.join(".")}: ${err.message}`)
+          .join(", ");
+        throw new Error(`[SchemaRegistry] Validation failed for '${event}': ${errorMsg}`);
+      }
     }
-
   }
 
   /**

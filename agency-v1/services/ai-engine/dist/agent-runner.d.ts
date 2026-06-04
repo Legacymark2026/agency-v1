@@ -40,6 +40,16 @@ interface AgentRunOutput {
 export declare function runAIAgent({ agentId, companyId, userMessage, conversationId, senderUserId, contactData, inlineHistory, userContext }: AgentRunInput): Promise<AgentRunOutput>;
 export declare function triageAndRouteMessage(companyId: string, userMessage: string, conversationId?: string, contactData?: Record<string, any>, inlineHistory?: any[], userContext?: any): Promise<AgentRunOutput | {
     result: string;
+    agentName?: undefined;
+    sentimentScore?: undefined;
+    latencyMs?: undefined;
+    tokensUsed?: undefined;
+} | {
+    agentName: string;
+    result: string;
+    sentimentScore: any;
+    latencyMs: number;
+    tokensUsed: any;
 }>;
 export declare function disconnectRedis(): Promise<void>;
 export {};

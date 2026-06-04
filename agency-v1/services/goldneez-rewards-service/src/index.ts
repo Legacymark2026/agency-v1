@@ -176,7 +176,7 @@ app.post("/api/goldneez-rewards/flavor-profile", async (req, res) => {
     const { userId, acidez, cuerpo, notas, metodoPreferido } = schema.parse(req.body);
 
     // Calcular recomendaciones de café
-    const recs: string[] = [];
+    let recs: string[] = [];
     if (acidez >= 4 && cuerpo <= 3) {
       recs = ["ethiopia-yirgacheffe", "panama-geisha"];
     } else if (cuerpo >= 4) {
