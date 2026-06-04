@@ -1,6 +1,6 @@
-# Plataforma - Arquitectura Empresarial V3 (Ultimate Scale)
+# Plataforma - Arquitectura Empresarial V6 (Ultimate Scale & Database Pooling)
 
-Este diagrama representa el estado más avanzado de la plataforma (V3), incorporando **GraphQL Federation (Supergraph)**, patrón **CQRS** (Separación de comandos y consultas) y **Edge Computing**.
+Este diagrama representa el estado actual de la plataforma (V6), incorporando **GraphQL Federation (Supergraph)**, patrón **CQRS** (Separación de comandos y consultas), **Edge Computing** y la optimización de conexiones a base de datos mediante **PgBouncer**.
 
 ```mermaid
 graph TD
@@ -14,6 +14,7 @@ graph TD
     classDef db_read fill:#10b981,stroke:#047857,color:white;
     classDef datalake fill:#0ea5e9,stroke:#0369a1,color:white;
     classDef registry fill:#06b6d4,stroke:#0891b2,color:white,stroke-width:2px;
+    classDef pooling fill:#ec4899,stroke:#be185d,color:white,stroke-width:2px;
 
     %% Clientes
     subgraph Clients ["📱 Clientes"]
@@ -42,6 +43,11 @@ graph TD
         MKT["Marketing Service"]:::microservice
     end
 
+    %% Capa de Connection Pooling (V6)
+    subgraph Pooling ["🎯 Capa de Pooling (PgBouncer)"]
+        PGBOUNCER["PgBouncer <br/> (Transaction Mode @pgbouncer:6432)"]:::pooling
+    end
+
     %% Bus de Eventos (Zod Schema Validation)
     subgraph EventsBus ["🚀 Bus de Eventos & Contratos Zod"]
         REDIS_EVENTS{{"Event Bus <br/> (Redis Streams @agency/events)"}}:::eventbus
@@ -56,10 +62,11 @@ graph TD
             W_AUTH[("schema.auth.prisma")]:::db_write
             W_CRM[("schema.core.prisma")]:::db_write
             W_MEDIA[("schema.media.prisma")]:::db_write
-            
-            %% Outbox Table
             W_OUTBOX[("tbl_outbox_events")]:::db_write
         end
+
+        %% Copias de seguridad (Directas a Postgres)
+        BACKUP["Postgres Backup <br/> (Direct @postgres:5432)"]:::microservice
 
         %% Bases de Lectura (Read DBs)
         subgraph ReadDB ["Bases de Lectura en Memoria (Queries)"]
@@ -78,12 +85,25 @@ graph TD
     ROUTER --> |2. Resolvers composition (Parallel)| Microservices
     REST --> |2. Dynamic Proxy Routing| Microservices
 
-    AUTH --> |Escritura| W_AUTH
-    CRM --> |1. Write transaction| W_CRM
-    CRM --> |1. Write transaction| W_OUTBOX
+    %% Conexiones de Microservicios a PgBouncer
+    AUTH --> |Conexión Pool| PGBOUNCER
+    CRM --> |Conexión Pool| PGBOUNCER
+    FIN --> |Conexión Pool| PGBOUNCER
+    AIE --> |Conexión Pool| PGBOUNCER
+    MKT --> |Conexión Pool| PGBOUNCER
+
+    %% Conexión de PgBouncer a las bases reales
+    PGBOUNCER --> |Escritura/Lectura| W_AUTH
+    PGBOUNCER --> |1. Write transaction| W_CRM
+    PGBOUNCER --> |1. Write transaction| W_OUTBOX
+    PGBOUNCER --> |Escritura/Lectura| W_MEDIA
+
+    %% Postgres Backup se conecta directamente a la DB física
+    BACKUP --> |Direct Dump| WriteDB
     
     %% Outbox Message Relay
-    W_OUTBOX -.-> |2. Poll PENDING/FAILED| CRM
+    W_OUTBOX -.-> |2. Poll PENDING/FAILED| PGBOUNCER
+    PGBOUNCER -.-> |Poll Result| CRM
     CRM -.-> |3. Publish Event| REDIS_EVENTS
     
     %% Event Validation
@@ -94,10 +114,12 @@ graph TD
     CRM --> |Lectura Sub-milisegundo (/api/cqrs/*)| R_REDIS
 ```
 
-## Características Nivel V3 Implementadas
+## Características Nivel V6 Implementadas
 
-1. **GraphQL composition real (`/graphql`):** El `api-gateway` ya no usa un stub de datos estáticos. Incorpora resolutores reales basados en composición HTTP que consultan a los microservicios de `auth-service` y `crm-service` de forma paralela y unificada, decodificando los claims del usuario y propagando los correlation IDs en las cabeceras.
-2. **Service Discovery Dinámico:** Las rutas del proxy y los resolvers de GraphQL de `api-gateway` resuelven la localización física de los 21 microservicios consultando dinámicamente un registro en Redis (`service_registry:<serviceName>`), permitiendo escalar instancias y redireccionar tráfico en caliente sin reiniciar el gateway.
-3. **Registro de Esquemas de Eventos con Zod:** Toda publicación al Bus de Eventos (`@agency/events`) pasa por un registro de esquemas Zod en tiempo de ejecución. Esto garantiza contratos estrictos de datos entre microservicios, previniendo payloads corruptos y ofreciendo tipado TypeScript fuerte en tiempo de compilación.
-4. **Patrón Transactional Outbox (Garantía de Entrega):** El servicio de CRM no publica eventos directamente en Redis de manera desorganizada. Escribe el Lead y el evento de negocio `lead.created` dentro de una transacción atómica de PostgreSQL en la tabla `tbl_outbox_events`. Un worker en segundo plano (`MessageRelayWorker`) procesa los eventos pendientes en lotes de forma asíncrona hacia Redis Streams, logrando entrega at-least-once y tolerancia a caídas.
-5. **Trazabilidad Distribuida con Correlation IDs:** Propagación de identificadores de correlación en las peticiones HTTP y en el bus de eventos de Redis. Los logs estructurados del gateway y microservicios incluyen el prefijo `[Trace: <CorrelationId>]`, facilitando el rastreo end-to-end de flujos de datos.
+1. **Pooling de Conexiones con PgBouncer:** Integración de un intermediario de base de datos que agrupa y optimiza las peticiones de los 21 microservicios activos hacia PostgreSQL. Utiliza el modo de transacción (`POOL_MODE: transaction`) permitiendo un soporte de hasta 500 conexiones de clientes virtuales y liberando drásticamente el consumo de memoria en PostgreSQL.
+2. **Autenticación SCRAM-SHA-256 Transparente:** PgBouncer utiliza el esquema criptográfico SCRAM de PostgreSQL mediante la sincronización del archivo `userlist.txt` conteniendo los hashes SCRAM correspondientes, garantizando máxima seguridad en el handshake sin rebajar la seguridad a MD5 o texto plano.
+3. **GraphQL composition real (`/graphql`):** El `api-gateway` incorpora resolutores dinámicos basados en composición HTTP que consultan los microservicios de `auth-service` y `crm-service` de forma paralela y unificada.
+4. **Service Discovery Dinámico:** Las rutas de API Gateway resuelven dinámicamente la localización física de los microservicios consultando un registro dinámico en Redis (`service_registry:<serviceName>`).
+5. **Registro de Esquemas de Eventos con Zod:** Toda publicación al Bus de Eventos (`@agency/events`) pasa por un registro de esquemas Zod en tiempo de ejecución.
+6. **Patrón Transactional Outbox (Garantía de Entrega):** El servicio de CRM escribe los registros operativos y los eventos de outbox correspondientes de manera atómica bajo una transacción única en PostgreSQL (tabla `tbl_outbox_events`). Un worker asíncrono procesa y publica los eventos pendientes hacia Redis Streams.
+7. **Trazabilidad Distribuida con Correlation IDs:** Propagación consistente de identificadores de correlación en las cabeceras HTTP, logs de base de datos y eventos de Redis Streams.
