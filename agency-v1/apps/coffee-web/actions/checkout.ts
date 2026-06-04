@@ -124,32 +124,65 @@ export async function checkoutAction(
     const pointsAwarded = Math.round(total * 10);
     let newTotalPoints = pointsAwarded;
 
-    const userProfile = await prisma.userProfile.findUnique({
-      where: { userId }
-    });
-
-    if (userProfile) {
-      let currentMetadata: any = {};
-      try {
-        currentMetadata = typeof userProfile.metadata === "string"
-          ? JSON.parse(userProfile.metadata)
-          : userProfile.metadata || {};
-      } catch {}
-
-      const currentPoints = currentMetadata.points ?? 0;
-      newTotalPoints = currentPoints + pointsAwarded;
-
-      await prisma.userProfile.update({
-        where: { userId },
-        data: {
-          metadata: JSON.stringify({
-            ...currentMetadata,
-            points: newTotalPoints,
-            city: userDetails.city.trim()
-          })
-        }
+    let microserviceSuccess = false;
+    try {
+      const REWARDS_SERVICE_URL = process.env.GOLDNEEZ_REWARDS_SERVICE_URL || "http://localhost:4020";
+      const res = await fetch(`${REWARDS_SERVICE_URL}/api/goldneez-rewards/points/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, puntos: pointsAwarded, concepto: "Compra de café en tienda" }),
+        signal: AbortSignal.timeout(3000),
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          newTotalPoints = data.points;
+          microserviceSuccess = true;
+        }
+      }
+    } catch (err: any) {
+      console.warn("[checkoutAction] Fallback a base de datos local para otorgar puntos:", err.message);
     }
+
+    if (!microserviceSuccess) {
+      const userProfile = await prisma.userProfile.findUnique({
+        where: { userId }
+      });
+
+      if (userProfile) {
+        let currentMetadata: any = {};
+        try {
+          currentMetadata = typeof userProfile.metadata === "string"
+            ? JSON.parse(userProfile.metadata)
+            : userProfile.metadata || {};
+        } catch {}
+
+        const currentPoints = currentMetadata.points ?? 0;
+        newTotalPoints = currentPoints + pointsAwarded;
+
+        await prisma.userProfile.update({
+          where: { userId },
+          data: {
+            metadata: JSON.stringify({
+              ...currentMetadata,
+              points: newTotalPoints,
+              city: userDetails.city.trim()
+            })
+          }
+        });
+
+        // Registrar en historial localmente
+        await prisma.goldneezPointsHistory.create({
+          data: {
+            userId,
+            puntos: pointsAwarded,
+            tipo: "earned",
+            concepto: "Compra de café en tienda"
+          }
+        });
+      }
+    }
+
 
     // 6. Registrar log de actividad con los detalles de los productos
     await prisma.userActivityLog.create({

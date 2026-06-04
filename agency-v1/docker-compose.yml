@@ -172,6 +172,31 @@ services:
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=4001"
 
+  # ── Goldneez Rewards Service ──────────────────────────────────────────────
+  goldneez-rewards-service:
+    build:
+      context: .
+      dockerfile: services/goldneez-rewards-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "4020"
+      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@postgres:5432/legacymark?schema=goldneez&search_path=goldneez,public
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4020/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.goldneez-rewards.rule=PathPrefix(`/api/goldneez-rewards`)"
+      - "traefik.http.routers.goldneez-rewards.entrypoints=web"
+      - "traefik.http.services.goldneez-rewards.loadbalancer.server.port=4020"
+
+
   # ── CRM Service ──────────────────────────────────────────────────────────
   crm-service:
     build:

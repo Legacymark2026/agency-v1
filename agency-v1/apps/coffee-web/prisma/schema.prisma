@@ -4112,3 +4112,94 @@ model Payout {
   @@map("tbl_affiliate_payouts")
 }
 
+model GoldneezFlavorProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  acidez          Int      @default(3)
+  cuerpo          Int      @default(3)
+  notas           String   @default("") // comma-separated values like "frutal, chocolate"
+  metodoPreferido String   @default("V60") @map("metodo_preferido")
+  recomendaciones String   @default("") // comma-separated productIds
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_goldneez_flavor_profiles")
+}
+
+model GoldneezPointsHistory {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  puntos    Int      @default(0)
+  tipo      String   @default("earned") // earned, redeemed
+  concepto  String   @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_goldneez_points_history")
+}
+
+model GoldneezReferral {
+  id              String   @id @default(uuid())
+  referrerId      String   @map("referrer_id") // El que invita
+  referredId      String?  @unique @map("referred_id") // El invitado (cuando se registra)
+  codigo          String   @unique @map("codigo") // Código único del referente
+  estado          String   @default("pending") // pending, completed
+  puntosReferente Int      @default(200) @map("puntos_referente")
+  puntosReferido  Int      @default(100) @map("puntos_referido")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_goldneez_referrals")
+}
+
+model GoldneezEventBooking {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  eventId    String   @map("event_id")
+  eventTitle String   @map("event_title")
+  eventDate  String   @map("event_date")
+  estado     String   @default("booked") // booked, cancelled
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_goldneez_event_bookings")
+}
+
+model GoldneezProductReview {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  orderId      String   @map("order_id")
+  coffeeId     String   @map("coffee_id")
+  coffeeName   String   @map("coffee_name")
+  calificacion Int      @default(5)
+  comentario   String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("tbl_goldneez_product_reviews")
+}
+
+model GoldneezNotificationPreference {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  promociones Boolean  @default(true)
+  pedidos     Boolean  @default(true)
+  clubPuntos  Boolean  @default(true)
+  boletines   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_goldneez_notification_preferences")
+}
+
+model GoldneezPaymentMethod {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  marca           String   @default("Visa") // Visa, Mastercard, Amex, etc.
+  ultimosCuatro   String   @map("ultimos_cuatro") // p.ej. "4242"
+  nombreTarjeta   String   @map("nombre_tarjeta") // p.ej. "Juan Perez"
+  token           String   @default("")
+  esPredeterminada Boolean  @default(false) @map("es_predeterminada")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_goldneez_payment_methods")
+}
