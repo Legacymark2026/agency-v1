@@ -1,25 +1,29 @@
-import LRUCache from "lru-cache";
-import Redis from "ioredis";
-
 class HybridCache {
-  private l1: LRUCache<string, any>;
-  private l2: Redis | null = null;
+  private l1: any = null;
+  private l2: any = null;
   private redisConnected = false;
+  private initialized = false;
 
-  constructor() {
-    // L1 local in-memory cache: max 1000 items, TTL of 5 seconds
-    this.l1 = new LRUCache<string, any>({
-      max: 1000,
-      ttl: 1000 * 5, // 5 seconds default TTL
-    });
+  private init() {
+    if (this.initialized) return;
+    this.initialized = true;
 
-    // Initialize Redis L2 Cache
-    const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
     try {
+      const LRUCache = require("lru-cache");
+      this.l1 = new LRUCache({
+        max: 1000,
+        ttl: 1000 * 5, // 5 seconds default TTL
+      });
+    } catch (err: any) {
+      console.error("🎒 Hybrid Cache: Failed to load lru-cache:", err.message);
+    }
+
+    try {
+      const Redis = require("ioredis");
+      const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
       this.l2 = new Redis(redisUrl, {
         maxRetriesPerRequest: 3,
-        retryStrategy(times) {
-          // Retry connecting after a delay, max 3s
+        retryStrategy(times: number) {
           return Math.min(times * 100, 3000);
         },
       });
@@ -46,10 +50,14 @@ class HybridCache {
     fetchFn: () => Promise<T>,
     options?: { ttlL1Ms?: number; ttlL2Seconds?: number }
   ): Promise<T> {
+    this.init();
+
     // 1. Try L1 (Local memory)
-    const localVal = this.l1.get(key);
-    if (localVal !== undefined) {
-      return localVal as T;
+    if (this.l1) {
+      const localVal = this.l1.get(key);
+      if (localVal !== undefined) {
+        return localVal as T;
+      }
     }
 
     // 2. Try L2 (Redis)
@@ -58,8 +66,9 @@ class HybridCache {
         const cached = await this.l2.get(key);
         if (cached) {
           const parsed = JSON.parse(cached);
-          // Save to L1 for next immediate reads
-          this.l1.set(key, parsed, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
+          if (this.l1) {
+            this.l1.set(key, parsed, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
+          }
           return parsed as T;
         }
       } catch (err: any) {
@@ -71,7 +80,9 @@ class HybridCache {
     const freshVal = await fetchFn();
 
     // 4. Save back to L1 & L2
-    this.l1.set(key, freshVal, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
+    if (this.l1) {
+      this.l1.set(key, freshVal, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
+    }
 
     if (this.l2 && this.redisConnected && freshVal !== undefined && freshVal !== null) {
       try {
@@ -93,7 +104,11 @@ class HybridCache {
     value: T,
     options?: { ttlL1Ms?: number; ttlL2Seconds?: number }
   ): Promise<void> {
-    this.l1.set(key, value, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
+    this.init();
+
+    if (this.l1) {
+      this.l1.set(key, value, { ttl: options?.ttlL1Ms ?? 1000 * 5 });
+    }
 
     if (this.l2 && this.redisConnected && value !== undefined && value !== null) {
       try {
@@ -109,7 +124,11 @@ class HybridCache {
    * Invalidate a key in both L1 and L2.
    */
   async delete(key: string): Promise<void> {
-    this.l1.delete(key);
+    this.init();
+
+    if (this.l1) {
+      this.l1.delete(key);
+    }
 
     if (this.l2 && this.redisConnected) {
       try {
@@ -124,7 +143,10 @@ class HybridCache {
    * Clear the local L1 cache (in-memory).
    */
   clearLocal(): void {
-    this.l1.clear();
+    this.init();
+    if (this.l1) {
+      this.l1.clear();
+    }
   }
 }
 
