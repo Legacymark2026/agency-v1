@@ -52,7 +52,63 @@ async function run() {
   console.log("  LegacyMark — Security & Data Protection Tests");
   console.log("══════════════════════════════════════════════════════════════\n");
 
-  // 1. Rate Limiting Test (100 req/min limit)
+  // 1. JWT Authorization Bypass Prevention
+  await test("Security: JWT Auth Bypass Block (No Token → 401)", async () => {
+    const { status } = await fetchJson(`${GATEWAY}/api/leads`);
+    assert(status === 401, `Protected route should return 401, got ${status}`);
+  });
+
+  await test("Security: JWT Auth Bypass Block (Malformed Token → 401)", async () => {
+    const { status } = await fetchJson(`${GATEWAY}/api/leads`, {
+      headers: { Authorization: "Bearer malformed.jwt.token" }
+    });
+    assert(status === 401, `Protected route should return 401 for malformed JWT, got ${status}`);
+  });
+
+  await test("Security: JWT Auth Bypass Block (Invalid Secret JWT → 401)", async () => {
+    // Generate a JWT signed with a bogus secret
+    const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjaGFvcy10ZXN0IiwiY29tcGFueUlkIjoiY29tcC0xMjMifQ.bogussignaturexyz";
+    const { status } = await fetchJson(`${GATEWAY}/api/leads`, {
+      headers: { Authorization: `Bearer ${fakeToken}` }
+    });
+    assert(status === 401, `Protected route should return 401 for fake signature JWT, got ${status}`);
+  });
+
+  // 2. CORS Origin Policy Enforcement
+  await test("Security: CORS Origin Policy Header Check", async () => {
+    const mockMaliciousOrigin = "http://malicious-attacker-site.com";
+    const { headers } = await fetchJson(`${GATEWAY}/health`, {
+      method: "OPTIONS",
+      headers: {
+        "Origin": mockMaliciousOrigin,
+        "Access-Control-Request-Method": "GET"
+      }
+    });
+
+    const allowedOrigin = headers.get("access-control-allow-origin");
+    // It should either not return access-control-allow-origin or not match the malicious site
+    assert(allowedOrigin !== mockMaliciousOrigin, "Malicious CORS origin allowed!");
+  });
+
+  // 3. SQL Injection safety in API requests
+  await test("Security: SQL Injection Safety (Query input escaping)", async () => {
+    // Try sending classical SQL injection payloads
+    const payloads = [
+      "comp-123' OR '1'='1",
+      "comp-123'; DROP TABLE tbl_outbox_events;--",
+      "comp-123' UNION SELECT * FROM tbl_user_activity_logs--"
+    ];
+
+    for (const sqlPayload of payloads) {
+      const { status, body } = await fetchJson(`${GATEWAY}/api/leads?companyId=${encodeURIComponent(sqlPayload)}`);
+      // Since it's protected by JWT, it should return 401, or if authorized/validated it should return 400 (invalid format)
+      // The important thing is it does NOT crash the database/gateway with 500 or execute the SQL
+      assert(status === 400 || status === 401 || status === 404, `Expected HTTP 400/401/404, got ${status}`);
+      assert(!JSON.stringify(body || {}).includes("syntax error") && !JSON.stringify(body || {}).includes("postgresql error"), "SQL injection payload caused database error leak!");
+    }
+  });
+
+  // 4. Rate Limiting Test (100 req/min limit) - RUN LAST to avoid blocking other tests
   await test("Security: Rate Limiting Blocks Flood Attacks (HTTP 429)", async () => {
     console.log("     Sending 105 rapid sequential requests to API Gateway...");
     let statuses: number[] = [];
@@ -77,62 +133,6 @@ async function run() {
       assert(rateLimitedCount >= 5, "Exceeded requests should be blocked with 429 Too Many Requests");
     } else {
       console.warn("     ⚠️  Rate limiter not active or Redis is bypassing. Skipping check.");
-    }
-  });
-
-  // 2. JWT Authorization Bypass Prevention
-  await test("Security: JWT Auth Bypass Block (No Token → 401)", async () => {
-    const { status } = await fetchJson(`${GATEWAY}/api/leads`);
-    assert(status === 401, `Protected route should return 401, got ${status}`);
-  });
-
-  await test("Security: JWT Auth Bypass Block (Malformed Token → 401)", async () => {
-    const { status } = await fetchJson(`${GATEWAY}/api/leads`, {
-      headers: { Authorization: "Bearer malformed.jwt.token" }
-    });
-    assert(status === 401, `Protected route should return 401 for malformed JWT, got ${status}`);
-  });
-
-  await test("Security: JWT Auth Bypass Block (Invalid Secret JWT → 401)", async () => {
-    // Generate a JWT signed with a bogus secret
-    const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjaGFvcy10ZXN0IiwiY29tcGFueUlkIjoiY29tcC0xMjMifQ.bogussignaturexyz";
-    const { status } = await fetchJson(`${GATEWAY}/api/leads`, {
-      headers: { Authorization: `Bearer ${fakeToken}` }
-    });
-    assert(status === 401, `Protected route should return 401 for fake signature JWT, got ${status}`);
-  });
-
-  // 3. CORS Origin Policy Enforcement
-  await test("Security: CORS Origin Policy Header Check", async () => {
-    const mockMaliciousOrigin = "http://malicious-attacker-site.com";
-    const { headers } = await fetchJson(`${GATEWAY}/health`, {
-      method: "OPTIONS",
-      headers: {
-        "Origin": mockMaliciousOrigin,
-        "Access-Control-Request-Method": "GET"
-      }
-    });
-
-    const allowedOrigin = headers.get("access-control-allow-origin");
-    // It should either not return access-control-allow-origin or not match the malicious site
-    assert(allowedOrigin !== mockMaliciousOrigin, "Malicious CORS origin allowed!");
-  });
-
-  // 4. SQL Injection safety in API requests
-  await test("Security: SQL Injection Safety (Query input escaping)", async () => {
-    // Try sending classical SQL injection payloads
-    const payloads = [
-      "comp-123' OR '1'='1",
-      "comp-123'; DROP TABLE tbl_outbox_events;--",
-      "comp-123' UNION SELECT * FROM tbl_user_activity_logs--"
-    ];
-
-    for (const sqlPayload of payloads) {
-      const { status, body } = await fetchJson(`${GATEWAY}/api/leads?companyId=${encodeURIComponent(sqlPayload)}`);
-      // Since it's protected by JWT, it should return 401, or if authorized/validated it should return 400 (invalid format)
-      // The important thing is it does NOT crash the database/gateway with 500 or execute the SQL
-      assert(status === 400 || status === 401 || status === 404, `Expected HTTP 400/401/404, got ${status}`);
-      assert(!JSON.stringify(body || {}).includes("syntax error") && !JSON.stringify(body || {}).includes("postgresql error"), "SQL injection payload caused database error leak!");
     }
   });
 
