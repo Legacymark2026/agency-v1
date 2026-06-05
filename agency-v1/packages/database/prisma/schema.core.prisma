@@ -72,18 +72,51 @@ model Team {
 }
 
 model Lead {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  name      String
-  email     String?
-  phone     String?
-  source    String?
-  status    String   @default("new")
-  assignedToUserId String? @map("assigned_to_user_id") // Soft link
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id                    String             @id @default(uuid())
+  name                  String?
+  email                 String?
+  phone                 String?
+  company               String?
+  jobTitle              String?            @map("job_title")
+  message               String?
+  source                String?
+  medium                String?
+  utmSource             String?            @map("utm_source")
+  utmMedium             String?            @map("utm_medium")
+  utmCampaign           String?            @map("utm_campaign")
+  utmTerm               String?            @map("utm_term")
+  utmContent            String?            @map("utm_content")
+  referer               String?
+  landingPage           String?            @map("landing_page")
+  ipAddress             String?            @map("ip_address")
+  userAgent             String?            @map("user_agent")
+  country               String?
+  city                  String?
+  campaignId            String?            @map("campaign_id")
+  status                String             @default("new")
+  score                 Int                @default(0)
+  convertedToDealId     String?            @map("converted_to_deal_id")
+  convertedAt           DateTime?          @map("converted_at")
+  formId                String?            @map("form_id")
+  formData              Json?              @map("form_data")
+  tags                  String[]           @default([])
+  notes                 String?
+  assignedTo            String?            @map("assigned_to")
+  companyId             String             @map("company_id")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+  conversionProbability Float?             @map("conversion_probability")
+  fbc                   String?
+  fbclid                String?
+  fbp                   String?
+  gclid                 String?
+  liFatId               String?            @map("li_fat_id")
+  predictionFactors     Json?              @map("prediction_factors")
+  ttclid                String?
+  schema_version        Int                @default(0) @map("col_schema_version")
+  deleted_at            DateTime?          @map("col_deleted_at")
+  
+  companyRef            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@map("tbl_leads")
