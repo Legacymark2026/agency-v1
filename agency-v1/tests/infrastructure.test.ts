@@ -81,7 +81,11 @@ function run() {
       console.log("     Running 'prisma migrate status' check...");
       const output = execSync("npm run db:migrate -- --dry-run || npx prisma migrate status --schema=packages/database/prisma/schema.prisma", {
         cwd: workspaceRoot,
-        env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core" },
+        env: { 
+          ...process.env, 
+          DATABASE_URL: process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core",
+          POSTGRES_EXTERNAL_URL: process.env.POSTGRES_EXTERNAL_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core"
+        },
         stdio: "pipe"
       }).toString();
       
