@@ -107,12 +107,14 @@ async function run() {
 
   // 3. Statement Timeout Verification (10s limit)
   await test("Database Statement Timeout (10000ms limit)", async () => {
-    // We connect to PgBouncer/Replica that has statement_timeout=10000 set
-    // Let's connect using a database URL with statement_timeout=10000
-    const dbUrl = process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core?statement_timeout=10000";
-    const client = new Client({ connectionString: dbUrl });
+    const dbUrl = process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core";
+    const urlObj = new URL(dbUrl);
+    urlObj.searchParams.delete("statement_timeout");
+    const client = new Client({ connectionString: urlObj.toString() });
     try {
       await client.connect();
+      // Set statement timeout dynamically on the session to prevent PgBouncer startup param error
+      await client.query("SET statement_timeout = 10000;");
       console.log("     Executing a query that takes 12 seconds (SELECT pg_sleep(12)) to test timeout...");
       
       const startTime = Date.now();
@@ -137,6 +139,7 @@ async function run() {
       if (err.message.includes("Query completed successfully") || err.message.includes("Query should abort")) {
         throw err;
       }
+      console.error("     ❌ Connection/Query error:", err);
       console.warn("     ⚠️  Database not reachable, skipping live statement timeout checks.");
     }
   });

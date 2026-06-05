@@ -201,14 +201,14 @@ async function run() {
       
       const columns = res.rows.map(r => r.column_name);
       assert(columns.includes("id"), "Outbox table should contain 'id'");
-      assert(columns.includes("event_type"), "Outbox table should contain 'event_type'");
-      assert(columns.includes("status"), "Outbox table should contain 'status'");
-      assert(columns.includes("payload"), "Outbox table should contain 'payload'");
+      assert(columns.includes("col_event_name"), "Outbox table should contain 'col_event_name'");
+      assert(columns.includes("col_status"), "Outbox table should contain 'col_status'");
+      assert(columns.includes("col_payload"), "Outbox table should contain 'col_payload'");
       
       await client.end();
     } catch (err: any) {
       await client.end().catch(() => {});
-      console.warn("     ⚠️  Postgres server not reachable, skipping live DB outbox column checks.");
+      throw err;
     }
   });
 
