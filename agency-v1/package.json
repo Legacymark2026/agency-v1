@@ -25,7 +25,13 @@
     "db:migrate": "npm run migrate:deploy --workspace=packages/database",
     "db:migrate:segregated": "node scripts/migrate-segregated-dbs.js",
     "db:studio": "npm run studio --workspace=packages/database",
-    "doctor": "npx react-doctor --project web --full --verbose"
+    "doctor": "npx react-doctor --project web --full --verbose",
+    "test:infrastructure": "npx tsx tests/infrastructure.test.ts",
+    "test:contracts": "npx tsx tests/contracts.test.ts",
+    "test:performance": "npx tsx tests/performance.test.ts",
+    "test:chaos": "npx tsx tests/chaos.test.ts",
+    "test:security": "npx tsx tests/security.test.ts",
+    "test:all-suites": "npm run test:infrastructure && npm run test:contracts && npm run test:performance && npm run test:chaos && npm run test:security"
   },
   "packageManager": "npm@10.8.2",
   "devDependencies": {
