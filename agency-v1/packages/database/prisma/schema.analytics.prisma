@@ -13,7 +13,7 @@ datasource db {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model UserActivityLog {
-  id        String   @id @default(uuid())
+  id        String   @default(uuid())
   userId    String?  @map("user_id") // Soft link
   action    String
   details   Json?
@@ -21,6 +21,7 @@ model UserActivityLog {
   userAgent String?  @map("user_agent")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@id([id, createdAt])
   @@index([userId])
   @@index([createdAt])
   @@map("tbl_user_activity_logs")
@@ -53,12 +54,13 @@ model PostView {
 }
 
 model UsageLog {
-  id        String   @id @default(uuid())
+  id        String   @default(uuid())
   companyId String   @map("company_id") // Soft link
   feature   String
   metric    Int      @default(1)
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@id([id, createdAt])
   @@index([companyId])
   @@index([createdAt])
   @@map("tbl_usage_logs")
