@@ -250,7 +250,7 @@ services:
 
   # ── Traefik API Gateway ────────────────────────────────────────────────────
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.1
     container_name: agency-v1-traefik
     restart: unless-stopped
     logging: *default-logging
