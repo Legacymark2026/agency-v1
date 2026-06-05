@@ -338,6 +338,8 @@ services:
     build:
       context: .
       dockerfile: services/api-gateway/Dockerfile
+    ports:
+      - "8083:8080"
     restart: unless-stopped
     logging: *default-logging
     environment:
