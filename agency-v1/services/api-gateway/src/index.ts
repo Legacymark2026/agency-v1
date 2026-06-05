@@ -40,6 +40,7 @@ app.get("/health", (_req, res) => {
 
 // ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+redis.on("error", (err) => console.error("[api-gateway] Redis global error:", err.message));
 const CACHE_TTL = 300; // 5 minutes
 
 // ── Redis-Backed Rate Limiting Middleware ────────────────────────────────────
@@ -188,6 +189,7 @@ class RedisKeyValueCache {
         return Math.min(times * 100, 3000);
       }
     });
+    this.client.on("error", (err) => console.error("[api-gateway] RedisKeyValueCache error:", err.message));
   }
   async get(key: string): Promise<string | undefined> {
     const val = await this.client.get(key);

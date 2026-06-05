@@ -8,8 +8,10 @@ const ioredis_1 = require("ioredis");
 let rateLimiter = null;
 function getRateLimiter() {
     if (!rateLimiter) {
+        const storeClient = new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+        storeClient.on('error', (err) => console.error('[rate-limit] Redis client error:', err.message));
         rateLimiter = new rate_limiter_flexible_1.RateLimiterRedis({
-            storeClient: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+            storeClient,
             keyPrefix: 'video_rate_limit',
             points: parseInt(process.env.RENDER_RATE_LIMIT || '10'),
             duration: parseInt(process.env.RENDER_RATE_WINDOW || '3600'),

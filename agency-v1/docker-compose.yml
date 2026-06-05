@@ -111,7 +111,7 @@ services:
     volumes:
       - ./userlist.txt:/etc/pgbouncer/userlist.txt:ro
     healthcheck:
-      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "6432", "-U", "legacymark"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432", "-U", "legacymark"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -145,7 +145,7 @@ services:
     volumes:
       - ./userlist.txt:/etc/pgbouncer/userlist.txt:ro
     healthcheck:
-      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "6433", "-U", "legacymark"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6433", "-U", "legacymark"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -164,7 +164,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     logging: *default-logging
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes --protected-mode no
     volumes:
       - redisdata:/data
     healthcheck:
@@ -183,7 +183,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     logging: *default-logging
-    command: redis-server --maxmemory 512mb --maxmemory-policy noeviction --appendonly yes
+    command: redis-server --maxmemory 512mb --maxmemory-policy noeviction --appendonly yes --protected-mode no
     volumes:
       - redisqueuedata:/data
     healthcheck:

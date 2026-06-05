@@ -317,6 +317,7 @@ setInterval(processEmailQueue, 5000);
 // ── Event Bus: Subscribe to platform events ──────────────────────────────────
 const eventBus = new events_1.EventBus(REDIS_URL, "notification-service");
 const redisClient = new ioredis_1.default(REDIS_URL);
+redisClient.on("error", (err) => console.error("[notification-service] Redis client error:", err.message));
 // Auto-generate notifications from platform events
 const EVENT_MAPPINGS = {
     "lead.created": {

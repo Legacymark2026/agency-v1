@@ -24,6 +24,7 @@ const google_1 = require("@ai-sdk/google");
 const ioredis_1 = __importDefault(require("ioredis"));
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const redis = new ioredis_1.default(REDIS_URL, { maxRetriesPerRequest: 3, lazyConnect: true });
+redis.on("error", (err) => console.error("[ai-engine] Redis client error:", err.message));
 redis.connect().catch(() => console.warn("[ai-engine] Redis not available for circuit breaker"));
 // ─── Universal Model Registry (inline for isolation) ─────────────────────────
 function buildModel(modelId) {

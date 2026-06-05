@@ -19,10 +19,14 @@ let queue = null;
 let worker = null;
 function getQueue() {
     if (!queue) {
+        const connection = new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+            maxRetriesPerRequest: null,
+        });
+        connection.on('error', (err) => {
+            console.error('[queue-redis] Error:', err);
+        });
         queue = new bullmq_1.Queue('video-renders', {
-            connection: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-                maxRetriesPerRequest: null,
-            }),
+            connection,
             defaultJobOptions: {
                 attempts: 3,
                 backoff: {
@@ -46,6 +50,12 @@ async function addRenderJob(data) {
 function createWorker(outputDir) {
     if (worker)
         return worker;
+    const connection = new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+        maxRetriesPerRequest: null,
+    });
+    connection.on('error', (err) => {
+        console.error('[worker-redis] Error:', err);
+    });
     worker = new bullmq_1.Worker('video-renders', async (job) => {
         const { jobId, companyId, config, timeline } = job.data;
         const startTime = Date.now();
@@ -120,9 +130,7 @@ function createWorker(outputDir) {
         (0, websocket_1.broadcastComplete)(jobId, result);
         return result;
     }, {
-        connection: new ioredis_1.Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
-            maxRetriesPerRequest: null,
-        }),
+        connection,
         concurrency: parseInt(process.env.RENDER_CONCURRENCY || '2'),
     });
     worker.on('failed', (job, err) => {

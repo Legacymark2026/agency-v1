@@ -362,6 +362,7 @@ setInterval(processEmailQueue, 5000);
 
 const eventBus = new EventBus(REDIS_URL, "notification-service");
 const redisClient = new Redis(REDIS_URL);
+redisClient.on("error", (err) => console.error("[notification-service] Redis client error:", err.message));
 
 // Auto-generate notifications from platform events
 const EVENT_MAPPINGS: Record<string, { type: string; titleFn: (data: any) => string }> = {

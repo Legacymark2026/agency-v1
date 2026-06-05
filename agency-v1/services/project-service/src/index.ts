@@ -421,6 +421,7 @@ app.get("/api/projects/:id/stats", async (req, res) => {
 
 const eventBus = new EventBus(REDIS_URL, "project-service");
 const redisClient = new Redis(REDIS_URL);
+redisClient.on("error", (err) => console.error("[project-service] Redis client error:", err.message));
 
 // Sync: when a deal stage changes, update linked tasks
 eventBus.subscribe("deal.stage_changed", async (payload) => {

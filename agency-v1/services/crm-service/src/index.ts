@@ -810,6 +810,7 @@ app.get("/api/crm/high-performance-stats", async (req, res) => {
 // ── Event Bus Setup & CQRS Worker ────────────────────────────────────────────
 const eventBus = new EventBus(REDIS_URL, "crm-service");
 const redisClient = new Redis(REDIS_URL);
+redisClient.on("error", (err) => console.error("[crm-service] Redis client error:", err.message));
 
 // CQRS Synchronizer: Listen to Write DB events and update Read DB (Redis)
 eventBus.subscribe("lead.created", async (payload) => {

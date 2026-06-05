@@ -6,8 +6,10 @@ let rateLimiter: RateLimiterRedis | null = null;
 
 export function getRateLimiter(): RateLimiterRedis {
   if (!rateLimiter) {
+    const storeClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    storeClient.on('error', (err) => console.error('[rate-limit] Redis client error:', err.message));
     rateLimiter = new RateLimiterRedis({
-      storeClient: new Redis(process.env.REDIS_URL || 'redis://localhost:6379'),
+      storeClient,
       keyPrefix: 'video_rate_limit',
       points: parseInt(process.env.RENDER_RATE_LIMIT || '10'),
       duration: parseInt(process.env.RENDER_RATE_WINDOW || '3600'),

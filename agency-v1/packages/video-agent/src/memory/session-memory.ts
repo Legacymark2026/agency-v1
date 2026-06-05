@@ -53,6 +53,9 @@ export class VideoSessionMemory {
         return Math.min(times * 200, 2000);
       },
     });
+    this.redis.on('error', (err) => {
+      console.error('[VideoSessionMemory] Redis error:', err);
+    });
   }
 
   private key(sessionId: string, segment: string): string {

@@ -536,6 +536,7 @@ app.get('/api/employees/:id/summary', async (req, res) => {
 
 const eventBus = new EventBus(REDIS_URL, "hr-service");
 const redisClient = new Redis(REDIS_URL);
+redisClient.on("error", (err) => console.error("[hr-service] Redis client error:", err.message));
 
 eventBus.subscribe("invoice.paid", async (payload) => {
   const { companyId } = payload.data;

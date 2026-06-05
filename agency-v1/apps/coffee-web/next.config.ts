@@ -7,10 +7,10 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   // Forzar que @prisma/client no sea bundleado (debe ser un módulo externo del servidor)
   serverExternalPackages: ["@prisma/client"],
+  transpilePackages: ["gsap"],
   experimental: {
     optimizePackageImports: [
       'lucide-react',
-      'gsap',
       'clsx',
       'tailwind-merge'
     ],
