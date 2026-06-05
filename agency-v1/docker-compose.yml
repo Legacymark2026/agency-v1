@@ -254,6 +254,8 @@ services:
     container_name: agency-v1-traefik
     restart: unless-stopped
     logging: *default-logging
+    environment:
+      - DOCKER_API_VERSION=1.40
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
