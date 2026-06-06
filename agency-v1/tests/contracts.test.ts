@@ -190,7 +190,14 @@ async function run() {
   // 5. Database Outbox Table Schema Check (Live verification if PG is running)
   await test("Outbox DB table columns verify (Postgres)", async () => {
     const dbUrl = process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core";
-    const client = new Client({ connectionString: dbUrl });
+    const dbUrlObj = new URL(dbUrl);
+    const hasSsl = dbUrlObj.searchParams.get("sslmode") === "require";
+    dbUrlObj.searchParams.delete("sslmode");
+    const isPgbouncer = dbUrlObj.hostname === "pgbouncer" || dbUrlObj.hostname === "pgbouncer-replica";
+    const client = new Client({ 
+      connectionString: dbUrlObj.toString(),
+      ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined
+    });
     try {
       await client.connect();
       const res = await client.query(`

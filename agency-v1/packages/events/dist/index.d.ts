@@ -279,23 +279,26 @@ export interface EventPayload {
     data: Record<string, unknown>;
 }
 export declare class EventBus {
-    private redisUrl;
-    private publisher;
-    private subscriber;
-    private localSubscribers;
+    private driver;
     private serviceName;
+    private redisUrl?;
+    private publisher?;
+    private subscriber?;
+    private localSubscribers;
+    private kafkaClient?;
+    private kafkaProducer?;
+    private kafkaConsumers;
     constructor(redisUrl: string, serviceName: string);
     /**
      * Validate schemas using Zod
      */
     private validateEventSchema;
     /**
-     * Publish an event to a Redis Stream
+     * Publish an event to a Redis Stream or Kafka Topic
      */
     publish(event: EventName, data: Record<string, unknown>, correlationId?: string): Promise<string | null>;
     /**
-     * Subscribe to an event stream using Consumer Groups
-     * Each service gets its own consumer group to ensure at-least-once delivery
+     * Subscribe to an event stream using Consumer Groups (Redis) or Consumer Groups (Kafka)
      */
     subscribe(event: EventName, handler: (payload: EventPayload) => Promise<void>): Promise<void>;
     /**

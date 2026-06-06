@@ -1,4 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { AsyncLocalStorage } from "async_hooks";
+
+export const primaryDatabaseStorage = new AsyncLocalStorage<boolean>();
+
+export function runInPrimary<T>(fn: () => Promise<T>): Promise<T> {
+  return primaryDatabaseStorage.run(true, fn);
+}
 
 // Re-export everything from the main Prisma Client for type safety and backward compatibility
 export { PrismaClient } from "@prisma/client";
@@ -233,10 +240,10 @@ export const prisma =
     get(target, prop: string | symbol) {
       if (typeof prop === "symbol") return (target as any)[prop];
 
-      // Redirigir consultas de lectura cruda a la réplica
+      // Redirigir consultas de lectura cruda a la réplica (a menos que se fuerce lectura al primario)
       if (prop === "$queryRaw" || prop === "$queryRawUnsafe") {
-        const readCoreClient = getPrismaCoreRead();
-        return (...args: any[]) => (readCoreClient as any)[prop](...args);
+        const client = primaryDatabaseStorage.getStore() ? getPrismaCore() : getPrismaCoreRead();
+        return (...args: any[]) => (client as any)[prop](...args);
       }
 
       // Redirigir el acceso al modelo correspondiente si está mapeado
@@ -248,7 +255,11 @@ export const prisma =
         return new Proxy(primaryModel, {
           get(modelTarget, methodProp: string | symbol) {
             const readMethods = ["findMany", "findUnique", "findFirst", "count", "aggregate", "groupBy", "findRaw", "aggregateRaw"];
-            if (typeof methodProp === "string" && readMethods.includes(methodProp)) {
+            if (
+              typeof methodProp === "string" && 
+              readMethods.includes(methodProp) &&
+              !primaryDatabaseStorage.getStore()
+            ) {
               const readClientGetter = modelToReadClientGetter[prop as string];
               if (readClientGetter) {
                 const readModel = readClientGetter()[prop as any];

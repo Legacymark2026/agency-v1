@@ -1,0 +1,27 @@
+http:
+  middlewares:
+    coraza-waf:
+      plugin:
+        coraza:
+          directives:
+            - "SecRuleEngine On"
+            - "SecDebugLog /dev/stdout"
+            - "SecDebugLogLevel 3"
+            - 'SecRule REQUEST_URI "@rx (union\s+select|select\s+.*\s+from|insert\s+into|delete\s+from|drop\s+table)" "id:101,phase:1,t:urlDecode,t:lowercase,deny,status:403,msg:''SQL Injection Blocked''"'
+            - 'SecRule REQUEST_URI "@rx (<script>|javascript:|onerror=|onload=)" "id:102,phase:1,t:urlDecode,t:lowercase,deny,status:403,msg:''XSS Blocked''"'
+
+    security-headers:
+      headers:
+        referrerPolicy: "no-referrer"
+        stsSeconds: 31536000
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        customResponseHeaders:
+          X-Frame-Options: "SAMEORIGIN"
+
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1m

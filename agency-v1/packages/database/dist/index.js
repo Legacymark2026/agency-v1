@@ -14,8 +14,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.prisma = exports.getPrismaAnalyticsRead = exports.getPrismaMediaRead = exports.getPrismaCoreRead = exports.getPrismaAuthRead = exports.getPrismaAnalytics = exports.getPrismaMedia = exports.getPrismaCore = exports.getPrismaAuth = exports.Prisma = exports.PrismaClient = void 0;
+exports.prisma = exports.getPrismaAnalyticsRead = exports.getPrismaMediaRead = exports.getPrismaCoreRead = exports.getPrismaAuthRead = exports.getPrismaAnalytics = exports.getPrismaMedia = exports.getPrismaCore = exports.getPrismaAuth = exports.Prisma = exports.PrismaClient = exports.primaryDatabaseStorage = void 0;
+exports.runInPrimary = runInPrimary;
 const client_1 = require("@prisma/client");
+const async_hooks_1 = require("async_hooks");
+exports.primaryDatabaseStorage = new async_hooks_1.AsyncLocalStorage();
+function runInPrimary(fn) {
+    return exports.primaryDatabaseStorage.run(true, fn);
+}
 // Re-export everything from the main Prisma Client for type safety and backward compatibility
 var client_2 = require("@prisma/client");
 Object.defineProperty(exports, "PrismaClient", { enumerable: true, get: function () { return client_2.PrismaClient; } });
@@ -234,10 +240,10 @@ exports.prisma = globalForPrisma.prisma ??
         get(target, prop) {
             if (typeof prop === "symbol")
                 return target[prop];
-            // Redirigir consultas de lectura cruda a la réplica
+            // Redirigir consultas de lectura cruda a la réplica (a menos que se fuerce lectura al primario)
             if (prop === "$queryRaw" || prop === "$queryRawUnsafe") {
-                const readCoreClient = (0, exports.getPrismaCoreRead)();
-                return (...args) => readCoreClient[prop](...args);
+                const client = exports.primaryDatabaseStorage.getStore() ? (0, exports.getPrismaCore)() : (0, exports.getPrismaCoreRead)();
+                return (...args) => client[prop](...args);
             }
             // Redirigir el acceso al modelo correspondiente si está mapeado
             const clientGetter = modelToClientGetter[prop];
@@ -247,7 +253,9 @@ exports.prisma = globalForPrisma.prisma ??
                 return new Proxy(primaryModel, {
                     get(modelTarget, methodProp) {
                         const readMethods = ["findMany", "findUnique", "findFirst", "count", "aggregate", "groupBy", "findRaw", "aggregateRaw"];
-                        if (typeof methodProp === "string" && readMethods.includes(methodProp)) {
+                        if (typeof methodProp === "string" &&
+                            readMethods.includes(methodProp) &&
+                            !exports.primaryDatabaseStorage.getStore()) {
                             const readClientGetter = modelToReadClientGetter[prop];
                             if (readClientGetter) {
                                 const readModel = readClientGetter()[prop];

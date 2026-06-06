@@ -83,7 +83,14 @@ async function run() {
   // 2. Database Read Replica Latency Verification (if DB is up)
   await test("Database Read Replica Latency Check", async () => {
     const readDbUrl = process.env.DATABASE_READ_URL || "postgresql://legacymark:legacymark_dev@localhost:6433/legacymark_core";
-    const client = new Client({ connectionString: readDbUrl });
+    const dbUrlObj = new URL(readDbUrl);
+    const hasSsl = dbUrlObj.searchParams.get("sslmode") === "require";
+    dbUrlObj.searchParams.delete("sslmode");
+    const isPgbouncer = dbUrlObj.hostname === "pgbouncer" || dbUrlObj.hostname === "pgbouncer-replica";
+    const client = new Client({ 
+      connectionString: dbUrlObj.toString(),
+      ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined
+    });
     try {
       const dbStart = Date.now();
       await client.connect();
@@ -101,7 +108,7 @@ async function run() {
       await client.end();
     } catch (err: any) {
       await client.end().catch(() => {});
-      console.warn("     ⚠️  Read replica database not reachable, skipping live DB performance checks.");
+      console.warn(`     ⚠️  Read replica database not reachable: ${err.message || err}. Skipping live DB performance checks.`);
     }
   });
 
@@ -109,8 +116,14 @@ async function run() {
   await test("Database Statement Timeout (10000ms limit)", async () => {
     const dbUrl = process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core";
     const urlObj = new URL(dbUrl);
+    const hasSsl = urlObj.searchParams.get("sslmode") === "require";
     urlObj.searchParams.delete("statement_timeout");
-    const client = new Client({ connectionString: urlObj.toString() });
+    urlObj.searchParams.delete("sslmode");
+    const isPgbouncer = urlObj.hostname === "pgbouncer" || urlObj.hostname === "pgbouncer-replica";
+    const client = new Client({ 
+      connectionString: urlObj.toString(),
+      ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined
+    });
     try {
       await client.connect();
       // Set statement timeout dynamically on the session to prevent PgBouncer startup param error

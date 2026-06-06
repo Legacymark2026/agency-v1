@@ -141,25 +141,35 @@ async function run() {
       }
 
       // Since leads requires companyId and does not do auth blocks, it should return 200/400/404 depending on matches
+      // If a WAF blocks it, it will return 403.
       // The important thing is it does NOT crash the database/gateway with 500 or execute the SQL
-      assert(status === 200 || status === 400 || status === 404, `Expected HTTP 200/400/404, got ${status}`);
+      assert(status === 200 || status === 400 || status === 404 || status === 403, `Expected HTTP 200/400/404/403, got ${status}`);
       assert(!JSON.stringify(body || {}).includes("syntax error") && !JSON.stringify(body || {}).includes("postgresql error"), "SQL injection payload caused database error leak!");
     }
   });
 
   // 3.5. JWT Token Revocation Blacklist via Logout
   await test("Security: JWT Token Revocation Blacklist via Logout", async () => {
-    // 1. Perform login via Traefik gateway to auth-service
-    const loginRes = await fetch(`${TRAEFIK_GATEWAY}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: "security-test@legacymark.com",
-        password: "security-test-pass"
-      })
-    });
+    // 1. Perform login via Traefik gateway to auth-service (with retries for transient connection/DNS caching)
+    let loginRes: Response | null = null;
+    for (let i = 0; i < 10; i++) {
+      try {
+        loginRes = await fetch(`${TRAEFIK_GATEWAY}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: "security-test@legacymark.com",
+            password: "security-test-pass"
+          })
+        });
+        if (loginRes.status === 200) {
+          break;
+        }
+      } catch (err) {}
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
     
-    assert(loginRes.status === 200, `Login should succeed, got ${loginRes.status}`);
+    assert(loginRes !== null && loginRes.status === 200, `Login should succeed, got ${loginRes?.status}`);
     const loginBody: any = await loginRes.json();
     const token = loginBody.token;
     assert(!!token, "Response should contain a JWT token");

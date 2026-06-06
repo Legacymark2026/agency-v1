@@ -107,7 +107,14 @@ async function run() {
 
     for (const dbInfo of dbsToCheck) {
       const dbUrl = getDbUrlFor(dbInfo.db);
-      const client = new Client({ connectionString: dbUrl });
+      const dbUrlObj = new URL(dbUrl);
+      const hasSsl = dbUrlObj.searchParams.get("sslmode") === "require";
+      dbUrlObj.searchParams.delete("sslmode");
+      const isPgbouncer = dbUrlObj.hostname === "pgbouncer" || dbUrlObj.hostname === "pgbouncer-replica";
+      const client = new Client({ 
+        connectionString: dbUrlObj.toString(),
+        ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined
+      });
       try {
         await client.connect();
         // Query to check if the table exists

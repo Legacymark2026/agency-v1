@@ -113,6 +113,18 @@ async function run() {
     const readDbUrl = process.env.DATABASE_READ_URL || "postgresql://legacymark:legacymark_dev@localhost:6433/legacymark_core";
     const primaryDbUrl = process.env.DATABASE_URL || "postgresql://legacymark:legacymark_dev@localhost:6432/legacymark_core";
 
+    const getClientConfig = (urlStr: string, extraOptions: any = {}) => {
+      const urlObj = new URL(urlStr);
+      const hasSsl = urlObj.searchParams.get("sslmode") === "require";
+      urlObj.searchParams.delete("sslmode");
+      const isPgbouncer = urlObj.hostname === "pgbouncer" || urlObj.hostname === "pgbouncer-replica";
+      return {
+        connectionString: urlObj.toString(),
+        ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined,
+        ...extraOptions
+      };
+    };
+
     if (hasDockerControl && await isContainerRunning(replicaContainer)) {
       console.log(`     Stopping replica container: ${replicaContainer}...`);
       await stopContainer(replicaContainer);
@@ -124,7 +136,7 @@ async function run() {
       
       // Simulation of app client fallback wrapper
       try {
-        const clientReplica = new Client({ connectionString: readDbUrl, connectionTimeoutMillis: 2000 });
+        const clientReplica = new Client(getClientConfig(readDbUrl, { connectionTimeoutMillis: 2000 }));
         clientReplica.on("error", () => {}); // Prevent unhandled exception crash on connection termination
         await clientReplica.connect();
         await clientReplica.query("SELECT 1;");
@@ -132,7 +144,7 @@ async function run() {
       } catch (err: any) {
         console.log(`     Replica query failed as expected: ${err.message}. Routing to primary...`);
         // Fall back to primary
-        const clientPrimary = new Client({ connectionString: primaryDbUrl });
+        const clientPrimary = new Client(getClientConfig(primaryDbUrl));
         clientPrimary.on("error", () => {});
         await clientPrimary.connect();
         const res = await clientPrimary.query("SELECT 1;");
@@ -152,7 +164,7 @@ async function run() {
       let recovered = false;
       for (let i = 0; i < 10; i++) {
         try {
-          const clientReplica = new Client({ connectionString: readDbUrl, connectionTimeoutMillis: 2000 });
+          const clientReplica = new Client(getClientConfig(readDbUrl, { connectionTimeoutMillis: 2000 }));
           clientReplica.on("error", () => {});
           await clientReplica.connect();
           await clientReplica.end();

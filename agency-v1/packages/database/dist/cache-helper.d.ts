@@ -1,8 +1,11 @@
 declare class HybridCache {
     private l1;
     private l2;
+    private l2Sub;
     private redisConnected;
     private initialized;
+    private instanceId;
+    private pubSubChannel;
     private init;
     /**
      * Helper to serialize and compress large values before writing to Redis.

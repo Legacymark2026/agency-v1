@@ -1,8 +1,11 @@
 class HybridCache {
   private l1: any = null;
   private l2: any = null;
+  private l2Sub: any = null;
   private redisConnected = false;
   private initialized = false;
+  private instanceId = Math.random().toString(36).substring(2, 15);
+  private pubSubChannel = "hybrid-cache-invalidation";
 
   private init() {
     if (this.initialized) return;
@@ -30,15 +33,54 @@ class HybridCache {
 
       this.l2.on("connect", () => {
         this.redisConnected = true;
-        console.log("🎒 Hybrid Cache: L2 Redis connected.");
+        console.log(`🎒 Hybrid Cache: L2 Redis connected. (Instance: ${this.instanceId})`);
       });
 
       this.l2.on("error", (err: any) => {
         this.redisConnected = false;
         console.error("🎒 Hybrid Cache: L2 Redis error:", err.message);
       });
+
+      // Setup Subscriber Client
+      this.l2Sub = new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        retryStrategy(times: number) {
+          return Math.min(times * 100, 3000);
+        },
+      });
+
+      this.l2Sub.on("connect", () => {
+        console.log(`🎒 Hybrid Cache: L2 Redis Subscriber connected.`);
+        this.l2Sub.subscribe(this.pubSubChannel, (err: any) => {
+          if (err) {
+            console.error("🎒 Hybrid Cache: Failed to subscribe to channel:", err.message);
+          } else {
+            console.log(`🎒 Hybrid Cache: Subscribed to channel ${this.pubSubChannel}`);
+          }
+        });
+      });
+
+      this.l2Sub.on("message", (channel: string, message: string) => {
+        if (channel === this.pubSubChannel) {
+          try {
+            const payload = JSON.parse(message);
+            if (payload && payload.key && payload.origin !== this.instanceId) {
+              console.log(`🎒 Hybrid Cache: Invalidating key locally: ${payload.key} (origin: ${payload.origin})`);
+              if (this.l1) {
+                this.l1.delete(payload.key);
+              }
+            }
+          } catch (err: any) {
+            console.error("🎒 Hybrid Cache: Failed to process Pub/Sub invalidation message:", err.message);
+          }
+        }
+      });
+
+      this.l2Sub.on("error", (err: any) => {
+        console.error("🎒 Hybrid Cache: L2 Redis Subscriber error:", err.message);
+      });
     } catch (err: any) {
-      console.error("🎒 Hybrid Cache: Failed to initialize Redis L2 Client:", err.message);
+      console.error("🎒 Hybrid Cache: Failed to initialize Redis L2 Clients:", err.message);
     }
   }
 
@@ -173,8 +215,14 @@ class HybridCache {
         const ttlL2 = options?.ttlL2Seconds ?? 300;
         const compressed = this.compressValue(value);
         await this.l2.set(key, compressed, "EX", ttlL2);
+        
+        // Publish L1 invalidation message to other instances
+        await this.l2.publish(
+          this.pubSubChannel,
+          JSON.stringify({ key, origin: this.instanceId })
+        );
       } catch (err: any) {
-        console.warn(`🎒 Hybrid Cache: Failed to write to L2 (Redis) for key ${key}:`, err.message);
+        console.warn(`🎒 Hybrid Cache: Failed to write and publish L2 (Redis) for key ${key}:`, err.message);
       }
     }
   }
@@ -192,8 +240,14 @@ class HybridCache {
     if (this.l2 && this.redisConnected) {
       try {
         await this.l2.del(key);
+        
+        // Publish L1 invalidation message to other instances
+        await this.l2.publish(
+          this.pubSubChannel,
+          JSON.stringify({ key, origin: this.instanceId })
+        );
       } catch (err: any) {
-        console.warn(`🎒 Hybrid Cache: Failed to delete key ${key} from L2:`, err.message);
+        console.warn(`🎒 Hybrid Cache: Failed to delete and publish key ${key} from L2:`, err.message);
       }
     }
   }

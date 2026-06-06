@@ -171,24 +171,57 @@ export interface EventPayload {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class EventBus {
-  private redisUrl: string;
-  private publisher: Redis;
-  private subscriber: Redis;
-  private localSubscribers: Redis[] = [];
+  private driver: "redis" | "kafka";
   private serviceName: string;
 
-  constructor(redisUrl: string, serviceName: string) {
-    this.redisUrl = redisUrl;
-    this.publisher = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
-    this.subscriber = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
-    this.serviceName = serviceName;
+  // Redis fields
+  private redisUrl?: string;
+  private publisher?: Redis;
+  private subscriber?: Redis;
+  private localSubscribers: Redis[] = [];
 
-    this.publisher.on("error", (err) =>
-      console.error(`[EventBus:${serviceName}] Publisher error:`, err.message)
-    );
-    this.subscriber.on("error", (err) =>
-      console.error(`[EventBus:${serviceName}] Subscriber error:`, err.message)
-    );
+  // Kafka fields
+  private kafkaClient?: any;
+  private kafkaProducer?: any;
+  private kafkaConsumers: any[] = [];
+
+  constructor(redisUrl: string, serviceName: string) {
+    this.serviceName = serviceName;
+    const driverEnv = process.env.EVENT_BUS_DRIVER || "redis";
+    this.driver = driverEnv === "kafka" ? "kafka" : "redis";
+
+    if (this.driver === "kafka") {
+      try {
+        const { Kafka } = require("kafkajs");
+        const kafkaBrokers = (process.env.KAFKA_BROKERS || "redpanda:9092").split(",");
+        this.kafkaClient = new Kafka({
+          clientId: serviceName,
+          brokers: kafkaBrokers,
+          retry: {
+            retries: 3
+          }
+        });
+        this.kafkaProducer = this.kafkaClient.producer();
+        console.log(`[EventBus:${serviceName}] Initialized in Kafka mode.`);
+      } catch (err: any) {
+        console.error(`[EventBus:${serviceName}] Failed to initialize Kafka client, falling back to Redis:`, err.message);
+        this.driver = "redis";
+      }
+    }
+
+    if (this.driver === "redis") {
+      this.redisUrl = redisUrl;
+      this.publisher = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
+      this.subscriber = new Redis(redisUrl, { maxRetriesPerRequest: 3 });
+
+      this.publisher.on("error", (err) =>
+        console.error(`[EventBus:${serviceName}] Publisher error:`, err.message)
+      );
+      this.subscriber.on("error", (err) =>
+        console.error(`[EventBus:${serviceName}] Subscriber error:`, err.message)
+      );
+      console.log(`[EventBus:${serviceName}] Initialized in Redis Streams mode.`);
+    }
   }
 
   /**
@@ -208,7 +241,7 @@ export class EventBus {
   }
 
   /**
-   * Publish an event to a Redis Stream
+   * Publish an event to a Redis Stream or Kafka Topic
    */
   async publish(
     event: EventName,
@@ -226,29 +259,83 @@ export class EventBus {
       data,
     };
 
-    const streamKey = `events:${event}`;
-    const messageId = await this.publisher.xadd(
-      streamKey,
-      "*",
-      "payload",
-      JSON.stringify(payload)
-    );
+    if (this.driver === "kafka" && this.kafkaProducer) {
+      try {
+        await this.kafkaProducer.connect();
+        const topic = `events.${event}`;
+        await this.kafkaProducer.send({
+          topic,
+          messages: [
+            { key: payload.correlationId, value: JSON.stringify(payload) }
+          ],
+        });
+        console.log(`[EventBus:${this.serviceName}] Published ${event} to Kafka topic ${topic} (trace: ${payload.correlationId})`);
+        return payload.eventId;
+      } catch (err: any) {
+        console.error(`[EventBus:${this.serviceName}] Failed to publish to Kafka, falling back to Redis:`, err.message);
+        if (!this.publisher) {
+          this.redisUrl = this.redisUrl || process.env.REDIS_URL || "redis://redis:6379";
+          this.publisher = new Redis(this.redisUrl, { maxRetriesPerRequest: 3 });
+        }
+      }
+    }
 
-    console.log(`[EventBus:${this.serviceName}] Published ${event} → ${messageId} (trace: ${payload.correlationId})`);
-    return messageId;
+    if (this.publisher) {
+      const streamKey = `events:${event}`;
+      const messageId = await this.publisher.xadd(
+        streamKey,
+        "*",
+        "payload",
+        JSON.stringify(payload)
+      );
+
+      console.log(`[EventBus:${this.serviceName}] Published ${event} to Redis Stream → ${messageId} (trace: ${payload.correlationId})`);
+      return messageId;
+    }
+
+    return null;
   }
 
   /**
-   * Subscribe to an event stream using Consumer Groups
-   * Each service gets its own consumer group to ensure at-least-once delivery
+   * Subscribe to an event stream using Consumer Groups (Redis) or Consumer Groups (Kafka)
    */
   async subscribe(
     event: EventName,
     handler: (payload: EventPayload) => Promise<void>
   ): Promise<void> {
+    if (this.driver === "kafka" && this.kafkaClient) {
+      try {
+        const topic = `events.${event}`;
+        const consumer = this.kafkaClient.consumer({ groupId: `group:${this.serviceName}` });
+        await consumer.connect();
+        await consumer.subscribe({ topic, fromBeginning: true });
+        
+        await consumer.run({
+          eachMessage: async ({ message }: any) => {
+            if (!message.value) return;
+            const payload: EventPayload = JSON.parse(message.value.toString());
+            await handler(payload);
+          }
+        });
+
+        this.kafkaConsumers.push(consumer);
+        console.log(`[EventBus:${this.serviceName}] Subscribed to Kafka topic ${topic}`);
+        return;
+      } catch (err: any) {
+        console.error(`[EventBus:${this.serviceName}] Failed to subscribe to Kafka, falling back to Redis:`, err.message);
+      }
+    }
+
     const streamKey = `events:${event}`;
     const groupName = `group:${this.serviceName}`;
     const consumerName = `${this.serviceName}-${process.pid}`;
+
+    if (!this.redisUrl) {
+      this.redisUrl = process.env.REDIS_URL || "redis://redis:6379";
+    }
+    if (!this.subscriber) {
+      this.subscriber = new Redis(this.redisUrl, { maxRetriesPerRequest: 3 });
+    }
 
     // Create a dedicated Redis subscriber client for this subscription's blocking loop
     const localSubscriber = new Redis(this.redisUrl, { maxRetriesPerRequest: 3 });
@@ -292,9 +379,9 @@ export class EventBus {
                 try {
                   await handler(payload);
                   // Acknowledge successful processing
-                  await this.subscriber.xack(streamKey, groupName, messageId);
+                  await this.subscriber!.xack(streamKey, groupName, messageId);
                   // Cleanup attempts counter if it was created
-                  await this.publisher.del(attemptKey).catch(() => {});
+                  await this.publisher?.del(attemptKey).catch(() => {});
                 } catch (err) {
                   console.error(
                     `[EventBus:${this.serviceName}] Error processing ${event}:${messageId}:`,
@@ -302,8 +389,8 @@ export class EventBus {
                   );
 
                   // Increment attempts
-                  const attempts = await this.subscriber.incr(attemptKey);
-                  await this.subscriber.expire(attemptKey, 86400); // 1 day TTL
+                  const attempts = await this.subscriber!.incr(attemptKey);
+                  await this.subscriber!.expire(attemptKey, 86400); // 1 day TTL
 
                   if (attempts >= 3) {
                     console.error(`[EventBus:${this.serviceName}] Message ${messageId} exceeded max attempts (3). Moving to DLQ.`);
@@ -318,7 +405,7 @@ export class EventBus {
                     };
 
                     // Move to dead letter stream
-                    await this.publisher.xadd(
+                    await this.publisher?.xadd(
                       "events:dead-letter",
                       "*",
                       "payload",
@@ -326,14 +413,14 @@ export class EventBus {
                     );
 
                     // Acknowledge to stop retry cycle
-                    await this.subscriber.xack(streamKey, groupName, messageId);
-                    await this.publisher.del(attemptKey).catch(() => {});
+                    await this.subscriber!.xack(streamKey, groupName, messageId);
+                    await this.publisher?.del(attemptKey).catch(() => {});
                   }
                 }
               } catch (parseErr) {
                 console.error(`[EventBus:${this.serviceName}] Error parsing message payload ${messageId}:`, parseErr);
                 // Corrupt payload, acknowledge immediately to prevent blocking the stream
-                await this.subscriber.xack(streamKey, groupName, messageId);
+                await this.subscriber!.xack(streamKey, groupName, messageId);
               }
             }
           }
@@ -349,18 +436,26 @@ export class EventBus {
       console.error(`[EventBus:${this.serviceName}] Fatal poll error:`, err)
     );
 
-    console.log(`[EventBus:${this.serviceName}] Subscribed to ${event}`);
+    console.log(`[EventBus:${this.serviceName}] Subscribed to ${event} via Redis Streams`);
   }
 
   /**
    * Graceful shutdown
    */
   async disconnect(): Promise<void> {
-    await this.publisher.quit();
-    await this.subscriber.quit();
+    if (this.publisher) await this.publisher.quit();
+    if (this.subscriber) await this.subscriber.quit();
     for (const sub of this.localSubscribers) {
       await sub.quit().catch(() => {});
     }
+
+    if (this.kafkaProducer) {
+      await this.kafkaProducer.disconnect().catch(() => {});
+    }
+    for (const consumer of this.kafkaConsumers) {
+      await consumer.disconnect().catch(() => {});
+    }
+
     console.log(`[EventBus:${this.serviceName}] Disconnected`);
   }
 }

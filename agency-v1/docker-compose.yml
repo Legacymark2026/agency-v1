@@ -21,6 +21,8 @@ x-microservice-base: &microservice-base
   networks:
     - backend-net
     - database-net
+  volumes:
+    - ./certs:/certs:ro
   deploy:
     resources:
       limits:
@@ -33,7 +35,7 @@ services:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     logging: *default-logging
-    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements"]
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "ssl=on", "-c", "ssl_cert_file=/certs/db/server.crt", "-c", "ssl_key_file=/certs/db/server.key", "-c", "ssl_ca_file=/certs/db/ca.crt"]
     environment:
       POSTGRES_USER: legacymark
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
@@ -41,6 +43,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infrastructure/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
+      - ./certs/db:/certs/db:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U legacymark"]
       interval: 10s
@@ -65,6 +68,7 @@ services:
       PGDATA: /var/lib/postgresql/data/replica
     volumes:
       - pgdata-replica:/var/lib/postgresql/data
+      - ./certs/db:/certs/db:ro
     entrypoint: |
       sh -c '
       if [ ! -s "$$PGDATA/PG_VERSION" ]; then
@@ -75,7 +79,7 @@ services:
           sleep 2
         done
       fi
-      exec docker-entrypoint.sh postgres -c shared_preload_libraries=pg_stat_statements
+      exec docker-entrypoint.sh postgres -c shared_preload_libraries=pg_stat_statements -c ssl=on -c ssl_cert_file=/certs/db/server.crt -c ssl_key_file=/certs/db/server.key -c ssl_ca_file=/certs/db/ca.crt
       '
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U legacymark"]
@@ -108,8 +112,16 @@ services:
       MIN_POOL_SIZE: 5
       RESERVE_POOL_SIZE: 5
       AUTH_TYPE: scram-sha-256
+      CLIENT_TLS_SSLMODE: "require"
+      CLIENT_TLS_CA_FILE: "/certs/db/ca.crt"
+      CLIENT_TLS_CERT_FILE: "/certs/db/pgbouncer.crt"
+      CLIENT_TLS_KEY_FILE: "/certs/db/pgbouncer.key"
+      SERVER_TLS_SSLMODE: "require"
+      SERVER_TLS_CA_FILE: "/certs/db/ca.crt"
+      SERVER_LOGIN_RETRY: 2
     volumes:
       - ./userlist.txt:/etc/pgbouncer/userlist.txt:ro
+      - ./certs/db:/certs/db:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6432", "-U", "legacymark"]
       interval: 10s
@@ -142,8 +154,16 @@ services:
       MIN_POOL_SIZE: 5
       RESERVE_POOL_SIZE: 5
       AUTH_TYPE: scram-sha-256
+      CLIENT_TLS_SSLMODE: "require"
+      CLIENT_TLS_CA_FILE: "/certs/db/ca.crt"
+      CLIENT_TLS_CERT_FILE: "/certs/db/pgbouncer.crt"
+      CLIENT_TLS_KEY_FILE: "/certs/db/pgbouncer.key"
+      SERVER_TLS_SSLMODE: "require"
+      SERVER_TLS_CA_FILE: "/certs/db/ca.crt"
+      SERVER_LOGIN_RETRY: 2
     volumes:
       - ./userlist.txt:/etc/pgbouncer/userlist.txt:ro
+      - ./certs/db:/certs/db:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "6433", "-U", "legacymark"]
       interval: 10s
@@ -224,17 +244,19 @@ services:
     logging: *default-logging
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-dev-backup-key-change-me}
     volumes:
       - ./backups:/backups
     entrypoint: |
       sh -c '
+      apk add --no-cache openssl
       while true; do
-        echo "Starting daily pg_dump for legacymark..."
+        echo "Starting daily encrypted pg_dump for legacymark..."
         mkdir -p /backups
-        pg_dump -h postgres -U legacymark -F c -b -v -f "/backups/backup_$$(date +%Y%m%d_%H%M%S).dump" legacymark
+        pg_dump -h postgres -U legacymark -F c -b legacymark | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:BACKUP_ENCRYPTION_KEY -out "/backups/backup_$$(date +%Y%m%d_%H%M%S).dump.enc"
         # Mantener solo los últimos 7 días
         find /backups -name "backup_*" -mtime +7 -delete
-        echo "Backup complete. Next backup in 24 hours."
+        echo "Encrypted backup complete. Next backup in 24 hours."
         sleep 86400
       done
       '
@@ -248,36 +270,40 @@ services:
           cpus: "0.25"
           memory: 256M
 
-  # ── Traefik API Gateway ────────────────────────────────────────────────────
+  # ── API Gateway (Traefik) ──────────────────────────────────────────────────
   traefik:
     image: traefik:latest
     container_name: agency-v1-traefik
     restart: unless-stopped
     logging: *default-logging
-    environment:
-      - DOCKER_API_VERSION=1.40
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=agency-backend-net"
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.middlewares=security-headers@docker"
+      - "--entrypoints.web.http.middlewares=security-headers@file,coraza-waf@file,rate-limit@file"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http3"
-      - "--entrypoints.websecure.http.middlewares=security-headers@docker"
+      - "--entrypoints.websecure.http.middlewares=security-headers@file,coraza-waf@file,rate-limit@file"
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@legacymark.com}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.le.acme.httpchallenge=true"
       - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+      - "--experimental.plugins.coraza.modulename=github.com/jcchavezs/coraza-http-wasm-traefik"
+      - "--experimental.plugins.coraza.version=v0.3.0"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
     ports:
       - "8081:80"
-      - "8443:443/tcp"
+      - "8443:443"
       - "8443:443/udp"
-      - "127.0.0.1:8082:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "letsencrypt:/letsencrypt"
+      - "./infrastructure/traefik:/etc/traefik/dynamic:ro"
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.security-headers.headers.referrerpolicy=no-referrer"
@@ -294,8 +320,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: 256M
+          cpus: "1.0"
+          memory: 1G
 
   # ── Next.js Web App ────────────────────────────────────────────────────────
   web:
@@ -303,27 +329,30 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
     ports: ["3000:3000"]
+    volumes:
+      - ./certs:/certs:ro
     restart: unless-stopped
     logging: *default-logging
     environment:
       NODE_ENV: production
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
-      AUTH_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      CORE_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
-      MEDIA_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_media?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
-      ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
+      AUTH_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      CORE_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
+      MEDIA_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_media?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
+      ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       REDIS_URL: redis://redis:6379
       API_GATEWAY_URL: http://api-gateway:8080
       VIDEO_SERVICE_URL: http://video-service:4007
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
       INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
+      NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -406,19 +435,20 @@ services:
     environment:
       PORT: "4001"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
-      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
-      AUTH_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      CORE_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
-      MEDIA_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_media?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
-      ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
+      AUTH_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      CORE_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
+      MEDIA_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_media?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
+      ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
+      NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     volumes:
       - ./certs:/certs:ro
     depends_on:
@@ -443,9 +473,10 @@ services:
       dockerfile: services/goldneez-rewards-service/Dockerfile
     environment:
       PORT: "4020"
-      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@pgbouncer:6432/legacymark?schema=goldneez&search_path=goldneez,public&connection_limit=5&pgbouncer=true
+      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@pgbouncer:6432/legacymark?schema=goldneez&search_path=goldneez,public&connection_limit=5&pgbouncer=true&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
+      NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
     healthcheck:
@@ -468,19 +499,20 @@ services:
     environment: &common-env
       PORT: "4002"
       REDIS_URL: redis://redis:6379
-      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true
-      AUTH_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true
-      CORE_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
-      MEDIA_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_media?connection_limit=5&pgbouncer=true&statement_timeout=10000
-      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
-      ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000
+      POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
+      AUTH_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      CORE_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      MEDIA_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
+      MEDIA_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_media?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
+      ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
+      NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -504,7 +536,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4003"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -531,7 +563,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4004"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
       GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
@@ -614,6 +646,7 @@ services:
       RENDER_OUTPUT_DIR: /app/renders
     volumes:
       - render-data:/app/renders
+      - ./certs:/certs:ro
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis-queue: { condition: service_healthy }
@@ -663,7 +696,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4009"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -756,7 +789,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4013"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -969,6 +1002,34 @@ services:
           cpus: "0.5"
           memory: 512M
 
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr redpanda:8082
+      - --rpc-addr 0.0.0.0:33145
+      - --advertise-rpc-addr redpanda:33145
+    ports:
+      - "19092:19092"
+      - "8082:8082"
+    volumes:
+      - redpandadata:/var/lib/redpanda/data
+    networks:
+      - backend-net
+    profiles: ["all"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
 volumes:
   pgdata:
   pgdata-replica:
@@ -978,6 +1039,7 @@ volumes:
   lokidata:
   grafanadata:
   letsencrypt:
+  redpandadata:
 
 networks:
   frontend-net:

@@ -243,6 +243,13 @@ app.post("/api/auth/logout", async (req, res) => {
 
 // POST /api/auth/validate — Internal service-to-service token validation
 app.post("/api/auth/validate", async (req, res) => {
+  // Verify internal service secret
+  const authHeader = req.headers.authorization;
+  const internalSecret = process.env.INTERNAL_SECRET || "video-service-secret-change-in-production";
+  if (!authHeader || authHeader !== `Bearer ${internalSecret}`) {
+    return res.status(401).json({ error: "Unauthorized inter-service request" });
+  }
+
   try {
     const { token } = req.body;
     
