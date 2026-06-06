@@ -147,6 +147,44 @@ async function run() {
     }
   });
 
+  // 3.5. JWT Token Revocation Blacklist via Logout
+  await test("Security: JWT Token Revocation Blacklist via Logout", async () => {
+    // 1. Perform login via Traefik gateway to auth-service
+    const loginRes = await fetch(`${TRAEFIK_GATEWAY}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "security-test@legacymark.com",
+        password: "security-test-pass"
+      })
+    });
+    
+    assert(loginRes.status === 200, `Login should succeed, got ${loginRes.status}`);
+    const loginBody: any = await loginRes.json();
+    const token = loginBody.token;
+    assert(!!token, "Response should contain a JWT token");
+
+    // 2. Call /api/auth/me to verify we can access protected resources with the token
+    const meRes1 = await fetchJson(`${TRAEFIK_GATEWAY}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert(meRes1.status === 200, `Protected route should return 200, got ${meRes1.status}`);
+    assert(meRes1.body?.user?.email === "security-test@legacymark.com", "Should return the user profile");
+
+    // 3. Perform logout to revoke the token
+    const logoutRes = await fetch(`${TRAEFIK_GATEWAY}/api/auth/logout`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert(logoutRes.status === 200, `Logout should succeed, got ${logoutRes.status}`);
+
+    // 4. Call /api/auth/me again to verify the token is now blacklisted/revoked (returns 401)
+    const meRes2 = await fetchJson(`${TRAEFIK_GATEWAY}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert(meRes2.status === 401, `Protected route should now return 401 for revoked token, got ${meRes2.status}`);
+  });
+
   // 4. Rate Limiting Test (100 req/min limit) - RUN LAST to avoid blocking other tests
   await test("Security: Rate Limiting Blocks Flood Attacks (HTTP 429)", async () => {
     console.log(`     Sending 105 rapid sequential requests to ${API_GATEWAY}/health-check-rate-limit...`);

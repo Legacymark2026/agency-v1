@@ -262,8 +262,10 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=agency-backend-net"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.middlewares=security-headers@docker"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http3"
+      - "--entrypoints.websecure.http.middlewares=security-headers@docker"
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@legacymark.com}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.le.acme.httpchallenge=true"
@@ -276,6 +278,14 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "letsencrypt:/letsencrypt"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.security-headers.headers.referrerpolicy=no-referrer"
+      - "traefik.http.middlewares.security-headers.headers.stsseconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.customresponseheaders.X-Frame-Options=SAMEORIGIN"
     depends_on:
       redis: { condition: service_healthy }
     networks:
@@ -409,6 +419,8 @@ services:
       ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
+    volumes:
+      - ./certs:/certs:ro
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }

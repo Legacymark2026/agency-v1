@@ -71,3 +71,6 @@ screenshots/
 live-screenshot*.png
 local-dev-screenshot.png
 *screenshot*.png
+
+# certificates
+certs/

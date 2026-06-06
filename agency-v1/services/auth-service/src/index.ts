@@ -12,10 +12,38 @@ import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
+import Redis from "ioredis";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4001", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+
+const redis = new Redis(REDIS_URL);
+redis.on("error", (err) => console.error("[auth-service] Redis error:", err.message));
+
+// Load RS256 keys if present
+let privateKey: string | null = null;
+let publicKey: string | null = null;
+
+try {
+  if (fs.existsSync("/certs/private.key")) {
+    privateKey = fs.readFileSync("/certs/private.key", "utf8");
+    publicKey = fs.readFileSync("/certs/public.key", "utf8");
+    console.log("[auth-service] RS256 keys loaded from /certs");
+  } else {
+    const localPrivate = path.join(__dirname, "../../../certs/private.key");
+    const localPublic = path.join(__dirname, "../../../certs/public.key");
+    if (fs.existsSync(localPrivate)) {
+      privateKey = fs.readFileSync(localPrivate, "utf8");
+      publicKey = fs.readFileSync(localPublic, "utf8");
+      console.log("[auth-service] RS256 keys loaded from local certs");
+    }
+  }
+} catch (err: any) {
+  console.warn("[auth-service] Failed to load RSA keys, falling back to HS256:", err.message);
+}
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(helmet());
@@ -67,6 +95,11 @@ app.post("/api/auth/login", async (req, res) => {
 
     // Generate JWT
     const jwt = await import("jsonwebtoken");
+    const signKey = privateKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    const signOptions: any = { expiresIn: "24h" };
+    if (privateKey) {
+      signOptions.algorithm = "RS256";
+    }
     const token = jwt.sign(
       {
         sub: user.id,
@@ -79,8 +112,8 @@ app.post("/api/auth/login", async (req, res) => {
           companyName: c.company.name,
         })),
       },
-      process.env.JWT_SECRET || "dev-secret-change-me",
-      { expiresIn: "24h" }
+      signKey,
+      signOptions
     );
 
     // Create session
@@ -120,9 +153,22 @@ app.get("/api/auth/me", async (req, res) => {
       return res.status(401).json({ error: "No token provided" });
     }
 
-    const jwt = await import("jsonwebtoken");
     const token = authHeader.slice(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret-change-me") as {
+
+    // Check Redis blacklist
+    const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
+    if (isBlacklisted) {
+      return res.status(401).json({ error: "Token has been revoked" });
+    }
+
+    const jwt = await import("jsonwebtoken");
+    const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    const verifyOptions: any = {};
+    if (publicKey) {
+      verifyOptions.algorithms = ["RS256"];
+    }
+
+    const decoded = jwt.verify(token, verifyKey, verifyOptions) as unknown as {
       sub: string;
     };
 
@@ -149,12 +195,71 @@ app.get("/api/auth/me", async (req, res) => {
   }
 });
 
+// POST /api/auth/logout — Revoke token immediately by blacklisting it in Redis
+app.post("/api/auth/logout", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(400).json({ error: "No token provided" });
+    }
+
+    const token = authHeader.slice(7);
+    const jwt = await import("jsonwebtoken");
+    const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    const verifyOptions: any = {};
+    if (publicKey) {
+      verifyOptions.algorithms = ["RS256"];
+    }
+
+    // Verify first to get expiration and ensure it's a valid token structure
+    const decoded = jwt.verify(token, verifyKey, verifyOptions) as { exp?: number };
+    
+    // Calculate remaining TTL in seconds
+    let ttl = 24 * 60 * 60;
+    if (decoded.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      ttl = Math.max(1, decoded.exp - now);
+    }
+
+    // Add to Redis blacklist
+    await redis.setex(`jwt:blacklist:${token}`, ttl, "revoked");
+
+    // Clean up SQL session table
+    await prisma.session.deleteMany({
+      where: { sessionToken: token },
+    });
+
+    res.json({ success: true, message: "Logged out and token blacklisted successfully" });
+  } catch (err: any) {
+    // Even if verification fails (e.g. token expired), we delete database sessions matching it
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      await prisma.session.deleteMany({ where: { sessionToken: token } }).catch(() => {});
+    }
+    res.status(401).json({ error: "Invalid token or already expired" });
+  }
+});
+
 // POST /api/auth/validate — Internal service-to-service token validation
 app.post("/api/auth/validate", async (req, res) => {
   try {
     const { token } = req.body;
+    
+    // Check Redis blacklist
+    const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
+    if (isBlacklisted) {
+      return res.json({ valid: false, reason: "revoked" });
+    }
+
     const jwt = await import("jsonwebtoken");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret-change-me");
+    const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    const verifyOptions: any = {};
+    if (publicKey) {
+      verifyOptions.algorithms = ["RS256"];
+    }
+
+    const decoded = jwt.verify(token, verifyKey, verifyOptions);
     res.json({ valid: true, claims: decoded });
   } catch {
     res.json({ valid: false });
