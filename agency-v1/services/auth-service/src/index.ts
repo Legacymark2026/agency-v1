@@ -3,8 +3,11 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Handles: Authentication, Authorization, RBAC, MFA, Sessions, API Keys
  * Port: 4001
- * 
- * Models: User, Session, Account, Role, Permission, RoleConfig, CompanyUser
+ *
+ * DB routing (via @agency/database proxy):
+ *   - User, Session, Account, Role, Permission, RoleConfig, ApiKey → AUTH DB
+ *   - CompanyUser → CORE DB (soft-linked by userId)
+ *   - UserActivityLog → ANALYTICS DB
  */
 
 import express from "express";
@@ -50,6 +53,28 @@ app.use(helmet());
 app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(",") || "*" }));
 app.use(express.json({ limit: "1mb" }));
 
+// ── Helper: write activity log (fire-and-forget, never throws) ────────────────
+async function logActivity(
+  userId: string | null,
+  action: string,
+  details: Record<string, unknown>,
+  req: express.Request
+): Promise<void> {
+  try {
+    await (prisma as any).userActivityLog.create({
+      data: {
+        userId,
+        action,
+        details,
+        ipAddress: req.ip ?? null,
+        userAgent: req.headers["user-agent"] ?? null,
+      },
+    });
+  } catch {
+    // Non-critical — never block the request on a logging failure
+  }
+}
+
 // ── Health Checks (Required for K8s) ─────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "auth-service", timestamp: new Date().toISOString() });
@@ -74,23 +99,45 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ error: "Email and password required" });
     }
 
+    // Step 1: Fetch user from AUTH DB (no cross-DB include)
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { companies: { include: { company: true, role: true } } },
     });
 
     if (!user || !user.passwordHash) {
+      await logActivity(null, "login_failed", { email, reason: "user_not_found" }, req);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const bcrypt = await import("bcryptjs");
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      await logActivity(user.id, "login_failed", { email, reason: "invalid_password" }, req);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     if (user.deactivatedAt) {
+      await logActivity(user.id, "login_failed", { email, reason: "account_deactivated" }, req);
       return res.status(403).json({ error: "Account deactivated" });
+    }
+
+    // Step 2: Fetch company memberships from CORE DB (separate query via proxy)
+    let companyMemberships: Array<{
+      id: string;
+      companyId: string;
+      roleName: string;
+      company: { id: string; name: string };
+    }> = [];
+
+    try {
+      const rawMemberships = await (prisma as any).companyUser.findMany({
+        where: { userId: user.id },
+        include: { company: { select: { id: true, name: true } } },
+      });
+      companyMemberships = rawMemberships ?? [];
+    } catch (err) {
+      // Non-fatal — user can log in without company data
+      console.warn("[auth-service] Could not fetch company memberships for user:", user.id, err);
     }
 
     // Generate JWT
@@ -106,17 +153,17 @@ app.post("/api/auth/login", async (req, res) => {
         email: user.email,
         role: user.role,
         globalRole: user.globalRole,
-        companies: user.companies.map((c) => ({
+        companies: companyMemberships.map((c) => ({
           companyId: c.companyId,
           roleName: c.roleName,
-          companyName: c.company.name,
+          companyName: c.company?.name ?? "",
         })),
       },
       signKey,
       signOptions
     );
 
-    // Create session
+    // Create session in AUTH DB
     const session = await prisma.session.create({
       data: {
         userId: user.id,
@@ -126,6 +173,9 @@ app.post("/api/auth/login", async (req, res) => {
         userAgent: req.headers["user-agent"],
       },
     });
+
+    // Log successful login to ANALYTICS DB (fire-and-forget)
+    await logActivity(user.id, "login_success", { sessionId: session.id, email: user.email }, req);
 
     res.json({
       token,
@@ -212,8 +262,8 @@ app.post("/api/auth/logout", async (req, res) => {
     }
 
     // Verify first to get expiration and ensure it's a valid token structure
-    const decoded = jwt.verify(token, verifyKey, verifyOptions) as { exp?: number };
-    
+    const decoded = jwt.verify(token, verifyKey, verifyOptions) as { exp?: number; sub?: string };
+
     // Calculate remaining TTL in seconds
     let ttl = 24 * 60 * 60;
     if (decoded.exp) {
@@ -228,6 +278,11 @@ app.post("/api/auth/logout", async (req, res) => {
     await prisma.session.deleteMany({
       where: { sessionToken: token },
     });
+
+    // Log logout to ANALYTICS DB (fire-and-forget)
+    if (decoded.sub) {
+      await logActivity(decoded.sub, "logout", {}, req);
+    }
 
     res.json({ success: true, message: "Logged out and token blacklisted successfully" });
   } catch (err: any) {
@@ -252,7 +307,7 @@ app.post("/api/auth/validate", async (req, res) => {
 
   try {
     const { token } = req.body;
-    
+
     // Check Redis blacklist
     const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
     if (isBlacklisted) {
@@ -297,7 +352,7 @@ app.get('/api/auth/roles/full/:companyId', async (req, res) => {
             permission: { select: { id: true, name: true, module: true, description: true } }
           }
         },
-        _count: { select: { users: true } }
+        _count: { select: { permissions: true } }
       },
       orderBy: [{ priority: 'desc' }, { name: 'asc' }]
     });
@@ -385,9 +440,14 @@ app.patch('/api/auth/roles/:id', async (req, res) => {
 
 app.delete('/api/auth/roles/:id', async (req, res) => {
   try {
-    const role = await prisma.role.findUnique({ where: { id: req.params.id }, include: { users: true } });
+    const role = await prisma.role.findUnique({ where: { id: req.params.id } });
     if (!role) return res.status(404).json({ error: 'Rol no encontrado' });
-    if (role.users.length > 0) return res.status(400).json({ error: 'El rol tiene usuarios asignados' });
+
+    // Check if any companyUser has this roleName in CORE DB
+    const usersWithRole = await (prisma as any).companyUser.count({
+      where: { companyId: role.companyId, roleName: role.name }
+    });
+    if (usersWithRole > 0) return res.status(400).json({ error: 'El rol tiene usuarios asignados' });
 
     await prisma.rolePermission.deleteMany({ where: { roleId: req.params.id } });
     await prisma.role.delete({ where: { id: req.params.id } });
@@ -399,12 +459,17 @@ app.delete('/api/auth/roles/:id', async (req, res) => {
 app.patch('/api/auth/assign-role', async (req, res) => {
   try {
     const { userId, companyId, roleId } = req.body;
-    const target = await prisma.companyUser.findFirst({ where: { userId, companyId } });
+    // companyUser lives in CORE DB — accessed via proxy
+    const target = await (prisma as any).companyUser.findFirst({ where: { userId, companyId } });
     if (!target) return res.status(400).json({ error: 'El usuario no pertenece a esta empresa' });
 
-    await prisma.companyUser.update({
+    // Update roleName by looking up the role name from AUTH DB
+    const role = await prisma.role.findUnique({ where: { id: roleId }, select: { name: true } });
+    if (!role) return res.status(404).json({ error: 'Rol no encontrado' });
+
+    await (prisma as any).companyUser.update({
       where: { id: target.id },
-      data: { roleId }
+      data: { roleName: role.name }
     });
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -412,16 +477,39 @@ app.patch('/api/auth/assign-role', async (req, res) => {
 
 app.get('/api/auth/users-with-roles/:companyId', async (req, res) => {
   try {
-    const users = await prisma.companyUser.findMany({
+    // Step 1: Get company members from CORE DB
+    const members = await (prisma as any).companyUser.findMany({
       where: { companyId: req.params.companyId },
       include: {
-        user: { select: { id: true, name: true, email: true, image: true } },
-        role: { select: { id: true, name: true, priority: true } },
         team: { select: { id: true, name: true } }
       },
       orderBy: [{ joinedAt: 'desc' }]
     });
-    res.json(users);
+
+    if (!members || members.length === 0) {
+      return res.json([]);
+    }
+
+    // Step 2: Fetch user details from AUTH DB (batch)
+    const userIds = members.map((m: any) => m.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true, image: true }
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    // Step 3: Combine results
+    const result = members.map((m: any) => ({
+      id: m.id,
+      userId: m.userId,
+      companyId: m.companyId,
+      roleName: m.roleName,
+      joinedAt: m.joinedAt,
+      team: m.team,
+      user: userMap.get(m.userId) ?? null,
+    }));
+
+    res.json(result);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
@@ -465,7 +553,7 @@ app.get('/api/auth/users/:id/mfa', async (req, res) => {
 
 app.patch('/api/auth/users/:id/mfa', async (req, res) => {
   try {
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { id: req.params.id },
       data: req.body
     });
