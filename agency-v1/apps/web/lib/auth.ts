@@ -136,30 +136,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                         logger.auth("Account already linked, skipping.");
                     }
 
-                    // Log initial success
-                    await prisma.userActivityLog.create({
-                        data: {
-                            userId: dbUser.id,
-                            action: `LOGIN_SUCCESS_OAUTH_${account.provider.toUpperCase()}`,
-                            ipAddress: ip,
-                            userAgent: userAgent,
-                        }
-                    });
+                    // Log initial success (fire-and-forget)
+                    try {
+                        await (prisma as any).userActivityLog.create({
+                            data: {
+                                userId: dbUser.id,
+                                action: `LOGIN_SUCCESS_OAUTH_${account.provider.toUpperCase()}`,
+                                ipAddress: ip,
+                                userAgent: userAgent,
+                            }
+                        });
+                    } catch (e) { /* non-critical */ }
 
                 } catch (error) {
                     logger.error("Error saving OAuth account:", { error });
                     return false;
                 }
             } else if (account?.provider === "credentials" && user?.id) {
-                // Log credentials success
-                await prisma.userActivityLog.create({
-                    data: {
-                        userId: user.id,
-                        action: "LOGIN_SUCCESS",
-                        ipAddress: ip,
-                        userAgent: userAgent,
-                    }
-                });
+                // Log credentials success (fire-and-forget)
+                try {
+                    await (prisma as any).userActivityLog.create({
+                        data: {
+                            userId: user.id,
+                            action: "LOGIN_SUCCESS",
+                            ipAddress: ip,
+                            userAgent: userAgent,
+                        }
+                    });
+                } catch (e) { /* non-critical */ }
             }
 
             return true;
@@ -209,22 +213,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                         if (dbAccount?.user) {
                             logger.auth("JWT: Resolved via linked OAuth account →", { email: dbAccount.user.email });
-                            // B-2: Cargar companyId y permissions desde CompanyUser
-                            const userWithMeta = await prisma.user.findUnique({
-                                where: { id: dbAccount.user.id },
-                                select: {
-                                    id: true,
-                                    role: true,
-                                    companies: {
-                                        select: { companyId: true, permissions: true },
-                                        take: 1
-                                    }
-                                }
-                            });
+                            // Fetch companyUser from CORE DB separately (no cross-DB include)
+                            let companyId: string | null = null;
+                            let permissions: string[] = [];
+                            try {
+                                const membership = await (prisma as any).companyUser.findFirst({
+                                    where: { userId: dbAccount.user.id },
+                                    select: { companyId: true, permissions: true },
+                                });
+                                companyId = membership?.companyId ?? null;
+                                permissions = (membership?.permissions as string[]) ?? [];
+                            } catch (e) { /* non-critical */ }
                             token.id = dbAccount.user.id;
                             token.role = dbAccount.user.role;
-                            token.companyId = userWithMeta?.companies[0]?.companyId ?? null;
-                            token.permissions = ((userWithMeta?.companies[0]?.permissions ?? []) as string[]) as Permission[];
+                            token.companyId = companyId;
+                            token.permissions = permissions as Permission[];
                             // ── RoleConfig: cargar rutas permitidas para roles custom
                             token.allowedRoutes = await loadAllowedRoutes(dbAccount.user.role);
                             token.roleCheckedAt = Date.now();
@@ -248,22 +251,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     }
 
                     if (dbUser) {
-                        // B-2: Cargar companyId y permissions desde CompanyUser
-                        const userWithMeta = await prisma.user.findUnique({
-                            where: { id: dbUser.id },
-                            select: {
-                                id: true,
-                                role: true,
-                                companies: {
-                                    select: { companyId: true, permissions: true },
-                                    take: 1
-                                }
-                            }
-                        });
+                        // Fetch companyUser from CORE DB separately (no cross-DB include)
+                        let companyId: string | null = null;
+                        let permissions: string[] = [];
+                        try {
+                            const membership = await (prisma as any).companyUser.findFirst({
+                                where: { userId: dbUser.id },
+                                select: { companyId: true, permissions: true },
+                            });
+                            companyId = membership?.companyId ?? null;
+                            permissions = (membership?.permissions as string[]) ?? [];
+                        } catch (e) { /* non-critical */ }
                         token.id = dbUser.id;
                         token.role = dbUser.role;
-                        token.companyId = userWithMeta?.companies[0]?.companyId ?? null;
-                        token.permissions = ((userWithMeta?.companies[0]?.permissions ?? []) as string[]) as Permission[];
+                        token.companyId = companyId;
+                        token.permissions = permissions as Permission[];
                         // ── RoleConfig: cargar rutas permitidas para roles custom
                         token.allowedRoutes = await loadAllowedRoutes(dbUser.role);
                         token.roleCheckedAt = Date.now();
@@ -291,18 +293,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     try {
                         const freshUser = await prisma.user.findUnique({
                             where: { id: tokenId },
-                            select: {
-                                role: true,
-                                companies: {
-                                    select: { companyId: true, permissions: true },
-                                    take: 1
-                                }
-                            }
+                            select: { role: true }
                         });
                         if (freshUser) {
+                            // Fetch companyUser from CORE DB separately
+                            let companyId: string | null = token.companyId as string ?? null;
+                            let permissions: string[] = (token.permissions as string[]) ?? [];
+                            try {
+                                const membership = await (prisma as any).companyUser.findFirst({
+                                    where: { userId: tokenId },
+                                    select: { companyId: true, permissions: true },
+                                });
+                                if (membership) {
+                                    companyId = membership.companyId ?? null;
+                                    permissions = (membership.permissions as string[]) ?? [];
+                                }
+                            } catch (e) { /* non-critical */ }
                             token.role = freshUser.role as UserRole;
-                            token.companyId = freshUser.companies[0]?.companyId ?? token.companyId;
-                            token.permissions = ((freshUser.companies[0]?.permissions ?? []) as string[]) as Permission[];
+                            token.companyId = companyId;
+                            token.permissions = permissions as Permission[];
                             // ── RoleConfig: refrescar rutas permitidas si el rol cambió
                             token.allowedRoutes = await loadAllowedRoutes(freshUser.role);
                             token.roleCheckedAt = Date.now();
@@ -412,7 +421,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                     const user = await prisma.user.findUnique({
                         where: { email },
-                        include: { companies: true },
                     });
 
                     if (!user || !user.passwordHash) return null;
@@ -437,13 +445,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             };
                         }
                         
-                        // Audit log para login exitoso
-                        await prisma.userActivityLog.create({
-                            data: {
-                                userId: user.id,
-                                action: "LOGIN_SUCCESS",
-                            }
-                        });
+                        // Audit log para login exitoso (fire-and-forget)
+                        try {
+                            await (prisma as any).userActivityLog.create({
+                                data: {
+                                    userId: user.id,
+                                    action: "LOGIN_SUCCESS",
+                                }
+                            });
+                        } catch (e) { /* non-critical */ }
                         
                         return {
                             id: user.id,
@@ -470,14 +480,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 userAgent = headersList.get("user-agent") || "Unknown Device";
                             } catch (e) { }
 
-                            await prisma.userActivityLog.create({
-                                data: {
-                                    userId: user.id,
-                                    action: "LOGIN_FAILED_BAD_PASSWORD",
-                                    ipAddress: ip,
-                                    userAgent: userAgent,
-                                }
-                            });
+                            try {
+                                await (prisma as any).userActivityLog.create({
+                                    data: {
+                                        userId: user.id,
+                                        action: "LOGIN_FAILED_BAD_PASSWORD",
+                                        ipAddress: ip,
+                                        userAgent: userAgent,
+                                    }
+                                });
+                            } catch (e) { }
                         }
                     } catch (e) { }
                 }
