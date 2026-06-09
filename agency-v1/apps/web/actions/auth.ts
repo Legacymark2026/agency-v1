@@ -109,19 +109,20 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
         if (isNextRedirect) throw error;
 
         if (error instanceof AuthError) {
+            const causeMsg = error.cause ? JSON.stringify(error.cause, Object.getOwnPropertyNames(error.cause)).slice(0, 300) : 'no cause';
             switch (error.type) {
                 case 'CredentialsSignin':
-                    return 'Credenciales inválidas.';
+                    return `[DEBUG] CredentialsSignin: ${causeMsg}`;
                 case 'CallbackRouteError':
-                    return 'Error de autenticación. Verifica tus credenciales.';
+                    return `[DEBUG] CallbackRouteError: ${causeMsg}`;
                 default:
-                    console.error('[LoginUser] AuthError type:', error.type, error.cause);
-                    return 'Algo salió mal. Por favor intenta de nuevo.';
+                    return `[DEBUG] AuthError(${error.type}): ${causeMsg}`;
             }
         }
 
-        console.error('[LoginUser] Unexpected error:', error);
-        return 'Servicio temporalmente no disponible. Por favor intenta de nuevo más tarde.';
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const errStack = error instanceof Error ? error.stack?.split('\n').slice(0,3).join(' | ') : '';
+        return `[DEBUG] Error: ${errMsg.slice(0, 200)} | ${errStack.slice(0, 200)}`;
     }
 }
 
