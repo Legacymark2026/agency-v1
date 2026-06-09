@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   productionBrowserSourceMaps: true,
+  // Prevent webpack from bundling native Node.js modules.
+  // Prisma requires its native query engine binary at runtime — bundling breaks it.
+  // bcryptjs uses native crypto APIs that also can't be bundled safely.
+  serverExternalPackages: ['@prisma/client', 'bcryptjs', '.prisma/client'],
   // ignoreBuildErrors: avoids OOM crash in the Next.js TypeScript worker on large codebases.
   // TypeScript is checked separately via `npx tsc --noEmit` in CI / pre-commit.
   // Ref: apps/web/ts_errors.log — pre-existing errors documented and tracked progressively.
