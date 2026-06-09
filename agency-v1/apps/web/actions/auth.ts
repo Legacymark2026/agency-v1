@@ -109,31 +109,18 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
         if (isNextRedirect) throw error;
 
         if (error instanceof AuthError) {
-            const causeMsg = error.cause ? JSON.stringify(error.cause, Object.getOwnPropertyNames(error.cause)).slice(0, 300) : 'no cause';
             switch (error.type) {
                 case 'CredentialsSignin':
-                    return `[DEBUG] CredentialsSignin: ${causeMsg}`;
+                    return 'Credenciales inválidas. Verifica tu correo y contraseña.';
                 case 'CallbackRouteError':
-                    return `[DEBUG] CallbackRouteError: ${causeMsg}`;
+                    return 'Error en el proceso de autenticación. Intenta nuevamente.';
                 default:
-                    return `[DEBUG] AuthError(${error.type}): ${causeMsg}`;
+                    return 'Ocurrió un error al iniciar sesión. Intenta nuevamente.';
             }
         }
 
-        const errMsg = error instanceof Error ? error.message : String(error);
-        const errStack = error instanceof Error ? error.stack?.split('\n').slice(0,3).join(' | ') : '';
-        const sanitize = (val: string | undefined) => {
-            if (!val) return "undefined";
-            return val.replace(/:[^:@]+@/, ":***@");
-        };
-        const envDetails = {
-            DATABASE_URL: sanitize(process.env.DATABASE_URL),
-            AUTH_DATABASE_READ_URL: sanitize(process.env.AUTH_DATABASE_READ_URL),
-            POSTGRES_EXTERNAL_URL: sanitize(process.env.POSTGRES_EXTERNAL_URL),
-            AUTH_DATABASE_URL: sanitize(process.env.AUTH_DATABASE_URL),
-            NODE_ENV: process.env.NODE_ENV,
-        };
-        return `[DEBUG] Error: ${errMsg.slice(0, 200)} | Env: ${JSON.stringify(envDetails)} | ${errStack.slice(0, 200)}`;
+        console.error('[loginUser] Unexpected error:', error);
+        return 'Servicio temporalmente no disponible. Intenta más tarde.';
     }
 }
 

@@ -27,17 +27,6 @@ let _prismaAnalyticsRead: PrismaClient | null = null;
 const createClient = (url: string | undefined): PrismaClient => {
   let connectionUrl = url;
 
-  // DIAGNOSTIC LOGGING (Sanitized to avoid logging passwords)
-  const sanitize = (val: string | undefined) => {
-    if (!val) return "undefined";
-    return val.replace(/:[^:@]+@/, ":***@");
-  };
-  process.stderr.write(`[PRISMA DIAGNOSTIC] createClient called with URL: ${sanitize(connectionUrl)}\n`);
-  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.POSTGRES_EXTERNAL_URL: ${sanitize(process.env.POSTGRES_EXTERNAL_URL)}\n`);
-  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.DATABASE_URL: ${sanitize(process.env.DATABASE_URL)}\n`);
-  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_READ_URL: ${sanitize(process.env.AUTH_DATABASE_READ_URL)}\n`);
-  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_URL: ${sanitize(process.env.AUTH_DATABASE_URL)}\n`);
-
   if (
     connectionUrl &&
     !connectionUrl.startsWith("prisma://") &&
