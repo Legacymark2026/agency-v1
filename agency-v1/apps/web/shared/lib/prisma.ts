@@ -24,11 +24,20 @@ let _prismaCoreRead: PrismaClient | null = null;
 let _prismaMediaRead: PrismaClient | null = null;
 let _prismaAnalyticsRead: PrismaClient | null = null;
 
-/**
- * Creates a Prisma Client instance with optimized pooling limit for serverless/docker.
- */
 const createClient = (url: string | undefined): PrismaClient => {
   let connectionUrl = url;
+
+  // DIAGNOSTIC LOGGING (Sanitized to avoid logging passwords)
+  const sanitize = (val: string | undefined) => {
+    if (!val) return "undefined";
+    return val.replace(/:[^:@]+@/, ":***@");
+  };
+  console.log(`[PRISMA DIAGNOSTIC] createClient called with URL: ${sanitize(connectionUrl)}`);
+  console.log(`[PRISMA DIAGNOSTIC] process.env.POSTGRES_EXTERNAL_URL: ${sanitize(process.env.POSTGRES_EXTERNAL_URL)}`);
+  console.log(`[PRISMA DIAGNOSTIC] process.env.DATABASE_URL: ${sanitize(process.env.DATABASE_URL)}`);
+  console.log(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_READ_URL: ${sanitize(process.env.AUTH_DATABASE_READ_URL)}`);
+  console.log(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_URL: ${sanitize(process.env.AUTH_DATABASE_URL)}`);
+
   if (
     connectionUrl &&
     !connectionUrl.startsWith("prisma://") &&
