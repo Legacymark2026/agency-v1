@@ -32,11 +32,11 @@ const createClient = (url: string | undefined): PrismaClient => {
     if (!val) return "undefined";
     return val.replace(/:[^:@]+@/, ":***@");
   };
-  console.log(`[PRISMA DIAGNOSTIC] createClient called with URL: ${sanitize(connectionUrl)}`);
-  console.log(`[PRISMA DIAGNOSTIC] process.env.POSTGRES_EXTERNAL_URL: ${sanitize(process.env.POSTGRES_EXTERNAL_URL)}`);
-  console.log(`[PRISMA DIAGNOSTIC] process.env.DATABASE_URL: ${sanitize(process.env.DATABASE_URL)}`);
-  console.log(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_READ_URL: ${sanitize(process.env.AUTH_DATABASE_READ_URL)}`);
-  console.log(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_URL: ${sanitize(process.env.AUTH_DATABASE_URL)}`);
+  process.stderr.write(`[PRISMA DIAGNOSTIC] createClient called with URL: ${sanitize(connectionUrl)}\n`);
+  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.POSTGRES_EXTERNAL_URL: ${sanitize(process.env.POSTGRES_EXTERNAL_URL)}\n`);
+  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.DATABASE_URL: ${sanitize(process.env.DATABASE_URL)}\n`);
+  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_READ_URL: ${sanitize(process.env.AUTH_DATABASE_READ_URL)}\n`);
+  process.stderr.write(`[PRISMA DIAGNOSTIC] process.env.AUTH_DATABASE_URL: ${sanitize(process.env.AUTH_DATABASE_URL)}\n`);
 
   if (
     connectionUrl &&
