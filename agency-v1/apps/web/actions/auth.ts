@@ -119,8 +119,9 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
             }
         }
 
-        console.error('[loginUser] Unexpected error:', error);
-        return 'Servicio temporalmente no disponible. Intenta más tarde.';
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const errStack = error instanceof Error ? error.stack?.split('\n').slice(0, 2).join(' | ') : '';
+        return `[DEBUG] Error inesperado: ${errMsg.slice(0, 200)} | ${errStack.slice(0, 200)}`;
     }
 }
 
