@@ -122,7 +122,18 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
 
         const errMsg = error instanceof Error ? error.message : String(error);
         const errStack = error instanceof Error ? error.stack?.split('\n').slice(0,3).join(' | ') : '';
-        return `[DEBUG] Error: ${errMsg.slice(0, 200)} | ${errStack.slice(0, 200)}`;
+        const sanitize = (val: string | undefined) => {
+            if (!val) return "undefined";
+            return val.replace(/:[^:@]+@/, ":***@");
+        };
+        const envDetails = {
+            DATABASE_URL: sanitize(process.env.DATABASE_URL),
+            AUTH_DATABASE_READ_URL: sanitize(process.env.AUTH_DATABASE_READ_URL),
+            POSTGRES_EXTERNAL_URL: sanitize(process.env.POSTGRES_EXTERNAL_URL),
+            AUTH_DATABASE_URL: sanitize(process.env.AUTH_DATABASE_URL),
+            NODE_ENV: process.env.NODE_ENV,
+        };
+        return `[DEBUG] Error: ${errMsg.slice(0, 200)} | Env: ${JSON.stringify(envDetails)} | ${errStack.slice(0, 200)}`;
     }
 }
 
