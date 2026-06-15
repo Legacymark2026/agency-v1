@@ -37,9 +37,14 @@ const createClient = (url: string | undefined): PrismaClient => {
     connectionUrl = `${connectionUrl}${separator}connection_limit=5&pool_timeout=20`;
   }
 
+  // Use datasourceUrl instead of datasources.db.url:
+  // In Prisma v6, `datasources` still triggers schema env var validation
+  // (checking env("DATABASE_URL") in schema.prisma) BEFORE applying the override,
+  // throwing "Environment variable not found" even if a URL is provided.
+  // `datasourceUrl` bypasses this validation entirely and provides the URL directly.
   return new PrismaClient({
     log: logConfig as any,
-    datasources: connectionUrl ? { db: { url: connectionUrl } } : undefined,
+    ...(connectionUrl ? { datasourceUrl: connectionUrl } : {}),
   });
 };
 
