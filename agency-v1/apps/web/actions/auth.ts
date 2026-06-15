@@ -89,6 +89,7 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
     }
 
     try {
+        process.stderr.write(`[ENV-CHECK] AUTH_DATABASE_URL=${process.env.AUTH_DATABASE_URL ? 'SET' : 'MISSING'} | DATABASE_URL=${process.env.DATABASE_URL ? 'SET' : 'MISSING'} | CORE=${process.env.CORE_DATABASE_URL ? 'SET' : 'MISSING'}\n`);
         const user = await prisma.user.findUnique({ where: { email } });
         const redirectTo = user?.role === UserRole.EXTERNAL_CLIENT ? '/dashboard/client' : '/dashboard';
 
