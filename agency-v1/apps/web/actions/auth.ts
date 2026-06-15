@@ -119,8 +119,10 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
             }
         }
 
-        console.error('[loginUser] Unexpected error:', error);
-        return 'Ocurrió un error inesperado. Por favor intenta de nuevo.';
+        const errMsg = error instanceof Error ? error.message : String(error);
+        const errStack = error instanceof Error ? (error.stack || '').split('\n').slice(0, 5).join(' | ') : '';
+        process.stderr.write(`[LOGIN ERROR] ${errMsg}\n[STACK] ${errStack}\n`);
+        return `Error: ${errMsg.slice(0, 300)}`;
     }
 }
 
