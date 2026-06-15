@@ -10,7 +10,21 @@ export { PrismaClient } from "@prisma/client";
 export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
-const logConfig = process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"];
+// Ensure DATABASE_URL is always defined in process.env at runtime to satisfy Prisma's schema validation.
+// Using bracket notation prevents Webpack from statically inlining these variables during build time.
+if (typeof process !== "undefined" && process.env) {
+  if (!process.env["DATABASE_URL"]) {
+    process.env["DATABASE_URL"] =
+      process.env["CORE_DATABASE_URL"] ||
+      process.env["AUTH_DATABASE_URL"] ||
+      "postgresql://legacyuser:dummy@localhost:5432/legacymark";
+  }
+}
+
+const logConfig =
+  process.env["NODE_ENV"] === "development"
+    ? ["query", "error", "warn"]
+    : ["error"];
 
 // Lazy-loaded primary database client instances
 let _prismaAuth: PrismaClient | null = null;
@@ -30,7 +44,7 @@ const createClient = (url: string | undefined): PrismaClient => {
   if (
     connectionUrl &&
     !connectionUrl.startsWith("prisma://") &&
-    process.env.NODE_ENV === "production" &&
+    process.env["NODE_ENV"] === "production" &&
     !connectionUrl.includes("connection_limit")
   ) {
     const separator = connectionUrl.includes("?") ? "&" : "?";
@@ -51,28 +65,36 @@ const createClient = (url: string | undefined): PrismaClient => {
 // Client getters for primary connections
 export const getPrismaAuth = (): PrismaClient => {
   if (!_prismaAuth) {
-    _prismaAuth = createClient(process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL);
+    _prismaAuth = createClient(
+      process.env["AUTH_DATABASE_URL"] || process.env["DATABASE_URL"]
+    );
   }
   return _prismaAuth;
 };
 
 export const getPrismaCore = (): PrismaClient => {
   if (!_prismaCore) {
-    _prismaCore = createClient(process.env.CORE_DATABASE_URL || process.env.DATABASE_URL);
+    _prismaCore = createClient(
+      process.env["CORE_DATABASE_URL"] || process.env["DATABASE_URL"]
+    );
   }
   return _prismaCore;
 };
 
 export const getPrismaMedia = (): PrismaClient => {
   if (!_prismaMedia) {
-    _prismaMedia = createClient(process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL);
+    _prismaMedia = createClient(
+      process.env["MEDIA_DATABASE_URL"] || process.env["DATABASE_URL"]
+    );
   }
   return _prismaMedia;
 };
 
 export const getPrismaAnalytics = (): PrismaClient => {
   if (!_prismaAnalytics) {
-    _prismaAnalytics = createClient(process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL);
+    _prismaAnalytics = createClient(
+      process.env["ANALYTICS_DATABASE_URL"] || process.env["DATABASE_URL"]
+    );
   }
   return _prismaAnalytics;
 };
@@ -81,10 +103,10 @@ export const getPrismaAnalytics = (): PrismaClient => {
 export const getPrismaAuthRead = (): PrismaClient => {
   if (!_prismaAuthRead) {
     _prismaAuthRead = createClient(
-      process.env.AUTH_DATABASE_READ_URL ||
-        process.env.DATABASE_READ_URL ||
-        process.env.AUTH_DATABASE_URL ||
-        process.env.DATABASE_URL
+      process.env["AUTH_DATABASE_READ_URL"] ||
+        process.env["DATABASE_READ_URL"] ||
+        process.env["AUTH_DATABASE_URL"] ||
+        process.env["DATABASE_URL"]
     );
   }
   return _prismaAuthRead;
@@ -93,10 +115,10 @@ export const getPrismaAuthRead = (): PrismaClient => {
 export const getPrismaCoreRead = (): PrismaClient => {
   if (!_prismaCoreRead) {
     _prismaCoreRead = createClient(
-      process.env.CORE_DATABASE_READ_URL ||
-        process.env.DATABASE_READ_URL ||
-        process.env.CORE_DATABASE_URL ||
-        process.env.DATABASE_URL
+      process.env["CORE_DATABASE_READ_URL"] ||
+        process.env["DATABASE_READ_URL"] ||
+        process.env["CORE_DATABASE_URL"] ||
+        process.env["DATABASE_URL"]
     );
   }
   return _prismaCoreRead;
@@ -105,10 +127,10 @@ export const getPrismaCoreRead = (): PrismaClient => {
 export const getPrismaMediaRead = (): PrismaClient => {
   if (!_prismaMediaRead) {
     _prismaMediaRead = createClient(
-      process.env.MEDIA_DATABASE_READ_URL ||
-        process.env.DATABASE_READ_URL ||
-        process.env.MEDIA_DATABASE_URL ||
-        process.env.DATABASE_URL
+      process.env["MEDIA_DATABASE_READ_URL"] ||
+        process.env["DATABASE_READ_URL"] ||
+        process.env["MEDIA_DATABASE_URL"] ||
+        process.env["DATABASE_URL"]
     );
   }
   return _prismaMediaRead;
@@ -117,10 +139,10 @@ export const getPrismaMediaRead = (): PrismaClient => {
 export const getPrismaAnalyticsRead = (): PrismaClient => {
   if (!_prismaAnalyticsRead) {
     _prismaAnalyticsRead = createClient(
-      process.env.ANALYTICS_DATABASE_READ_URL ||
-        process.env.DATABASE_READ_URL ||
-        process.env.ANALYTICS_DATABASE_URL ||
-        process.env.DATABASE_URL
+      process.env["ANALYTICS_DATABASE_READ_URL"] ||
+        process.env["DATABASE_READ_URL"] ||
+        process.env["ANALYTICS_DATABASE_URL"] ||
+        process.env["DATABASE_URL"]
     );
   }
   return _prismaAnalyticsRead;
@@ -320,6 +342,6 @@ export const prisma =
     }
   });
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env["NODE_ENV"] !== "production") {
   globalThis.__prisma = prisma;
 }
