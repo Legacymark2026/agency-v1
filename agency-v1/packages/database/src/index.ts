@@ -24,48 +24,83 @@ let _prismaCoreRead: PrismaClient | null = null;
 let _prismaMediaRead: PrismaClient | null = null;
 let _prismaAnalyticsRead: PrismaClient | null = null;
 
-const logConfig = process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"];
+const getRuntimeEnv = (key: string): string | undefined => {
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.env) {
+    return p.env[key];
+  }
+  return undefined;
+};
+
+// Write debug info directly to stderr
+const writeDebug = (msg: string) => {
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.stderr) {
+    p.stderr.write(`[PRISMA-DB-DEBUG] ${msg}\n`);
+  }
+};
+
+const logConfig =
+  getRuntimeEnv("NODE_ENV") === "development"
+    ? ["query", "error", "warn"]
+    : ["error"];
+
+const createClient = (url: string | undefined): PrismaClient => {
+  let connectionUrl = url;
+
+  writeDebug(`Creating PrismaClient with URL: ${connectionUrl ? connectionUrl.replace(/:[^:@]+@/, ":****@") : "undefined"}`);
+
+  if (
+    connectionUrl &&
+    !connectionUrl.startsWith("prisma://") &&
+    getRuntimeEnv("NODE_ENV") === "production" &&
+    !connectionUrl.includes("connection_limit")
+  ) {
+    const separator = connectionUrl.includes("?") ? "&" : "?";
+    connectionUrl = `${connectionUrl}${separator}connection_limit=5&pool_timeout=20`;
+  }
+
+  // Use datasourceUrl instead of datasources.db.url to bypass schema env var validation
+  return new PrismaClient({
+    log: logConfig as any,
+    ...(connectionUrl ? { datasourceUrl: connectionUrl } : {}),
+  });
+};
 
 export const getPrismaAuth = (): PrismaClient => {
   if (!_prismaAuth) {
-    const url = process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaAuth = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaAuth = createClient(
+      getRuntimeEnv("AUTH_DATABASE_URL") || getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaAuth;
 };
 
 export const getPrismaCore = (): PrismaClient => {
   if (!_prismaCore) {
-    const url = process.env.CORE_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaCore = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaCore = createClient(
+      getRuntimeEnv("CORE_DATABASE_URL") || getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaCore;
 };
 
 export const getPrismaMedia = (): PrismaClient => {
   if (!_prismaMedia) {
-    const url = process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaMedia = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaMedia = createClient(
+      getRuntimeEnv("MEDIA_DATABASE_URL") || getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaMedia;
 };
 
 export const getPrismaAnalytics = (): PrismaClient => {
   if (!_prismaAnalytics) {
-    const url = process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaAnalytics = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaAnalytics = createClient(
+      getRuntimeEnv("ANALYTICS_DATABASE_URL") || getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaAnalytics;
 };
@@ -73,44 +108,48 @@ export const getPrismaAnalytics = (): PrismaClient => {
 // Getters de réplicas de lectura
 export const getPrismaAuthRead = (): PrismaClient => {
   if (!_prismaAuthRead) {
-    const url = process.env.AUTH_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaAuthRead = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaAuthRead = createClient(
+      getRuntimeEnv("AUTH_DATABASE_READ_URL") ||
+        getRuntimeEnv("DATABASE_READ_URL") ||
+        getRuntimeEnv("AUTH_DATABASE_URL") ||
+        getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaAuthRead;
 };
 
 export const getPrismaCoreRead = (): PrismaClient => {
   if (!_prismaCoreRead) {
-    const url = process.env.CORE_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.CORE_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaCoreRead = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaCoreRead = createClient(
+      getRuntimeEnv("CORE_DATABASE_READ_URL") ||
+        getRuntimeEnv("DATABASE_READ_URL") ||
+        getRuntimeEnv("CORE_DATABASE_URL") ||
+        getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaCoreRead;
 };
 
 export const getPrismaMediaRead = (): PrismaClient => {
   if (!_prismaMediaRead) {
-    const url = process.env.MEDIA_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.MEDIA_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaMediaRead = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaMediaRead = createClient(
+      getRuntimeEnv("MEDIA_DATABASE_READ_URL") ||
+        getRuntimeEnv("DATABASE_READ_URL") ||
+        getRuntimeEnv("MEDIA_DATABASE_URL") ||
+        getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaMediaRead;
 };
 
 export const getPrismaAnalyticsRead = (): PrismaClient => {
   if (!_prismaAnalyticsRead) {
-    const url = process.env.ANALYTICS_DATABASE_READ_URL || process.env.DATABASE_READ_URL || process.env.ANALYTICS_DATABASE_URL || process.env.DATABASE_URL;
-    _prismaAnalyticsRead = new PrismaClient({
-      log: logConfig as any,
-      datasources: url ? { db: { url } } : undefined,
-    });
+    _prismaAnalyticsRead = createClient(
+      getRuntimeEnv("ANALYTICS_DATABASE_READ_URL") ||
+        getRuntimeEnv("DATABASE_READ_URL") ||
+        getRuntimeEnv("ANALYTICS_DATABASE_URL") ||
+        getRuntimeEnv("DATABASE_URL")
+    );
   }
   return _prismaAnalyticsRead;
 };
@@ -312,7 +351,7 @@ export const prisma =
     }
   });
 
-if (process.env.NODE_ENV !== "production") {
+if (getRuntimeEnv("NODE_ENV") !== "production") {
   globalForPrisma.prisma = prisma;
 }
 

@@ -4,7 +4,10 @@
  * Handles: Authentication, Authorization, RBAC, MFA, Sessions, API Keys
  * Port: 4001
  *
- * Models: User, Session, Account, Role, Permission, RoleConfig, CompanyUser
+ * DB routing (via @agency/database proxy):
+ *   - User, Session, Account, Role, Permission, RoleConfig, ApiKey → AUTH DB
+ *   - CompanyUser → CORE DB (soft-linked by userId)
+ *   - UserActivityLog → ANALYTICS DB
  */
 declare const _default: any;
 export default _default;
