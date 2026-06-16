@@ -11,25 +11,21 @@ export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
 const getRuntimeEnv = (key: string): string | undefined => {
-  try {
-    const rawProcess = eval("process");
-    if (rawProcess && rawProcess.env) {
-      return rawProcess.env[key];
-    }
-  } catch (e) {
-    // Fallback if eval("process") fails
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.env) {
+    return p.env[key];
   }
   return undefined;
 };
 
 // Write debug info directly to stderr to bypass Next.js removeConsole minification
 const writeDebug = (msg: string) => {
-  try {
-    const rawProcess = eval("process");
-    if (rawProcess && rawProcess.stderr) {
-      rawProcess.stderr.write(`[PRISMA-DEBUG] ${msg}\n`);
-    }
-  } catch (e) {}
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.stderr) {
+    p.stderr.write(`[PRISMA-DEBUG] ${msg}\n`);
+  }
 };
 
 // Ensure DATABASE_URL is always defined in process.env at runtime to satisfy Prisma's schema validation.
@@ -40,12 +36,11 @@ if (!runtimeDbUrl) {
     getRuntimeEnv("AUTH_DATABASE_URL") ||
     "postgresql://legacyuser:dummy@localhost:5432/legacymark";
   writeDebug(`DATABASE_URL is missing at startup! Setting fallback to: ${fallback.replace(/:[^:@]+@/, ":****@")}`);
-  try {
-    const rawProcess = eval("process");
-    if (rawProcess && rawProcess.env) {
-      rawProcess.env.DATABASE_URL = fallback;
-    }
-  } catch (e) {}
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.env) {
+    p.env.DATABASE_URL = fallback;
+  }
 } else {
   writeDebug(`DATABASE_URL is defined at startup: ${runtimeDbUrl.replace(/:[^:@]+@/, ":****@")}`);
 }
