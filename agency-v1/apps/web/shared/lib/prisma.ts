@@ -11,14 +11,25 @@ export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
 const getRuntimeEnv = (key: string): string | undefined => {
-  if (
-    typeof globalThis !== "undefined" &&
-    (globalThis as any).process &&
-    (globalThis as any).process.env
-  ) {
-    return (globalThis as any).process.env[key];
+  try {
+    const rawProcess = eval("process");
+    if (rawProcess && rawProcess.env) {
+      return rawProcess.env[key];
+    }
+  } catch (e) {
+    // Fallback if eval("process") fails
   }
   return undefined;
+};
+
+// Write debug info directly to stderr to bypass Next.js removeConsole minification
+const writeDebug = (msg: string) => {
+  try {
+    const rawProcess = eval("process");
+    if (rawProcess && rawProcess.stderr) {
+      rawProcess.stderr.write(`[PRISMA-DEBUG] ${msg}\n`);
+    }
+  } catch (e) {}
 };
 
 // Ensure DATABASE_URL is always defined in process.env at runtime to satisfy Prisma's schema validation.
@@ -28,13 +39,15 @@ if (!runtimeDbUrl) {
     getRuntimeEnv("CORE_DATABASE_URL") ||
     getRuntimeEnv("AUTH_DATABASE_URL") ||
     "postgresql://legacyuser:dummy@localhost:5432/legacymark";
-  if (
-    typeof globalThis !== "undefined" &&
-    (globalThis as any).process &&
-    (globalThis as any).process.env
-  ) {
-    (globalThis as any).process.env.DATABASE_URL = fallback;
-  }
+  writeDebug(`DATABASE_URL is missing at startup! Setting fallback to: ${fallback.replace(/:[^:@]+@/, ":****@")}`);
+  try {
+    const rawProcess = eval("process");
+    if (rawProcess && rawProcess.env) {
+      rawProcess.env.DATABASE_URL = fallback;
+    }
+  } catch (e) {}
+} else {
+  writeDebug(`DATABASE_URL is defined at startup: ${runtimeDbUrl.replace(/:[^:@]+@/, ":****@")}`);
 }
 
 const logConfig =
@@ -57,6 +70,8 @@ let _prismaAnalyticsRead: PrismaClient | null = null;
 const createClient = (url: string | undefined): PrismaClient => {
   let connectionUrl = url;
 
+  writeDebug(`Creating PrismaClient with URL: ${connectionUrl ? connectionUrl.replace(/:[^:@]+@/, ":****@") : "undefined"}`);
+
   if (
     connectionUrl &&
     !connectionUrl.startsWith("prisma://") &&
@@ -67,14 +82,23 @@ const createClient = (url: string | undefined): PrismaClient => {
     connectionUrl = `${connectionUrl}${separator}connection_limit=5&pool_timeout=20`;
   }
 
-  // Use datasourceUrl instead of datasources.db.url:
+  // Use both datasourceUrl and datasources.db.url to guarantee compatibility:
   // In Prisma v6, `datasources` still triggers schema env var validation
   // (checking env("DATABASE_URL") in schema.prisma) BEFORE applying the override,
   // throwing "Environment variable not found" even if a URL is provided.
-  // `datasourceUrl` bypasses this validation entirely and provides the URL directly.
+  // `datasourceUrl` bypasses this validation entirely. We provide both to cover all cases.
   return new PrismaClient({
     log: logConfig as any,
-    ...(connectionUrl ? { datasourceUrl: connectionUrl } : {}),
+    ...(connectionUrl
+      ? {
+          datasourceUrl: connectionUrl,
+          datasources: {
+            db: {
+              url: connectionUrl,
+            },
+          },
+        }
+      : {}),
   });
 };
 
