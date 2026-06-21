@@ -1,4 +1,12 @@
-import { prisma } from "@/lib/prisma";
+import { getPrismaMediaRead, getPrismaCoreRead } from "@agency/database";
+
+// Maps table names to the Prisma client that owns them
+const tableClientMap: Record<string, () => any> = {
+  tbl_posts: getPrismaMediaRead,
+  tbl_projects: getPrismaMediaRead,
+  tbl_categories: getPrismaMediaRead,
+  tbl_tags: getPrismaMediaRead,
+};
 
 const tableExistsCache = new Map<string, boolean>();
 
@@ -8,7 +16,10 @@ export async function doesTableExist(tableName: string): Promise<boolean> {
   }
 
   try {
-    const result = await prisma.$queryRaw`
+    const clientGetter = tableClientMap[tableName];
+    const client = clientGetter ? clientGetter() : getPrismaCoreRead();
+
+    const result = await client.$queryRaw`
       SELECT EXISTS (
         SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'public' AND table_name = ${tableName}
@@ -24,8 +35,9 @@ export async function doesTableExist(tableName: string): Promise<boolean> {
     return boolExists;
   } catch (error) {
     console.error(`[DBUtils] Table existence check failed for ${tableName}:`, error);
-    tableExistsCache.set(tableName, false);
-    return false;
+    // Fail-open: if we can't check, attempt the query anyway
+    tableExistsCache.set(tableName, true);
+    return true;
   }
 }
 
@@ -35,6 +47,7 @@ export async function safeTableQuery<T>(
   fallback: T
 ): Promise<T> {
   if (!(await doesTableExist(tableName))) {
+    console.warn(`[DBUtils] Table ${tableName} not found, returning fallback`);
     return fallback;
   }
 
