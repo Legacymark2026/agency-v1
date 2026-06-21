@@ -1,4 +1,4 @@
-import { getPrismaMediaRead, getPrismaCoreRead } from "@agency/database";
+import { getPrismaMediaRead, getPrismaCoreRead } from "@/shared/lib/prisma";
 
 // Maps table names to the Prisma client that owns them
 const tableClientMap: Record<string, () => any> = {
