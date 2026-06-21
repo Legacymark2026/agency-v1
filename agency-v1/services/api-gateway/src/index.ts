@@ -382,12 +382,18 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
 
   return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     breaker.checkState();
-    
+
     if (breaker.state === "OPEN") {
       console.warn(`[CircuitBreaker] Short-circuiting request for ${serviceName} (Circuit is OPEN)`);
       return handleFallback(req, res, serviceName, "Circuit breaker is open");
     }
-    
+
+    // Express strips the mount prefix from req.url (e.g. app.use("/api/auth") → req.url = "/login").
+    // Upstream services expect the full path (/api/auth/login), so we restore it from req.originalUrl.
+    if (req.originalUrl && req.url !== req.originalUrl) {
+      req.url = req.originalUrl;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (proxy as any)(req, res, next);
   };
