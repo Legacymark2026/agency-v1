@@ -4,6 +4,21 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
+  console.log("Upserting author user in media database...");
+  const user = await prisma.user.upsert({
+    where: { id: "f73a894c-7442-48fc-baee-2dfd2a7f0e4c" },
+    update: {},
+    create: {
+      id: "f73a894c-7442-48fc-baee-2dfd2a7f0e4c",
+      name: "Administrador",
+      email: "administrador@legacymarksas.com",
+      role: "admin",
+      globalRole: "super_admin",
+      updatedAt: new Date()
+    }
+  });
+  console.log("Success! Author user is ready:", user.id, user.email);
+
   console.log("Inserting test post...");
   const post = await prisma.post.upsert({
     where: { slug: "mi-primer-blog" },
@@ -13,7 +28,7 @@ async function main() {
       title: "Mi primer blog",
       slug: "mi-primer-blog",
       content: "Este es el contenido de mi primer blog posts. Creado para verificar la base de datos segregada.",
-      authorId: "f73a894c-7442-48fc-baee-2dfd2a7f0e4c",
+      authorId: user.id,
       published: true,
       status: "published",
       updatedAt: new Date()
