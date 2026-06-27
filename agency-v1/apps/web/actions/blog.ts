@@ -145,46 +145,14 @@ export async function submitComment(data: CommentData) {
     }
 }
 
-export async function getPostComments(postId: string) {
-    try {
-        const comments = await prisma.comment.findMany({
-            where: {
-                postId,
-                approved: true,
-                parentId: null
-            },
-            include: {
-                replies: {
-                    where: { approved: true },
-                    orderBy: { createdAt: 'asc' }
-                }
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+import { dbGetPostComments, dbGetCommentCount } from "@/lib/blog-data";
 
-        return comments.map(comment => ({
-            ...comment,
-            likeCount: comment.likeCount,
-            replies: comment.replies.map(reply => ({
-                ...reply,
-                likeCount: reply.likeCount
-            }))
-        }));
-    } catch (error) {
-        console.error(error);
-        return [];
-    }
+export async function getPostComments(postId: string) {
+    return dbGetPostComments(postId);
 }
 
 export async function getCommentCount(postId: string): Promise<number> {
-    try {
-        return await prisma.comment.count({
-            where: { postId, approved: true }
-        });
-    } catch (error) {
-        console.error(error);
-        return 0;
-    }
+    return dbGetCommentCount(postId);
 }
 
 // ==================== ADMIN COMMENT MANAGEMENT ====================

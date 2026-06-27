@@ -28,7 +28,7 @@ import {
   FAQSchema,
 } from "@/components/seo/structured-data";
 import { BlogFAQ } from "@/components/blog/blog-faq";
-import { getPostComments, getCommentCount } from "@/actions/blog";
+import { dbGetPostComments, dbGetCommentCount } from "@/lib/blog-data";
 import { BlogContentViewer } from "@/components/blog/blog-content-viewer";
 
 // Calculate reading time (average 200 words per minute)
@@ -145,8 +145,8 @@ export default async function BlogPostPage({
   try {
     [relatedPosts, comments, commentCount] = await Promise.all([
       getRelatedPosts(post.id, categoryIds, 3),
-      getPostComments(post.id).catch(() => []),
-      getCommentCount(post.id).catch(() => 0),
+      dbGetPostComments(post.id).catch(() => []),
+      dbGetCommentCount(post.id).catch(() => 0),
     ]);
   } catch {
     relatedPosts = await getRelatedPosts(post.id, categoryIds, 3).catch(
