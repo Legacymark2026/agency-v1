@@ -8,7 +8,6 @@ import { getPublicIntegrations } from "@/actions/settings";
 import { auth } from "@/lib/auth";
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { headers } from "next/headers";
 import { ClientDecorativeElements } from "@/components/layout/client-decorative-elements";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -37,6 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   }
 
+  const { headers } = await import("next/headers");
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
   const openGraphLocale = locale === 'en' ? 'en_US' : 'es_ES';

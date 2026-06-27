@@ -55,8 +55,9 @@ function addHeadingIds(html: string): string {
 
 import { siteConfig } from "@/lib/site-config";
 
-// Enable ISR with 1 hour revalidation for blog posts
-export const revalidate = 3600;
+// Force dynamic rendering — the root layout uses auth() which calls headers()
+// on every request, making ISR/static rendering incompatible with this layout tree.
+export const dynamic = 'force-dynamic';
 
 // Generate static params for all published blog posts for SSG
 export async function generateStaticParams() {
