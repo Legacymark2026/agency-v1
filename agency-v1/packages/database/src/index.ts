@@ -201,6 +201,12 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   socialPost: getPrismaMedia,
   aiAgent: getPrismaMedia,
   agentMemory: getPrismaMedia,
+  comment: getPrismaMedia,
+  commentLike: getPrismaMedia,
+  postLike: getPrismaMedia,
+  postSeries: getPrismaMedia,
+  readingListItem: getPrismaMedia,
+  newsletterSubscription: getPrismaMedia,
 
   // Analytics & Logs
   userActivityLog: getPrismaAnalytics,
@@ -258,6 +264,12 @@ const modelToReadClientGetter: Record<string, () => PrismaClient> = {
   socialPost: getPrismaMediaRead,
   aiAgent: getPrismaMediaRead,
   agentMemory: getPrismaMediaRead,
+  comment: getPrismaMediaRead,
+  commentLike: getPrismaMediaRead,
+  postLike: getPrismaMediaRead,
+  postSeries: getPrismaMediaRead,
+  readingListItem: getPrismaMediaRead,
+  newsletterSubscription: getPrismaMediaRead,
 
   // Analytics & Logs
   userActivityLog: getPrismaAnalyticsRead,
