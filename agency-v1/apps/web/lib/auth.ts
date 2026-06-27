@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import { headers } from "next/headers";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import LinkedIn from "next-auth/providers/linkedin";
@@ -63,6 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             let ip = "Unknown IP";
             let userAgent = "Unknown Device";
             try {
+                const { headers } = await import("next/headers");
                 const headersList = await headers();
                 ip = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "Unknown IP";
                 userAgent = headersList.get("user-agent") || "Unknown Device";

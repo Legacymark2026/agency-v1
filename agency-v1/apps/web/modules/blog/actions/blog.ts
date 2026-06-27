@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { createHash } from "crypto";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 // Helper to hash IP for privacy
@@ -19,6 +18,7 @@ function getSessionId(): string {
 
 export async function recordPostView(postId: string) {
     try {
+        const { headers } = await import("next/headers");
         const headersList = await headers();
         const forwardedFor = headersList.get('x-forwarded-for');
         const ip = forwardedFor?.split(',')[0] || 'unknown';
