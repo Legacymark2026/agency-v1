@@ -51,7 +51,8 @@ COPY --from=base /app/apps/web/.next/standalone ./
 COPY --from=base /app/apps/web/public ./apps/web/public
 COPY --from=base /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=base /app/apps/web/prisma ./apps/web/prisma
+COPY apps/web/inject-env.js ./apps/web/inject-env.js
 
 EXPOSE 3000
 WORKDIR /app/apps/web
-CMD ["node", "server.js"]
+CMD ["node", "--require", "./inject-env.js", "server.js"]

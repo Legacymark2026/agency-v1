@@ -11,6 +11,11 @@ export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
 const getRuntimeEnv = (key: string): string | undefined => {
+  const dbEnv = (globalThis as any).__DB_ENV__;
+  if (dbEnv && key in dbEnv) {
+    return dbEnv[key];
+  }
+
   if (typeof process !== "undefined" && process.env) {
     // Dynamic property access prevents Turbopack/Webpack from inlining env variables during next build.
     const envObj = process.env;
