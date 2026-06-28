@@ -10,22 +10,13 @@ export { PrismaClient } from "@prisma/client";
 export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
-const ENV_CACHE: Record<string, string | undefined> = {
-  DATABASE_URL: typeof process !== "undefined" ? process.env.DATABASE_URL : undefined,
-  DATABASE_READ_URL: typeof process !== "undefined" ? process.env.DATABASE_READ_URL : undefined,
-  CORE_DATABASE_URL: typeof process !== "undefined" ? process.env.CORE_DATABASE_URL : undefined,
-  CORE_DATABASE_READ_URL: typeof process !== "undefined" ? process.env.CORE_DATABASE_READ_URL : undefined,
-  AUTH_DATABASE_URL: typeof process !== "undefined" ? process.env.AUTH_DATABASE_URL : undefined,
-  AUTH_DATABASE_READ_URL: typeof process !== "undefined" ? process.env.AUTH_DATABASE_READ_URL : undefined,
-  MEDIA_DATABASE_URL: typeof process !== "undefined" ? process.env.MEDIA_DATABASE_URL : undefined,
-  MEDIA_DATABASE_READ_URL: typeof process !== "undefined" ? process.env.MEDIA_DATABASE_READ_URL : undefined,
-  ANALYTICS_DATABASE_URL: typeof process !== "undefined" ? process.env.ANALYTICS_DATABASE_URL : undefined,
-  ANALYTICS_DATABASE_READ_URL: typeof process !== "undefined" ? process.env.ANALYTICS_DATABASE_READ_URL : undefined,
-  NODE_ENV: typeof process !== "undefined" ? process.env.NODE_ENV : undefined,
-};
-
 const getRuntimeEnv = (key: string): string | undefined => {
-  return ENV_CACHE[key];
+  if (typeof process !== "undefined" && process.env) {
+    // Dynamic property access prevents Turbopack/Webpack from inlining env variables during next build.
+    const envObj = process.env;
+    return envObj[key];
+  }
+  return undefined;
 };
 
 // Write debug info directly to stderr to bypass Next.js removeConsole minification
@@ -47,10 +38,8 @@ if (!runtimeDbUrl) {
     getRuntimeEnv("AUTH_DATABASE_URL") ||
     "postgresql://legacymark:legacymark_dev@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require";
   writeDebug(`DATABASE_URL is missing at startup! Setting fallback to: ${fallback.replace(/:[^:@]+@/, ":****@")}`);
-  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
-  const p = g["process"];
-  if (p && p.env) {
-    p.env.DATABASE_URL = fallback;
+  if (typeof process !== "undefined" && process.env) {
+    process.env.DATABASE_URL = fallback;
   }
 } else {
   writeDebug(`DATABASE_URL is defined at startup: ${runtimeDbUrl.replace(/:[^:@]+@/, ":****@")}`);
