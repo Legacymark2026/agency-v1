@@ -31,7 +31,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/observability/package.json ./packages/observability/
 COPY services/api-gateway/package.json ./services/api-gateway/
-RUN npm ci --omit=dev --workspace=@agency/api-gateway --ignore-scripts || npm install --omit=dev --workspace=@agency/api-gateway --ignore-scripts
+RUN npm ci --omit=dev --workspace=@agency/api-gateway --workspace=@agency/observability --ignore-scripts || npm install --omit=dev --workspace=@agency/api-gateway --workspace=@agency/observability --ignore-scripts
 
 FROM node:20-alpine AS runner
 WORKDIR /app

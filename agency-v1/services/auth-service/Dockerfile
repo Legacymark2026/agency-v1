@@ -43,7 +43,7 @@ COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/auth-service/package.json ./services/auth-service/
-RUN npm ci --omit=dev --workspace=@agency/auth-service --ignore-scripts || npm install --omit=dev --workspace=@agency/auth-service --ignore-scripts
+RUN npm ci --omit=dev --workspace=@agency/auth-service --workspace=@agency/observability --ignore-scripts || npm install --omit=dev --workspace=@agency/auth-service --workspace=@agency/observability --ignore-scripts
 
 FROM node:20-alpine AS runner
 WORKDIR /app
