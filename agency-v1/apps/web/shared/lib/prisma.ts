@@ -11,39 +11,12 @@ export { Prisma } from "@prisma/client";
 export type * from "@prisma/client";
 
 const getRuntimeEnv = (key: string): string | undefined => {
-  // Explicit static access to allow Webpack/Turbopack to inline env variables in Next.js builds
-  switch (key) {
-    case "DATABASE_URL":
-      return process.env.DATABASE_URL;
-    case "DATABASE_READ_URL":
-      return process.env.DATABASE_READ_URL;
-    case "CORE_DATABASE_URL":
-      return process.env.CORE_DATABASE_URL;
-    case "CORE_DATABASE_READ_URL":
-      return process.env.CORE_DATABASE_READ_URL;
-    case "AUTH_DATABASE_URL":
-      return process.env.AUTH_DATABASE_URL;
-    case "AUTH_DATABASE_READ_URL":
-      return process.env.AUTH_DATABASE_READ_URL;
-    case "MEDIA_DATABASE_URL":
-      return process.env.MEDIA_DATABASE_URL;
-    case "MEDIA_DATABASE_READ_URL":
-      return process.env.MEDIA_DATABASE_READ_URL;
-    case "ANALYTICS_DATABASE_URL":
-      return process.env.ANALYTICS_DATABASE_URL;
-    case "ANALYTICS_DATABASE_READ_URL":
-      return process.env.ANALYTICS_DATABASE_READ_URL;
-    case "NODE_ENV":
-      return process.env.NODE_ENV;
-    default: {
-      const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
-      const p = g["process"];
-      if (p && p.env) {
-        return p.env[key];
-      }
-      return undefined;
-    }
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.env) {
+    return p.env[key];
   }
+  return undefined;
 };
 
 // Write debug info directly to stderr to bypass Next.js removeConsole minification
@@ -56,21 +29,19 @@ const writeDebug = (msg: string) => {
 };
 
 // Ensure DATABASE_URL is always defined in process.env at runtime to satisfy Prisma's schema validation.
+// The actual connection URLs are passed via datasourceUrl in createClient(), so this value
+// is only used as a Prisma schema validation placeholder when the real env var is missing.
 const runtimeDbUrl = getRuntimeEnv("DATABASE_URL");
 if (!runtimeDbUrl) {
   const fallback =
     getRuntimeEnv("CORE_DATABASE_URL") ||
     getRuntimeEnv("AUTH_DATABASE_URL") ||
-    "";
-  if (fallback) {
-    writeDebug(`DATABASE_URL is missing at startup! Setting fallback to: ${fallback.replace(/:[^:@]+@/, ":****@")}`);
-    const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
-    const p = g["process"];
-    if (p && p.env) {
-      p.env.DATABASE_URL = fallback;
-    }
-  } else {
-    writeDebug(`WARNING: DATABASE_URL is missing at startup and no fallback is available!`);
+    "postgresql://placeholder:placeholder@pgbouncer:6432/legacymark_core";
+  writeDebug(`DATABASE_URL is missing at startup! Setting fallback to: ${fallback.replace(/:[^:@]+@/, ":****@")}`);
+  const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
+  const p = g["process"];
+  if (p && p.env) {
+    p.env.DATABASE_URL = fallback;
   }
 } else {
   writeDebug(`DATABASE_URL is defined at startup: ${runtimeDbUrl.replace(/:[^:@]+@/, ":****@")}`);
