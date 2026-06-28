@@ -4,18 +4,22 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/observability/package.json ./packages/observability/
 COPY services/crm-service/package.json ./services/crm-service/
 
 RUN npm ci || npm install
 
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
+COPY packages/observability/ ./packages/observability/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
 WORKDIR /app/packages/database
 RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npx tsc --outDir dist
 WORKDIR /app/packages/events
+RUN npx tsc --outDir dist
+WORKDIR /app/packages/observability
 RUN npx tsc --outDir dist
 
 WORKDIR /app
@@ -29,6 +33,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/observability/package.json ./packages/observability/
 COPY services/crm-service/package.json ./services/crm-service/
 RUN npm ci --omit=dev --workspace=@agency/crm-service --ignore-scripts || npm install --omit=dev --workspace=@agency/crm-service --ignore-scripts
 
@@ -40,6 +45,8 @@ COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
+COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
+COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/crm-service/dist ./dist
 COPY --from=builder /app/services/crm-service/package.json ./
 COPY --from=deps /app/node_modules ./node_modules

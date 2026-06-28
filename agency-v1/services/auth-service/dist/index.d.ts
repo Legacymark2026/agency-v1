@@ -9,5 +9,6 @@
  *   - CompanyUser → CORE DB (soft-linked by userId)
  *   - UserActivityLog → ANALYTICS DB
  */
+import "@agency/observability/register";
 declare const _default: any;
 export default _default;

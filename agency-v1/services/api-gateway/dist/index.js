@@ -10,6 +10,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Handles: JWT validation, rate limiting, CORS, request logging.
  * Port: 8080 (public-facing)
  */
+require("@agency/observability/register");
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -20,6 +22,7 @@ const express4_1 = require("@apollo/server/express4");
 const crypto_1 = __importDefault(require("crypto"));
 const app = (0, express_1.default)();
 const PORT = parseInt(process.env.PORT || "8080", 10);
+app.use((0, observability_1.metricsMiddleware)("api-gateway"));
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
@@ -38,6 +41,7 @@ app.use((req, res, next) => {
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
+app.get("/metrics", observability_1.metricsEndpoint);
 // ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
 const redis = new ioredis_1.default(process.env.REDIS_URL || "redis://localhost:6379");
 redis.on("error", (err) => console.error("[api-gateway] Redis global error:", err.message));
@@ -369,6 +373,11 @@ const resilientProxy = (serviceName, target) => {
         if (breaker.state === "OPEN") {
             console.warn(`[CircuitBreaker] Short-circuiting request for ${serviceName} (Circuit is OPEN)`);
             return handleFallback(req, res, serviceName, "Circuit breaker is open");
+        }
+        // Express strips the mount prefix from req.url (e.g. app.use("/api/auth") → req.url = "/login").
+        // Upstream services expect the full path (/api/auth/login), so we restore it from req.originalUrl.
+        if (req.originalUrl && req.url !== req.originalUrl) {
+            req.url = req.originalUrl;
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return proxy(req, res, next);

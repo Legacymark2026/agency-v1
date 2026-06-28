@@ -7,3 +7,23 @@ datasources:
     url: http://loki:3100
     jsonData:
       maxLines: 1000
+      derivedFields:
+        - name: TraceID
+          select: '"trace_id":"([^"]+)"'
+          url: '$${__value.raw}'
+          internalLinkTarget: 'Jaeger'
+          internalLinkName: 'View Trace in Jaeger'
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    jsonData:
+      nodeGraph:
+        enabled: true

@@ -83,8 +83,16 @@ scrape_configs:
         namespaces: { names: ["legacymark"] }
     relabel_configs:
       - source_labels: [__meta_kubernetes_pod_label_app]
-        regex: finance-service
+      	regex: finance-service
         action: keep
       - source_labels: [__meta_kubernetes_pod_ip]
         target_label: __address__
         replacement: "$1:4006"
+
+  - job_name: "docker-compose-services"
+    static_configs:
+      - targets:
+          - "api-gateway:8080"
+          - "auth-service:4001"
+          - "crm-service:4002"
+

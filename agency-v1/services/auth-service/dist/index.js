@@ -47,6 +47,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("@agency/observability/register");
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -56,6 +58,7 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("auth-service"));
 const PORT = parseInt(process.env.PORT || "4001", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const redis = new ioredis_1.default(REDIS_URL);
@@ -107,6 +110,7 @@ async function logActivity(userId, action, details, req) {
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "auth-service", timestamp: new Date().toISOString() });
 });
+app.get("/metrics", observability_1.metricsEndpoint);
 app.get("/ready", async (_req, res) => {
     try {
         await database_1.prisma.$queryRaw `SELECT 1`;

@@ -5,6 +5,8 @@
  * Handles: JWT validation, rate limiting, CORS, request logging.
  * Port: 8080 (public-facing)
  */
+import "@agency/observability/register";
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -17,6 +19,7 @@ import crypto from "crypto";
 const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 
+app.use(metricsMiddleware("api-gateway"));
 app.use(helmet());
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
@@ -37,6 +40,8 @@ app.use((req, res, next) => {
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
+
+app.get("/metrics", metricsEndpoint);
 
 // ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");

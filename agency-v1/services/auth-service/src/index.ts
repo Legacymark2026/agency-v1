@@ -10,6 +10,8 @@
  *   - UserActivityLog → ANALYTICS DB
  */
 
+import "@agency/observability/register";
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -20,6 +22,7 @@ import fs from "fs";
 import path from "path";
 
 const app = express();
+app.use(metricsMiddleware("auth-service"));
 const PORT = parseInt(process.env.PORT || "4001", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -79,6 +82,8 @@ async function logActivity(
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "auth-service", timestamp: new Date().toISOString() });
 });
+
+app.get("/metrics", metricsEndpoint);
 
 app.get("/ready", async (_req, res) => {
   try {

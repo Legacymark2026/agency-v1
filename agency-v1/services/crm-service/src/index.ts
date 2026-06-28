@@ -5,6 +5,8 @@
  * Port: 4002
  */
 
+import "@agency/observability/register";
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -16,6 +18,7 @@ import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { routeLead } from "./assignment-engine";
 
 const app = express();
+app.use(metricsMiddleware("crm-service"));
 const PORT = parseInt(process.env.PORT || "4002", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -27,6 +30,8 @@ app.use(express.json({ limit: "5mb" }));
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "crm-service", timestamp: new Date().toISOString() });
 });
+
+app.get("/metrics", metricsEndpoint);
 
 app.get("/ready", async (_req, res) => {
   try {

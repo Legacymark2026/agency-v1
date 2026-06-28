@@ -385,6 +385,8 @@ services:
     environment:
       PORT: "8080"
       REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: api-gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
       AUTH_SERVICE_URL: http://auth-service:4001
       CRM_SERVICE_URL: http://crm-service:4002
       AUTOMATION_SERVICE_URL: http://automation-service:4003
@@ -435,6 +437,8 @@ services:
     environment:
       PORT: "4001"
       REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: auth-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
       POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
       DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_auth?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
@@ -499,6 +503,8 @@ services:
     environment: &common-env
       PORT: "4002"
       REDIS_URL: redis://redis:6379
+      OTEL_SERVICE_NAME: crm-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
       POSTGRES_EXTERNAL_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
       DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
@@ -990,9 +996,44 @@ services:
       - "3002:3000"
     volumes:
       - ./infrastructure/monitoring/grafana/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - grafanadata:/var/lib/grafana
     depends_on:
       loki: { condition: service_started }
+    profiles: ["monitoring"]
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    profiles: ["monitoring"]
+    networks:
+      - backend-net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
     profiles: ["monitoring"]
     networks:
       - backend-net

@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/observability/package.json ./packages/observability/
 COPY services/auth-service/package.json ./services/auth-service/
 
 # Install dependencies
@@ -13,6 +14,7 @@ RUN npm ci || npm install
 # Copy shared packages + Prisma schema
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
+COPY packages/observability/ ./packages/observability/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
 # Generate Prisma client
@@ -22,6 +24,8 @@ RUN npx prisma generate --schema=./prisma/schema.prisma
 # Build shared packages
 RUN npx tsc --outDir dist
 WORKDIR /app/packages/events
+RUN npx tsc --outDir dist
+WORKDIR /app/packages/observability
 RUN npx tsc --outDir dist
 
 # Copy and build service
@@ -37,6 +41,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/observability/package.json ./packages/observability/
 COPY services/auth-service/package.json ./services/auth-service/
 RUN npm ci --omit=dev --workspace=@agency/auth-service --ignore-scripts || npm install --omit=dev --workspace=@agency/auth-service --ignore-scripts
 
@@ -48,6 +53,8 @@ COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
+COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
+COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/auth-service/dist ./dist
 COPY --from=builder /app/services/auth-service/package.json ./
 COPY --from=deps /app/node_modules ./node_modules
