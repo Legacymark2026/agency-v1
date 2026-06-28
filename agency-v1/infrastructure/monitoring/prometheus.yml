@@ -83,7 +83,7 @@ scrape_configs:
         namespaces: { names: ["legacymark"] }
     relabel_configs:
       - source_labels: [__meta_kubernetes_pod_label_app]
-      	regex: finance-service
+        regex: finance-service
         action: keep
       - source_labels: [__meta_kubernetes_pod_ip]
         target_label: __address__
