@@ -32,7 +32,8 @@ const envKeys = [
   "VIDEO_SERVICE_URL",
   "NEXTAUTH_URL",
   "NEXTAUTH_SECRET",
-  "INTERNAL_SECRET"
+  "INTERNAL_SECRET",
+  "NODE_EXTRA_CA_CERTS"
 ];
 
 // Capture dynamic env vars
