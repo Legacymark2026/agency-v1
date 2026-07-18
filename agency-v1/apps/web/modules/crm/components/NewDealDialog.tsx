@@ -61,35 +61,38 @@ export function NewDealDialog({ companyId }: Props) {
         }
     };
 
-    const inputCls = "w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all";
+    const inputCls = "w-full px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all [&>option]:bg-slate-950 [&>option]:text-white";
 
     return (
         <>
             <button
                 onClick={() => setOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white text-sm font-bold rounded-xl hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white text-sm font-black uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-teal-500/20"
             >
                 <Plus className="w-4 h-4" /> Add Deal
             </button>
 
             {open && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto"
                     onClick={(e) => e.target === e.currentTarget && !loading && setOpen(false)}
                 >
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] my-auto flex flex-col overflow-hidden">
+                    <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl shadow-teal-500/5 w-full max-w-lg max-h-[85vh] my-auto flex flex-col overflow-hidden relative">
+                        {/* Brillo Teal superior */}
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
+
                         {/* Header */}
-                        <div className="bg-white rounded-t-3xl px-8 pt-8 pb-4 border-b border-slate-100 flex items-center justify-between z-10 flex-shrink-0">
+                        <div className="bg-slate-950/80 backdrop-blur-md px-8 pt-8 pb-4 border-b border-slate-900 flex items-center justify-between z-10 flex-shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white flex-shrink-0 shadow-inner">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-teal-500/10">
                                     <Briefcase className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-black text-slate-900">Nuevo Deal</h2>
-                                    <p className="text-xs text-slate-400">Agrega una oportunidad de negocio</p>
+                                    <h2 className="text-lg font-black text-white tracking-tight">Nuevo Deal</h2>
+                                    <p className="text-xs text-slate-500">Agrega una oportunidad de negocio</p>
                                 </div>
                             </div>
-                            <button onClick={() => setOpen(false)} disabled={loading} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                            <button onClick={() => setOpen(false)} disabled={loading} className="p-2 rounded-xl text-slate-500 hover:text-slate-350 hover:bg-slate-900 transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -97,28 +100,28 @@ export function NewDealDialog({ companyId }: Props) {
                         {success ? (
                             <div className="px-8 py-16 text-center">
                                 <div className="text-5xl mb-4">🎉</div>
-                                <h3 className="text-lg font-black text-slate-900">¡Deal Creado!</h3>
+                                <h3 className="text-lg font-black text-white">¡Deal Creado!</h3>
                                 <p className="text-sm text-slate-400 mt-2">La oportunidad se agregó al Pipeline y el Lead fue sincronizado con éxito.</p>
                             </div>
                         ) : (
-                            <form onSubmit={handleSubmit} className="px-8 pb-8 pt-5 space-y-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-track]:bg-transparent">
+                            <form onSubmit={handleSubmit} className="px-8 pb-8 pt-5 space-y-6 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-800 [&::-webkit-scrollbar-track]:bg-transparent">
                                 {/* Datos del Negocio (Específico de Deal) */}
                                 <div>
-                                    <p className="text-xs font-black text-violet-500 uppercase tracking-wider mb-3">🎯 Datos del Negocio</p>
+                                    <p className="text-xs font-black text-teal-400 uppercase tracking-wider mb-3">🎯 Datos del Negocio</p>
                                     <div className="space-y-3">
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">Título del Deal</label>
+                                                <label className="text-xs font-semibold text-slate-400">Título del Deal</label>
                                                 <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="(Auto-generado)" className={inputCls} />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">Valor Estimado ($)</label>
+                                                <label className="text-xs font-semibold text-slate-400">Valor Estimado ($)</label>
                                                 <input type="number" min="0" value={form.value} onChange={(e) => set("value", e.target.value)} placeholder="0.00" className={inputCls} />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">Etapa Inicial</label>
+                                                <label className="text-xs font-semibold text-slate-400">Etapa Inicial</label>
                                                 <select value={form.stage} onChange={(e) => set("stage", e.target.value)} className={inputCls}>
                                                     <option value="NEW">New Lead</option>
                                                     <option value="CONTACTED">Contacted</option>
@@ -127,7 +130,7 @@ export function NewDealDialog({ companyId }: Props) {
                                                 </select>
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">Prioridad</label>
+                                                <label className="text-xs font-semibold text-slate-400">Prioridad</label>
                                                 <select value={form.priority} onChange={(e) => set("priority", e.target.value)} className={inputCls}>
                                                     <option value="LOW">Low</option>
                                                     <option value="MEDIUM">Medium</option>
@@ -140,31 +143,31 @@ export function NewDealDialog({ companyId }: Props) {
 
                                 {/* Datos de contacto (Idéntico a Lead) */}
                                 <div>
-                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3">📋 Info de Contacto</p>
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">📋 Info de Contacto</p>
                                     <div className="space-y-3">
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">Nombre</label>
+                                                <label className="text-xs font-semibold text-slate-400">Nombre</label>
                                                 <input value={form.contactName} onChange={(e) => set("contactName", e.target.value)} placeholder="Ana García" className={inputCls} />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">Empresa</label>
+                                                <label className="text-xs font-semibold text-slate-400">Empresa</label>
                                                 <input value={form.contactCompany} onChange={(e) => set("contactCompany", e.target.value)} placeholder="Mi Empresa S.A.S" className={inputCls} />
                                             </div>
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-semibold text-slate-600">Email <span className="text-red-400">*</span></label>
+                                            <label className="text-xs font-semibold text-slate-400">Email <span className="text-red-400">*</span></label>
                                             <input type="email" required value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} onBlur={handleEmailBlur} placeholder="ana@empresa.com" className={inputCls} />
                                             {duplicate && (
-                                                <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs">
-                                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
-                                                    <span className="text-amber-800">Lead Existente: <strong>{duplicate.leadName ?? duplicate.leadId}</strong></span>
-                                                    <Link href={`/dashboard/admin/crm/leads/${duplicate.leadId}`} onClick={() => setOpen(false)} className="ml-auto font-bold text-violet-600 hover:underline">Ver →</Link>
+                                                <div className="flex items-center gap-2 p-2.5 bg-amber-950/20 border border-amber-900/40 rounded-xl text-xs">
+                                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                                                    <span className="text-amber-200">Lead Existente: <strong>{duplicate.leadName ?? duplicate.leadId}</strong></span>
+                                                    <Link href={`/dashboard/admin/crm/leads/${duplicate.leadId}`} onClick={() => setOpen(false)} className="ml-auto font-bold text-teal-400 hover:underline">Ver →</Link>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-semibold text-slate-600">WhatsApp / Teléfono</label>
+                                            <label className="text-xs font-semibold text-slate-400">WhatsApp / Teléfono</label>
                                             <input type="tel" value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} placeholder="+57 300 000 0000" className={inputCls} />
                                         </div>
                                     </div>
@@ -172,9 +175,9 @@ export function NewDealDialog({ companyId }: Props) {
 
                                 {/* Fuente */}
                                 <div>
-                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3">🌐 Fuente de Origen</p>
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">🌐 Fuente de Origen</p>
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-slate-600">¿De dónde viene este negocio? <span className="text-red-400">*</span></label>
+                                        <label className="text-xs font-semibold text-slate-400">¿De dónde viene este negocio? <span className="text-red-400">*</span></label>
                                         <select required value={form.source} onChange={(e) => set("source", e.target.value)} className={inputCls}>
                                             {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
                                         </select>
@@ -183,7 +186,7 @@ export function NewDealDialog({ companyId }: Props) {
 
                                 {/* Mensaje */}
                                 <div>
-                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-3">💬 Requerimiento / Notas</p>
+                                    <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">💬 Requerimiento / Notas</p>
                                     <textarea
                                         value={form.notes} onChange={(e) => set("notes", e.target.value)}
                                         rows={3} placeholder="¿Qué necesita o qué cotización pidió?..."
@@ -193,8 +196,8 @@ export function NewDealDialog({ companyId }: Props) {
 
                                 {/* UTMs (collapsible) */}
                                 <details className="group">
-                                    <summary className="text-xs font-black text-slate-500 uppercase tracking-wider cursor-pointer hover:text-slate-700 select-none flex items-center gap-2">
-                                        <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
+                                    <summary className="text-xs font-black text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none flex items-center gap-2">
+                                        <span className="group-open:rotate-90 transition-transform inline-block text-[10px]">▶</span>
                                         📊 UTM / Atribución (opcional)
                                     </summary>
                                     <div className="mt-3 grid grid-cols-3 gap-3">
@@ -204,7 +207,7 @@ export function NewDealDialog({ companyId }: Props) {
                                             { key: "utmCampaign", label: "UTM Campaign", placeholder: "brand-q1" },
                                         ].map((f) => (
                                             <div key={f.key} className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-600">{f.label}</label>
+                                                <label className="text-xs font-semibold text-slate-400">{f.label}</label>
                                                 <input value={form[f.key as keyof typeof form]} onChange={(e) => set(f.key, e.target.value)} placeholder={f.placeholder} className={inputCls} />
                                             </div>
                                         ))}
@@ -212,19 +215,19 @@ export function NewDealDialog({ companyId }: Props) {
                                 </details>
 
                                 {error && (
-                                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">{error}</div>
+                                    <div className="p-3 bg-red-950/20 border border-red-900/40 rounded-xl text-sm text-red-400">{error}</div>
                                 )}
 
-                                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                                <div className="flex gap-3 pt-4 border-t border-slate-900">
                                     <button
                                         type="button" onClick={() => setOpen(false)} disabled={loading}
-                                        className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors disabled:opacity-40"
+                                        className="flex-1 py-3 rounded-xl border border-slate-800 text-slate-450 font-bold text-sm hover:bg-slate-900 transition-colors disabled:opacity-40"
                                     >
                                         Cancelar
                                     </button>
                                     <button
                                         type="submit" disabled={loading}
-                                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-sm hover:from-violet-700 hover:to-fuchsia-700 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-violet-200 disabled:opacity-50"
+                                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold text-sm hover:from-teal-600 hover:to-emerald-700 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
                                     >
                                         {loading ? "Guardando..." : "Agregar Deal ✓"}
                                     </button>
