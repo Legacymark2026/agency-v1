@@ -2,9 +2,7 @@ import { PortfolioClient } from "@/components/portfolio/portfolio-client";
 import { getPublicProjects, getProjectCategories } from "@/actions/projects";
 import { getSocialProfiles } from "@/actions/social-profiles";
 
-// ISR: Revalida el portfolio cada hora.
-// getPublicProjects + getCategories + getSocialProfiles dejan de ejecutarse en cada request.
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 // Next.js 15 Server Component
 export default async function PortfolioPage() {

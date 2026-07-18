@@ -7,24 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { BlogContentViewer } from "@/components/blog/blog-content-viewer";
 import { ProjectGallery } from "@/components/portfolio/project-gallery";
 
-// Enable ISR with 1 hour revalidation for portfolio projects
-export const revalidate = 3600;
-
-// Generate static params for all published portfolio projects for SSG
-export async function generateStaticParams() {
-  try {
-    const projects = await getAllProjects();
-    return projects.map((project) => ({
-      slug: project.slug,
-    }));
-  } catch (error) {
-    console.error(
-      "Failed to generate static params for portfolio projects:",
-      error,
-    );
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
 export default async function ProjectPage({
   params,
