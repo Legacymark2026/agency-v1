@@ -620,12 +620,25 @@ app.get('/api/cms/posts', async (req, res) => {
     const posts = await (prisma as any).post.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        author: { select: { name: true, email: true } },
         categories: true,
         tags: true
       }
     });
-    res.json(posts);
+
+    const authorIds = Array.from(new Set(posts.map((p: any) => p.authorId).filter(Boolean)));
+    const users = authorIds.length ? await (prisma as any).user.findMany({
+      where: { id: { in: authorIds as string[] } },
+      select: { id: true, name: true, email: true }
+    }) : [];
+
+    const userMap = new Map(users.map((u: any) => [u.id, u]));
+
+    const postsWithAuthors = posts.map((post: any) => ({
+      ...post,
+      author: userMap.get(post.authorId) || { name: 'LegacyMark User', email: '' }
+    }));
+
+    res.json(postsWithAuthors);
   } catch (error: any) { res.status(500).json({ error: error.message }); }
 });
 

@@ -13,15 +13,31 @@ export async function getPosts() {
     if (!session?.user) return fail('Unauthorized', 401);
 
     try {
+        // Query posts without author include to avoid cross-database relation JOIN errors
         const posts = await prisma.post.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
-                author: { select: { name: true, email: true } },
                 categories: true,
                 tags: true
             }
         });
-        return ok(posts);
+
+        // Query authors manually from the Auth database
+        const authorIds = Array.from(new Set(posts.map((p: any) => p.authorId).filter(Boolean)));
+        const users = authorIds.length ? await prisma.user.findMany({
+            where: { id: { in: authorIds as string[] } },
+            select: { id: true, name: true, email: true }
+        }) : [];
+
+        const userMap = new Map(users.map(u => [u.id, u]));
+
+        // Merge posts with their authors
+        const postsWithAuthors = posts.map((post: any) => ({
+            ...post,
+            author: userMap.get(post.authorId) || { name: 'LegacyMark User', email: '' }
+        }));
+
+        return ok(postsWithAuthors);
     } catch (error) {
         console.error('Failed to get posts:', error);
         return fail('Failed to fetch posts', 500);
