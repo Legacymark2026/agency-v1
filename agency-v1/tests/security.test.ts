@@ -10,6 +10,7 @@
  * 4. SQL Injection safety (escaped inputs in query queries)
  */
 
+import "dotenv/config";
 import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 

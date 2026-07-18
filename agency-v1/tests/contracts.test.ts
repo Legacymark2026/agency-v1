@@ -10,6 +10,7 @@
  * 4. Redis Stream EventBus contract enforcement (optional if Redis is up)
  */
 
+import "dotenv/config";
 import { z } from "zod";
 import * as path from "path";
 import { 

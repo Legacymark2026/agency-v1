@@ -9,6 +9,7 @@
  * 3. Graceful recovery and health status checks after component restoration
  */
 
+import "dotenv/config";
 import { Client } from "pg";
 import Redis from "ioredis";
 import { execSync } from "child_process";

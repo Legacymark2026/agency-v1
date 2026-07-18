@@ -11,6 +11,7 @@
  * 5. Database Schema & Migration consistency status via Prisma
  */
 
+import "dotenv/config";
 import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "child_process";

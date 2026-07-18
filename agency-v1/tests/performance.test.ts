@@ -9,6 +9,7 @@
  * 3. Statement timeout (10s) prevention of resource hanging
  */
 
+import "dotenv/config";
 import { Client } from "pg";
 
 const GATEWAY = process.env.GATEWAY_URL || "http://localhost:8080";

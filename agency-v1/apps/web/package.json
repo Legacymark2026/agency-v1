@@ -187,6 +187,8 @@
     "@next/swc-linux-x64-musl": "16.2.4",
     "@parcel/watcher-linux-x64-glibc": "^2.5.0",
     "@parcel/watcher-linux-x64-musl": "^2.5.0",
+    "@rolldown/binding-linux-x64-gnu": "1.0.0-rc.15",
+    "@rolldown/binding-linux-x64-musl": "1.0.0-rc.15",
     "@swc/core-linux-x64-gnu": "^1.10.18",
     "@swc/core-linux-x64-musl": "^1.10.18",
     "@tailwindcss/oxide-linux-x64-gnu": "4.2.2",
