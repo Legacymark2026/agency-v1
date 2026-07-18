@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createDeal, checkDuplicateEmail } from "@/actions/crm";
 import { useRouter } from "next/navigation";
 import { Plus, X, AlertTriangle, Briefcase } from "lucide-react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 
 const SOURCES = ["GOOGLE", "FACEBOOK", "INSTAGRAM", "LINKEDIN", "TIKTOK", "REFERRAL", "DIRECT", "EMAIL", "ORGANIC", "WHATSAPP", "OTRO"];
 
@@ -17,6 +18,11 @@ export function NewDealDialog({ companyId }: Props) {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const [duplicate, setDuplicate] = useState<{ leadId: string; leadName?: string } | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // States match exactly the Lead structure PLUS Deal specific structure
     const [form, setForm] = useState({
@@ -72,9 +78,9 @@ export function NewDealDialog({ companyId }: Props) {
                 <Plus className="w-4 h-4" /> Add Deal
             </button>
 
-            {open && (
+            {mounted && open && typeof document !== "undefined" && createPortal(
                 <div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-md z-[99999] flex items-start md:items-center justify-center p-4 overflow-y-auto"
                     onClick={(e) => e.target === e.currentTarget && !loading && setOpen(false)}
                 >
                     <div className="bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl shadow-teal-500/5 w-full max-w-lg max-h-[85vh] my-auto flex flex-col overflow-hidden relative">
@@ -235,7 +241,8 @@ export function NewDealDialog({ companyId }: Props) {
                             </form>
                         )}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );
