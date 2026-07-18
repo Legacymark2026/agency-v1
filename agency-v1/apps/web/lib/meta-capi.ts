@@ -73,8 +73,17 @@ export async function sendMetaCapiEvent({
     // Auto-generate event_id if not provided — used for pixel deduplication
     const resolvedEventId = eventId || `${eventName}_${timestamp}_${Math.random().toString(36).slice(2, 9)}`;
 
-    // QualifiedLead is not a standard Meta event — map it to Lead with custom_data label
-    const resolvedEventName = eventName === 'QualifiedLead' ? 'Lead' : eventName;
+    // QualifiedLead is not a standard Meta event — map it to Other with custom_data label
+    let resolvedEventName = eventName;
+    let resolvedCustomData = customData || {};
+
+    if (eventName === 'QualifiedLead') {
+        resolvedEventName = 'Other';
+        resolvedCustomData = {
+            ...resolvedCustomData,
+            event_name: 'QualifiedLead'
+        };
+    }
 
     const payload = {
         data: [
@@ -98,11 +107,7 @@ export async function sendMetaCapiEvent({
                     client_ip_address: userData.clientIpAddress || null,
                     client_user_agent: userData.clientUserAgent || null,
                 },
-                custom_data: {
-                    ...customData,
-                    // Tag QualifiedLead in custom_data so Meta UI can filter it
-                    ...(eventName === 'QualifiedLead' && { lead_type: 'QualifiedLead' }),
-                },
+                custom_data: resolvedCustomData,
             },
         ],
         ...(testEventCode && { test_event_code: testEventCode }),
