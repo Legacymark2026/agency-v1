@@ -122,13 +122,7 @@ const getPrismaCoreRead = () => {
 };
 exports.getPrismaCoreRead = getPrismaCoreRead;
 const getPrismaMediaRead = () => {
-    if (!_prismaMediaRead) {
-        _prismaMediaRead = createClient(getRuntimeEnv("MEDIA_DATABASE_READ_URL") ||
-            getRuntimeEnv("DATABASE_READ_URL") ||
-            getRuntimeEnv("MEDIA_DATABASE_URL") ||
-            getRuntimeEnv("DATABASE_URL"));
-    }
-    return _prismaMediaRead;
+    return (0, exports.getPrismaMedia)();
 };
 exports.getPrismaMediaRead = getPrismaMediaRead;
 const getPrismaAnalyticsRead = () => {
@@ -181,6 +175,9 @@ const modelToClientGetter = {
     category: exports.getPrismaMedia,
     tag: exports.getPrismaMedia,
     project: exports.getPrismaMedia,
+    projectCategory: exports.getPrismaMedia,
+    projectTag: exports.getPrismaMedia,
+    projectView: exports.getPrismaMedia,
     workflow: exports.getPrismaMedia,
     campaign: exports.getPrismaMedia,
     socialPost: exports.getPrismaMedia,
@@ -194,7 +191,6 @@ const modelToClientGetter = {
     newsletterSubscription: exports.getPrismaMedia,
     // Analytics & Logs
     userActivityLog: exports.getPrismaAnalytics,
-    projectView: exports.getPrismaAnalytics,
     postView: exports.getPrismaAnalytics,
     usageLog: exports.getPrismaAnalytics,
     integrationLog: exports.getPrismaAnalytics,
@@ -240,6 +236,9 @@ const modelToReadClientGetter = {
     category: exports.getPrismaMediaRead,
     tag: exports.getPrismaMediaRead,
     project: exports.getPrismaMediaRead,
+    projectCategory: exports.getPrismaMediaRead,
+    projectTag: exports.getPrismaMediaRead,
+    projectView: exports.getPrismaMediaRead,
     workflow: exports.getPrismaMediaRead,
     campaign: exports.getPrismaMediaRead,
     socialPost: exports.getPrismaMediaRead,
@@ -253,7 +252,6 @@ const modelToReadClientGetter = {
     newsletterSubscription: exports.getPrismaMediaRead,
     // Analytics & Logs
     userActivityLog: exports.getPrismaAnalyticsRead,
-    projectView: exports.getPrismaAnalyticsRead,
     postView: exports.getPrismaAnalyticsRead,
     usageLog: exports.getPrismaAnalyticsRead,
     integrationLog: exports.getPrismaAnalyticsRead,

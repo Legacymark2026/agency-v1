@@ -156,15 +156,7 @@ export const getPrismaCoreRead = (): PrismaClient => {
 };
 
 export const getPrismaMediaRead = (): PrismaClient => {
-  if (!_prismaMediaRead) {
-    _prismaMediaRead = createClient(
-      getRuntimeEnv("MEDIA_DATABASE_READ_URL") ||
-        getRuntimeEnv("DATABASE_READ_URL") ||
-        getRuntimeEnv("MEDIA_DATABASE_URL") ||
-        getRuntimeEnv("DATABASE_URL")
-    );
-  }
-  return _prismaMediaRead;
+  return getPrismaMedia();
 };
 
 export const getPrismaAnalyticsRead = (): PrismaClient => {
