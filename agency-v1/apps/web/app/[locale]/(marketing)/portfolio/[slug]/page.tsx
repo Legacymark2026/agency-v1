@@ -28,7 +28,7 @@ export default async function ProjectPage({
   return (
     <article className="min-h-screen bg-slate-950 pb-24">
       {/* IMMERSIVE HERO SECTION */}
-      <div className="relative w-full h-[65vh] min-h-[500px] flex items-end pb-16 pt-32 lg:pb-24">
+      <div className="relative w-full flex items-end pt-40 pb-16 lg:pt-48 lg:pb-24">
         {/* Background Cover Image with Gradient fade */}
         {coverUrl ? (
           <>
@@ -64,6 +64,7 @@ export default async function ProjectPage({
                   height={64}
                   className="h-full w-full object-contain"
                   unoptimized
+                  placeholder="empty"
                 />
               </div>
             )}
@@ -74,10 +75,10 @@ export default async function ProjectPage({
             )}
           </div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 drop-shadow-2xl">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-6 drop-shadow-2xl">
             {project.title}
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 max-w-3xl leading-relaxed drop-shadow-lg font-light">
+          <p className="text-lg md:text-xl text-slate-300 max-w-3xl leading-relaxed drop-shadow-lg font-light">
             {project.description}
           </p>
         </div>
