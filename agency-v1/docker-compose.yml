@@ -356,7 +356,7 @@ services:
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
-    profiles: ["all"]
+    # profiles: removed — web must start with the default docker compose up -d
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=PathPrefix(`/`)"
@@ -542,7 +542,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4003"
-      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
