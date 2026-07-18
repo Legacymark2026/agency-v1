@@ -221,6 +221,9 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   category: getPrismaMedia,
   tag: getPrismaMedia,
   project: getPrismaMedia,
+  projectCategory: getPrismaMedia,
+  projectTag: getPrismaMedia,
+  projectView: getPrismaMedia,
   workflow: getPrismaMedia,
   campaign: getPrismaMedia,
   socialPost: getPrismaMedia,
@@ -235,7 +238,6 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
 
   // Analytics & Logs
   userActivityLog: getPrismaAnalytics,
-  projectView: getPrismaAnalytics,
   postView: getPrismaAnalytics,
   usageLog: getPrismaAnalytics,
   integrationLog: getPrismaAnalytics,
@@ -284,6 +286,9 @@ const modelToReadClientGetter: Record<string, () => PrismaClient> = {
   category: getPrismaMediaRead,
   tag: getPrismaMediaRead,
   project: getPrismaMediaRead,
+  projectCategory: getPrismaMediaRead,
+  projectTag: getPrismaMediaRead,
+  projectView: getPrismaMediaRead,
   workflow: getPrismaMediaRead,
   campaign: getPrismaMediaRead,
   socialPost: getPrismaMediaRead,
@@ -298,7 +303,6 @@ const modelToReadClientGetter: Record<string, () => PrismaClient> = {
 
   // Analytics & Logs
   userActivityLog: getPrismaAnalyticsRead,
-  projectView: getPrismaAnalyticsRead,
   postView: getPrismaAnalyticsRead,
   usageLog: getPrismaAnalyticsRead,
   integrationLog: getPrismaAnalyticsRead,
