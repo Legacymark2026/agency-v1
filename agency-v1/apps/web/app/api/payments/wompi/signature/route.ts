@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { reference, amountInCents, currency = "COP" } = body;
 
-        if (!reference || !amountInCents) {
+        if (!reference || amountInCents === undefined || amountInCents === null) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 

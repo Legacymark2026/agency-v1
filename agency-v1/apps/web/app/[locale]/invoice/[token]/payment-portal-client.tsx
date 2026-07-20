@@ -55,7 +55,7 @@ interface PaymentPortalClientProps {
 
 export default function PaymentPortalClient({ invoice: initialInvoice, payuConfig }: PaymentPortalClientProps) {
     const [invoice, setInvoice] = useState(initialInvoice);
-    const [selectedGateway, setSelectedGateway] = useState<"wompi" | "stripe" | "payu" | "paypal" | "transfer">("wompi");
+    const [selectedGateway, setSelectedGateway] = useState<"wompi" | "stripe" | "payu" | "paypal" | "transfer">(initialInvoice.currency === "USD" ? "stripe" : "wompi");
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [loadingPayment, setLoadingPayment] = useState(false);
     const [wompiSignatureData, setWompiSignatureData] = useState<{ signature: string; reference: string; amountInCents: number; currency: string } | null>(null);
