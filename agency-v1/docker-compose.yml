@@ -27,7 +27,7 @@ x-microservice-base: &microservice-base
     resources:
       limits:
         cpus: "0.5"
-        memory: 512M
+        memory: 384M
 
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────
@@ -356,6 +356,7 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
       INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
+      NODE_OPTIONS: "--max-old-space-size=512"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -525,6 +526,7 @@ services:
       ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
+      NODE_OPTIONS: "--max-old-space-size=256"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
