@@ -17,9 +17,9 @@ describe('Enterprise Object Storage Engine & Metadata Transmission Tests', () =>
   });
 
   it('2. should generate structured storage key with company ID and category date path', () => {
-    const key = engine.generateStorageKey('comp-test-123', 'audio', 'voice_note_1.ogg');
+    const key = engine.generateStorageKey('comp-test-123', 'audio', 'voice-note-1.ogg');
     expect(key).toContain('companies/comp-test-123/audio/');
-    expect(key).toContain('voice_note_1.ogg');
+    expect(key).toContain('voice-note-1.ogg');
   });
 
   it('3. should generate presigned upload result with lightweight metadata reference', () => {
