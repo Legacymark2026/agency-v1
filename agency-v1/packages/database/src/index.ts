@@ -310,7 +310,25 @@ export const prisma =
               const readClientGetter = modelToReadClientGetter[prop as string];
               if (readClientGetter) {
                 const readModel = readClientGetter()[prop as any];
-                return (readModel as any)[methodProp].bind(readModel);
+                return async (...args: any[]) => {
+                  try {
+                    return await (readModel as any)[methodProp](...args);
+                  } catch (err: any) {
+                    const isConnErr =
+                      err?.message?.includes("Can't reach database server") ||
+                      err?.message?.includes("pgbouncer-replica") ||
+                      err?.code === "P1001" ||
+                      err?.code === "P1002" ||
+                      err?.code === "ECONNREFUSED";
+
+                    if (isConnErr) {
+                      writeDebug(`⚠️ [Replica Fallback] Read replica failed: ${err.message}. Falling back to primary DB.`);
+                      const fallbackPrimaryModel = clientGetter()[prop as any];
+                      return await (fallbackPrimaryModel as any)[methodProp](...args);
+                    }
+                    throw err;
+                  }
+                };
               }
             }
             // Ejecutar métodos de escritura o utilidad en el cliente principal (primario)
