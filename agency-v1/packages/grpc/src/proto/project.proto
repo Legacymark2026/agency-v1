@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package project;
+
+service ProjectService {
+  rpc GetProjectStatus (GetProjectRequest) returns (ProjectResponse);
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+}
+
+message GetProjectRequest {
+  string projectId = 1;
+  string companyId = 2;
+}
+
+message ProjectResponse {
+  bool found = 1;
+  string projectId = 2;
+  string name = 3;
+  string status = 4;
+  int32 completionPercentage = 5;
+  string error = 6;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+  int64 timestamp = 3;
+}

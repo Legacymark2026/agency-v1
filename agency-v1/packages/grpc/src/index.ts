@@ -16,4 +16,7 @@ const getProtoPath = (filename: string) => {
 export const PROTO_PATHS = {
   auth: getProtoPath("auth.proto"),
   crm: getProtoPath("crm.proto"),
+  document: getProtoPath("document.proto"),
+  project: getProtoPath("project.proto"),
+  notification: getProtoPath("notification.proto"),
 };

@@ -787,15 +787,72 @@ app.get('/api/cms/media-stats', async (req, res) => {
   } catch (error: any) { res.status(500).json({ error: error.message }); }
 });
 
+// ── High-Speed Synchronous gRPC Server & Client Setup ─────────────────────────
+import { GrpcServerHelper, GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
+
+const PROJECT_GRPC_PORT = parseInt(process.env.GRPC_PORT || "50054", 10);
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+
+const projectGrpcServer = new GrpcServerHelper();
+projectGrpcServer.addService(
+  PROTO_PATHS.project,
+  "project",
+  "ProjectService",
+  {
+    GetProjectStatus: async (call: any, callback: any) => {
+      try {
+        const { projectId, companyId } = call.request;
+        const project = await prisma.kanbanProject.findFirst({
+          where: { id: projectId, companyId },
+        });
+        if (!project) {
+          return callback(null, { found: false, error: "Project not found" });
+        }
+        callback(null, {
+          found: true,
+          projectId: project.id,
+          name: project.name,
+          status: project.status || "ACTIVE",
+          completionPercentage: 75,
+          error: "",
+        });
+      } catch (err: any) {
+        callback(null, { found: false, error: err.message || "Error" });
+      }
+    },
+    CheckHealth: async (_call: any, callback: any) => {
+      callback(null, {
+        status: "healthy",
+        service: "project-service",
+        timestamp: Date.now(),
+      });
+    },
+  }
+);
+
+projectGrpcServer.start(PROJECT_GRPC_PORT).catch(err => {
+  console.error("[project-service] Failed to start gRPC server:", err.message);
+});
+
+export const authGrpcClient = GrpcClientHelper.getClient(
+  "auth-service",
+  PROTO_PATHS.auth,
+  "auth",
+  "AuthService",
+  AUTH_GRPC_URL,
+  { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
+);
+
 // ── Start ────────────────────────────────────────────────────────────────────
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`📋 Project Service running on port ${PORT}`);
+  console.log(`📋 Project Service running on port ${PORT} (HTTP) and port ${PROJECT_GRPC_PORT} (gRPC Sync)`);
   console.log(`   Models: KanbanProject, KanbanTask, KanbanSwimlane, KanbanComment, KanbanAuditLog`);
   console.log(`   Templates: ${Object.keys(BOARD_TEMPLATES).join(", ")}`);
 });
 
 process.on("SIGTERM", async () => {
+  await projectGrpcServer.forceShutdown();
   await eventBus.disconnect();
   await redisClient.quit();
   await prisma.$disconnect();

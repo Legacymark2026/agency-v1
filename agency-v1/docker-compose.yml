@@ -756,6 +756,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4011"
+      GRPC_PORT: "50053"
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -872,6 +873,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4016"
+      GRPC_PORT: "50055"
       RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -919,6 +921,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4018"
+      GRPC_PORT: "50054"
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }

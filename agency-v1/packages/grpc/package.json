@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && node -e \"const fs=require('fs'); fs.mkdirSync('dist/proto',{recursive:true}); ['auth.proto','crm.proto'].forEach(f=>fs.copyFileSync('src/proto/'+f,'dist/proto/'+f));\"",
+    "build": "tsc && node -e \"const fs=require('fs'); fs.mkdirSync('dist/proto',{recursive:true}); ['auth.proto','crm.proto','document.proto','project.proto','notification.proto'].forEach(f=>fs.copyFileSync('src/proto/'+f,'dist/proto/'+f));\"",
     "dev": "tsc --watch"
   },
   "dependencies": {

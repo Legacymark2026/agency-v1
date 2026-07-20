@@ -422,10 +422,67 @@ for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
   });
 }
 
+// ── High-Speed Synchronous gRPC Server & Client Setup ─────────────────────────
+import { GrpcServerHelper, GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
+
+const NOTIF_GRPC_PORT = parseInt(process.env.GRPC_PORT || "50055", 10);
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+
+const notifGrpcServer = new GrpcServerHelper();
+notifGrpcServer.addService(
+  PROTO_PATHS.notification,
+  "notification",
+  "NotificationService",
+  {
+    SendDirectNotification: async (call: any, callback: any) => {
+      try {
+        const { userId, title, message, type } = call.request;
+        const notification = await prisma.notification.create({
+          data: {
+            userId,
+            companyId: "default",
+            title,
+            message,
+            type: type || "SYSTEM",
+            isRead: false,
+          },
+        });
+        callback(null, {
+          success: true,
+          notificationId: notification.id,
+          error: "",
+        });
+      } catch (err: any) {
+        callback(null, { success: false, notificationId: "", error: err.message || "Error" });
+      }
+    },
+    CheckHealth: async (_call: any, callback: any) => {
+      callback(null, {
+        status: "healthy",
+        service: "notification-service",
+        timestamp: Date.now(),
+      });
+    },
+  }
+);
+
+notifGrpcServer.start(NOTIF_GRPC_PORT).catch(err => {
+  console.error("[notification-service] Failed to start gRPC server:", err.message);
+});
+
+export const authGrpcClient = GrpcClientHelper.getClient(
+  "auth-service",
+  PROTO_PATHS.auth,
+  "auth",
+  "AuthService",
+  AUTH_GRPC_URL,
+  { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
+);
+
 // ── Start ────────────────────────────────────────────────────────────────────
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🔔 Notification Service running on port ${PORT}`);
+  console.log(`🔔 Notification Service running on port ${PORT} (HTTP) and port ${NOTIF_GRPC_PORT} (gRPC Sync)`);
   console.log(`   Channels: IN_APP, EMAIL, PUSH`);
   console.log(`   Categories: ${NOTIFICATION_CATEGORIES.join(", ")}`);
   console.log(`   Event mappings: ${Object.keys(EVENT_MAPPINGS).join(", ")}`);
@@ -433,6 +490,7 @@ app.listen(PORT, "0.0.0.0", () => {
 
 process.on("SIGTERM", async () => {
   console.log("[notification-service] Graceful shutdown...");
+  await notifGrpcServer.forceShutdown();
   await eventBus.disconnect();
   await redisClient.quit();
   await prisma.$disconnect();

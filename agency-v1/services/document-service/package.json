@@ -10,17 +10,29 @@
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
-    "express": "^5.1.0",
+    "@agency/grpc": "file:../../packages/grpc",
+    "@agency/observability": "file:../../packages/observability",
+    "@grpc/grpc-js": "^1.12.6",
+    "@grpc/proto-loader": "^0.7.13",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.47.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.52.0",
+    "@opentelemetry/resources": "^1.25.0",
+    "@opentelemetry/sdk-node": "^0.52.0",
+    "@opentelemetry/semantic-conventions": "^1.25.0",
     "cors": "^2.8.5",
+    "express": "^5.1.0",
     "helmet": "^8.1.0",
-    "zod": "^3.24.0",
-    "ioredis": "^5.6.1"
+    "ioredis": "^5.6.1",
+    "prom-client": "^15.1.3",
+    "winston": "^3.13.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
     "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
     "@types/node": "^20",
-    "typescript": "^5",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5"
   }
 }
