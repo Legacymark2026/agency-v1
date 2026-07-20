@@ -403,7 +403,6 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             try {
                 const file = await stopRecordingAndGetFile();
                 setPendingFiles(prev => [...prev, file]);
-                // Now re-trigger send with the file in state
                 setTimeout(handleSend, 50);
             } catch {
                 toast.error('Error al procesar la nota de voz');
@@ -412,10 +411,12 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
         }
 
         setIsSending(true);
-        let content = newItem;
+        const currentPendingFiles = [...pendingFiles];
+        const currentItem = newItem;
+        let content = currentItem;
 
         // Pre-set content for voice notes so the message always has content
-        const hasAudioFile = pendingFiles.some((f: any) => f instanceof File && f.type?.includes('audio'));
+        const hasAudioFile = currentPendingFiles.some((f: any) => f instanceof File && (f.type?.includes('audio') || f.name.includes('voice-note')));
         if (hasAudioFile && !content) {
             content = `🎤 Nota de Voz`;
         }
@@ -424,7 +425,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             // Subir archivos
             const uploadedAttachments: { url: string; type: string }[] = [];
 
-            for (const file of pendingFiles) {
+            for (const file of currentPendingFiles) {
                 if (file instanceof File) {
                     const formData = new FormData();
                     formData.append("file", file);
@@ -434,7 +435,6 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     let uploadedUrl = '';
                     let uploaded = false;
 
-                    // Fallback to local database/filesystem media upload
                     try {
                         const localRes = await fetch("/api/media/upload", {
                             method: "POST",
@@ -451,7 +451,6 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         console.warn("Local media upload error:", localErr);
                     }
 
-                    // Fallback to Object URL if server upload returned error or failed
                     if (!uploaded || !uploadedUrl) {
                         uploadedUrl = URL.createObjectURL(file);
                         uploaded = true;
@@ -466,7 +465,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
 
             const optimisticAttachments = uploadedAttachments.map((a, idx) => ({
                 id: 'temp-a-' + Math.random(),
-                fileName: pendingFiles[idx] instanceof File ? (pendingFiles[idx] as File).name : 'attachment',
+                fileName: currentPendingFiles[idx] instanceof File ? (currentPendingFiles[idx] as File).name : 'attachment',
                 mediaUrl: a.url,
                 mediaType: a.type
             }));
@@ -486,29 +485,30 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             setShowQuickReplies(false);
             setIsRecording(false);
             setIsPrivateNote(false);
-            setPendingFiles([]); // Clear pending files
-            if (textareaRef.current) textareaRef.current.style.height = '44px'; // Reset height
+            setPendingFiles([]);
+            if (textareaRef.current) textareaRef.current.style.height = '44px';
 
-            // Format for advanced action
             const advancedAttachments = uploadedAttachments.map((a, idx) => ({
-                fileName: pendingFiles[idx] instanceof File ? (pendingFiles[idx] as File).name : 'attachment',
+                fileName: currentPendingFiles[idx] instanceof File ? (currentPendingFiles[idx] as File).name : 'attachment',
                 mediaUrl: a.url,
                 mediaType: a.type,
-                fileSize: pendingFiles[idx] instanceof File ? (pendingFiles[idx] as File).size : 0
+                fileSize: currentPendingFiles[idx] instanceof File ? (currentPendingFiles[idx] as File).size : 0
             }));
 
             // Call Server Action
             const result = await sendMessage_Advanced(conversation.id, content, advancedAttachments, { direction: isPrivateNote ? 'INTERNAL' : 'OUTBOUND' });
+            
             if (result && result.success === false) {
-                toast.error((result as any).error);
+                console.warn("[Send Message Warning]:", result.error);
+                toast.error(result.error || "No se pudo sincronizar el mensaje.");
                 setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, status: 'FAILED' } : m));
             } else {
-                setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, status: 'SENT' } : m));
+                setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, id: result?.messageId || m.id, status: 'SENT' } : m));
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error sending message", error);
-            toast.error("Error enviando el mensaje.");
-            setMessages((prev: any) => prev.map((m: any) => m.status === 'SENT' && m.id.startsWith('temp-') ? { ...m, status: 'FAILED' } : m));
+            toast.error(error?.message || "Error al procesar el mensaje.");
+            setMessages((prev: any) => prev.map((m: any) => m.status === 'SENT' && m.id?.startsWith('temp-') ? { ...m, status: 'FAILED' } : m));
         } finally {
             setIsSending(false);
         }
