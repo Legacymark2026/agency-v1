@@ -58,7 +58,8 @@ export default function PaymentPortalClient({ invoice: initialInvoice, payuConfi
     const [selectedGateway, setSelectedGateway] = useState<"wompi" | "stripe" | "payu" | "paypal" | "transfer">("wompi");
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [loadingPayment, setLoadingPayment] = useState(false);
-    const [wompiSignatureData, setWompiSignatureData] = useState<{ signature: string; reference: string; amountInCents: number } | null>(null);
+    const [wompiSignatureData, setWompiSignatureData] = useState<{ signature: string; reference: string; amountInCents: number; currency: string } | null>(null);
+    const [wompiError, setWompiError] = useState(false);
 
     const isPaid = invoice.status === "PAID";
     const isCancelled = invoice.status === "CANCELLED";
@@ -102,10 +103,14 @@ export default function PaymentPortalClient({ invoice: initialInvoice, payuConfi
                     const data = await res.json();
                     if (data.signature) {
                         setWompiSignatureData(data);
+                        setWompiError(false);
+                        return;
                     }
                 }
+                setWompiError(true);
             } catch (err) {
                 console.error("Wompi signature fetch error:", err);
+                setWompiError(true);
             }
         };
 
@@ -417,6 +422,16 @@ export default function PaymentPortalClient({ invoice: initialInvoice, payuConfi
                                                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                                     </button>
                                                 </form>
+                                            ) : wompiError ? (
+                                                <div className="p-4 bg-slate-900 rounded-lg text-center space-y-3">
+                                                    <p className="text-xs text-amber-400 font-medium">No se pudo generar la firma de Wompi de forma automática.</p>
+                                                    <button
+                                                        onClick={() => setSelectedGateway("stripe")}
+                                                        className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        Pagar con Tarjeta (Stripe Checkout)
+                                                    </button>
+                                                </div>
                                             ) : (
                                                 <div className="p-3 bg-slate-900 rounded-lg text-center text-xs text-slate-400 animate-pulse">
                                                     Generando firma segura de Wompi...
