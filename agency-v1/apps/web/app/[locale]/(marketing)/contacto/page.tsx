@@ -2,11 +2,18 @@ import { ContactForm } from "@/components/sections/contact-form";
 import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata() {
-    const t = await getTranslations('contactPage.meta');
-    return {
-        title: t('title'),
-        description: t('description'),
-    };
+    try {
+        const t = await getTranslations('contactPage.meta');
+        return {
+            title: t('title'),
+            description: t('description'),
+        };
+    } catch {
+        return {
+            title: "Contacto | LegacyMark",
+            description: "Ponte en contacto con el equipo de LegacyMark",
+        };
+    }
 }
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────────────
