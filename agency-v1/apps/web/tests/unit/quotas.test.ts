@@ -5,7 +5,16 @@
  * Mejora 6.4
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Mock Prisma client to avoid DB connection timeouts in unit tests
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    company: {
+      findUnique: vi.fn().mockResolvedValue({ id: "test-company", plan: "pro", subscriptionStatus: "active" }),
+    },
+  },
+}));
 
 // Mock fetch global para simular Upstash Redis
 const mockFetch = vi.fn();
@@ -21,7 +30,7 @@ const { enforceQuota, getQuotaUsage, TIER_LIMITS } = await import("@/lib/quotas"
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 beforeEach(() => {
-  mockFetch.mockClear();
+  mockFetch.mockReset();
 });
 
 describe("TIER_LIMITS", () => {
@@ -43,7 +52,6 @@ describe("TIER_LIMITS", () => {
 
 describe("enforceQuota — MASTER_TENANT bypass", () => {
   it("debe permitir acceso ilimitado al master tenant sin llamar a Redis", async () => {
-    mockFetch.mockClear();
     const result = await enforceQuota("master-tenant-id", "leads", "free");
     expect(result.allowed).toBe(true);
     expect(result.limit).toBe(999999);
@@ -52,10 +60,6 @@ describe("enforceQuota — MASTER_TENANT bypass", () => {
 });
 
 describe("enforceQuota — free tier", () => {
-  beforeEach(() => {
-    mockFetch.mockClear();
-  });
-
   it("debe permitir cuando el uso está dentro del límite", async () => {
     // Simular Redis devolviendo uso = 50 (dentro del límite free de 100)
     mockFetch.mockResolvedValueOnce({
