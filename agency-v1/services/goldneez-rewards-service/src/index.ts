@@ -19,7 +19,10 @@ const pool = new Pool({
 
 // Establecer el esquema goldneez automáticamente en cada nueva conexión
 pool.on("connect", (client) => {
-  client.query("SET search_path TO goldneez, public;");
+  client.query("SET search_path TO goldneez, public;").catch(err => console.error("[PG] search_path set error:", err));
+});
+pool.on("error", (err) => {
+  console.error("[PG] Unexpected error on idle client:", err);
 });
 
 app.use(helmet());

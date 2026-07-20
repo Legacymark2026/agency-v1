@@ -483,7 +483,7 @@ services:
       dockerfile: services/goldneez-rewards-service/Dockerfile
     environment:
       PORT: "4020"
-      GOLDNEEZ_DB_URL: postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@pgbouncer:6432/legacymark?schema=goldneez&search_path=goldneez,public&connection_limit=5&pgbouncer=true&sslmode=require
+      GOLDNEEZ_DB_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       NODE_ENV: ${NODE_ENV:-development}
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
