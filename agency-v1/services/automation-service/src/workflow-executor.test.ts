@@ -4,7 +4,6 @@
  * Tests the pure logic functions of the workflow executor:
  * - executeRealAction: SEND_EMAIL skip/credentials, UPDATE_DEAL, DB_WRITE guards,
  *   UNKNOWN_ACTION, HTTP action
- * - getNestedValue helper (via context resolution)
  * - condition evaluation in conditionNode (via executeWorkflow DAG)
  *
  * All external I/O (Prisma, fetch, Resend) is mocked.
@@ -13,8 +12,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ─── vi.hoisted: mock fns must be declared before vi.mock is executed ─────────
-// vi.mock() is hoisted to top-of-file by vitest, so all variables referenced in
-// the factory must be hoisted too via vi.hoisted().
 const {
   mockIntegrationConfig,
   mockWhatsAppIntegration,
@@ -69,7 +66,7 @@ vi.mock("handlebars", async () => {
   return actual;
 });
 
-import { triggerWorkflow } from "./workflow-executor";
+import { triggerWorkflow, executeWorkflow } from "./workflow-executor";
 
 function makeExecution(overrides = {}) {
   return { id: "exec-1", ...overrides };
@@ -89,12 +86,17 @@ describe("executeRealAction — SEND_EMAIL", () => {
       isActive: true,
       steps: [{ type: "SEND_EMAIL", config: {} }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
     mockWorkflowExecution.update.mockResolvedValue({});
 
-    await triggerWorkflow("FORM_SUBMISSION", { source: "landing", email: undefined });
-    expect(mockWorkflowExecution.update).toHaveBeenCalled();
+    await executeWorkflow("wf-1", { source: "landing", email: undefined });
+    expect(mockWorkflowExecution.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "exec-1" },
+        data: expect.objectContaining({ status: "SUCCESS" }),
+      })
+    );
   });
 
   it("fails email when RESEND_API_KEY is not configured", async () => {
@@ -106,11 +108,11 @@ describe("executeRealAction — SEND_EMAIL", () => {
       isActive: true,
       steps: [{ type: "SEND_EMAIL", config: { to: "test@example.com" } }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
-    mockWorkflowExecution.update.mockImplementation(({ data }: any) => Promise.resolve(data));
+    mockWorkflowExecution.update.mockResolvedValue({});
 
-    await triggerWorkflow("FORM_SUBMISSION", { email: "test@example.com" });
+    await executeWorkflow("wf-2", { email: "test@example.com" });
     expect(mockWorkflowExecution.update).toHaveBeenCalled();
   });
 });
@@ -130,11 +132,11 @@ describe("executeRealAction — UPDATE_DEAL", () => {
       isActive: true,
       steps: [{ type: "UPDATE_DEAL", config: { stage: "WON" } }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
     mockWorkflowExecution.update.mockResolvedValue({});
 
-    await triggerWorkflow("DEAL_STAGE_CHANGED", { __dealId: "deal-1", stage: "WON" });
+    await executeWorkflow("wf-deal", { __dealId: "deal-1", stage: "WON" });
 
     expect(mockDeal.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "deal-1" } })
@@ -148,11 +150,11 @@ describe("executeRealAction — UPDATE_DEAL", () => {
       isActive: true,
       steps: [{ type: "UPDATE_DEAL", config: { stage: "LOST" } }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
     mockWorkflowExecution.update.mockResolvedValue({});
 
-    await triggerWorkflow("DEAL_STAGE_CHANGED", { stage: "LOST" });
+    await executeWorkflow("wf-nodeal", { stage: "LOST" });
     expect(mockDeal.update).not.toHaveBeenCalled();
   });
 });
@@ -171,16 +173,16 @@ describe("executeRealAction — DB_WRITE security guards", () => {
       isActive: true,
       steps: [{ type: "DB_WRITE", config: { model: "user", operation: "create", data: {} } }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
 
     let capturedLogs: any = null;
     mockWorkflowExecution.update.mockImplementation(({ data }: any) => {
-      capturedLogs = data.logs;
+      if (data.logs) capturedLogs = data.logs;
       return Promise.resolve({});
     });
 
-    await triggerWorkflow("FORM_SUBMISSION", {});
+    await executeWorkflow("wf-blocked", {});
 
     const dbWriteLog = capturedLogs?.find((l: any) => l.type === "DB_WRITE");
     expect(dbWriteLog?.details).toContain("DB_WRITE_BLOCKED");
@@ -193,16 +195,16 @@ describe("executeRealAction — DB_WRITE security guards", () => {
       isActive: true,
       steps: [{ type: "DB_WRITE", config: { model: "lead", operation: "update", data: { status: "CLOSED" } } }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
 
     let capturedLogs: any = null;
     mockWorkflowExecution.update.mockImplementation(({ data }: any) => {
-      capturedLogs = data.logs;
+      if (data.logs) capturedLogs = data.logs;
       return Promise.resolve({});
     });
 
-    await triggerWorkflow("FORM_SUBMISSION", {});
+    await executeWorkflow("wf-no-where", {});
 
     const dbWriteLog = capturedLogs?.find((l: any) => l.type === "DB_WRITE");
     expect(dbWriteLog?.details).toContain("DB_WRITE_BLOCKED");
@@ -223,16 +225,16 @@ describe("executeRealAction — UNKNOWN_ACTION", () => {
       isActive: true,
       steps: [{ type: "MAGIC_TELEPORT", config: {} }],
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
 
     let capturedLogs: any = null;
     mockWorkflowExecution.update.mockImplementation(({ data }: any) => {
-      capturedLogs = data.logs;
+      if (data.logs) capturedLogs = data.logs;
       return Promise.resolve({});
     });
 
-    await triggerWorkflow("FORM_SUBMISSION", {});
+    await executeWorkflow("wf-unknown", {});
     const entry = capturedLogs?.find((l: any) => l.type === "MAGIC_TELEPORT");
     expect(entry?.details).toContain("UNKNOWN_ACTION");
   });
@@ -279,7 +281,7 @@ describe("triggerWorkflow — DAG conditionNode branching", () => {
       isActive: true,
       steps: { nodes, edges },
     };
-    mockWorkflow.findMany.mockResolvedValue([wf]);
+    mockWorkflow.findUnique.mockResolvedValue(wf);
 
     let capturedLogs: any = null;
     mockWorkflowExecution.update.mockImplementation(({ data }: any) => {
@@ -287,7 +289,7 @@ describe("triggerWorkflow — DAG conditionNode branching", () => {
       return Promise.resolve({});
     });
 
-    await triggerWorkflow("FORM_SUBMISSION", { __assignedTo: "user-1", score: "75" });
+    await executeWorkflow("wf-dag", { __assignedTo: "user-1", score: "75" });
 
     const trueAction = capturedLogs?.find((l: any) => l.nodeId === "action-true");
     const falseAction = capturedLogs?.find((l: any) => l.nodeId === "action-false");
