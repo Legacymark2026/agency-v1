@@ -1372,5 +1372,25 @@
       "desc2": "Es el momento perfecto para adelantarlos.",
       "btn": "Iniciar Transformación"
     }
+  },
+  "creacionContenidoPage": {
+    "title": "Creación de Contenido",
+    "description": "Producimos contenido audiovisual y gráfico de alto impacto."
+  },
+  "automatizacionPage": {
+    "title": "Automatización & IA",
+    "description": "Flujos de trabajo impulsados por IA."
+  },
+  "estrategiaPage": {
+    "title": "Estrategia Digital",
+    "description": "Hojas de ruta estratégicas para dominancia de mercado."
+  },
+  "estrategiaDeMarcaPage": {
+    "title": "Estrategia de Marca",
+    "description": "Construcción de marcas memorables."
+  },
+  "webDevPage": {
+    "title": "Desarrollo Web",
+    "description": "Sitios web de alta velocidad y conversión."
   }
 }

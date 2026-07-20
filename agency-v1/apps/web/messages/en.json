@@ -1368,5 +1368,25 @@
       "desc2": "It's the perfect time to overtake them.",
       "btn": "Start Transformation"
     }
+  },
+  "creacionContenidoPage": {
+    "title": "Content Creation",
+    "description": "High-impact audiovisual and graphic content production."
+  },
+  "automatizacionPage": {
+    "title": "Automation & AI",
+    "description": "AI-powered workflows."
+  },
+  "estrategiaPage": {
+    "title": "Digital Strategy",
+    "description": "Strategic roadmaps for market dominance."
+  },
+  "estrategiaDeMarcaPage": {
+    "title": "Brand Strategy",
+    "description": "Building memorable brands."
+  },
+  "webDevPage": {
+    "title": "Web Development",
+    "description": "High speed and conversion websites."
   }
 }
