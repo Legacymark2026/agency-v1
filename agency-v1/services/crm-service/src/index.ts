@@ -2463,12 +2463,85 @@ app.get('/api/crm/closing/funnel-conversion-report', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
+// ── High-Speed Synchronous gRPC Server & Client Setup ─────────────────────────
+import { GrpcServerHelper, GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
+
+const CRM_GRPC_PORT = parseInt(process.env.GRPC_PORT || "50052", 10);
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+
+// 1. gRPC Server for CRM Service
+const crmGrpcServer = new GrpcServerHelper();
+
+crmGrpcServer.addService(PROTO_PATHS.crm, "crm", "CrmService", {
+  GetLeadDetails: async (call: any, callback: any) => {
+    try {
+      const { leadId, companyId } = call.request;
+      if (!leadId) {
+        return callback(null, { found: false, error: "leadId is required" });
+      }
+
+      const lead = await prisma.lead.findFirst({
+        where: {
+          id: leadId,
+          ...(companyId ? { companyId } : {})
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          status: true,
+          assignedAgentId: true
+        }
+      });
+
+      if (!lead) {
+        return callback(null, { found: false, error: "Lead not found" });
+      }
+
+      callback(null, {
+        found: true,
+        leadId: lead.id,
+        name: lead.name || "",
+        email: lead.email || "",
+        status: lead.status || "new",
+        assignedAgentId: lead.assignedAgentId || "",
+        error: ""
+      });
+    } catch (err: any) {
+      callback(null, { found: false, error: err.message || "Error fetching lead" });
+    }
+  },
+
+  CheckHealth: async (_call: any, callback: any) => {
+    callback(null, {
+      status: "healthy",
+      service: "crm-service",
+      timestamp: Date.now()
+    });
+  }
+});
+
+crmGrpcServer.start(CRM_GRPC_PORT).catch(err => {
+  console.error("[crm-service] Failed to start gRPC server:", err.message);
+});
+
+// 2. gRPC Client to Auth Service (with Circuit Breaker)
+export const authGrpcClient = GrpcClientHelper.getClient(
+  "auth-service",
+  PROTO_PATHS.auth,
+  "auth",
+  "AuthService",
+  AUTH_GRPC_URL,
+  { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
+);
+
 // ── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`📊 CRM Service running on port ${PORT}`);
+  console.log(`📊 CRM Service running on port ${PORT} (HTTP) and port ${CRM_GRPC_PORT} (gRPC Sync)`);
 });
 
 process.on("SIGTERM", async () => {
+  await crmGrpcServer.forceShutdown();
   await eventBus.disconnect();
   await prisma.$disconnect();
   process.exit(0);
@@ -2476,3 +2549,4 @@ process.on("SIGTERM", async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
+

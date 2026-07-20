@@ -51,9 +51,11 @@ graph TD
         PGBOUNCER_READ["PgBouncer Replica <br/> (Transaction Mode @pgbouncer-replica:6433)"]:::pooling
     end
 
-    %% Bus de Eventos (Zod Schema Validation)
-    subgraph EventsBus ["🚀 Bus de Eventos & Contratos Zod"]
-        REDIS_EVENTS{{"Event Bus <br/> (Redis Streams @agency/events)"}}:::eventbus
+    %% Capa de Comunicación Híbrida (gRPC + Redis/Kafka Event Bus)
+    subgraph HybridComm ["⚡ Capa de Comunicación Híbrida & Autonomía"]
+        GRPC_MESH["Red Síncrona gRPC <br/> (@agency/grpc @50051/50052)"]:::supergraph
+        CIRCUIT_BREAKER["Circuit Breaker & Fallbacks <br/> (Isolated Traffic Autonomy)"]:::edge
+        REDIS_EVENTS{{"Bus Asíncrono de Eventos <br/> (Redis Streams / Kafka @agency/events)"}}:::eventbus
         ZOD_VALIDATION["Zod Schema Registry <br/> (Safe Payload Validation)"]:::edge
     end
 

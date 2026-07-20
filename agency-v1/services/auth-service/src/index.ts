@@ -635,9 +635,91 @@ app.patch('/api/auth/global-users/:id/role', async (req, res) => {
 // ── Event Bus Setup ──────────────────────────────────────────────────────────
 const eventBus = new EventBus(REDIS_URL, "auth-service");
 
+// ── High-Speed Synchronous gRPC Server Setup ──────────────────────────────────
+import { GrpcServerHelper, PROTO_PATHS } from "@agency/grpc";
+import jwt from "jsonwebtoken";
+
+const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
+const grpcServer = new GrpcServerHelper();
+
+grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
+  ValidateToken: async (call: any, callback: any) => {
+    try {
+      const { token } = call.request;
+      if (!token) {
+        return callback(null, { valid: false, error: "Token is required" });
+      }
+
+      // Check Redis blacklist
+      const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
+      if (isBlacklisted) {
+        return callback(null, { valid: false, error: "Token has been revoked" });
+      }
+
+      const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+      const verifyOptions: any = {};
+      if (publicKey) verifyOptions.algorithms = ["RS256"];
+
+      const decoded = jwt.verify(token, verifyKey, verifyOptions) as any;
+      
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.sub },
+        select: { id: true, email: true, role: true }
+      });
+
+      if (!user) {
+        return callback(null, { valid: false, error: "User not found" });
+      }
+
+      callback(null, {
+        valid: true,
+        userId: user.id,
+        email: user.email,
+        role: user.role || "user",
+        companyId: decoded.companyId || "",
+        error: ""
+      });
+    } catch (err: any) {
+      callback(null, { valid: false, error: err.message || "Invalid token" });
+    }
+  },
+
+  GetUserPermissions: async (call: any, callback: any) => {
+    try {
+      const { userId } = call.request;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true }
+      });
+
+      if (!user) {
+        return callback(null, { userId, permissions: [], role: "" });
+      }
+
+      const roleConfig = await prisma.roleConfig.findUnique({
+        where: { roleName: user.role || "user" }
+      });
+
+      const permissions = roleConfig?.allowedRoutes || ["/api/*"];
+
+      callback(null, {
+        userId: user.id,
+        permissions,
+        role: user.role || "user"
+      });
+    } catch (err: any) {
+      callback(null, { userId: call.request.userId, permissions: [], role: "" });
+    }
+  }
+});
+
+grpcServer.start(GRPC_PORT).catch(err => {
+  console.error("[auth-service] Failed to start gRPC server:", err.message);
+});
+
 // ── Start Server ─────────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🔐 Auth Service running on port ${PORT}`);
+  console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);
   console.log(`   Health: http://localhost:${PORT}/health`);
   console.log(`   Ready:  http://localhost:${PORT}/ready`);
 });
@@ -645,6 +727,7 @@ app.listen(PORT, "0.0.0.0", () => {
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("[auth-service] SIGTERM received. Shutting down...");
+  await grpcServer.forceShutdown();
   await eventBus.disconnect();
   await prisma.$disconnect();
   process.exit(0);
@@ -652,3 +735,4 @@ process.on("SIGTERM", async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
+

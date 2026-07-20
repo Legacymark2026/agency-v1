@@ -4,6 +4,7 @@
   "private": true,
   "scripts": { "dev": "tsx watch src/index.ts", "build": "tsc", "start": "node dist/index.js" },
   "dependencies": {
+    "@agency/grpc": "file:../../packages/grpc",
     "@agency/observability": "file:../../packages/observability",
     "express": "^5.1.0", "cors": "^2.8.5", "helmet": "^8.1.0",
     "http-proxy-middleware": "^3.0.3", "express-rate-limit": "^7.5.0",

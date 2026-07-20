@@ -11,6 +11,7 @@
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
+    "@agency/grpc": "file:../../packages/grpc",
     "@agency/observability": "file:../../packages/observability",
     "express": "^5.1.0",
     "cors": "^2.8.5",

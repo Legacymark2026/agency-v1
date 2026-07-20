@@ -235,6 +235,49 @@ async function run() {
     }
   });
 
+  // 6. gRPC Synchronous Contract & Circuit Breaker Tests
+  await test("gRPC Circuit Breaker state transitions and fallback execution", async () => {
+    const { CircuitBreaker, CircuitState } = await import("../packages/grpc/src/circuit-breaker");
+    const breaker = new CircuitBreaker("test-service", { failureThreshold: 2, resetTimeoutMs: 100, timeoutMs: 50 });
+
+    assert(breaker.getState() === CircuitState.CLOSED, "Initial state should be CLOSED");
+
+    // Failure 1
+    try {
+      await breaker.execute(async () => { throw new Error("Connection failed"); });
+    } catch {}
+    assert(breaker.getState() === CircuitState.CLOSED, "State should remain CLOSED after 1 failure");
+
+    // Failure 2 -> triggers OPEN
+    let fallbackExecuted = false;
+    const result = await breaker.execute(
+      async () => { throw new Error("Connection failed 2"); },
+      async () => { fallbackExecuted = true; return "fallback-result"; }
+    );
+
+    assert(fallbackExecuted === true, "Fallback should execute on failure");
+    assert(result === "fallback-result", "Fallback result should be returned");
+    assert(breaker.getState() === CircuitState.OPEN, "State should transition to OPEN after reaching failure threshold");
+  });
+
+  await test("gRPC Proto Files Existence & Structure", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const authProtoPath = path.join(__dirname, "../packages/grpc/src/proto/auth.proto");
+    const crmProtoPath = path.join(__dirname, "../packages/grpc/src/proto/crm.proto");
+
+    assert(fs.existsSync(authProtoPath), "auth.proto should exist");
+    assert(fs.existsSync(crmProtoPath), "crm.proto should exist");
+
+    const authContent = fs.readFileSync(authProtoPath, "utf8");
+    assert(authContent.includes("service AuthService"), "auth.proto must contain AuthService definition");
+    assert(authContent.includes("rpc ValidateToken"), "auth.proto must define ValidateToken RPC");
+
+    const crmContent = fs.readFileSync(crmProtoPath, "utf8");
+    assert(crmContent.includes("service CrmService"), "crm.proto must contain CrmService definition");
+    assert(crmContent.includes("rpc GetLeadDetails"), "crm.proto must define GetLeadDetails RPC");
+  });
+
   console.log("\n══════════════════════════════════════════════════════════════");
   console.log(`  Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);
   console.log("══════════════════════════════════════════════════════════════\n");

@@ -15,6 +15,17 @@ import Redis from "ioredis";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import crypto from "crypto";
+import { GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
+
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+const authGrpcClient = GrpcClientHelper.getClient(
+  "auth-service",
+  PROTO_PATHS.auth,
+  "auth",
+  "AuthService",
+  AUTH_GRPC_URL,
+  { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
+);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
@@ -42,6 +53,34 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/metrics", metricsEndpoint);
+
+// Fast High-Speed gRPC Token Verification Route with HTTP Fallback
+app.post("/api/gateway/verify-token", express.json(), async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ valid: false, error: "Token required" });
+
+  try {
+    const result = await authGrpcClient.call("ValidateToken", { token }, async () => {
+      // Fallback: HTTP call if gRPC fails or circuit is open
+      const authUrl = await resolveServiceUrl("auth");
+      const resp = await fetch(`${authUrl}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data: any = await resp.json();
+      return {
+        valid: resp.ok,
+        userId: data.user?.id || "",
+        email: data.user?.email || "",
+        role: data.user?.role || "",
+        companyId: "",
+        error: resp.ok ? "" : (data.error || "HTTP verification failed")
+      };
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ valid: false, error: err.message });
+  }
+});
 
 // ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");

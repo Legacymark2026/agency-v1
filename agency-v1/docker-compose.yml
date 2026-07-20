@@ -440,6 +440,7 @@ services:
       dockerfile: services/auth-service/Dockerfile
     environment:
       PORT: "4001"
+      GRPC_PORT: "50051"
       REDIS_URL: redis://redis:6379
       OTEL_SERVICE_NAME: auth-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
@@ -506,6 +507,8 @@ services:
       dockerfile: services/crm-service/Dockerfile
     environment: &common-env
       PORT: "4002"
+      GRPC_PORT: "50052"
+      AUTH_GRPC_URL: auth-service:50051
       REDIS_URL: redis://redis:6379
       OTEL_SERVICE_NAME: crm-service
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
