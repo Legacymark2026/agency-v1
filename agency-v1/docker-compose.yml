@@ -228,9 +228,9 @@ services:
     restart: unless-stopped
     logging: *default-logging
     environment:
-      AUTOHEAL_CONTAINER_LABEL: all
-      AUTOHEAL_INTERVAL: 10
-      AUTOHEAL_START_PERIOD: 30
+      AUTOHEAL_CONTAINER_LABEL: disabled
+      AUTOHEAL_INTERVAL: 30
+      AUTOHEAL_START_PERIOD: 300
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
