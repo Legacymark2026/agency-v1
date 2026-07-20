@@ -2,7 +2,7 @@
   "name": "@agency/finance-service",
   "version": "1.0.0",
   "private": true,
-  "scripts": { "dev": "tsx watch src/index.ts", "build": "tsc", "start": "node dist/index.js" },
+  "scripts": { "dev": "tsx watch src/index.ts", "build": "tsc", "start": "node dist/index.js", "test": "vitest run" },
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
