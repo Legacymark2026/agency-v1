@@ -25,9 +25,9 @@ const Stats = dynamic(() => import("@/components/sections/stats").then(mod => mo
 const CTA = dynamic(() => import("@/components/sections/cta").then(mod => mod.CTA));
 
 export default async function HomePage() {
-    const projects = await getRecentProjects(4);
-    const posts = await getRecentPosts(3);
-    const experts = await getExperts();
+    const projects = await getRecentProjects(4).catch(() => []);
+    const posts = await getRecentPosts(3).catch(() => []);
+    const experts = await getExperts().catch(() => []);
 
     return (
         <main className="relative bg-slate-950 text-white overflow-hidden scroll-smooth">
