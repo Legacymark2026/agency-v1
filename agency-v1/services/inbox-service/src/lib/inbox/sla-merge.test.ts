@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ─── Mock logger ──────────────────────────────────────────────────────────────
-vi.mock("../src/lib/inbox/logger", () => ({
+vi.mock("./logger", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -21,26 +21,26 @@ vi.mock("../src/lib/inbox/logger", () => ({
 }));
 
 // ─── Mock audit ───────────────────────────────────────────────────────────────
-vi.mock("../src/lib/inbox/audit", () => ({
+vi.mock("./audit", () => ({
   logAuditEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-// ─── Mock Prisma ─────────────────────────────────────────────────────────────
-const mockConversationSLA = {
-  findUnique: vi.fn(),
-  create: vi.fn(),
-  update: vi.fn(),
-};
-const mockConversation = {
-  findUnique: vi.fn(),
-  findMany: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn(),
-};
-const mockMessage = { updateMany: vi.fn() };
-const mockMessageDraft = { updateMany: vi.fn() };
-const mockInboxTagAssignment = { updateMany: vi.fn() };
-const mockInboxAuditLog = { updateMany: vi.fn() };
+// ─── Mock Prisma — use vi.hoisted so fns are available when vi.mock is hoisted ──
+const {
+  mockConversationSLA,
+  mockConversation,
+  mockMessage,
+  mockMessageDraft,
+  mockInboxTagAssignment,
+  mockInboxAuditLog,
+} = vi.hoisted(() => ({
+  mockConversationSLA: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+  mockConversation: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  mockMessage: { updateMany: vi.fn() },
+  mockMessageDraft: { updateMany: vi.fn() },
+  mockInboxTagAssignment: { updateMany: vi.fn() },
+  mockInboxAuditLog: { updateMany: vi.fn() },
+}));
 
 vi.mock("@agency/database", () => ({
   prisma: {
@@ -53,8 +53,8 @@ vi.mock("@agency/database", () => ({
   },
 }));
 
-import { getSLAConfig, getSLAWarning } from "../src/lib/inbox/sla";
-import { mergeConversations, findDuplicateConversations } from "../src/lib/inbox/merge";
+import { getSLAConfig, getSLAWarning } from "./sla";
+import { mergeConversations, findDuplicateConversations } from "./merge";
 
 // ─── SLA Tests ───────────────────────────────────────────────────────────────
 describe("getSLAConfig", () => {

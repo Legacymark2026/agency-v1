@@ -12,12 +12,22 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// ─── Mock @agency/database before importing the module under test ─────────────
-const mockFindMany = vi.fn();
-const mockFindUnique = vi.fn();
-const mockUpsert = vi.fn();
-const mockCompanyUserFindMany = vi.fn();
-const mockUserFindMany = vi.fn();
+// ─── vi.hoisted: declare mock fns BEFORE vi.mock is executed ──────────────────
+// vi.mock() is hoisted to top-of-file by vitest's transform, so any variables
+// referenced inside the factory must also be hoisted via vi.hoisted().
+const {
+  mockFindMany,
+  mockFindUnique,
+  mockUpsert,
+  mockCompanyUserFindMany,
+  mockUserFindMany,
+} = vi.hoisted(() => ({
+  mockFindMany: vi.fn(),
+  mockFindUnique: vi.fn(),
+  mockUpsert: vi.fn(),
+  mockCompanyUserFindMany: vi.fn(),
+  mockUserFindMany: vi.fn(),
+}));
 
 vi.mock("@agency/database", () => ({
   prisma: {
@@ -32,7 +42,7 @@ vi.mock("@agency/database", () => ({
 }));
 
 // Import AFTER mocking
-import { routeLead } from "../src/assignment-engine";
+import { routeLead } from "./assignment-engine";
 
 // ─── Helper: build a minimal lead object ─────────────────────────────────────
 function makeLead(overrides: Record<string, any> = {}) {
@@ -74,7 +84,6 @@ describe("evaluateCondition — operator coverage via routeLead integration", ()
         assignedUserId: "user-abc",
       },
     ]);
-    // No members → fallback returns null
     const result = await routeLead(makeLead({ email: "test@example.com" }));
     expect(result).toBeNull();
   });
@@ -167,7 +176,7 @@ describe("routeLead — core routing logic", () => {
   });
 
   it("returns null when no rules match and no company members exist", async () => {
-    mockFindMany.mockResolvedValue([]); // no rules
+    mockFindMany.mockResolvedValue([]);
     mockCompanyUserFindMany.mockResolvedValue([]);
     mockUserFindMany.mockResolvedValue([]);
     mockFindUnique.mockResolvedValue(null);
@@ -258,7 +267,7 @@ describe("routeLead — core routing logic", () => {
   });
 
   it("fallback global round-robin — uses all company members when no rule matches", async () => {
-    mockFindMany.mockResolvedValue([]); // No rules match
+    mockFindMany.mockResolvedValue([]);
     mockCompanyUserFindMany.mockResolvedValue([
       { userId: "fallback-a" },
       { userId: "fallback-b" },

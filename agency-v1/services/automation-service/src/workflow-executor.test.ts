@@ -6,25 +6,40 @@
  *   UNKNOWN_ACTION, HTTP action
  * - getNestedValue helper (via context resolution)
  * - condition evaluation in conditionNode (via executeWorkflow DAG)
- * 
+ *
  * All external I/O (Prisma, fetch, Resend) is mocked.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// ─── Mock @agency/database ───────────────────────────────────────────────────
-const mockIntegrationConfig = { findMany: vi.fn(), findFirst: vi.fn() };
-const mockWhatsAppIntegration = { findFirst: vi.fn() };
-const mockDeal = { update: vi.fn(), findUnique: vi.fn() };
-const mockTask = { create: vi.fn() };
-const mockNotification = { create: vi.fn() };
-const mockLead = { findFirst: vi.fn(), findUnique: vi.fn() };
-const mockWorkflow = { findMany: vi.fn(), findUnique: vi.fn() };
-const mockWorkflowExecution = {
-  create: vi.fn(),
-  update: vi.fn(),
-  findFirst: vi.fn(),
-};
+// ─── vi.hoisted: mock fns must be declared before vi.mock is executed ─────────
+// vi.mock() is hoisted to top-of-file by vitest, so all variables referenced in
+// the factory must be hoisted too via vi.hoisted().
+const {
+  mockIntegrationConfig,
+  mockWhatsAppIntegration,
+  mockDeal,
+  mockTask,
+  mockNotification,
+  mockLead,
+  mockWorkflow,
+  mockWorkflowExecution,
+  mockFetch,
+} = vi.hoisted(() => ({
+  mockIntegrationConfig: { findMany: vi.fn(), findFirst: vi.fn() },
+  mockWhatsAppIntegration: { findFirst: vi.fn() },
+  mockDeal: { update: vi.fn(), findUnique: vi.fn() },
+  mockTask: { create: vi.fn() },
+  mockNotification: { create: vi.fn() },
+  mockLead: { findFirst: vi.fn(), findUnique: vi.fn() },
+  mockWorkflow: { findMany: vi.fn(), findUnique: vi.fn() },
+  mockWorkflowExecution: {
+    create: vi.fn(),
+    update: vi.fn(),
+    findFirst: vi.fn(),
+  },
+  mockFetch: vi.fn(),
+}));
 
 vi.mock("@agency/database", () => ({
   prisma: {
@@ -39,11 +54,8 @@ vi.mock("@agency/database", () => ({
   },
 }));
 
-// ─── Mock fetch globally ──────────────────────────────────────────────────────
-const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
-// ─── Mock resend ──────────────────────────────────────────────────────────────
 vi.mock("resend", () => ({
   Resend: vi.fn().mockImplementation(() => ({
     emails: {
@@ -52,13 +64,12 @@ vi.mock("resend", () => ({
   })),
 }));
 
-// ─── Mock handlebars (passthrough) ───────────────────────────────────────────
 vi.mock("handlebars", async () => {
   const actual = await vi.importActual<typeof import("handlebars")>("handlebars");
   return actual;
 });
 
-import { triggerWorkflow, executeWorkflow } from "../src/workflow-executor";
+import { triggerWorkflow } from "./workflow-executor";
 
 function makeExecution(overrides = {}) {
   return { id: "exec-1", ...overrides };
@@ -76,15 +87,13 @@ describe("executeRealAction — SEND_EMAIL", () => {
       id: "wf-1",
       companyId: "c1",
       isActive: true,
-      steps: [{ type: "SEND_EMAIL", config: {} }], // no 'to'
+      steps: [{ type: "SEND_EMAIL", config: {} }],
     };
     mockWorkflow.findMany.mockResolvedValue([wf]);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
     mockWorkflowExecution.update.mockResolvedValue({});
 
     await triggerWorkflow("FORM_SUBMISSION", { source: "landing", email: undefined });
-    
-    // Should not throw; execution should reach UPDATE (success or skip)
     expect(mockWorkflowExecution.update).toHaveBeenCalled();
   });
 
@@ -102,8 +111,6 @@ describe("executeRealAction — SEND_EMAIL", () => {
     mockWorkflowExecution.update.mockImplementation(({ data }: any) => Promise.resolve(data));
 
     await triggerWorkflow("FORM_SUBMISSION", { email: "test@example.com" });
-    
-    // logs should show FAILED: credentials
     expect(mockWorkflowExecution.update).toHaveBeenCalled();
   });
 });
@@ -145,7 +152,7 @@ describe("executeRealAction — UPDATE_DEAL", () => {
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
     mockWorkflowExecution.update.mockResolvedValue({});
 
-    await triggerWorkflow("DEAL_STAGE_CHANGED", { stage: "LOST" }); // no __dealId
+    await triggerWorkflow("DEAL_STAGE_CHANGED", { stage: "LOST" });
     expect(mockDeal.update).not.toHaveBeenCalled();
   });
 });
@@ -175,7 +182,6 @@ describe("executeRealAction — DB_WRITE security guards", () => {
 
     await triggerWorkflow("FORM_SUBMISSION", {});
 
-    // Find the log entry for DB_WRITE
     const dbWriteLog = capturedLogs?.find((l: any) => l.type === "DB_WRITE");
     expect(dbWriteLog?.details).toContain("DB_WRITE_BLOCKED");
   });
@@ -186,7 +192,6 @@ describe("executeRealAction — DB_WRITE security guards", () => {
       companyId: "c1",
       isActive: true,
       steps: [{ type: "DB_WRITE", config: { model: "lead", operation: "update", data: { status: "CLOSED" } } }],
-      // No where clause
     };
     mockWorkflow.findMany.mockResolvedValue([wf]);
     mockWorkflowExecution.create.mockResolvedValue(makeExecution());
@@ -282,7 +287,6 @@ describe("triggerWorkflow — DAG conditionNode branching", () => {
       return Promise.resolve({});
     });
 
-    // score = 75 > 50 → TRUE branch should fire
     await triggerWorkflow("FORM_SUBMISSION", { __assignedTo: "user-1", score: "75" });
 
     const trueAction = capturedLogs?.find((l: any) => l.nodeId === "action-true");
@@ -321,7 +325,6 @@ describe("triggerWorkflow — DAG conditionNode branching", () => {
     mockWorkflowExecution.update.mockResolvedValue({});
 
     const result = await triggerWorkflow("DEAL_STAGE_CHANGED", { stage: "WON" });
-    // Only wf-won should execute, not wf-lost
     expect(result.executed).toBe(1);
   });
 });
