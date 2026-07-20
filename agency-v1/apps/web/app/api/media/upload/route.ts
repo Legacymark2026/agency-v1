@@ -4,6 +4,7 @@ import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { objectStorageEngine } from '@/lib/storage/object-storage-engine';
 
 export const maxDuration = 120;
 
@@ -69,6 +70,9 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    // Generar storage key usando el ObjectStorageEngine
+    const storageKey = objectStorageEngine.generateStorageKey(companyId, assetType, file.name);
+
     // Crear directorio organizado por empresa y tipo
     const uploadDir = join(process.cwd(), 'public', 'uploads', companyId, assetType);
     await mkdir(uploadDir, { recursive: true });
@@ -88,6 +92,15 @@ export async function POST(req: NextRequest) {
     if (metaRaw) {
       try { extra = JSON.parse(metaRaw); } catch { /* ignorar */ }
     }
+
+    // Reference object for metadata transmission
+    const storageRef = objectStorageEngine.generatePresignedUploadUrl(
+      file.name,
+      mimeType,
+      file.size,
+      companyId,
+      extra
+    ).metadataReference;
 
     // Persistir en base de datos si hay sesión
     let asset = null;
@@ -109,7 +122,7 @@ export async function POST(req: NextRequest) {
             fps:        (extra.fps        as number)  ?? null,
             resolution: (extra.resolution as string)  ?? null,
             tags:       (extra.tags       as string[]) ?? [],
-            metadata:   extra,
+            metadata:   { ...extra, storageKey, bucket: objectStorageEngine.getBucket(), provider: objectStorageEngine.getProvider() },
           },
         });
       } catch (dbErr) {
@@ -120,14 +133,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       asset: {
-        id:         asset?.id || `asset-${Date.now()}`,
+        id:         asset?.id || storageRef.id,
         url:        relativeUrl,
         name:       file.name,
         type:       assetType,
         mimeType:   mimeType,
         sizeBytes:  file.size,
+        storageKey: storageKey,
+        bucket:     objectStorageEngine.getBucket(),
+        provider:   objectStorageEngine.getProvider(),
         createdAt:  new Date(),
       },
+      metadataReference: storageRef,
     });
 
   } catch (error: any) {
