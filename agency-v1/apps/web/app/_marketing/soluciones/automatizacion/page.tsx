@@ -30,11 +30,7 @@ const staggerContainer = {
 };
 
 export default function AutomationPage() {
-    const targetRef = useRef(null);
-    const { scrollYProgress } = useScroll({
-        target: targetRef,
-        offset: ["start start", "end start"]
-    });
+    const { scrollYProgress } = useScroll();
 
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
     const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.9]);
