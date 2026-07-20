@@ -69,7 +69,7 @@ export default function PaymentPortalClient({ invoice: initialInvoice, payuConfi
 
         const interval = setInterval(async () => {
             try {
-                const res = await fetch(`/api/invoices/${invoice.token}/status`);
+                const res = await fetch(`/api/invoices/${invoice.token || invoice.id}/status`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.status && data.status !== invoice.status) {
