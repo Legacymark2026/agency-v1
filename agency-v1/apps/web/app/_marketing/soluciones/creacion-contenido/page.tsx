@@ -26,7 +26,11 @@ const staggerContainer = {
 };
 
 export default function ContentCreationPage() {
-    const { scrollYProgress } = useScroll();
+    const targetRef = useRef(null);
+    const { scrollYProgress } = useScroll({
+        target: targetRef,
+        offset: ["start start", "end start"]
+    });
 
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
     const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.9]);
