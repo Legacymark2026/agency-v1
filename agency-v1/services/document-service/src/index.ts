@@ -27,10 +27,8 @@ app.use("/api/propuesta", (_req, res) => { res.status(200).json({ message: "/api
 app.use("/api/kb", (_req, res) => { res.status(200).json({ message: "/api/kb handled by document-service" }); });
 
 // ── Hybrid Event Bus ─────────────────────────────────────────────────────────
-const eventBus = new EventBus({ serviceName: "document-service" });
-eventBus.connect().then(() => {
-  console.log("[EventBus:document-service] Connected in Redis Streams mode");
-}).catch(err => console.error("[EventBus:document-service] Error connecting:", err));
+const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";
+const eventBus = new EventBus(REDIS_URL, "document-service");
 
 // ── Synchronous gRPC Server (port 50053) ──────────────────────────────────────
 const docGrpcServer = new GrpcServerHelper();
