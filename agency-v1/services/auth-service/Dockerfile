@@ -9,7 +9,7 @@ COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/auth-service/package.json ./services/auth-service/
 
-# Install dependencies
+# Install all workspace dependencies
 RUN npm ci || npm install
 
 # Copy shared packages + Prisma schema
@@ -40,16 +40,6 @@ RUN npx tsc --outDir dist
 
 # ── Production Image ──────────────────────────────────────────────────────────
 
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-COPY packages/database/package.json ./packages/database/
-COPY packages/events/package.json ./packages/events/
-COPY packages/grpc/package.json ./packages/grpc/
-COPY packages/observability/package.json ./packages/observability/
-COPY services/auth-service/package.json ./services/auth-service/
-RUN npm ci --omit=dev --workspace=@agency/auth-service --ignore-scripts || npm install --omit=dev --workspace=@agency/auth-service --ignore-scripts
-
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -64,8 +54,7 @@ COPY --from=builder /app/packages/observability/dist ./packages/observability/di
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/auth-service/dist ./dist
 COPY --from=builder /app/services/auth-service/package.json ./
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 4001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4001/health || exit 1

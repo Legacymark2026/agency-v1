@@ -30,14 +30,6 @@ RUN npx tsc --outDir dist
 
 # ── Production Image ──────────────────────────────────────────────────────────
 
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-COPY packages/grpc/package.json ./packages/grpc/
-COPY packages/observability/package.json ./packages/observability/
-COPY services/api-gateway/package.json ./services/api-gateway/
-RUN npm ci --omit=dev --workspace=@agency/api-gateway --ignore-scripts || npm install --omit=dev --workspace=@agency/api-gateway --ignore-scripts
-
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -48,7 +40,7 @@ COPY --from=builder /app/packages/observability/dist ./packages/observability/di
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/api-gateway/dist ./dist
 COPY --from=builder /app/services/api-gateway/package.json ./
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:8080/health || exit 1
