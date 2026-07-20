@@ -1,7 +1,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig*.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/grpc/package.json ./packages/grpc/
@@ -40,7 +40,7 @@ COPY packages/events/package.json ./packages/events/
 COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/crm-service/package.json ./services/crm-service/
-RUN npm ci --omit=dev --ignore-scripts || npm install --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --workspace=@agency/crm-service --ignore-scripts || npm install --omit=dev --workspace=@agency/crm-service --ignore-scripts
 
 FROM node:20-alpine AS runner
 WORKDIR /app

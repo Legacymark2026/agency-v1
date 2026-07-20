@@ -2,7 +2,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy workspace manifests
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig*.json ./
 COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/api-gateway/package.json ./services/api-gateway/
@@ -36,7 +36,7 @@ COPY package.json package-lock.json ./
 COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/api-gateway/package.json ./services/api-gateway/
-RUN npm ci --omit=dev --ignore-scripts || npm install --omit=dev --ignore-scripts
+RUN npm ci --omit=dev --workspace=@agency/api-gateway --ignore-scripts || npm install --omit=dev --workspace=@agency/api-gateway --ignore-scripts
 
 FROM node:20-alpine AS runner
 WORKDIR /app
