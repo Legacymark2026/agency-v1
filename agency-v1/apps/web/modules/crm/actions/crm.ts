@@ -3,26 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export type Deal = {
-    id: string;
-    title: string;
-    value: number;
-    currency: string;
-    stage: string;
-    companyId: string;
-    contactName: string | null;
-    contactEmail: string | null;
-    priority: string;
-    probability: number;
-    notes: string | null;
-    lostReason: string | null;
-    lastActivity: Date;
-    tags: string[];
-    source: string | null;
-    expectedClose: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-}
+// ─── Canonical Deal type — single source of truth ────────────────────────────
+// Re-export from the CRM module's canonical types so all consumers get the same
+// shape regardless of whether they import from actions/crm or types/index.
+export type { Deal } from "@/modules/crm/types";
+
 
 export async function getDeals(companyId: string) {
     try {
