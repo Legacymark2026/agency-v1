@@ -430,7 +430,7 @@ app.post("/api/payments/checkout-session", async (req, res) => {
       mode = "payment"
     } = req.body;
 
-    let targetInvoice = null;
+    let targetInvoice: any = null;
     if (invoiceId) {
       targetInvoice = await prisma.invoice.findUnique({ where: { id: invoiceId } });
       if (!targetInvoice) return res.status(404).json({ error: "Invoice not found" });
