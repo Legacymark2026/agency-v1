@@ -1042,6 +1042,8 @@ services:
     image: jaegertracing/all-in-one:1.57
     restart: unless-stopped
     logging: *default-logging
+    environment:
+      MEMORY_MAX_TRACES: "10000"
     ports:
       - "16686:16686"
       - "4317:4317"
