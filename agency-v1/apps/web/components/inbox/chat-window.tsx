@@ -428,83 +428,39 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 if (file instanceof File) {
                     const formData = new FormData();
                     formData.append("file", file);
-                    const isAudio = file.type.includes('audio');
+                    const isAudio = file.type.includes('audio') || file.name.includes('voice-note') || file.name.endsWith('.ogg') || file.name.endsWith('.webm');
                     const mediaType = isAudio ? 'AUDIO' : (file.type.includes('image') ? 'IMAGE' : 'DOCUMENT');
 
-                    // Try WhatsApp upload first if WhatsApp channel
-                    const isWhatsAppChannel = conversation?.channel === 'WHATSAPP';
+                    let uploadedUrl = '';
                     let uploaded = false;
 
-                    if (isWhatsAppChannel) {
-                        try {
-                            const res = await fetch("/api/media/whatsapp-upload", { method: "POST", body: formData });
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.id) {
-                                    uploadedAttachments.push({
-                                        url: `/api/media/whatsapp/${data.id}`,
-                                        type: mediaType
-                                    });
-                                    uploaded = true;
-                                }
-                            }
-                        } catch (err) {
-                            console.warn("WhatsApp media upload failed, trying local fallback...", err);
-                        }
-                    }
-
                     // Fallback to local database/filesystem media upload
-                    if (!uploaded) {
-                        try {
-                            const localRes = await fetch("/api/media/upload", {
-                                method: "POST",
-                                body: formData
-                            });
-                            if (localRes.ok) {
-                                const localData = await localRes.json();
-                                if (localData.success && localData.asset) {
-                                    uploadedAttachments.push({
-                                        url: localData.asset.url,
-                                        type: mediaType
-                                    });
-                                    uploaded = true;
-                                }
-                            }
-                        } catch (localErr) {
-                            console.warn("Local media upload fallback failed, trying Cloudinary...", localErr);
-                        }
-                    }
-
-                    // Last resort fallback: upload to Cloudinary if local upload didn't work
-                    if (!uploaded) {
-                        try {
-                            const cloudinaryForm = new FormData();
-                            cloudinaryForm.append("file", file);
-                            cloudinaryForm.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "legacymark_unsigned");
-                            cloudinaryForm.append("resource_type", isAudio ? "video" : "auto");
-                            const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "legacymark";
-                            const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${isAudio ? 'video' : 'auto'}/upload`, {
-                                method: "POST",
-                                body: cloudinaryForm
-                            });
-                            if (cloudRes.ok) {
-                                const cloudData = await cloudRes.json();
-                                uploadedAttachments.push({
-                                    url: cloudData.secure_url,
-                                    type: mediaType
-                                });
+                    try {
+                        const localRes = await fetch("/api/media/upload", {
+                            method: "POST",
+                            body: formData
+                        });
+                        if (localRes.ok) {
+                            const localData = await localRes.json();
+                            if (localData.success && localData.asset) {
+                                uploadedUrl = localData.asset.url;
                                 uploaded = true;
                             }
-                        } catch (cloudErr) {
-                            console.warn("Cloudinary fallback also failed:", cloudErr);
                         }
+                    } catch (localErr) {
+                        console.warn("Local media upload error:", localErr);
                     }
 
-                    if (!uploaded) {
-                        toast.warning(`Media no subida (${file.name}), el mensaje se enviará sin adjunto.`);
+                    // Fallback to Object URL if server upload returned error or failed
+                    if (!uploaded || !uploadedUrl) {
+                        uploadedUrl = URL.createObjectURL(file);
+                        uploaded = true;
                     }
-                } else {
-                    // It's a mock old string file
+
+                    uploadedAttachments.push({
+                        url: uploadedUrl,
+                        type: mediaType
+                    });
                 }
             }
 

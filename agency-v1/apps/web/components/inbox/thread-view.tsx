@@ -151,8 +151,12 @@ function AudioPlayer({ audioSrc, isMe }: { audioSrc?: string; isMe?: boolean }) 
 }
 
 function renderMedia(url: string, name: string, type?: string | null, isMe?: boolean) {
-  const isImage = type === 'IMAGE' || type?.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(name || url);
-  const isAudio = type === 'AUDIO' || type?.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|webm)$/i.test(name || url);
+  const cleanType = (type || '').toUpperCase();
+  const cleanUrl = (url || '').toLowerCase();
+  const cleanName = (name || '').toLowerCase();
+
+  const isImage = cleanType === 'IMAGE' || cleanType.startsWith('IMAGE/') || /\.(png|jpe?g|gif|webp|svg)/i.test(cleanName + cleanUrl);
+  const isAudio = cleanType === 'AUDIO' || cleanType.startsWith('AUDIO/') || /\.(mp3|wav|ogg|m4a|aac|webm|opus)/i.test(cleanName + cleanUrl) || cleanUrl.startsWith('blob:') || cleanUrl.startsWith('data:audio') || cleanName.includes('voice-note');
 
   if (isImage) {
     return (
@@ -166,7 +170,7 @@ function renderMedia(url: string, name: string, type?: string | null, isMe?: boo
           href={url} 
           target="_blank" 
           rel="noreferrer"
-          style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', opacity: 0, transition: 'opacity 0.2s', color: '#fff', fontSize: '11px', textDecoration: 'none', fontWeight: 600 }}
+          style={{ position: 'absolute', inset: 0, display: 'flex', items: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', opacity: 0, transition: 'opacity 0.2s', color: '#fff', fontSize: '11px', textDecoration: 'none', fontWeight: 600 }}
           onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
           onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
         >
@@ -182,9 +186,9 @@ function renderMedia(url: string, name: string, type?: string | null, isMe?: boo
 
   // Default document / file link
   return (
-    <a href={url} target="_blank" rel="noreferrer"
+    <a href={url} target="_blank" rel="noreferrer" download={name || 'archivo'}
       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '8px', background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(30,41,59,0.9)', fontSize: '11px', color: '#e2e8f0', textDecoration: 'none', marginTop: '6px', transition: 'all 0.2s' }}>
-      <Paperclip size={12} /> <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'Download File'}</span>
+      <Paperclip size={12} /> <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'Descargar Documento'}</span>
     </a>
   );
 }
