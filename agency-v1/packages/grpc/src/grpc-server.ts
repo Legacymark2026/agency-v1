@@ -21,7 +21,7 @@ export class GrpcServerHelper {
       defaults: true,
       oneofs: true,
     });
-    const proto = grpc.loadPackageDefinition(packageDefinition);
+    const proto = grpc.loadPackageDefinition(packageDefinition) as Record<string, any>;
     const service = proto[packageName][serviceClass].service;
     this.server.addService(service, implementation);
     return this;

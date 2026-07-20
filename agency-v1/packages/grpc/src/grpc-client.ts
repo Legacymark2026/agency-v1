@@ -39,7 +39,7 @@ export class GrpcClientHelper {
     const cacheKey = `${serviceName}@${targetAddress}`;
 
     if (!this.clientCache.has(cacheKey)) {
-      const proto = this.loadProto(protoPath);
+      const proto = this.loadProto(protoPath) as Record<string, any>;
       const ServiceCtor = proto[packageName][serviceClass];
       const client = new ServiceCtor(
         targetAddress,
