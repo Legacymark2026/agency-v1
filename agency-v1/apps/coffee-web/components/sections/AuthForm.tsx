@@ -71,9 +71,9 @@ export default function AuthForm() {
     try {
       if (isLogin) {
         const res = await loginUserAction(email, password);
-        if (res.error) {
-          setError(res.error);
-        } else if (res.success && res.user) {
+        if ("error" in res) {
+          setError(res.error || "Ocurrió un error");
+        } else {
           // Set session client-side variables for UI compatibility
           localStorage.setItem("goldneez_session", "active");
           localStorage.setItem("goldneez_current_user", JSON.stringify(res.user));
@@ -85,17 +85,17 @@ export default function AuthForm() {
         }
       } else {
         const res = await registerUserAction(name, email, password);
-        if (res.error) {
-          setError(res.error);
-        } else if (res.success && res.user) {
+        if ("error" in res) {
+          setError(res.error || "Ocurrió un error");
+        } else {
           // Set session client-side variables
           localStorage.setItem("goldneez_session", "active");
           localStorage.setItem("goldneez_current_user", JSON.stringify(res.user));
 
           // Set points and initial sub locally (compatible with existing UI mock variables)
           const mockUser = {
-            name: res.user.name,
-            email: res.user.email,
+            name: res.user.name || "",
+            email: res.user.email || "",
             points: 500,
             registeredAt: new Date().toLocaleDateString()
           };

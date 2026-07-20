@@ -22,6 +22,7 @@ import { getProductReviewsAction, submitReviewAction } from "@/actions/reviews";
 import { getNotificationPrefsAction, updateNotificationPrefsAction } from "@/actions/notifications";
 import { getPaymentMethodsAction, addPaymentMethodAction, deletePaymentMethodAction } from "@/actions/payments";
 import { getSubscriptionAction, updateSubscriptionAction } from "@/actions/subscription";
+import { getQuestsAction, completeQuestAction } from "@/actions/quests";
 
 // Recompensas catálogo mock
 const REWARDS_CATALOG = [

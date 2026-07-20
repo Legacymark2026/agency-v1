@@ -342,5 +342,45 @@
     "placeholder": "Type your question here...",
     "send": "Send",
     "bot_default_reply": "I'm sorry, I didn't understand your question. Try selecting one of the quick options or message us directly via WhatsApp to speak with a barista."
+  },
+  "quests": {
+    "title": "Barista Quests",
+    "subtitle": "Complete challenges and activities to earn extra Golden Points and level up.",
+    "points": "points",
+    "completed": "Completed",
+    "pending": "In progress",
+    "claim_points": "Claim Points",
+    "start_quest": "Start Quest",
+    "claim_success": "Points claimed successfully!"
+  },
+  "timer": {
+    "title": "Extraction Assistant",
+    "subtitle": "Follow the steps and pouring times to brew the perfect cup.",
+    "select_recipe": "Select Recipe",
+    "start": "Start Brewing",
+    "pause": "Pause",
+    "resume": "Resume",
+    "reset": "Reset",
+    "step_bloom": "Pre-infusion (Bloom)",
+    "step_bloom_desc": "Wet the coffee with 50g of hot water to release gases.",
+    "step_pour_1": "First Pour",
+    "step_pour_1_desc": "Pour water in gentle circles until reaching 150g.",
+    "step_pour_2": "Second Pour",
+    "step_pour_2_desc": "Pour the remaining water until reaching 250g.",
+    "step_enjoy": "Ready to Enjoy!",
+    "step_enjoy_desc": "Wait for all the coffee to filter and savor your golden memories.",
+    "quest_completed": "Quest 'The Perfect Cup' completed! You earned 100 points."
+  },
+  "calendar": {
+    "title": "Delivery Calendar",
+    "subtitle": "Visually review and manage your next scheduled deliveries.",
+    "delivery": "Delivery",
+    "status_scheduled": "Scheduled",
+    "status_paused": "Paused",
+    "action_pause": "Pause Delivery",
+    "action_resume": "Resume Delivery",
+    "action_speedup": "Speed Up Delivery",
+    "action_speedup_success": "Delivery sped up! It will ship tomorrow.",
+    "action_change_success": "Delivery status updated."
   }
 }

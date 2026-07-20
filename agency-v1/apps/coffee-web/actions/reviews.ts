@@ -3,6 +3,7 @@
 import prismaGoldneez from "../lib/prisma";
 const prisma = prismaGoldneez;
 import { getMeAction } from "./auth";
+import { completeQuestAction } from "./quests";
 
 const REWARDS_SERVICE_URL = process.env.GOLDNEEZ_REWARDS_SERVICE_URL || "http://localhost:4020";
 
@@ -52,7 +53,11 @@ export async function submitReviewAction(
       signal: AbortSignal.timeout(3000),
     });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      try {
+        await completeQuestAction("coffee-critic");
+      } catch {}
+      return data;
     }
   } catch (err: any) {
     console.warn("[submitReviewAction] Fallback a base de datos local:", err.message);
@@ -70,6 +75,13 @@ export async function submitReviewAction(
         comentario,
       },
     });
+
+    // Auto-complete the quest Coffee Critic to award 150 points
+    try {
+      await completeQuestAction("coffee-critic");
+    } catch (questErr) {
+      console.warn("Fallo al completar misión coffee-critic:", questErr);
+    }
 
     return { success: true, reviewId: review.id };
   } catch (err: any) {

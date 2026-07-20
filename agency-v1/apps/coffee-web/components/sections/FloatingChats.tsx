@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import gsap from "gsap";
 import { MessageSquare, Send, X, MessageCircle } from "lucide-react";
+import { askGeminiAction } from "@/actions/ai";
 
 interface ChatMessage {
   id: number;
@@ -70,20 +71,37 @@ export default function FloatingChats() {
       setMessages(prev => [...prev, { id: Date.now(), text, isBot: false }]);
       setInputValue("");
       
-      // Trigger bot response
+      // Trigger bot response via Gemini Server Action
       setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        const botReply = getBotReply(text);
-        setMessages(prev => [...prev, { id: Date.now() + 1, text: botReply, isBot: true }]);
+      
+      // Get conversation history formatted
+      const chatHistory = messages.map(m => ({ text: m.text, isBot: m.isBot }));
 
-        // Special handling for redirecting to WhatsApp
-        if (botReply === t("reply_human")) {
-          setTimeout(() => {
-            window.open(getWhatsAppLink(), "_blank");
-          }, 1500);
-        }
-      }, 1200);
+      askGeminiAction(text, chatHistory)
+        .then((res) => {
+          setIsTyping(false);
+          if (res && res.success) {
+            setMessages(prev => [...prev, { id: Date.now() + 1, text: res.text, isBot: true }]);
+            
+            // Auto redirect to WhatsApp if bot triggers WhatsApp handover
+            const lowercaseReply = res.text.toLowerCase();
+            if (
+              lowercaseReply.includes("redirigiendo") || 
+              (lowercaseReply.includes("whatsapp") && lowercaseReply.includes("humano"))
+            ) {
+              setTimeout(() => {
+                window.open(getWhatsAppLink(), "_blank");
+              }, 2000);
+            }
+          } else {
+            setMessages(prev => [...prev, { id: Date.now() + 1, text: t("bot_default_reply"), isBot: true }]);
+          }
+        })
+        .catch((err) => {
+          console.error("[Chatbot AI Error]:", err);
+          setIsTyping(false);
+          setMessages(prev => [...prev, { id: Date.now() + 1, text: t("bot_default_reply"), isBot: true }]);
+        });
     } else {
       // Direct insertion for quick replies
       setMessages(prev => [...prev, { id: Date.now(), text, isBot: false }]);
@@ -120,22 +138,6 @@ export default function FloatingChats() {
         }, 1500);
       }
     }, 1000);
-  };
-
-  const getBotReply = (userText: string): string => {
-    const text = userText.toLowerCase();
-    
-    if (text.includes("café") || text.includes("grano") || text.includes("variedad") || text.includes("tipo") || text.includes("producto")) {
-      return t("reply_coffee");
-    }
-    if (text.includes("suscrip") || text.includes("club") || text.includes("mensual") || text.includes("pausa") || text.includes("frecuencia")) {
-      return t("reply_sub");
-    }
-    if (text.includes("humano") || text.includes("persona") || text.includes("barista") || text.includes("contacto") || text.includes("teléfono") || text.includes("ayuda") || text.includes("whatsapp")) {
-      return t("reply_human");
-    }
-    
-    return t("bot_default_reply");
   };
 
   const getWhatsAppLink = () => {

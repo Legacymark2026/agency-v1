@@ -7,6 +7,11 @@ until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
   sleep 1
 done
 
+# Permitir conexiones de replicación en la red interna de Docker
+echo "host replication all all scram-sha-256" >> "$PGDATA/pg_hba.conf"
+pg_ctl -D "$PGDATA" reload
+
+
 # Función para crear una base de datos si no existe
 create_db() {
   local db=$1

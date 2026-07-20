@@ -342,5 +342,45 @@
     "placeholder": "Escribe tu pregunta aquí...",
     "send": "Enviar",
     "bot_default_reply": "Lo siento, no he entendido tu pregunta. Prueba seleccionando una de las opciones rápidas o escríbenos directamente por WhatsApp para hablar con un barista."
+  },
+  "quests": {
+    "title": "Misiones de Barista",
+    "subtitle": "Completa retos y actividades para ganar Golden Points extra y ascender de nivel.",
+    "points": "puntos",
+    "completed": "Completada",
+    "pending": "En progreso",
+    "claim_points": "Reclamar Puntos",
+    "start_quest": "Iniciar Misión",
+    "claim_success": "¡Puntos reclamados con éxito!"
+  },
+  "timer": {
+    "title": "Asistente de Extracción",
+    "subtitle": "Sigue los pasos y tiempos de vertido para preparar la taza perfecta.",
+    "select_recipe": "Selecciona Receta",
+    "start": "Iniciar Preparación",
+    "pause": "Pausar",
+    "resume": "Continuar",
+    "reset": "Reiniciar",
+    "step_bloom": "Pre-infusión (Bloom)",
+    "step_bloom_desc": "Moja el café con 50g de agua caliente para liberar los gases.",
+    "step_pour_1": "Primer Vertido",
+    "step_pour_1_desc": "Vierte agua en círculos suaves hasta llegar a 150g.",
+    "step_pour_2": "Segundo Vertido",
+    "step_pour_2_desc": "Vierte el agua restante hasta alcanzar los 250g.",
+    "step_enjoy": "¡Listo para disfrutar!",
+    "step_enjoy_desc": "Espera a que filtre todo el café y saborea tus recuerdos dorados.",
+    "quest_completed": "¡Misión 'La Taza Perfecta' completada! Ganaste 100 puntos."
+  },
+  "calendar": {
+    "title": "Calendario de Entregas",
+    "subtitle": "Revisa y gestiona visualmente tus próximos despachos programados.",
+    "delivery": "Despacho",
+    "status_scheduled": "Programado",
+    "status_paused": "Pausado",
+    "action_pause": "Pausar Envío",
+    "action_resume": "Reanudar Envío",
+    "action_speedup": "Adelantar Envío",
+    "action_speedup_success": "¡Envío adelantado! Se despachará mañana mismo.",
+    "action_change_success": "Estado de despacho actualizado."
   }
 }

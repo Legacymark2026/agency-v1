@@ -103,10 +103,10 @@ export async function checkoutAction(
     const deal = await prisma.deal.create({
       data: {
         companyId: company.id,
-        name: `Pedido de Café - ${userDetails.name}`,
+        title: `Pedido de Café - ${userDetails.name}`,
         value: total,
         stage: "won",
-        assignedToUserId: userId,
+        assignedTo: userId,
       }
     });
 
@@ -114,9 +114,13 @@ export async function checkoutAction(
     await prisma.invoice.create({
       data: {
         companyId: company.id,
-        amount: total,
+        clientName: userDetails.name,
+        totalAmount: total,
+        advanceAmount: 0,
+        finalAmount: total,
         status: "paid",
         dueDate: new Date(),
+        dealId: deal.id,
       }
     });
 
@@ -234,7 +238,7 @@ export async function getUserOrdersAction() {
     // Buscar todos los Deals ganados por el usuario
     const deals = await prisma.deal.findMany({
       where: {
-        assignedToUserId: me.id,
+        assignedTo: me.id,
         stage: "won"
       },
       orderBy: {
