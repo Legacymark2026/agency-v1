@@ -87,9 +87,15 @@ export default function PaymentPortalClient({ invoice: initialInvoice, payuConfi
 
     // Fetch Wompi signature if COP currency
     useEffect(() => {
+        const amount = invoice.finalAmount || invoice.totalAmount || 0;
+        if (amount <= 0) {
+            setWompiError(true);
+            return;
+        }
+
         const fetchSignature = async () => {
             try {
-                const amountInCents = Math.round((invoice.finalAmount || invoice.totalAmount) * 100);
+                const amountInCents = Math.round(amount * 100);
                 const res = await fetch("/api/payments/wompi/signature", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -345,7 +351,13 @@ export default function PaymentPortalClient({ invoice: initialInvoice, payuConfi
                             </h2>
                             <p className="text-xs text-slate-400 mb-6">Transacción cifrada y procesada directamente por pasarelas certificadas.</p>
 
-                            {!isPaid && !isCancelled ? (
+                            {(invoice.finalAmount || invoice.totalAmount || 0) <= 0 ? (
+                                <div className="p-6 rounded-xl bg-slate-950/80 border border-slate-800 text-center space-y-3">
+                                    <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                                    <h3 className="text-base font-bold text-white">Factura de Valor $0.00</h3>
+                                    <p className="text-xs text-slate-400">Esta factura no requiere procesamiento de pago a través de pasarelas de comercio electrónico.</p>
+                                </div>
+                            ) : !isPaid && !isCancelled ? (
                                 <div className="space-y-4">
                                     {/* GATEWAY TABS */}
                                     <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
