@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Mail, Phone, Clock, Calendar, Tag, Star, TrendingUp, TrendingDown, Bell } from "lucide-react";
+import { Mail, Phone, Clock, Calendar, Tag, Star, TrendingUp, TrendingDown, Bell, Sparkles } from "lucide-react";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,15 @@ function StarRating({ priority }: { priority: string }) {
     );
 }
 
-export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (id: string, updates: any) => void }) {
+export function DealCard({
+    deal,
+    onQuickUpdate,
+    onOpenAiInsights
+}: {
+    deal: any,
+    onQuickUpdate?: (id: string, updates: any) => void,
+    onOpenAiInsights?: (deal: any) => void
+}) {
     const daysSinceAction = deal.lastActivity
         ? Math.floor((new Date().getTime() - new Date(deal.lastActivity).getTime()) / (1000 * 3600 * 24))
         : 0;
@@ -54,25 +62,22 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
         }
     };
 
-
-    // Phase 15: Value Trend (simulated - would come from DB in real app)
+    // Phase 15: Value Trend
     const valueTrend = deal.previousValue ? (deal.value > deal.previousValue ? 'up' : deal.value < deal.previousValue ? 'down' : null) : null;
 
-    // Phase 15: Next Action Reminder (days until expected close or follow-up)
+    // Phase 15: Next Action Reminder
     const daysUntilAction = deal.expectedClose
         ? differenceInDays(new Date(deal.expectedClose), new Date())
         : null;
 
     // Phase 15 Batch D: AI Deal Score (0-100 based on signals)
     const calculateDealScore = () => {
-        let score = 50; // Base score
-        // Positive signals
+        let score = 50;
         if (deal.probability >= 70) score += 15;
         else if (deal.probability >= 50) score += 10;
         if (deal.value >= 10000) score += 10;
         if (deal.source === 'Referral') score += 10;
         if (deal.contactEmail && deal.contactPhone) score += 5;
-        // Negative signals
         if (isStagnant) score -= 15;
         if (isOverdue) score -= 20;
         if (!deal.expectedClose) score -= 10;
@@ -91,7 +96,20 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
 
             <CardContent className="p-3.5 relative z-10">
                 {/* Phase 15: Deal Age Badge & AI Score - Top Right Corner */}
-                <div className="absolute top-2 right-2 flex gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                    {/* AI Insights Button Trigger */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onOpenAiInsights) onOpenAiInsights(deal);
+                        }}
+                        className="flex items-center gap-1 text-[11px] font-mono font-bold bg-slate-900 text-teal-400 hover:bg-teal-500 hover:text-slate-950 px-2 py-0.5 rounded-full border border-teal-500/30 transition-all shadow-sm"
+                        title="Abrir Análisis de IA & Next Best Action"
+                    >
+                        <Sparkles className="w-3 h-3" />
+                        <span>IA</span>
+                    </button>
+
                     <span
                         className={`text-xs px-2 py-0.5 rounded-full font-bold shadow-sm border ${dealScore >= 70 ? 'bg-green-50 text-green-700 border-green-200 shadow-[0_0_10px_rgba(34,197,94,0.2)]' :
                             dealScore >= 40 ? 'bg-amber-50 text-amber-700 border-amber-200' :
@@ -104,7 +122,7 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                 </div>
 
                 {/* Header: Title, Stars, Source */}
-                <div className="flex justify-between items-start mb-3 pr-12">
+                <div className="flex justify-between items-start mb-3 pr-16">
                     <div className="space-y-1.5 w-full">
                         <div className="flex justify-between items-start gap-2">
                             <h4 className="font-bold text-[13px] text-gray-800 line-clamp-2 leading-tight flex-1 group-hover:text-blue-600 transition-colors">{deal.title}</h4>
@@ -151,7 +169,6 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                                     {formatCurrency(deal.value)}
                                 </span>
                             )}
-                            {/* Phase 15: Value Trend Icon */}
                             {valueTrend === 'up' && <TrendingUp className="w-4 h-4 text-emerald-500 stroke-[3]" />}
                             {valueTrend === 'down' && <TrendingDown className="w-4 h-4 text-rose-500 stroke-[3]" />}
                         </div>
@@ -256,5 +273,5 @@ export function DealCard({ deal, onQuickUpdate }: { deal: any, onQuickUpdate?: (
                 </div>
             </CardContent>
         </Card>
-    )
+    );
 }
