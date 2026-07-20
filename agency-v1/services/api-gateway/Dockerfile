@@ -3,6 +3,7 @@ WORKDIR /app
 
 # Copy workspace manifests
 COPY package.json package-lock.json ./
+COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/api-gateway/package.json ./services/api-gateway/
 
@@ -10,9 +11,12 @@ COPY services/api-gateway/package.json ./services/api-gateway/
 RUN npm ci || npm install
 
 # Copy shared packages
+COPY packages/grpc/ ./packages/grpc/
 COPY packages/observability/ ./packages/observability/
 
 # Build shared packages
+WORKDIR /app/packages/grpc
+RUN npm run build
 WORKDIR /app/packages/observability
 RUN npx tsc --outDir dist
 
@@ -29,6 +33,7 @@ RUN npx tsc --outDir dist
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
+COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/api-gateway/package.json ./services/api-gateway/
 RUN npm ci --omit=dev --ignore-scripts || npm install --omit=dev --ignore-scripts
@@ -37,6 +42,8 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+COPY --from=builder /app/packages/grpc/dist ./packages/grpc/dist
+COPY --from=builder /app/packages/grpc/package.json ./packages/grpc/
 COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/api-gateway/dist ./dist

@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/auth-service/package.json ./services/auth-service/
 
@@ -14,6 +15,7 @@ RUN npm ci || npm install
 # Copy shared packages + Prisma schema
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
+COPY packages/grpc/ ./packages/grpc/
 COPY packages/observability/ ./packages/observability/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
@@ -25,6 +27,8 @@ RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npx tsc --outDir dist
 WORKDIR /app/packages/events
 RUN npx tsc --outDir dist
+WORKDIR /app/packages/grpc
+RUN npm run build
 WORKDIR /app/packages/observability
 RUN npx tsc --outDir dist
 
@@ -41,6 +45,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY services/auth-service/package.json ./services/auth-service/
 RUN npm ci --omit=dev --ignore-scripts || npm install --omit=dev --ignore-scripts
@@ -53,6 +58,8 @@ COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
+COPY --from=builder /app/packages/grpc/dist ./packages/grpc/dist
+COPY --from=builder /app/packages/grpc/package.json ./packages/grpc/
 COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/auth-service/dist ./dist
