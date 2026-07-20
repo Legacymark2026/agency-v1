@@ -130,29 +130,67 @@ export async function sendMessage(conversationId: string, content: string, userI
             return { success: false, error: "Message content or attachment required" };
         }
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                content,
-                direction: 'OUTBOUND',
-                senderId: userId,
-                status: 'SENT',
-                attachments,
-                type: content ? "TEXT" : "MEDIA"
-            })
-        });
+        let message: any = null;
 
-        const resData = await response.json();
-        if (!response.ok) {
-            return { success: false, error: resData.error || "Failed to send message" };
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    content,
+                    direction: 'OUTBOUND',
+                    senderId: userId,
+                    status: 'SENT',
+                    attachments,
+                    type: content ? "TEXT" : "MEDIA"
+                })
+            });
+            if (response.ok) {
+                const resData = await response.json();
+                message = resData.message;
+            }
+        } catch (gwErr) {
+            console.warn("Gateway sendMessage failed, using Prisma fallback");
         }
-        const message = resData.message;
 
-        // Fetch conversation details for channel info
-        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
-        const convoData = await convoRes.json();
-        const conversation = convoData.conversation;
+        if (!message) {
+            const { prisma } = await import("@/lib/prisma");
+            message = await prisma.message.create({
+                data: {
+                    conversationId,
+                    content: content || '',
+                    direction: 'OUTBOUND',
+                    senderId: userId,
+                    status: 'SENT',
+                    mediaUrl: attachments[0]?.url || attachments[0]?.mediaUrl || null,
+                    mediaType: attachments[0]?.type || attachments[0]?.mediaType || null,
+                }
+            });
+
+            await prisma.conversation.update({
+                where: { id: conversationId },
+                data: { updatedAt: new Date() }
+            });
+        }
+
+        let conversation: any = null;
+        try {
+            const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+            if (convoRes.ok) {
+                const convoData = await convoRes.json();
+                conversation = convoData.conversation;
+            }
+        } catch (gwConvoErr) {
+            console.warn("Gateway fetch conversation failed, using Prisma fallback");
+        }
+
+        if (!conversation) {
+            const { prisma } = await import("@/lib/prisma");
+            conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                include: { lead: true }
+            });
+        }
 
         if (conversation && (conversation.channel === 'MESSENGER' || conversation.channel === 'INSTAGRAM') && conversation.metadata) {
             const { MetaService } = await import("@/lib/services/meta-sync");
