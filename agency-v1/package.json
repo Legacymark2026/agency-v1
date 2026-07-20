@@ -41,5 +41,9 @@
     "@esbuild/linux-x64": "^0.28.0",
     "puppeteer": "^24.43.0",
     "puppeteer-cluster": "^0.25.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*",
+    "@rollup/rollup-linux-x64-musl": "*"
   }
 }
