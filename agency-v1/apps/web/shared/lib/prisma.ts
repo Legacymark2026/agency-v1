@@ -41,7 +41,7 @@ if (!runtimeDbUrl) {
   const fallback =
     getRuntimeEnv("CORE_DATABASE_URL") ||
     getRuntimeEnv("AUTH_DATABASE_URL") ||
-    "postgresql://legacymark:legacymark_dev@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require";
+    "postgresql://legacymark:legacymark_dev@127.0.0.1:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require";
   writeDebug(`DATABASE_URL is missing at startup! Setting fallback to: ${fallback.replace(/:[^:@]+@/, ":****@")}`);
   if (typeof process !== "undefined" && process.env) {
     process.env.DATABASE_URL = fallback;

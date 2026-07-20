@@ -100,6 +100,8 @@ services:
     image: edoburu/pgbouncer:latest
     restart: unless-stopped
     logging: *default-logging
+    ports:
+      - "6432:6432"
     environment:
       DB_USER: legacymark
       DB_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
@@ -142,6 +144,8 @@ services:
     image: edoburu/pgbouncer:latest
     restart: unless-stopped
     logging: *default-logging
+    ports:
+      - "6433:6433"
     environment:
       DB_USER: legacymark
       DB_PASSWORD: ${POSTGRES_PASSWORD:-legacymark_dev}
