@@ -1,2 +1,7 @@
-export { default } from '@/app/_marketing/suscripcion/page';
-export { generateMetadata } from '@/app/_marketing/suscripcion/page';
+import SubscriptionPageFromMarketing, { generateMetadata as genMeta } from "@/app/_marketing/suscripcion/page";
+
+export const generateMetadata = genMeta;
+
+export default function SubscriptionPage() {
+    return <SubscriptionPageFromMarketing />;
+}
