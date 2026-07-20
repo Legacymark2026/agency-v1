@@ -5,6 +5,8 @@ import { UserRole } from "@/types/auth";
 import { getStripeSession } from "@/lib/stripe";
 import { revalidatePath } from "next/cache";
 import { notifyUsers } from "@/lib/notifications/notification-engine";
+import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 
 export type InvoiceInput = {
     clientName: string;
@@ -18,6 +20,7 @@ export type InvoiceInput = {
     totalAmount: number;
     advanceAmount: number;
     finalAmount: number;
+    currency?: string;
     dueDate?: Date;
     notes?: string;
     terms?: string;
@@ -34,8 +37,6 @@ export type InvoiceInput = {
     }[];
 };
 
-const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
-
 export async function createInvoice(data: InvoiceInput) {
     try {
         const session = await auth();
@@ -46,28 +47,52 @@ export async function createInvoice(data: InvoiceInput) {
             return { success: false, error: "Forbidden" };
         }
 
-        const response = await fetch(`${GATEWAY_URL}/api/invoices`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...data,
-                companyId: session.user.companyId,
-            })
-        });
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to create invoice" };
-        const invoice = resData.invoice;
+        const token = randomUUID();
 
-        // Generar Stripe Session para el Final Amount (es lo que se va a cobrar)
-        // Usamos el token generado para la URL de retorno
-        const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/es/invoice/${invoice.token}?success=true`;
-        const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/es/invoice/${invoice.token}?canceled=true`;
+        const invoice = await prisma.invoice.create({
+            data: {
+                clientName: data.clientName,
+                clientNit: data.clientNit,
+                clientAddress: data.clientAddress,
+                clientCity: data.clientCity,
+                clientPhone: data.clientPhone,
+                subtotalAmount: data.subtotalAmount,
+                taxAmount: data.taxAmount,
+                discountAmount: data.discountAmount || 0,
+                totalAmount: data.totalAmount,
+                advanceAmount: data.advanceAmount,
+                finalAmount: data.finalAmount,
+                currency: data.currency || "USD",
+                dueDate: data.dueDate,
+                notes: data.notes,
+                terms: data.terms,
+                isElectronic: data.isElectronic ?? true,
+                leadId: data.leadId,
+                dealId: data.dealId,
+                token: token,
+                companyId: session.user.companyId,
+                items: data.items && data.items.length > 0 ? {
+                    create: data.items.map(item => ({
+                        title: item.title,
+                        description: item.description,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        taxRate: item.taxRate,
+                        totalAmount: item.totalAmount,
+                    }))
+                } : undefined,
+            }
+        });
+
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://legacymarksas.com";
+        const successUrl = `${baseUrl}/es/invoice/${token}?success=true`;
+        const cancelUrl = `${baseUrl}/es/invoice/${token}?canceled=true`;
 
         try {
             const stripeSession = await getStripeSession(
                 session.user.companyId,
                 data.finalAmount,
-                "USD",
+                data.currency || "USD",
                 `Factura a ${data.clientName}`,
                 { invoiceId: invoice.id, companyId: session.user.companyId },
                 successUrl,
@@ -75,29 +100,29 @@ export async function createInvoice(data: InvoiceInput) {
             );
 
             if (stripeSession && stripeSession.url) {
-                await fetch(`${GATEWAY_URL}/api/invoices/${invoice.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentUrl: stripeSession.url, stripeInvoiceId: stripeSession.id })
+                await prisma.invoice.update({
+                    where: { id: invoice.id },
+                    data: {
+                        paymentUrl: stripeSession.url,
+                        stripeInvoiceId: stripeSession.id,
+                    }
                 });
             }
         } catch (stripeError) {
-             console.error("[Stripe Link Generation Failed]", stripeError);
-             // No retornamos error fatal porque la factura ya se creó. Permite reintentar después.
+             console.warn("[Stripe Link Generation Notice]", stripeError);
         }
 
         revalidatePath("/dashboard/admin/invoices");
 
-        // ─── Enterprise Notification — Invoice Created ────────────────────────
         notifyUsers("FINANCE.INVOICE_CREATED", {
             companyId: session.user.companyId,
             title: "Nueva Factura Creada",
             message: `Factura para ${data.clientName} — $${data.finalAmount.toLocaleString()}`,
             roles: ["super_admin", "admin"],
-            data: { invoiceId: invoice.id },
+            data: { invoiceId: invoice.id, token: invoice.token },
         }).catch(() => {});
 
-        return { success: true, invoiceId: invoice.id };
+        return { success: true, invoiceId: invoice.id, token: invoice.token };
 
     } catch (error: any) {
         console.error("[CREATE_INVOICE]", error);
@@ -110,16 +135,11 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/invoices/${invoiceId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status })
+        const invoice = await prisma.invoice.update({
+            where: { id: invoiceId, companyId: session.user.companyId },
+            data: { status }
         });
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to update status" };
-        const invoice = resData.invoice;
 
-        // ─── Enterprise Notification — Invoice Status ─────────────────────────
         if (status === "PAID") {
             notifyUsers("FINANCE.INVOICE_PAID", {
                 companyId: session.user.companyId,
@@ -142,11 +162,9 @@ export async function deleteInvoice(invoiceId: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/invoices/${invoiceId}`, {
-            method: 'DELETE'
+        await prisma.invoice.delete({
+            where: { id: invoiceId, companyId: session.user.companyId }
         });
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to delete" };
 
         revalidatePath("/dashboard/admin/invoices");
         return { success: true };
@@ -160,19 +178,14 @@ export async function sendInvoiceEmail(invoiceId: string) {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
 
-        // Aquí iría la integración con Resend
-        // Simulando delay de envío
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Actualizamos estado si estaba en draft
-        const invoicesRes = await fetch(`${GATEWAY_URL}/api/invoices?companyId=${session.user.companyId}`);
-        const invoicesData = await invoicesRes.json();
-        const invoice = (invoicesData.invoices || []).find((inv: any) => inv.id === invoiceId);
+        const invoice = await prisma.invoice.findFirst({
+            where: { id: invoiceId, companyId: session.user.companyId }
+        });
+
         if (invoice && invoice.status === 'DRAFT_AWAITING_PAYMENT') {
-            await fetch(`${GATEWAY_URL}/api/invoices/${invoiceId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: 'SENT' })
+            await prisma.invoice.update({
+                where: { id: invoiceId },
+                data: { status: 'SENT' }
             });
         }
 
@@ -188,13 +201,34 @@ export async function getInvoiceStats() {
         const session = await auth();
         if (!session?.user?.companyId) return { success: false, data: null };
 
-        const response = await fetch(`${GATEWAY_URL}/api/invoices/stats?companyId=${session.user.companyId}`);
-        const resData = await response.json();
-        if (!response.ok) return { success: false, data: null };
+        const invoices = await prisma.invoice.findMany({
+            where: { companyId: session.user.companyId }
+        });
+
+        const billed = invoices
+            .filter(i => i.status === 'PAID')
+            .reduce((acc, i) => acc + (i.finalAmount || 0), 0);
+
+        const outstanding = invoices
+            .filter(i => i.status === 'DRAFT_AWAITING_PAYMENT' || i.status === 'SENT')
+            .reduce((acc, i) => acc + (i.finalAmount || 0), 0);
+
+        const overdue = invoices
+            .filter(i => (i.status === 'DRAFT_AWAITING_PAYMENT' || i.status === 'SENT') && i.dueDate && new Date(i.dueDate) < new Date())
+            .reduce((acc, i) => acc + (i.finalAmount || 0), 0);
+
+        const totalCount = invoices.length;
+        const paidCount = invoices.filter(i => i.status === 'PAID').length;
+        const successRate = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
 
         return {
             success: true,
-            data: resData.data
+            data: {
+                billed,
+                outstanding,
+                overdue,
+                successRate
+            }
         };
     } catch (error) {
         return { success: false, data: null };

@@ -208,8 +208,8 @@ export default async function ClientPortalPage() {
                                     </p>
                                 </div>
                                 <div className="mt-5">
-                                    <Link href={`/api/invoices/${invoice.id}/pay`} className="block w-full text-center bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-md transition cursor-pointer shadow-lg shadow-emerald-500/20 shadow-inner">
-                                        Pagar Seguro con PayU
+                                    <Link href={`/es/invoice/${invoice.token || invoice.id}`} className="block w-full text-center bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-md transition cursor-pointer shadow-lg shadow-emerald-500/20 shadow-inner">
+                                        Pagar Seguro (Stripe / PayU / Wompi)
                                     </Link>
                                 </div>
                             </div>
