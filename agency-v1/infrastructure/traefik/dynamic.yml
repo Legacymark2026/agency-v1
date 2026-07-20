@@ -22,6 +22,6 @@ http:
 
     rate-limit:
       rateLimit:
-        average: 100
-        burst: 50
+        average: 3000
+        burst: 1000
         period: 1m
