@@ -38,6 +38,8 @@ const DEFAULT_PRODUCTS: Product[] = [
     { id: "p6", title: "Lector Código de Barras Láser 2D", sku: "HW-006", barcode: "7701001006", category: "Hardware", unitPrice: 195000, taxRate: 0.19, stock: 25 },
 ];
 
+import { DianInvoiceViewer, DianInvoiceData } from "@/components/billing/dian-invoice-viewer";
+
 export default function PosTerminalClient() {
     const [companyId, setCompanyId] = useState("");
     const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
@@ -57,6 +59,9 @@ export default function PosTerminalClient() {
     const [cashReceived, setCashReceived] = useState<number | "">("");
     const [customerName, setCustomerName] = useState("Consumidor Final");
     const [customerNit, setCustomerNit] = useState("");
+
+    // Receipt Format Toggle: "thermal" or "dian_a4"
+    const [receiptFormat, setReceiptFormat] = useState<"thermal" | "dian_a4">("dian_a4");
 
     // Cash Register Session
     const [activeSession, setActiveSession] = useState<any>({
@@ -670,64 +675,151 @@ export default function PosTerminalClient() {
                 </div>
             </div>
 
-            {/* MODAL: THERMAL TICKET RECEIPT PRINTING & DIAN CUFE */}
+            {/* MODAL: DIAN ELECTRONIC INVOICE GRAPHIC REPRESENTATION (A4) / THERMAL RECEIPT */}
             {showReceiptModal && lastCompletedOrder && (
-                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative">
-                        <button onClick={() => setShowReceiptModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-2 md:p-4 overflow-y-auto">
+                    <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+                        <button
+                            onClick={() => setShowReceiptModal(false)}
+                            className="absolute top-4 right-4 z-50 bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-full shadow-lg print:hidden"
+                        >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="text-center space-y-1">
-                            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                            <h3 className="font-bold text-lg text-white">Venta Registrada</h3>
-                            <p className="text-xs text-slate-400 font-mono">Tiquete #{lastCompletedOrder.receiptTicket?.header?.receiptNo}</p>
+                        {/* FORMAT SELECTOR TABS */}
+                        <div className="mb-4 flex justify-center gap-2 print:hidden">
+                            <button
+                                onClick={() => setReceiptFormat("dian_a4")}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                                    receiptFormat === "dian_a4"
+                                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                                        : "bg-slate-800 text-slate-400 hover:text-white"
+                                }`}
+                            >
+                                <ShieldCheck className="w-4 h-4" /> Factura Electrónica DIAN (A4)
+                            </button>
+                            <button
+                                onClick={() => setReceiptFormat("thermal")}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                                    receiptFormat === "thermal"
+                                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                                        : "bg-slate-800 text-slate-400 hover:text-white"
+                                }`}
+                            >
+                                <Printer className="w-4 h-4" /> Tiquete POS Térmico (80mm)
+                            </button>
                         </div>
 
-                        {/* PRINTABLE THERMAL RECEIPT AREA */}
-                        <div id="thermal-receipt" className="bg-white text-black font-mono text-[11px] p-4 rounded-xl space-y-2 border border-slate-300">
-                            <div className="text-center border-b pb-2 border-black/20">
-                                <p className="font-bold text-sm uppercase">{lastCompletedOrder.receiptTicket?.header?.companyName}</p>
-                                <p>NIT: {lastCompletedOrder.receiptTicket?.header?.nit}</p>
-                                <p>Tel: {lastCompletedOrder.receiptTicket?.header?.phone}</p>
-                                <p className="text-[10px]">{lastCompletedOrder.receiptTicket?.header?.date}</p>
-                            </div>
-
-                            <div>
-                                <p>Cliente: {lastCompletedOrder.receiptTicket?.customer?.name}</p>
-                                <p>NIT/CC: {lastCompletedOrder.receiptTicket?.customer?.nit}</p>
-                            </div>
-
-                            <div className="border-t border-b py-2 border-black/20 space-y-1">
-                                {lastCompletedOrder.receiptTicket?.items?.map((it: any, idx: number) => (
-                                    <div key={idx} className="flex justify-between">
-                                        <span>{it.qty}x {it.name}</span>
-                                        <span>${it.total.toLocaleString("es-CO")}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="space-y-0.5 text-right font-bold pt-1">
-                                <p>TOTAL: ${lastCompletedOrder.receiptTicket?.totals?.total?.toLocaleString("es-CO")}</p>
-                                <p>Recibido: ${lastCompletedOrder.receiptTicket?.totals?.cashReceived?.toLocaleString("es-CO")}</p>
-                                <p>Cambio: ${lastCompletedOrder.receiptTicket?.totals?.change?.toLocaleString("es-CO")}</p>
-                            </div>
-
-                            {/* DIAN CUFE CODE */}
-                            {lastCompletedOrder.receiptTicket?.header?.cufe && (
-                                <div className="text-center pt-2 border-t border-black/20 text-[8px] space-y-0.5">
-                                    <p className="font-bold">Factura Electrónica Habilitada DIAN</p>
-                                    <p className="break-all">CUFE: {lastCompletedOrder.receiptTicket.header.cufe.substring(0, 32)}...</p>
+                        {receiptFormat === "dian_a4" ? (
+                            <DianInvoiceViewer
+                                onClose={() => setShowReceiptModal(false)}
+                                data={{
+                                    documentType: "FACTURA_ELECTRONICA",
+                                    documentNumber: lastCompletedOrder.receiptTicket?.header?.receiptNo || "SETG1",
+                                    cufeOrCude: lastCompletedOrder.cufe || "9af0bdcba30d60fe05541cac1bafe9715fc8b05a6315d0ae2041cd135ffd39b5e2c622f0a929db4489dd56dbb9a20c11",
+                                    issueDate: new Date().toLocaleDateString("es-CO"),
+                                    paymentForm: "Contado",
+                                    paymentMethod: paymentMethod === "CASH" ? "Efectivo" : paymentMethod === "CARD_POS" ? "Tarjeta / Datáfono" : "Transferencia / PSE",
+                                    operationType: "10 - Específica",
+                                    issuer: {
+                                        companyName: "GARCIA DURAN NESTOR ELIAN",
+                                        tradeName: "GARCIA DURAN NESTOR ELIAN",
+                                        nit: "1005462317",
+                                        taxpayerType: "Persona Natural",
+                                        taxRegime: "R-99-PN",
+                                        taxResponsibility: "ZZ - No aplica",
+                                        economicActivity: "7310",
+                                        country: "Colombia",
+                                        department: "Santander",
+                                        city: "Bucaramanga",
+                                        address: "CL 12 # 19 - 18 MZ 20 CA 1",
+                                        phone: "3153981340",
+                                        email: "nestorgarcia1005462@gmail.com",
+                                    },
+                                    buyer: {
+                                        name: customerName || "CONSULTORIA DE COLOMBIA S.A.S",
+                                        documentType: "NIT",
+                                        documentNumber: customerNit || "804017909",
+                                        taxpayerType: "Persona Jurídica",
+                                        taxRegime: "O-47;R-99-PN",
+                                        taxResponsibility: "01 - IVA",
+                                        country: "Colombia",
+                                        department: "Bogotá",
+                                        city: "Bogotá, D.C.",
+                                        address: "crr1a 55a 30 IN ED CENTAURIO BRR CIUDADELA REAL DE MINAS",
+                                        phone: "3173720384",
+                                        email: "gerencia@neogestion.co",
+                                    },
+                                    items: lastCompletedOrder.receiptTicket?.items?.map((it: any, idx: number) => ({
+                                        nro: idx + 1,
+                                        code: `8210150${idx + 4}`,
+                                        description: it.name,
+                                        unitOfMeasure: "WSD",
+                                        quantity: it.qty,
+                                        unitPrice: it.unitPrice,
+                                        discountDetail: 0,
+                                        surchargeDetail: 0,
+                                        ivaPct: 19,
+                                        totalItemValue: it.total,
+                                    })) || [],
+                                    subtotal,
+                                    taxTotal: tax,
+                                    discountTotal: totalDiscountCombined,
+                                    grandTotal: finalTotal,
+                                }}
+                            />
+                        ) : (
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm mx-auto p-6 space-y-4 shadow-2xl relative text-slate-100">
+                                <div className="text-center space-y-1">
+                                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+                                    <h3 className="font-bold text-lg text-white">Venta Registrada</h3>
+                                    <p className="text-xs text-slate-400 font-mono">Tiquete #{lastCompletedOrder.receiptTicket?.header?.receiptNo}</p>
                                 </div>
-                            )}
-                        </div>
 
-                        <button
-                            onClick={() => window.print()}
-                            className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2"
-                        >
-                            <Printer className="w-4 h-4" /> Imprimir Tiquete Térmico
-                        </button>
+                                <div id="thermal-receipt" className="bg-white text-black font-mono text-[11px] p-4 rounded-xl space-y-2 border border-slate-300">
+                                    <div className="text-center border-b pb-2 border-black/20">
+                                        <p className="font-bold text-sm uppercase">{lastCompletedOrder.receiptTicket?.header?.companyName}</p>
+                                        <p>NIT: {lastCompletedOrder.receiptTicket?.header?.nit}</p>
+                                        <p>Tel: {lastCompletedOrder.receiptTicket?.header?.phone}</p>
+                                        <p className="text-[10px]">{lastCompletedOrder.receiptTicket?.header?.date}</p>
+                                    </div>
+
+                                    <div>
+                                        <p>Cliente: {lastCompletedOrder.receiptTicket?.customer?.name}</p>
+                                        <p>NIT/CC: {lastCompletedOrder.receiptTicket?.customer?.nit}</p>
+                                    </div>
+
+                                    <div className="border-t border-b py-2 border-black/20 space-y-1">
+                                        {lastCompletedOrder.receiptTicket?.items?.map((it: any, idx: number) => (
+                                            <div key={idx} className="flex justify-between">
+                                                <span>{it.qty}x {it.name}</span>
+                                                <span>${it.total.toLocaleString("es-CO")}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="space-y-0.5 text-right font-bold pt-1">
+                                        <p>TOTAL: ${lastCompletedOrder.receiptTicket?.totals?.total?.toLocaleString("es-CO")}</p>
+                                        <p>Recibido: ${lastCompletedOrder.receiptTicket?.totals?.cashReceived?.toLocaleString("es-CO")}</p>
+                                        <p>Cambio: ${lastCompletedOrder.receiptTicket?.totals?.change?.toLocaleString("es-CO")}</p>
+                                    </div>
+
+                                    {lastCompletedOrder.receiptTicket?.header?.cufe && (
+                                        <div className="text-center pt-2 border-t border-black/20 text-[8px] space-y-0.5">
+                                            <p className="font-bold">Factura Electrónica Habilitada DIAN</p>
+                                            <p className="break-all">CUFE: {lastCompletedOrder.receiptTicket.header.cufe.substring(0, 32)}...</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={() => window.print()}
+                                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2"
+                                >
+                                    <Printer className="w-4 h-4" /> Imprimir Tiquete Térmico
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
