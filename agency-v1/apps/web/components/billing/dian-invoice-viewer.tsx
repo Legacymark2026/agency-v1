@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Printer, Download, ShieldCheck, QrCode } from "lucide-react";
+import { Printer, ShieldCheck, QrCode } from "lucide-react";
 
 export interface DianInvoiceData {
     documentType?: "FACTURA_ELECTRONICA" | "NOTA_CREDITO" | "NOTA_DEBITO";
@@ -10,8 +10,10 @@ export interface DianInvoiceData {
     issueDate: string;
     dueDate?: string;
     paymentForm?: string; // Contado / Crédito
-    paymentMethod?: string; // Instrumento no definido, Transferencia, Efectivo
-    operationType?: string; // 10 - Específica, 20 - Nota Crédito
+    paymentMethod?: string; // Transferencia Débito Bancaria, Efectivo
+    operationType?: string; // 10 - Estándar, 20 - Nota Crédito
+    purchaseOrder?: string; // DESARROLLO DE BRANDING
+    purchaseOrderDate?: string; // 22/05/2026
 
     // Emisor
     issuer: {
@@ -71,6 +73,7 @@ export interface DianInvoiceData {
     }>;
 
     notes?: string;
+    businessLine?: string;
     subtotal: number;
     taxTotal: number;
     discountTotal: number;
@@ -90,18 +93,20 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
     const isCreditNote = data.documentType === "NOTA_CREDITO";
     const documentTitle = isCreditNote
         ? "Nota Crédito de la Factura Electrónica de Venta"
-        : "Factura Electrónica de Venta";
+        : "FACTURA ELECTRÓNICA DE VENTA";
 
-    const cufeLabel = isCreditNote ? "Código Único de documento electrónico - CUDE" : "Código Único de Factura Electrónica - CUFE";
+    const cufeLabel = isCreditNote
+        ? "Código Único de documento electrónico - CUDE :"
+        : "Código Único de Factura - CUFE :";
 
     const fmtCOP = (num: number) => {
         return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 2 }).format(num);
     };
 
     return (
-        <div className="bg-slate-950 text-slate-900 font-sans p-4 md:p-8 min-h-screen flex flex-col items-center">
+        <div className="bg-slate-950 text-slate-900 font-sans p-2 md:p-6 min-h-screen flex flex-col items-center">
             {/* ACTION BAR (HIDDEN IN PRINT) */}
-            <div className="w-full max-w-4xl mb-6 flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl text-white print:hidden">
+            <div className="w-full max-w-4xl mb-4 flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl text-white print:hidden">
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-emerald-400" />
                     <span className="font-bold text-sm">Representación Gráfica Oficial DIAN (Anexo 1.8)</span>
@@ -127,65 +132,75 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
             {/* A4 PRINTABLE DOCUMENT CONTAINER */}
             <div
                 id="dian-printable-document"
-                className="w-full max-w-4xl bg-white text-slate-900 p-8 md:p-10 shadow-2xl rounded-sm font-sans text-xs space-y-6 print:p-0 print:shadow-none print:w-full print:max-w-none"
+                className="w-full max-w-4xl bg-white text-slate-900 p-6 md:p-10 shadow-2xl rounded-sm font-sans text-xs space-y-5 print:p-0 print:shadow-none print:w-full print:max-w-none"
             >
-                {/* BRAND HEADER & DIAN TITLE */}
-                <div className="text-center space-y-1 relative pb-4 border-b-4 border-emerald-400">
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="text-2xl font-black text-slate-800 tracking-tighter uppercase">DIAN</span>
-                        <span className="text-xs text-slate-500 font-mono">Formato Oficial Anexo Técnico 1.8</span>
+                {/* BRAND HEADER & DIAN LOGO BANNER */}
+                <div className="text-center space-y-1 relative pb-3 border-b-4 border-emerald-400">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-2xl font-black text-slate-700 tracking-tighter">DIAN</span>
+                        <h1 className="text-lg md:text-xl font-extrabold tracking-wide text-slate-900 uppercase">
+                            {documentTitle}
+                        </h1>
+                        <span className="text-2xl font-black text-slate-700 tracking-tighter">DIAN</span>
                     </div>
-                    <h1 className="text-xl md:text-2xl font-bold text-slate-900">{documentTitle}</h1>
-                    <h2 className="text-base font-semibold text-emerald-600">Representación Gráfica</h2>
+                    <h2 className="text-sm font-bold text-slate-800">Representación Gráfica</h2>
                 </div>
 
                 {/* 1. DATOS DEL DOCUMENTO */}
-                <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-emerald-700 border-b border-emerald-400 pb-1">
+                <div className="space-y-1.5">
+                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
                         Datos del Documento
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-1.5 gap-x-6 text-[11px] leading-relaxed">
-                        <div className="md:col-span-2 bg-slate-50 p-2 rounded border border-slate-200">
-                            <span className="font-bold text-slate-700 block">{cufeLabel}:</span>
-                            <span className="font-mono text-[10px] break-all text-slate-800 font-semibold">
+                    <div className="space-y-1 text-[11px] leading-tight">
+                        <div className="bg-slate-50 p-1.5 rounded border border-slate-200">
+                            <span className="font-bold text-slate-700">{cufeLabel}</span>
+                            <span className="font-mono text-[10px] break-all text-slate-900 font-semibold block mt-0.5">
                                 {data.cufeOrCude}
                             </span>
                         </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Número de Factura: </span>
-                            <span className="font-mono font-bold text-slate-900">{data.documentNumber}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Forma de Pago: </span>
-                            <span>{data.paymentForm || "Contado"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Fecha de Emisión: </span>
-                            <span>{data.issueDate}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Medio de Pago: </span>
-                            <span>{data.paymentMethod || "Instrumento no definido"}</span>
-                        </div>
-                        {data.dueDate && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 pt-1">
+                            <div>
+                                <span className="font-bold text-slate-700">Número de Factura: </span>
+                                <span className="font-mono font-bold text-slate-900">{data.documentNumber}</span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-700">Forma de pago: </span>
+                                <span>{data.paymentForm || "Contado"}</span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-700">Fecha de Emisión: </span>
+                                <span>{data.issueDate}</span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-700">Medio de Pago: </span>
+                                <span>{data.paymentMethod || "Transferencia Débito Bancaria"}</span>
+                            </div>
                             <div>
                                 <span className="font-bold text-slate-700">Fecha de Vencimiento: </span>
-                                <span>{data.dueDate}</span>
+                                <span>{data.dueDate || data.issueDate}</span>
                             </div>
-                        )}
-                        <div>
-                            <span className="font-bold text-slate-700">Tipo de Operación: </span>
-                            <span>{data.operationType || (isCreditNote ? "20 - Nota Crédito" : "10 - Específica")}</span>
+                            <div>
+                                <span className="font-bold text-slate-700">Orden de pedido: </span>
+                                <span>{data.purchaseOrder || "DESARROLLO DE BRANDING"}</span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-700">Tipo de Operación: </span>
+                                <span>{data.operationType || (isCreditNote ? "20 - Nota Crédito" : "10 - Estándar")}</span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-700">Fecha de orden de pedido: </span>
+                                <span>{data.purchaseOrderDate || "22/05/2026"}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* 2. DATOS DEL EMISOR / VENDEDOR */}
-                <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-emerald-700 border-b border-emerald-400 pb-1">
-                        Datos del emisor / vendedor
+                <div className="space-y-1.5">
+                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
+                        Datos del Emisor / Vendedor
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-1 gap-x-6 text-[11px]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0.5 text-[11px]">
                         <div>
                             <span className="font-bold text-slate-700">Razón Social: </span>
                             <span className="font-semibold">{data.issuer.companyName}</span>
@@ -194,18 +209,16 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                             <span className="font-bold text-slate-700">País: </span>
                             <span>{data.issuer.country || "Colombia"}</span>
                         </div>
-                        {data.issuer.tradeName && (
-                            <div>
-                                <span className="font-bold text-slate-700">Nombre Comercial: </span>
-                                <span>{data.issuer.tradeName}</span>
-                            </div>
-                        )}
+                        <div>
+                            <span className="font-bold text-slate-700">Nombre Comercial: </span>
+                            <span>{data.issuer.tradeName || data.issuer.companyName}</span>
+                        </div>
                         <div>
                             <span className="font-bold text-slate-700">Departamento: </span>
                             <span>{data.issuer.department || "Santander"}</span>
                         </div>
                         <div>
-                            <span className="font-bold text-slate-700">NIT del Emisor: </span>
+                            <span className="font-bold text-slate-700">Nit del Emisor: </span>
                             <span className="font-mono font-semibold">{data.issuer.nit}</span>
                         </div>
                         <div>
@@ -218,7 +231,7 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Dirección: </span>
-                            <span>{data.issuer.address || "CL 12 # 19 - 18"}</span>
+                            <span>{data.issuer.address || "CL 12 # 19 - 18 MZ 20 CA 1"}</span>
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Régimen Fiscal: </span>
@@ -234,7 +247,7 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Correo: </span>
-                            <span>{data.issuer.email || "contacto@legacymarksas.com"}</span>
+                            <span>{data.issuer.email || "nestorgarcia1005462@gmail.com"}</span>
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Actividad Económica: </span>
@@ -244,11 +257,11 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                 </div>
 
                 {/* 3. DATOS DEL ADQUIRIENTE / COMPRADOR */}
-                <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-emerald-700 border-b border-emerald-400 pb-1">
+                <div className="space-y-1.5">
+                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
                         Datos del Adquiriente / Comprador
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-1 gap-x-6 text-[11px]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0.5 text-[11px]">
                         <div>
                             <span className="font-bold text-slate-700">Nombre o Razón Social: </span>
                             <span className="font-semibold">{data.buyer.name}</span>
@@ -263,7 +276,7 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Departamento: </span>
-                            <span>{data.buyer.department || "Bogotá"}</span>
+                            <span>{data.buyer.department || "Santander"}</span>
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Número Documento: </span>
@@ -271,7 +284,7 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Municipio / Ciudad: </span>
-                            <span>{data.buyer.city || "Bogotá, D.C."}</span>
+                            <span>{data.buyer.city || "Bucaramanga"}</span>
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Tipo de Contribuyente: </span>
@@ -279,7 +292,7 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Dirección: </span>
-                            <span>{data.buyer.address || "CRRA 55A 30 IN ED CENTAURIO"}</span>
+                            <span>{data.buyer.address || "crr1a 55a 30 IN ED CENTAURIO BRR CIUDADELA REAL DE MINAS"}</span>
                         </div>
                         <div>
                             <span className="font-bold text-slate-700">Régimen fiscal: </span>
@@ -300,42 +313,46 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                     </div>
                 </div>
 
-                {/* 4. DETALLES DE PRODUCTOS (TABLA DE ÍTEMS CON ESTILO DIAN) */}
-                <div className="space-y-2">
-                    <h3 className="font-bold text-sm text-emerald-700 border-b border-emerald-400 pb-1">
+                {/* 4. DETALLES DE PRODUCTOS (TABLA DE ÍTEMS CON ESTILO VERDE DIAN) */}
+                <div className="space-y-1.5">
+                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
                         Detalles de Productos
                     </h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-[10px] text-left border-collapse border border-emerald-300">
                             <thead>
-                                <tr className="bg-emerald-50 text-slate-800 font-bold border-b border-emerald-300">
-                                    <th className="p-1.5 border-r border-emerald-300 text-center">Nro.</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-center">Código</th>
-                                    <th className="p-1.5 border-r border-emerald-300">Descripción</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-center">U/M</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-center">Cantidad</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-right">Precio unitario</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-right">Descuento detalle</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-right">Recargo detalle</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-center bg-emerald-100/60">IVA %</th>
-                                    <th className="p-1.5 border-r border-emerald-300 text-center bg-emerald-100/60">INC %</th>
-                                    <th className="p-1.5 text-right font-black bg-emerald-100/80">Valor de Venta por Item</th>
+                                <tr className="bg-emerald-100/70 text-slate-900 font-bold border-b border-emerald-300">
+                                    <th className="p-1 border-r border-emerald-300 text-center">Nro.</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center">Código</th>
+                                    <th className="p-1 border-r border-emerald-300">Descripción</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center">U/M</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center">Cantidad</th>
+                                    <th className="p-1 border-r border-emerald-300 text-right">Precio unitario</th>
+                                    <th className="p-1 border-r border-emerald-300 text-right">Descuento detalle</th>
+                                    <th className="p-1 border-r border-emerald-300 text-right">Recargo detalle</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">IVA</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">%</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">INC</th>
+                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">%</th>
+                                    <th className="p-1 text-right font-black bg-emerald-200/70">Precio unitario de venta</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.items.map((it) => (
-                                    <tr key={it.nro} className="border-b border-slate-200">
-                                        <td className="p-1.5 border-r border-emerald-200 text-center font-mono">{it.nro}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-center font-mono">{it.code}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 font-medium uppercase">{it.description}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-center font-mono">{it.unitOfMeasure || "WSD"}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-center font-mono">{it.quantity.toFixed(2)}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.unitPrice)}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.discountDetail || 0)}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.surchargeDetail || 0)}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-center font-mono">{it.ivaPct ? `${it.ivaPct}%` : ""}</td>
-                                        <td className="p-1.5 border-r border-emerald-200 text-center font-mono">{it.incPct ? `${it.incPct}%` : ""}</td>
-                                        <td className="p-1.5 text-right font-mono font-bold">{fmtCOP(it.totalItemValue)}</td>
+                                    <tr key={it.nro} className="border-b border-emerald-200">
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.nro}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.code}</td>
+                                        <td className="p-1 border-r border-emerald-200 font-semibold uppercase text-[9.5px]">{it.description}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.unitOfMeasure || "WSD"}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.quantity.toFixed(2)}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.unitPrice)}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.discountDetail || 0)}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.surchargeDetail || 0)}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono"></td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.ivaPct ? `${it.ivaPct}%` : ""}</td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono"></td>
+                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.incPct ? `${it.incPct}%` : ""}</td>
+                                        <td className="p-1 text-right font-mono font-bold">{fmtCOP(it.totalItemValue)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -343,29 +360,29 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                     </div>
                 </div>
 
-                {/* 5. REFERENCIAS (NOTAS CRÉDITO O FACTURA PREVIA) */}
+                {/* 5. REFERENCIAS (SI APLICA) */}
                 {data.references && data.references.length > 0 && (
-                    <div className="space-y-2">
-                        <h3 className="font-bold text-sm text-emerald-700 border-b border-emerald-400 pb-1">
+                    <div className="space-y-1.5">
+                        <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
                             Referencias
                         </h3>
                         <div className="overflow-x-auto">
                             <table className="w-full text-[10px] text-left border-collapse border border-emerald-200">
                                 <thead>
                                     <tr className="bg-slate-50 text-slate-800 font-bold border-b border-emerald-200">
-                                        <th className="p-1.5 border-r border-emerald-200">Tipo de Documento Referencia</th>
-                                        <th className="p-1.5 border-r border-emerald-200">Número Referencia</th>
-                                        <th className="p-1.5 border-r border-emerald-200">Fecha Referencia</th>
-                                        <th className="p-1.5">Razón de Referencia</th>
+                                        <th className="p-1 border-r border-emerald-200">Tipo de Documento Referencia</th>
+                                        <th className="p-1 border-r border-emerald-200">Número Referencia</th>
+                                        <th className="p-1 border-r border-emerald-200">Fecha Referencia</th>
+                                        <th className="p-1">Razón de Referencia</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {data.references.map((ref, idx) => (
                                         <tr key={idx} className="border-b border-slate-200">
-                                            <td className="p-1.5 border-r border-emerald-200">{ref.type}</td>
-                                            <td className="p-1.5 border-r border-emerald-200 font-mono font-semibold">{ref.number}</td>
-                                            <td className="p-1.5 border-r border-emerald-200">{ref.date}</td>
-                                            <td className="p-1.5 uppercase font-medium">{ref.reason || "N/A"}</td>
+                                            <td className="p-1 border-r border-emerald-200">{ref.type}</td>
+                                            <td className="p-1 border-r border-emerald-200 font-mono font-semibold">{ref.number}</td>
+                                            <td className="p-1 border-r border-emerald-200">{ref.date}</td>
+                                            <td className="p-1 uppercase font-medium">{ref.reason || "N/A"}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -374,20 +391,22 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                     </div>
                 )}
 
-                {/* 6. NOTAS FINALES Y TOTALES */}
-                <div className="space-y-2 pt-2">
-                    <h3 className="font-bold text-sm text-emerald-700 border-b border-emerald-400 pb-1">
+                {/* 6. NOTAS FINALES Y FIRMA DIGITAL */}
+                <div className="space-y-1.5 pt-1">
+                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
                         Notas Finales
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                        <div className="text-[10px] text-slate-600 space-y-1">
-                            <p><span className="font-bold">Linea de negocio:</span> {data.notes || "Venta Directa de Servicios & Productos LegacyMark"}</p>
-                            <div className="p-2 border border-slate-200 rounded bg-slate-50 flex items-center gap-3">
-                                <QrCode className="w-12 h-12 text-slate-800 shrink-0" />
-                                <div className="space-y-0.5">
-                                    <p className="font-bold text-[9px] text-slate-800">Documento Firmado Digitalmente por la DIAN</p>
-                                    <p className="text-[8px] font-mono break-all text-slate-500">{data.cufeOrCude.substring(0, 48)}...</p>
-                                </div>
+                    <div className="space-y-1 text-[10.5px]">
+                        <p className="font-mono text-slate-700">TpoDocRef:|SerieRef:|NumeroRef:|CodRef:|RazonRef:</p>
+                        <p><span className="font-bold">Linea de negocio:</span> {data.businessLine || data.notes || "Venta Directa de Servicios & Productos LegacyMark"}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-2">
+                        <div className="p-2 border border-slate-200 rounded bg-slate-50 flex items-center gap-3">
+                            <QrCode className="w-12 h-12 text-slate-800 shrink-0" />
+                            <div className="space-y-0.5">
+                                <p className="font-bold text-[9px] text-slate-800">Documento Firmado Digitalmente por la DIAN</p>
+                                <p className="text-[8px] font-mono break-all text-slate-500">{data.cufeOrCude.substring(0, 50)}...</p>
                             </div>
                         </div>
 
