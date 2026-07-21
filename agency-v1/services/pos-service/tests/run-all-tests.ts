@@ -1,3 +1,7 @@
+if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/agency_db?schema=public";
+}
+
 import app from "../src/index";
 import { runUnitTests } from "./unit/dian-engine.test";
 import { runIntegrationTests } from "./integration/pos-api.test";

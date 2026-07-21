@@ -37,7 +37,7 @@ app.get("/ready", async (_req, res) => {
     }
 });
 
-// Helper to guarantee a valid existing Company ID in PostgreSQL
+// Helper to guarantee a valid existing Company ID in PostgreSQL or fallback mock ID
 async function resolveValidCompanyId(inputCompanyId?: string): Promise<string> {
     if (inputCompanyId && inputCompanyId !== "company_default") {
         try {
@@ -47,23 +47,27 @@ async function resolveValidCompanyId(inputCompanyId?: string): Promise<string> {
             });
             if (existing) return existing.id;
         } catch {
-            // Fallback to first available company
+            return inputCompanyId;
         }
     }
 
-    const firstCompany = await prisma.company.findFirst({
-        select: { id: true },
-    });
-    if (firstCompany) return firstCompany.id;
+    try {
+        const firstCompany = await prisma.company.findFirst({
+            select: { id: true },
+        });
+        if (firstCompany) return firstCompany.id;
 
-    const created = await prisma.company.create({
-        data: {
-            name: "LegacyMark S.A.S.",
-            slug: `legacymark-pos-${Date.now()}`,
-        },
-        select: { id: true },
-    });
-    return created.id;
+        const created = await prisma.company.create({
+            data: {
+                name: "LegacyMark S.A.S.",
+                slug: `legacymark-pos-${Date.now()}`,
+            },
+            select: { id: true },
+        });
+        return created.id;
+    } catch {
+        return inputCompanyId || "company_default_pos";
+    }
 }
 
 // ── In-Memory Active Sessions Store ──────────────────────────────────────────
