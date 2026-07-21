@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
-    DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap
+    DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap, Settings
 } from "lucide-react";
 
 import {
