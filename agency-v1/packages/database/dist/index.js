@@ -47,15 +47,19 @@ const getRuntimeEnv = (key) => {
 };
 // Write debug info directly to stderr
 const writeDebug = (msg) => {
+    if (getRuntimeEnv("NODE_ENV") === "test")
+        return;
     const g = typeof globalThis !== "undefined" ? globalThis : {};
     const p = g["process"];
     if (p && p.stderr) {
         p.stderr.write(`[PRISMA-DB-DEBUG] ${msg}\n`);
     }
 };
-const logConfig = getRuntimeEnv("NODE_ENV") === "development"
-    ? ["query", "error", "warn"]
-    : ["error"];
+const logConfig = getRuntimeEnv("NODE_ENV") === "test"
+    ? []
+    : getRuntimeEnv("NODE_ENV") === "development"
+        ? ["query", "error", "warn"]
+        : ["error"];
 const createClient = (url) => {
     let connectionUrl = url;
     writeDebug(`Creating PrismaClient with URL: ${connectionUrl ? connectionUrl.replace(/:[^:@]+@/, ":****@") : "undefined"}`);
@@ -283,7 +287,24 @@ exports.prisma = globalForPrisma.prisma ??
                             const readClientGetter = modelToReadClientGetter[prop];
                             if (readClientGetter) {
                                 const readModel = readClientGetter()[prop];
-                                return readModel[methodProp].bind(readModel);
+                                return async (...args) => {
+                                    try {
+                                        return await readModel[methodProp](...args);
+                                    }
+                                    catch (err) {
+                                        const isConnErr = err?.message?.includes("Can't reach database server") ||
+                                            err?.message?.includes("pgbouncer-replica") ||
+                                            err?.code === "P1001" ||
+                                            err?.code === "P1002" ||
+                                            err?.code === "ECONNREFUSED";
+                                        if (isConnErr) {
+                                            writeDebug(`⚠️ [Replica Fallback] Read replica failed: ${err.message}. Falling back to primary DB.`);
+                                            const fallbackPrimaryModel = clientGetter()[prop];
+                                            return await fallbackPrimaryModel[methodProp](...args);
+                                        }
+                                        throw err;
+                                    }
+                                };
                             }
                         }
                         // Ejecutar métodos de escritura o utilidad en el cliente principal (primario)
