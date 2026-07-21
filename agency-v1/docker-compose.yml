@@ -648,6 +648,29 @@ services:
       - "traefik.http.routers.finance.entrypoints=web"
       - "traefik.http.services.finance.loadbalancer.server.port=4006"
 
+  # ── POS Service (Punto de Venta) ───────────────────────────────────────────
+  pos-service:
+    <<: *microservice-base
+    build:
+      context: .
+      dockerfile: services/pos-service/Dockerfile
+    environment:
+      <<: *common-env
+      PORT: "4020"
+    depends_on:
+      pgbouncer: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4020/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pos.rule=PathPrefix(`/api/pos`)"
+      - "traefik.http.routers.pos.entrypoints=web"
+      - "traefik.http.services.pos.loadbalancer.server.port=4020"
+
   # ── Video Service ─────────────────────────────────────────────────────────
   video-service:
     <<: *microservice-base
