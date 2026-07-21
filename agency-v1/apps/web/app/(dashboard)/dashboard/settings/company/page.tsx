@@ -1,5 +1,6 @@
 import { WhiteLabelingSettings } from "@/components/settings/white-labeling-settings";
 import { DefaultCompanySettings } from "@/components/settings/default-company-settings";
+import { DianInvoicingSettings } from "@/components/settings/dian-invoicing-settings";
 import { GlobalEmailTemplates } from "@/components/settings/global-email-templates";
 import { CustomDomainSettings } from "@/components/settings/custom-domain-settings";
 import { fetchCompanySettings } from "@/app/actions/settings";
@@ -18,11 +19,15 @@ export default async function SettingsCompanyPage() {
                     Compañía y Marca Blanca
                 </h2>
                 <p className="text-sm text-[var(--ds-text-secondary)] mt-2">
-                    Configura la apariencia global del sistema para tu equipo y establece las preferencias regionales por defecto.
+                    Configura la apariencia global del sistema, marca blanca y la habilitación completa de Facturación Electrónica DIAN.
                 </p>
             </div>
 
             <section className="space-y-4">
+                <DianInvoicingSettings initialConfig={companyData?.defaultSettings} />
+            </section>
+
+            <section className="space-y-4 pt-4">
                 <WhiteLabelingSettings initialData={companyData} />
             </section>
 

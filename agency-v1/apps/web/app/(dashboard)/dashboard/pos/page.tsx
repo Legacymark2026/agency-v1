@@ -27,6 +27,8 @@ export default async function PosPage() {
         email: session?.user?.email || "nestorgarcia1005462@gmail.com",
     };
 
+    let dianConfig = null;
+
     if (session?.user?.id) {
         try {
             const [user, companyUser] = await Promise.all([
@@ -49,20 +51,24 @@ export default async function PosPage() {
 
             if (companyUser?.company) {
                 const settings = (companyUser.company.defaultCompanySettings as any) || {};
+                dianConfig = settings.dianConfig || null;
+
+                const dc = dianConfig || {};
+
                 issuerData = {
-                    companyName: companyUser.company.name || user?.name || issuerData.companyName,
-                    tradeName: settings.tradeName || companyUser.company.name || issuerData.tradeName,
-                    nit: settings.nit || issuerData.nit,
-                    taxpayerType: settings.taxpayerType || issuerData.taxpayerType,
-                    taxRegime: settings.taxRegime || issuerData.taxRegime,
-                    taxResponsibility: settings.taxResponsibility || issuerData.taxResponsibility,
-                    economicActivity: settings.economicActivity || issuerData.economicActivity,
-                    country: settings.country || issuerData.country,
-                    department: settings.department || issuerData.department,
-                    city: settings.city || issuerData.city,
-                    address: settings.address || issuerData.address,
-                    phone: settings.phone || issuerData.phone,
-                    email: user?.email || settings.email || issuerData.email,
+                    companyName: dc.companyName || companyUser.company.name || user?.name || issuerData.companyName,
+                    tradeName: dc.tradeName || settings.tradeName || companyUser.company.name || issuerData.tradeName,
+                    nit: dc.nit ? `${dc.nit}${dc.dv ? `-${dc.dv}` : ''}` : settings.nit || issuerData.nit,
+                    taxpayerType: dc.taxpayerType || settings.taxpayerType || issuerData.taxpayerType,
+                    taxRegime: dc.taxRegime || settings.taxRegime || issuerData.taxRegime,
+                    taxResponsibility: dc.taxResponsibility || settings.taxResponsibility || issuerData.taxResponsibility,
+                    economicActivity: dc.economicActivity || settings.economicActivity || issuerData.economicActivity,
+                    country: dc.country || settings.country || issuerData.country,
+                    department: dc.department || settings.department || issuerData.department,
+                    city: dc.city || settings.city || issuerData.city,
+                    address: dc.address || settings.address || issuerData.address,
+                    phone: dc.phone || settings.phone || issuerData.phone,
+                    email: dc.email || user?.email || settings.email || issuerData.email,
                 };
             } else if (user?.name) {
                 issuerData.companyName = user.name;
@@ -74,5 +80,5 @@ export default async function PosPage() {
         }
     }
 
-    return <PosTerminalClient initialIssuer={issuerData} />;
+    return <PosTerminalClient initialIssuer={issuerData} dianConfig={dianConfig} />;
 }

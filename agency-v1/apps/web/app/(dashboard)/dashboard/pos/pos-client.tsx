@@ -38,13 +38,15 @@ const DEFAULT_PRODUCTS: Product[] = [
     { id: "p6", title: "Lector Código de Barras Láser 2D", sku: "HW-006", barcode: "7701001006", category: "Hardware", unitPrice: 195000, taxRate: 0.19, stock: 25 },
 ];
 
+import Link from "next/link";
 import { DianInvoiceViewer, DianInvoiceData } from "@/components/billing/dian-invoice-viewer";
 
 interface PosTerminalClientProps {
     initialIssuer?: DianInvoiceData["issuer"];
+    dianConfig?: any;
 }
 
-export default function PosTerminalClient({ initialIssuer }: PosTerminalClientProps) {
+export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerminalClientProps) {
     const [companyId, setCompanyId] = useState("");
     const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -460,6 +462,36 @@ export default function PosTerminalClient({ initialIssuer }: PosTerminalClientPr
                     )}
                 </div>
             </header>
+
+            {/* DIAN INVOICING CONFIGURATION BANNER */}
+            <div className={`p-3.5 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-3 text-xs ${
+                dianConfig?.isConfigured
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-300"
+            }`}>
+                <div className="flex items-center gap-2.5">
+                    <ShieldCheck className="w-5 h-5 shrink-0" />
+                    <div>
+                        <span className="font-bold">
+                            {dianConfig?.isConfigured
+                                ? `Habilitación DIAN Activa — Res. N° ${dianConfig.dianResolutionNumber || "18760000001"} (Prefijo ${dianConfig.dianPrefix || "SETG"})`
+                                : "Configuración DIAN de Empresa — Configura los datos fiscales y resoluciones DIAN de tu negocio."}
+                        </span>
+                        <p className="text-[11px] opacity-80 mt-0.5">
+                            {dianConfig?.isConfigured
+                                ? `Emisor: ${issuerData.companyName} | NIT: ${issuerData.nit}`
+                                : "Puedes editar la Razón Social, NIT, Resolución, Prefijo y Clave Técnica en el Panel de Configuración."}
+                        </p>
+                    </div>
+                </div>
+
+                <Link
+                    href="/dashboard/settings/company"
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl border border-slate-700 shrink-0 transition-all flex items-center gap-1.5"
+                >
+                    <Settings className="w-3.5 h-3.5 text-teal-400" /> Configurar Datos Empresa DIAN
+                </Link>
+            </div>
 
             {/* MAIN POS TERMINAL LAYOUT */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

@@ -236,3 +236,39 @@ export async function updateWhiteLabeling(settings: any) {
 export async function updateCustomDomain(domain: string) {
     return updateWhiteLabeling({ domain });
 }
+
+export async function updateDianInvoicingSettings(dianData: any) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const companyUser = await prisma.companyUser.findFirst({
+            where: { userId: session.user.id },
+            include: { company: true }
+        });
+
+        if (!companyUser?.company) return { success: false, error: 'No company found' };
+
+        const existingDefaultSettings = (companyUser.company.defaultCompanySettings as any) || {};
+
+        const updatedDefaultSettings = {
+            ...existingDefaultSettings,
+            dianConfig: {
+                ...(existingDefaultSettings.dianConfig || {}),
+                ...dianData,
+                updatedAt: new Date().toISOString()
+            }
+        };
+
+        await prisma.company.update({
+            where: { id: companyUser.companyId },
+            data: { defaultCompanySettings: updatedDefaultSettings }
+        });
+
+        revalidatePath('/dashboard/settings/company');
+        revalidatePath('/dashboard/pos');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to update DIAN settings' };
+    }
+}
