@@ -413,6 +413,7 @@ services:
       HR_SERVICE_URL: http://hr-service:4017
       PROJECT_SERVICE_URL: http://project-service:4018
       AFFILIATE_SERVICE_URL: http://affiliate-service:4019
+      POS_SERVICE_URL: http://pos-service:4020
     depends_on:
       redis: { condition: service_healthy }
       auth-service: { condition: service_healthy }
