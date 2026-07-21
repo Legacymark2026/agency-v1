@@ -40,7 +40,11 @@ const DEFAULT_PRODUCTS: Product[] = [
 
 import { DianInvoiceViewer, DianInvoiceData } from "@/components/billing/dian-invoice-viewer";
 
-export default function PosTerminalClient() {
+interface PosTerminalClientProps {
+    initialIssuer?: DianInvoiceData["issuer"];
+}
+
+export default function PosTerminalClient({ initialIssuer }: PosTerminalClientProps) {
     const [companyId, setCompanyId] = useState("");
     const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -54,11 +58,43 @@ export default function PosTerminalClient() {
     const [offlineCount, setOfflineCount] = useState(0);
     const [syncingOffline, setSyncingOffline] = useState(false);
 
+    // Real Issuer State (Emisor DIAN)
+    const [issuerData, setIssuerData] = useState<DianInvoiceData["issuer"]>(
+        initialIssuer || {
+            companyName: "GARCIA DURAN NESTOR ELIAN",
+            tradeName: "GARCIA DURAN NESTOR ELIAN",
+            nit: "1005462317",
+            taxpayerType: "Persona Natural",
+            taxRegime: "R-99-PN",
+            taxResponsibility: "ZZ - No aplica",
+            economicActivity: "7310",
+            country: "Colombia",
+            department: "Santander",
+            city: "Bucaramanga",
+            address: "CL 12 # 19 - 18 MZ 20 CA 1",
+            phone: "3153981340",
+            email: "nestorgarcia1005462@gmail.com",
+        }
+    );
+
+    // Real Buyer/Customer State (Adquiriente Comprador DIAN)
+    const [customerName, setCustomerName] = useState("CONSULTORIA DE COLOMBIA S.A.S");
+    const [customerDocType, setCustomerDocType] = useState("NIT");
+    const [customerNit, setCustomerNit] = useState("804017909");
+    const [customerTaxpayerType, setCustomerTaxpayerType] = useState("Persona Jurídica");
+    const [customerTaxRegime, setCustomerTaxRegime] = useState("O-47;R-99-PN");
+    const [customerTaxResponsibility, setCustomerTaxResponsibility] = useState("01 - IVA");
+    const [customerCountry, setCustomerCountry] = useState("Colombia");
+    const [customerDepartment, setCustomerDepartment] = useState("Santander");
+    const [customerCity, setCustomerCity] = useState("Bucaramanga");
+    const [customerAddress, setCustomerAddress] = useState("crr1a 55a 30 IN ED CENTAURIO BRR CIUDADELA REAL DE MINAS");
+    const [customerPhone, setCustomerPhone] = useState("3173720384");
+    const [customerEmail, setCustomerEmail] = useState("gerencia@neogestion.co");
+    const [showAdvancedCustomerForm, setShowAdvancedCustomerForm] = useState(false);
+
     // Payment state
     const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD_POS" | "NEQUI_PSE" | "CREDIT">("CASH");
     const [cashReceived, setCashReceived] = useState<number | "">("");
-    const [customerName, setCustomerName] = useState("Consumidor Final");
-    const [customerNit, setCustomerNit] = useState("");
 
     // Receipt Format Toggle: "thermal" or "dian_a4"
     const [receiptFormat, setReceiptFormat] = useState<"thermal" | "dian_a4">("dian_a4");
@@ -715,40 +751,29 @@ export default function PosTerminalClient() {
                                 onClose={() => setShowReceiptModal(false)}
                                 data={{
                                     documentType: "FACTURA_ELECTRONICA",
-                                    documentNumber: lastCompletedOrder.receiptTicket?.header?.receiptNo || "SETG1",
-                                    cufeOrCude: lastCompletedOrder.cufe || "9af0bdcba30d60fe05541cac1bafe9715fc8b05a6315d0ae2041cd135ffd39b5e2c622f0a929db4489dd56dbb9a20c11",
+                                    documentNumber: lastCompletedOrder.receiptTicket?.header?.receiptNo || "SETG980000000",
+                                    cufeOrCude: lastCompletedOrder.cufe || "d9060ca6ea4d0aa1936164f14127093e1caab207fee3a14452da33717788e155917390392881c13c1c37e947fd888aea",
                                     issueDate: new Date().toLocaleDateString("es-CO"),
+                                    dueDate: new Date().toLocaleDateString("es-CO"),
                                     paymentForm: "Contado",
-                                    paymentMethod: paymentMethod === "CASH" ? "Efectivo" : paymentMethod === "CARD_POS" ? "Tarjeta / Datáfono" : "Transferencia / PSE",
-                                    operationType: "10 - Específica",
-                                    issuer: {
-                                        companyName: "GARCIA DURAN NESTOR ELIAN",
-                                        tradeName: "GARCIA DURAN NESTOR ELIAN",
-                                        nit: "1005462317",
-                                        taxpayerType: "Persona Natural",
-                                        taxRegime: "R-99-PN",
-                                        taxResponsibility: "ZZ - No aplica",
-                                        economicActivity: "7310",
-                                        country: "Colombia",
-                                        department: "Santander",
-                                        city: "Bucaramanga",
-                                        address: "CL 12 # 19 - 18 MZ 20 CA 1",
-                                        phone: "3153981340",
-                                        email: "nestorgarcia1005462@gmail.com",
-                                    },
+                                    paymentMethod: paymentMethod === "CASH" ? "Efectivo" : paymentMethod === "CARD_POS" ? "Tarjeta / Datáfono" : "Transferencia Débito Bancaria",
+                                    operationType: "10 - Estándar",
+                                    purchaseOrder: "DESARROLLO DE BRANDING",
+                                    purchaseOrderDate: new Date().toLocaleDateString("es-CO"),
+                                    issuer: issuerData,
                                     buyer: {
                                         name: customerName || "CONSULTORIA DE COLOMBIA S.A.S",
-                                        documentType: "NIT",
+                                        documentType: customerDocType || "NIT",
                                         documentNumber: customerNit || "804017909",
-                                        taxpayerType: "Persona Jurídica",
-                                        taxRegime: "O-47;R-99-PN",
-                                        taxResponsibility: "01 - IVA",
-                                        country: "Colombia",
-                                        department: "Bogotá",
-                                        city: "Bogotá, D.C.",
-                                        address: "crr1a 55a 30 IN ED CENTAURIO BRR CIUDADELA REAL DE MINAS",
-                                        phone: "3173720384",
-                                        email: "gerencia@neogestion.co",
+                                        taxpayerType: customerTaxpayerType || "Persona Jurídica",
+                                        taxRegime: customerTaxRegime || "O-47;R-99-PN",
+                                        taxResponsibility: customerTaxResponsibility || "01 - IVA",
+                                        country: customerCountry || "Colombia",
+                                        department: customerDepartment || "Santander",
+                                        city: customerCity || "Bucaramanga",
+                                        address: customerAddress || "crr1a 55a 30 IN ED CENTAURIO BRR CIUDADELA REAL DE MINAS",
+                                        phone: customerPhone || "3173720384",
+                                        email: customerEmail || "gerencia@neogestion.co",
                                     },
                                     items: lastCompletedOrder.receiptTicket?.items?.map((it: any, idx: number) => ({
                                         nro: idx + 1,
