@@ -237,7 +237,10 @@ export function getAccessibleRoutes(role: UserRole): string[] {
 // Los permisos están en formato 'scope.action' (ej. crm.view_all, mkt.view)
 export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     // Dashboard base
-    { perm: "dashboard.view", routes: ["/dashboard"] },
+    { perm: "dashboard.view", routes: ["/dashboard", "/dashboard/pos"] },
+    // POS Terminal
+    { perm: "pos.view", routes: ["/dashboard/pos"] },
+    { perm: "pos.manage", routes: ["/dashboard/pos"] },
     // IAM / Admin
     { perm: "iam.view_users", routes: ["/dashboard/users"] },
     { perm: "iam.manage_users", routes: ["/dashboard/users", "/dashboard/experts"] },
@@ -249,9 +252,9 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "calendar.create", routes: ["/dashboard/events"] },
     { perm: "calendar.delete", routes: ["/dashboard/events"] },
     // CRM
-    { perm: "crm.view_own", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
-    { perm: "crm.view_all", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
-    { perm: "crm.edit", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.view_own", routes: ["/dashboard/pos", "/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.view_all", routes: ["/dashboard/pos", "/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.edit", routes: ["/dashboard/pos", "/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
     { perm: "crm.delete", routes: ["/dashboard/admin/crm/leads"] },
     { perm: "crm.export", routes: ["/dashboard/admin/crm"] },
     { perm: "crm.pipeline", routes: ["/dashboard/admin/crm/pipeline"] },
