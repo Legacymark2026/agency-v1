@@ -12,13 +12,10 @@ export function runUnitTests() {
 
     // Test 1: Algoritmo Dígito de Verificación NIT (Módulo 11)
     const dv1 = calculateNitDv("1005462317");
-    if (dv1 !== "1") throw new Error(`Falló cálculo DV NIT: esperado 1, obtenido ${dv1}`);
+    if (dv1 !== "0") throw new Error(`Falló cálculo DV NIT: esperado 0, obtenido ${dv1}`);
 
-    const dv2 = calculateNitDv("804017909");
-    if (dv2 !== "5" && dv2 !== "0" && dv2 !== "9") {
-        // Validar que genere un dígito numérico válido
-        if (isNaN(parseInt(dv2, 10))) throw new Error(`DV inválido: ${dv2}`);
-    }
+    const dv2 = calculateNitDv("901546231");
+    if (dv2 !== "7") throw new Error(`Falló cálculo DV NIT: esperado 7, obtenido ${dv2}`);
     console.log("    ✓ [UNIT] Algoritmo Módulo 11 (Dígito Verificación NIT): OK");
 
     // Test 2: Cálculo HASH CUFE SHA-384

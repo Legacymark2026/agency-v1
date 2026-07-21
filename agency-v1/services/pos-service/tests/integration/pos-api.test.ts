@@ -39,7 +39,7 @@ export async function runIntegrationTests(baseUrl: string) {
 
     // Test 1: API DV NIT Validation
     const resDv = await postJson("/api/pos/dian/verify-nit-dv", { nit: "1005462317" });
-    if (resDv.status !== 200 || resDv.body?.dv !== "1") {
+    if (resDv.status !== 200 || resDv.body?.dv !== "0") {
         throw new Error(`Integration Test Failed: /api/pos/dian/verify-nit-dv returned ${JSON.stringify(resDv)}`);
     }
     console.log("    ✓ [INTEGRATION] Endpoint /api/pos/dian/verify-nit-dv: OK");
