@@ -530,7 +530,7 @@ app.post("/api/pos/orders", async (req, res) => {
                 taxAmount,
                 totalAmount,
                 status: "PAID",
-                items: processedItems.map(i => ({ title: i.title, quantity: i.quantity, unitPrice: i.unitPrice, totalAmount: i.totalAmount })),
+                items: processedItems.map((i: any) => ({ title: i.title, quantity: i.quantity, unitPrice: i.unitPrice, totalAmount: i.totalAmount })),
             };
         } else {
             try {
@@ -563,7 +563,7 @@ app.post("/api/pos/orders", async (req, res) => {
                     taxAmount,
                     totalAmount,
                     status: "PAID",
-                    items: processedItems.map(i => ({ title: i.title, quantity: i.quantity, unitPrice: i.unitPrice, totalAmount: i.totalAmount })),
+                    items: processedItems.map((i: any) => ({ title: i.title, quantity: i.quantity, unitPrice: i.unitPrice, totalAmount: i.totalAmount })),
                 };
             }
         }
