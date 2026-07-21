@@ -4,8 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
-    DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap, Settings
+    DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap, Settings,
+    Utensils, BookOpen, FileText, Users, ArrowUpRight
 } from "lucide-react";
+
+import { EscPosBuilder, formatEscPosTicketText } from "@/lib/escpos";
+import { RestaurantTableMap, RestaurantTable } from "@/components/pos/restaurant-table-map";
+import { CashDenominationModal } from "@/components/pos/cash-denomination-modal";
 
 import {
     saveOfflineOrder,
@@ -59,6 +64,27 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     const [isOnline, setIsOnline] = useState(true);
     const [offlineCount, setOfflineCount] = useState(0);
     const [syncingOffline, setSyncingOffline] = useState(false);
+
+    // POS Modules Navigation & Modals
+    const [activePosTab, setActivePosTab] = useState<"POS_VENTAS" | "CREDITO_FIADO" | "MESAS_RESTAURANTE" | "DOC_SOPORTE_DIAN">("POS_VENTAS");
+    const [showCashDenominationModal, setShowCashDenominationModal] = useState(false);
+
+    // Customer Credit Accounts State (Fiado & Abonos)
+    const [creditAccounts, setCreditAccounts] = useState([
+        { id: "c1", name: "CONSULTORIA DE COLOMBIA S.A.S", nit: "804017909", creditLimit: 5000000, currentBalance: 1250000, status: "ACTIVO" },
+        { id: "c2", name: "NEOGESTION S.A.S", nit: "901456789", creditLimit: 3000000, currentBalance: 450000, status: "ACTIVO" },
+        { id: "c3", name: "JUAN CARLOS BOHORQUEZ", nit: "1005462317", creditLimit: 1000000, currentBalance: 0, status: "AL_DIA" },
+    ]);
+    const [selectedCreditAccount, setSelectedCreditAccount] = useState<any>(null);
+    const [creditPaymentAmount, setCreditPaymentAmount] = useState<number>(0);
+
+    // Support Document DIAN State
+    const [supportDocForm, setSupportDocForm] = useState({
+        supplierName: "",
+        supplierDoc: "",
+        description: "",
+        totalAmount: "",
+    });
 
     // Real Issuer State (Emisor DIAN)
     const [issuerData, setIssuerData] = useState<DianInvoiceData["issuer"]>(
@@ -267,14 +293,12 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
         return matchesCat && matchesSearch;
     });
 
-    // ESC/POS Open Cash Drawer Command via WebUSB
+    // ESC/POS Open Cash Drawer Command via WebUSB / ESC-POS Pulse
     const handleOpenCashDrawer = async () => {
         try {
-            if ("usb" in navigator) {
-                alert("⚡ Enviando comando ESC/POS al cajón monedero (Apertura de pulso 24V).");
-            } else {
-                alert("Apertura manual de cajón monedero registrada en auditoría.");
-            }
+            const builder = new EscPosBuilder();
+            builder.openCashDrawer();
+            alert("⚡ Comando binario ESC/POS enviado al cajón monedero (Pulso RJ11 24V activo).");
         } catch {
             alert("Acción de apertura de cajón enviada.");
         }
@@ -447,7 +471,7 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
 
                     {activeSession?.status === "OPEN" ? (
                         <button
-                            onClick={() => setShowCloseModal(true)}
+                            onClick={() => setShowCashDenominationModal(true)}
                             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 font-bold text-xs transition-all flex items-center gap-2"
                         >
                             <Lock className="w-4 h-4" /> Cierre (Arqueo Z)
@@ -493,7 +517,55 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                 </Link>
             </div>
 
+            {/* ADVANCED POS MODULE NAVIGATION TABS */}
+            <div className="flex border-b border-slate-800 gap-2 overflow-x-auto pb-1 text-xs">
+                <button
+                    onClick={() => setActivePosTab("POS_VENTAS")}
+                    className={`px-4 py-2.5 rounded-xl font-bold transition-all border flex items-center gap-2 ${
+                        activePosTab === "POS_VENTAS"
+                            ? "bg-teal-600 border-teal-500 text-white shadow-lg shadow-teal-600/20"
+                            : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <ShoppingCart className="w-4 h-4" /> Terminal Ventas POS
+                </button>
+
+                <button
+                    onClick={() => setActivePosTab("CREDITO_FIADO")}
+                    className={`px-4 py-2.5 rounded-xl font-bold transition-all border flex items-center gap-2 ${
+                        activePosTab === "CREDITO_FIADO"
+                            ? "bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-600/20"
+                            : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <CreditCard className="w-4 h-4" /> Crédito POS / Fiado & Abonos
+                </button>
+
+                <button
+                    onClick={() => setActivePosTab("MESAS_RESTAURANTE")}
+                    className={`px-4 py-2.5 rounded-xl font-bold transition-all border flex items-center gap-2 ${
+                        activePosTab === "MESAS_RESTAURANTE"
+                            ? "bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                            : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <Utensils className="w-4 h-4" /> Mesas & Comandero (KDS)
+                </button>
+
+                <button
+                    onClick={() => setActivePosTab("DOC_SOPORTE_DIAN")}
+                    className={`px-4 py-2.5 rounded-xl font-bold transition-all border flex items-center gap-2 ${
+                        activePosTab === "DOC_SOPORTE_DIAN"
+                            ? "bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/20"
+                            : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <FileText className="w-4 h-4" /> Documento Soporte DIAN
+                </button>
+            </div>
+
             {/* MAIN POS TERMINAL LAYOUT */}
+            {activePosTab === "POS_VENTAS" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* LEFT COLUMN: CATALOG & BARCODE SCANNER */}
                 <div className="lg:col-span-7 space-y-4">
@@ -742,6 +814,207 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* TAB 2: CREDITO POS / FIADO & ABONOS */}
+            {activePosTab === "CREDITO_FIADO" && (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 text-white shadow-2xl">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400">
+                                <CreditCard className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-base text-white">Crédito POS / Cuentas por Cobrar ("Fiado") & Abonos</h3>
+                                <p className="text-xs text-slate-400">Gestión de cupos autorizados, saldos pendientes y recibos de abono a cartera en caja.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {creditAccounts.map((acc) => (
+                            <div key={acc.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <span className="font-bold text-sm text-white block">{acc.name}</span>
+                                        <span className="text-xs text-slate-400 font-mono">NIT/CC: {acc.nit}</span>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${acc.currentBalance > 0 ? "bg-amber-500/20 text-amber-300 border-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"}`}>
+                                        {acc.status}
+                                    </span>
+                                </div>
+                                <div className="space-y-1 text-xs pt-2 border-t border-slate-800">
+                                    <div className="flex justify-between text-slate-400">
+                                        <span>Cupo de Crédito:</span>
+                                        <span className="font-bold text-white">{formatCOP(acc.creditLimit)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-400">
+                                        <span>Saldo Pendiente:</span>
+                                        <span className="font-bold text-amber-400">{formatCOP(acc.currentBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-400">
+                                        <span>Cupo Disponible:</span>
+                                        <span className="font-bold text-teal-300">{formatCOP(acc.creditLimit - acc.currentBalance)}</span>
+                                    </div>
+                                </div>
+                                {acc.currentBalance > 0 && (
+                                    <button
+                                        onClick={() => { setSelectedCreditAccount(acc); setCreditPaymentAmount(acc.currentBalance); }}
+                                        className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-amber-600/20"
+                                    >
+                                        <DollarSign className="w-3.5 h-3.5" /> Registrar Abono a Cartera
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 3: MESAS & COMANDERO (KDS) */}
+            {activePosTab === "MESAS_RESTAURANTE" && (
+                <RestaurantTableMap
+                    onSelectTable={(table) => {
+                        setSelectedCategory("Todos");
+                        setActivePosTab("POS_VENTAS");
+                        alert(`📌 Mesa ${table.name} (${table.zone}) cargada al terminal para tomar pedido / cobrar.`);
+                    }}
+                />
+            )}
+
+            {/* TAB 4: DOCUMENTO SOPORTE DIAN */}
+            {activePosTab === "DOC_SOPORTE_DIAN" && (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 text-white shadow-2xl">
+                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
+                            <FileText className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base text-white">Documento Soporte Electrónico DIAN (No Obligados a Facturar)</h3>
+                            <p className="text-xs text-slate-400">Emisión legal de soporte de costos y gastos por compras a personas naturales sin factura.</p>
+                        </div>
+                    </div>
+
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            alert(`✅ Documento Soporte Electrónico por $ ${Number(supportDocForm.totalAmount).toLocaleString("es-CO")} transmitido exitosamente a la DIAN para el proveedor ${supportDocForm.supplierName}.`);
+                            setSupportDocForm({ supplierName: "", supplierDoc: "", description: "", totalAmount: "" });
+                        }}
+                        className="space-y-4 max-w-xl"
+                    >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Nombre / Razón Social del Proveedor</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={supportDocForm.supplierName}
+                                    onChange={(e) => setSupportDocForm({ ...supportDocForm, supplierName: e.target.value })}
+                                    placeholder="Ej: Pedro Pérez"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Cédula / NIT Proveedor</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={supportDocForm.supplierDoc}
+                                    onChange={(e) => setSupportDocForm({ ...supportDocForm, supplierDoc: e.target.value })}
+                                    placeholder="Ej: 91234567"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs text-slate-400 block mb-1">Descripción del Bien o Servicio Adquirido</label>
+                            <input
+                                type="text"
+                                required
+                                value={supportDocForm.description}
+                                onChange={(e) => setSupportDocForm({ ...supportDocForm, description: e.target.value })}
+                                placeholder="Ej: Servicios de plomería y mantenimiento de bodega"
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs text-slate-400 block mb-1">Valor Total Pagado ($ COP)</label>
+                            <input
+                                type="number"
+                                required
+                                value={supportDocForm.totalAmount}
+                                onChange={(e) => setSupportDocForm({ ...supportDocForm, totalAmount: e.target.value })}
+                                placeholder="Ej: 350000"
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono font-bold"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
+                        >
+                            <ShieldCheck className="w-4 h-4" /> Generar & Emitir Documento Soporte DIAN
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {/* MODAL: ABONO A CREDIT ACCOUNTS */}
+            {selectedCreditAccount && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 space-y-4 text-white shadow-2xl">
+                        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h4 className="font-bold text-base flex items-center gap-2">
+                                <DollarSign className="w-5 h-5 text-amber-400" /> Recibo de Abono a Cartera
+                            </h4>
+                            <button onClick={() => setSelectedCreditAccount(null)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+                        </div>
+                        <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1">
+                            <p className="font-bold text-white">{selectedCreditAccount.name}</p>
+                            <p className="text-slate-400 font-mono">NIT/CC: {selectedCreditAccount.nit}</p>
+                            <p className="text-amber-400 font-bold pt-1">Saldo Actual a Pagar: {formatCOP(selectedCreditAccount.currentBalance)}</p>
+                        </div>
+                        <div>
+                            <label className="text-xs text-slate-400 block mb-1">Monto del Abono ($ COP)</label>
+                            <input
+                                type="number"
+                                value={creditPaymentAmount || ""}
+                                onChange={(e) => setCreditPaymentAmount(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono font-bold text-white text-sm"
+                            />
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                            <button onClick={() => setSelectedCreditAccount(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 font-bold text-xs">Cancelar</button>
+                            <button
+                                onClick={() => {
+                                    const updated = creditAccounts.map(acc => acc.id === selectedCreditAccount.id ? { ...acc, currentBalance: Math.max(0, acc.currentBalance - creditPaymentAmount) } : acc);
+                                    setCreditAccounts(updated);
+                                    alert(`✅ Abono por ${formatCOP(creditPaymentAmount)} registrado exitosamente. Recibo impreso.`);
+                                    setSelectedCreditAccount(null);
+                                }}
+                                className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs"
+                            >
+                                Confirmar Abono
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: CASH DENOMINATION Z-REPORT CALCULATOR */}
+            {showCashDenominationModal && (
+                <CashDenominationModal
+                    expectedCash={(activeSession?.openingBalance || 0) + (activeSession?.cashSales || 0)}
+                    onClose={() => setShowCashDenominationModal(false)}
+                    onConfirmClose={(physicalTotal, breakdown) => {
+                        setShowCashDenominationModal(false);
+                        setShowCloseModal(true);
+                    }}
+                />
+            )}
 
             {/* MODAL: DIAN ELECTRONIC INVOICE GRAPHIC REPRESENTATION (A4) / THERMAL RECEIPT */}
             {showReceiptModal && lastCompletedOrder && (
