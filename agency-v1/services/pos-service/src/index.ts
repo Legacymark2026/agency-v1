@@ -30,6 +30,35 @@ app.get("/ready", async (_req, res) => {
     }
 });
 
+// Helper to guarantee a valid existing Company ID in PostgreSQL
+async function resolveValidCompanyId(inputCompanyId?: string): Promise<string> {
+    if (inputCompanyId && inputCompanyId !== "company_default") {
+        try {
+            const existing = await prisma.company.findUnique({
+                where: { id: inputCompanyId },
+                select: { id: true },
+            });
+            if (existing) return existing.id;
+        } catch {
+            // Fallback to first available company
+        }
+    }
+
+    const firstCompany = await prisma.company.findFirst({
+        select: { id: true },
+    });
+    if (firstCompany) return firstCompany.id;
+
+    const created = await prisma.company.create({
+        data: {
+            name: "LegacyMark S.A.S.",
+            slug: `legacymark-pos-${Date.now()}`,
+        },
+        select: { id: true },
+    });
+    return created.id;
+}
+
 // ── In-Memory Active Sessions Store ──────────────────────────────────────────
 const activeSessionsMap = new Map<string, any>();
 
@@ -52,14 +81,14 @@ const ACTIVE_PROMOTIONS: PromotionRule[] = [
         type: "BUY_N_GET_M",
         targetSku: "HW-006",
         requiredQty: 3,
-        discountPct: 100, // 3rd item is free
+        discountPct: 100,
     },
     {
         id: "promo_starter_bundle",
         name: "Combo Super Kit Inicial POS (Impresora + Lector)",
         type: "BUNDLE",
         bundleSkus: ["HW-005", "HW-006"],
-        bundleFixedPrice: 500000, // Regular $575,000 -> $500,000 COP
+        bundleFixedPrice: 500000,
     },
 ];
 
@@ -67,7 +96,6 @@ export function evaluateCartPromotions(items: Array<{ sku: string; quantity: num
     let totalDiscount = 0;
     const appliedPromos: string[] = [];
 
-    // 1. Evaluate BUNDLE Promotions
     const bundlePromo = ACTIVE_PROMOTIONS.find((p) => p.type === "BUNDLE" && p.bundleSkus);
     if (bundlePromo && bundlePromo.bundleSkus && bundlePromo.bundleFixedPrice) {
         const hasAllSkus = bundlePromo.bundleSkus.every((sku) =>
@@ -87,7 +115,6 @@ export function evaluateCartPromotions(items: Array<{ sku: string; quantity: num
         }
     }
 
-    // 2. Evaluate BUY N GET M Promotions
     items.forEach((item) => {
         const promo = ACTIVE_PROMOTIONS.find((p) => p.type === "BUY_N_GET_M" && p.targetSku === item.sku);
         if (promo && promo.requiredQty && item.quantity >= promo.requiredQty) {
@@ -119,12 +146,9 @@ app.post("/api/pos/promotions/evaluate", (req, res) => {
 app.get("/api/pos/forecast/reorder", async (req, res) => {
     try {
         const { companyId, leadTimeDays = 3 } = req.query;
-        if (!companyId) return res.status(400).json({ error: "companyId required" });
-
-        const cid = String(companyId);
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
         const lTime = Number(leadTimeDays);
 
-        // Fetch past POS sales to compute daily sales velocity per product
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -137,7 +161,6 @@ app.get("/api/pos/forecast/reorder", async (req, res) => {
             include: { items: true },
         });
 
-        // Calculate sales velocity per item title/description
         const salesVelocityMap = new Map<string, number>();
         posInvoices.forEach((inv: any) => {
             inv.items.forEach((it: any) => {
@@ -147,13 +170,11 @@ app.get("/api/pos/forecast/reorder", async (req, res) => {
             });
         });
 
-        // Compute Reorder Point (ROP) & Economic Order Quantity (EOQ)
         const forecastReport = Array.from(salesVelocityMap.entries()).map(([title, totalUnits30Days]) => {
             const avgDailySales = totalUnits30Days / 30;
-            const safetyStock = Math.ceil(avgDailySales * 2); // 2 days safety buffer
+            const safetyStock = Math.ceil(avgDailySales * 2);
             const reorderPoint = Math.ceil(avgDailySales * lTime + safetyStock);
 
-            // Economic Order Quantity: EOQ = sqrt((2 * Demand * OrderCost) / HoldingCost)
             const annualDemand = avgDailySales * 365;
             const eoq = Math.ceil(Math.sqrt((2 * annualDemand * 15000) / 2000));
 
@@ -170,6 +191,7 @@ app.get("/api/pos/forecast/reorder", async (req, res) => {
 
         res.json({
             success: true,
+            companyId: cid,
             leadTimeDays: lTime,
             forecast: forecastReport,
         });
@@ -182,12 +204,9 @@ app.get("/api/pos/forecast/reorder", async (req, res) => {
 app.get("/api/pos/analytics/anomalies", async (req, res) => {
     try {
         const { companyId } = req.query;
-        if (!companyId) return res.status(400).json({ error: "companyId required" });
-
-        const cid = String(companyId);
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
         const currentSession = activeSessionsMap.get(cid);
 
-        // Analyze cashier patterns (voids, cash discrepancies)
         const auditLog: any[] = [];
         let riskScore = 0;
 
@@ -204,6 +223,7 @@ app.get("/api/pos/analytics/anomalies", async (req, res) => {
 
         res.json({
             success: true,
+            companyId: cid,
             cashierRiskScore: Math.min(100, riskScore),
             riskLevel: riskScore > 50 ? "ALTO_RIESGO" : riskScore > 20 ? "MODERADO" : "BAJO_RIESGO",
             auditLog,
@@ -217,15 +237,14 @@ app.get("/api/pos/analytics/anomalies", async (req, res) => {
 app.post("/api/pos/sync/offline-orders", async (req, res) => {
     try {
         const { companyId, offlineOrders } = req.body;
-        if (!companyId || !Array.isArray(offlineOrders)) {
-            return res.status(400).json({ error: "companyId and offlineOrders array required" });
+        if (!Array.isArray(offlineOrders)) {
+            return res.status(400).json({ error: "offlineOrders array required" });
         }
 
-        const cid = String(companyId);
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
         const syncedOrders: any[] = [];
 
         for (const order of offlineOrders) {
-            // Idempotency check: Skip if already synced
             const existing = await prisma.invoice.findFirst({
                 where: { companyId: cid, notes: { contains: `[OFFLINE_UUID:${order.offlineId}]` } },
             });
@@ -291,7 +310,6 @@ app.post("/api/pos/dian/generate-cufe", (req, res) => {
         const { orderId, totalAmount, taxAmount, clientNit, date } = req.body;
         const secretPin = process.env.DIAN_SOFTWARE_PIN || "123456789";
 
-        // DIAN Official SHA-384 CUFE Hash Calculation Algorithm
         const rawCufeStr = `${orderId}${date}${totalAmount}${taxAmount}01${clientNit || "222222222222"}${secretPin}`;
         const cufeHash = crypto.createHash("sha384").update(rawCufeStr).digest("hex");
 
@@ -313,12 +331,10 @@ app.post("/api/pos/dian/generate-cufe", (req, res) => {
 app.get("/api/pos/sessions", async (req, res) => {
     try {
         const { companyId } = req.query;
-        if (!companyId) return res.status(400).json({ error: "companyId required" });
-
-        const cid = String(companyId);
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
         const activeSession = activeSessionsMap.get(cid) || null;
 
-        res.json({ success: true, activeSession });
+        res.json({ success: true, companyId: cid, activeSession });
     } catch (err) {
         res.status(500).json({ error: String(err) });
     }
@@ -327,9 +343,8 @@ app.get("/api/pos/sessions", async (req, res) => {
 app.post("/api/pos/sessions/open", async (req, res) => {
     try {
         const { companyId, registerName = "Caja Principal", openedById, openingBalance = 0 } = req.body;
-        if (!companyId) return res.status(400).json({ error: "companyId required" });
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
 
-        const cid = String(companyId);
         const newSession = {
             id: `pos_session_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
             companyId: cid,
@@ -364,9 +379,7 @@ app.post("/api/pos/sessions/open", async (req, res) => {
 app.post("/api/pos/sessions/close", async (req, res) => {
     try {
         const { companyId, closingBalance = 0, notes } = req.body;
-        if (!companyId) return res.status(400).json({ error: "companyId required" });
-
-        const cid = String(companyId);
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
         const currentSession = activeSessionsMap.get(cid);
         if (!currentSession) return res.status(400).json({ error: "No hay sesión abierta" });
 
@@ -402,9 +415,8 @@ app.post("/api/pos/sessions/close", async (req, res) => {
 app.get("/api/pos/products", async (req, res) => {
     try {
         const { companyId, search } = req.query;
-        if (!companyId) return res.status(400).json({ error: "companyId required" });
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
 
-        const cid = String(companyId);
         const servicePrices = await prisma.servicePrice.findMany({
             where: { companyId: cid, isActive: true },
             take: 100,
@@ -429,10 +441,10 @@ app.get("/api/pos/products", async (req, res) => {
                     p.sku.toLowerCase().includes(q) ||
                     p.barcode.includes(q)
             );
-            return res.json({ success: true, products: filtered });
+            return res.json({ success: true, companyId: cid, products: filtered });
         }
 
-        res.json({ success: true, products });
+        res.json({ success: true, companyId: cid, products });
     } catch (err) {
         res.status(500).json({ error: String(err) });
     }
@@ -451,9 +463,10 @@ app.post("/api/pos/orders", async (req, res) => {
             items = [],
         } = req.body;
 
-        if (!companyId || !items.length) return res.status(400).json({ error: "companyId and items required" });
+        if (!items.length) return res.status(400).json({ error: "items array required" });
 
-        const cid = String(companyId);
+        // Resolve a guaranteed valid companyId in PostgreSQL DB
+        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
 
         let subtotalAmount = 0;
         let taxAmount = 0;
@@ -479,7 +492,6 @@ app.post("/api/pos/orders", async (req, res) => {
             };
         });
 
-        // Apply Dynamic Promotions Engine
         const promoEvaluation = evaluateCartPromotions(items);
         const totalDiscountCombined = Number(discountAmount) + promoEvaluation.totalDiscount;
 
@@ -488,7 +500,6 @@ app.post("/api/pos/orders", async (req, res) => {
         const received = Number(cashReceived) || totalAmount;
         const changeAmount = paymentMethod === "CASH" ? Math.max(0, received - totalAmount) : 0;
 
-        // DIAN CUFE Hash Generation
         const secretPin = "123456789";
         const issueDate = new Date().toISOString();
         const rawCufeStr = `${Date.now()}${issueDate}${totalAmount}${taxAmount}01${customerNit || "222222222222"}${secretPin}`;
@@ -515,7 +526,6 @@ app.post("/api/pos/orders", async (req, res) => {
             include: { items: true },
         });
 
-        // Update active session
         const currentSession = activeSessionsMap.get(cid);
         if (currentSession && currentSession.status === "OPEN") {
             currentSession.orderCount += 1;

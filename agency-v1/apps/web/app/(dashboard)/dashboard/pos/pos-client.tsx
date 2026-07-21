@@ -39,7 +39,7 @@ const DEFAULT_PRODUCTS: Product[] = [
 ];
 
 export default function PosTerminalClient() {
-    const [companyId] = useState("company_default");
+    const [companyId, setCompanyId] = useState("");
     const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -114,9 +114,10 @@ export default function PosTerminalClient() {
     useEffect(() => {
         const fetchCatalog = async () => {
             try {
-                const res = await fetch(`/api/pos/products?companyId=${companyId}`);
+                const res = await fetch(`/api/pos/products`);
                 if (res.ok) {
                     const data = await res.json();
+                    if (data.companyId) setCompanyId(data.companyId);
                     if (data.products && data.products.length > 0) {
                         setProducts(data.products);
                     }
@@ -126,7 +127,7 @@ export default function PosTerminalClient() {
             }
         };
         fetchCatalog();
-    }, [companyId]);
+    }, []);
 
     // Handle Barcode Scan
     const handleBarcodeSubmit = (e: React.FormEvent) => {
