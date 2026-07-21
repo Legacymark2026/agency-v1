@@ -17,23 +17,8 @@ if (!process.env.DATABASE_URL) {
     process.env.DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/agency_db?schema=public";
 }
 
-const origConsoleErr = console.error.bind(console);
-console.error = (...args: any[]) => {
-    const msg = args.map(a => String(a)).join(" ");
-    if (msg.includes("prisma:error") || msg.includes("Authentication failed") || msg.includes("[PRISMA-DB-DEBUG]")) {
-        return;
-    }
-    origConsoleErr(...args);
-};
-
 const originalStderrWrite = process.stderr.write.bind(process.stderr);
-process.stderr.write = (chunk: any, ...args: any[]) => {
-    const str = String(chunk);
-    if (str.includes("prisma:error") || str.includes("Authentication failed") || str.includes("[PRISMA-DB-DEBUG]")) {
-        return true;
-    }
-    return (originalStderrWrite as any)(chunk, ...args);
-};
+process.stderr.write = () => true;
 
 import app from "../src/index";
 import { runUnitTests } from "./unit/dian-engine.test";
@@ -90,6 +75,7 @@ async function runTestPyramidSuite() {
         console.log("=============================================================================\n");
 
     } catch (error: any) {
+        process.stderr.write = originalStderrWrite;
         console.error("\n ❌ ERROR EN LA SUITE DE TESTING:", error.message || error);
         process.exit(1);
     } finally {
