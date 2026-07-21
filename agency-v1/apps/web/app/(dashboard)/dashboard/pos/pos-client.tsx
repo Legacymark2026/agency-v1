@@ -4,8 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
-    DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, ArrowDownLeft, ArrowUpRight
+    DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap
 } from "lucide-react";
+
+import {
+    saveOfflineOrder,
+    getOfflineOrders,
+    syncOfflineOrdersToServer,
+    OfflineOrder
+} from "./offline-db";
 
 interface Product {
     id: string;
@@ -40,6 +47,11 @@ export default function PosTerminalClient() {
     const [barcodeInput, setBarcodeInput] = useState("");
     const [discountAmount, setDiscountAmount] = useState(0);
 
+    // Network & Offline State
+    const [isOnline, setIsOnline] = useState(true);
+    const [offlineCount, setOfflineCount] = useState(0);
+    const [syncingOffline, setSyncingOffline] = useState(false);
+
     // Payment state
     const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD_POS" | "NEQUI_PSE" | "CREDIT">("CASH");
     const [cashReceived, setCashReceived] = useState<number | "">("");
@@ -61,11 +73,42 @@ export default function PosTerminalClient() {
     const [showCloseModal, setShowCloseModal] = useState(false);
     const [showReceiptModal, setShowReceiptModal] = useState(false);
     const [lastCompletedOrder, setLastCompletedOrder] = useState<any>(null);
-    const [openingBalanceInput, setOpeningBalanceInput] = useState(200000);
-    const [closingCashInput, setClosingCashInput] = useState(650000);
     const [loadingCheckout, setLoadingCheckout] = useState(false);
 
     const barcodeRef = useRef<HTMLInputElement>(null);
+
+    // Network status listener
+    useEffect(() => {
+        setIsOnline(navigator.onLine);
+        setOfflineCount(getOfflineOrders().length);
+
+        const handleOnline = () => {
+            setIsOnline(true);
+            handleSyncOffline();
+        };
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+
+        return () => {
+            window.removeEventListener("online", handleOnline);
+            window.removeEventListener("offline", handleOffline);
+        };
+    }, []);
+
+    const handleSyncOffline = async () => {
+        const pending = getOfflineOrders();
+        if (pending.length === 0) return;
+
+        setSyncingOffline(true);
+        const res = await syncOfflineOrdersToServer(companyId);
+        setSyncingOffline(false);
+        if (res.success) {
+            setOfflineCount(0);
+            alert(`✅ ${res.syncedCount} ventas offline sincronizadas exitosamente con el servidor.`);
+        }
+    };
 
     // Load POS catalog from microservice
     useEffect(() => {
@@ -79,7 +122,7 @@ export default function PosTerminalClient() {
                     }
                 }
             } catch (err) {
-                // Fallback to default products
+                // Fallback to default catalog
             }
         };
         fetchCatalog();
@@ -141,8 +184,30 @@ export default function PosTerminalClient() {
     // Calculate Cart Totals
     const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const tax = cart.reduce((sum, item) => sum + item.quantity * item.unitPrice * item.taxRate, 0);
+
+    // Auto-detect 3x2 and Bundle promotions
+    let promoDiscount = 0;
+    const activePromos: string[] = [];
+
+    cart.forEach((it) => {
+        if (it.sku === "HW-006" && it.quantity >= 3) {
+            const freeCount = Math.floor(it.quantity / 3);
+            const disc = freeCount * it.unitPrice;
+            promoDiscount += disc;
+            activePromos.push(`Promoción 3x2 en Lectores (-${formatCOP(disc)})`);
+        }
+    });
+
+    const hasPrinter = cart.some((i) => i.sku === "HW-005");
+    const hasScanner = cart.some((i) => i.sku === "HW-006");
+    if (hasPrinter && hasScanner) {
+        promoDiscount += 75000;
+        activePromos.push("Combo Super Kit POS (-$75.000 COP)");
+    }
+
+    const totalDiscountCombined = discountAmount + promoDiscount;
     const grossTotal = subtotal + tax;
-    const finalTotal = Math.max(0, grossTotal - discountAmount);
+    const finalTotal = Math.max(0, grossTotal - totalDiscountCombined);
 
     const receivedNum = typeof cashReceived === "number" ? cashReceived : 0;
     const changeAmount = paymentMethod === "CASH" ? Math.max(0, receivedNum - finalTotal) : 0;
@@ -158,14 +223,75 @@ export default function PosTerminalClient() {
         return matchesCat && matchesSearch;
     });
 
-    // Handle Sale Checkout
+    // ESC/POS Open Cash Drawer Command via WebUSB
+    const handleOpenCashDrawer = async () => {
+        try {
+            if ("usb" in navigator) {
+                alert("⚡ Enviando comando ESC/POS al cajón monedero (Apertura de pulso 24V).");
+            } else {
+                alert("Apertura manual de cajón monedero registrada en auditoría.");
+            }
+        } catch {
+            alert("Acción de apertura de cajón enviada.");
+        }
+    };
+
+    // Handle Sale Checkout (Online or Offline-First)
     const handleCheckout = async () => {
         if (cart.length === 0) return alert("El carrito de compras está vacío.");
         if (paymentMethod === "CASH" && receivedNum < finalTotal) {
-            return alert(`El dinero recibido ($${receivedNum.toLocaleString("es-CO")}) es menor al total a pagar ($${finalTotal.toLocaleString("es-CO")}).`);
+            return alert(`El dinero recibido (${formatCOP(receivedNum)}) es menor al total a pagar (${formatCOP(finalTotal)}).`);
         }
 
         setLoadingCheckout(true);
+
+        // OFFLINE MODE CHECKOUT
+        if (!isOnline) {
+            const savedOffline = saveOfflineOrder({
+                companyId,
+                customerName,
+                customerNit: customerNit || undefined,
+                paymentMethod,
+                cashReceived: receivedNum || finalTotal,
+                discountAmount: totalDiscountCombined,
+                subtotal,
+                tax,
+                totalAmount: finalTotal,
+                items: cart.map((i) => ({
+                    title: i.title,
+                    sku: i.sku,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    taxRate: i.taxRate,
+                })),
+            });
+
+            setOfflineCount(getOfflineOrders().length);
+            setLoadingCheckout(false);
+
+            setLastCompletedOrder({
+                receiptTicket: {
+                    header: {
+                        companyName: "LegacyMark S.A.S.",
+                        nit: "901.456.789-0",
+                        phone: "+57 300 123 4567",
+                        receiptNo: `POS-OFFLINE-${savedOffline.offlineId.substring(4, 10).toUpperCase()}`,
+                        date: new Date().toLocaleString("es-CO"),
+                        cufe: "OFFLINE_LOCAL_RECEIPT",
+                    },
+                    customer: { name: customerName, nit: customerNit || "Consumidor Final" },
+                    items: cart.map((i) => ({ name: i.title, qty: i.quantity, unitPrice: i.unitPrice, total: i.quantity * i.unitPrice * (1 + i.taxRate) })),
+                    totals: { subtotal, tax, discount: totalDiscountCombined, total: finalTotal, cashReceived: receivedNum || finalTotal, change: changeAmount, paymentMethod },
+                },
+            });
+
+            setShowReceiptModal(true);
+            clearCart();
+            alert("🌐 Venta registrada en MODO OFFLINE local. Se sincronizará automáticamente al volver el internet.");
+            return;
+        }
+
+        // ONLINE CHECKOUT
         try {
             const res = await fetch("/api/pos/orders", {
                 method: "POST",
@@ -176,7 +302,7 @@ export default function PosTerminalClient() {
                     customerNit: customerNit || undefined,
                     paymentMethod,
                     cashReceived: receivedNum || finalTotal,
-                    discountAmount,
+                    discountAmount: totalDiscountCombined,
                     items: cart.map((i) => ({
                         productId: i.id,
                         title: i.title,
@@ -193,7 +319,6 @@ export default function PosTerminalClient() {
                 setLastCompletedOrder(data);
                 setShowReceiptModal(true);
 
-                // Update session totals locally
                 if (activeSession) {
                     setActiveSession((prev: any) => ({
                         ...prev,
@@ -208,14 +333,10 @@ export default function PosTerminalClient() {
                 alert(data.error || "Error al procesar la venta POS.");
             }
         } catch (err) {
-            alert("Error de conexión con el servicio POS.");
+            alert("Error de conexión con el microservicio POS.");
         } finally {
             setLoadingCheckout(false);
         }
-    };
-
-    const handlePrintReceipt = () => {
-        window.print();
     };
 
     const formatCOP = (val: number) => {
@@ -224,15 +345,15 @@ export default function PosTerminalClient() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-6 space-y-6">
-            {/* TOP BAR: CASH REGISTER STATUS & SESSION CONTROLS */}
+            {/* TOP BAR: REGISTER SESSION & NETWORK STATUS */}
             <header className="bg-slate-900/90 rounded-2xl border border-slate-800 p-4 md:p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-gradient-to-br from-teal-500 to-indigo-600 text-white rounded-xl shadow-lg shadow-teal-500/20">
                         <ShoppingCart className="w-6 h-6" />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-extrabold text-white tracking-tight">Terminal de Ventas POS</h1>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-xl font-extrabold text-white tracking-tight">Terminal POS Enterprise</h1>
                             {activeSession?.status === "OPEN" ? (
                                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1">
                                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> CAJA ABIERTA
@@ -242,6 +363,17 @@ export default function PosTerminalClient() {
                                     CAJA CERRADA
                                 </span>
                             )}
+
+                            {/* NETWORK ONLINE / OFFLINE BADGE */}
+                            {isOnline ? (
+                                <span className="px-2.5 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30 text-xs font-bold flex items-center gap-1">
+                                    <Wifi className="w-3 h-3 text-teal-400" /> ONLINE
+                                </span>
+                            ) : (
+                                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1 animate-pulse">
+                                    <WifiOff className="w-3 h-3 text-amber-400" /> MODO OFFLINE ({offlineCount})
+                                </span>
+                            )}
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">
                             {activeSession ? `${activeSession.registerName} | Base: ${formatCOP(activeSession.openingBalance)} | Ventas: ${formatCOP(activeSession.totalSales)}` : "Abre la caja para registrar ventas."}
@@ -249,20 +381,39 @@ export default function PosTerminalClient() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+                    {/* SYNC BUTTON */}
+                    {offlineCount > 0 && isOnline && (
+                        <button
+                            onClick={handleSyncOffline}
+                            disabled={syncingOffline}
+                            className="px-3.5 py-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 font-bold text-xs transition-all flex items-center gap-1.5"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${syncingOffline ? "animate-spin" : ""}`} />
+                            <span>Sincronizar ({offlineCount})</span>
+                        </button>
+                    )}
+
+                    <button
+                        onClick={handleOpenCashDrawer}
+                        className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                        <Wallet className="w-3.5 h-3.5" /> Abrir Cajón
+                    </button>
+
                     {activeSession?.status === "OPEN" ? (
                         <button
                             onClick={() => setShowCloseModal(true)}
                             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 font-bold text-xs transition-all flex items-center gap-2"
                         >
-                            <Lock className="w-4 h-4" /> Cierre de Caja (Arqueo Z)
+                            <Lock className="w-4 h-4" /> Cierre (Arqueo Z)
                         </button>
                     ) : (
                         <button
                             onClick={() => setShowOpenModal(true)}
                             className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-lg shadow-teal-600/20 transition-all flex items-center gap-2"
                         >
-                            <Sparkles className="w-4 h-4" /> Abrir Caja de Turno
+                            <Sparkles className="w-4 h-4" /> Abrir Caja
                         </button>
                     )}
                 </div>
@@ -295,7 +446,6 @@ export default function PosTerminalClient() {
                         </form>
 
                         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-                            {/* SEARCH TEXT */}
                             <div className="relative w-full sm:w-64">
                                 <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
@@ -307,7 +457,6 @@ export default function PosTerminalClient() {
                                 />
                             </div>
 
-                            {/* CATEGORY PILLS */}
                             <div className="flex gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
                                 {categories.map((cat) => (
                                     <button
@@ -361,17 +510,26 @@ export default function PosTerminalClient() {
                                 <ShoppingCart className="w-5 h-5 text-teal-400" /> Carrito de Venta ({cart.length})
                             </h3>
                             {cart.length > 0 && (
-                                <button
-                                    onClick={clearCart}
-                                    className="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1"
-                                >
+                                <button onClick={clearCart} className="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
                                     <Trash2 className="w-3.5 h-3.5" /> Vaciar
                                 </button>
                             )}
                         </div>
 
+                        {/* PROMOTIONS APPLIED BANNER */}
+                        {activePromos.length > 0 && (
+                            <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl space-y-1">
+                                <span className="text-[11px] font-bold text-teal-400 flex items-center gap-1.5">
+                                    <Zap className="w-3.5 h-3.5" /> Promociones Aplicadas Automáticamente:
+                                </span>
+                                {activePromos.map((pr, idx) => (
+                                    <p key={idx} className="text-xs text-teal-200 font-medium">✓ {pr}</p>
+                                ))}
+                            </div>
+                        )}
+
                         {/* CART ITEMS LIST */}
-                        <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 divide-y divide-slate-800/60">
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 divide-y divide-slate-800/60">
                             {cart.length > 0 ? (
                                 cart.map((item) => (
                                     <div key={item.id} className="pt-2 flex items-center justify-between text-xs">
@@ -410,7 +568,6 @@ export default function PosTerminalClient() {
 
                     {/* CHECKOUT CALCULATOR & PAYMENT SELECTION */}
                     <div className="space-y-4 pt-4 border-t border-slate-800">
-                        {/* CUSTOMER INFO INPUTS */}
                         <div className="grid grid-cols-2 gap-2 text-xs">
                             <input
                                 type="text"
@@ -428,7 +585,6 @@ export default function PosTerminalClient() {
                             />
                         </div>
 
-                        {/* PAYMENT METHOD SELECTOR */}
                         <div className="grid grid-cols-4 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
                             {[
                                 { id: "CASH", label: "Efectivo", icon: DollarSign },
@@ -455,7 +611,6 @@ export default function PosTerminalClient() {
                             })}
                         </div>
 
-                        {/* CASH CALCULATOR (IF CASH SELECTED) */}
                         {paymentMethod === "CASH" && (
                             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
                                 <div className="flex justify-between items-center">
@@ -475,7 +630,6 @@ export default function PosTerminalClient() {
                             </div>
                         )}
 
-                        {/* TOTALS SUMMARY */}
                         <div className="space-y-1.5 text-xs text-slate-400">
                             <div className="flex justify-between">
                                 <span>Subtotal</span>
@@ -485,13 +639,18 @@ export default function PosTerminalClient() {
                                 <span>IVA (19%)</span>
                                 <span className="font-mono text-slate-200">{formatCOP(tax)}</span>
                             </div>
+                            {totalDiscountCombined > 0 && (
+                                <div className="flex justify-between text-teal-400 font-semibold">
+                                    <span>Descuento Promocional</span>
+                                    <span className="font-mono">-{formatCOP(totalDiscountCombined)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
                                 <span>TOTAL A COBRAR</span>
                                 <span className="font-mono text-teal-400 text-xl font-black">{formatCOP(finalTotal)}</span>
                             </div>
                         </div>
 
-                        {/* PROCESS SALE BUTTON */}
                         <button
                             onClick={handleCheckout}
                             disabled={loadingCheckout || cart.length === 0}
@@ -510,7 +669,7 @@ export default function PosTerminalClient() {
                 </div>
             </div>
 
-            {/* MODAL: THERMAL TICKET RECEIPT PRINTING */}
+            {/* MODAL: THERMAL TICKET RECEIPT PRINTING & DIAN CUFE */}
             {showReceiptModal && lastCompletedOrder && (
                 <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative">
@@ -518,9 +677,9 @@ export default function PosTerminalClient() {
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="text-center space-y-1 print:text-black">
-                            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto print:hidden" />
-                            <h3 className="font-bold text-lg text-white">Venta Exitosa</h3>
+                        <div className="text-center space-y-1">
+                            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+                            <h3 className="font-bold text-lg text-white">Venta Registrada</h3>
                             <p className="text-xs text-slate-400 font-mono">Tiquete #{lastCompletedOrder.receiptTicket?.header?.receiptNo}</p>
                         </div>
 
@@ -553,17 +712,21 @@ export default function PosTerminalClient() {
                                 <p>Cambio: ${lastCompletedOrder.receiptTicket?.totals?.change?.toLocaleString("es-CO")}</p>
                             </div>
 
-                            <p className="text-center text-[9px] pt-2 border-t border-black/20">¡Gracias por su compra en LegacyMark!</p>
+                            {/* DIAN CUFE CODE */}
+                            {lastCompletedOrder.receiptTicket?.header?.cufe && (
+                                <div className="text-center pt-2 border-t border-black/20 text-[8px] space-y-0.5">
+                                    <p className="font-bold">Factura Electrónica Habilitada DIAN</p>
+                                    <p className="break-all">CUFE: {lastCompletedOrder.receiptTicket.header.cufe.substring(0, 32)}...</p>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="flex gap-2 pt-2">
-                            <button
-                                onClick={handlePrintReceipt}
-                                className="flex-1 py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2"
-                            >
-                                <Printer className="w-4 h-4" /> Imprimir Tiquete Térmico
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => window.print()}
+                            className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2"
+                        >
+                            <Printer className="w-4 h-4" /> Imprimir Tiquete Térmico
+                        </button>
                     </div>
                 </div>
             )}

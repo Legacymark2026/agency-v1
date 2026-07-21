@@ -1,7 +1,8 @@
 /**
- * POS Service — Unit Tests
+ * POS Service — Unit Tests & Enterprise Engine Validation
  */
 import { describe, it, expect } from "vitest";
+import { evaluateCartPromotions } from "./index";
 
 function calculatePosCart(items: Array<{ quantity: number; unitPrice: number; taxRate: number }>, discount = 0) {
     let subtotal = 0;
@@ -31,11 +32,11 @@ function calculateCashChange(total: number, cashReceived: number) {
 describe("POS Service — Cart & Change Calculations", () => {
     it("calculates POS cart subtotal, 19% VAT, and final total correctly", () => {
         const items = [
-            { quantity: 2, unitPrice: 50000, taxRate: 0.19 }, // 100,000 subtotal + 19,000 tax
-            { quantity: 1, unitPrice: 20000, taxRate: 0.19 }, // 20,000 subtotal + 3,800 tax
+            { quantity: 2, unitPrice: 50000, taxRate: 0.19 },
+            { quantity: 1, unitPrice: 20000, taxRate: 0.19 },
         ];
 
-        const result = calculatePosCart(items, 10000); // 10,000 COP discount
+        const result = calculatePosCart(items, 10000);
         expect(result.subtotal).toBe(120000);
         expect(result.tax).toBe(22800);
         expect(result.total).toBe(132800);
@@ -44,5 +45,29 @@ describe("POS Service — Cart & Change Calculations", () => {
     it("calculates cash change correctly for POS register", () => {
         expect(calculateCashChange(85000, 100000)).toBe(15000);
         expect(calculateCashChange(50000, 50000)).toBe(0);
+    });
+});
+
+describe("POS Service — Dynamic Promotions Engine", () => {
+    it("applies 3x2 promotion correctly when 3 units are purchased", () => {
+        const items = [
+            { title: "Lector Código de Barras", sku: "HW-006", quantity: 3, unitPrice: 195000 },
+        ];
+
+        const evaluation = evaluateCartPromotions(items);
+        expect(evaluation.totalDiscount).toBe(195000); // 1 item free (3rd item)
+        expect(evaluation.appliedPromos.length).toBe(1);
+    });
+
+    it("applies Bundle discount when all bundle items are present in cart", () => {
+        const items = [
+            { title: "Impresora Térmica", sku: "HW-005", quantity: 1, unitPrice: 380000 },
+            { title: "Lector Código de Barras", sku: "HW-006", quantity: 1, unitPrice: 195000 },
+        ];
+
+        // Regular sum: $575,000 COP. Bundle price: $500,000 COP -> Savings = $75,000 COP
+        const evaluation = evaluateCartPromotions(items);
+        expect(evaluation.totalDiscount).toBe(75000);
+        expect(evaluation.appliedPromos.length).toBe(1);
     });
 });
