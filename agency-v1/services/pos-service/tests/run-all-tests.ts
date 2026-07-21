@@ -1,4 +1,17 @@
+import fs from "fs";
+import path from "path";
+
 process.env.NODE_ENV = "test";
+
+// Load real DATABASE_URL from root .env if present
+const rootEnvPath = path.resolve(__dirname, "../../../.env");
+if (fs.existsSync(rootEnvPath)) {
+    const envContent = fs.readFileSync(rootEnvPath, "utf-8");
+    const match = envContent.match(/DATABASE_URL=["']?([^"'\r\n]+)["']?/);
+    if (match && match[1]) {
+        process.env.DATABASE_URL = match[1];
+    }
+}
 
 if (!process.env.DATABASE_URL) {
     process.env.DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/agency_db?schema=public";
