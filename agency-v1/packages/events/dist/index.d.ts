@@ -269,6 +269,15 @@ export declare const EVENTS: {
     readonly "task.completed": {
         readonly source: "project-service";
     };
+    readonly "pos.session.opened": {
+        readonly source: "pos-service";
+    };
+    readonly "pos.session.closed": {
+        readonly source: "pos-service";
+    };
+    readonly "pos.order.created": {
+        readonly source: "pos-service";
+    };
 };
 export type EventName = keyof typeof EVENTS;
 export interface EventPayload {
