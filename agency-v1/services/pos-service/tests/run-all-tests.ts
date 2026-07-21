@@ -17,9 +17,12 @@ async function runTestPyramidSuite() {
     let server: http.Server | null = null;
 
     try {
-        // Start ephemeral in-memory server for API Integration & E2E tests
-        server = app.listen(TEST_PORT, "127.0.0.1");
-        const baseUrl = `http://127.0.0.1:${TEST_PORT}`;
+        // Start ephemeral in-memory server on free port for API Integration & E2E tests
+        server = await new Promise<http.Server>((resolve) => {
+            const s = app.listen(0, "127.0.0.1", () => resolve(s));
+        });
+        const assignedPort = (server.address() as any).port;
+        const baseUrl = `http://127.0.0.1:${assignedPort}`;
 
         const startTime = Date.now();
 
