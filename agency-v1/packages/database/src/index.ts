@@ -35,6 +35,7 @@ const getRuntimeEnv = (key: string): string | undefined => {
 
 // Write debug info directly to stderr
 const writeDebug = (msg: string) => {
+  if (getRuntimeEnv("NODE_ENV") === "test") return;
   const g = typeof globalThis !== "undefined" ? (globalThis as any) : {};
   const p = g["process"];
   if (p && p.stderr) {
@@ -43,7 +44,9 @@ const writeDebug = (msg: string) => {
 };
 
 const logConfig =
-  getRuntimeEnv("NODE_ENV") === "development"
+  getRuntimeEnv("NODE_ENV") === "test"
+    ? []
+    : getRuntimeEnv("NODE_ENV") === "development"
     ? ["query", "error", "warn"]
     : ["error"];
 
