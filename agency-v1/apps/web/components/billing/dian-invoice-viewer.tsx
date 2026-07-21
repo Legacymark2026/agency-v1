@@ -103,28 +103,58 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
         return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 2 }).format(num);
     };
 
+    const handleDownloadXml = () => {
+        const xmlStr = `<?xml version="1.0" encoding="UTF-8"?><Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"><cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID><cbc:ID>${data.documentNumber}</cbc:ID><cbc:UUID>${data.cufeOrCude}</cbc:UUID><cbc:IssueDate>${data.issueDate}</cbc:IssueDate></Invoice>`;
+        const blob = new Blob([xmlStr], { type: "application/xml" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Factura_DIAN_${data.documentNumber}_UBL21.xml`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleVerifyDianPortal = () => {
+        window.open(`https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${data.cufeOrCude}`, "_blank");
+    };
+
     return (
         <div className="bg-slate-950 text-slate-900 font-sans p-2 md:p-6 min-h-screen flex flex-col items-center">
             {/* ACTION BAR (HIDDEN IN PRINT) */}
-            <div className="w-full max-w-4xl mb-4 flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl text-white print:hidden">
+            <div className="w-full max-w-4xl mb-4 flex flex-col sm:flex-row justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl text-white gap-3 print:hidden">
                 <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                    <span className="font-bold text-sm">Representación Gráfica Oficial DIAN (Anexo 1.8)</span>
+                    <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <div>
+                        <span className="font-bold text-sm block">Representación Gráfica Oficial DIAN (Anexo 1.8)</span>
+                        <span className="text-[11px] text-slate-400 font-mono">CUFE: {data.cufeOrCude.substring(0, 32)}...</span>
+                    </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={handleVerifyDianPortal}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                    >
+                        <QrCode className="w-3.5 h-3.5" /> Consultar DIAN
+                    </button>
+                    <button
+                        onClick={handleDownloadXml}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                    >
+                        <Download className="w-3.5 h-3.5 text-emerald-400" /> XML UBL 2.1
+                    </button>
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-all"
+                            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-all"
                         >
                             Cerrar
                         </button>
                     )}
                     <button
                         onClick={handlePrint}
-                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20"
                     >
-                        <Printer className="w-4 h-4" /> Imprimir Documento A4
+                        <Printer className="w-4 h-4" /> Imprimir A4
                     </button>
                 </div>
             </div>

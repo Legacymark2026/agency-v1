@@ -8,6 +8,13 @@ import helmet from "helmet";
 import crypto from "crypto";
 import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
+import {
+    calculateDianCufe,
+    generateDianQrUrl,
+    buildDianUbl21Xml,
+    calculateNitDv,
+    runDianHabilitationTestSet
+} from "./dian-engine";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4020", 10);
@@ -578,6 +585,43 @@ app.post("/api/pos/orders", async (req, res) => {
             promotionsApplied: promoEvaluation.appliedPromos,
             receiptTicket,
         });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Endpoint 1: Validar DV de NIT
+app.post("/api/pos/dian/verify-nit-dv", (req, res) => {
+    const { nit } = req.body;
+    const dv = calculateNitDv(String(nit || ""));
+    res.json({ success: true, nit, dv });
+});
+
+// Endpoint 2: Generar XML UBL 2.1 Oficial DIAN
+app.post("/api/pos/dian/generate-xml-ubl21", (req, res) => {
+    try {
+        const payload = req.body;
+        const cufe = calculateDianCufe(payload);
+        const xmlContent = buildDianUbl21Xml(payload, cufe);
+        const qrUrl = generateDianQrUrl(cufe);
+
+        res.json({
+            success: true,
+            cufe,
+            qrUrl,
+            xmlContent
+        });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// Endpoint 3: Ejecutar Set de Pruebas de Habilitación DIAN
+app.post("/api/pos/dian/run-test-set", (req, res) => {
+    try {
+        const { testSetId, issuer } = req.body;
+        const result = runDianHabilitationTestSet(testSetId || "dian-test-set-88291", issuer);
+        res.json({ success: true, habilitation: result });
     } catch (err) {
         res.status(500).json({ error: String(err) });
     }
