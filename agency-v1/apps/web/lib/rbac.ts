@@ -109,6 +109,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Finanzas y Operaciones ────────────────────────────
     "/dashboard/pos": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/catalog": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/promotions": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/admin/treasury": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/invoices": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/payroll": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
@@ -239,9 +240,9 @@ export function getAccessibleRoutes(role: UserRole): string[] {
 export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     // Dashboard base
     { perm: "dashboard.view", routes: ["/dashboard", "/dashboard/pos"] },
-    // POS Terminal & Catalog
-    { perm: "pos.view", routes: ["/dashboard/pos", "/dashboard/catalog"] },
-    { perm: "pos.manage", routes: ["/dashboard/pos", "/dashboard/catalog"] },
+    // POS Terminal & Catalog & Promotions
+    { perm: "pos.view", routes: ["/dashboard/pos", "/dashboard/catalog", "/dashboard/promotions"] },
+    { perm: "pos.manage", routes: ["/dashboard/pos", "/dashboard/catalog", "/dashboard/promotions"] },
     // IAM / Admin
     { perm: "iam.view_users", routes: ["/dashboard/users"] },
     { perm: "iam.manage_users", routes: ["/dashboard/users", "/dashboard/experts"] },

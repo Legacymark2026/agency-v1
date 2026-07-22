@@ -40,6 +40,7 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/pos", label: "Terminal POS (Caja)", icon: <ShoppingBag size={14} />, code: "POS" },
             { href: "/dashboard/catalog", label: "Catálogo & Productos", icon: <Package size={14} />, code: "CAT" },
+            { href: "/dashboard/promotions", label: "Promociones & Cupones", icon: <Percent size={14} />, code: "PRM" },
             { href: "/dashboard/admin/crm", label: "Command Center", icon: <TrendingUp size={14} />, code: "OVW" },
             { href: "/dashboard/admin/crm/leads", label: "Leads", icon: <Users size={14} />, code: "LDS" },
             { href: "/dashboard/admin/crm/assignment", label: "Asignación de Leads", icon: <Workflow size={14} />, code: "RUT" },

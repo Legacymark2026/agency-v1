@@ -671,6 +671,64 @@ app.delete("/api/pos/products/:id", async (req, res) => {
     }
 });
 
+// ── MULTI-CATALOG & PROMOTIONS ENDPOINTS ──────────────────────────────────────
+
+// GET /api/pos/catalogs - Obtener Lista de Catálogos
+app.get("/api/pos/catalogs", async (req, res) => {
+    try {
+        const catalogs = await catalogService.getRepository().getCatalogs();
+        res.json({ success: true, catalogs });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/catalogs - Crear Nuevo Catálogo
+app.post("/api/pos/catalogs", async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const newCat = await catalogService.getRepository().createCatalog(name, description);
+        res.status(201).json({ success: true, catalog: newCat });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// GET /api/pos/promotions/coupons - Obtener Reglas de Cupones y Promociones
+app.get("/api/pos/promotions/coupons", async (req, res) => {
+    try {
+        const coupons = await catalogService.getRepository().getCoupons();
+        res.json({ success: true, coupons });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/promotions/coupons - Crear Nueva Regla de Cupón o Promoción
+app.post("/api/pos/promotions/coupons", async (req, res) => {
+    try {
+        const companyId = await resolveValidCompanyId(req.body.companyId);
+        const newCoupon = await catalogService.getRepository().createCoupon({
+            ...req.body,
+            companyId,
+        });
+        res.status(201).json({ success: true, coupon: newCoupon });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// PATCH /api/pos/promotions/coupons/:id/toggle - Activar / Desactivar Promoción
+app.patch("/api/pos/promotions/coupons/:id/toggle", async (req, res) => {
+    try {
+        const updated = await catalogService.getRepository().toggleCoupon(req.params.id);
+        if (!updated) return res.status(404).json({ error: "Cupón no encontrado" });
+        res.json({ success: true, coupon: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Endpoint 1: Validar DV de NIT
 app.post("/api/pos/dian/verify-nit-dv", (req, res) => {
     const { nit } = req.body;
