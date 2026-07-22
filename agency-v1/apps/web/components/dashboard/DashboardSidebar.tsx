@@ -7,7 +7,7 @@ import {
     MessageSquare, Target, TrendingUp, Link2, Building2,
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
-    PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag
+    PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag, Package
 } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
@@ -39,6 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
         accent: "amber", icon: <Briefcase size={20} />,
         items: [
             { href: "/dashboard/pos", label: "Terminal POS (Caja)", icon: <ShoppingBag size={14} />, code: "POS" },
+            { href: "/dashboard/catalog", label: "Catálogo & Productos", icon: <Package size={14} />, code: "CAT" },
             { href: "/dashboard/admin/crm", label: "Command Center", icon: <TrendingUp size={14} />, code: "OVW" },
             { href: "/dashboard/admin/crm/leads", label: "Leads", icon: <Users size={14} />, code: "LDS" },
             { href: "/dashboard/admin/crm/assignment", label: "Asignación de Leads", icon: <Workflow size={14} />, code: "RUT" },

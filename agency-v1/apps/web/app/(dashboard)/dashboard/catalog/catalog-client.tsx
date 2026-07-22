@@ -163,6 +163,75 @@ export default function CatalogClient() {
         }
     };
 
+    const [editingProduct, setEditingProduct] = useState<CatalogItem | null>(null);
+
+    const handleEditOpen = (p: CatalogItem) => {
+        setEditingProduct(p);
+        setTitle(p.title);
+        setSku(p.sku);
+        setBarcode(p.barcode);
+        setCategory(p.category);
+        setUnitPrice(String(p.unitPrice));
+        setCostPrice(String(p.costPrice || 0));
+        setWholesalePrice(String(p.wholesalePrice || p.unitPrice * 0.85));
+        setStock(String(p.stock));
+        setLocation(p.location || "Bodega Principal");
+        setDescription(p.description || "");
+    };
+
+    const handleUpdateSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingProduct) return;
+        setSubmitting(true);
+        setFormError(null);
+
+        try {
+            const uPrice = parseFloat(unitPrice) || 0;
+            const cPrice = parseFloat(costPrice) || 0;
+            const wPrice = parseFloat(wholesalePrice) || (uPrice * 0.85);
+
+            const res = await fetch(`/api/pos/products/${editingProduct.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title,
+                    unitPrice: uPrice,
+                    costPrice: cPrice,
+                    wholesalePrice: wPrice,
+                    stock: parseInt(stock, 10) || 0,
+                    isActive: true,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.error || "Fallo al actualizar producto");
+
+            const updatedProd = data.product;
+            setProducts(prev => prev.map(p => p.id === updatedProd.id ? updatedProd : p));
+            setEditingProduct(null);
+            alert(`✅ Producto "${updatedProd.title}" actualizado exitosamente.`);
+        } catch (err: any) {
+            setFormError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteProduct = async (p: CatalogItem) => {
+        if (!confirm(`¿Estás seguro de eliminar el producto "${p.title}" del catálogo?`)) return;
+
+        try {
+            const res = await fetch(`/api/pos/products/${p.id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setProducts(prev => prev.filter(x => x.id !== p.id));
+                alert(`🗑️ Producto "${p.title}" eliminado exitosamente del catálogo.`);
+            }
+        } catch (err: any) {
+            alert(`Error al eliminar producto: ${err.message}`);
+        }
+    };
+
     const handleStockAdjustmentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!stockAdjustmentModal) return;
@@ -427,6 +496,22 @@ export default function CatalogClient() {
                                         >
                                             <History className="w-4 h-4" />
                                         </button>
+
+                                        <button
+                                            onClick={() => handleEditOpen(p)}
+                                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-400 hover:text-teal-300 transition-all"
+                                            title="Editar Producto"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleDeleteProduct(p)}
+                                            className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-rose-400 transition-all"
+                                            title="Eliminar Producto"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -461,9 +546,11 @@ export default function CatalogClient() {
                                     <td className="p-3.5 font-mono text-indigo-300">{formatCOP(p.wholesalePrice || p.unitPrice * 0.85)}</td>
                                     <td className="p-3.5 font-bold">{p.stock} un.</td>
                                     <td className="p-3.5 text-slate-400">{p.location || "Bodega Central"}</td>
-                                    <td className="p-3.5 text-right space-x-2">
-                                        <button onClick={() => setSelectedBarcodeProduct(p)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg"><Printer className="w-3.5 h-3.5" /></button>
-                                        <button onClick={() => setStockAdjustmentModal(p)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg"><SlidersHorizontal className="w-3.5 h-3.5" /></button>
+                                    <td className="p-3.5 text-right space-x-1.5">
+                                        <button onClick={() => setSelectedBarcodeProduct(p)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg" title="Imprimir Barras"><Printer className="w-3.5 h-3.5" /></button>
+                                        <button onClick={() => setStockAdjustmentModal(p)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg" title="Kárdex"><SlidersHorizontal className="w-3.5 h-3.5" /></button>
+                                        <button onClick={() => handleEditOpen(p)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-lg" title="Editar"><Edit3 className="w-3.5 h-3.5" /></button>
+                                        <button onClick={() => handleDeleteProduct(p)} className="p-1.5 bg-slate-800 hover:bg-rose-900/40 text-rose-400 rounded-lg" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
                                     </td>
                                 </tr>
                             ))}
@@ -647,6 +734,62 @@ export default function CatalogClient() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 5: EDIT CATALOG ITEM */}
+            {editingProduct && (
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center">
+                                    <Edit3 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Editar Producto del Catálogo</h2>
+                                    <p className="text-xs text-slate-400">Actualizar tarifas y existencias en el microservicio POS</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setEditingProduct(null)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">✕</button>
+                        </div>
+
+                        <form onSubmit={handleUpdateSubmit} className="p-6 space-y-4">
+                            {formError && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">{formError}</div>}
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Nombre del Producto o Servicio *</label>
+                                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 transition-all" />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Precio Detal *</label>
+                                    <input type="number" required value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition-all font-mono" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Precio Costo</label>
+                                    <input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 transition-all font-mono" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Mayorista (-15%)</label>
+                                    <input type="number" value={wholesalePrice} onChange={(e) => setWholesalePrice(e.target.value)} className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500 transition-all font-mono" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Stock Actual</label>
+                                <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-teal-500 transition-all font-mono" />
+                            </div>
+
+                            <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
+                                <button type="button" onClick={() => setEditingProduct(null)} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs transition-all">Cancelar</button>
+                                <button type="submit" disabled={submitting} className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-lg shadow-teal-600/20 transition-all flex items-center gap-2">
+                                    {submitting ? "Actualizando..." : <><CheckCircle2 className="w-4 h-4" /> Guardar Cambios</>}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
