@@ -12,6 +12,8 @@
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
+    "@grpc/grpc-js": "^1.12.5",
+    "@grpc/proto-loader": "^0.7.13",
     "express": "^5.1.0",
     "cors": "^2.8.5",
     "helmet": "^8.1.0",

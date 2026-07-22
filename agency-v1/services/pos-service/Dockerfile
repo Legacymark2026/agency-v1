@@ -30,6 +30,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/database ./packages/database
 COPY --from=builder /app/packages/events ./packages/events
 COPY --from=builder /app/services/pos-service/dist ./dist
+COPY --from=builder /app/services/pos-service/proto ./proto
 COPY --from=builder /app/services/pos-service/package.json ./package.json
-EXPOSE 4020
+EXPOSE 4020 50051
 CMD ["node", "dist/index.js"]
