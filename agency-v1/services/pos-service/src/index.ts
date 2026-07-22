@@ -15,10 +15,14 @@ import {
     calculateNitDv,
     runDianHabilitationTestSet
 } from "./dian-engine";
+import { CatalogService } from "./catalog-service";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4020", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+
+const eventBus = new EventBus(REDIS_URL, "pos-service");
+const catalogService = new CatalogService(eventBus);
 
 app.use(helmet());
 app.use(cors());
@@ -625,19 +629,77 @@ app.post("/api/pos/orders", async (req, res) => {
     }
 });
 
-// Endpoint 0: Obtener Catálogo POS
+// ── CATALOG MICROSERVICE REST API ENDPOINTS ──────────────────────────────────
+
+// 1. GET /api/pos/products - Obtener Catálogo con Filtros
 app.get("/api/pos/products", async (req, res) => {
     try {
         const companyId = await resolveValidCompanyId(req.query.companyId as string);
-        const products = [
-            { id: "p1", title: "Consultoría Estratégica POS (1 hora)", sku: "SERV-001", barcode: "7701001001", category: "Servicios", unitPrice: 150000, costPrice: 65000, wholesalePrice: 125000, taxRate: 0.19, stock: 99 },
-            { id: "p2", title: "Plan Branding & Identidad Corporativa", sku: "BRAND-002", barcode: "7701001002", category: "Diseño", unitPrice: 850000, costPrice: 380000, wholesalePrice: 720000, taxRate: 0.19, stock: 50 },
-            { id: "p3", title: "Desarrollo Web Next.js MVP", sku: "WEB-003", barcode: "7701001003", category: "Desarrollo", unitPrice: 1200000, costPrice: 550000, wholesalePrice: 990000, taxRate: 0.19, stock: 20 },
-            { id: "p4", title: "Bolsa 100K Peticiones API Gateway", sku: "API-004", barcode: "7701001004", category: "SaaS", unitPrice: 120000, costPrice: 35000, wholesalePrice: 95000, taxRate: 0.19, stock: 999 },
-            { id: "p5", title: "Impresora Térmica POS 80mm USB/LAN", sku: "HW-005", barcode: "7701001005", category: "Hardware", unitPrice: 380000, costPrice: 210000, wholesalePrice: 310000, taxRate: 0.19, stock: 15 },
-            { id: "p6", title: "Lector Código de Barras Láser 2D", sku: "HW-006", barcode: "7701001006", category: "Hardware", unitPrice: 195000, costPrice: 98000, wholesalePrice: 155000, taxRate: 0.19, stock: 25 },
-        ];
+        const products = await catalogService.getProducts({
+            companyId,
+            category: req.query.category as string,
+            search: req.query.search as string,
+        });
         res.json({ success: true, companyId, products });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// 2. GET /api/pos/products/:id - Detalle de Producto por ID / SKU
+app.get("/api/pos/products/:id", async (req, res) => {
+    try {
+        const product = await catalogService.getProductById(req.params.id);
+        if (!product) return res.status(404).json({ error: "Producto no encontrado" });
+        res.json({ success: true, product });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// 3. POST /api/pos/products - Crear Producto / Servicio & Notificar Evento
+app.post("/api/pos/products", async (req, res) => {
+    try {
+        const companyId = await resolveValidCompanyId(req.body.companyId);
+        const newProduct = await catalogService.createProduct({
+            ...req.body,
+            companyId,
+        });
+        res.status(201).json({ success: true, product: newProduct });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// 4. PUT /api/pos/products/:id - Actualizar Atributos / Precios & Notificar Evento
+app.put("/api/pos/products/:id", async (req, res) => {
+    try {
+        const updated = await catalogService.updateProduct(req.params.id, req.body);
+        if (!updated) return res.status(404).json({ error: "Producto no encontrado" });
+        res.json({ success: true, product: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// 5. POST /api/pos/products/:id/stock - Ajustar Inventario & Notificar Evento
+app.post("/api/pos/products/:id/stock", async (req, res) => {
+    try {
+        const { deltaQty, reason } = req.body;
+        const updated = await catalogService.adjustStock(req.params.id, Number(deltaQty) || 0, reason || "Ajuste manual de kárdex");
+        if (!updated) return res.status(404).json({ error: "Producto no encontrado" });
+        res.json({ success: true, product: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// 6. DELETE /api/pos/products/:id - Eliminar / Desactivar & Notificar Evento
+app.delete("/api/pos/products/:id", async (req, res) => {
+    try {
+        const deleted = await catalogService.deleteProduct(req.params.id);
+        if (!deleted) return res.status(404).json({ error: "Producto no encontrado" });
+        res.json({ success: true, message: "Producto eliminado exitosamente" });
     } catch (err) {
         res.status(500).json({ error: String(err) });
     }
@@ -680,7 +742,6 @@ app.post("/api/pos/dian/run-test-set", (req, res) => {
     }
 });
 
-const eventBus = new EventBus(REDIS_URL, "pos-service");
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`🛍️ Enterprise POS Service running on port ${PORT}`);
 });

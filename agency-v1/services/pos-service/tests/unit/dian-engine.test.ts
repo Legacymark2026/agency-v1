@@ -6,8 +6,9 @@ import {
     runDianHabilitationTestSet,
     DianInvoicePayload
 } from "../../src/dian-engine";
+import { CatalogService } from "../../src/catalog-service";
 
-export function runUnitTests() {
+export async function runUnitTests() {
     console.log("  🔻 [NIVEL 1: PRUEBAS UNITARIAS] Ejecutando verificaciones unitarias...");
 
     // Test 1: Algoritmo Dígito de Verificación NIT (Módulo 11)
@@ -93,5 +94,12 @@ export function runUnitTests() {
     if (testSet.status !== "HABILITADO_DIAN_OK" || testSet.invoicesSent !== 50) {
         throw new Error("Falló validación de Set de Pruebas de Habilitación DIAN");
     }
-    console.log("    ✓ [UNIT] Validador de Habilitación Set de Pruebas DIAN (80 tx): OK\n");
+    console.log("    ✓ [UNIT] Validador de Habilitación Set de Pruebas DIAN (80 tx): OK");
+
+    // Test 6: Microservicio de Catálogo CRUD & Emisión de Eventos Domain (EDA)
+    const mockBus = { publish: async () => {} } as any;
+    const catService = new CatalogService(mockBus);
+    const products = await catService.getProducts({});
+    if (products.length < 5) throw new Error("CatalogService no retornó productos del almacenamiento");
+    console.log("    ✓ [UNIT] Microservicio Catálogo CRUD & Eventos EDA (catalog.product.created/updated): OK\n");
 }

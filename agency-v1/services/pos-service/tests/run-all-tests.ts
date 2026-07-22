@@ -45,7 +45,7 @@ async function runTestPyramidSuite() {
         const startTime = Date.now();
 
         // 1. NIVEL 1: PRUEBAS UNITARIAS (BASE DE LA PIRÁMIDE)
-        runUnitTests();
+        await runUnitTests();
 
         // 2. NIVEL 2: PRUEBAS DE INTEGRACIÓN (NIVEL MEDIO)
         await runIntegrationTests(baseUrl);
