@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package finance;
+
+message InvoiceItem {
+  string id = 1;
+  string company_id = 2;
+  string client_name = 3;
+  double total_amount = 4;
+  string status = 5;
+  string created_at = 6;
+}
+
+message GetInvoicesRequest {
+  string company_id = 1;
+  string status = 2;
+}
+
+message GetInvoicesResponse {
+  bool success = 1;
+  repeated InvoiceItem invoices = 2;
+}
+
+service FinanceGRPCService {
+  rpc GetInvoices (GetInvoicesRequest) returns (GetInvoicesResponse);
+}
