@@ -18,8 +18,8 @@ export interface CatalogStoreInfo {
 export interface CatalogEntity {
     id: string;
     companyId: string;
-    catalogId: string;
-    itemType: ItemType;
+    catalogId?: string;
+    itemType?: ItemType;
     sku: string;
     barcode: string;
     title: string;
@@ -32,6 +32,7 @@ export interface CatalogEntity {
     stock: number; // Subject to inventory ONLY if itemType === "PRODUCTO"
     isActive: boolean;
     location?: string;
+    imageUrl?: string;
     estimatedTime?: string;
     createdAt: string;
     updatedAt: string;
