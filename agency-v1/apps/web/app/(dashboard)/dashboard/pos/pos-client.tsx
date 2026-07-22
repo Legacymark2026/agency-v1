@@ -178,6 +178,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     const [regLocation, setRegLocation] = useState("Sede Bucaramanga - Principal");
     const [regFloat, setRegFloat] = useState("200000");
 
+    const [editingRegisterConfig, setEditingRegisterConfig] = useState<CashRegisterItem | null>(null);
+    const [configFormat, setConfigFormat] = useState<"thermal_80mm" | "thermal_58mm" | "dian_a4">("thermal_80mm");
+    const [configPrinterIp, setConfigPrinterIp] = useState("192.168.1.200:9100");
+    const [configMaxCash, setConfigMaxCash] = useState("1500000");
+    const [configShift, setConfigShift] = useState<"MAÑANA" | "TARDE" | "NOCHE">("MAÑANA");
+    const [configUser, setConfigUser] = useState("Cajero Principal");
+
     const fetchRegisters = async () => {
         try {
             const res = await fetch("/api/pos/registers");
