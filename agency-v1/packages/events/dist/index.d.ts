@@ -278,6 +278,18 @@ export declare const EVENTS: {
     readonly "pos.order.created": {
         readonly source: "pos-service";
     };
+    readonly "catalog.product.created": {
+        readonly source: "pos-service";
+    };
+    readonly "catalog.product.updated": {
+        readonly source: "pos-service";
+    };
+    readonly "catalog.stock.updated": {
+        readonly source: "pos-service";
+    };
+    readonly "catalog.product.deleted": {
+        readonly source: "pos-service";
+    };
 };
 export type EventName = keyof typeof EVENTS;
 export interface EventPayload {

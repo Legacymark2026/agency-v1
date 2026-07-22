@@ -155,10 +155,14 @@ export const EVENTS = {
   "task.moved": { source: "project-service" },
   "task.completed": { source: "project-service" },
 
-  // POS Service Events
+  // POS & Catalog Service Events
   "pos.session.opened": { source: "pos-service" },
   "pos.session.closed": { source: "pos-service" },
   "pos.order.created": { source: "pos-service" },
+  "catalog.product.created": { source: "pos-service" },
+  "catalog.product.updated": { source: "pos-service" },
+  "catalog.stock.updated": { source: "pos-service" },
+  "catalog.product.deleted": { source: "pos-service" },
 } as const;
 
 export type EventName = keyof typeof EVENTS;
