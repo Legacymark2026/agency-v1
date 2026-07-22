@@ -435,44 +435,6 @@ app.post("/api/pos/sessions/close", async (req, res) => {
     }
 });
 
-app.get("/api/pos/products", async (req, res) => {
-    try {
-        const { companyId, search } = req.query;
-        const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
-
-        const servicePrices = await prisma.servicePrice.findMany({
-            where: { companyId: cid, isActive: true },
-            take: 100,
-        });
-
-        const products = servicePrices.map((sp: any, idx: number) => ({
-            id: sp.id,
-            title: sp.title || sp.name || `Producto #${idx + 1}`,
-            sku: sp.sku || `SKU-${1000 + idx}`,
-            barcode: sp.barcode || `770${100000000 + idx}`,
-            category: sp.category || "General",
-            unitPrice: sp.amount || sp.price || 0,
-            taxRate: sp.taxRate ?? 0.19,
-            stock: sp.stock ?? 999,
-        }));
-
-        if (search) {
-            const q = String(search).toLowerCase();
-            const filtered = products.filter(
-                (p: any) =>
-                    p.title.toLowerCase().includes(q) ||
-                    p.sku.toLowerCase().includes(q) ||
-                    p.barcode.includes(q)
-            );
-            return res.json({ success: true, companyId: cid, products: filtered });
-        }
-
-        res.json({ success: true, companyId: cid, products });
-    } catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-
 app.post("/api/pos/orders", async (req, res) => {
     try {
         const {
