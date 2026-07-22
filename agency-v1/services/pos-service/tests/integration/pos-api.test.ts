@@ -107,5 +107,39 @@ export async function runIntegrationTests(baseUrl: string) {
     if (resTestSet.status !== 200 || resTestSet.body?.habilitation?.status !== "HABILITADO_DIAN_OK") {
         throw new Error(`Integration Test Failed: /api/pos/dian/run-test-set returned ${JSON.stringify(resTestSet)}`);
     }
-    console.log("    ✓ [INTEGRATION] Endpoint /api/pos/dian/run-test-set: OK\n");
+    console.log("    ✓ [INTEGRATION] Endpoint /api/pos/dian/run-test-set: OK");
+
+    // Test 4: API Catalog Products Endpoint
+    const getJson = (path: string): Promise<any> => {
+        return new Promise((resolve, reject) => {
+            const u = new URL(baseUrl + path);
+            const req = http.request(
+                {
+                    hostname: u.hostname,
+                    port: u.port,
+                    path: u.pathname,
+                    method: "GET",
+                },
+                (res) => {
+                    let respStr = "";
+                    res.on("data", (chunk) => (respStr += chunk));
+                    res.on("end", () => {
+                        try {
+                            resolve({ status: res.statusCode, body: JSON.parse(respStr) });
+                        } catch (e) {
+                            resolve({ status: res.statusCode, text: respStr });
+                        }
+                    });
+                }
+            );
+            req.on("error", reject);
+            req.end();
+        });
+    };
+
+    const resProducts = await getJson("/api/pos/products");
+    if (resProducts.status !== 200 || !Array.isArray(resProducts.body?.products)) {
+        throw new Error(`Integration Test Failed: /api/pos/products returned ${JSON.stringify(resProducts)}`);
+    }
+    console.log("    ✓ [INTEGRATION] Endpoint /api/pos/products (Microservicio Catálogo): OK\n");
 }
