@@ -210,6 +210,22 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
             }
         };
         fetchCatalog();
+
+        try {
+            const bc = new BroadcastChannel("pos-catalog-sync");
+            bc.onmessage = (event) => {
+                if (event.data?.type === "PRODUCT_CREATED" && event.data.product) {
+                    const newProd = event.data.product;
+                    setProducts((prev) => {
+                        if (prev.some((p) => p.id === newProd.id)) return prev;
+                        return [newProd, ...prev];
+                    });
+                }
+            };
+            return () => bc.close();
+        } catch (e) {
+            // BroadcastChannel fallback
+        }
     }, []);
 
     // Handle Barcode Scan
