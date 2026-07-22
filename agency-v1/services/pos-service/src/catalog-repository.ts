@@ -1,6 +1,6 @@
 /**
  * Isolated Catalog Repository & Data Store
- * Supports Multi-Catalog Management, Item Type (PRODUCTO vs SERVICIO), & Promotions Engine.
+ * Supports Multi-Catalog Management, Item Type (PRODUCTO vs SERVICIO), Promotions Engine & POS Cash Registers (Cajas).
  */
 import { EventBus } from "@agency/events";
 
@@ -43,7 +43,7 @@ export interface CouponRule {
     companyId: string;
     code: string;
     discountType: "PERCENTAGE" | "FIXED_COP" | "BUY_X_GET_Y";
-    discountValue: number; // e.g. 15 for 15% or 20000 for $20,000 COP
+    discountValue: number;
     minPurchaseAmount?: number;
     usageLimit?: number;
     usedCount: number;
@@ -53,10 +53,24 @@ export interface CouponRule {
     createdAt: string;
 }
 
+export interface CashRegisterEntity {
+    id: string;
+    companyId: string;
+    name: string;
+    location: string;
+    initialFloat: number;
+    currentBalance: number;
+    status: "OPEN" | "CLOSED";
+    openedAt?: string;
+    closedAt?: string;
+    createdAt: string;
+}
+
 export class IsolatedCatalogRepository {
     private catalogs = new Map<string, CatalogStoreInfo>();
     private store = new Map<string, CatalogEntity>();
     private coupons = new Map<string, CouponRule>();
+    private cashRegisters = new Map<string, CashRegisterEntity>();
     private eventBus: EventBus;
 
     constructor(eventBus: EventBus) {
@@ -100,9 +114,16 @@ export class IsolatedCatalogRepository {
             { id: "c2", companyId: "company_default_pos", code: "PROMO50K", discountType: "FIXED_COP", discountValue: 50000, minPurchaseAmount: 300000, usageLimit: 50, usedCount: 5, isActive: true, validUntil: "2026-12-31", description: "$50.000 COP de descuento en compras superiores a $300.000", createdAt: new Date().toISOString() },
         ];
         seedCoupons.forEach(c => this.coupons.set(c.id, c));
+
+        // Seed Cash Registers (Cajas)
+        const seedRegisters: CashRegisterEntity[] = [
+            { id: "caja_1", companyId: "company_default_pos", name: "Caja Principal 01 - Recepción", location: "Sede Central", initialFloat: 200000, currentBalance: 850000, status: "OPEN", openedAt: new Date().toISOString(), createdAt: new Date().toISOString() },
+            { id: "caja_2", companyId: "company_default_pos", name: "Caja 02 - Punto de Venta 2", location: "Sede Norte", initialFloat: 150000, currentBalance: 150000, status: "CLOSED", createdAt: new Date().toISOString() },
+        ];
+        seedRegisters.forEach(r => this.cashRegisters.set(r.id, r));
     }
 
-    // --- CATALOG MANAGEMENT ---
+    // --- MULTI-CATALOG CRUD ---
     async getCatalogs(): Promise<CatalogStoreInfo[]> {
         return Array.from(this.catalogs.values());
     }
@@ -121,6 +142,22 @@ export class IsolatedCatalogRepository {
         return newCat;
     }
 
+    async updateCatalog(id: string, name: string, description: string): Promise<CatalogStoreInfo | null> {
+        const existing = this.catalogs.get(id);
+        if (!existing) return null;
+        existing.name = name;
+        existing.description = description;
+        this.catalogs.set(id, existing);
+        return existing;
+    }
+
+    async deleteCatalog(id: string): Promise<boolean> {
+        if (!this.catalogs.has(id)) return false;
+        this.catalogs.delete(id);
+        return true;
+    }
+
+    // --- PRODUCTS & SERVICES CRUD ---
     async findAll(filter?: { catalogId?: string; category?: string; itemType?: ItemType; search?: string }): Promise<CatalogEntity[]> {
         let list = Array.from(this.store.values()).filter(p => p.isActive);
 
@@ -219,10 +256,7 @@ export class IsolatedCatalogRepository {
         const product = this.store.get(productId);
         if (!product) return null;
 
-        // Services are NOT subject to inventory management
-        if (product.itemType === "SERVICIO") {
-            return product;
-        }
+        if (product.itemType === "SERVICIO") return product;
 
         const previousStock = product.stock;
         const newStock = Math.max(0, previousStock + deltaQty);
@@ -263,7 +297,7 @@ export class IsolatedCatalogRepository {
         return true;
     }
 
-    // --- PROMOTIONS & COUPONS MANAGEMENT ---
+    // --- PROMOTIONS & COUPONS CRUD ---
     async getCoupons(): Promise<CouponRule[]> {
         return Array.from(this.coupons.values());
     }
@@ -282,11 +316,71 @@ export class IsolatedCatalogRepository {
         return coupon;
     }
 
+    async updateCoupon(id: string, updates: Partial<CouponRule>): Promise<CouponRule | null> {
+        const existing = this.coupons.get(id);
+        if (!existing) return null;
+        const updated = { ...existing, ...updates };
+        this.coupons.set(id, updated);
+        return updated;
+    }
+
     async toggleCoupon(id: string): Promise<CouponRule | null> {
         const coupon = this.coupons.get(id);
         if (!coupon) return null;
         coupon.isActive = !coupon.isActive;
         this.coupons.set(id, coupon);
         return coupon;
+    }
+
+    async deleteCoupon(id: string): Promise<boolean> {
+        if (!this.coupons.has(id)) return false;
+        this.coupons.delete(id);
+        return true;
+    }
+
+    // --- POS CASH REGISTERS (CAJAS REGISTRADORAS) CRUD ---
+    async getCashRegisters(): Promise<CashRegisterEntity[]> {
+        return Array.from(this.cashRegisters.values());
+    }
+
+    async createCashRegister(name: string, location: string, initialFloat: number): Promise<CashRegisterEntity> {
+        const id = `caja_${Date.now()}`;
+        const register: CashRegisterEntity = {
+            id,
+            companyId: "company_default_pos",
+            name,
+            location: location || "Sede Principal",
+            initialFloat: initialFloat || 0,
+            currentBalance: initialFloat || 0,
+            status: "OPEN",
+            openedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+        };
+        this.cashRegisters.set(id, register);
+        return register;
+    }
+
+    async updateCashRegister(id: string, updates: Partial<CashRegisterEntity>): Promise<CashRegisterEntity | null> {
+        const existing = this.cashRegisters.get(id);
+        if (!existing) return null;
+        const updated = { ...existing, ...updates };
+        this.cashRegisters.set(id, updated);
+        return updated;
+    }
+
+    async toggleCashRegisterStatus(id: string): Promise<CashRegisterEntity | null> {
+        const register = this.cashRegisters.get(id);
+        if (!register) return null;
+        register.status = register.status === "OPEN" ? "CLOSED" : "OPEN";
+        if (register.status === "OPEN") register.openedAt = new Date().toISOString();
+        else register.closedAt = new Date().toISOString();
+        this.cashRegisters.set(id, register);
+        return register;
+    }
+
+    async deleteCashRegister(id: string): Promise<boolean> {
+        if (!this.cashRegisters.has(id)) return false;
+        this.cashRegisters.delete(id);
+        return true;
     }
 }

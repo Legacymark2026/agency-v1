@@ -694,6 +694,29 @@ app.post("/api/pos/catalogs", async (req, res) => {
     }
 });
 
+// PUT /api/pos/catalogs/:id - Actualizar Catálogo
+app.put("/api/pos/catalogs/:id", async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const updated = await catalogService.getRepository().updateCatalog(req.params.id, name, description);
+        if (!updated) return res.status(404).json({ error: "Catálogo no encontrado" });
+        res.json({ success: true, catalog: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// DELETE /api/pos/catalogs/:id - Eliminar Catálogo
+app.delete("/api/pos/catalogs/:id", async (req, res) => {
+    try {
+        const deleted = await catalogService.getRepository().deleteCatalog(req.params.id);
+        if (!deleted) return res.status(404).json({ error: "Catálogo no encontrado" });
+        res.json({ success: true, message: "Catálogo eliminado exitosamente" });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // GET /api/pos/promotions/coupons - Obtener Reglas de Cupones y Promociones
 app.get("/api/pos/promotions/coupons", async (req, res) => {
     try {
@@ -718,12 +741,90 @@ app.post("/api/pos/promotions/coupons", async (req, res) => {
     }
 });
 
+// PUT /api/pos/promotions/coupons/:id - Actualizar Cupón
+app.put("/api/pos/promotions/coupons/:id", async (req, res) => {
+    try {
+        const updated = await catalogService.getRepository().updateCoupon(req.params.id, req.body);
+        if (!updated) return res.status(404).json({ error: "Cupón no encontrado" });
+        res.json({ success: true, coupon: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // PATCH /api/pos/promotions/coupons/:id/toggle - Activar / Desactivar Promoción
 app.patch("/api/pos/promotions/coupons/:id/toggle", async (req, res) => {
     try {
         const updated = await catalogService.getRepository().toggleCoupon(req.params.id);
         if (!updated) return res.status(404).json({ error: "Cupón no encontrado" });
         res.json({ success: true, coupon: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// DELETE /api/pos/promotions/coupons/:id - Eliminar Cupón
+app.delete("/api/pos/promotions/coupons/:id", async (req, res) => {
+    try {
+        const deleted = await catalogService.getRepository().deleteCoupon(req.params.id);
+        if (!deleted) return res.status(404).json({ error: "Cupón no encontrado" });
+        res.json({ success: true, message: "Cupón eliminado exitosamente" });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// ── POS CASH REGISTERS (CAJAS REGISTRADORAS) ENDPOINTS ───────────────────────
+
+// GET /api/pos/registers - Lista de Cajas Registradoras
+app.get("/api/pos/registers", async (req, res) => {
+    try {
+        const registers = await catalogService.getRepository().getCashRegisters();
+        res.json({ success: true, registers });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/registers - Crear Nueva Caja Registradora
+app.post("/api/pos/registers", async (req, res) => {
+    try {
+        const { name, location, initialFloat } = req.body;
+        const register = await catalogService.getRepository().createCashRegister(name, location, Number(initialFloat) || 0);
+        res.status(201).json({ success: true, register });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// PUT /api/pos/registers/:id - Actualizar Caja Registradora
+app.put("/api/pos/registers/:id", async (req, res) => {
+    try {
+        const updated = await catalogService.getRepository().updateCashRegister(req.params.id, req.body);
+        if (!updated) return res.status(404).json({ error: "Caja no encontrada" });
+        res.json({ success: true, register: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// PATCH /api/pos/registers/:id/status - Abrir / Cerrar Caja Registradora
+app.patch("/api/pos/registers/:id/status", async (req, res) => {
+    try {
+        const updated = await catalogService.getRepository().toggleCashRegisterStatus(req.params.id);
+        if (!updated) return res.status(404).json({ error: "Caja no encontrada" });
+        res.json({ success: true, register: updated });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// DELETE /api/pos/registers/:id - Eliminar Caja Registradora
+app.delete("/api/pos/registers/:id", async (req, res) => {
+    try {
+        const deleted = await catalogService.getRepository().deleteCashRegister(req.params.id);
+        if (!deleted) return res.status(404).json({ error: "Caja no encontrada" });
+        res.json({ success: true, message: "Caja eliminada exitosamente" });
     } catch (err) {
         res.status(500).json({ error: String(err) });
     }

@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    Percent, Plus, Search, RefreshCw, Tag, DollarSign, Calendar,
-    CheckCircle2, ShieldCheck, Zap, ToggleLeft, ToggleRight, Sparkles,
-    Trash2, Copy, AlertCircle, ShoppingCart
+    Percent, Plus, Search, RefreshCw, Edit3, Trash2, ToggleLeft, ToggleRight,
+    Zap, ShoppingCart, CheckCircle2, ShieldCheck, Tag, DollarSign, Calendar
 } from "lucide-react";
 
 interface CouponRule {
@@ -28,6 +27,7 @@ export default function PromotionsClient() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [editingCoupon, setEditingCoupon] = useState<CouponRule | null>(null);
 
     // Form state
     const [code, setCode] = useState("");
@@ -87,14 +87,73 @@ export default function PromotionsClient() {
 
             setCoupons(prev => [data.coupon, ...prev]);
             setShowCreateModal(false);
-            setCode("");
-            setDiscountValue("");
-            setDescription("");
+            resetForm();
             alert(`✅ Cupón de Descuento "${data.coupon.code}" creado y activado exitosamente.`);
         } catch (err: any) {
             setFormError(err.message);
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleEditOpen = (c: CouponRule) => {
+        setEditingCoupon(c);
+        setCode(c.code);
+        setDiscountType(c.discountType as any);
+        setDiscountValue(String(c.discountValue));
+        setMinPurchaseAmount(String(c.minPurchaseAmount || ""));
+        setUsageLimit(String(c.usageLimit || "100"));
+        setValidUntil(c.validUntil || "2026-12-31");
+        setDescription(c.description || "");
+    };
+
+    const handleUpdateCoupon = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingCoupon) return;
+        setSubmitting(true);
+        setFormError(null);
+
+        try {
+            const res = await fetch(`/api/pos/promotions/coupons/${editingCoupon.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    code: code.toUpperCase().trim(),
+                    discountType,
+                    discountValue: parseFloat(discountValue) || 0,
+                    minPurchaseAmount: parseFloat(minPurchaseAmount) || 0,
+                    usageLimit: parseInt(usageLimit, 10) || 100,
+                    validUntil,
+                    description,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.error || "Fallo al actualizar cupón");
+
+            setCoupons(prev => prev.map(c => c.id === data.coupon.id ? data.coupon : c));
+            setEditingCoupon(null);
+            resetForm();
+            alert(`✅ Cupón "${data.coupon.code}" actualizado exitosamente.`);
+        } catch (err: any) {
+            setFormError(err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteCoupon = async (c: CouponRule) => {
+        if (!confirm(`¿Estás seguro de eliminar el cupón "${c.code}"?`)) return;
+
+        try {
+            const res = await fetch(`/api/pos/promotions/coupons/${c.id}`, { method: "DELETE" });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setCoupons(prev => prev.filter(x => x.id !== c.id));
+                alert(`🗑️ Cupón "${c.code}" eliminado exitosamente.`);
+            }
+        } catch (err: any) {
+            alert(`Error al eliminar cupón: ${err.message}`);
         }
     };
 
@@ -108,6 +167,13 @@ export default function PromotionsClient() {
         } catch (err: any) {
             alert(`Error al cambiar estado del cupón: ${err.message}`);
         }
+    };
+
+    const resetForm = () => {
+        setCode("");
+        setDiscountValue("");
+        setMinPurchaseAmount("");
+        setDescription("");
     };
 
     const formatCOP = (amount: number) => {
@@ -129,13 +195,13 @@ export default function PromotionsClient() {
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-black text-white tracking-tight">Gestión de Promociones & Cupones</h1>
+                            <h1 className="text-xl font-black text-white tracking-tight">Gestión de Promociones & Cupones (CRUD)</h1>
                             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1">
                                 <Zap className="w-3 h-3" /> Reglas en Tiempo Real
                             </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            Crea reglas de descuento, cupones y promociones motivadas y administradas libremente por el usuario.
+                            Crea, edita, activa y elimina cupones y reglas de descuento motivadas libremente por el usuario.
                         </p>
                     </div>
                 </div>
@@ -158,7 +224,7 @@ export default function PromotionsClient() {
                     </Link>
 
                     <button
-                        onClick={() => setShowCreateModal(true)}
+                        onClick={() => { resetForm(); setShowCreateModal(true); }}
                         className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
                     >
                         <Plus className="w-4 h-4" /> Crear Cupón / Promoción
@@ -191,19 +257,13 @@ export default function PromotionsClient() {
                     <Percent className="w-10 h-10 mx-auto text-slate-600" />
                     <h3 className="text-sm font-bold text-slate-300">No hay reglas de cupones registradas</h3>
                     <p className="text-xs text-slate-500">Crea tu primer código de descuento para aplicarlo en las ventas POS y clientes.</p>
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="px-4 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-xl hover:bg-amber-400 transition-all inline-flex items-center gap-2"
-                    >
-                        <Plus className="w-4 h-4" /> Crear Cupón
-                    </button>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredCoupons.map(c => (
                         <div
                             key={c.id}
-                            className={`bg-slate-900/80 border ${c.isActive ? "border-amber-500/40" : "border-slate-800 opacity-60"} rounded-2xl p-5 space-y-4 transition-all relative group`}
+                            className={`bg-slate-900/80 border ${c.isActive ? "border-amber-500/40" : "border-slate-800 opacity-60"} rounded-2xl p-5 space-y-4 transition-all relative group shadow-xl`}
                         >
                             <div className="flex items-start justify-between gap-2">
                                 <div className="space-y-1">
@@ -242,31 +302,47 @@ export default function PromotionsClient() {
 
                             <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60 text-[11px] text-slate-400">
                                 <span>Compra Min: {c.minPurchaseAmount ? formatCOP(c.minPurchaseAmount) : "N/A"}</span>
-                                <span>Vence: {c.validUntil || "Sin vencimiento"}</span>
+                                
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={() => handleEditOpen(c)}
+                                        className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 transition-all"
+                                        title="Editar Cupón"
+                                    >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteCoupon(c)}
+                                        className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-rose-400 transition-all"
+                                        title="Eliminar Cupón"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* CREATE COUPON MODAL */}
-            {showCreateModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+            {/* MODAL: CREATE / EDIT COUPON (PROFESSIONAL DESIGN) */}
+            {(showCreateModal || editingCoupon) && (
+                <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
                                     <Percent className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-bold text-white">Crear Nueva Regla de Cupón</h2>
-                                    <p className="text-xs text-slate-400">Configura descuentos y promociones motivadas por el usuario</p>
+                                    <h2 className="text-base font-bold text-white">{editingCoupon ? "Editar Regla de Cupón" : "Crear Nueva Regla de Cupón"}</h2>
+                                    <p className="text-xs text-slate-400">Descuentos y promociones configurados libremente</p>
                                 </div>
                             </div>
-                            <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">✕</button>
+                            <button onClick={() => { setShowCreateModal(false); setEditingCoupon(null); }} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">✕</button>
                         </div>
 
-                        <form onSubmit={handleCreateCoupon} className="p-6 space-y-4">
+                        <form onSubmit={editingCoupon ? handleUpdateCoupon : handleCreateCoupon} className="p-6 space-y-4">
                             {formError && <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">{formError}</div>}
 
                             <div className="space-y-1">
@@ -305,9 +381,9 @@ export default function PromotionsClient() {
                             </div>
 
                             <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
-                                <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs transition-all">Cancelar</button>
+                                <button type="button" onClick={() => { setShowCreateModal(false); setEditingCoupon(null); }} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs transition-all">Cancelar</button>
                                 <button type="submit" disabled={submitting} className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2">
-                                    {submitting ? "Creando..." : <><CheckCircle2 className="w-4 h-4" /> Crear & Activar Promoción</>}
+                                    {submitting ? "Guardando..." : <><CheckCircle2 className="w-4 h-4" /> Guardar Promoción</>}
                                 </button>
                             </div>
                         </form>
