@@ -308,6 +308,17 @@ export default function CatalogClient() {
 
                 <div className="flex items-center gap-2.5 flex-wrap">
                     <button
+                        onClick={() => {
+                            const publicUrl = `${window.location.origin}/catalog/public-menu`;
+                            navigator.clipboard.writeText(publicUrl);
+                            alert(`🌐 Enlace del Catálogo Público Copiado:\n${publicUrl}\n\nLos clientes pueden ver el catálogo y hacer autopedidos en línea.`);
+                        }}
+                        className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-teal-300 border border-slate-800 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                        <Zap className="w-3.5 h-3.5 text-teal-400" /> Catálogo Público Online
+                    </button>
+
+                    <button
                         onClick={exportToCSV}
                         className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800 font-bold text-xs transition-all flex items-center gap-1.5"
                     >
