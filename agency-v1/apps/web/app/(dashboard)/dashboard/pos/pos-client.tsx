@@ -1495,6 +1495,19 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
 
                                             <div className="flex items-center gap-1.5">
                                                 <button
+                                                    onClick={() => {
+                                                        setEditingRegisterConfig(r);
+                                                        setConfigFormat("thermal_80mm");
+                                                        setConfigPrinterIp("192.168.1.200:9100");
+                                                        setConfigMaxCash("1500000");
+                                                    }}
+                                                    className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 transition-all"
+                                                    title="Configurar Apertura, Cierre, Impresora y Turnos"
+                                                >
+                                                    <Settings className="w-4 h-4 text-indigo-400" />
+                                                </button>
+
+                                                <button
                                                     onClick={() => handleToggleRegisterStatus(r)}
                                                     className={`px-3 py-1.5 rounded-xl border font-bold text-xs transition-all ${r.status === "OPEN" ? "bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30"}`}
                                                 >
@@ -1514,6 +1527,75 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: ADVANCED CASH REGISTER CONFIGURATOR */}
+            {editingRegisterConfig && (
+                <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+                                    <Settings className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-white">Configurar Caja: {editingRegisterConfig.name}</h3>
+                                    <p className="text-xs text-slate-400">Parámetros operativos de apertura, cierre, turnos e impresora</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setEditingRegisterConfig(null)} className="text-slate-400 hover:text-white">✕</button>
+                        </div>
+
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            setCashRegisters(prev => prev.map(x => x.id === editingRegisterConfig.id ? { ...x, initialFloat: parseFloat(regFloat) || x.initialFloat } : x));
+                            setEditingRegisterConfig(null);
+                            alert(`⚙️ Parámetros de apertura, cierre y turno para "${editingRegisterConfig.name}" actualizados.`);
+                        }} className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Turno de Operación</label>
+                                    <select value={configShift} onChange={(e) => setConfigShift(e.target.value as any)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                                        <option value="MAÑANA">Turno Mañana (06:00 - 14:00)</option>
+                                        <option value="TARDE">Turno Tarde (14:00 - 22:00)</option>
+                                        <option value="NOCHE">Turno Noche (22:00 - 06:00)</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Cajero Asignado</label>
+                                    <input type="text" value={configUser} onChange={(e) => setConfigUser(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Formato Impresión Tiquete</label>
+                                    <select value={configFormat} onChange={(e) => setConfigFormat(e.target.value as any)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
+                                        <option value="thermal_80mm">Impresora Térmica 80mm POS</option>
+                                        <option value="thermal_58mm">Impresora Térmica 58mm POS</option>
+                                        <option value="dian_a4">Factura Electrónica DIAN A4</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">IP / Puerto Impresora POS</label>
+                                    <input type="text" value={configPrinterIp} onChange={(e) => setConfigPrinterIp(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-indigo-500" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Límite Máximo Efectivo en Gaveta (Alerta Retiro Parcial $ COP)</label>
+                                <input type="number" value={configMaxCash} onChange={(e) => setConfigMaxCash(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-indigo-500" />
+                            </div>
+
+                            <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
+                                <button type="button" onClick={() => setEditingRegisterConfig(null)} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs">Cancelar</button>
+                                <button type="submit" className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" /> Guardar Parámetros
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

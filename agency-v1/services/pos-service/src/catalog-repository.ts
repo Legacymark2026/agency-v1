@@ -53,6 +53,15 @@ export interface CouponRule {
     createdAt: string;
 }
 
+export interface CashRegisterConfig {
+    receiptFormat?: "thermal_80mm" | "thermal_58mm" | "dian_a4";
+    printerAddress?: string;
+    maxDrawerCashLimit?: number;
+    assignedUser?: string;
+    currentShift?: "MAÑANA" | "TARDE" | "NOCHE";
+    notes?: string;
+}
+
 export interface CashRegisterEntity {
     id: string;
     companyId: string;
@@ -63,6 +72,7 @@ export interface CashRegisterEntity {
     status: "OPEN" | "CLOSED";
     openedAt?: string;
     closedAt?: string;
+    config?: CashRegisterConfig;
     createdAt: string;
 }
 
