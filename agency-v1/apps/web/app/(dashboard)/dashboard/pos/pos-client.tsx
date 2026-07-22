@@ -13,6 +13,7 @@ import { RestaurantTableMap, RestaurantTable } from "@/components/pos/restaurant
 import { CashDenominationModal } from "@/components/pos/cash-denomination-modal";
 import { SmartPosTerminalModal } from "@/components/pos/smart-pos-terminal-modal";
 import { QrMenuModal } from "@/components/pos/qr-menu-modal";
+import { CreateProductModal } from "@/components/pos/create-product-modal";
 
 import {
     saveOfflineOrder,
@@ -131,6 +132,7 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     const [customerPhone, setCustomerPhone] = useState("3173720384");
     const [customerEmail, setCustomerEmail] = useState("gerencia@neogestion.co");
     const [showAdvancedCustomerForm, setShowAdvancedCustomerForm] = useState(false);
+    const [showCreateProductModal, setShowCreateProductModal] = useState(false);
 
     // Payment state
     const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD_POS" | "NEQUI_PSE" | "CREDIT">("CASH");
@@ -506,6 +508,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                             <span>Sincronizar ({offlineCount})</span>
                         </button>
                     )}
+
+                    <button
+                        onClick={() => setShowCreateProductModal(true)}
+                        className="px-3.5 py-2.5 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                        <Plus className="w-3.5 h-3.5 text-teal-400" /> Crear Producto
+                    </button>
 
                     <button
                         onClick={handleOpenCashDrawer}
@@ -1323,6 +1332,18 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                         });
                         setActivePosTab("POS_VENTAS");
                         alert(`📌 Autopedido desde ${selfOrder.table} cargado exitosamente al terminal POS.`);
+                    }}
+                />
+            )}
+
+            {/* MODAL: CREATE CATALOG ITEM */}
+            {showCreateProductModal && (
+                <CreateProductModal
+                    isOpen={showCreateProductModal}
+                    onClose={() => setShowCreateProductModal(false)}
+                    onCreated={(newP) => {
+                        setProducts((prev) => [newP, ...prev]);
+                        alert(`✅ Producto "${newP.title}" guardado exitosamente en el Catálogo.`);
                     }}
                 />
             )}
