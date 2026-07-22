@@ -5,7 +5,7 @@ import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
     DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap, Settings,
-    Utensils, BookOpen, FileText, Users, ArrowUpRight, Tag, TrendingUp
+    Utensils, BookOpen, FileText, Users, ArrowUpRight, Tag, TrendingUp, Landmark
 } from "lucide-react";
 
 import { EscPosBuilder, formatEscPosTicketText } from "@/lib/escpos";
