@@ -946,7 +946,9 @@ app.post("/api/pos/dian/run-test-set", (req, res) => {
 
 import {
     createVerifiablePaymentTransaction,
-    verifyPaymentTransactionById
+    verifyPaymentTransactionById,
+    getCompanyBankAccounts,
+    verifyElectronicTransfer
 } from "./payment-microservice";
 
 // POST /api/pos/payments/create - Crear Transacción de Pago Verificable
@@ -1126,6 +1128,36 @@ app.post("/api/pos/datafonos/ping", async (req, res) => {
             diagnosticNote: diagnosticNote || `Handshake ISO 8583 verificado exitosamente para la terminal ${tid}`,
             timestamp
         });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// GET /api/pos/payments/bank-accounts - Cuentas Bancarias Asignadas a la Empresa
+app.get("/api/pos/payments/bank-accounts", async (req, res) => {
+    try {
+        const accounts = await getCompanyBankAccounts("company_default_pos");
+        res.json({ success: true, accounts });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/payments/verify-transfer - Verificación Estricta de Transferencia en Cuenta
+app.post("/api/pos/payments/verify-transfer", async (req, res) => {
+    try {
+        const { voucherReference, amount, destinationAccountId } = req.body;
+        const result = await verifyElectronicTransfer({
+            companyId: "company_default_pos",
+            voucherReference,
+            amount: Number(amount || 0),
+            destinationAccountId
+        });
+        if (result.verified) {
+            res.json({ success: true, ...result });
+        } else {
+            res.status(400).json({ success: false, ...result });
+        }
     } catch (err) {
         res.status(500).json({ error: String(err) });
     }

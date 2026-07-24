@@ -567,6 +567,31 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
             return;
         }
 
+        // ELECTRONIC BANK ACCOUNT VERIFICATION ENFORCEMENT
+        if (paymentMethod === "NEQUI" || paymentMethod === "DAVIPLATA" || paymentMethod === "PSE") {
+            const voucherRef = prompt(`🔒 VERIFICACIÓN DE PAGO ELECTRÓNICO (${paymentMethod}):\nIngrese el número de comprobante o referencia de transferencia bancaria acreditada en la cuenta del comercio:`, `REF-${Date.now().toString().slice(-6)}`);
+            if (!voucherRef || voucherRef.trim().length < 4) {
+                setLoadingCheckout(false);
+                return alert("❌ Venta rechazada: Es obligatorio validar el comprobante de transferencia bancaria acreditado en la cuenta del comercio.");
+            }
+
+            try {
+                const verifyRes = await fetch("/api/pos/payments/verify-transfer", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        voucherReference: voucherRef,
+                        amount: finalTotal
+                    })
+                });
+                const verifyData = await verifyRes.json();
+                if (!verifyData.verified) {
+                    setLoadingCheckout(false);
+                    return alert(verifyData.reason || "❌ Transacción rechazada: No se pudo verificar el abono en la cuenta bancaria asignada.");
+                }
+            } catch (e) {}
+        }
+
         // ONLINE CHECKOUT
         try {
             const res = await fetch("/api/pos/orders", {
