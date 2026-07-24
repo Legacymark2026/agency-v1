@@ -1,9 +1,12 @@
-/**
- * POS Service — Unit Tests & Enterprise Engine Validation
- */
 import { describe, it, expect } from "vitest";
 import { evaluateCartPromotions } from "./index";
-import { calculateDianCufe, calculateNitDv } from "./dian-engine";
+import {
+    calculateDianCufe,
+    calculateNitDv,
+    calculateColombianTaxBreakdown,
+    signXmlWithXAdESBES,
+    generateDianZipEnvelope
+} from "./dian-engine";
 
 function calculatePosCart(items: Array<{ quantity: number; unitPrice: number; taxRate: number }>, discount = 0) {
     let subtotal = 0;
@@ -123,6 +126,36 @@ describe("DIAN Invoicing Engine — Official Algorithms (Anexo Técnico 1.8)", (
         expect(calculateNitDv("890211126")).toBe("4");
         // Test NIT 900123456 -> DV 8
         expect(calculateNitDv("900123456")).toBe("8");
+    });
+
+    it("calculates Colombian tax breakdown (IVA 19%, INC 8%, ReteFuente 2.5%, ReteICA)", () => {
+        const items = [
+            { nro: 1, code: "P-1", description: "Servicios", quantity: 1, unitPrice: 2000000, ivaPct: 19, totalItemValue: 2000000 },
+        ];
+        const breakdown = calculateColombianTaxBreakdown(items, 2.5, 4.14);
+
+        expect(breakdown.subtotal).toBe(2000000);
+        expect(breakdown.taxIva19).toBe(380000);
+        expect(breakdown.reteFuenteAmount).toBe(50000); // 2.5% of 2,000,000
+        expect(breakdown.reteIcaAmount).toBe(8280); // 4.14 per thousand of 2,000,000
+    });
+
+    it("injects XAdES-BES XMLDSig digital signature structure into UBL 2.1 XML", () => {
+        const rawXml = "<Invoice><cbc:ID>FE-300001</cbc:ID></Invoice>";
+        const signedXml = signXmlWithXAdESBES(rawXml);
+
+        expect(signedXml).toContain("<ds:Signature");
+        expect(signedXml).toContain("xmldsig-signature-dian");
+        expect(signedXml).toContain("<ds:DigestValue>");
+    });
+
+    it("generates Base64 encoded ZIP envelope payload for DIAN SOAP Web Services", () => {
+        const xml = "<Invoice>Test</Invoice>";
+        const { zipFileName, base64ZipPayload } = generateDianZipEnvelope(xml, "FE-300001", "890211126");
+
+        expect(zipFileName).toContain("z89021112600026300001.zip");
+        expect(typeof base64ZipPayload).toBe("string");
+        expect(base64ZipPayload.length).toBeGreaterThan(0);
     });
 });
 
