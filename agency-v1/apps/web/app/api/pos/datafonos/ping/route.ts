@@ -14,11 +14,11 @@ export async function POST(req: Request) {
         return NextResponse.json(data, { status: res.status });
     } catch (e: any) {
         return NextResponse.json({
-            success: true,
-            status: "ONLINE",
-            responseTimeMs: 16,
-            handshake: "ISO-8583-HANDSHAKE-SUCCESS-OK",
-            diagnosticNote: `Ping directo a terminal POS completado.`
-        });
+            success: false,
+            status: "OFFLINE",
+            responseTimeMs: 0,
+            handshake: "FALLA_CONEXION_MICROSERVICIO",
+            message: `❌ No se pudo establecer conexión con el microservicio POS: ${e.message}`
+        }, { status: 503 });
     }
 }

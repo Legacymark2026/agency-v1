@@ -262,12 +262,36 @@ export function DatafonoConfigModal({ isOpen, onClose, onSaveSuccess }: Datafono
                                 </div>
 
                                 {pingResult && (
-                                    <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30 space-y-1 text-xs font-mono">
-                                        <div className="flex justify-between items-center text-emerald-300 font-bold">
-                                            <span>Estado Dispositivo: {pingResult.status}</span>
+                                    <div className={`p-3.5 rounded-xl border text-xs font-mono space-y-1.5 ${
+                                        pingResult.status === "ONLINE"
+                                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                                            : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+                                    }`}>
+                                        <div className="flex justify-between items-center font-bold">
+                                            <span className="flex items-center gap-1.5">
+                                                <span className={`w-2 h-2 rounded-full ${pingResult.status === "ONLINE" ? "bg-emerald-400 animate-pulse" : "bg-rose-500"}`}></span>
+                                                Estado Dispositivo: {pingResult.status}
+                                            </span>
                                             <span>Latencia: {pingResult.latencyMs}ms</span>
                                         </div>
-                                        <p className="text-emerald-200 text-[11px] font-sans">✓ {pingResult.handshake} - Datáfono listo para procesar pagos real-time.</p>
+
+                                        <p className="text-[11px] font-sans">
+                                            {pingResult.status === "ONLINE" ? "✓ " : "✕ "}
+                                            {pingResult.handshake}
+                                        </p>
+
+                                        {pingResult.diagnosticNote && (
+                                            <p className="text-[10px] opacity-80 border-t border-slate-800 pt-1 font-mono">
+                                                Diagnóstico: {pingResult.diagnosticNote}
+                                            </p>
+                                        )}
+
+                                        {pingResult.handshakeSignature && (
+                                            <div className="text-[9px] opacity-70 flex justify-between pt-0.5">
+                                                <span>Firma HMAC-SHA256:</span>
+                                                <span>{pingResult.handshakeSignature}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
