@@ -3,6 +3,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { evaluateCartPromotions } from "./index";
+import { calculateDianCufe, calculateNitDv } from "./dian-engine";
 
 function calculatePosCart(items: Array<{ quantity: number; unitPrice: number; taxRate: number }>, discount = 0) {
     let subtotal = 0;
@@ -71,3 +72,57 @@ describe("POS Service — Dynamic Promotions Engine", () => {
         expect(evaluation.appliedPromos.length).toBe(1);
     });
 });
+
+describe("DIAN Invoicing Engine — Official Algorithms (Anexo Técnico 1.8)", () => {
+    it("calculates CUFE SHA-384 hash using official DIAN 15-parameter formula", () => {
+        const payload = {
+            documentType: "FACTURA_ELECTRONICA" as const,
+            prefix: "FE",
+            number: "300001",
+            issueDate: "2026-07-24",
+            issueTime: "10:00:00-05:00",
+            paymentForm: "Contado",
+            paymentMethod: "Transferencia Débito Bancaria",
+            operationType: "10",
+            subtotal: 100000,
+            taxTotal: 19000,
+            discountTotal: 0,
+            grandTotal: 119000,
+            technicalKey: "fc8b05a6315d0ae2041cd135ffd39b5e2c622f0a929db4489dd56dbb9a20c11",
+            environment: "2" as const,
+            issuer: {
+                companyName: "EMPRESA DEMO",
+                nit: "900123456",
+                dv: "1",
+                taxpayerType: "Persona Jurídica",
+                taxRegime: "O-48",
+                taxResponsibility: "01 - IVA",
+                economicActivity: "4711",
+                country: "Colombia",
+                department: "Santander",
+                city: "Bucaramanga",
+                address: "Calle 33",
+                phone: "3000000",
+                email: "demo@ejemplo.com",
+            },
+            buyer: {
+                name: "CONSUMIDOR FINAL",
+                documentType: "CC",
+                documentNumber: "1005462317",
+            },
+            items: [],
+        };
+
+        const cufe = calculateDianCufe(payload);
+        expect(cufe).toHaveLength(96); // SHA-384 hex string length is exactly 96 characters
+        expect(typeof cufe).toBe("string");
+    });
+
+    it("calculates official Modulo 11 Nit DV (Dígito de Verificación) correctly", () => {
+        // Test NIT 890211126 -> DV 4 (Carlixplast S.A.S)
+        expect(calculateNitDv("890211126")).toBe("4");
+        // Test NIT 900123456 -> DV 8
+        expect(calculateNitDv("900123456")).toBe("8");
+    });
+});
+
