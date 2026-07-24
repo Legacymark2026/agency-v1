@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditCard, Wifi, CheckCircle2, RefreshCw, AlertTriangle, ShieldCheck, Zap, Smartphone, Radio } from "lucide-react";
 
 interface SmartPosTerminalModalProps {
@@ -16,6 +16,25 @@ export function SmartPosTerminalModal({ amount, customerName, onClose, onPayment
     const [connectionType, setConnectionType] = useState<"BLUETOOTH" | "WIFI" | "USB_SERIAL">("BLUETOOTH");
     const [terminalIp, setTerminalIp] = useState("192.168.1.150:8080");
     const [bluetoothDeviceName, setBluetoothDeviceName] = useState<string | null>(null);
+
+    const [availableTerminals, setAvailableTerminals] = useState<any[]>([]);
+    const [selectedTerminalId, setSelectedTerminalId] = useState<string>("");
+
+    useEffect(() => {
+        fetch("/api/pos/datafonos")
+            .then(res => res.json())
+            .then(data => {
+                if (data.terminals && data.terminals.length > 0) {
+                    setAvailableTerminals(data.terminals);
+                    const defaultTerm = data.terminals.find((t: any) => t.isDefault) || data.terminals[0];
+                    setSelectedTerminalId(defaultTerm.id);
+                    setSelectedProvider(defaultTerm.provider);
+                    setConnectionType(defaultTerm.connectionType);
+                    if (defaultTerm.terminalIp) setTerminalIp(defaultTerm.terminalIp);
+                }
+            })
+            .catch(() => {});
+    }, []);
     const [approvalDetails, setApprovalDetails] = useState<{
         code: string;
         card: string;
@@ -165,6 +184,32 @@ export function SmartPosTerminalModal({ amount, customerName, onClose, onPayment
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
                 </div>
+
+                {/* MULTI-DATÁFONO TERMINAL SELECTOR */}
+                {availableTerminals.length > 0 && (
+                    <div className="space-y-1 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                        <label className="text-[11px] font-bold text-slate-400 block">Datáfono Terminal de Cobro Asignado</label>
+                        <select
+                            value={selectedTerminalId}
+                            onChange={(e) => {
+                                const term = availableTerminals.find(t => t.id === e.target.value);
+                                if (term) {
+                                    setSelectedTerminalId(term.id);
+                                    setSelectedProvider(term.provider);
+                                    setConnectionType(term.connectionType);
+                                    if (term.terminalIp) setTerminalIp(term.terminalIp);
+                                }
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-indigo-500 focus:outline-none"
+                        >
+                            {availableTerminals.map((term: any) => (
+                                <option key={term.id} value={term.id}>
+                                    {term.name} ({term.provider} - {term.connectionType}) {term.isDefault ? "[Predeterminado]" : ""}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {/* CONNECTION TYPE SELECTOR */}
                 <div className="grid grid-cols-3 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
