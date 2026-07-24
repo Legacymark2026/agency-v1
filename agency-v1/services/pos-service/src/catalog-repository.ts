@@ -1,6 +1,6 @@
 /**
  * Isolated Catalog Repository & Data Store
- * Supports Multi-Catalog Management, Item Type (PRODUCTO vs SERVICIO), Promotions Engine & POS Cash Registers (Cajas).
+ * Supports Multi-Catalog Management, Item Type (PRODUCTO vs SERVICIO), Promotions Engine, POS Cash Registers, Cash Movements & Customer Loyalty/Credit.
  */
 import { EventBus } from "@agency/events";
 
@@ -76,11 +76,37 @@ export interface CashRegisterEntity {
     createdAt: string;
 }
 
+export interface CashMovementEntity {
+    id: string;
+    registerId: string;
+    type: "ENTRY" | "EXIT";
+    amount: number;
+    reason: string;
+    user: string;
+    createdAt: string;
+}
+
+export interface CustomerAccountEntity {
+    id: string;
+    companyId: string;
+    nit: string;
+    name: string;
+    email: string;
+    phone: string;
+    loyaltyPoints: number;
+    creditLimit: number;
+    usedCredit: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export class IsolatedCatalogRepository {
     private catalogs = new Map<string, CatalogStoreInfo>();
     private store = new Map<string, CatalogEntity>();
     private coupons = new Map<string, CouponRule>();
     private cashRegisters = new Map<string, CashRegisterEntity>();
+    private cashMovements = new Map<string, CashMovementEntity>();
+    private customerAccounts = new Map<string, CustomerAccountEntity>();
     private eventBus: EventBus;
 
     constructor(eventBus: EventBus) {
@@ -131,6 +157,13 @@ export class IsolatedCatalogRepository {
             { id: "caja_2", companyId: "company_default_pos", name: "Caja 02 - Punto de Venta 2", location: "Sede Norte", initialFloat: 150000, currentBalance: 150000, status: "CLOSED", createdAt: new Date().toISOString() },
         ];
         seedRegisters.forEach(r => this.cashRegisters.set(r.id, r));
+
+        // Seed Customer Accounts
+        const seedCustomers: CustomerAccountEntity[] = [
+            { id: "cust_1", companyId: "company_default_pos", nit: "3173720384", name: "Empresa NeoGestión Co", email: "gerencia@neogestion.co", phone: "3173720384", loyaltyPoints: 450, creditLimit: 2000000, usedCredit: 350000, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+            { id: "cust_2", companyId: "company_default_pos", nit: "222222222", name: "Cliente Frecuente VIP", email: "vip@legacymarksas.com", phone: "3150000000", loyaltyPoints: 1200, creditLimit: 5000000, usedCredit: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        ];
+        seedCustomers.forEach(c => this.customerAccounts.set(c.nit, c));
     }
 
     // --- MULTI-CATALOG CRUD ---
@@ -348,7 +381,7 @@ export class IsolatedCatalogRepository {
         return true;
     }
 
-    // --- POS CASH REGISTERS (CAJAS REGISTRADORAS) CRUD ---
+    // --- POS CASH REGISTERS & MOVEMENTS (CAJAS REGISTRADORAS Y MOVIMIENTOS) ---
     async getCashRegisters(): Promise<CashRegisterEntity[]> {
         return Array.from(this.cashRegisters.values());
     }
@@ -392,5 +425,83 @@ export class IsolatedCatalogRepository {
         if (!this.cashRegisters.has(id)) return false;
         this.cashRegisters.delete(id);
         return true;
+    }
+
+    // --- CASH MOVEMENTS (ENTRADAS & SALIDAS CAJA CHICA / CORTE X) ---
+    async getCashMovements(registerId?: string): Promise<CashMovementEntity[]> {
+        const list = Array.from(this.cashMovements.values());
+        if (registerId) return list.filter(m => m.registerId === registerId);
+        return list;
+    }
+
+    async createCashMovement(data: Omit<CashMovementEntity, "id" | "createdAt">): Promise<CashMovementEntity> {
+        const id = `mov_${Date.now()}`;
+        const movement: CashMovementEntity = {
+            ...data,
+            id,
+            createdAt: new Date().toISOString(),
+        };
+        this.cashMovements.set(id, movement);
+
+        // Update cash register balance dynamically
+        const reg = this.cashRegisters.get(data.registerId);
+        if (reg) {
+            if (data.type === "ENTRY") reg.currentBalance += data.amount;
+            else reg.currentBalance = Math.max(0, reg.currentBalance - data.amount);
+            this.cashRegisters.set(reg.id, reg);
+        }
+
+        return movement;
+    }
+
+    // --- CUSTOMER LOYALTY & CREDIT (PUNTOS Y FIADO) ---
+    async getCustomerAccounts(): Promise<CustomerAccountEntity[]> {
+        return Array.from(this.customerAccounts.values());
+    }
+
+    async findCustomerByNit(nit: string): Promise<CustomerAccountEntity | null> {
+        return this.customerAccounts.get(nit) || null;
+    }
+
+    async createOrUpdateCustomerAccount(data: Partial<CustomerAccountEntity> & { nit: string }): Promise<CustomerAccountEntity> {
+        const existing = this.customerAccounts.get(data.nit);
+        const now = new Date().toISOString();
+
+        if (existing) {
+            const updated: CustomerAccountEntity = {
+                ...existing,
+                ...data,
+                updatedAt: now,
+            };
+            this.customerAccounts.set(data.nit, updated);
+            return updated;
+        }
+
+        const newCust: CustomerAccountEntity = {
+            id: `cust_${Date.now()}`,
+            companyId: "company_default_pos",
+            nit: data.nit,
+            name: data.name || "Cliente General",
+            email: data.email || "",
+            phone: data.phone || "",
+            loyaltyPoints: data.loyaltyPoints || 0,
+            creditLimit: data.creditLimit || 500000,
+            usedCredit: data.usedCredit || 0,
+            createdAt: now,
+            updatedAt: now,
+        };
+
+        this.customerAccounts.set(data.nit, newCust);
+        return newCust;
+    }
+
+    async addLoyaltyPoints(nit: string, pointsEarned: number): Promise<CustomerAccountEntity | null> {
+        const customer = this.customerAccounts.get(nit);
+        if (!customer) return null;
+
+        customer.loyaltyPoints += pointsEarned;
+        customer.updatedAt = new Date().toISOString();
+        this.customerAccounts.set(nit, customer);
+        return customer;
     }
 }

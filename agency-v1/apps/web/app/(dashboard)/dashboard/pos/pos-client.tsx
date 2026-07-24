@@ -185,6 +185,88 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     const [configShift, setConfigShift] = useState<"MAÑANA" | "TARDE" | "NOCHE">("MAÑANA");
     const [configUser, setConfigUser] = useState("Cajero Principal");
 
+    // Cash Movements (Caja Chica / Corte X)
+    interface CashMovement {
+        id: string;
+        registerId: string;
+        type: "ENTRY" | "EXIT";
+        amount: number;
+        reason: string;
+        user: string;
+        createdAt: string;
+    }
+
+    const [showCashMovementModal, setShowCashMovementModal] = useState(false);
+    const [cashMovements, setCashMovements] = useState<CashMovement[]>([
+        { id: "mov_1", registerId: "caja_1", type: "EXIT", amount: 15000, reason: "Pago Domicilio Insumos Urgentes", user: "Cajero Principal", createdAt: new Date().toISOString() },
+        { id: "mov_2", registerId: "caja_1", type: "ENTRY", amount: 50000, reason: "Adición de Sencillo a la Base", user: "Administrador", createdAt: new Date().toISOString() }
+    ]);
+    const [movType, setMovType] = useState<"ENTRY" | "EXIT">("EXIT");
+    const [movAmount, setMovAmount] = useState("");
+    const [movReason, setMovReason] = useState("");
+
+    // Split Payment (Pago Mixto) & Customer Loyalty Account
+    const [showSplitPaymentModal, setShowSplitPaymentModal] = useState(false);
+    const [splitCashAmount, setSplitCashAmount] = useState("");
+    const [splitCardAmount, setSplitCardAmount] = useState("");
+    const [splitNequiAmount, setSplitNequiAmount] = useState("");
+    const [splitCreditAmount, setSplitCreditAmount] = useState("");
+
+    interface CustomerAccount {
+        nit: string;
+        name: string;
+        loyaltyPoints: number;
+        creditLimit: number;
+        usedCredit: number;
+    }
+
+    const [customerAccount, setCustomerAccount] = useState<CustomerAccount | null>({
+        nit: "3173720384",
+        name: "Empresa NeoGestión Co",
+        loyaltyPoints: 450,
+        creditLimit: 2000000,
+        usedCredit: 350000,
+    });
+
+    const fetchMovements = async () => {
+        try {
+            const res = await fetch("/api/pos/movements");
+            if (res.ok) {
+                const data = await res.json();
+                if (data.movements && data.movements.length > 0) setCashMovements(data.movements);
+            }
+        } catch (e) {}
+    };
+
+    const handleCreateMovementSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const amt = parseFloat(movAmount);
+        if (isNaN(amt) || amt <= 0) return alert("Ingresa un monto válido.");
+
+        try {
+            const res = await fetch("/api/pos/movements", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    registerId: "caja_1",
+                    type: movType,
+                    amount: amt,
+                    reason: movReason || (movType === "ENTRY" ? "Entrada extra de efectivo" : "Gasto menor de caja chica"),
+                    user: "Cajero Principal"
+                }),
+            });
+            const data = await res.json();
+            if (res.ok && data.movement) {
+                setCashMovements(prev => [data.movement, ...prev]);
+                setMovAmount("");
+                setMovReason("");
+                alert(`✅ Movimiento de Caja (${movType === "ENTRY" ? "ENTRADA" : "SALIDA"}) por $${amt.toLocaleString("es-CO")} registrado.`);
+            }
+        } catch (err: any) {
+            alert(`Error al registrar movimiento: ${err.message}`);
+        }
+    };
+
     const fetchRegisters = async () => {
         try {
             const res = await fetch("/api/pos/registers");
@@ -615,6 +697,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     </button>
 
                     <button
+                        onClick={() => { fetchMovements(); setShowCashMovementModal(true); }}
+                        className="px-3.5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                        <DollarSign className="w-3.5 h-3.5 text-amber-400" /> Caja Chica (Corte X)
+                    </button>
+
+                    <button
                         onClick={() => setShowCreateProductModal(true)}
                         className="px-3.5 py-2.5 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
                     >
@@ -941,20 +1030,41 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                             />
                         </div>
 
-                        <div className="grid grid-cols-4 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        {/* CUSTOMER LOYALTY & CREDIT BADGE */}
+                        {customerAccount && (
+                            <div className="p-2.5 bg-indigo-950/40 border border-indigo-500/30 rounded-xl flex items-center justify-between text-xs">
+                                <div>
+                                    <span className="font-bold text-indigo-300 flex items-center gap-1">
+                                        <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Puntos Fidelidad: {customerAccount.loyaltyPoints} pts
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 block">
+                                        Cupo Crédito Disponible: ${ (customerAccount.creditLimit - customerAccount.usedCredit).toLocaleString("es-CO") }
+                                    </span>
+                                </div>
+                                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                                    Cliente VIP
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-5 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
                             {[
                                 { id: "CASH", label: "Efectivo", icon: DollarSign },
                                 { id: "CARD_POS", label: "Datáfono", icon: CreditCard },
                                 { id: "NEQUI_PSE", label: "Nequi/PSE", icon: QrCode },
                                 { id: "CREDIT", label: "Crédito", icon: Wallet },
+                                { id: "SPLIT", label: "Mixto", icon: Zap },
                             ].map((m) => {
                                 const IconComp = m.icon;
                                 const isSel = paymentMethod === m.id;
                                 return (
                                     <button
                                         key={m.id}
-                                        onClick={() => setPaymentMethod(m.id as any)}
-                                        className={`py-2 rounded-lg text-[11px] font-bold transition-all flex flex-col items-center gap-1 ${
+                                        onClick={() => {
+                                            setPaymentMethod(m.id as any);
+                                            if (m.id === "SPLIT") setShowSplitPaymentModal(true);
+                                        }}
+                                        className={`py-2 rounded-lg text-[10px] font-bold transition-all flex flex-col items-center gap-1 ${
                                             isSel
                                                 ? "bg-teal-600 text-white shadow-md"
                                                 : "text-slate-400 hover:text-white"
@@ -1638,6 +1748,167 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                                 <button type="button" onClick={() => setShowCreateRegisterModal(false)} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs">Cancelar</button>
                                 <button type="submit" className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 flex items-center gap-2">
                                     <CheckCircle2 className="w-4 h-4" /> Crear & Activar Caja
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: CASH MOVEMENTS & CORTE X (CAJA CHICA) */}
+            {showCashMovementModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
+                                    <DollarSign className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Caja Chica & Corte X (Arqueo Parcial)</h2>
+                                    <p className="text-xs text-slate-400">Registrar entradas y salidas menores de efectivo y balance en tiempo real</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowCashMovementModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">✕</button>
+                        </div>
+
+                        <div className="p-6 space-y-5">
+                            {/* CORTE X SUMMARY BOX */}
+                            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                                <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Zap className="w-3.5 h-3.5" /> Balance Corte X (Resumen Parcial de Turno)
+                                </h3>
+
+                                <div className="grid grid-cols-4 gap-2 text-xs font-mono">
+                                    <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                                        <span className="text-[10px] text-slate-500 block">Base Inicial</span>
+                                        <span className="font-bold text-white">${activeSession?.openingBalance?.toLocaleString("es-CO") || "200.000"}</span>
+                                    </div>
+                                    <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                                        <span className="text-[10px] text-slate-500 block">Ventas Efectivo</span>
+                                        <span className="font-bold text-emerald-400">${activeSession?.cashSales?.toLocaleString("es-CO") || "450.000"}</span>
+                                    </div>
+                                    <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                                        <span className="text-[10px] text-slate-500 block">Salidas Caja Chica</span>
+                                        <span className="font-bold text-rose-400">-${cashMovements.filter(m=>m.type==="EXIT").reduce((a,b)=>a+b.amount,0).toLocaleString("es-CO")}</span>
+                                    </div>
+                                    <div className="bg-slate-900 p-2.5 rounded-xl border border-amber-500/30">
+                                        <span className="text-[10px] text-amber-300 block font-bold">Saldo Esperado</span>
+                                        <span className="font-black text-amber-400 text-sm">
+                                            ${ ((activeSession?.openingBalance || 200000) + (activeSession?.cashSales || 450000) + cashMovements.filter(m=>m.type==="ENTRY").reduce((a,b)=>a+b.amount,0) - cashMovements.filter(m=>m.type==="EXIT").reduce((a,b)=>a+b.amount,0)).toLocaleString("es-CO") }
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* REGISTER NEW MOVEMENT FORM */}
+                            <form onSubmit={handleCreateMovementSubmit} className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 space-y-3">
+                                <h4 className="text-xs font-bold text-white">Registrar Nuevo Movimiento de Efectivo</h4>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="text-[11px] font-bold text-slate-400">Tipo de Movimiento</label>
+                                        <select value={movType} onChange={(e) => setMovType(e.target.value as any)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white">
+                                            <option value="EXIT">Salida (-) Gasto Chica</option>
+                                            <option value="ENTRY">Entrada (+) Adición Base</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-[11px] font-bold text-slate-400">Monto ($ COP)</label>
+                                        <input type="number" required placeholder="15000" value={movAmount} onChange={(e) => setMovAmount(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white font-mono" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[11px] font-bold text-slate-400">Concepto / Motivo</label>
+                                        <input type="text" required placeholder="Ej. Pago transporte domiciliario" value={movReason} onChange={(e) => setMovReason(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <button type="submit" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5">
+                                        <CheckCircle2 className="w-4 h-4" /> Registrar Movimiento
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* RECENT MOVEMENTS LOG */}
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-bold text-slate-300">Historial de Movimientos de la Caja</h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                    {cashMovements.map(m => (
+                                        <div key={m.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${m.type === "ENTRY" ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"}`}>
+                                                    {m.type === "ENTRY" ? "+ ENTRADA" : "- SALIDA"}
+                                                </span>
+                                                <span className="text-slate-300 font-medium">{m.reason}</span>
+                                            </div>
+                                            <span className="font-bold text-white font-mono">${m.amount.toLocaleString("es-CO")}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: SPLIT PAYMENT (COBRO MIXTO MULTI-MÉTODO) */}
+            {showSplitPaymentModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center">
+                                    <Zap className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Configurar Cobro Mixto (Split Payment)</h2>
+                                    <p className="text-xs text-slate-400">Dividir el total de ${finalTotal.toLocaleString("es-CO")} en varios métodos de pago</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowSplitPaymentModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">✕</button>
+                        </div>
+
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const c = parseFloat(splitCashAmount) || 0;
+                            const d = parseFloat(splitCardAmount) || 0;
+                            const n = parseFloat(splitNequiAmount) || 0;
+                            const cr = parseFloat(splitCreditAmount) || 0;
+                            const sum = c + d + n + cr;
+
+                            if (sum < finalTotal) {
+                                return alert(`La suma de pagos ($${sum.toLocaleString("es-CO")}) es menor al total a cobrar ($${finalTotal.toLocaleString("es-CO")}).`);
+                            }
+                            setShowSplitPaymentModal(false);
+                            alert(`✅ Cobro Mixto configurado correctamente:\n• Efectivo: $${c.toLocaleString("es-CO")}\n• Datáfono: $${d.toLocaleString("es-CO")}\n• Nequi/PSE: $${n.toLocaleString("es-CO")}\n• Crédito: $${cr.toLocaleString("es-CO")}`);
+                        }} className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Efectivo ($ COP)</label>
+                                    <input type="number" placeholder="0" value={splitCashAmount} onChange={(e) => setSplitCashAmount(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:border-teal-500" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Datáfono / Tarjeta ($ COP)</label>
+                                    <input type="number" placeholder="0" value={splitCardAmount} onChange={(e) => setSplitCardAmount(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:border-teal-500" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Nequi / Daviplata / PSE ($ COP)</label>
+                                    <input type="number" placeholder="0" value={splitNequiAmount} onChange={(e) => setSplitNequiAmount(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:border-teal-500" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-300">Crédito / Fiado ($ COP)</label>
+                                    <input type="number" placeholder="0" value={splitCreditAmount} onChange={(e) => setSplitCreditAmount(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:border-teal-500" />
+                                </div>
+                            </div>
+
+                            <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
+                                <button type="button" onClick={() => setShowSplitPaymentModal(false)} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs">Cancelar</button>
+                                <button type="submit" className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-lg shadow-teal-600/20 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" /> Confirmar Cobro Mixto
                                 </button>
                             </div>
                         </form>

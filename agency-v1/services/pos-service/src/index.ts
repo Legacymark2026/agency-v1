@@ -830,6 +830,81 @@ app.delete("/api/pos/registers/:id", async (req, res) => {
     }
 });
 
+// ── CASH MOVEMENTS (CAJA CHICA & CORTE X) ENDPOINTS ─────────────────────────
+
+// GET /api/pos/movements - Obtener Entradas / Salidas de Caja Chica
+app.get("/api/pos/movements", async (req, res) => {
+    try {
+        const registerId = req.query.registerId as string | undefined;
+        const movements = await catalogService.getRepository().getCashMovements(registerId);
+        res.json({ success: true, movements });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/movements - Registrar Entrada o Salida de Efectivo
+app.post("/api/pos/movements", async (req, res) => {
+    try {
+        const { registerId, type, amount, reason, user } = req.body;
+        const movement = await catalogService.getRepository().createCashMovement({
+            registerId: registerId || "caja_1",
+            type: type || "EXIT",
+            amount: Number(amount) || 0,
+            reason: reason || "Gasto de Caja Chica",
+            user: user || "Cajero Principal"
+        });
+        res.status(201).json({ success: true, movement });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// ── CUSTOMERS (PUNTOS DE FIDELIZACIÓN & CRÉDITO/FIADO) ENDPOINTS ─────────────
+
+// GET /api/pos/customers - Lista de Cuentas de Clientes (Puntos y Crédito)
+app.get("/api/pos/customers", async (req, res) => {
+    try {
+        const customers = await catalogService.getRepository().getCustomerAccounts();
+        res.json({ success: true, customers });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// GET /api/pos/customers/:nit - Buscar Cliente por NIT / Cédula
+app.get("/api/pos/customers/:nit", async (req, res) => {
+    try {
+        const customer = await catalogService.getRepository().findCustomerByNit(req.params.nit);
+        if (!customer) return res.status(404).json({ success: false, message: "Cliente no encontrado" });
+        res.json({ success: true, customer });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/customers - Crear o Actualizar Cuenta de Cliente
+app.post("/api/pos/customers", async (req, res) => {
+    try {
+        const customer = await catalogService.getRepository().createOrUpdateCustomerAccount(req.body);
+        res.status(200).json({ success: true, customer });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
+// POST /api/pos/customers/:nit/points - Sumar Puntos por Venta Realizada
+app.post("/api/pos/customers/:nit/points", async (req, res) => {
+    try {
+        const { points } = req.body;
+        const customer = await catalogService.getRepository().addLoyaltyPoints(req.params.nit, Number(points) || 0);
+        if (!customer) return res.status(404).json({ success: false, message: "Cliente no encontrado" });
+        res.json({ success: true, customer });
+    } catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+
 // Endpoint 1: Validar DV de NIT
 app.post("/api/pos/dian/verify-nit-dv", (req, res) => {
     const { nit } = req.body;
