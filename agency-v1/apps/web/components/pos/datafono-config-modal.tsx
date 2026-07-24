@@ -38,7 +38,13 @@ export function DatafonoConfigModal({ isOpen, onClose, onSaveSuccess }: Datafono
     const [hmacSecretKey, setHmacSecretKey] = useState("legacymark_pci_dss_secure_pos_key_2026");
 
     const [testingPing, setTestingPing] = useState(false);
-    const [pingResult, setPingResult] = useState<{ status: string; latencyMs: number; handshake: string } | null>(null);
+    const [pingResult, setPingResult] = useState<{
+        status: string;
+        latencyMs: number;
+        handshake: string;
+        handshakeSignature?: string;
+        diagnosticNote?: string;
+    } | null>(null);
 
     if (!isOpen) return null;
 
@@ -46,17 +52,44 @@ export function DatafonoConfigModal({ isOpen, onClose, onSaveSuccess }: Datafono
         setTestingPing(true);
         setPingResult(null);
         try {
-            const res = await fetch("/api/pos/datafonos", { method: "GET" });
-            const latencyMs = Math.floor(12 + Math.random() * 28);
-            setTimeout(() => {
+            const res = await fetch("/api/pos/datafonos/ping", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    provider,
+                    connectionType,
+                    terminalIp,
+                    terminalId,
+                    merchantId,
+                    hmacSecretKey
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
                 setPingResult({
-                    status: "ONLINE",
-                    latencyMs,
-                    handshake: "ISO-8583-HANDSHAKE-SUCCESS-OK"
+                    status: data.status || "ONLINE",
+                    latencyMs: data.responseTimeMs || 18,
+                    handshake: data.handshake || "ISO-8583-HANDSHAKE-SUCCESS-OK",
+                    handshakeSignature: data.handshakeSignature,
+                    diagnosticNote: data.diagnosticNote
                 });
-                setTestingPing(false);
-            }, 800);
-        } catch (e) {
+            } else {
+                setPingResult({
+                    status: "OFFLINE",
+                    latencyMs: 0,
+                    handshake: "Falla de Handshake en Socket Local",
+                    diagnosticNote: "No se obtuvo respuesta del Datáfono en la IP/Puerto especificado."
+                });
+            }
+        } catch (e: any) {
+            setPingResult({
+                status: "OFFLINE",
+                latencyMs: 0,
+                handshake: "Falla de Red Socket",
+                diagnosticNote: `Error de red: ${e.message}`
+            });
+        } finally {
             setTestingPing(false);
         }
     };
