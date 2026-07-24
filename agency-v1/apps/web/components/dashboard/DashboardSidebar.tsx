@@ -39,6 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
         accent: "amber", icon: <Briefcase size={20} />,
         items: [
             { href: "/dashboard/pos", label: "Terminal POS (Caja)", icon: <ShoppingBag size={14} />, code: "POS" },
+            { href: "/dashboard/invoicing", label: "Facturación DIAN & RADIAN", icon: <ShieldCheck size={14} />, code: "FAC" },
             { href: "/dashboard/catalog", label: "Catálogo & Productos", icon: <Package size={14} />, code: "CAT" },
             { href: "/dashboard/promotions", label: "Promociones & Cupones", icon: <Percent size={14} />, code: "PRM" },
             { href: "/dashboard/admin/crm", label: "Command Center", icon: <TrendingUp size={14} />, code: "OVW" },
