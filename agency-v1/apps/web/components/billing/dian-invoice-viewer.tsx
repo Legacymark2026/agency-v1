@@ -316,6 +316,7 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                                     <td className="p-1.5 border-r border-slate-200 text-right font-mono">{fmtCOP(it.unitPrice)}</td>
                                     <td className="p-1.5 text-right font-mono font-bold">{fmtCOP(it.totalItemValue)}</td>
                                 </tr>
+                            ))}
                         </tbody>
                     </table>
                     <div className="bg-slate-50 p-1 border-t border-slate-800 text-[9.5px] font-bold text-slate-700">
