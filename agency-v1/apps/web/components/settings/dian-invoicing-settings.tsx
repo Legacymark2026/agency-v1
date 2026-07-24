@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck, Building2, FileText, Key, CheckCircle2, AlertTriangle, Save, RefreshCw, Layers, Server } from "lucide-react";
+import { ShieldCheck, Building2, FileText, Key, CheckCircle2, AlertTriangle, AlertCircle, Save, RefreshCw, Layers, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { updateDianInvoicingSettings } from "@/app/actions/settings";
