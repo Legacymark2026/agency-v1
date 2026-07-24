@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
     LayoutDashboard, Users, Settings, FileText, LogOut,
-    Shield, BookOpen, Briefcase, BarChart2, Workflow,
+    Shield, ShieldCheck, BookOpen, Briefcase, BarChart2, Workflow,
     MessageSquare, Target, TrendingUp, Link2, Building2,
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
