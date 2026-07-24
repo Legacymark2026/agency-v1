@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Printer, ShieldCheck, QrCode } from "lucide-react";
+import { Printer, ShieldCheck, QrCode, Download } from "lucide-react";
 
 export interface DianInvoiceData {
     documentType?: "FACTURA_ELECTRONICA" | "NOTA_CREDITO" | "NOTA_DEBITO";
