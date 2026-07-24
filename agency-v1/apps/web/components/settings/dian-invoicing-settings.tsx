@@ -32,6 +32,15 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
     const [phone, setPhone] = useState(config.phone || "3153981340");
     const [email, setEmail] = useState(config.email || "nestorgarcia1005462@gmail.com");
 
+    // Logo & Official Invoice Branding State
+    const [logoUrl, setLogoUrl] = useState(config.logoUrl || "https://carlixplast.com/logo.png");
+    const [slogan, setSlogan] = useState(config.slogan || "Soluciones Amigables");
+    const [certifications, setCertifications] = useState(config.certifications || "ISO 9001 - ISO 45001");
+    const [pqrPhone, setPqrPhone] = useState(config.pqrPhone || "PQR - 3123010693");
+    const [pqrEmail, setPqrEmail] = useState(config.pqrEmail || "facturacion@carlixplast.com");
+    const [sellerName, setSellerName] = useState(config.sellerName || "WILSON TAPIA 8 GONZALEZ");
+    const [legalFooterText, setLegalFooterText] = useState(config.legalFooterText || "SOMOS GRANDES CONTRIBUYENTES DE ICA EN BUCARAMANGA SEGUN RESOLUCION 3331 DEL 18 DE ABRIL DE 2022");
+
     // Resolución & Numeración State
     const [dianPrefix, setDianPrefix] = useState(config.dianPrefix || "SETG");
     const [dianFromNumber, setDianFromNumber] = useState(config.dianFromNumber || "980000000");
@@ -57,6 +66,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
         const payload = {
             companyName, tradeName, nit, dv, taxpayerType, taxRegime, taxResponsibility,
             economicActivity, country, department, city, address, phone, email,
+            logoUrl, slogan, certifications, pqrPhone, pqrEmail, sellerName, legalFooterText,
             dianPrefix, dianFromNumber, dianToNumber, dianCurrentNumber,
             dianResolutionNumber, dianResolutionDate, dianResolutionDueDate, dianTechnicalKey,
             environment, softwareProvider, dianSoftwareId, dianSoftwarePin, testSetId, certificateStatus,
@@ -152,6 +162,68 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
             {/* TAB CONTENT 1: EMISOR TRIBUTARIO */}
             {activeTab === "issuer" && (
                 <div className="p-6 space-y-6">
+                    {/* LOGO DE LA FACTURA & BRANDING SECTION */}
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                            <FileText className="w-4 h-4" /> Logo de la Factura Electrónica & Identidad de Marca
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-xs font-bold text-slate-300">URL o Archivo del Logo de la Empresa (PNG / JPG / WebP / Base64)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="https://ejemplo.com/logo.png"
+                                        value={logoUrl}
+                                        onChange={(e) => setLogoUrl(e.target.value)}
+                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-500"
+                                    />
+                                    <label className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md">
+                                        Subir Archivo
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        if (event.target?.result) setLogoUrl(event.target.result as string);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                                <span className="text-[10px] text-slate-400 block">Este logo se estampará automáticamente en el encabezado superior izquierdo de todas las Facturas Electrónicas PDF / A4 de la DIAN.</span>
+                            </div>
+
+                            {/* LOGO PREVIEW CARD */}
+                            <div className="bg-white p-3 rounded-xl border border-slate-300 text-slate-900 flex flex-col items-center justify-center space-y-1 text-center shadow-inner min-h-[90px]">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vista Previa Logo En Factura</span>
+                                {logoUrl ? (
+                                    <img src={logoUrl} alt="Logo Factura DIAN" className="max-h-14 object-contain" />
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic">Sin Logo Cargado</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
+                            <div className="space-y-1">
+                                <label className="font-bold text-slate-300">Eslogan Comercial (Debajo del Logo)</label>
+                                <input type="text" value={slogan} onChange={(e) => setSlogan(e.target.value)} placeholder="Soluciones Amigables" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="font-bold text-slate-300">Certificaciones ISO / ICONTEC</label>
+                                <input type="text" value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="ISO 9001 - ISO 45001" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono text-[11px]" />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                         <div className="space-y-1.5">
                             <label className="font-bold text-slate-300">Razón Social / Nombre Legal *</label>

@@ -30,6 +30,13 @@ export interface DianInvoiceData {
         address?: string;
         phone?: string;
         email?: string;
+        logoUrl?: string;
+        slogan?: string;
+        certifications?: string;
+        pqrPhone?: string;
+        pqrEmail?: string;
+        sellerName?: string;
+        legalFooterText?: string;
     };
 
     // Adquiriente
@@ -159,307 +166,243 @@ export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
                 </div>
             </div>
 
-            {/* A4 PRINTABLE DOCUMENT CONTAINER */}
+            {/* A4 PRINTABLE DOCUMENT CONTAINER (EXACT DIAN FORMAT MATCHING CARLIXPLAST SAMPLE) */}
             <div
                 id="dian-printable-document"
-                className="w-full max-w-4xl bg-white text-slate-900 p-6 md:p-10 shadow-2xl rounded-sm font-sans text-xs space-y-5 print:p-0 print:shadow-none print:w-full print:max-w-none"
+                className="w-full max-w-4xl bg-white text-slate-900 p-6 md:p-8 shadow-2xl rounded-sm font-sans text-xs space-y-4 print:p-0 print:shadow-none print:w-full print:max-w-none border border-slate-300"
             >
-                {/* BRAND HEADER & DIAN LOGO BANNER */}
-                <div className="text-center space-y-1 relative pb-3 border-b-4 border-emerald-400">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-2xl font-black text-slate-700 tracking-tighter">DIAN</span>
-                        <h1 className="text-lg md:text-xl font-extrabold tracking-wide text-slate-900 uppercase">
-                            {documentTitle}
-                        </h1>
-                        <span className="text-2xl font-black text-slate-700 tracking-tighter">DIAN</span>
-                    </div>
-                    <h2 className="text-sm font-bold text-slate-800">Representación Gráfica</h2>
-                </div>
-
-                {/* 1. DATOS DEL DOCUMENTO */}
-                <div className="space-y-1.5">
-                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
-                        Datos del Documento
-                    </h3>
-                    <div className="space-y-1 text-[11px] leading-tight">
-                        <div className="bg-slate-50 p-1.5 rounded border border-slate-200">
-                            <span className="font-bold text-slate-700">{cufeLabel}</span>
-                            <span className="font-mono text-[10px] break-all text-slate-900 font-semibold block mt-0.5">
-                                {data.cufeOrCude}
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 pt-1">
-                            <div>
-                                <span className="font-bold text-slate-700">Número de Factura: </span>
-                                <span className="font-mono font-bold text-slate-900">{data.documentNumber}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Forma de pago: </span>
-                                <span>{data.paymentForm || "Contado"}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Fecha de Emisión: </span>
-                                <span>{data.issueDate}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Medio de Pago: </span>
-                                <span>{data.paymentMethod || "Transferencia Débito Bancaria"}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Fecha de Vencimiento: </span>
-                                <span>{data.dueDate || data.issueDate}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Orden de pedido: </span>
-                                <span>{data.purchaseOrder || "DESARROLLO DE BRANDING"}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Tipo de Operación: </span>
-                                <span>{data.operationType || (isCreditNote ? "20 - Nota Crédito" : "10 - Estándar")}</span>
-                            </div>
-                            <div>
-                                <span className="font-bold text-slate-700">Fecha de orden de pedido: </span>
-                                <span>{data.purchaseOrderDate || "22/05/2026"}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. DATOS DEL EMISOR / VENDEDOR */}
-                <div className="space-y-1.5">
-                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
-                        Datos del Emisor / Vendedor
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0.5 text-[11px]">
-                        <div>
-                            <span className="font-bold text-slate-700">Razón Social: </span>
-                            <span className="font-semibold">{data.issuer.companyName}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">País: </span>
-                            <span>{data.issuer.country || "Colombia"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Nombre Comercial: </span>
-                            <span>{data.issuer.tradeName || data.issuer.companyName}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Departamento: </span>
-                            <span>{data.issuer.department || "Santander"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Nit del Emisor: </span>
-                            <span className="font-mono font-semibold">{data.issuer.nit}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Municipio / Ciudad: </span>
-                            <span>{data.issuer.city || "Bucaramanga"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Tipo de Contribuyente: </span>
-                            <span>{data.issuer.taxpayerType || "Persona Natural"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Dirección: </span>
-                            <span>{data.issuer.address || "CL 12 # 19 - 18 MZ 20 CA 1"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Régimen Fiscal: </span>
-                            <span>{data.issuer.taxRegime || "R-99-PN"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Teléfono / Móvil: </span>
-                            <span>{data.issuer.phone || "3153981340"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Responsabilidad tributaria: </span>
-                            <span>{data.issuer.taxResponsibility || "ZZ - No aplica"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Correo: </span>
-                            <span>{data.issuer.email || "nestorgarcia1005462@gmail.com"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Actividad Económica: </span>
-                            <span>{data.issuer.economicActivity || "7310"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. DATOS DEL ADQUIRIENTE / COMPRADOR */}
-                <div className="space-y-1.5">
-                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
-                        Datos del Adquiriente / Comprador
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0.5 text-[11px]">
-                        <div>
-                            <span className="font-bold text-slate-700">Nombre o Razón Social: </span>
-                            <span className="font-semibold">{data.buyer.name}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">País: </span>
-                            <span>{data.buyer.country || "Colombia"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Tipo de Documento: </span>
-                            <span>{data.buyer.documentType || "NIT"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Departamento: </span>
-                            <span>{data.buyer.department || "Santander"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Número Documento: </span>
-                            <span className="font-mono font-semibold">{data.buyer.documentNumber}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Municipio / Ciudad: </span>
-                            <span>{data.buyer.city || "Bucaramanga"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Tipo de Contribuyente: </span>
-                            <span>{data.buyer.taxpayerType || "Persona Jurídica"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Dirección: </span>
-                            <span>{data.buyer.address || "crr1a 55a 30 IN ED CENTAURIO BRR CIUDADELA REAL DE MINAS"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Régimen fiscal: </span>
-                            <span>{data.buyer.taxRegime || "O-47;R-99-PN"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Teléfono / Móvil: </span>
-                            <span>{data.buyer.phone || "3173720384"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Responsabilidad tributaria: </span>
-                            <span>{data.buyer.taxResponsibility || "01 - IVA"}</span>
-                        </div>
-                        <div>
-                            <span className="font-bold text-slate-700">Correo: </span>
-                            <span>{data.buyer.email || "gerencia@neogestion.co"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. DETALLES DE PRODUCTOS (TABLA DE ÍTEMS CON ESTILO VERDE DIAN) */}
-                <div className="space-y-1.5">
-                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
-                        Detalles de Productos
-                    </h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-[10px] text-left border-collapse border border-emerald-300">
-                            <thead>
-                                <tr className="bg-emerald-100/70 text-slate-900 font-bold border-b border-emerald-300">
-                                    <th className="p-1 border-r border-emerald-300 text-center">Nro.</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center">Código</th>
-                                    <th className="p-1 border-r border-emerald-300">Descripción</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center">U/M</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center">Cantidad</th>
-                                    <th className="p-1 border-r border-emerald-300 text-right">Precio unitario</th>
-                                    <th className="p-1 border-r border-emerald-300 text-right">Descuento detalle</th>
-                                    <th className="p-1 border-r border-emerald-300 text-right">Recargo detalle</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">IVA</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">%</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">INC</th>
-                                    <th className="p-1 border-r border-emerald-300 text-center bg-emerald-200/50">%</th>
-                                    <th className="p-1 text-right font-black bg-emerald-200/70">Precio unitario de venta</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.items.map((it) => (
-                                    <tr key={it.nro} className="border-b border-emerald-200">
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.nro}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.code}</td>
-                                        <td className="p-1 border-r border-emerald-200 font-semibold uppercase text-[9.5px]">{it.description}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.unitOfMeasure || "WSD"}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.quantity.toFixed(2)}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.unitPrice)}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.discountDetail || 0)}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-right font-mono">{fmtCOP(it.surchargeDetail || 0)}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono"></td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.ivaPct ? `${it.ivaPct}%` : ""}</td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono"></td>
-                                        <td className="p-1 border-r border-emerald-200 text-center font-mono">{it.incPct ? `${it.incPct}%` : ""}</td>
-                                        <td className="p-1 text-right font-mono font-bold">{fmtCOP(it.totalItemValue)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* 5. REFERENCIAS (SI APLICA) */}
-                {data.references && data.references.length > 0 && (
-                    <div className="space-y-1.5">
-                        <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
-                            Referencias
-                        </h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-[10px] text-left border-collapse border border-emerald-200">
-                                <thead>
-                                    <tr className="bg-slate-50 text-slate-800 font-bold border-b border-emerald-200">
-                                        <th className="p-1 border-r border-emerald-200">Tipo de Documento Referencia</th>
-                                        <th className="p-1 border-r border-emerald-200">Número Referencia</th>
-                                        <th className="p-1 border-r border-emerald-200">Fecha Referencia</th>
-                                        <th className="p-1">Razón de Referencia</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.references.map((ref, idx) => (
-                                        <tr key={idx} className="border-b border-slate-200">
-                                            <td className="p-1 border-r border-emerald-200">{ref.type}</td>
-                                            <td className="p-1 border-r border-emerald-200 font-mono font-semibold">{ref.number}</td>
-                                            <td className="p-1 border-r border-emerald-200">{ref.date}</td>
-                                            <td className="p-1 uppercase font-medium">{ref.reason || "N/A"}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {/* 6. NOTAS FINALES Y FIRMA DIGITAL */}
-                <div className="space-y-1.5 pt-1">
-                    <h3 className="font-bold text-xs text-emerald-700 border-b border-emerald-400 pb-0.5">
-                        Notas Finales
-                    </h3>
-                    <div className="space-y-1 text-[10.5px]">
-                        <p className="font-mono text-slate-700">TpoDocRef:|SerieRef:|NumeroRef:|CodRef:|RazonRef:</p>
-                        <p><span className="font-bold">Linea de negocio:</span> {data.businessLine || data.notes || "Venta Directa de Servicios & Productos LegacyMark"}</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pt-2">
-                        <div className="p-2 border border-slate-200 rounded bg-slate-50 flex items-center gap-3">
-                            <QrCode className="w-12 h-12 text-slate-800 shrink-0" />
-                            <div className="space-y-0.5">
-                                <p className="font-bold text-[9px] text-slate-800">Documento Firmado Digitalmente por la DIAN</p>
-                                <p className="text-[8px] font-mono break-all text-slate-500">{data.cufeOrCude.substring(0, 50)}...</p>
-                            </div>
-                        </div>
-
-                        <div className="border border-emerald-300 rounded p-3 bg-emerald-50/50 space-y-1.5 text-xs text-right font-mono">
-                            <div className="flex justify-between">
-                                <span className="text-slate-600 font-sans">Subtotal</span>
-                                <span>{fmtCOP(data.subtotal)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600 font-sans">Impuestos (IVA 19%)</span>
-                                <span>{fmtCOP(data.taxTotal)}</span>
-                            </div>
-                            {data.discountTotal > 0 && (
-                                <div className="flex justify-between text-emerald-700 font-sans">
-                                    <span>Descuento Aplicado</span>
-                                    <span>-{fmtCOP(data.discountTotal)}</span>
+                {/* 1. TOP HEADER SECTION WITH LOGO, CERTIFICATIONS, ADDRESS & DIAN RESOLUTION BOX */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pb-3 border-b-2 border-slate-800 items-start">
+                    {/* LOGO & COMPANY INFO (LEFT) */}
+                    <div className="md:col-span-5 space-y-1">
+                        <div className="flex items-center gap-3">
+                            {data.issuer.logoUrl ? (
+                                <img src={data.issuer.logoUrl} alt={data.issuer.companyName} className="max-h-16 max-w-[180px] object-contain" />
+                            ) : (
+                                <div className="text-xl font-black text-indigo-900 tracking-tighter uppercase">
+                                    {data.issuer.companyName}
                                 </div>
                             )}
-                            <div className="flex justify-between text-sm font-black text-slate-900 pt-1 border-t border-emerald-300">
-                                <span className="font-sans">VALOR TOTAL</span>
-                                <span className="text-emerald-700">{fmtCOP(data.grandTotal)}</span>
+                            {data.issuer.certifications && (
+                                <div className="text-[8px] bg-slate-100 p-1 border rounded border-slate-300 font-mono text-slate-600">
+                                    {data.issuer.certifications}
+                                </div>
+                            )}
+                        </div>
+                        {data.issuer.slogan && (
+                            <p className="text-[10px] text-teal-700 font-bold italic">{data.issuer.slogan}</p>
+                        )}
+                        <h2 className="font-extrabold text-xs uppercase tracking-tight">{data.issuer.companyName}</h2>
+                        <p className="font-mono text-[10.5px] font-bold text-slate-800">NIT. {data.issuer.nit}</p>
+                        <div className="text-[9.5px] text-slate-600 space-y-0.5 font-medium leading-tight">
+                            <p>{data.issuer.taxResponsibility || "Responsable de IVA"}</p>
+                            <p>Actividad Económica {data.issuer.economicActivity || "2221"}</p>
+                            <p>{data.issuer.legalFooterText || "Somos Grandes Contribuyentes de ICA en Bucaramanga"}</p>
+                        </div>
+                    </div>
+
+                    {/* CUSTOMER SERVICE & ADDRESSES (CENTER) */}
+                    <div className="md:col-span-4 text-center space-y-0.5 text-[10px] text-slate-700 font-medium border-x md:border-slate-200 md:px-2 pt-1">
+                        <h3 className="font-bold text-xs text-slate-900 mb-1">Atención al Cliente</h3>
+                        <p>factura - {data.issuer.pqrEmail || data.issuer.email || "facturacion@carlixplast.com"}</p>
+                        <p className="font-bold">{data.issuer.pqrPhone || "PQR - 3123010693"}</p>
+                        <p>Principal - {data.issuer.address || "Calle 33 No. 11-83 - 3102305941"}</p>
+                        <p>Sucursal - {data.issuer.city || "Bucaramanga"} - {data.issuer.country || "Colombia"}</p>
+                    </div>
+
+                    {/* DIAN RESOLUTION & INVOICE NUMBER BOX (RIGHT) */}
+                    <div className="md:col-span-3 text-right space-y-2">
+                        <div className="text-[8.5px] text-slate-600 font-mono leading-tight">
+                            <p>Resolucion DIAN No. 18764105721229 Vigencia 10/FEB/2026 a 10/FEB/2028</p>
+                            <p>Numeracion Electronica del FE-300001 al FE-400000</p>
+                        </div>
+
+                        <div className="bg-slate-50 border-2 border-indigo-900 rounded-xl p-2.5 text-center space-y-0.5 shadow-sm">
+                            <span className="text-[10px] font-extrabold uppercase text-slate-800 tracking-wider block">
+                                FACTURA ELECTRÓNICA DE VENTA
+                            </span>
+                            <span className="text-base font-black text-indigo-950 font-mono block tracking-tight">
+                                {data.documentNumber}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. DATES & PAYMENT METADATA BAR */}
+                <div className="grid grid-cols-3 gap-2 text-[10.5px] font-bold border-b border-slate-300 pb-2">
+                    <div>
+                        <span className="text-slate-500 font-normal">FECHA HORA EXP: </span>
+                        <span>{data.issueDate}</span>
+                    </div>
+                    <div className="text-center">
+                        <span className="text-slate-500 font-normal">VENC: </span>
+                        <span>{data.dueDate || data.issueDate}</span>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-slate-500 font-normal">FORMA DE PAGO: </span>
+                        <span>{data.paymentForm || "Contado"}</span>
+                    </div>
+                </div>
+
+                {/* 3. PURCHASER BOX (TABLA DE DATOS DEL COMPRADOR / ADQUIRENTE) */}
+                <div className="border border-slate-800 text-[10px]">
+                    <div className="grid grid-cols-12 border-b border-slate-800 bg-slate-50 p-1.5 font-semibold">
+                        <div className="col-span-4">
+                            <span className="text-slate-500 font-bold block text-[9px]">SEÑOR(ES)</span>
+                            <span className="font-extrabold text-slate-900 uppercase">{data.buyer.name}</span>
+                        </div>
+                        <div className="col-span-2 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">C.C/Nit</span>
+                            <span className="font-mono font-bold text-slate-900">{data.buyer.documentNumber}</span>
+                        </div>
+                        <div className="col-span-3 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">EMAIL</span>
+                            <span className="font-medium text-slate-900">{data.buyer.email || "gerencia@neogestion.co"}</span>
+                        </div>
+                        <div className="col-span-3 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">MEDIO DE PAGO</span>
+                            <span className="font-bold text-slate-900">{data.paymentMethod || "CONSIGNACIÓN"}</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-12 p-1.5">
+                        <div className="col-span-4">
+                            <span className="text-slate-500 font-bold block text-[9px]">Dirección</span>
+                            <span>{data.buyer.address || "CALLE 15 3 4-47"}</span>
+                        </div>
+                        <div className="col-span-2 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">TEL</span>
+                            <span className="font-mono">{data.buyer.phone || "3124272175"}</span>
+                        </div>
+                        <div className="col-span-2 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">CIUDAD</span>
+                            <span>{data.buyer.city || "TOLEDO"}</span>
+                        </div>
+                        <div className="col-span-2 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">SOLICITUD</span>
+                            <span>-</span>
+                        </div>
+                        <div className="col-span-2 border-l border-slate-300 pl-2">
+                            <span className="text-slate-500 font-bold block text-[9px]">O.C.</span>
+                            <span>{data.purchaseOrder || "-"}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. ITEMS TABLE (TABLA DE PRODUCTOS CARLIXPLAST FORMAT) */}
+                <div className="border border-slate-800">
+                    <table className="w-full text-[10px] text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-800 bg-slate-100 font-bold text-slate-900 uppercase">
+                                <th className="p-1.5 border-r border-slate-300 text-center w-8">#</th>
+                                <th className="p-1.5 border-r border-slate-300">CODIGO</th>
+                                <th className="p-1.5 border-r border-slate-300 text-center">CANTIDAD</th>
+                                <th className="p-1.5 border-r border-slate-300">DESCRIPCION</th>
+                                <th className="p-1.5 border-r border-slate-300 text-right">VALOR UNITARIO</th>
+                                <th className="p-1.5 text-right font-black">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.items.map((it, idx) => (
+                                <tr key={it.nro || idx} className="border-b border-slate-200">
+                                    <td className="p-1.5 border-r border-slate-200 text-center font-mono">{it.nro || idx + 1}</td>
+                                    <td className="p-1.5 border-r border-slate-200 font-mono text-[9.5px] font-bold">{it.code}</td>
+                                    <td className="p-1.5 border-r border-slate-200 text-center font-mono font-bold">
+                                        {it.quantity.toFixed(2)} {it.unitOfMeasure || "UND"}
+                                    </td>
+                                    <td className="p-1.5 border-r border-slate-200 font-medium uppercase text-[9.5px]">
+                                        {it.description}
+                                    </td>
+                                    <td className="p-1.5 border-r border-slate-200 text-right font-mono">{fmtCOP(it.unitPrice)}</td>
+                                    <td className="p-1.5 text-right font-mono font-bold">{fmtCOP(it.totalItemValue)}</td>
+                                </tr>
+                        </tbody>
+                    </table>
+                    <div className="bg-slate-50 p-1 border-t border-slate-800 text-[9.5px] font-bold text-slate-700">
+                        Items: {data.items.length}
+                    </div>
+                </div>
+
+                {/* 5. PURCHASER SIGNATURE & TOTALS SECTION */}
+                <div className="grid grid-cols-12 gap-3 pt-1">
+                    {/* VENDEDOR & FIRMA COMPRADOR (LEFT & CENTER) */}
+                    <div className="col-span-8 border border-slate-800 rounded p-2.5 space-y-3 flex flex-col justify-between text-[9.5px]">
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <span className="font-bold text-slate-700">VENDEDOR: </span>
+                                <span className="font-extrabold">{data.issuer.sellerName || "WILSON TAPIA 8 GONZALEZ"}</span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-700">Celular: </span>
+                                <span>3123010693</span>
                             </div>
                         </div>
+
+                        <div className="pt-4 border-t border-slate-300">
+                            <p className="text-[8px] text-slate-600 italic leading-tight mb-3">
+                                Con la presente se hace constar que las mercancías descritas en el presente título valor fueron recibidas a entera satisfacción por quien aparece firmando este documento en nombre del comprador.
+                            </p>
+                            <div className="border-t border-slate-900 pt-0.5 text-center font-bold uppercase text-[9px] tracking-wider text-slate-800">
+                                COMPRADOR (FIRMA Y SELLO)
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* TOTALS BOX (RIGHT) */}
+                    <div className="col-span-4 border border-slate-800 rounded p-2 bg-slate-50 space-y-1 text-xs font-mono">
+                        <div className="flex justify-between text-slate-700">
+                            <span>Subtotal:</span>
+                            <span className="font-bold text-slate-900">{fmtCOP(data.subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-700">
+                            <span>Retefuente:</span>
+                            <span className="font-bold text-slate-900">{fmtCOP(data.withholdingTax || 0)}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-700">
+                            <span>I.V.A.:</span>
+                            <span className="font-bold text-slate-900">{fmtCOP(data.taxTotal)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-slate-800 pt-1 font-extrabold text-sm text-slate-950">
+                            <span>Total:</span>
+                            <span>{fmtCOP(data.grandTotal || data.totalAmount)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 6. DIAN LEGAL STATEMENT, CUFE, QR CODE & FOOTER */}
+                <div className="space-y-2 pt-1 border-t border-slate-800">
+                    <div className="border border-slate-800 p-1.5 rounded text-[8px] text-center font-mono uppercase font-semibold leading-tight text-slate-700">
+                        ESTA FACTURA, PARA ASPECTOS COMERCIALES, SE ASIMILA EN TODOS SUS EFECTOS A LA LETRA DE CAMBIO (ART. 772, 773, 774 Y SIGUIENTES DEL CODIGO DE COMERCIO Y DEMAS NORMAS CONCORDANTES DEL CÓDIGO DE COMERCIO Y CÓDIGO PENAL COLOMBIANO)
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-3 items-center">
+                        {/* QR CODE */}
+                        <div className="col-span-2 flex justify-center">
+                            <QrCode className="w-16 h-16 text-slate-950" />
+                        </div>
+
+                        {/* CUFE & FIRMA DIGITAL */}
+                        <div className="col-span-10 space-y-1 text-[9px] font-mono leading-tight">
+                            <div>
+                                <span className="font-bold text-slate-900 block">{cufeLabel}:</span>
+                                <span className="break-all text-[8.5px] font-bold text-slate-800 block">
+                                    {data.cufeOrCude}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-900 block">Firma Digital:</span>
+                                <span className="break-all text-[7.5px] text-slate-600 block">
+                                    kZdF+NJAXTbzct44lIy5AvJ2UAH9wnJMNLZo0Itthgp4MukIIUnMWuHqbo/hz9w3bB5AlN1ssm+sLXd4pst4I4llgvhLRYy1O539zbOMLl1wvKfnJn4XLn
+                                </span>
+                            </div>
+                            <div className="flex justify-between text-[9px] font-sans font-bold text-slate-800 pt-0.5">
+                                <span>Fecha Validación Dian: {data.issueDate}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center text-[8.5px] font-bold uppercase tracking-tight text-slate-700 border-t border-slate-300 pt-1">
+                        PARA CAMBIO SUMINISTRAR SU NUMERO DE IDENTIFICACION ANTE 8 DE 30 DIA. Aplican condiciones de cambio. SOMOS GRANDES CONTRIBUYENTES DE ICA EN BUCARAMANGA SEGUN RESOLUCION 3331 DEL 18 DE ABRIL DE 2022. FACTURA IMPRESA POR {data.issuer.companyName} NIT {data.issuer.nit}
                     </div>
                 </div>
             </div>
