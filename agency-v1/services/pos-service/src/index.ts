@@ -17,16 +17,21 @@ import {
 } from "./dian-engine";
 import { CatalogService } from "./catalog-service";
 import { CatalogGRPCServer } from "./grpc-server";
+import { InvoicingGRPCServer } from "./invoicing-grpc-server";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4020", 10);
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
+const INVOICING_GRPC_PORT = parseInt(process.env.INVOICING_GRPC_PORT || "50052", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 const eventBus = new EventBus(REDIS_URL, "pos-service");
 const catalogService = new CatalogService(eventBus);
 const grpcServer = new CatalogGRPCServer(catalogService.getRepository(), GRPC_PORT);
-grpcServer.start().catch((err) => console.warn("gRPC Server fallback/disabled:", err.message));
+grpcServer.start().catch((err) => console.warn("Catalog gRPC Server fallback/disabled:", err.message));
+
+const invoicingGrpcServer = new InvoicingGRPCServer(INVOICING_GRPC_PORT);
+invoicingGrpcServer.start().catch((err) => console.warn("Invoicing gRPC Server fallback/disabled:", err.message));
 
 app.use(helmet());
 app.use(cors());

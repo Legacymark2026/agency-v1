@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package dian_invoicing;
+
+service InvoicingGRPCService {
+  rpc GenerateInvoice (GenerateInvoiceRequest) returns (GenerateInvoiceResponse);
+  rpc CalculateCufe (CalculateCufeRequest) returns (CalculateCufeResponse);
+  rpc CalculateNitDv (CalculateNitDvRequest) returns (CalculateNitDvResponse);
+  rpc ValidateUblXml (ValidateUblXmlRequest) returns (ValidateUblXmlResponse);
+  rpc RunHabilitationTestSet (HabilitationTestSetRequest) returns (HabilitationTestSetResponse);
+}
+
+message CompanyData {
+  string company_name = 1;
+  string trade_name = 2;
+  string nit = 3;
+  string dv = 4;
+  string taxpayer_type = 5;
+  string tax_regime = 6;
+  string tax_responsibility = 7;
+  string economic_activity = 8;
+  string country = 9;
+  string department = 10;
+  string city = 11;
+  string address = 12;
+  string phone = 13;
+  string email = 14;
+}
+
+message BuyerData {
+  string name = 1;
+  string document_type = 2;
+  string document_number = 3;
+  string taxpayer_type = 4;
+  string tax_regime = 5;
+  string tax_responsibility = 6;
+  string country = 7;
+  string department = 8;
+  string city = 9;
+  string address = 10;
+  string phone = 11;
+  string email = 12;
+}
+
+message ItemData {
+  int32 nro = 1;
+  string code = 2;
+  string description = 3;
+  string unit_of_measure = 4;
+  double quantity = 5;
+  double unit_price = 6;
+  double discount_detail = 7;
+  double surcharge_detail = 8;
+  double iva_pct = 9;
+  double inc_pct = 10;
+  double total_item_value = 11;
+}
+
+message GenerateInvoiceRequest {
+  string document_type = 1;
+  string prefix = 2;
+  string number = 3;
+  string issue_date = 4;
+  string issue_time = 5;
+  string payment_form = 6;
+  string payment_method = 7;
+  string operation_type = 8;
+  string technical_key = 9;
+  string environment = 10;
+  CompanyData issuer = 11;
+  BuyerData buyer = 12;
+  repeated ItemData items = 13;
+  double subtotal = 14;
+  double tax_total = 15;
+  double discount_total = 16;
+  double grand_total = 17;
+}
+
+message GenerateInvoiceResponse {
+  bool success = 1;
+  string cufe = 2;
+  string qr_url = 3;
+  string ubl_xml = 4;
+  string issue_date = 5;
+  string document_number = 6;
+  string digital_signature = 7;
+  string error = 8;
+}
+
+message CalculateCufeRequest {
+  string full_number = 1;
+  string issue_date = 2;
+  string issue_time = 3;
+  double val_fac = 4;
+  double val_imp_1 = 5;
+  double val_tot = 6;
+  string nit_ofe = 7;
+  string num_adq = 8;
+  string technical_key = 9;
+  string environment = 10;
+}
+
+message CalculateCufeResponse {
+  bool success = 1;
+  string cufe = 2;
+  string algorithm = 3;
+}
+
+message CalculateNitDvRequest {
+  string nit = 1;
+}
+
+message CalculateNitDvResponse {
+  bool success = 1;
+  string nit = 2;
+  string dv = 3;
+}
+
+message ValidateUblXmlRequest {
+  string ubl_xml = 1;
+}
+
+message ValidateUblXmlResponse {
+  bool is_valid = 1;
+  string ubl_version = 2;
+  int32 line_count = 3;
+  string error = 4;
+}
+
+message HabilitationTestSetRequest {
+  string test_set_id = 1;
+  CompanyData issuer = 2;
+}
+
+message HabilitationTestSetResponse {
+  bool success = 1;
+  string status = 2;
+  int32 invoices_accepted = 3;
+  int32 credit_notes_accepted = 4;
+  int32 debit_notes_accepted = 5;
+  string dian_response_msg = 6;
+}
