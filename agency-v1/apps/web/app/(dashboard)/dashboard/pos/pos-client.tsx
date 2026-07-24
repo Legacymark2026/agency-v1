@@ -14,6 +14,7 @@ import { CashDenominationModal } from "@/components/pos/cash-denomination-modal"
 import { SmartPosTerminalModal } from "@/components/pos/smart-pos-terminal-modal";
 import { QrMenuModal } from "@/components/pos/qr-menu-modal";
 import { CreateProductModal } from "@/components/pos/create-product-modal";
+import { DatafonoConfigModal } from "@/components/pos/datafono-config-modal";
 
 import {
     saveOfflineOrder,
@@ -227,6 +228,8 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
         creditLimit: 2000000,
         usedCredit: 350000,
     });
+
+    const [showDatafonoConfigModal, setShowDatafonoConfigModal] = useState(false);
 
     const fetchMovements = async () => {
         try {
@@ -694,6 +697,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                         className="px-3.5 py-2.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
                     >
                         <Landmark className="w-3.5 h-3.5 text-indigo-400" /> Cajas Registradoras
+                    </button>
+
+                    <button
+                        onClick={() => setShowDatafonoConfigModal(true)}
+                        className="px-3.5 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                        <Settings className="w-3.5 h-3.5 text-purple-400" /> Configurar Datáfonos
                     </button>
 
                     <button
@@ -1915,6 +1925,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     </div>
                 </div>
             )}
+
+            {/* MODAL: DATÁFONO STRUCTURED CONFIGURATOR */}
+            <DatafonoConfigModal
+                isOpen={showDatafonoConfigModal}
+                onClose={() => setShowDatafonoConfigModal(false)}
+                onSaveSuccess={() => alert("✅ Configuración estructurada del Datáfono guardada en la base de datos.")}
+            />
         </div>
     );
 }

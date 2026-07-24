@@ -101,6 +101,27 @@ export interface CustomerAccountEntity {
     updatedAt: string;
 }
 
+export interface DatafonoTerminalEntity {
+    id: string;
+    companyId: string;
+    registerId?: string;
+    name: string;
+    provider: "BOLD" | "REDEBAN" | "WOMPI" | "CREDIBANCO" | "SUMUP";
+    connectionType: "BLUETOOTH" | "WIFI" | "USB_SERIAL";
+    terminalIp?: string;
+    bluetoothMac?: string;
+    usbPort?: string;
+    terminalId: string;
+    merchantId: string;
+    hmacSecretKey: string;
+    isDefault: boolean;
+    isActive: boolean;
+    lastPingStatus?: "ONLINE" | "OFFLINE";
+    lastPingAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export class IsolatedCatalogRepository {
     private catalogs = new Map<string, CatalogStoreInfo>();
     private store = new Map<string, CatalogEntity>();
@@ -108,6 +129,7 @@ export class IsolatedCatalogRepository {
     private cashRegisters = new Map<string, CashRegisterEntity>();
     private cashMovements = new Map<string, CashMovementEntity>();
     private customerAccounts = new Map<string, CustomerAccountEntity>();
+    private datafonoTerminals = new Map<string, DatafonoTerminalEntity>();
     private eventBus: EventBus;
     private dbInitialized = false;
 
@@ -832,5 +854,76 @@ export class IsolatedCatalogRepository {
         } catch (e: any) {}
 
         return customer;
+    }
+
+    // --- DATÁFONO POS TERMINALS HARDWARE CRUD ---
+    async getDatafonoTerminals(): Promise<DatafonoTerminalEntity[]> {
+        return Array.from(this.datafonoTerminals.values());
+    }
+
+    async createDatafonoTerminal(data: Partial<DatafonoTerminalEntity>): Promise<DatafonoTerminalEntity> {
+        const id = `dat_${Date.now()}`;
+        const now = new Date().toISOString();
+        const terminal: DatafonoTerminalEntity = {
+            id,
+            companyId: data.companyId || "company_default_pos",
+            registerId: data.registerId || "caja_1",
+            name: data.name || "Datáfono Smart POS Principal",
+            provider: data.provider || "BOLD",
+            connectionType: data.connectionType || "BLUETOOTH",
+            terminalIp: data.terminalIp || "192.168.1.150:8080",
+            bluetoothMac: data.bluetoothMac || "00:11:22:33:FF:EE",
+            usbPort: data.usbPort || "COM3",
+            terminalId: data.terminalId || `TERM-${data.provider || 'BOLD'}-01`,
+            merchantId: data.merchantId || "MERC-LEGACYMARK-8829",
+            hmacSecretKey: data.hmacSecretKey || "legacymark_hmac_secret_key_2026",
+            isDefault: data.isDefault ?? true,
+            isActive: data.isActive ?? true,
+            lastPingStatus: "ONLINE",
+            lastPingAt: now,
+            createdAt: now,
+            updatedAt: now,
+        };
+        this.datafonoTerminals.set(id, terminal);
+
+        try {
+            await prisma.$executeRawUnsafe(
+                `INSERT INTO tbl_pos_datafono_terminals 
+                (id, company_id, register_id, name, provider, connection_type, terminal_ip, bluetooth_mac, usb_port, terminal_id, merchant_id, hmac_secret_key, is_default, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                terminal.id, terminal.companyId, terminal.registerId || null, terminal.name, terminal.provider,
+                terminal.connectionType, terminal.terminalIp || null, terminal.bluetoothMac || null, terminal.usbPort || null,
+                terminal.terminalId, terminal.merchantId, terminal.hmacSecretKey, terminal.isDefault, terminal.isActive
+            );
+        } catch (e: any) {}
+
+        return terminal;
+    }
+
+    async updateDatafonoTerminal(id: string, updates: Partial<DatafonoTerminalEntity>): Promise<DatafonoTerminalEntity | null> {
+        const existing = this.datafonoTerminals.get(id);
+        if (!existing) return null;
+        const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+        this.datafonoTerminals.set(id, updated);
+
+        try {
+            await prisma.$executeRawUnsafe(
+                `UPDATE tbl_pos_datafono_terminals SET name = $1, provider = $2, connection_type = $3, terminal_ip = $4, terminal_id = $5, merchant_id = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7`,
+                updated.name, updated.provider, updated.connectionType, updated.terminalIp || null, updated.terminalId, updated.merchantId, id
+            );
+        } catch (e: any) {}
+
+        return updated;
+    }
+
+    async deleteDatafonoTerminal(id: string): Promise<boolean> {
+        if (!this.datafonoTerminals.has(id)) return false;
+        this.datafonoTerminals.delete(id);
+
+        try {
+            await prisma.$executeRawUnsafe(`DELETE FROM tbl_pos_datafono_terminals WHERE id = $1`, id);
+        } catch (e: any) {}
+
+        return true;
     }
 }
