@@ -24,6 +24,7 @@ import {
 import { DianInvoiceViewer, DianInvoiceData } from "./dian-invoice-viewer";
 import { DianWithholdingCalculator } from "./dian-withholding-calculator";
 import { DianTaxParametersManager } from "./dian-tax-parameters-manager";
+import { DianLiveSyncMonitor } from "./dian-live-sync-monitor";
 
 import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
 
@@ -376,6 +377,14 @@ export function DianElectronicBillingHub() {
                         >
                             Catálogo Parámetros DIAN
                         </button>
+                        <button
+                            onClick={() => setActiveTab("LIVE_SYNC")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "LIVE_SYNC" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Monitor Sincronización TRM/UVT
+                        </button>
                     </div>
 
                     <div className="relative w-full md:w-72">
@@ -390,7 +399,7 @@ export function DianElectronicBillingHub() {
                     </div>
                 </div>
 
-                {/* CONDITIONAL RENDER: RETEFUENTE CALCULATOR, TAX PARAMS CATALOG OR DOCUMENTS TABLE */}
+                {/* CONDITIONAL RENDER: RETEFUENTE, TAX PARAMS, LIVE SYNC OR DOCUMENTS TABLE */}
                 {activeTab === "RETEFUENTE" ? (
                     <div className="pt-2">
                         <DianWithholdingCalculator />
@@ -398,6 +407,10 @@ export function DianElectronicBillingHub() {
                 ) : activeTab === "TAX_PARAMS" ? (
                     <div className="pt-2">
                         <DianTaxParametersManager />
+                    </div>
+                ) : activeTab === "LIVE_SYNC" ? (
+                    <div className="pt-2">
+                        <DianLiveSyncMonitor />
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
