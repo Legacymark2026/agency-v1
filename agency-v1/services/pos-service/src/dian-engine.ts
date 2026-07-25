@@ -269,9 +269,15 @@ export function runDianHabilitationTestSet(testSetId: string, issuer: DianCompan
 
 /**
  * ALGORITMO 5 & 7: Descomposición de Impuestos (IVA, INC, ICUI, INPP, ReteFuente, ReteICA y ReteIVA)
- * Cumplimiento de Anexo Técnico DIAN 1.8 & Ley de Crecimiento 2010
+ * Cumplimiento de Anexo Técnico DIAN 1.8, Ley de Crecimiento 2010 & UVT 2026 ($49.799 COP)
  */
-export function calculateColombianTaxBreakdown(items: DianItemData[], reteFuenteRatePct = 2.5, reteIcaPerThousand = 4.14) {
+export function calculateColombianTaxBreakdown(
+    items: DianItemData[],
+    reteFuenteRatePct = 2.5,
+    reteIcaPerThousand = 4.14,
+    isWithholdingAgent = true,
+    isRegimenSimpleBuyer = false
+) {
     let subtotal = 0;
     let taxIva19 = 0;
     let taxIva5 = 0;
@@ -302,10 +308,15 @@ export function calculateColombianTaxBreakdown(items: DianItemData[], reteFuente
 
     const taxTotal = taxIva19 + taxIva5 + taxInc8 + taxIcui20;
 
-    // Retenciones en la fuente e ICA (Solo aplican sobre la base sin IVA si supera la cuantía mínima UVT)
-    const reteFuenteAmount = subtotal >= 1100000 ? (subtotal * (reteFuenteRatePct / 100)) : 0;
-    const reteIcaAmount = subtotal * (reteIcaPerThousand / 1000);
-    const reteIvaAmount = taxIva19 * 0.15; // 15% del valor total del IVA discriminado
+    // UVT 2026 = $49.799 COP. Base mínima para Compras Generales = 27 UVT = $1.344.573 COP (ET Art. 401)
+    const minUvtThresholdCop = 27 * 49799;
+
+    // Retención en la fuente sólo aplica si la empresa es Agente Retenedor, el cliente no es RST y la base supera 27 UVTs
+    const appliesReteFuente = isWithholdingAgent && !isRegimenSimpleBuyer && subtotal >= minUvtThresholdCop;
+    const reteFuenteAmount = appliesReteFuente ? (subtotal * (reteFuenteRatePct / 100)) : 0;
+
+    const reteIcaAmount = isWithholdingAgent ? (subtotal * (reteIcaPerThousand / 1000)) : 0;
+    const reteIvaAmount = isWithholdingAgent ? (taxIva19 * 0.15) : 0; // 15% del IVA para Grandes Contribuyentes
 
     const grandTotal = (subtotal + taxTotal) - (reteFuenteAmount + reteIcaAmount);
 
@@ -317,6 +328,8 @@ export function calculateColombianTaxBreakdown(items: DianItemData[], reteFuente
         taxIcui20: Number(taxIcui20.toFixed(2)),
         taxTotal: Number(taxTotal.toFixed(2)),
         totalDiscounts: Number(totalDiscounts.toFixed(2)),
+        appliesReteFuente,
+        minUvtThresholdCop,
         reteFuenteAmount: Number(reteFuenteAmount.toFixed(2)),
         reteIcaAmount: Number(reteIcaAmount.toFixed(2)),
         reteIvaAmount: Number(reteIvaAmount.toFixed(2)),

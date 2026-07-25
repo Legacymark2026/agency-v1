@@ -22,6 +22,7 @@ import {
     Download
 } from "lucide-react";
 import { DianInvoiceViewer, DianInvoiceData } from "./dian-invoice-viewer";
+import { DianWithholdingCalculator } from "./dian-withholding-calculator";
 
 export interface DianDocumentRecord {
     id: string;
@@ -356,6 +357,14 @@ export function DianElectronicBillingHub() {
                         >
                             Doc. Soporte
                         </button>
+                        <button
+                            onClick={() => setActiveTab("RETEFUENTE")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "RETEFUENTE" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Retención en la Fuente 2026
+                        </button>
                     </div>
 
                     <div className="relative w-full md:w-72">
@@ -370,8 +379,13 @@ export function DianElectronicBillingHub() {
                     </div>
                 </div>
 
-                {/* DOCUMENTS TABLE */}
-                <div className="overflow-x-auto">
+                {/* CONDITIONAL RENDER: RETEFUENTE CALCULATOR OR DOCUMENTS TABLE */}
+                {activeTab === "RETEFUENTE" ? (
+                    <div className="pt-2">
+                        <DianWithholdingCalculator />
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left border-collapse">
                         <thead>
                             <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
@@ -444,6 +458,7 @@ export function DianElectronicBillingHub() {
                         </tbody>
                     </table>
                 </div>
+                )}
             </div>
 
             {/* MODAL: VER REPRESENTACIÓN GRÁFICA A4 DIAN */}
