@@ -24,7 +24,7 @@ export async function getUsers() {
     if (authCheck) return authCheck;
 
     try {
-        const users = await prisma.user.findMany({
+        const rawUsers = await prisma.user.findMany({
             orderBy: { createdAt: "desc" },
             select: {
                 id: true,
@@ -38,18 +38,32 @@ export async function getUsers() {
                 createdAt: true,
                 deactivatedAt: true,
                 mfaEnabled: true,
-                emailVerified: true, // For visual check
-                _count: {
-                    select: { 
-                        activityLogs: true
-                    }
-                }
+                emailVerified: true,
             }
         });
+
+        let logsCountMap: Record<string, number> = {};
+        try {
+            const counts = await prisma.userActivityLog.groupBy({
+                by: ['userId'],
+                _count: { _all: true }
+            });
+            counts.forEach(c => {
+                if (c.userId) logsCountMap[c.userId] = c._count._all;
+            });
+        } catch (e) {
+            console.warn("Non-fatal: could not fetch activityLogs count:", e);
+        }
+
+        const users = rawUsers.map(u => ({
+            ...u,
+            _count: { activityLogs: logsCountMap[u.id] || 0 }
+        }));
+
         return { users };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to fetch users:", error);
-        return { error: "Failed to fetch users" };
+        return { error: error?.message || "Error al consultar usuarios en base de datos" };
     }
 }
 
