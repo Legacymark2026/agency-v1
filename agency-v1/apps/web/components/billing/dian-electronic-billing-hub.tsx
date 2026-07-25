@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { DianInvoiceViewer, DianInvoiceData } from "./dian-invoice-viewer";
 import { DianWithholdingCalculator } from "./dian-withholding-calculator";
+import { DianTaxParametersManager } from "./dian-tax-parameters-manager";
 
 import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
 
@@ -367,6 +368,14 @@ export function DianElectronicBillingHub() {
                         >
                             Retención en la Fuente 2026
                         </button>
+                        <button
+                            onClick={() => setActiveTab("TAX_PARAMS")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "TAX_PARAMS" ? "bg-teal-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Catálogo Parámetros DIAN
+                        </button>
                     </div>
 
                     <div className="relative w-full md:w-72">
@@ -381,10 +390,14 @@ export function DianElectronicBillingHub() {
                     </div>
                 </div>
 
-                {/* CONDITIONAL RENDER: RETEFUENTE CALCULATOR OR DOCUMENTS TABLE */}
+                {/* CONDITIONAL RENDER: RETEFUENTE CALCULATOR, TAX PARAMS CATALOG OR DOCUMENTS TABLE */}
                 {activeTab === "RETEFUENTE" ? (
                     <div className="pt-2">
                         <DianWithholdingCalculator />
+                    </div>
+                ) : activeTab === "TAX_PARAMS" ? (
+                    <div className="pt-2">
+                        <DianTaxParametersManager />
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
