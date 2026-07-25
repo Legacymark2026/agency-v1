@@ -1492,10 +1492,10 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                                         ivaPct: 19,
                                         totalItemValue: it.total,
                                     })) || [],
-                                    subtotal,
-                                    taxTotal: tax,
-                                    discountTotal: totalDiscountCombined,
-                                    grandTotal: finalTotal,
+                                    subtotal: lastCompletedOrder.receiptTicket?.totals?.subtotal || subtotal,
+                                    taxTotal: lastCompletedOrder.receiptTicket?.totals?.tax || tax,
+                                    discountTotal: lastCompletedOrder.receiptTicket?.totals?.discount || totalDiscountCombined,
+                                    grandTotal: lastCompletedOrder.receiptTicket?.totals?.total || finalTotal,
                                 }}
                             />
                         ) : (
