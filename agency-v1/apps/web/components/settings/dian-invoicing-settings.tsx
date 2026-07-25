@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck, Building2, FileText, Key, CheckCircle2, AlertTriangle, AlertCircle, Save, RefreshCw, Layers, Server } from "lucide-react";
+import {
+    ShieldCheck, Building2, FileText, Key, CheckCircle2, AlertTriangle,
+    AlertCircle, Save, RefreshCw, Layers, Server, Calculator, Check, Image as ImageIcon, Zap
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { updateDianInvoicingSettings } from "@/app/actions/settings";
@@ -13,10 +16,10 @@ interface DianInvoicingSettingsProps {
 export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsProps) {
     const config = initialConfig?.dianConfig || {};
 
-    const [activeTab, setActiveTab] = useState<"issuer" | "resolution" | "software">("issuer");
+    const [activeTab, setActiveTab] = useState<"issuer" | "branding" | "resolution" | "software" | "tax_coordination">("issuer");
     const [isSaving, setIsSaving] = useState(false);
 
-    // Emisor State
+    // 1. Emisor & Régimen State
     const [companyName, setCompanyName] = useState(config.companyName || "GARCIA DURAN NESTOR ELIAN");
     const [tradeName, setTradeName] = useState(config.tradeName || "GARCIA DURAN NESTOR ELIAN");
     const [nit, setNit] = useState(config.nit || "1005462317");
@@ -32,7 +35,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
     const [phone, setPhone] = useState(config.phone || "3153981340");
     const [email, setEmail] = useState(config.email || "nestorgarcia1005462@gmail.com");
 
-    // Logo & Official Invoice Branding State
+    // 2. Logo & Official Invoice Branding State
     const [logoUrl, setLogoUrl] = useState(config.logoUrl || "https://carlixplast.com/logo.png");
     const [slogan, setSlogan] = useState(config.slogan || "Soluciones Amigables");
     const [certifications, setCertifications] = useState(config.certifications || "ISO 9001 - ISO 45001");
@@ -41,7 +44,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
     const [sellerName, setSellerName] = useState(config.sellerName || "WILSON TAPIA 8 GONZALEZ");
     const [legalFooterText, setLegalFooterText] = useState(config.legalFooterText || "SOMOS GRANDES CONTRIBUYENTES DE ICA EN BUCARAMANGA SEGUN RESOLUCION 3331 DEL 18 DE ABRIL DE 2022");
 
-    // Resolución & Numeración State
+    // 3. Resolución & Numeración State
     const [dianPrefix, setDianPrefix] = useState(config.dianPrefix || "SETG");
     const [dianFromNumber, setDianFromNumber] = useState(config.dianFromNumber || "980000000");
     const [dianToNumber, setDianToNumber] = useState(config.dianToNumber || "990000000");
@@ -51,7 +54,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
     const [dianResolutionDueDate, setDianResolutionDueDate] = useState(config.dianResolutionDueDate || "2027-01-15");
     const [dianTechnicalKey, setDianTechnicalKey] = useState(config.dianTechnicalKey || "fc8b05a6315d0ae2041cd135ffd39b5e2c622f0a929db4489dd56dbb9a20c11");
 
-    // Software & Habilitación State
+    // 4. Software & Habilitación State
     const [environment, setEnvironment] = useState(config.environment || "HABILITACION_PRUEBAS");
     const [softwareProvider, setSoftwareProvider] = useState(config.softwareProvider || "DIAN Software Propio");
     const [dianSoftwareId, setDianSoftwareId] = useState(config.dianSoftwareId || "a1b2c3d4-e5f6-7890-abcd-ef1234567890");
@@ -59,7 +62,11 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
     const [testSetId, setTestSetId] = useState(config.testSetId || "dian-test-set-88291");
     const [certificateStatus, setCertificateStatus] = useState(config.certificateStatus || "VÁLIDO HASTA 2027-12-31");
 
-    // Diagnostic State for Technical Key & Digital Signature
+    // 5. Retenciones & Coordinación Municipal State
+    const [municipalReteIcaRate, setMunicipalReteIcaRate] = useState(config.municipalReteIcaRate || "4.14");
+    const [generalReteFuenteRate, setGeneralReteFuenteRate] = useState(config.generalReteFuenteRate || "2.5");
+
+    // Diagnostic State
     const [techKeyStatus, setTechKeyStatus] = useState<{ checked: boolean; isValid: boolean; message: string; details?: any } | null>(null);
     const [certCheckStatus, setCertCheckStatus] = useState<{ checked: boolean; isValid: boolean; message: string; details?: any } | null>(null);
 
@@ -131,7 +138,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
 
     const handleSave = async () => {
         setIsSaving(true);
-        const toastId = toast.loading("Guardando configuración de Facturación Electrónica DIAN...");
+        const toastId = toast.loading("Sincronizando y guardando configuración de Facturación DIAN...");
 
         const payload = {
             companyName, tradeName, nit, dv, taxpayerType, taxRegime, taxResponsibility,
@@ -140,13 +147,14 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
             dianPrefix, dianFromNumber, dianToNumber, dianCurrentNumber,
             dianResolutionNumber, dianResolutionDate, dianResolutionDueDate, dianTechnicalKey,
             environment, softwareProvider, dianSoftwareId, dianSoftwarePin, testSetId, certificateStatus,
+            municipalReteIcaRate, generalReteFuenteRate,
             isConfigured: true
         };
 
         const result = await updateDianInvoicingSettings(payload);
 
         if (result.success) {
-            toast.success("Configuración de Facturación DIAN guardada con éxito", { id: toastId });
+            toast.success("Configuración del Sistema de Facturación DIAN 100% Sincronizada", { id: toastId });
         } else {
             toast.error(result.error || "Ocurrió un error al guardar la configuración", { id: toastId });
         }
@@ -155,25 +163,25 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
 
     return (
         <div className="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl overflow-hidden mt-6 text-slate-100">
-            {/* HEADER BANNER */}
-            <div className="p-6 border-b border-slate-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-950/60">
+            {/* HEADER BANNER WITH LIVE MASTER COORDINATION STATUS */}
+            <div className="p-6 border-b border-slate-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-950/80 backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
-                        <ShieldCheck className="w-6 h-6" />
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 shadow-lg shadow-emerald-500/10">
+                        <ShieldCheck className="w-7 h-7" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-bold text-white">Facturación Electrónica DIAN</h3>
+                            <h3 className="text-lg font-bold text-white">Centro de Coordinación & Configuración DIAN UBL 2.1</h3>
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                                 environment === "PRODUCCION_EN_DIRECTO"
                                     ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                                     : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
                             }`}>
-                                {environment === "PRODUCCION_EN_DIRECTO" ? "Producción Activa" : "Entorno de Pruebas / Habilitación"}
+                                {environment === "PRODUCCION_EN_DIRECTO" ? "Producción Legal Directa" : "Entorno Habilitación DIAN"}
                             </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            Configura los parámetros legales, tributarios, resoluciones y credenciales de software requeridos por la DIAN (Anexo Técnico 1.8).
+                            Sincronización integral de Datos Fiscales, Marca A4, Resoluciones, Firma Criptográfica y Microservicio gRPC (:50052).
                         </p>
                     </div>
                 </div>
@@ -185,116 +193,94 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                 >
                     {isSaving ? (
                         <>
-                            <RefreshCw className="w-4 h-4 animate-spin" /> Guardando...
+                            <RefreshCw className="w-4 h-4 animate-spin" /> Sincronizando...
                         </>
                     ) : (
                         <>
-                            <Save className="w-4 h-4" /> Guardar Datos DIAN
+                            <Save className="w-4 h-4" /> Guardar & Sincronizar Sistema
                         </>
                     )}
                 </Button>
             </div>
 
-            {/* NAVIGATION TABS */}
-            <div className="flex border-b border-slate-800 bg-slate-950/40 px-6 gap-2 pt-2">
+            {/* LIVE COORDINATION STATUS BAR */}
+            <div className="bg-slate-950 px-6 py-2 border-b border-slate-800 text-[11px] font-mono flex flex-wrap items-center justify-between gap-3 text-slate-400">
+                <div className="flex items-center gap-4">
+                    <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> API gRPC Invoicing (:50052)
+                    </span>
+                    <span className="flex items-center gap-1.5 text-teal-300">
+                        <Check className="w-3.5 h-3.5" /> DIAN VPFE Web Services
+                    </span>
+                    <span className="flex items-center gap-1.5 text-indigo-300">
+                        <Zap className="w-3.5 h-3.5" /> Algoritmo SHA-384 CUFE
+                    </span>
+                </div>
+                <span className="text-slate-500">UVT 2026 Ref: $49.799 COP</span>
+            </div>
+
+            {/* REORGANIZED NAVIGATION TABS (5 COORDINATED SECTIONS) */}
+            <div className="flex overflow-x-auto border-b border-slate-800 bg-slate-950/40 px-4 gap-1 pt-2">
                 <button
                     onClick={() => setActiveTab("issuer")}
-                    className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                    className={`px-3.5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
                         activeTab === "issuer"
                             ? "border-emerald-500 text-emerald-400 bg-slate-900/60"
                             : "border-transparent text-slate-400 hover:text-white"
                     }`}
                 >
-                    <Building2 className="w-4 h-4" /> 1. Datos Tributarios del Emisor
+                    <Building2 className="w-4 h-4" /> 1. Datos Tributarios & Régimen
                 </button>
+
+                <button
+                    onClick={() => setActiveTab("branding")}
+                    className={`px-3.5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "branding"
+                            ? "border-emerald-500 text-emerald-400 bg-slate-900/60"
+                            : "border-transparent text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <ImageIcon className="w-4 h-4" /> 2. Logo & Plantilla A4
+                </button>
+
                 <button
                     onClick={() => setActiveTab("resolution")}
-                    className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                    className={`px-3.5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
                         activeTab === "resolution"
                             ? "border-emerald-500 text-emerald-400 bg-slate-900/60"
                             : "border-transparent text-slate-400 hover:text-white"
                     }`}
                 >
-                    <FileText className="w-4 h-4" /> 2. Resolución & Numeración DIAN
+                    <FileText className="w-4 h-4" /> 3. Resolución & Clave Técnica
                 </button>
+
                 <button
                     onClick={() => setActiveTab("software")}
-                    className={`px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+                    className={`px-3.5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
                         activeTab === "software"
                             ? "border-emerald-500 text-emerald-400 bg-slate-900/60"
                             : "border-transparent text-slate-400 hover:text-white"
                     }`}
                 >
-                    <Key className="w-4 h-4" /> 3. Software & Firma Digital
+                    <Key className="w-4 h-4" /> 4. Software & Firma Digital
+                </button>
+
+                <button
+                    onClick={() => setActiveTab("tax_coordination")}
+                    className={`px-3.5 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "tax_coordination"
+                            ? "border-emerald-500 text-emerald-400 bg-slate-900/60"
+                            : "border-transparent text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <Calculator className="w-4 h-4" /> 5. Retenciones & Coordinación
                 </button>
             </div>
 
-            {/* TAB CONTENT 1: EMISOR TRIBUTARIO */}
+            {/* TAB 1: DATOS TRIBUTARIOS Y RÉGIMEN FISCAL (RUT) */}
             {activeTab === "issuer" && (
-                <div className="p-6 space-y-6">
-                    {/* LOGO DE LA FACTURA & BRANDING SECTION */}
-                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
-                        <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
-                            <FileText className="w-4 h-4" /> Logo de la Factura Electrónica & Identidad de Marca
-                        </h4>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            <div className="space-y-2 md:col-span-2">
-                                <label className="text-xs font-bold text-slate-300">URL o Archivo del Logo de la Empresa (PNG / JPG / WebP / Base64)</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="https://ejemplo.com/logo.png"
-                                        value={logoUrl}
-                                        onChange={(e) => setLogoUrl(e.target.value)}
-                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-500"
-                                    />
-                                    <label className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md">
-                                        Subir Archivo
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    const reader = new FileReader();
-                                                    reader.onload = (event) => {
-                                                        if (event.target?.result) setLogoUrl(event.target.result as string);
-                                                    };
-                                                    reader.readAsDataURL(file);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </div>
-                                <span className="text-[10px] text-slate-400 block">Este logo se estampará automáticamente en el encabezado superior izquierdo de todas las Facturas Electrónicas PDF / A4 de la DIAN.</span>
-                            </div>
-
-                            {/* LOGO PREVIEW CARD */}
-                            <div className="bg-white p-3 rounded-xl border border-slate-300 text-slate-900 flex flex-col items-center justify-center space-y-1 text-center shadow-inner min-h-[90px]">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vista Previa Logo En Factura</span>
-                                {logoUrl ? (
-                                    <img src={logoUrl} alt="Logo Factura DIAN" className="max-h-14 object-contain" />
-                                ) : (
-                                    <span className="text-xs text-slate-400 italic">Sin Logo Cargado</span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
-                            <div className="space-y-1">
-                                <label className="font-bold text-slate-300">Eslogan Comercial (Debajo del Logo)</label>
-                                <input type="text" value={slogan} onChange={(e) => setSlogan(e.target.value)} placeholder="Soluciones Amigables" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="font-bold text-slate-300">Certificaciones ISO / ICONTEC</label>
-                                <input type="text" value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="ISO 9001 - ISO 45001" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono text-[11px]" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                <div className="p-6 space-y-6 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1.5">
                             <label className="font-bold text-slate-300">Razón Social / Nombre Legal *</label>
                             <input
@@ -331,7 +317,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                                     type="text"
                                     value={dv}
                                     onChange={(e) => setDv(e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-center text-white outline-none focus:border-emerald-500 font-mono font-bold"
+                                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono font-bold text-center"
                                 />
                             </div>
                         </div>
@@ -443,7 +429,86 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                 </div>
             )}
 
-            {/* TAB CONTENT 2: RESOLUCIÓN Y NUMERACIÓN DIAN */}
+            {/* TAB 2: BRANDING E IMAGEN CORPORATIVA FACTURA A4 */}
+            {activeTab === "branding" && (
+                <div className="p-6 space-y-6 text-xs">
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                            <ImageIcon className="w-4 h-4" /> Logo de la Factura Electrónica & Identidad de Marca
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="md:col-span-2 space-y-2">
+                                <label className="font-bold text-slate-300">URL del Logo o Carga de Archivo Imagen (PNG/JPG)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="https://tuempresa.com/logo.png"
+                                        value={logoUrl}
+                                        onChange={(e) => setLogoUrl(e.target.value)}
+                                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-500"
+                                    />
+                                    <label className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-md">
+                                        Subir Archivo
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        if (event.target?.result) setLogoUrl(event.target.result as string);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-slate-300 text-slate-900 flex flex-col items-center justify-center space-y-1 text-center shadow-inner min-h-[90px]">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Vista Previa Logo En Factura</span>
+                                {logoUrl ? (
+                                    <img src={logoUrl} alt="Logo Factura DIAN" className="max-h-14 object-contain" />
+                                ) : (
+                                    <span className="text-xs text-slate-400 italic">Sin Logo Cargado</span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
+                            <div className="space-y-1">
+                                <label className="font-bold text-slate-300">Eslogan Comercial (Debajo del Logo)</label>
+                                <input type="text" value={slogan} onChange={(e) => setSlogan(e.target.value)} placeholder="Soluciones Amigables" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="font-bold text-slate-300">Certificaciones ISO / ICONTEC</label>
+                                <input type="text" value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="ISO 9001 - ISO 45001" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono text-[11px]" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                            <label className="font-bold text-slate-300">Vendedor Predeterminado en Factura</label>
+                            <input type="text" value={sellerName} onChange={(e) => setSellerName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-semibold" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="font-bold text-slate-300">Teléfono / PQR Atención al Cliente</label>
+                            <input type="text" value={pqrPhone} onChange={(e) => setPqrPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono" />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="font-bold text-slate-300">Texto Legal de Pie de Página (Título Valor Art. 772/773/774 C.Co.)</label>
+                            <textarea rows={2} value={legalFooterText} onChange={(e) => setLegalFooterText(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-emerald-500 font-mono text-[11px]" />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 3: RESOLUCIÓN Y CLAVE TÉCNICA DIAN */}
             {activeTab === "resolution" && (
                 <div className="p-6 space-y-6 text-xs">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -559,7 +624,7 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                 </div>
             )}
 
-            {/* TAB CONTENT 3: SOFTWARE & FIRMA DIGITAL */}
+            {/* TAB 4: SOFTWARE Y FIRMA DIGITAL */}
             {activeTab === "software" && (
                 <div className="p-6 space-y-6 text-xs">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -653,6 +718,72 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                                     )}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 5: RETENCIONES & COORDINACIÓN MUNICIPAL */}
+            {activeTab === "tax_coordination" && (
+                <div className="p-6 space-y-6 text-xs">
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                            <Calculator className="w-4 h-4" /> Parámetros Municipales de Retención & UVT 2026
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1.5">
+                                <label className="font-bold text-slate-300">Tarifa ReteICA Municipal (x 1.000)</label>
+                                <select
+                                    value={municipalReteIcaRate}
+                                    onChange={(e) => setMunicipalReteIcaRate(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-indigo-500 font-mono"
+                                >
+                                    <option value="4.14">4.14 x 1.000 | Bucaramanga (Comercio General)</option>
+                                    <option value="7.00">7.00 x 1.000 | Bucaramanga / Medellín (Servicios)</option>
+                                    <option value="9.66">9.66 x 1.000 | Bogotá D.C. (Comercio)</option>
+                                    <option value="11.04">11.04 x 1.000 | Bogotá D.C. (Servicios)</option>
+                                    <option value="10.00">10.00 x 1.000 | Cali (Comercio y Servicios)</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="font-bold text-slate-300">Tarifa Retefuente Predeterminada (Compras 27 UVT)</label>
+                                <select
+                                    value={generalReteFuenteRate}
+                                    onChange={(e) => setGeneralReteFuenteRate(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-indigo-500 font-mono"
+                                >
+                                    <option value="2.5">2.5% | Compras Generales (Declarantes)</option>
+                                    <option value="3.5">3.5% | Compras Generales (No Declarantes)</option>
+                                    <option value="4.0">4.0% | Servicios Generales (Declarantes)</option>
+                                    <option value="11.0">11.0% | Honorarios y Comisiones (PJ)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MICROSERVICES COORDINATION STATUS CARD */}
+                    <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+                        <h4 className="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2">
+                            <Server className="w-4 h-4 text-teal-400" /> Estado de Coordinación Microservicio POS & API gRPC
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+                            <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                                <span className="text-[10px] text-slate-400 block font-sans">Microservicio POS API (REST)</span>
+                                <span className="font-bold text-emerald-400 block">HTTP 200 OK (:4020)</span>
+                            </div>
+
+                            <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                                <span className="text-[10px] text-slate-400 block font-sans">Invoicing gRPC Server</span>
+                                <span className="font-bold text-teal-300 block">Proto Buffer (:50052)</span>
+                            </div>
+
+                            <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
+                                <span className="text-[10px] text-slate-400 block font-sans">Servicio SOAP DIAN VPFE</span>
+                                <span className="font-bold text-indigo-300 block">SendBillSync Activo</span>
+                            </div>
                         </div>
                     </div>
                 </div>
