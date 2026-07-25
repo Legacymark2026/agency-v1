@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { updateDianInvoicingSettings } from "@/app/actions/settings";
 
+import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
+
 interface DianInvoicingSettingsProps {
     initialConfig?: any;
 }
@@ -218,6 +220,43 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                 </div>
                 <span className="text-slate-500">UVT 2026 Ref: $49.799 COP</span>
             </div>
+
+            {/* LIVE DIAN READINESS & ENABLEMENT STATUS BANNER */}
+            {(() => {
+                const readiness = evaluateDianSystemReadiness({
+                    nit, dv, taxRegime, email,
+                    dianPrefix, dianResolutionNumber, dianResolutionDueDate, dianTechnicalKey,
+                    dianSoftwareId, dianSoftwarePin, certificateStatus
+                });
+
+                return (
+                    <div className={`mx-6 my-4 p-4 rounded-2xl border text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-3 ${readiness.statusBadge.colorClass}`}>
+                        <div className="flex items-center gap-3">
+                            {readiness.isFullyEnabled ? (
+                                <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
+                            ) : (
+                                <AlertCircle className="w-6 h-6 text-amber-400 shrink-0" />
+                            )}
+                            <div>
+                                <h4 className="font-bold text-sm font-sans flex items-center gap-2">
+                                    {readiness.statusBadge.label}
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/80 font-mono border border-slate-700">
+                                        {readiness.completionPercentage}% CONFIGURADO
+                                    </span>
+                                </h4>
+                                <p className="text-[11px] opacity-90 font-sans mt-0.5">
+                                    {readiness.statusBadge.description}
+                                </p>
+                                {!readiness.isFullyEnabled && (
+                                    <div className="text-[10px] font-mono mt-1 text-amber-200">
+                                        Pendientes: {readiness.missingFields.join(" • ")}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* REORGANIZED NAVIGATION TABS (5 COORDINATED SECTIONS) */}
             <div className="flex overflow-x-auto border-b border-slate-800 bg-slate-950/40 px-4 gap-1 pt-2">

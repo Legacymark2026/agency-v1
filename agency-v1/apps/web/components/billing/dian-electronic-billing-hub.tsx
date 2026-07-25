@@ -24,7 +24,9 @@ import {
 import { DianInvoiceViewer, DianInvoiceData } from "./dian-invoice-viewer";
 import { DianWithholdingCalculator } from "./dian-withholding-calculator";
 
-export interface DianDocumentRecord {
+import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
+
+interface DianDocumentRecord {
     id: string;
     documentType: "FACTURA_ELECTRONICA" | "NOTA_CREDITO" | "NOTA_DEBITO" | "DOCUMENTO_SOPORTE";
     prefix: string;
