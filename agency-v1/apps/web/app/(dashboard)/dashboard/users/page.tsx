@@ -9,18 +9,18 @@ export default async function UsersPage() {
 
     if ('error' in result) {
         return (
-            <div className="flex flex-col items-center justify-center p-10 h-full">
-                <div className="bg-red-50 text-red-600 p-6 rounded-2xl border border-red-200">
-                    <h2 className="font-bold text-lg">Error fatal</h2>
-                    <p>{result.error}</p>
+            <div className="flex flex-col items-center justify-center p-10 h-full min-h-[400px]">
+                <div className="bg-rose-950/60 text-rose-300 p-6 rounded-2xl border border-rose-800/80 shadow-xl space-y-2 max-w-md text-center">
+                    <h2 className="font-bold text-lg text-white">Error al cargar usuarios</h2>
+                    <p className="text-xs text-rose-200">{result.error}</p>
                 </div>
             </div>
         );
     }
 
-    const { users } = result;
+    const users = result.users || [];
     const currentUserId = session?.user?.id ?? "";
-    const customRoles = rolesRes.success ? rolesRes.roles : [];
+    const customRoles = rolesRes?.success ? rolesRes.roles : [];
 
     return (
         <div className="h-full">

@@ -41,9 +41,7 @@ export async function getUsers() {
                 emailVerified: true, // For visual check
                 _count: {
                     select: { 
-                        activityLogs: {
-                            where: { action: { startsWith: "LOGIN" } }
-                        }
+                        activityLogs: true
                     }
                 }
             }
