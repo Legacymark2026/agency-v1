@@ -349,30 +349,33 @@ export function DianInvoicingSettings({ initialConfig }: DianInvoicingSettingsPr
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="font-bold text-slate-300">Régimen Fiscal DIAN</label>
+                            <label className="font-bold text-slate-300">Régimen Fiscal & Tributario DIAN (RUT) *</label>
                             <select
                                 value={taxRegime}
                                 onChange={(e) => setTaxRegime(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500"
+                                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-semibold"
                             >
-                                <option value="O-48">O-48 | Impuesto Sobre las Ventas - IVA</option>
-                                <option value="O-47">O-47 | Régimen Simple de Tributación - SIMPLE</option>
+                                <option value="O-48">O-48 | Impuesto Sobre las Ventas - IVA (Régimen Ordinario)</option>
+                                <option value="O-47">O-47 | Régimen Simple de Tributación - SIMPLE (RST)</option>
                                 <option value="R-99-PN">R-99-PN | Persona Natural No Responsable de IVA</option>
+                                <option value="O-45">O-45 | Entidad Sin Ánimo de Lucro (ESAL - Régimen Especial)</option>
+                                <option value="ZF-01">ZF-01 | Zona Franca / ZESE (Tarifa Especial Impuesto Renta)</option>
                             </select>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="font-bold text-slate-300">Responsabilidad Tributaria</label>
+                            <label className="font-bold text-slate-300">Responsabilidad Tributaria (Casilla 53/54) *</label>
                             <select
                                 value={taxResponsibility}
                                 onChange={(e) => setTaxResponsibility(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500"
+                                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-semibold"
                             >
                                 <option value="01 - IVA">01 - IVA (Responsable de Impuesto a las Ventas)</option>
-                                <option value="04 - INC">04 - INC (Impuesto Nacional al Consumo)</option>
-                                <option value="ZZ - No aplica">ZZ - No aplica</option>
-                                <option value="O-13">O-13 | Gran Contribuyente</option>
-                                <option value="O-15">O-15 | Autorretenedor</option>
+                                <option value="04 - INC">04 - INC (Impuesto Nacional al Consumo 8%)</option>
+                                <option value="O-13">O-13 | Gran Contribuyente Autorizado DIAN</option>
+                                <option value="O-15">O-15 | Autorretenedor Autorizado DIAN</option>
+                                <option value="O-23">O-23 | Agente de Retención en IVA</option>
+                                <option value="ZZ - No aplica">ZZ - No aplica (No Responsable)</option>
                             </select>
                         </div>
 
