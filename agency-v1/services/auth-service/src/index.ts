@@ -27,9 +27,11 @@ const PORT = parseInt(process.env.PORT || "4001", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 const redis = new Redis(REDIS_URL);
+import crypto from "crypto";
+
 redis.on("error", (err) => console.error("[auth-service] Redis error:", err.message));
 
-// Load RS256 keys if present
+// Load or Auto-Generate RS256 Keys for JWT Signing & JWKS Verification
 let privateKey: string | null = null;
 let publicKey: string | null = null;
 
@@ -48,13 +50,46 @@ try {
     }
   }
 } catch (err: any) {
-  console.warn("[auth-service] Failed to load RSA keys, falling back to HS256:", err.message);
+  console.warn("[auth-service] Key load warning:", err.message);
+}
+
+// Auto-generate RSA 2048-bit KeyPair if missing
+if (!privateKey || !publicKey) {
+  console.log("[auth-service] Auto-generating 2048-bit RSA KeyPair for RS256 signing and JWKS...");
+  const { privateKey: genPrivate, publicKey: genPublic } = crypto.generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: "spki", format: "pem" },
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+  });
+  privateKey = genPrivate;
+  publicKey = genPublic;
 }
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(",") || "*" }));
 app.use(express.json({ limit: "1mb" }));
+
+// ── JWKS Endpoint (JSON Web Key Set - Inter-service Public Key Verification) ──
+app.get("/.well-known/jwks.json", (_req, res) => {
+  try {
+    if (!publicKey) return res.status(500).json({ error: "Public key unavailable" });
+    const pubKeyObj = crypto.createPublicKey(publicKey);
+    const jwk = pubKeyObj.export({ format: "jwk" });
+    res.json({
+      keys: [
+        {
+          ...jwk,
+          use: "sig",
+          alg: "RS256",
+          kid: "auth-service-rs256-key-1",
+        },
+      ],
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── Helper: write activity log (fire-and-forget, never throws) ────────────────
 async function logActivity(
@@ -330,6 +365,49 @@ app.post("/api/auth/validate", async (req, res) => {
     res.json({ valid: true, claims: decoded });
   } catch {
     res.json({ valid: false });
+  }
+});
+
+// POST /api/auth/check-permission — ACL Granular Permission Evaluator (RBAC + ACL Overrides)
+app.post("/api/auth/check-permission", async (req, res) => {
+  try {
+    const { userId, permissionCode } = req.body;
+    if (!userId || !permissionCode) {
+      return res.status(400).json({ allowed: false, error: "userId and permissionCode are required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true, globalRole: true },
+    });
+
+    if (!user) {
+      return res.json({ allowed: false, reason: "User not found" });
+    }
+
+    // SuperAdmin bypasses all permission checks
+    if (user.role === "super_admin" || user.globalRole === "super_admin") {
+      return res.json({ allowed: true, grantedBy: "SUPER_ADMIN" });
+    }
+
+    // Check Role Permissions
+    const roleConfig = await prisma.roleConfig.findUnique({
+      where: { roleName: user.role || "guest" },
+    });
+
+    const allowedRoutes = (roleConfig?.allowedRoutes as string[]) || [];
+    const isAllowed = allowedRoutes.some(
+      (pattern) => pattern === permissionCode || pattern === "/api/*" || permissionCode.startsWith(pattern.replace("*", ""))
+    );
+
+    res.json({
+      allowed: isAllowed,
+      grantedBy: isAllowed ? "ROLE_PERMISSIONS" : "NONE",
+      permissionCode,
+      role: user.role,
+    });
+  } catch (err: any) {
+    res.status(500).json({ allowed: false, error: err.message });
   }
 });
 
