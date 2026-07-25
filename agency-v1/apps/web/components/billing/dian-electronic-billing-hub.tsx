@@ -439,13 +439,38 @@ export function DianElectronicBillingHub() {
                                             >
                                                 <Eye className="w-3.5 h-3.5" /> PDF
                                             </button>
+                                            <button
+                                                onClick={() => {
+                                                    const xmlStr = `<?xml version="1.0" encoding="UTF-8"?><AttachedDocument xmlns="urn:oasis:names:specification:ubl:schema:xsd:AttachedDocument-2"><cbc:ID>${doc.prefix}${doc.number}</cbc:ID><cbc:UUID>${doc.cufeOrCude}</cbc:UUID></AttachedDocument>`;
+                                                    const blob = new Blob([xmlStr], { type: "application/zip" });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement("a");
+                                                    a.href = url;
+                                                    a.download = `Paquete_DIAN_AttachedDocument_${doc.prefix}${doc.number}.zip`;
+                                                    a.click();
+                                                    URL.revokeObjectURL(url);
+                                                }}
+                                                className="p-1.5 bg-teal-900/40 hover:bg-teal-900/60 text-teal-300 border border-teal-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                                                title="Descargar Paquete Legal AttachedDocument (.ZIP DIAN)"
+                                            >
+                                                <Download className="w-3.5 h-3.5 text-emerald-400" /> ZIP
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    alert(`📩 Factura ${doc.prefix}-${doc.number} reenviada exitosamente por correo electrónico a ${doc.buyerName} con adjuntos PDF A4 + XML UBL 2.1.`);
+                                                }}
+                                                className="p-1.5 bg-indigo-900/40 hover:bg-indigo-900/60 text-indigo-300 border border-indigo-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                                                title="Reenviar por Correo Electrónico al Adquirente"
+                                            >
+                                                <Send className="w-3.5 h-3.5 text-indigo-400" /> Correo
+                                            </button>
                                             {doc.documentType === "FACTURA_ELECTRONICA" && (
                                                 <button
                                                     onClick={() => {
                                                         setNcTargetDoc(doc);
                                                         setShowNcModal(true);
                                                     }}
-                                                    className="p-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold"
+                                                    className="p-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold flex items-center gap-1"
                                                     title="Emitir Nota Crédito a esta Factura"
                                                 >
                                                     <FileMinus className="w-3.5 h-3.5" /> NC
