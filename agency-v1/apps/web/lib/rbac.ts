@@ -139,6 +139,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── RRHH / Time Tracking ──────────────────────────────
     "/dashboard/admin/hr": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/hr/time-tracking": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/roles": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 
     // ── Creative Studio ───────────────────────────────────
     "/dashboard/admin/marketing/creative-studio": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],

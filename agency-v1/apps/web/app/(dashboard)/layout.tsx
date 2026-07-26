@@ -126,7 +126,7 @@ export default async function DashboardLayout({
         "/dashboard/admin/crm/scoring", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions",
         "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment", "/dashboard/posts",
         "/dashboard/posts/comments", "/dashboard/posts/categories", "/dashboard/projects", "/dashboard/media",
-        "/dashboard/users", "/dashboard/admin/team", "/dashboard/security", "/dashboard/admin/payroll",
+        "/dashboard/users", "/dashboard/roles", "/dashboard/admin/team", "/dashboard/security", "/dashboard/admin/payroll",
         "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses",
         "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/inbox/macros",
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/video-editor",
