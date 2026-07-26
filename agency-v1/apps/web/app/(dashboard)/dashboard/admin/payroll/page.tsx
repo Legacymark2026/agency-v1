@@ -12,6 +12,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { getPayrolls, getPayrollAnalytics, getUpcomingPayrolls, bulkGeneratePayroll, exportPayrollsCSV } from "@/actions/payroll";
 import { getExpenses, getExpenseStats } from "@/actions/expenses";
+import { PayrollPilaCalculator } from "@/components/payroll/payroll-pila-calculator";
 import { toast } from "sonner";
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -246,6 +247,9 @@ export default function PayrollDashboard() {
                     </Link>
                 </div>
             </div>
+
+            {/* Planilla PILA, Dispersión Masiva Bancaria & Horas Extras */}
+            <PayrollPilaCalculator />
 
             {/* ── Tabs ── */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
