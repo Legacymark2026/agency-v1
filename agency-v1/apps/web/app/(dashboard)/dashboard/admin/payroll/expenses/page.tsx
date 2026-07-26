@@ -16,6 +16,7 @@ import {
     deleteExpense, exportExpensesCSV
 } from "@/actions/expenses";
 import { getFinancialAccounts } from "@/actions/treasury";
+import { PayrollExpensesAdvancedManager } from "@/components/payroll/payroll-expenses-advanced-manager";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const fmt = (n: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
@@ -214,6 +215,9 @@ export default function ExpensesPage() {
                     </ul>
                 </div>
             </div>
+
+            {/* Módulo de Gestión de Centros de Costos y Egresos Recurrentes */}
+            <PayrollExpensesAdvancedManager />
 
             {/* Table */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
