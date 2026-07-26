@@ -31,8 +31,11 @@ app.get("/ready", async (_req, res) => {
   catch (err) { res.status(503).json({ status: "not_ready", error: String(err) }); }
 });
 
-// ── Invoices ─────────────────────────────────────────────────────────────────
-app.get("/api/invoices", async (req, res) => {
+import { financeRouter } from "./routes/finance.routes";
+import { errorHandler } from "./middlewares/finance.middleware";
+
+app.use("/api", financeRouter);
+app.use(errorHandler);
   try {
     const { companyId, status } = req.query;
     if (!companyId) return res.status(400).json({ error: "companyId required" });

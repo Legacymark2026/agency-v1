@@ -34,9 +34,11 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
-// ── Kanban Projects ──────────────────────────────────────────────────────────
+import { projectRouter } from "./routes/project.routes";
+import { errorHandler } from "./middlewares/project.middleware";
 
-app.get("/api/projects", async (req, res) => {
+app.use("/api", projectRouter);
+app.use(errorHandler);
   try {
     const { companyId, status, page = "1", limit = "20" } = req.query;
     if (!companyId) return res.status(400).json({ error: "companyId required" });

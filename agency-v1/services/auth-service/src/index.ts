@@ -129,10 +129,11 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
-// ── Auth Routes ──────────────────────────────────────────────────────────────
+import { createAuthRouter } from "./routes/auth.routes";
+import { errorHandler } from "./middlewares/auth.middleware";
 
-// POST /api/auth/login
-app.post("/api/auth/login", async (req, res) => {
+app.use("/api/auth", createAuthRouter(privateKey));
+app.use(errorHandler);
   try {
     const { email, password } = req.body;
     if (!email || !password) {
