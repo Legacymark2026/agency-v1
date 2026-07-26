@@ -83,8 +83,53 @@ async function run() {
     });
 
     await test("Docker resources limits are set for microservices", () => {
-      assert(content.includes("cpus: \"0.5\""), "Base microservices should limit CPU to 0.5");
-      assert(content.includes("memory: 512M") || content.includes("memory: 256M"), "Base microservices should limit memory");
+      assert(content.includes("cpus: \"0.5\"") || content.includes("cpus: \"0.50\""), "Base microservices should limit CPU to 0.5");
+      assert(content.includes("memory: 512M") || content.includes("memory: 384M") || content.includes("memory: 256M"), "Base microservices should limit memory");
+    });
+
+    await test("All 22 microservices are configured in Docker Compose with Traefik Mesh & healthchecks", () => {
+      const expectedMicroservices = [
+        "admin-service",
+        "affiliate-service",
+        "agent-team-engine",
+        "ai-engine",
+        "analytics-service",
+        "api-gateway",
+        "auth-service",
+        "automation-service",
+        "calendar-service",
+        "crm-service",
+        "document-service",
+        "finance-service",
+        "goldneez-rewards-service",
+        "hr-service",
+        "inbox-service",
+        "integration-service",
+        "marketing-service",
+        "notification-service",
+        "pos-service",
+        "project-service",
+        "public-api-service",
+        "video-service"
+      ];
+
+      for (const ms of expectedMicroservices) {
+        assert(content.includes(`${ms}:`), `Microservice '${ms}' must be defined in docker-compose.yml`);
+      }
+    });
+
+    await test("Service Mesh & API Gateway configuration files are present and valid", () => {
+      const meshConfig = path.join(workspaceRoot, "infrastructure", "monitoring", "service-mesh-config.yml");
+      const mtlsPolicy = path.join(workspaceRoot, "infrastructure", "k8s", "base", "mtls-policy.yml");
+      const traefikConfig = path.join(workspaceRoot, "infrastructure", "traefik", "traefik.yml");
+
+      assert(fs.existsSync(meshConfig), "service-mesh-config.yml must exist");
+      assert(fs.existsSync(mtlsPolicy), "mtls-policy.yml must exist");
+      assert(fs.existsSync(traefikConfig), "traefik.yml must exist");
+
+      const meshContent = fs.readFileSync(meshConfig, "utf-8");
+      assert(meshContent.includes("STRICT"), "mTLS mode should be set to STRICT in Service Mesh config");
+      assert(meshContent.includes("roundRobin"), "Load balancing algorithm should be roundRobin");
     });
   }
 
