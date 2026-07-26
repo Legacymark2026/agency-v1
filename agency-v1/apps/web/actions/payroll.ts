@@ -9,12 +9,34 @@ import { CreatePayrollRequest, calculatePayroll, generatePILARows, generatePILAC
 import { getFinancialAccounts } from "@/actions/treasury";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+async function resolveCompanyId(session: any): Promise<string | null> {
+    if (session?.user?.companyId) return session.user.companyId;
+    if (!session?.user?.id) return null;
+
+    try {
+        const membership = await (prisma as any).companyUser.findFirst({
+            where: { userId: session.user.id },
+            select: { companyId: true }
+        });
+        if (membership?.companyId) return membership.companyId;
+
+        const company = await (prisma as any).company.findFirst({ select: { id: true } });
+        if (company?.id) return company.id;
+    } catch {
+        // Fallback
+    }
+
+    return null;
+}
+
 async function requireAdminSession() {
     const session = await auth();
-    if (!session?.user?.companyId) return null;
+    if (!session?.user) return null;
     const role = session.user.role as UserRole;
     if (role !== UserRole.SUPER_ADMIN && role !== UserRole.ADMIN) return null;
-    return session;
+    const companyId = await resolveCompanyId(session);
+    if (!companyId) return null;
+    return { ...session, user: { ...session.user, companyId } };
 }
 
 async function logPayrollAction(payrollId: string, userId: string, action: string, details?: object) {
@@ -30,12 +52,9 @@ async function logPayrollAction(payrollId: string, userId: string, action: strin
 // ─── Generar Nómina Individual ────────────────────────────────────────────────
 export async function generatePayroll(data: CreatePayrollRequest) {
     try {
-        const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
-        const role = session.user.role as UserRole;
-        if (role !== UserRole.SUPER_ADMIN && role !== UserRole.ADMIN) {
-            return { success: false, error: "Forbidden" };
-        }
+        const session = await requireAdminSession();
+        if (!session) return { success: false, error: "No autorizado o empresa no válida" };
+        const companyId = session.user.companyId;
 
         const employee = await prisma.employee.findUnique({
             where: { id: data.employeeId, companyId: session.user.companyId },

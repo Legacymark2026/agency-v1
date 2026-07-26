@@ -6,19 +6,59 @@ import { revalidatePath } from "next/cache";
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
+// Helper: Safely resolve companyId for any logged-in user (including SUPER_ADMIN / ADMIN)
+async function resolveCompanyId(session: any): Promise<string | null> {
+    if (session?.user?.companyId) return session.user.companyId;
+    if (!session?.user?.id) return null;
+
+    try {
+        const membership = await (prisma as any).companyUser.findFirst({
+            where: { userId: session.user.id },
+            select: { companyId: true }
+        });
+        if (membership?.companyId) return membership.companyId;
+
+        const company = await (prisma as any).company.findFirst({ select: { id: true } });
+        if (company?.id) return company.id;
+    } catch {
+        // Fallback
+    }
+
+    return null;
+}
+
 // ─── Get Employees ────────────────────────────────────────────────────────────
 export async function getEmployees(includeInactive = false) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, data: [] };
+        if (!session?.user) return { success: false, data: [] };
 
-        const response = await fetch(
-            `${GATEWAY_URL}/api/employees?companyId=${session.user.companyId}${includeInactive ? "" : "&isActive=true"}&limit=1000`
-        );
-        const resData = await response.json();
-        if (!response.ok) return { success: false, data: [] };
+        const companyId = await resolveCompanyId(session);
+        if (!companyId) return { success: false, data: [] };
 
-        return { success: true, data: resData.employees || [] };
+        // Attempt API Gateway first
+        try {
+            const response = await fetch(
+                `${GATEWAY_URL}/api/employees?companyId=${companyId}${includeInactive ? "" : "&isActive=true"}&limit=1000`
+            );
+            if (response.ok) {
+                const resData = await response.json();
+                return { success: true, data: resData.employees || [] };
+            }
+        } catch {
+            // Gateway fallback
+        }
+
+        // Direct Prisma DB Fallback
+        const employees = await prisma.employee.findMany({
+            where: {
+                companyId,
+                ...(includeInactive ? {} : { isActive: true })
+            },
+            orderBy: { createdAt: "desc" }
+        });
+
+        return { success: true, data: employees || [] };
     } catch (error) {
         console.error("[GET_EMPLOYEES]", error);
         return { success: false, data: [] };
@@ -39,32 +79,80 @@ export async function createEmployee(data: {
 }) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "No autenticado. Inicie sesión nuevamente." };
 
-        const response = await fetch(`${GATEWAY_URL}/api/employees`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                ...data,
-                companyId: session.user.companyId,
+        const companyId = await resolveCompanyId(session);
+        if (!companyId) return { success: false, error: "No se encontró una empresa activa configurada en el sistema." };
+
+        // Attempt API Gateway
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/employees`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...data,
+                    companyId,
+                    baseSalary: Number(data.baseSalary),
+                    joiningDate: data.joiningDate ? new Date(data.joiningDate).toISOString() : null,
+                    birthDate: data.birthDate ? new Date(data.birthDate).toISOString() : null,
+                    ptoDays: data.ptoDays || 15,
+                    riskLevel: data.riskLevel || 1,
+                    isActive: true,
+                }),
+            });
+
+            if (response.ok) {
+                const resData = await response.json();
+                revalidatePath("/dashboard/admin/payroll");
+                revalidatePath("/dashboard/admin/payroll/employees");
+                return { success: true, employee: resData.employee };
+            }
+        } catch {
+            // Gateway fallback
+        }
+
+        // Direct Prisma DB Fallback
+        const employee = await prisma.employee.create({
+            data: {
+                companyId,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                documentType: data.documentType,
+                documentNumber: data.documentNumber,
+                email: data.email || null,
+                phone: data.phone || null,
+                contractType: data.contractType,
+                position: data.position,
+                department: data.department || null,
                 baseSalary: Number(data.baseSalary),
-                joiningDate: data.joiningDate ? new Date(data.joiningDate).toISOString() : null,
-                birthDate: data.birthDate ? new Date(data.birthDate).toISOString() : null,
+                joiningDate: data.joiningDate ? new Date(data.joiningDate) : new Date(),
+                birthDate: data.birthDate ? new Date(data.birthDate) : null,
                 ptoDays: data.ptoDays || 15,
                 riskLevel: data.riskLevel || 1,
                 isActive: true,
-            }),
+                bankName: data.bankName || null,
+                bankAccount: data.bankAccount || null,
+                bankAccountType: data.bankAccountType || null,
+                epsName: data.epsName || null,
+                epsNumber: data.epsNumber || null,
+                afpName: data.afpName || null,
+                afpNumber: data.afpNumber || null,
+                arlName: data.arlName || null,
+                compensationBox: data.compensationBox || null,
+                emergencyContactName: data.emergencyContactName || null,
+                emergencyContactPhone: data.emergencyContactPhone || null,
+                emergencyContactRel: data.emergencyContactRel || null,
+                address: data.address || null,
+                city: data.city || null,
+            }
         });
-
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to create employee" };
 
         revalidatePath("/dashboard/admin/payroll");
         revalidatePath("/dashboard/admin/payroll/employees");
-        return { success: true, employee: resData.employee };
+        return { success: true, employee };
     } catch (error: any) {
         console.error("[CREATE_EMPLOYEE]", error);
-        return { success: false, error: error.message };
+        return { success: false, error: error?.message || "Error al registrar el empleado" };
     }
 }
 
@@ -82,25 +170,47 @@ export async function updateEmployee(id: string, data: Partial<{
 }>) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "Unauthorized" };
+
+        const companyId = await resolveCompanyId(session);
+        if (!companyId) return { success: false, error: "Empresa no válida" };
 
         const { joiningDate, birthDate, ...rest } = data;
-        const response = await fetch(`${GATEWAY_URL}/api/employees/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                ...rest,
-                ...(joiningDate ? { joiningDate: new Date(joiningDate).toISOString() } : {}),
-                ...(birthDate ? { birthDate: new Date(birthDate).toISOString() } : {}),
-            }),
-        });
 
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to update employee" };
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/employees/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...rest,
+                    ...(joiningDate ? { joiningDate: new Date(joiningDate).toISOString() } : {}),
+                    ...(birthDate ? { birthDate: new Date(birthDate).toISOString() } : {}),
+                }),
+            });
+
+            if (response.ok) {
+                const resData = await response.json();
+                revalidatePath("/dashboard/admin/payroll");
+                revalidatePath("/dashboard/admin/payroll/employees");
+                return { success: true, employee: resData.employee };
+            }
+        } catch {
+            // Gateway fallback
+        }
+
+        // Direct Prisma DB Fallback
+        const employee = await prisma.employee.update({
+            where: { id },
+            data: {
+                ...rest,
+                ...(joiningDate ? { joiningDate: new Date(joiningDate) } : {}),
+                ...(birthDate ? { birthDate: new Date(birthDate) } : {}),
+            }
+        });
 
         revalidatePath("/dashboard/admin/payroll");
         revalidatePath("/dashboard/admin/payroll/employees");
-        return { success: true, employee: resData.employee };
+        return { success: true, employee };
     } catch (error: any) {
         console.error("[UPDATE_EMPLOYEE]", error);
         return { success: false, error: error.message };
@@ -111,22 +221,34 @@ export async function updateEmployee(id: string, data: Partial<{
 export async function deactivateEmployee(id: string) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "Unauthorized" };
 
-        // Check for pending payrolls locally (validation check)
+        const companyId = await resolveCompanyId(session);
+        if (!companyId) return { success: false, error: "Empresa no válida" };
+
         const pending = await prisma.payroll.count({
-            where: { employeeId: id, companyId: session.user.companyId, status: "PENDING" },
+            where: { employeeId: id, companyId, status: "PENDING" },
         });
         if (pending > 0) return { success: false, error: "El empleado tiene nóminas pendientes de pago." };
 
-        const response = await fetch(`${GATEWAY_URL}/api/employees/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isActive: false }),
-        });
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/employees/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isActive: false }),
+            });
+            if (response.ok) {
+                revalidatePath("/dashboard/admin/payroll/employees");
+                return { success: true };
+            }
+        } catch {
+            // Gateway fallback
+        }
 
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to deactivate employee" };
+        await prisma.employee.update({
+            where: { id },
+            data: { isActive: false }
+        });
 
         revalidatePath("/dashboard/admin/payroll/employees");
         return { success: true };
@@ -139,16 +261,26 @@ export async function deactivateEmployee(id: string) {
 export async function reactivateEmployee(id: string) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/employees/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isActive: true }),
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/employees/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isActive: true }),
+            });
+            if (response.ok) {
+                revalidatePath("/dashboard/admin/payroll/employees");
+                return { success: true };
+            }
+        } catch {
+            // Gateway fallback
+        }
+
+        await prisma.employee.update({
+            where: { id },
+            data: { isActive: true }
         });
-
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to reactivate employee" };
 
         revalidatePath("/dashboard/admin/payroll/employees");
         return { success: true };
@@ -162,21 +294,28 @@ export async function reactivateEmployee(id: string) {
 export async function getEmployeeSummary(employeeId: string) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, data: null };
+        if (!session?.user) return { success: false, data: null };
 
-        const response = await fetch(`${GATEWAY_URL}/api/employees/${employeeId}/summary?companyId=${session.user.companyId}`);
-        if (!response.ok) return { success: false, data: null };
+        const companyId = await resolveCompanyId(session);
+        if (!companyId) return { success: false, data: null };
 
-        const resData = await response.json();
-        const { employee, payrollHistory, benefits } = resData;
+        const employee = await prisma.employee.findUnique({
+            where: { id: employeeId },
+            include: {
+                payrolls: { orderBy: { createdAt: "desc" } },
+                benefits: { where: { isActive: true } }
+            }
+        });
 
         if (!employee) return { success: false, data: null };
 
-        const totalPaidYTD = payrollHistory.filter((p: any) => p.status === "PAID").reduce((s: number, p: any) => s + p.netPay, 0);
-        const monthlyBenefits = benefits.filter((b: any) => b.frequency === "MONTHLY").reduce((s: number, b: any) => s + b.amount, 0);
+        const payrollHistory = employee.payrolls || [];
+        const benefits = employee.benefits || [];
 
-        // Approximate employer cost
-        const employerContribRate = 0.30; // ~30% for all parafiscales
+        const totalPaidYTD = payrollHistory.filter((p: any) => p.status === "PAID").reduce((s: number, p: any) => s + (p.netPay || 0), 0);
+        const monthlyBenefits = benefits.filter((b: any) => b.frequency === "MONTHLY").reduce((s: number, b: any) => s + (b.amount || 0), 0);
+
+        const employerContribRate = 0.30;
         const employerMonthlyExtraCost = employee.baseSalary * employerContribRate;
 
         return {
@@ -209,22 +348,27 @@ export async function createBenefit(data: {
 }) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/hr/benefits`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                ...data,
-                companyId: session.user.companyId,
-            }),
+        const companyId = await resolveCompanyId(session);
+        if (!companyId) return { success: false, error: "Empresa no válida" };
+
+        const benefit = await prisma.employeeBenefit.create({
+            data: {
+                employeeId: data.employeeId,
+                companyId,
+                name: data.name,
+                amount: Number(data.amount),
+                frequency: data.frequency,
+                description: data.description || null,
+                startDate: data.startDate ? new Date(data.startDate) : new Date(),
+                endDate: data.endDate ? new Date(data.endDate) : null,
+                isActive: true,
+            }
         });
 
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to create benefit" };
-
         revalidatePath("/dashboard/admin/payroll/employees");
-        return { success: true, data: resData.data };
+        return { success: true, data: benefit };
     } catch (error: any) {
         console.error("[CREATE_BENEFIT]", error);
         return { success: false, error: error.message };
@@ -237,19 +381,18 @@ export async function updateBenefit(id: string, data: Partial<{
 }>) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/hr/benefits/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
+        const benefit = await prisma.employeeBenefit.update({
+            where: { id },
+            data: {
+                ...data,
+                ...(data.endDate ? { endDate: new Date(data.endDate) } : {}),
+            }
         });
 
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to update benefit" };
-
         revalidatePath("/dashboard/admin/payroll/employees");
-        return { success: true, data: resData.data };
+        return { success: true, data: benefit };
     } catch (error: any) {
         console.error("[UPDATE_BENEFIT]", error);
         return { success: false, error: error.message };
@@ -259,14 +402,9 @@ export async function updateBenefit(id: string, data: Partial<{
 export async function deleteBenefit(id: string) {
     try {
         const session = await auth();
-        if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+        if (!session?.user) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/hr/benefits/${id}`, {
-            method: "DELETE",
-        });
-
-        const resData = await response.json();
-        if (!response.ok) return { success: false, error: resData.error || "Failed to delete benefit" };
+        await prisma.employeeBenefit.delete({ where: { id } });
 
         revalidatePath("/dashboard/admin/payroll/employees");
         return { success: true };
