@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "type-check": "tsc --noEmit"
+    "type-check": "node --max-old-space-size=4096 ../../node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@agency/database": "file:../../packages/database",
