@@ -1,10 +1,7 @@
 import { Pool } from "pg";
 import crypto from "crypto";
-import { EventBus } from "@agency/events";
 
 const GOLDNEEZ_DB_URL = process.env.GOLDNEEZ_DB_URL || "postgresql://legacyuser:legacypass@localhost:5432/legacymark?schema=goldneez&search_path=goldneez,public";
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const eventBus = new EventBus(REDIS_URL, "goldneez-rewards-service");
 
 const pool = new Pool({
   connectionString: GOLDNEEZ_DB_URL,
@@ -41,7 +38,7 @@ export class GoldneezService {
   }
 
   /**
-   * Canjear recompensa y emitir evento
+   * Canjear recompensa y registrar en base de datos
    */
   static async redeemReward(customerId: string, rewardId: string, pointsCost: number) {
     const txId = crypto.randomUUID();
@@ -59,14 +56,7 @@ export class GoldneezService {
       );
       await client.query("COMMIT");
 
-      await eventBus.publish("rewards.redeemed", {
-        txId,
-        customerId,
-        rewardId,
-        pointsCost,
-        timestamp: new Date().toISOString()
-      });
-
+      console.log(`[goldneez-rewards] Redemption registered: txId=${txId} customerId=${customerId} rewardId=${rewardId}`);
       return { success: true, txId };
     } catch (err) {
       await client.query("ROLLBACK");
