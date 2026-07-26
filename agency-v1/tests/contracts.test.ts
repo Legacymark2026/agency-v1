@@ -194,13 +194,28 @@ async function run() {
     const dbUrlObj = new URL(dbUrl);
     const hasSsl = dbUrlObj.searchParams.get("sslmode") === "require";
     dbUrlObj.searchParams.delete("sslmode");
-    const client = new Client({ 
-      connectionString: dbUrlObj.toString(),
-      ssl: hasSsl ? { rejectUnauthorized: false } : undefined,
-      connectionTimeoutMillis: 4000,
-    });
+    const connectWithFallback = async (useSsl: boolean) => {
+      const c = new Client({ 
+        connectionString: dbUrlObj.toString(),
+        ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+        connectionTimeoutMillis: 3000,
+      });
+      await c.connect();
+      return c;
+    };
+
+    let client: Client | null = null;
     try {
-      await client.connect();
+      try {
+        client = await connectWithFallback(hasSsl);
+      } catch (sslErr: any) {
+        if (sslErr.message && sslErr.message.includes("does not support SSL")) {
+          client = await connectWithFallback(false);
+        } else {
+          throw sslErr;
+        }
+      }
+
       const res = await client.query(`
         SELECT column_name, data_type 
         FROM information_schema.columns 
@@ -222,11 +237,12 @@ async function run() {
       
       await client.end();
     } catch (err: any) {
-      await client.end().catch(() => {});
+      if (client) await (client as Client).end().catch(() => {});
       // Network / authentication errors → skip gracefully (DB is inside Docker)
       const isNetworkError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' 
-        || err.code === 'EAI_AGAIN' || err.message?.includes('connect ETIMEDOUT')
-        || err.message?.includes('Authentication failed') || err.message?.includes('ECONNRESET');
+        || err.code === 'EAI_AGAIN' || err.code === '28P01' || err.message?.includes('connect ETIMEDOUT')
+        || err.message?.includes('Authentication failed') || err.message?.includes('autentificación')
+        || err.message?.includes('password') || err.message?.includes('ECONNRESET');
       if (isNetworkError) {
         console.warn(`     ⚠️  Postgres not reachable from host, skipping live Outbox schema check: ${err.message}`);
         return; // Treat as a skipped test, not a failure

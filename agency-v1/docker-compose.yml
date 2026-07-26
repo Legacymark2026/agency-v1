@@ -26,8 +26,11 @@ x-microservice-base: &microservice-base
   deploy:
     resources:
       limits:
-        cpus: "0.5"
+        cpus: "0.50"
         memory: 384M
+      reservations:
+        cpus: "0.10"
+        memory: 128M
 
 services:
   # ── Infrastructure ────────────────────────────────────────────────────────

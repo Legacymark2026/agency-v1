@@ -112,12 +112,29 @@ async function run() {
       const hasSsl = dbUrlObj.searchParams.get("sslmode") === "require";
       dbUrlObj.searchParams.delete("sslmode");
       const isPgbouncer = dbUrlObj.hostname === "pgbouncer" || dbUrlObj.hostname === "pgbouncer-replica";
-      const client = new Client({ 
-        connectionString: dbUrlObj.toString(),
-        ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined
-      });
-      try {
+      
+      const connectWithFallback = async (useSsl: boolean) => {
+        const client = new Client({
+          connectionString: dbUrlObj.toString(),
+          ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+          connectionTimeoutMillis: 3000
+        });
         await client.connect();
+        return client;
+      };
+
+      try {
+        let client: Client;
+        try {
+          client = await connectWithFallback(hasSsl || isPgbouncer);
+        } catch (sslErr: any) {
+          if (sslErr.message && sslErr.message.includes("does not support SSL")) {
+            client = await connectWithFallback(false);
+          } else {
+            throw sslErr;
+          }
+        }
+
         // Query to check if the table exists
         const res = await client.query(`
           SELECT EXISTS (
@@ -130,8 +147,7 @@ async function run() {
         console.log(`     Database [${dbInfo.name}] is reachable and table '${dbInfo.table}' exists.`);
         await client.end();
       } catch (err: any) {
-        await client.end().catch(() => {});
-        if (err.message.includes("should exist")) {
+        if (err.message && err.message.includes("should exist")) {
           throw err;
         }
         console.warn(`     ⚠️  Database [${dbInfo.name}] not reachable, skipping live checks: ${err.message}`);

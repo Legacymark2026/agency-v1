@@ -24,6 +24,7 @@
     "db:generate": "npm run generate --workspace=packages/database",
     "db:migrate": "npm run migrate:deploy --workspace=packages/database",
     "db:migrate:segregated": "node scripts/migrate-segregated-dbs.js",
+    "db:sync-schemas": "node scripts/sync-prisma-schemas.js",
     "db:studio": "npm run studio --workspace=packages/database",
     "doctor": "npx react-doctor --project web --full --verbose",
     "test:infrastructure": "npx tsx tests/infrastructure.test.ts",

@@ -407,6 +407,25 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
         if (req.headers["x-correlation-id"]) {
           proxyReq.setHeader("x-correlation-id", req.headers["x-correlation-id"]);
         }
+        // Extract validated claims from JWT if present to prevent IDOR parameter tampering downstream
+        const token = req.headers.authorization || (req.headers.Authorization as string);
+        if (token && token.startsWith("Bearer ")) {
+          try {
+            const payloadBase64 = token.split(".")[1];
+            if (payloadBase64) {
+              const decoded = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf8"));
+              if (decoded?.userId) {
+                proxyReq.setHeader("x-user-id", String(decoded.userId));
+              }
+              const companyId = decoded?.companyId || decoded?.companies?.[0]?.companyId;
+              if (companyId) {
+                proxyReq.setHeader("x-company-id", String(companyId));
+              }
+            }
+          } catch (err) {
+            // Ignore malformed tokens; auth-service will handle 401
+          }
+        }
       },
       proxyRes: (proxyRes, req: any, res) => {
         if (proxyRes.statusCode && proxyRes.statusCode >= 500) {

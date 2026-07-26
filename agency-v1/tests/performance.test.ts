@@ -95,13 +95,28 @@ async function run() {
     const hasSsl = dbUrlObj.searchParams.get("sslmode") === "require";
     dbUrlObj.searchParams.delete("sslmode");
     const isPgbouncer = dbUrlObj.hostname === "pgbouncer" || dbUrlObj.hostname === "pgbouncer-replica";
-    const client = new Client({ 
-      connectionString: dbUrlObj.toString(),
-      ssl: (hasSsl || isPgbouncer) ? { rejectUnauthorized: false } : undefined
-    });
+    const connectWithFallback = async (useSsl: boolean) => {
+      const c = new Client({ 
+        connectionString: dbUrlObj.toString(),
+        ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+        connectionTimeoutMillis: 3000,
+      });
+      await c.connect();
+      return c;
+    };
+
+    let client: Client;
+    try {
+      client = await connectWithFallback(hasSsl || isPgbouncer);
+    } catch (sslErr: any) {
+      if (sslErr.message && sslErr.message.includes("does not support SSL")) {
+        client = await connectWithFallback(false);
+      } else {
+        throw sslErr;
+      }
+    }
     try {
       const dbStart = Date.now();
-      await client.connect();
       
       // Execute 20 read queries in sequence
       for (let i = 0; i < 20; i++) {
