@@ -14,6 +14,12 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'admin-service' });
 });
 
+import { adminRouter } from "./routes/admin.routes";
+import { errorHandler } from "./middlewares/admin.middleware";
+
+app.use("/api", adminRouter);
+app.use(errorHandler);
+
 // Kanban Routes migrated from Next.js
 app.get('/api/admin/kanban', async (req, res) => {
   try {

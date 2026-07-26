@@ -13,9 +13,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'public-api-service' });
 });
 
-app.use('/api/v1', (req, res) => { res.status(200).json({ message: '/api/v1 handled by public-api-service' }); });
-app.use('/api/public', (req, res) => { res.status(200).json({ message: '/api/public handled by public-api-service' }); });
-app.use('/api/serve', (req, res) => { res.status(200).json({ message: '/api/serve handled by public-api-service' }); });
+import { publicApiRouter } from "./routes/public-api.routes";
+import { errorHandler } from "./middlewares/public-api.middleware";
+
+app.use("/api", publicApiRouter);
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Public API Service listening at http://localhost:${port}`);

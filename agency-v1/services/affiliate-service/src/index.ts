@@ -34,6 +34,12 @@ app.get("/ready", async (_req: Request, res: Response) => {
   }
 });
 
+import { affiliateRouter } from "./routes/affiliate.routes";
+import { errorHandler } from "./middlewares/affiliate.middleware";
+
+app.use("/api", affiliateRouter);
+app.use(errorHandler);
+
 // ── Redirección & Analíticas de Enlaces ─────────────────────────────────────────
 app.get("/r/:code", trackClick);
 

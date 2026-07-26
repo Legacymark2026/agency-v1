@@ -48,6 +48,12 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+import { videoRouter } from "./routes/video.routes";
+import { errorHandler } from "./middlewares/video.middleware";
+
+app.use("/api", videoRouter);
+app.use(errorHandler);
+
 // ─── Auth middleware ─────────────────────────────────────────────────────────
 function requireInternalSecret(req: Request, res: Response, next: NextFunction) {
   const secret = req.headers['x-internal-secret'] as string;
