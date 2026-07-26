@@ -137,7 +137,8 @@ app.use(errorHandler);
 
 // POST /api/auth/login
 app.post("/api/auth/login", async (req, res) => {
-    if (!email || !password) {
+  try {
+    const { email, password } = req.body;
       return res.status(400).json({ error: "Email and password required" });
     }
 

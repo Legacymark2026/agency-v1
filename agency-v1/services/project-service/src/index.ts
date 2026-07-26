@@ -41,7 +41,8 @@ app.use(errorHandler);
 // ── Kanban Projects ──────────────────────────────────────────────────────────
 
 app.get("/api/projects", async (req, res) => {
-    if (!companyId) return res.status(400).json({ error: "companyId required" });
+  try {
+    const { companyId, status, page = "1", limit = "20" } = req.query;
 
     const where: Record<string, unknown> = { companyId: String(companyId) };
     if (status) where.status = String(status);

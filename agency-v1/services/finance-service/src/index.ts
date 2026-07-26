@@ -37,6 +37,8 @@ app.use(errorHandler);
 
 // ── Invoices ─────────────────────────────────────────────────────────────────
 app.get("/api/invoices", async (req, res) => {
+  try {
+    const { companyId, status } = req.query;
     if (!companyId) return res.status(400).json({ error: "companyId required" });
     const where: Record<string, unknown> = { companyId: String(companyId) };
     if (status) where.status = String(status);
