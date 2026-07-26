@@ -1,0 +1,35 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# LegacyMark — Service Mesh Architecture Configuration (Envoy / Traefik Mesh)
+# ══════════════════════════════════════════════════════════════════════════════
+# Independiente del código de los microservicios.
+# Controla: mTLS estricto, balanceo de carga L7, Circuit Breaking y Tracing OpenTelemetry.
+# ══════════════════════════════════════════════════════════════════════════════
+
+apiVersion: mesh.traefik.io/v1alpha1
+kind: MeshConfig
+metadata:
+  name: legacymark-service-mesh
+  namespace: legacymark-system
+spec:
+  tracing:
+    openTelemetry:
+      address: "otel-collector.monitoring.svc.cluster.local:4317"
+      sampleRate: 1.0
+  security:
+    mTLS:
+      mode: STRICT
+      trustDomain: "legacymark.internal"
+      certificateAuthority:
+        secretName: "legacymark-mesh-ca"
+  loadBalancing:
+    defaultAlgorithm: "roundRobin"
+    healthCheck:
+      interval: "5s"
+      timeout: "2s"
+      unhealthyThreshold: 2
+      healthyThreshold: 2
+  circuitBreaking:
+    maxConnections: 1024
+    maxPendingRequests: 100
+    maxRequests: 1000
+    maxRetries: 3

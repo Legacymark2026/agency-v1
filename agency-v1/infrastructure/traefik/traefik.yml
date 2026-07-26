@@ -1,0 +1,39 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# LegacyMark — Traefik API Gateway Static Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+  traefik:
+    address: ":8081"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "legacymark_backend-net"
+  file:
+    filename: "/etc/traefik/dynamic.yml"
+    watch: true
+
+tracing:
+  openTelemetry:
+    grpc:
+      endpoint: "otel-collector:4317"
+      insecure: true
+
+metrics:
+  prometheus:
+    entryPoint: traefik
+    addServicesLabels: true
