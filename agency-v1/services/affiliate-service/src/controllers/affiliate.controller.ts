@@ -24,11 +24,16 @@ export class AffiliateController {
    */
   static async trackClick(req: Request, res: Response, next: NextFunction) {
     try {
-      const { code } = req.params;
+      const codeStr = Array.isArray(req.params.code) ? req.params.code[0] : String(req.params.code || "");
+      const rawIp = req.headers["x-forwarded-for"] || req.ip;
+      const ipAddress: string = Array.isArray(rawIp) ? rawIp[0] : String(rawIp || "127.0.0.1");
+      const rawUa = req.headers["user-agent"];
+      const userAgent: string | undefined = rawUa ? (Array.isArray(rawUa) ? rawUa[0] : String(rawUa)) : undefined;
+
       const result = await AffiliateService.trackClick(
-        code,
-        req.ip || req.headers["x-forwarded-for"] as string,
-        req.headers["user-agent"]
+        codeStr,
+        ipAddress,
+        userAgent
       );
 
       res.redirect(result.targetUrl || "/");

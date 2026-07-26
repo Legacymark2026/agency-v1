@@ -54,7 +54,13 @@ app.get("/health", (_req, res) => {
 
 app.get("/metrics", metricsEndpoint);
 
-// Fast High-Speed gRPC Token Verification Route with HTTP Fallback
+// ── Layered Router (Controller -> Service -> Middleware) ──────────────────────
+import { gatewayRouter } from "./routes/gateway.routes";
+import { errorHandler as gatewayErrorHandler } from "./middlewares/gateway.middleware";
+app.use("/api", gatewayRouter);
+app.use(gatewayErrorHandler);
+
+
 app.post("/api/gateway/verify-token", express.json(), async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ valid: false, error: "Token required" });
