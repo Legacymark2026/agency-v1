@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package crm;
+
+service CrmService {
+  rpc GetLeadDetails (GetLeadDetailsRequest) returns (GetLeadDetailsResponse);
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+}
+
+message GetLeadDetailsRequest {
+  string leadId = 1;
+  string companyId = 2;
+}
+
+message GetLeadDetailsResponse {
+  bool found = 1;
+  string leadId = 2;
+  string name = 3;
+  string email = 4;
+  string status = 5;
+  string assignedAgentId = 6;
+  string error = 7;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+  int64 timestamp = 3;
+}

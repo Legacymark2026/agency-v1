@@ -32,6 +32,7 @@ app.get("/ready", async (_req, res) => {
   } catch (err) {
     res.status(503).json({ status: "not_ready", error: String(err) });
   }
+});
 import { projectRouter } from "./routes/project.routes";
 import { errorHandler } from "./middlewares/project.middleware";
 
@@ -833,7 +834,7 @@ projectGrpcServer.addService(
   }
 );
 
-projectGrpcServer.start(PROJECT_GRPC_PORT).catch(err => {
+projectGrpcServer.start(PROJECT_GRPC_PORT).catch((err: any) => {
   console.error("[project-service] Failed to start gRPC server:", err.message);
 });
 

@@ -1,6 +1,9 @@
 import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
 
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const eventBus = new EventBus(REDIS_URL, "finance-service");
+
 export interface CreateInvoiceInput {
   companyId: string;
   clientName: string;
@@ -64,7 +67,7 @@ export class FinanceService {
       });
 
       // Publicar evento invoice.created
-      await EventBus.publish("invoice.created", {
+      await eventBus.publish("invoice.created", {
         id: invoice.id,
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,

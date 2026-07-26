@@ -29,6 +29,7 @@ app.get("/health", (_req, res) => { res.json({ status: "healthy", service: "fina
 app.get("/ready", async (_req, res) => {
   try { await prisma.$queryRaw`SELECT 1`; res.json({ status: "ready" }); }
   catch (err) { res.status(503).json({ status: "not_ready", error: String(err) }); }
+});
 import { financeRouter } from "./routes/finance.routes";
 import { errorHandler } from "./middlewares/finance.middleware";
 

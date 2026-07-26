@@ -127,6 +127,7 @@ app.get("/ready", async (_req, res) => {
   } catch (err) {
     res.status(503).json({ status: "not_ready", db: "disconnected", error: String(err) });
   }
+});
 import { createAuthRouter } from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/auth.middleware";
 
@@ -139,6 +140,7 @@ app.use(errorHandler);
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
       return res.status(400).json({ error: "Email and password required" });
     }
 
@@ -797,9 +799,6 @@ grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
 grpcServer.start(GRPC_PORT).catch(err => {
   console.error("[auth-service] Failed to start gRPC server:", err.message);
 });
-
-import { errorHandler } from "./middlewares/auth.middleware";
-app.use(errorHandler as any);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {

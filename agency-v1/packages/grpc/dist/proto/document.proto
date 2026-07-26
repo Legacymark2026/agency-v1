@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package document;
+
+service DocumentService {
+  rpc GetDocumentMetadata (GetDocumentRequest) returns (DocumentResponse);
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+}
+
+message GetDocumentRequest {
+  string documentId = 1;
+  string companyId = 2;
+}
+
+message DocumentResponse {
+  bool found = 1;
+  string documentId = 2;
+  string title = 3;
+  string fileUrl = 4;
+  string mimeType = 5;
+  int64 size = 6;
+  string status = 7;
+  string error = 8;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+  string service = 2;
+  int64 timestamp = 3;
+}
