@@ -795,6 +795,9 @@ grpcServer.start(GRPC_PORT).catch(err => {
   console.error("[auth-service] Failed to start gRPC server:", err.message);
 });
 
+import { errorHandler } from "./middlewares/auth.middleware";
+app.use(errorHandler as any);
+
 // ── Start Server ─────────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);

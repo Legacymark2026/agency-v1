@@ -17,6 +17,9 @@ import { Client } from "pg";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { routeLead } from "./assignment-engine";
 
+import { leadRouter } from "./routes/lead.routes";
+import { errorHandler } from "./middlewares/crm.middleware";
+
 const app = express();
 app.use(metricsMiddleware("crm-service"));
 const PORT = parseInt(process.env.PORT || "4002", 10);
@@ -25,6 +28,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
+app.use("/api", leadRouter);
 
 // ── Health Checks ────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
@@ -2534,6 +2538,8 @@ export const authGrpcClient = GrpcClientHelper.getClient(
   AUTH_GRPC_URL,
   { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
 );
+
+app.use(errorHandler as any);
 
 // ── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, "0.0.0.0", () => {
