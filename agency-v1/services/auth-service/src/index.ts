@@ -127,15 +127,16 @@ app.get("/ready", async (_req, res) => {
   } catch (err) {
     res.status(503).json({ status: "not_ready", db: "disconnected", error: String(err) });
   }
-});
-
 import { createAuthRouter } from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/auth.middleware";
 
 app.use("/api/auth", createAuthRouter(privateKey));
 app.use(errorHandler);
-  try {
-    const { email, password } = req.body;
+
+// ── Auth Routes (Legacy Endpoints Backup) ───────────────────────────────────
+
+// POST /api/auth/login
+app.post("/api/auth/login", async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password required" });
     }

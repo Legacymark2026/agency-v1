@@ -29,15 +29,14 @@ app.get("/health", (_req, res) => { res.json({ status: "healthy", service: "fina
 app.get("/ready", async (_req, res) => {
   try { await prisma.$queryRaw`SELECT 1`; res.json({ status: "ready" }); }
   catch (err) { res.status(503).json({ status: "not_ready", error: String(err) }); }
-});
-
 import { financeRouter } from "./routes/finance.routes";
 import { errorHandler } from "./middlewares/finance.middleware";
 
 app.use("/api", financeRouter);
 app.use(errorHandler);
-  try {
-    const { companyId, status } = req.query;
+
+// ── Invoices ─────────────────────────────────────────────────────────────────
+app.get("/api/invoices", async (req, res) => {
     if (!companyId) return res.status(400).json({ error: "companyId required" });
     const where: Record<string, unknown> = { companyId: String(companyId) };
     if (status) where.status = String(status);

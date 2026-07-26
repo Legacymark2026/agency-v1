@@ -32,15 +32,15 @@ app.get("/ready", async (_req, res) => {
   } catch (err) {
     res.status(503).json({ status: "not_ready", error: String(err) });
   }
-});
-
 import { projectRouter } from "./routes/project.routes";
 import { errorHandler } from "./middlewares/project.middleware";
 
 app.use("/api", projectRouter);
 app.use(errorHandler);
-  try {
-    const { companyId, status, page = "1", limit = "20" } = req.query;
+
+// ── Kanban Projects ──────────────────────────────────────────────────────────
+
+app.get("/api/projects", async (req, res) => {
     if (!companyId) return res.status(400).json({ error: "companyId required" });
 
     const where: Record<string, unknown> = { companyId: String(companyId) };
