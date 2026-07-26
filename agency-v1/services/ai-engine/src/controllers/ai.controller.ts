@@ -37,7 +37,7 @@ export class AiController {
         conversationId: req.body.conversationId
       });
 
-      res.json({ success: true, ...result });
+      res.json(result);
     } catch (err) {
       next(err);
     }
