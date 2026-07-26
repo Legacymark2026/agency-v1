@@ -1,6 +1,11 @@
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
 const port = process.env.PORT || 4015;
@@ -16,9 +21,10 @@ app.get('/health', (req, res) => {
 import { publicApiRouter } from "./routes/public-api.routes";
 import { errorHandler } from "./middlewares/public-api.middleware";
 
-app.use("/api", publicApiRouter);
+app.use("/api/v1", publicApiRouter);
 app.use(errorHandler);
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Public API Service listening at http://localhost:${port}`);
 });
+setupGracefulShutdown(server);

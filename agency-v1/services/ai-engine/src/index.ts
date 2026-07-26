@@ -7,10 +7,16 @@
  * GPU-INTENSIVE SERVICE — Different scaling profile than other services
  */
 
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
+import { setupGracefulShutdown } from "@agency/service-auth";
 import { EventBus, EventPayload } from "@agency/events";
 import { runAIAgent, triageAndRouteMessage, disconnectRedis } from "./agent-runner";
 
@@ -40,7 +46,7 @@ app.get("/ready", async (_req, res) => {
 import { aiRouter } from "./routes/ai.routes";
 import { errorHandler } from "./middlewares/ai.middleware";
 
-app.use("/api", aiRouter);
+app.use("/api/v1", aiRouter);
 app.use(errorHandler);
 
 // ── Agent Invocation ─────────────────────────────────────────────────────────
@@ -141,15 +147,14 @@ eventBus.subscribe("workflow.ai_step", async (payload: EventPayload) => {
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🧠 AI Engine running on port ${PORT}`);
 });
 
-process.on("SIGTERM", async () => {
+setupGracefulShutdown(server, async () => {
   await eventBus.disconnect();
   await disconnectRedis();
   await prisma.$disconnect();
-  process.exit(0);
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

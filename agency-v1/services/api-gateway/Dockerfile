@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json tsconfig*.json ./
 COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
+COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/api-gateway/package.json ./services/api-gateway/
 
 # Install dependencies
@@ -13,11 +14,14 @@ RUN npm ci || npm install
 # Copy shared packages
 COPY packages/grpc/ ./packages/grpc/
 COPY packages/observability/ ./packages/observability/
+COPY packages/service-auth/ ./packages/service-auth/
 
 # Build shared packages
 WORKDIR /app/packages/grpc
 RUN npm run build
 WORKDIR /app/packages/observability
+RUN npx tsc --outDir dist
+WORKDIR /app/packages/service-auth
 RUN npx tsc --outDir dist
 
 # Copy source
@@ -38,6 +42,8 @@ COPY --from=builder /app/packages/grpc/dist ./packages/grpc/dist
 COPY --from=builder /app/packages/grpc/package.json ./packages/grpc/
 COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
+COPY --from=builder /app/packages/service-auth/dist ./packages/service-auth/dist
+COPY --from=builder /app/packages/service-auth/package.json ./packages/service-auth/
 COPY --from=builder /app/services/api-gateway/dist ./dist
 COPY --from=builder /app/services/api-gateway/package.json ./
 COPY --from=builder /app/node_modules ./node_modules

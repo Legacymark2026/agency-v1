@@ -1,6 +1,11 @@
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { prisma } from '@agency/database';
+import { setupGracefulShutdown } from "@agency/service-auth";
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { writeFile, mkdir } from 'fs/promises';
@@ -51,7 +56,7 @@ app.use(express.json({ limit: '50mb' }));
 import { videoRouter } from "./routes/video.routes";
 import { errorHandler } from "./middlewares/video.middleware";
 
-app.use("/api", videoRouter);
+app.use("/api/v1", videoRouter);
 app.use(errorHandler);
 
 // ─── Auth middleware ─────────────────────────────────────────────────────────
@@ -952,9 +957,7 @@ server.listen(port, () => {
 });
 
 // ─── Graceful shutdown ──────────────────────────────────────────────────────
-process.on('SIGTERM', async () => {
-  console.log('[shutdown] SIGTERM received, closing queue...');
+setupGracefulShutdown(server, async () => {
+  console.log('[shutdown] Closing queue...');
   await closeQueue();
-  server.close();
-  process.exit(0);
 });

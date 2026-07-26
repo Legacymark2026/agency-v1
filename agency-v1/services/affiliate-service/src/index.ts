@@ -1,7 +1,12 @@
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
+import { setupGracefulShutdown } from "@agency/service-auth";
 import { trackClick } from "./controllers/click.controller";
 import { processPayout } from "./controllers/payout.controller";
 import { startEventConsumers } from "./events/consumer";
@@ -37,7 +42,7 @@ app.get("/ready", async (_req: Request, res: Response) => {
 import { affiliateRouter } from "./routes/affiliate.routes";
 import { errorHandler } from "./middlewares/affiliate.middleware";
 
-app.use("/api", affiliateRouter);
+app.use("/api/v1", affiliateRouter);
 app.use(errorHandler);
 
 // ── Redirección & Analíticas de Enlaces ─────────────────────────────────────────
@@ -238,11 +243,6 @@ const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Affiliate Service listening at http://localhost:${PORT}`);
 });
 
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM received. Shutting down...");
-  server.close(async () => {
-    await prisma.$disconnect();
-    console.log("Database disconnected. Server closed.");
-    process.exit(0);
-  });
+setupGracefulShutdown(server, async () => {
+  await prisma.$disconnect();
 });

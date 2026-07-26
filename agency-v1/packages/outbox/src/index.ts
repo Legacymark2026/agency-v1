@@ -279,7 +279,7 @@ export class OutboxWorker {
   }
 
   private async moveToDLQ(event: OutboxEvent): Promise<void> {
-    const dlqKey = `dlq:${this.serviceId}:${event.topic}`;
+    const dlqKey = `dead-letter:${this.serviceId}:${event.topic}`;
     await this.dlqRedis.lpush(
       dlqKey,
       JSON.stringify({
@@ -287,7 +287,7 @@ export class OutboxWorker {
         failedAt: new Date().toISOString(),
       })
     );
-    // Keep DLQ entries for 7 days
+    // Keep dead-letter entries for 7 days
     await this.dlqRedis.expire(dlqKey, 7 * 24 * 60 * 60);
   }
 }

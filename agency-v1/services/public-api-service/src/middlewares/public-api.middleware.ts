@@ -26,3 +26,5 @@ export const errorHandler = (err: CustomError, req: Request, res: Response, _nex
     timestamp: new Date().toISOString()
   });
 };
+
+export { idempotencyMiddleware } from "@agency/service-auth";

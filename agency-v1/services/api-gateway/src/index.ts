@@ -5,9 +5,13 @@
  * Handles: JWT validation, rate limiting, CORS, request logging.
  * Port: 8080 (public-facing)
  */
-import "@agency/observability/register";
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
+import { setupGracefulShutdown } from "@agency/service-auth";
 import cors from "cors";
 import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
@@ -57,7 +61,7 @@ app.get("/metrics", metricsEndpoint);
 // ── Layered Router (Controller -> Service -> Middleware) ──────────────────────
 import { gatewayRouter } from "./routes/gateway.routes";
 import { errorHandler as gatewayErrorHandler } from "./middlewares/gateway.middleware";
-app.use("/api", gatewayRouter);
+app.use("/api/v1", gatewayRouter);
 app.use(gatewayErrorHandler);
 
 
@@ -577,7 +581,7 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Route not found", hint: "Check the API Gateway route table" });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🌐 API Gateway running on port ${PORT}`);
   console.log(`   Routes: auth→${SERVICES.auth}, crm→${SERVICES.crm}, automation→${SERVICES.automation}`);
   console.log(`   Routes: ai→${SERVICES.ai}, inbox→${SERVICES.inbox}, finance→${SERVICES.finance}`);
@@ -587,5 +591,6 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`   Routes: analytics→${SERVICES.analytics}, admin→${SERVICES.admin}, publicApi→${SERVICES.publicApi}`);
   console.log(`   Routes: notification→${SERVICES.notification}, hr→${SERVICES.hr}, project→${SERVICES.project}`);
 });
+setupGracefulShutdown(server);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
