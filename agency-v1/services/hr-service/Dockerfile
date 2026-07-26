@@ -11,12 +11,15 @@ RUN npm ci || npm install
 
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
+COPY packages/service-auth/ ./packages/service-auth/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
 WORKDIR /app/packages/database
 RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npx tsc --outDir dist
 WORKDIR /app/packages/events
+RUN npx tsc --outDir dist
+WORKDIR /app/packages/service-auth
 RUN npx tsc --outDir dist
 
 WORKDIR /app
