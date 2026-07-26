@@ -5,9 +5,9 @@ export class LeadController {
   /**
    * GET /api/leads
    */
-  static async getLeads(req: Request, res: Response, next: NextFunction) {
+  static async getLeads(req: Request, res: Response, NextFunction: NextFunction) {
     try {
-      const companyId = (req.headers["x-company-id"] as string) || (req.query.companyId as string);
+      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
@@ -29,17 +29,17 @@ export class LeadController {
 
       res.json({ success: true, ...result });
     } catch (err) {
-      next(err);
+      NextFunction(err);
     }
   }
 
   /**
    * GET /api/leads/:id
    */
-  static async getLeadById(req: Request, res: Response, next: NextFunction) {
+  static async getLeadById(req: Request, res: Response, NextFunction: NextFunction) {
     try {
       const { id } = req.params;
-      const companyId = (req.headers["x-company-id"] as string) || (req.query.companyId as string);
+      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
@@ -47,16 +47,16 @@ export class LeadController {
       const lead = await LeadService.getLeadById(id, companyId);
       res.json({ success: true, lead });
     } catch (err) {
-      next(err);
+      NextFunction(err);
     }
   }
 
   /**
    * POST /api/leads
    */
-  static async createLead(req: Request, res: Response, next: NextFunction) {
+  static async createLead(req: Request, res: Response, NextFunction: NextFunction) {
     try {
-      const companyId = (req.headers["x-company-id"] as string) || req.body.companyId;
+      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "");
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }

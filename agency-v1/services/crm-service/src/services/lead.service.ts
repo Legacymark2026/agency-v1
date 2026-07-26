@@ -115,7 +115,7 @@ export class LeadService {
    */
   static async createLead(input: CreateLeadInput) {
     // 1. Ejecutar motor de asignación automática de leads (Lead Assignment Engine)
-    const assignedAgentId = await routeLead(input.companyId, input.source || "manual");
+    const assignedAgentId = await routeLead({ companyId: input.companyId, source: input.source || "manual" });
 
     // 2. Transacción Atómica Prisma: Crear Lead + Registrar evento en Outbox
     const result = await prisma.$transaction(async (tx) => {
