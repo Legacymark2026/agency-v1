@@ -58,6 +58,12 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
+import { inboxRouter } from "./routes/inbox.routes";
+import { errorHandler } from "./middlewares/inbox.middleware";
+
+app.use("/api", inboxRouter);
+app.use(errorHandler);
+
 // ── Conversations ────────────────────────────────────────────────────────────
 
 app.get("/api/inbox/conversations", async (req, res) => {

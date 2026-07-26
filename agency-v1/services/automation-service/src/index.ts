@@ -37,6 +37,12 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
+import { automationRouter } from "./routes/automation.routes";
+import { errorHandler } from "./middlewares/automation.middleware";
+
+app.use("/api", automationRouter);
+app.use(errorHandler);
+
 // ── Workflows CRUD ───────────────────────────────────────────────────────────
 
 app.get("/api/workflows", async (req, res) => {

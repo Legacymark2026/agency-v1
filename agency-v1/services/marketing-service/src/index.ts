@@ -24,6 +24,12 @@ app.get('/ready', async (_req: Request, res: Response) => {
   }
 });
 
+import { marketingRouter } from "./routes/marketing.routes";
+import { errorHandler } from "./middlewares/marketing.middleware";
+
+app.use("/api", marketingRouter);
+app.use(errorHandler);
+
 // ─── Email Blasts ─────────────────────────────────────────────────────────────
 app.post('/api/email-blast', async (req: Request, res: Response) => {
   try {

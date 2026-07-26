@@ -15,6 +15,12 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'integration-service' });
 });
 
+import { integrationRouter } from "./routes/integration.routes";
+import { errorHandler } from "./middlewares/integration.middleware";
+
+app.use("/api", integrationRouter);
+app.use(errorHandler);
+
 // ============================================================================
 // PROVIDER MIGRATION & HELPERS
 // ============================================================================
