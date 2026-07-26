@@ -310,9 +310,9 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "treasury.manage", routes: ["/dashboard/admin/treasury", "/dashboard/admin/invoices"] },
     { perm: "treasury.export", routes: ["/dashboard/admin/treasury"] },
     // Nómina y Operaciones
-    { perm: "payroll.view", routes: ["/dashboard/admin/payroll", "/dashboard/admin/operations"] },
-    { perm: "payroll.manage", routes: ["/dashboard/admin/payroll", "/dashboard/admin/operations"] },
-    { perm: "payroll.approve", routes: ["/dashboard/admin/payroll"] },
+    { perm: "payroll.view", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses", "/dashboard/admin/operations"] },
+    { perm: "payroll.manage", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses", "/dashboard/admin/operations"] },
+    { perm: "payroll.approve", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/expenses"] },
     // Propuestas comerciales
     { perm: "proposals.view", routes: ["/dashboard/admin/proposals"] },
     { perm: "proposals.manage", routes: ["/dashboard/admin/proposals"] },

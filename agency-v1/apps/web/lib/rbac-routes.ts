@@ -29,4 +29,7 @@ export const ALL_DASHBOARD_ROUTES: { route: string; label: string }[] = [
     { route: "/dashboard/admin/crm/assignment", label: "CRM → Asignación de Leads" },
     { route: "/dashboard/events", label: "Calendario / Eventos" },
     { route: "/dashboard/roles", label: "Gestión de Roles" },
+    { route: "/dashboard/admin/payroll", label: "Nómina Electrónica & PILA" },
+    { route: "/dashboard/admin/payroll/employees", label: "Personal y Contratistas" },
+    { route: "/dashboard/admin/payroll/expenses", label: "Gestión de Egresos" },
 ];
