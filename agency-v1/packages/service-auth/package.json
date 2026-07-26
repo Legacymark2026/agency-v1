@@ -1,0 +1,20 @@
+{
+  "name": "@agency/service-auth",
+  "version": "1.0.0",
+  "description": "Inter-service JWT authentication for LegacyMark microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --outDir dist",
+    "dev": "tsc --watch --outDir dist"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

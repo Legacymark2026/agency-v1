@@ -10,7 +10,8 @@
  *   - UserActivityLog → ANALYTICS DB
  */
 
-import "@agency/observability/register";
+try { require("@agency/observability/register"); } catch { /* optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
@@ -131,7 +132,7 @@ app.get("/ready", async (_req, res) => {
 import { createAuthRouter } from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/auth.middleware";
 
-app.use("/api/auth", createAuthRouter(privateKey));
+app.use("/api/v1/auth", createAuthRouter(privateKey));
 app.use(errorHandler);
 
 // ── Auth Routes (Legacy Endpoints Backup) ───────────────────────────────────
@@ -801,11 +802,12 @@ grpcServer.start(GRPC_PORT).catch(err => {
 });
 
 // ── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);
   console.log(`   Health: http://localhost:${PORT}/health`);
   console.log(`   Ready:  http://localhost:${PORT}/ready`);
 });
+setupGracefulShutdown(server);
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {

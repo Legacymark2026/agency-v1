@@ -5,6 +5,11 @@
  */
 
 import express from "express";
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
@@ -37,7 +42,7 @@ app.get("/ready", async (_req, res) => {
 import { hrRouter } from "./routes/hr.routes";
 import { errorHandler } from "./middlewares/hr.middleware";
 
-app.use("/api", hrRouter);
+app.use("/api/v1", hrRouter);
 app.use(errorHandler);
 
 // ── Employees ────────────────────────────────────────────────────────────────
@@ -553,10 +558,11 @@ eventBus.subscribe("invoice.paid", async (payload) => {
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`👥 HR Service running on port ${PORT}`);
   console.log(`   Modules: Employees, Payroll, Timesheets, PILA`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
   await eventBus.disconnect();

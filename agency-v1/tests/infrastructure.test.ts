@@ -200,6 +200,125 @@ async function run() {
     }
   });
 
+
+  // ── Test 10: @agency/service-auth package exists ────────────────────────────
+  test("@agency/service-auth package is present", () => {
+    const pkgPath = path.join(workspaceRoot, "packages", "service-auth", "package.json");
+    assert(fs.existsSync(pkgPath), "packages/service-auth/package.json should exist");
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    assert(pkg.name === "@agency/service-auth", "package name should be @agency/service-auth");
+    const srcPath = path.join(workspaceRoot, "packages", "service-auth", "src", "index.ts");
+    assert(fs.existsSync(srcPath), "packages/service-auth/src/index.ts should exist");
+    const src = fs.readFileSync(srcPath, "utf-8");
+    assert(src.includes("signServiceToken"), "service-auth should export signServiceToken");
+    assert(src.includes("requireServiceAuth"), "service-auth should export requireServiceAuth");
+    assert(src.includes("setupGracefulShutdown"), "service-auth should export setupGracefulShutdown");
+    assert(src.includes("idempotencyMiddleware"), "service-auth should export idempotencyMiddleware");
+  });
+
+  // ── Test 11: @agency/outbox package exists ───────────────────────────────────
+  test("@agency/outbox package is present with OutboxWriter and OutboxWorker", () => {
+    const pkgPath = path.join(workspaceRoot, "packages", "outbox", "package.json");
+    assert(fs.existsSync(pkgPath), "packages/outbox/package.json should exist");
+    const srcPath = path.join(workspaceRoot, "packages", "outbox", "src", "index.ts");
+    assert(fs.existsSync(srcPath), "packages/outbox/src/index.ts should exist");
+    const src = fs.readFileSync(srcPath, "utf-8");
+    assert(src.includes("OutboxWriter"), "outbox should export OutboxWriter");
+    assert(src.includes("OutboxWorker"), "outbox should export OutboxWorker");
+    assert(src.includes("OUTBOX_SETUP_SQL"), "outbox should export OUTBOX_SETUP_SQL");
+    assert(src.includes("SKIP LOCKED"), "outbox worker should use FOR UPDATE SKIP LOCKED");
+    assert(src.includes("dead-letter"), "outbox should have DLQ support");
+  });
+
+  // ── Test 12: @agency/openapi package exists ──────────────────────────────────
+  test("@agency/openapi package is present with AgencyOpenAPIRegistry", () => {
+    const pkgPath = path.join(workspaceRoot, "packages", "openapi", "package.json");
+    assert(fs.existsSync(pkgPath), "packages/openapi/package.json should exist");
+    const srcPath = path.join(workspaceRoot, "packages", "openapi", "src", "index.ts");
+    assert(fs.existsSync(srcPath), "packages/openapi/src/index.ts should exist");
+    const src = fs.readFileSync(srcPath, "utf-8");
+    assert(src.includes("AgencyOpenAPIRegistry"), "openapi should export AgencyOpenAPIRegistry");
+    assert(src.includes("serveSwaggerUI"), "openapi should export serveSwaggerUI");
+  });
+
+  // ── Test 13: API v1 versioning in all 22 service index.ts ────────────────────
+  test("All 22 microservices use /api/v1/ route versioning", () => {
+    const services = [
+      "crm-service", "auth-service", "project-service", "finance-service", "inbox-service",
+      "automation-service", "calendar-service", "marketing-service", "integration-service",
+      "document-service", "notification-service", "analytics-service", "pos-service",
+      "hr-service", "admin-service", "affiliate-service", "public-api-service", "video-service",
+      "ai-engine", "agent-team-engine", "goldneez-rewards-service", "api-gateway"
+    ];
+
+    const missingV1: string[] = [];
+    for (const svc of services) {
+      const indexPath = path.join(workspaceRoot, "services", svc, "src", "index.ts");
+      if (!fs.existsSync(indexPath)) {
+        missingV1.push(`${svc} (index.ts missing)`);
+        continue;
+      }
+      const src = fs.readFileSync(indexPath, "utf-8");
+      if (!src.includes("/api/v1")) {
+        missingV1.push(svc);
+      }
+    }
+    assert(
+      missingV1.length === 0,
+      `Services missing /api/v1 versioning: ${missingV1.join(", ")}`
+    );
+  });
+
+  // ── Test 14: Graceful shutdown in all services ───────────────────────────────
+  test("All 22 microservices implement graceful shutdown", () => {
+    const services = [
+      "crm-service", "auth-service", "project-service", "finance-service", "inbox-service",
+      "automation-service", "calendar-service", "marketing-service", "integration-service",
+      "document-service", "notification-service", "analytics-service", "pos-service",
+      "hr-service", "admin-service", "affiliate-service", "public-api-service", "video-service",
+      "ai-engine", "agent-team-engine", "goldneez-rewards-service", "api-gateway"
+    ];
+
+    const missingShutdown: string[] = [];
+    for (const svc of services) {
+      const indexPath = path.join(workspaceRoot, "services", svc, "src", "index.ts");
+      if (!fs.existsSync(indexPath)) continue;
+      const src = fs.readFileSync(indexPath, "utf-8");
+      if (!src.includes("setupGracefulShutdown") && !src.includes("SIGTERM") && !src.includes("process.on")) {
+        missingShutdown.push(svc);
+      }
+    }
+    assert(
+      missingShutdown.length === 0,
+      `Services missing graceful shutdown: ${missingShutdown.join(", ")}`
+    );
+  });
+
+  // ── Test 15: Dockerfiles include service-auth ─────────────────────────────────
+  test("Standard microservice Dockerfiles include @agency/service-auth build steps", () => {
+    const standardServices = [
+      "crm-service", "auth-service", "project-service", "finance-service", "inbox-service",
+      "automation-service", "calendar-service", "marketing-service", "integration-service",
+      "document-service", "notification-service", "analytics-service", "hr-service",
+      "admin-service", "affiliate-service", "public-api-service", "video-service",
+      "ai-engine", "agent-team-engine"
+    ];
+
+    const missingAuth: string[] = [];
+    for (const svc of standardServices) {
+      const dockerfilePath = path.join(workspaceRoot, "services", svc, "Dockerfile");
+      if (!fs.existsSync(dockerfilePath)) continue;
+      const content = fs.readFileSync(dockerfilePath, "utf-8");
+      if (!content.includes("service-auth")) {
+        missingAuth.push(svc);
+      }
+    }
+    assert(
+      missingAuth.length === 0,
+      `Dockerfiles missing service-auth: ${missingAuth.join(", ")}`
+    );
+  });
+
   console.log("\n══════════════════════════════════════════════════════════════");
   console.log(`  Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);
   console.log("══════════════════════════════════════════════════════════════\n");
@@ -208,3 +327,4 @@ async function run() {
 }
 
 run();
+

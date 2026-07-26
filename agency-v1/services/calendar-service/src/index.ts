@@ -1,9 +1,13 @@
 import express from "express";
+try {
+  require("@agency/observability/register");
+} catch { /* optional */ }
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { calendarRouter } from "./routes/calendar.routes";
 import { errorHandler } from "./middlewares/calendar.middleware";
+import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
 const port = process.env.PORT || 4008;
@@ -25,11 +29,12 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
-app.use("/api", calendarRouter);
+app.use("/api/v1", calendarRouter);
 app.use(errorHandler);
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Calendar Service listening at http://localhost:${port}`);
 });
+setupGracefulShutdown(server);
 
 export default app;

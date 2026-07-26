@@ -8,11 +8,15 @@
  */
 
 import express from "express";
+try {
+  require("@agency/observability/register");
+} catch { /* optional */ }
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { EventBus, EventPayload } from "@agency/events";
 import { executeWorkflow, triggerWorkflow } from "./workflow-executor";
+import { setupGracefulShutdown } from "@agency/service-auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const app = express();
@@ -40,7 +44,7 @@ app.get("/ready", async (_req, res) => {
 import { automationRouter } from "./routes/automation.routes";
 import { errorHandler } from "./middlewares/automation.middleware";
 
-app.use("/api", automationRouter);
+app.use("/api/v1", automationRouter);
 app.use(errorHandler);
 
 // ── Workflows CRUD ───────────────────────────────────────────────────────────
@@ -453,9 +457,10 @@ eventBus.subscribe("deal.stage_changed", async (payload: EventPayload) => {
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`⚡ Automation Service running on port ${PORT}`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
   await eventBus.disconnect();

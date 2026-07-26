@@ -2,6 +2,8 @@
  * Finance Service — Billing, Payroll & Accounting Microservice
  * Port: 4006 | Low frequency, high data criticality
  */
+try { require("@agency/observability/register"); } catch { /* optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -33,7 +35,7 @@ app.get("/ready", async (_req, res) => {
 import { financeRouter } from "./routes/finance.routes";
 import { errorHandler } from "./middlewares/finance.middleware";
 
-app.use("/api", financeRouter);
+app.use("/api/v1", financeRouter);
 app.use(errorHandler);
 
 // ── Invoices ─────────────────────────────────────────────────────────────────
@@ -763,7 +765,8 @@ app.post("/api/cron/subscriptions", async (_req, res) => {
 });
 
 const eventBus = new EventBus(REDIS_URL, "finance-service");
-app.listen(PORT, "0.0.0.0", () => { console.log(`💰 Finance Service running on port ${PORT}`); });
+const server = app.listen(PORT, "0.0.0.0", () => { console.log(`💰 Finance Service running on port ${PORT}`); });
+setupGracefulShutdown(server);
 process.on("SIGTERM", async () => { await eventBus.disconnect(); await prisma.$disconnect(); process.exit(0); });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;

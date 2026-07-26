@@ -1,7 +1,11 @@
 import express, { Request, Response } from 'express';
+try {
+  require("@agency/observability/register");
+} catch { /* optional */ }
 import cors from 'cors';
 import helmet from 'helmet';
 import { prisma } from '@agency/database';
+import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4009', 10);
@@ -27,7 +31,7 @@ app.get('/ready', async (_req: Request, res: Response) => {
 import { marketingRouter } from "./routes/marketing.routes";
 import { errorHandler } from "./middlewares/marketing.middleware";
 
-app.use("/api", marketingRouter);
+app.use("/api/v1", marketingRouter);
 app.use(errorHandler);
 
 // ─── Email Blasts ─────────────────────────────────────────────────────────────
@@ -400,9 +404,10 @@ app.post('/api/suppression-lists', async (req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Marketing Service listening at http://localhost:${PORT}`);
 });
+setupGracefulShutdown(server);
 
 process.on('SIGTERM', async () => {
   await prisma.$disconnect();

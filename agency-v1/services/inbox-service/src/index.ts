@@ -2,6 +2,8 @@
  * Inbox Service — OmniChannel Communication Microservice
  * Port: 4005 | Sticky Sessions Required (WebSocket)
  */
+try { require("@agency/observability/register"); } catch { /* optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -61,7 +63,7 @@ app.get("/ready", async (_req, res) => {
 import { inboxRouter } from "./routes/inbox.routes";
 import { errorHandler } from "./middlewares/inbox.middleware";
 
-app.use("/api", inboxRouter);
+app.use("/api/v1", inboxRouter);
 app.use(errorHandler);
 
 // ── Conversations ────────────────────────────────────────────────────────────
@@ -800,9 +802,10 @@ eventBus.subscribe("agent.response_ready", async (payload) => {
   console.log(`[inbox-service] AI response ready: ${payload.data.conversationId}`);
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`💬 Inbox Service running on port ${PORT}`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
   await eventBus.disconnect();

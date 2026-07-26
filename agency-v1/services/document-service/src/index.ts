@@ -1,10 +1,14 @@
 import "@agency/observability/register";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
+try {
+  require("@agency/observability/register");
+} catch { /* optional */ }
 import cors from "cors";
 import helmet from "helmet";
 import { EventBus } from "@agency/events";
 import { GrpcServerHelper, GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
+import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
 app.use(metricsMiddleware("document-service"));
@@ -25,7 +29,7 @@ app.get("/metrics", metricsEndpoint);
 import { documentRouter } from "./routes/document.routes";
 import { errorHandler } from "./middlewares/document.middleware";
 
-app.use("/api", documentRouter);
+app.use("/api/v1", documentRouter);
 app.use(errorHandler);
 
 // ── Hybrid Event Bus ─────────────────────────────────────────────────────────
@@ -76,6 +80,7 @@ export const authGrpcClient = GrpcClientHelper.getClient(
   { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
 );
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📄 Document Service running on port ${PORT} (HTTP) and port ${DOC_GRPC_PORT} (gRPC Sync)`);
 });
+setupGracefulShutdown(server);

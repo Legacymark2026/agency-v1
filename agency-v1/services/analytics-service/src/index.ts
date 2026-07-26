@@ -1,4 +1,9 @@
 import express from 'express';
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import cors from 'cors';
 import helmet from 'helmet';
 import { getPrismaAnalytics } from '@agency/database';
@@ -17,7 +22,7 @@ app.get('/health', (req, res) => {
 import { analyticsRouter } from "./routes/analytics.routes";
 import { errorHandler } from "./middlewares/analytics.middleware";
 
-app.use("/api", analyticsRouter);
+app.use("/api/v1", analyticsRouter);
 app.use(errorHandler);
 
 async function runPartitionMaintenance() {
@@ -59,7 +64,7 @@ async function runPartitionMaintenance() {
   }
 }
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Analytics Service listening at http://localhost:${port}`);
   
   // Run on startup
@@ -70,3 +75,4 @@ app.listen(port, () => {
     runPartitionMaintenance().catch(err => console.error('Error in cron partition check:', err));
   }, 24 * 60 * 60 * 1000);
 });
+setupGracefulShutdown(server);

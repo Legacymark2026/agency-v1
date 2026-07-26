@@ -16,6 +16,11 @@
  */
 
 import express from "express";
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
@@ -55,7 +60,7 @@ app.get("/ready", async (_req, res) => {
 import { notificationRouter } from "./routes/notification.routes";
 import { errorHandler } from "./middlewares/notification.middleware";
 
-app.use("/api", notificationRouter);
+app.use("/api/v1", notificationRouter);
 app.use(errorHandler);
 
 // ── Notification Types Registry ──────────────────────────────────────────────
@@ -487,12 +492,13 @@ export const authGrpcClient = GrpcClientHelper.getClient(
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔔 Notification Service running on port ${PORT} (HTTP) and port ${NOTIF_GRPC_PORT} (gRPC Sync)`);
   console.log(`   Channels: IN_APP, EMAIL, PUSH`);
   console.log(`   Categories: ${NOTIFICATION_CATEGORIES.join(", ")}`);
   console.log(`   Event mappings: ${Object.keys(EVENT_MAPPINGS).join(", ")}`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
   console.log("[notification-service] Graceful shutdown...");

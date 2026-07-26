@@ -1,7 +1,11 @@
 import express from 'express';
+try {
+  require("@agency/observability/register");
+} catch { /* optional */ }
 import cors from 'cors';
 import helmet from 'helmet';
 import { prisma } from '@agency/database';
+import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
 const port = process.env.PORT || 4010;
@@ -18,7 +22,7 @@ app.get('/health', (req, res) => {
 import { integrationRouter } from "./routes/integration.routes";
 import { errorHandler } from "./middlewares/integration.middleware";
 
-app.use("/api", integrationRouter);
+app.use("/api/v1", integrationRouter);
 app.use(errorHandler);
 
 // ============================================================================
@@ -476,6 +480,7 @@ app.post('/api/integrations/domains', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Integration Service listening at http://localhost:${port}`);
 });
+setupGracefulShutdown(server);

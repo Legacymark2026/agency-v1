@@ -4,6 +4,8 @@
  * Port: 4018 (internal)
  */
 
+try { require("@agency/observability/register"); } catch { /* optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -36,7 +38,7 @@ app.get("/ready", async (_req, res) => {
 import { projectRouter } from "./routes/project.routes";
 import { errorHandler } from "./middlewares/project.middleware";
 
-app.use("/api", projectRouter);
+app.use("/api/v1", projectRouter);
 app.use(errorHandler);
 
 // ── Kanban Projects ──────────────────────────────────────────────────────────
@@ -849,11 +851,12 @@ export const authGrpcClient = GrpcClientHelper.getClient(
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📋 Project Service running on port ${PORT} (HTTP) and port ${PROJECT_GRPC_PORT} (gRPC Sync)`);
   console.log(`   Models: KanbanProject, KanbanTask, KanbanSwimlane, KanbanComment, KanbanAuditLog`);
   console.log(`   Templates: ${Object.keys(BOARD_TEMPLATES).join(", ")}`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
   await projectGrpcServer.forceShutdown();

@@ -37,6 +37,12 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
+import { aiRouter } from "./routes/ai.routes";
+import { errorHandler } from "./middlewares/ai.middleware";
+
+app.use("/api", aiRouter);
+app.use(errorHandler);
+
 // ── Agent Invocation ─────────────────────────────────────────────────────────
 
 app.post("/api/agents/:agentId/run", async (req, res) => {

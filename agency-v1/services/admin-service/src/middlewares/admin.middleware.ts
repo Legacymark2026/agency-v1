@@ -48,3 +48,5 @@ export const validateRequest = (schema: ZodSchema, source: "body" | "query" | "p
     }
   };
 };
+
+export { idempotencyMiddleware } from "@agency/service-auth";

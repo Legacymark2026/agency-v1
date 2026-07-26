@@ -3,6 +3,11 @@
  * Port: 4020 | High concurrency, Offline-First Sync, AI Forecasting & Fraud Detection
  */
 import express from "express";
+// Observability registration — must be first
+try {
+  require("@agency/observability/register");
+} catch { /* observability optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import cors from "cors";
 import helmet from "helmet";
 import crypto from "crypto";
@@ -53,7 +58,7 @@ app.get("/ready", async (_req, res) => {
 import { posRouter } from "./routes/pos.routes";
 import { errorHandler } from "./middlewares/pos.middleware";
 
-app.use("/api", posRouter);
+app.use("/api/v1", posRouter);
 app.use(errorHandler);
 
 // Helper to guarantee a valid existing Company ID in PostgreSQL or fallback mock ID
@@ -1174,9 +1179,10 @@ app.post("/api/pos/payments/verify-transfer", async (req, res) => {
     }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`🛍️ Enterprise POS Service running on port ${PORT}`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
     await eventBus.disconnect();

@@ -5,7 +5,8 @@
  * Port: 4002
  */
 
-import "@agency/observability/register";
+try { require("@agency/observability/register"); } catch { /* optional */ }
+import { setupGracefulShutdown } from "@agency/service-auth";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
@@ -28,7 +29,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
-app.use("/api", leadRouter);
+app.use("/api/v1", leadRouter);
 
 // ── Health Checks ────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
@@ -2542,9 +2543,10 @@ export const authGrpcClient = GrpcClientHelper.getClient(
 app.use(errorHandler as any);
 
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📊 CRM Service running on port ${PORT} (HTTP) and port ${CRM_GRPC_PORT} (gRPC Sync)`);
 });
+setupGracefulShutdown(server);
 
 process.on("SIGTERM", async () => {
   await crmGrpcServer.forceShutdown();
