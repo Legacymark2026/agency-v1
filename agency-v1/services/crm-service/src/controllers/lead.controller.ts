@@ -5,7 +5,7 @@ export class LeadController {
   /**
    * GET /api/leads
    */
-  static async getLeads(req: Request, res: Response, NextFunction: NextFunction) {
+  static async getLeads(req: Request, res: Response, next: NextFunction) {
     try {
       const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
       if (!companyId) {
@@ -29,16 +29,16 @@ export class LeadController {
 
       res.json({ success: true, ...result });
     } catch (err) {
-      NextFunction(err);
+      next(err);
     }
   }
 
   /**
    * GET /api/leads/:id
    */
-  static async getLeadById(req: Request, res: Response, NextFunction: NextFunction) {
+  static async getLeadById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id || "");
       const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
@@ -47,14 +47,14 @@ export class LeadController {
       const lead = await LeadService.getLeadById(id, companyId);
       res.json({ success: true, lead });
     } catch (err) {
-      NextFunction(err);
+      next(err);
     }
   }
 
   /**
    * POST /api/leads
    */
-  static async createLead(req: Request, res: Response, NextFunction: NextFunction) {
+  static async createLead(req: Request, res: Response, next: NextFunction) {
     try {
       const companyId = String(req.headers["x-company-id"] || req.body.companyId || "");
       if (!companyId) {
