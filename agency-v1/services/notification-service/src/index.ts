@@ -52,6 +52,12 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
+import { notificationRouter } from "./routes/notification.routes";
+import { errorHandler } from "./middlewares/notification.middleware";
+
+app.use("/api", notificationRouter);
+app.use(errorHandler);
+
 // ── Notification Types Registry ──────────────────────────────────────────────
 
 const NOTIFICATION_CATEGORIES = [

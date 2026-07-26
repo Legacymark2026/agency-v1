@@ -22,9 +22,11 @@ app.get("/health", (_req, res) => {
 });
 app.get("/metrics", metricsEndpoint);
 
-app.use("/api/proposals", (_req, res) => { res.status(200).json({ message: "/api/proposals handled by document-service" }); });
-app.use("/api/propuesta", (_req, res) => { res.status(200).json({ message: "/api/propuesta handled by document-service" }); });
-app.use("/api/kb", (_req, res) => { res.status(200).json({ message: "/api/kb handled by document-service" }); });
+import { documentRouter } from "./routes/document.routes";
+import { errorHandler } from "./middlewares/document.middleware";
+
+app.use("/api", documentRouter);
+app.use(errorHandler);
 
 // ── Hybrid Event Bus ─────────────────────────────────────────────────────────
 const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";

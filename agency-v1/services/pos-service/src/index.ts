@@ -50,6 +50,12 @@ app.get("/ready", async (_req, res) => {
     }
 });
 
+import { posRouter } from "./routes/pos.routes";
+import { errorHandler } from "./middlewares/pos.middleware";
+
+app.use("/api", posRouter);
+app.use(errorHandler);
+
 // Helper to guarantee a valid existing Company ID in PostgreSQL or fallback mock ID
 async function resolveValidCompanyId(inputCompanyId?: string): Promise<string> {
     if (process.env.NODE_ENV === "test" || (inputCompanyId && inputCompanyId.includes("test"))) {

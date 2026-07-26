@@ -34,6 +34,12 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
+import { hrRouter } from "./routes/hr.routes";
+import { errorHandler } from "./middlewares/hr.middleware";
+
+app.use("/api", hrRouter);
+app.use(errorHandler);
+
 // ── Employees ────────────────────────────────────────────────────────────────
 
 app.get("/api/employees", async (req, res) => {

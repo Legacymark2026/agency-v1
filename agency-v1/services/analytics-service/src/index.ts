@@ -14,8 +14,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'analytics-service' });
 });
 
-app.use('/api/analytics', (req, res) => { res.status(200).json({ message: '/api/analytics handled by analytics-service' }); });
-app.use('/api/track', (req, res) => { res.status(200).json({ message: '/api/track handled by analytics-service' }); });
+import { analyticsRouter } from "./routes/analytics.routes";
+import { errorHandler } from "./middlewares/analytics.middleware";
+
+app.use("/api", analyticsRouter);
+app.use(errorHandler);
 
 async function runPartitionMaintenance() {
   console.log('📅 [AutoPartition] Running log partition check...');
