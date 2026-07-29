@@ -68,9 +68,10 @@ export class MarketingController {
    */
   static async checkDns(req: Request, res: Response, next: NextFunction) {
     try {
-      const domainRaw = req.query.domain || req.body.domain || "legacymarksas.com";
-      const domain = Array.isArray(domainRaw) ? String(domainRaw[0]) : String(domainRaw);
-      const result = await DnsValidatorService.checkDomain(domain);
+      const targetDomain = typeof req.query.domain === "string" 
+        ? req.query.domain 
+        : (typeof req.body?.domain === "string" ? req.body.domain : "legacymarksas.com");
+      const result = await DnsValidatorService.checkDomain(targetDomain);
       res.json({ success: true, result });
     } catch (err) {
       next(err);
