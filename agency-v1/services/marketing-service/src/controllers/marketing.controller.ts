@@ -159,6 +159,90 @@ export class MarketingController {
       }
 
   /**
+   * GET /api/v1/email-blast/components/presets
+   * Catálogo de componentes pre-diseñados y reutilizables
+   */
+  static async getPresets(req: Request, res: Response, next: NextFunction) {
+    try {
+      const presets = [
+        {
+          type: "hero_banner",
+          name: "Hero Banner de Aniversario",
+          description: "Banner promocional de impacto con imagen de fondo y botón CTA",
+          defaultBlock: {
+            type: "hero_banner",
+            imageUrl: "https://images.unsplash.com/photo-1557804506-669a67965ba0",
+            headline: "¡Oferta Exclusiva de Aniversario!",
+            subheadline: "Aprovecha hasta un 50% de descuento en nuestros servicios VIP",
+            ctaText: "Reclamar Oferta",
+            ctaUrl: "https://legacymarksas.com/promocion"
+          }
+        },
+        {
+          type: "product_card",
+          name: "Tarjeta de Producto",
+          description: "Ficha destacada para promocionar productos o servicios",
+          defaultBlock: {
+            type: "product_card",
+            imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
+            title: "Plan LegacyMark Enterprise",
+            price: "$299 USD",
+            originalPrice: "$499 USD",
+            description: "Acceso completo a todos los microservicios e IA automatizada.",
+            buttonText: "Comprar Ahora",
+            buttonUrl: "https://legacymarksas.com/checkout"
+          }
+        },
+        {
+          type: "coupon_code",
+          name: "Cupón de Descuento",
+          description: "Caja de código promocional destacado con borde punteado",
+          defaultBlock: {
+            type: "coupon_code",
+            code: "{{discountCode}}",
+            discountText: "Tu código de regalo exclusivo",
+            expiresText: "Válido durante 48 horas únicamente"
+          }
+        },
+        {
+          type: "testimonial",
+          name: "Testimonio de Cliente",
+          description: "Cita destacada con avatar de autor",
+          defaultBlock: {
+            type: "testimonial",
+            quote: "LegacyMark transformó por completo nuestras ventas de email marketing.",
+            authorName: "Carlos Mendoza",
+            authorTitle: "CEO en TechCorp",
+            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb"
+          }
+        }
+      ];
+
+      res.json({ success: true, presets });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/compile-preview
+   * Compilar bloques e interpolar variables dinámicas para vista previa en tiempo real
+   */
+  static async compilePreview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { designJson, variables } = req.body;
+      if (!designJson) {
+        return res.status(400).json({ success: false, error: "designJson is required" });
+      }
+
+      const compiledHtml = await BlockCompilerService.compileBlocksToHtmlWithCache(designJson, variables);
+      res.json({ success: true, html: compiledHtml });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * POST /api/v1/email-blast/compile
    * Compilar bloques JSON a HTML responsive en tiempo real
    */

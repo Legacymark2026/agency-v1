@@ -21,11 +21,13 @@ marketingRouter.get("/email-blast/track/click", WebhookController.trackClick);
 marketingRouter.get("/email-blast/unsubscribe", WebhookController.unsubscribe);
 marketingRouter.post("/email-blast/unsubscribe", WebhookController.unsubscribe);
 
-// Diagnóstico DNS & Optimización IA & Compilador de Bloques
+// Diagnóstico DNS & Optimización IA & Compilador de Bloques & Previsualización
 marketingRouter.get("/email-blast/dns-check", MarketingController.checkDns);
 marketingRouter.post("/email-blast/spam-check", MarketingController.analyzeSpam);
 marketingRouter.post("/email-blast/ai-generate", MarketingController.aiGenerateSubjects);
 marketingRouter.post("/email-blast/compile", MarketingController.compileBlocks);
+marketingRouter.post("/email-blast/compile-preview", MarketingController.compilePreview);
+marketingRouter.get("/email-blast/components/presets", MarketingController.getPresets);
 
 // Galería y Carga de Imágenes de Campañas
 marketingRouter.get("/email-blast/images", MarketingController.getImages);

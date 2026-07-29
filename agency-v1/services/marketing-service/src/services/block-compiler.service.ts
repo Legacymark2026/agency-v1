@@ -1,4 +1,64 @@
-export type BlockType = "header" | "text" | "image" | "button" | "divider" | "columns" | "social" | "footer";
+import Redis from "ioredis";
+import { VariableParserService, VariableContext } from "./variable-parser.service";
+
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+let redisClient: Redis | null = null;
+try {
+  redisClient = new Redis(REDIS_URL, { maxRetriesPerRequest: 1 });
+  redisClient.on("error", () => {}); // Suppress unhandled redis log spam in tests
+} catch {}
+
+export type BlockType =
+  | "header"
+  | "text"
+  | "image"
+  | "button"
+  | "divider"
+  | "columns"
+  | "social"
+  | "footer"
+  | "hero_banner"
+  | "product_card"
+  | "testimonial"
+  | "coupon_code";
+
+export interface HeroBannerBlock {
+  type: "hero_banner";
+  imageUrl: string;
+  headline: string;
+  subheadline?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  overlayColor?: string;
+}
+
+export interface ProductCardBlock {
+  type: "product_card";
+  imageUrl: string;
+  title: string;
+  price: string;
+  originalPrice?: string;
+  description?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+}
+
+export interface TestimonialBlock {
+  type: "testimonial";
+  quote: string;
+  authorName: string;
+  authorTitle?: string;
+  avatarUrl?: string;
+}
+
+export interface CouponCodeBlock {
+  type: "coupon_code";
+  code: string;
+  discountText: string;
+  expiresText?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+}
 
 export interface HeaderBlock {
   type: "header";
@@ -83,9 +143,14 @@ export type EmailBlock =
   | DividerBlock
   | ColumnsBlock
   | SocialBlock
-  | FooterBlock;
+  | FooterBlock
+  | HeroBannerBlock
+  | ProductCardBlock
+  | TestimonialBlock
+  | CouponCodeBlock;
 
 export interface EmailDesignJson {
+  id?: string;
   bgColor?: string;
   cardBgColor?: string;
   fontFamily?: string;
@@ -95,7 +160,36 @@ export interface EmailDesignJson {
 
 export class BlockCompilerService {
   /**
-   * Compilar un objeto EmailDesignJson a HTML responsive compatible con clientes de correo
+   * Compilar un objeto EmailDesignJson a HTML responsive con caché Redis de alto tráfico
+   */
+  static async compileBlocksToHtmlWithCache(
+    design: EmailDesignJson,
+    variablesContext?: VariableContext
+  ): Promise<string> {
+    const cacheKey = design.id ? `email-template:compiled:${design.id}` : null;
+
+    if (cacheKey && redisClient) {
+      try {
+        const cachedHtml = await redisClient.get(cacheKey);
+        if (cachedHtml) {
+          return VariableParserService.parseVariables(cachedHtml, variablesContext);
+        }
+      } catch {}
+    }
+
+    const compiledRawHtml = this.compileBlocksToHtml(design);
+
+    if (cacheKey && redisClient) {
+      try {
+        await redisClient.setex(cacheKey, 86400, compiledRawHtml); // Cache 24 hours
+      } catch {}
+    }
+
+    return VariableParserService.parseVariables(compiledRawHtml, variablesContext);
+  }
+
+  /**
+   * Compilar un objeto EmailDesignJson a HTML responsive
    */
   static compileBlocksToHtml(design: EmailDesignJson): string {
     const bgColor = design.bgColor || "#0f172a";
@@ -144,6 +238,65 @@ export class BlockCompilerService {
 
   private static renderBlock(block: EmailBlock): string {
     switch (block.type) {
+      case "hero_banner": {
+        const cta = block.ctaText
+          ? `<div style="margin-top: 15px;"><a href="${block.ctaUrl || "#"}" style="background-color: #0d9488; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">${block.ctaText}</a></div>`
+          : "";
+        return `
+          <div style="position: relative; text-align: center; border-radius: 10px; overflow: hidden; margin-bottom: 20px; background-color: #0f172a; border: 1px solid #334155;">
+            <img src="${block.imageUrl}" alt="${block.headline}" style="width: 100%; max-height: 280px; object-fit: cover; display: block;" />
+            <div style="padding: 20px; background: rgba(15,23,42,0.85);">
+              <h2 style="margin: 0; color: #f8fafc; font-size: 22px; font-weight: bold;">${block.headline}</h2>
+              ${block.subheadline ? `<p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 14px;">${block.subheadline}</p>` : ""}
+              ${cta}
+            </div>
+          </div>
+        `;
+      }
+
+      case "product_card": {
+        const origPrice = block.originalPrice ? `<span style="text-decoration: line-through; color: #64748b; margin-left: 8px; font-size: 13px;">${block.originalPrice}</span>` : "";
+        return `
+          <div style="background-color: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: center;">
+            <img src="${block.imageUrl}" alt="${block.title}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;" />
+            <h3 style="margin: 0; color: #f8fafc; font-size: 16px;">${block.title}</h3>
+            ${block.description ? `<p style="color: #94a3b8; font-size: 13px; margin: 6px 0;">${block.description}</p>` : ""}
+            <div style="margin: 10px 0; font-size: 18px; font-weight: bold; color: #38bdf8;">
+              ${block.price} ${origPrice}
+            </div>
+            ${block.buttonText ? `<a href="${block.buttonUrl || "#"}" style="background-color: #0d9488; color: #ffffff; padding: 8px 16px; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: bold; display: inline-block;">${block.buttonText}</a>` : ""}
+          </div>
+        `;
+      }
+
+      case "testimonial": {
+        const avatar = block.avatarUrl ? `<img src="${block.avatarUrl}" alt="${block.authorName}" style="width: 44px; height: 44px; border-radius: 50%; display: inline-block; margin-right: 12px; vertical-align: middle;" />` : "";
+        return `
+          <div style="background-color: #0f172a; border-left: 4px solid #38bdf8; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0; color: #cbd5e1; font-style: italic; font-size: 14px;">"${block.quote}"</p>
+            <div style="display: flex; align-items: center;">
+              ${avatar}
+              <div style="display: inline-block; vertical-align: middle;">
+                <strong style="color: #f8fafc; font-size: 13px; display: block;">${block.authorName}</strong>
+                ${block.authorTitle ? `<span style="color: #64748b; font-size: 11px;">${block.authorTitle}</span>` : ""}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      case "coupon_code": {
+        return `
+          <div style="background: linear-gradient(135deg, rgba(13,148,136,0.15), rgba(8,145,178,0.15)); border: 2px dashed #0d9488; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 20px;">
+            <p style="margin: 0; color: #2dd4bf; font-size: 13px; font-weight: uppercase; tracking-wider: 1px;">${block.discountText}</p>
+            <div style="font-size: 26px; font-weight: 900; color: #ffffff; letter-spacing: 3px; margin: 10px 0; background: #0f172a; padding: 8px 16px; display: inline-block; border-radius: 6px; border: 1px solid #334155;">
+              ${block.code}
+            </div>
+            ${block.expiresText ? `<p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 11px;">${block.expiresText}</p>` : ""}
+          </div>
+        `;
+      }
+
       case "header": {
         const align = block.align || "center";
         const logo = block.logoUrl
@@ -195,17 +348,9 @@ export class BlockCompilerService {
 
         return `
           <div style="text-align: ${align}; margin: 20px 0;">
-            <!--[if mso]>
-            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${block.url}" style="height:${py * 2 + fontSize}px;v-text-anchor:middle;width:200px;" arcsize="${borderRadius * 2}%" stroke="f" fillcolor="${bgColor}">
-              <w:anchorlock/>
-              <center style="color:${textColor};font-family:sans-serif;font-size:${fontSize}px;font-weight:bold;">${block.label}</center>
-            </v:roundrect>
-            <![endif]-->
-            <!--[if !mso]><!-->
             <a href="${block.url}" target="_blank" style="background-color: ${bgColor}; color: ${textColor}; display: inline-block; font-size: ${fontSize}px; font-weight: bold; text-decoration: none; padding: ${py}px ${px}px; border-radius: ${borderRadius}px; box-shadow: 0 4px 12px rgba(13,148,136,0.3); transition: all 0.2s ease;">
               ${block.label}
             </a>
-            <!--<![endif]-->
           </div>
         `;
       }
