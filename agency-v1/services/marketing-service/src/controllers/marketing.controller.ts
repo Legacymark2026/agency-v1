@@ -16,7 +16,7 @@ export class MarketingController {
       }
 
       const blasts = await MarketingService.getEmailBlasts(companyId);
-      res.json({ success: true, blasts });
+      res.json(blasts);
     } catch (err) {
       next(err);
     }
