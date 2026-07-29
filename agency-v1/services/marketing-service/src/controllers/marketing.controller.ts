@@ -48,7 +48,7 @@ export class MarketingController {
    */
   static async sendEmailBlast(req: Request, res: Response, next: NextFunction) {
     try {
-      const blastId = req.params.id;
+      const blastId = String(req.params.id);
       const companyId = String(req.headers["x-company-id"] || req.body.companyId || "");
       const baseUrl = `${req.protocol}://${req.get("host")}`;
 
