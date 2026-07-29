@@ -7,17 +7,17 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const isProd = process.env.NODE_ENV === 'production';
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' ${isProd ? '' : "'unsafe-eval'"} https://static.cloudflareinsights.com https://cloudflareinsights.com https://www.googletagmanager.com https://connect.facebook.net https://static.hotjar.com https://script.hotjar.com https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://vercel.live;
+    script-src 'self' 'unsafe-inline' ${isProd ? '' : "'unsafe-eval'"} https://static.cloudflareinsights.com https://cloudflareinsights.com https://www.googletagmanager.com https://connect.facebook.net https://static.hotjar.com https://script.hotjar.com https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://vercel.live https://editor.unlayer.com https://*.unlayer.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://www.gstatic.com;
-    img-src 'self' blob: data: https: http: https://vercel.live;
+    img-src 'self' blob: data: https: http: https://vercel.live https://editor.unlayer.com https://*.unlayer.com;
     font-src 'self' data: https://fonts.gstatic.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
     form-action 'self' https://*.stripe.com https://*.facebook.com https://*.hubspot.com;
     frame-ancestors 'self' https://app.powerbi.com;
     upgrade-insecure-requests;
-    connect-src 'self' wss://legacymarksas.com wss://www.legacymarksas.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://graph.facebook.com https://*.upstash.io https://res.cloudinary.com https://sentry.io https://*.sentry.io https://o4504.ingest.sentry.io https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://*.tiktokw.us https://vercel.live https://api.linkedin.com https://*.on.aws https://*.run.app;
-    frame-src 'self' https://www.youtube.com https://player.vimeo.com https://vercel.live https://*.facebook.com https://*.facebook.net;
+    connect-src 'self' wss://legacymarksas.com wss://www.legacymarksas.com https://static.cloudflareinsights.com https://cloudflareinsights.com https://api.stripe.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://connect.facebook.net https://graph.facebook.com https://*.upstash.io https://res.cloudinary.com https://sentry.io https://*.sentry.io https://o4504.ingest.sentry.io https://analytics.tiktok.com https://*.tiktok.com https://analytics.ahrefs.com https://*.tiktokw.us https://vercel.live https://api.linkedin.com https://*.on.aws https://*.run.app https://editor.unlayer.com https://*.unlayer.com;
+    frame-src 'self' https://www.youtube.com https://player.vimeo.com https://vercel.live https://*.facebook.com https://*.facebook.net https://editor.unlayer.com https://*.unlayer.com;
 `.replace(/\n/g, '');
 
 const nextConfig: NextConfig = {

@@ -108,10 +108,16 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
     console.warn('[createEmailBlast] Quota verification notice:', quotaErr);
   }
 
+  // Destinatarios defensivos para evitar errores 400/500 en campañas sin CSV cargado
+  const recipients = Array.isArray(input.recipients) && input.recipients.length > 0
+    ? input.recipients
+    : [{ email: session.user.email || 'contacto@legacymarksas.com', name: session.user.name || 'Cliente' }];
+
   const res = await gw('/api/email-blast', {
     method: 'POST',
     body: JSON.stringify({
       ...input,
+      recipients,
       companyId,
       createdById: session.user.id
     })
