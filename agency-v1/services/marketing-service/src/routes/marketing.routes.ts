@@ -21,6 +21,11 @@ marketingRouter.get("/email-blast/track/click", WebhookController.trackClick);
 marketingRouter.get("/email-blast/unsubscribe", WebhookController.unsubscribe);
 marketingRouter.post("/email-blast/unsubscribe", WebhookController.unsubscribe);
 
+// Pruebas A/B & Mapa de Calor & Diagnóstico de Clientes
+marketingRouter.post("/email-blast/ab-evaluate", MarketingController.evaluateAbTest);
+marketingRouter.get("/email-blast/:id/heatmap", MarketingController.getHeatmap);
+marketingRouter.post("/email-blast/client-matrix", MarketingController.checkClientMatrix);
+
 // Diagnóstico DNS & Optimización IA & Compilador de Bloques & Previsualización
 marketingRouter.get("/email-blast/dns-check", MarketingController.checkDns);
 marketingRouter.post("/email-blast/spam-check", MarketingController.analyzeSpam);

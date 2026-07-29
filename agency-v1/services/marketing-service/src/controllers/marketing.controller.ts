@@ -5,6 +5,9 @@ import { AiOptimizerService } from "../services/ai-optimizer.service";
 import { SuppressionService } from "../services/suppression.service";
 import { BlockCompilerService } from "../services/block-compiler.service";
 import { ImageManagerService } from "../services/image-manager.service";
+import { AbTestingService } from "../services/ab-testing.service";
+import { HeatmapService } from "../services/heatmap.service";
+import { ClientPreviewService } from "../services/client-preview.service";
 
 export class MarketingController {
   /**
@@ -157,6 +160,51 @@ export class MarketingController {
       if (!companyId || !email) {
         return res.status(400).json({ success: false, error: "companyId and email are required" });
       }
+
+  /**
+   * POST /api/v1/email-blast/ab-evaluate
+   */
+  static async evaluateAbTest(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { blastId, metricGoal } = req.body;
+      if (!blastId) return res.status(400).json({ success: false, error: "blastId is required" });
+
+      const metrics = await AbTestingService.evaluateAbWinner(blastId, metricGoal || "OPENS");
+      res.json({ success: true, metrics });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/email-blast/:id/heatmap
+   */
+  static async getHeatmap(req: Request, res: Response, next: NextFunction) {
+    try {
+      const blastId = String(req.params.id || "");
+      if (!blastId) return res.status(400).json({ success: false, error: "blastId is required" });
+
+      const heatmap = await HeatmapService.getCampaignHeatmap(blastId);
+      res.json({ success: true, heatmap });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/client-matrix
+   */
+  static async checkClientMatrix(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { html } = req.body;
+      if (!html) return res.status(400).json({ success: false, error: "html is required" });
+
+      const report = ClientPreviewService.analyzeCompatibility(html);
+      res.json({ success: true, report });
+    } catch (err) {
+      next(err);
+    }
+  }
 
   /**
    * GET /api/v1/email-blast/components/presets
