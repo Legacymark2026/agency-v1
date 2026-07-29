@@ -76,54 +76,60 @@ async function getCompanyId(): Promise<string> {
 // ── Crear un blast ───────────────────────────────────────────────────────
 
 export async function createEmailBlast(input: CreateEmailBlastInput) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('No autenticado');
-  const companyId = await getCompanyId();
-
-  // Verificar cuota de emails del plan defensivamente
   try {
-    const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}`).catch(() => null);
-    if (companyRes?.ok) {
-      const companyData = await companyRes.json();
-      const tier = companyData?.data?.subscriptionTier || 'free';
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: 'No autenticado. Por favor inicia sesión.' };
+    const companyId = await getCompanyId();
 
-      const campaignQuota = await enforceQuota(companyId, 'campaigns', tier);
-      if (!campaignQuota.allowed) {
-        throw new Error(
-          `Límite de campañas alcanzado para el plan ${tier.toUpperCase()}. ` +
-          `Límite: ${campaignQuota.limit}. Mejora tu plan para continuar.`
-        );
-      }
+    // Verificar cuota de emails del plan defensivamente
+    try {
+      const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}`).catch(() => null);
+      if (companyRes?.ok) {
+        const companyData = await companyRes.json();
+        const tier = companyData?.data?.subscriptionTier || 'free';
 
-      const emailQuota = await enforceQuota(companyId, 'emails_per_month', tier);
-      if (!emailQuota.allowed) {
-        throw new Error(
-          `Límite de emails mensuales alcanzado (${emailQuota.limit.toLocaleString()} emails/${tier} plan). ` +
-          `El contador se resetea el 1ro del próximo mes.`
-        );
+        const campaignQuota = await enforceQuota(companyId, 'campaigns', tier);
+        if (!campaignQuota.allowed) {
+          return {
+            success: false,
+            error: `Límite de campañas alcanzado para el plan ${tier.toUpperCase()}. Límite: ${campaignQuota.limit}. Mejora tu plan para continuar.`
+          };
+        }
+
+        const emailQuota = await enforceQuota(companyId, 'emails_per_month', tier);
+        if (!emailQuota.allowed) {
+          return {
+            success: false,
+            error: `Límite de emails mensuales alcanzado (${emailQuota.limit.toLocaleString()} emails/${tier} plan). El contador se resetea el 1ro del próximo mes.`
+          };
+        }
       }
+    } catch (quotaErr: any) {
+      if (quotaErr.message?.includes('Límite')) return { success: false, error: quotaErr.message };
+      console.warn('[createEmailBlast] Quota verification notice:', quotaErr);
     }
-  } catch (quotaErr: any) {
-    if (quotaErr.message?.includes('Límite')) throw quotaErr;
-    console.warn('[createEmailBlast] Quota verification notice:', quotaErr);
+
+    // Destinatarios defensivos para evitar errores 400/500 en campañas sin CSV cargado
+    const recipients = Array.isArray(input.recipients) && input.recipients.length > 0
+      ? input.recipients
+      : [{ email: session.user.email || 'contacto@legacymarksas.com', name: session.user.name || 'Cliente' }];
+
+    const res = await gw('/api/email-blast', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...input,
+        recipients,
+        companyId,
+        createdById: session.user.id
+      })
+    });
+
+    const blastObj = res?.blast || res;
+    return { success: true, blast: blastObj, recipients };
+  } catch (err: any) {
+    console.error('[createEmailBlast Server Action Error]:', err);
+    return { success: false, error: err?.message || 'Ocurrió un error al procesar la campaña en el servidor.' };
   }
-
-  // Destinatarios defensivos para evitar errores 400/500 en campañas sin CSV cargado
-  const recipients = Array.isArray(input.recipients) && input.recipients.length > 0
-    ? input.recipients
-    : [{ email: session.user.email || 'contacto@legacymarksas.com', name: session.user.name || 'Cliente' }];
-
-  const res = await gw('/api/email-blast', {
-    method: 'POST',
-    body: JSON.stringify({
-      ...input,
-      recipients,
-      companyId,
-      createdById: session.user.id
-    })
-  });
-
-  return res?.blast || res;
 }
 
 // ── Obtener lista de blasts de la empresa ─────────────────────────────────

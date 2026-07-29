@@ -586,7 +586,7 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
         try {
             const finalHtml = buildFinalHtml(state.htmlBody, state.config);
             // 1. Create blast record
-            const blast = await createEmailBlast({
+            const createRes = await createEmailBlast({
                 name: state.name || `Campaña ${state.config.mode} ${new Date().toLocaleDateString()}`,
                 subject: state.subject,
                 htmlBody: finalHtml,
@@ -599,10 +599,17 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                 recipients: state.recipients,
             });
 
-            const total = (blast?.recipients || blast?.blast?.recipients || state.recipients || []).length;
+            if ((createRes as any)?.error || (createRes as any)?.success === false) {
+                toast.error((createRes as any)?.error || 'Error al crear la campaña');
+                setSending(false);
+                return;
+            }
+
+            const blast = (createRes as any)?.blast || createRes;
+            const total = (blast?.recipients || (createRes as any)?.recipients || state.recipients || []).length;
             setProgress({ sent: 0, failed: 0, total, done: false });
 
-            // 2. Call sendEmailBlast server action directly (avoids NGINX SSE issues)
+            // 2. Call sendEmailBlast server action directly
             const { sendEmailBlast } = await import('@/actions/email-blast');
 
             // Show animated progress while waiting
@@ -613,11 +620,17 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                 setProgress(p => p ? { ...p, sent: estimated } : p);
             }, 500);
 
-            const result = await sendEmailBlast(blast.id);
+            const sendRes = await sendEmailBlast(blast.id);
             clearInterval(interval);
 
+            if ((sendRes as any)?.error || (sendRes as any)?.success === false) {
+                toast.error((sendRes as any)?.error || 'Error al despachar campaña');
+                setSending(false);
+                return;
+            }
+
             setProgress({ sent: 0, failed: 0, total, done: true });
-            toast.success(result.message || 'Campaña encolada');
+            toast.success((sendRes as any)?.message || 'Campaña encolada');
             setTimeout(() => onDone(), 2500);
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
