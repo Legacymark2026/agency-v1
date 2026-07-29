@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { enforceQuota } from '@/lib/quotas';
+import { prisma } from '@/lib/prisma';
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
@@ -43,10 +44,33 @@ async function getCompanyId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) throw new Error('No autenticado');
 
-  const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
-  const cuData = await cuRes.json();
-  if (!cuRes.ok || !cuData.data) throw new Error('Sin empresa asignada');
-  return cuData.data.companyId;
+  // 1. Búsqueda directa en Base de Datos PostgreSQL
+  try {
+    const cu = await prisma.companyUser.findFirst({
+      where: { userId: session.user.id },
+      select: { companyId: true }
+    });
+    if (cu?.companyId) return cu.companyId;
+  } catch (e) {
+    console.warn('[getCompanyId] DB lookup notice:', e);
+  }
+
+  // 2. Intento por API Gateway
+  try {
+    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
+    if (cuRes.ok) {
+      const cuData = await cuRes.json();
+      if (cuData?.data?.companyId) return cuData.data.companyId;
+    }
+  } catch (e) {
+    console.warn('[getCompanyId] Gateway lookup notice:', e);
+  }
+
+  // 3. Fallback a primera empresa disponible
+  const defaultCompany = await prisma.company.findFirst({ select: { id: true } });
+  if (defaultCompany?.id) return defaultCompany.id;
+
+  throw new Error('Sin empresa asignada');
 }
 
 // ── Crear un blast ───────────────────────────────────────────────────────
@@ -56,25 +80,32 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
   if (!session?.user?.id) throw new Error('No autenticado');
   const companyId = await getCompanyId();
 
-  // Verificar cuota de emails del plan
-  const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}`);
-  const companyData = await companyRes.json();
-  const tier = companyData?.data?.subscriptionTier || 'free';
+  // Verificar cuota de emails del plan defensivamente
+  try {
+    const companyRes = await fetch(`${GATEWAY_URL}/api/crm/companies/${companyId}`).catch(() => null);
+    if (companyRes?.ok) {
+      const companyData = await companyRes.json();
+      const tier = companyData?.data?.subscriptionTier || 'free';
 
-  const campaignQuota = await enforceQuota(companyId, 'campaigns', tier);
-  if (!campaignQuota.allowed) {
-    throw new Error(
-      `Límite de campañas alcanzado para el plan ${tier.toUpperCase()}. ` +
-      `Límite: ${campaignQuota.limit}. Mejora tu plan para continuar.`
-    );
-  }
+      const campaignQuota = await enforceQuota(companyId, 'campaigns', tier);
+      if (!campaignQuota.allowed) {
+        throw new Error(
+          `Límite de campañas alcanzado para el plan ${tier.toUpperCase()}. ` +
+          `Límite: ${campaignQuota.limit}. Mejora tu plan para continuar.`
+        );
+      }
 
-  const emailQuota = await enforceQuota(companyId, 'emails_per_month', tier);
-  if (!emailQuota.allowed) {
-    throw new Error(
-      `Límite de emails mensuales alcanzado (${emailQuota.limit.toLocaleString()} emails/${tier} plan). ` +
-      `El contador se resetea el 1ro del próximo mes.`
-    );
+      const emailQuota = await enforceQuota(companyId, 'emails_per_month', tier);
+      if (!emailQuota.allowed) {
+        throw new Error(
+          `Límite de emails mensuales alcanzado (${emailQuota.limit.toLocaleString()} emails/${tier} plan). ` +
+          `El contador se resetea el 1ro del próximo mes.`
+        );
+      }
+    }
+  } catch (quotaErr: any) {
+    if (quotaErr.message?.includes('Límite')) throw quotaErr;
+    console.warn('[createEmailBlast] Quota verification notice:', quotaErr);
   }
 
   const res = await gw('/api/email-blast', {

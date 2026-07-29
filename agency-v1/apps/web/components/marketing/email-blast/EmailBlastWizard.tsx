@@ -599,7 +599,7 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                 recipients: state.recipients,
             });
 
-            const total = blast.recipients.length;
+            const total = (blast?.recipients || blast?.blast?.recipients || state.recipients || []).length;
             setProgress({ sent: 0, failed: 0, total, done: false });
 
             // 2. Call sendEmailBlast server action directly (avoids NGINX SSE issues)
