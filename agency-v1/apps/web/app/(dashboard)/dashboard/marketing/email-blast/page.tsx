@@ -2,19 +2,21 @@ import { Suspense } from 'react';
 import { getEmailBlasts } from '@/actions/email-blast';
 import { EmailBlastDashboard } from '@/components/marketing/email-blast/EmailBlastDashboard';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
     title: 'Email Masivo | LegacyMark',
     description: 'Envía campañas de email masivo a tus contactos',
 };
 
 export default async function EmailBlastPage() {
-    let blasts: Awaited<ReturnType<typeof getEmailBlasts>> = [];
+    let blasts: any[] = [];
     try {
-        blasts = await getEmailBlasts();
+        const res = await getEmailBlasts();
+        blasts = Array.isArray(res) ? res : [];
     } catch (err) {
-        console.error('[EmailBlast] Error cargando blasts:', err);
-        // Tabla no existe aún (migración pendiente) o usuario sin empresa
-        // Mostrar dashboard vacío sin crashear
+        console.error('[EmailBlastPage Error]:', err);
+        blasts = [];
     }
 
     return (
