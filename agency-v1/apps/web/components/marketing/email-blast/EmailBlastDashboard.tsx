@@ -208,7 +208,15 @@ function DetailModal({ detail, onClose, onResend }: { detail: BlastDetail; onClo
 // ─── Main Dashboard ───────────────────────────────────────────────────────
 
 export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSummary[] }) {
-    const [blasts, setBlasts] = useState(initialBlasts);
+    const safeInitialBlasts = useMemo(() => {
+        if (Array.isArray(initialBlasts)) return initialBlasts;
+        if (initialBlasts && typeof initialBlasts === 'object' && Array.isArray((initialBlasts as any).blasts)) {
+            return (initialBlasts as any).blasts;
+        }
+        return [];
+    }, [initialBlasts]);
+
+    const [blasts, setBlasts] = useState<BlastSummary[]>(safeInitialBlasts);
     const [showWizard, setShowWizard] = useState(false);
     const [detail, setDetail] = useState<BlastDetail | null>(null);
     const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
@@ -226,7 +234,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
     const handleDelete = async (id: string) => {
         if (!confirm('¿Eliminar esta campaña?')) return;
         await deleteEmailBlast(id);
-        setBlasts((b) => b.filter((x) => x.id !== id));
+        setBlasts((b) => (Array.isArray(b) ? b.filter((x) => x.id !== id) : []));
         setSelectedBlasts((s) => s.filter((x) => x !== id));
         toast.success('Campaña eliminada');
     };
@@ -235,7 +243,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
         if (!confirm(`¿Eliminar ${selectedBlasts.length} campañas seleccionadas?`)) return;
         try {
             await deleteEmailBlasts(selectedBlasts);
-            setBlasts((b) => b.filter((x) => !selectedBlasts.includes(x.id)));
+            setBlasts((b) => (Array.isArray(b) ? b.filter((x) => !selectedBlasts.includes(x.id)) : []));
             setSelectedBlasts([]);
             toast.success('Campañas eliminadas');
         } catch {
@@ -246,8 +254,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
     const handleClone = async (id: string) => {
         const toastId = toast.loading('Clonando campaña…');
         try {
-            const clone = await cloneEmailBlast(id);
-            // Refresh list — simplest approach
+            await cloneEmailBlast(id);
             window.location.reload();
             toast.success('Campaña clonada como borrador', { id: toastId });
         } catch {
@@ -281,23 +288,27 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
         }
     };
 
+    const safeBlastsList = useMemo(() => {
+        return Array.isArray(blasts) ? blasts : [];
+    }, [blasts]);
+
     // ── Filtered & searched blasts ──
     const filteredBlasts = useMemo(() => {
-        return blasts.filter((b) => {
+        return safeBlastsList.filter((b) => {
             const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter;
             const query = searchQuery.toLowerCase();
             const matchesSearch =
                 !query ||
-                b.name.toLowerCase().includes(query) ||
-                b.subject.toLowerCase().includes(query) ||
-                b.creatorName.toLowerCase().includes(query);
+                (b.name || '').toLowerCase().includes(query) ||
+                (b.subject || '').toLowerCase().includes(query) ||
+                (b.creatorName || '').toLowerCase().includes(query);
             return matchesStatus && matchesSearch;
         });
-    }, [blasts, searchQuery, statusFilter]);
+    }, [safeBlastsList, searchQuery, statusFilter]);
 
-    const totalSent = blasts.reduce((a, b) => a + b.sent, 0);
-    const totalFailed = blasts.reduce((a, b) => a + b.failed, 0);
-    const totalRecipients = blasts.reduce((a, b) => a + b.totalRecipients, 0);
+    const totalSent = safeBlastsList.reduce((a, b) => a + (b.sent || 0), 0);
+    const totalFailed = safeBlastsList.reduce((a, b) => a + (b.failed || 0), 0);
+    const totalRecipients = safeBlastsList.reduce((a, b) => a + (b.totalRecipients || 0), 0);
     const avgRate = totalRecipients > 0 ? Math.round((totalSent / totalRecipients) * 100) : 0;
 
     return (
