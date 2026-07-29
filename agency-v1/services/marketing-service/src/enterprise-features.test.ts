@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { AbTestingService } from "./services/ab-testing.service";
 import { ConditionalContentService } from "./services/conditional-content.service";
 import { ClientPreviewService } from "./services/client-preview.service";
+import { TimezoneDeliveryService } from "./services/timezone-delivery.service";
+import { RssAutomationService } from "./services/rss-automation.service";
 
 describe("Enterprise Email Platform - A/B Testing, Conditions & Client Matrix", () => {
   it("should split recipients into 10% Sample A, 10% Sample B and 80% Remaining for A/B testing", () => {
@@ -48,5 +50,34 @@ describe("Enterprise Email Platform - A/B Testing, Conditions & Client Matrix", 
     expect(outlookReport).toBeDefined();
     expect(gmailReport?.warnings.length).toBeGreaterThan(0);
     expect(outlookReport?.warnings.length).toBeGreaterThan(0);
+  });
+
+  it("should group recipients by timezone for Timezone-Aware Delivery", () => {
+    const recipients = [
+      { email: "user1@bogota.co", timezone: "America/Bogota" },
+      { email: "user2@bogota.co", timezone: "America/Bogota" },
+      { email: "user3@madrid.es", timezone: "Europe/Madrid" }
+    ];
+
+    const groups = TimezoneDeliveryService.groupRecipientsByTimezone(recipients, 9);
+
+    expect(groups.length).toBe(2);
+    const bogotaGroup = groups.find((g) => g.timezone === "America/Bogota");
+    expect(bogotaGroup?.recipientsCount).toBe(2);
+  });
+
+  it("should generate newsletter automatically from blog articles for RSS automation", () => {
+    const articles = [
+      {
+        title: "Lanzamiento de LegacyMark 2.0",
+        excerpt: "Nuevas funciones de IA y automatización.",
+        url: "https://legacymarksas.com/blog/2.0"
+      }
+    ];
+
+    const { designJson, compiledHtml } = RssAutomationService.generateNewsletterFromArticles("LegacyMark", articles);
+
+    expect(designJson.blocks.length).toBeGreaterThan(0);
+    expect(compiledHtml).toContain("Lanzamiento de LegacyMark 2.0");
   });
 });

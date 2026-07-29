@@ -8,6 +8,8 @@ import { ImageManagerService } from "../services/image-manager.service";
 import { AbTestingService } from "../services/ab-testing.service";
 import { HeatmapService } from "../services/heatmap.service";
 import { ClientPreviewService } from "../services/client-preview.service";
+import { TimezoneDeliveryService } from "../services/timezone-delivery.service";
+import { RssAutomationService } from "../services/rss-automation.service";
 
 export class MarketingController {
   /**
@@ -163,6 +165,40 @@ export class MarketingController {
 
       await SuppressionService.removeFromSuppression(companyId, email);
       res.json({ success: true });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/timezone-schedule
+   */
+  static async timezoneSchedule(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { recipients, targetHour } = req.body;
+      if (!recipients || !Array.isArray(recipients)) {
+        return res.status(400).json({ success: false, error: "recipients array is required" });
+      }
+
+      const groups = TimezoneDeliveryService.groupRecipientsByTimezone(recipients, targetHour || 9);
+      res.json({ success: true, groups });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/rss-generate
+   */
+  static async rssGenerate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { companyName, articles } = req.body;
+      if (!articles || !Array.isArray(articles)) {
+        return res.status(400).json({ success: false, error: "articles array is required" });
+      }
+
+      const result = RssAutomationService.generateNewsletterFromArticles(companyName || "LegacyMark", articles);
+      res.json({ success: true, ...result });
     } catch (err) {
       next(err);
     }

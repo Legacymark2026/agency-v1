@@ -21,10 +21,12 @@ marketingRouter.get("/email-blast/track/click", WebhookController.trackClick);
 marketingRouter.get("/email-blast/unsubscribe", WebhookController.unsubscribe);
 marketingRouter.post("/email-blast/unsubscribe", WebhookController.unsubscribe);
 
-// Pruebas A/B & Mapa de Calor & Diagnóstico de Clientes
+// Pruebas A/B & Mapa de Calor & Diagnóstico de Clientes & Zona Horaria & RSS
 marketingRouter.post("/email-blast/ab-evaluate", MarketingController.evaluateAbTest);
 marketingRouter.get("/email-blast/:id/heatmap", MarketingController.getHeatmap);
 marketingRouter.post("/email-blast/client-matrix", MarketingController.checkClientMatrix);
+marketingRouter.post("/email-blast/timezone-schedule", MarketingController.timezoneSchedule);
+marketingRouter.post("/email-blast/rss-generate", MarketingController.rssGenerate);
 
 // Diagnóstico DNS & Optimización IA & Compilador de Bloques & Previsualización
 marketingRouter.get("/email-blast/dns-check", MarketingController.checkDns);
