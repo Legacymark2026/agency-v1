@@ -161,6 +161,13 @@ export class MarketingController {
         return res.status(400).json({ success: false, error: "companyId and email are required" });
       }
 
+      await SuppressionService.removeFromSuppression(companyId, email);
+      res.json({ success: true });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   /**
    * POST /api/v1/email-blast/ab-evaluate
    */
