@@ -3,6 +3,7 @@ import { EventBus } from "@agency/events";
 import { EmailProviderManager } from "./email-provider";
 import { SuppressionService } from "./suppression.service";
 import { TrackingService } from "./tracking.service";
+import { BlockCompilerService } from "./block-compiler.service";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const eventBus = new EventBus(REDIS_URL, "marketing-service");
@@ -65,11 +66,21 @@ export class MarketingService {
 
     const isAb = input.isAbTest ?? false;
 
+    // Si se proporciona designJson y no htmlBody, compilar bloques a HTML responsive
+    let finalHtmlBody = input.htmlBody || "";
+    if (input.designJson && (!finalHtmlBody || finalHtmlBody.trim().length === 0)) {
+      try {
+        finalHtmlBody = BlockCompilerService.compileBlocksToHtml(input.designJson);
+      } catch (err) {
+        console.warn("[createEmailBlast] Error compilando designJson a HTML:", err);
+      }
+    }
+
     const blast = await (prisma as any).emailBlast.create({
       data: {
         name: input.name,
         subject: input.subject,
-        htmlBody: input.htmlBody,
+        htmlBody: finalHtmlBody || "<p>Sin contenido</p>",
         designJson: input.designJson ?? null,
         isAbTest: isAb,
         subjectB: input.subjectB ?? null,

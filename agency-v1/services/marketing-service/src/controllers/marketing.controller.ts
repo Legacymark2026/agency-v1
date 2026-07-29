@@ -3,6 +3,8 @@ import { MarketingService } from "../services/marketing.service";
 import { DnsValidatorService } from "../services/dns-validator";
 import { AiOptimizerService } from "../services/ai-optimizer.service";
 import { SuppressionService } from "../services/suppression.service";
+import { BlockCompilerService } from "../services/block-compiler.service";
+import { ImageManagerService } from "../services/image-manager.service";
 
 export class MarketingController {
   /**
@@ -156,8 +158,64 @@ export class MarketingController {
         return res.status(400).json({ success: false, error: "companyId and email are required" });
       }
 
-      await SuppressionService.removeFromSuppression(companyId, email);
-      res.json({ success: true });
+  /**
+   * POST /api/v1/email-blast/compile
+   * Compilar bloques JSON a HTML responsive en tiempo real
+   */
+  static async compileBlocks(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { designJson } = req.body;
+      if (!designJson) {
+        return res.status(400).json({ success: false, error: "designJson is required" });
+      }
+
+      const html = BlockCompilerService.compileBlocksToHtml(designJson);
+      res.json({ success: true, html });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/email-blast/images
+   */
+  static async getImages(req: Request, res: Response, next: NextFunction) {
+    try {
+      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
+      if (!companyId) {
+        return res.status(400).json({ success: false, error: "companyId is required" });
+      }
+
+      const images = await ImageManagerService.getCompanyImages(companyId);
+      res.json({ success: true, images });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/images/upload
+   */
+  static async uploadImage(req: Request, res: Response, next: NextFunction) {
+    try {
+      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "");
+      const { url, name, alt, width, height, sizeBytes } = req.body;
+
+      if (!companyId || !url) {
+        return res.status(400).json({ success: false, error: "companyId and url are required" });
+      }
+
+      const image = await ImageManagerService.registerImage({
+        companyId,
+        url,
+        name: name || "Campaña Imagen",
+        alt,
+        width,
+        height,
+        sizeBytes
+      });
+
+      res.status(201).json({ success: true, image });
     } catch (err) {
       next(err);
     }
