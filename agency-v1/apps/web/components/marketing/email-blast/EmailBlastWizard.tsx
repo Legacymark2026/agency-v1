@@ -634,15 +634,41 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
     };
 
     const handleFile = useCallback((file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.target?.result as string;
-            const { headers, rows } = parseCSV(text);
-            setState(s => ({ ...s, csvHeaders: headers, recipients: rows }));
-            if (rows.length === 0) toast.error('No se encontraron emails válidos en el CSV');
-            else toast.success(`${rows.length} contactos cargados`);
-        };
-        reader.readAsText(file);
+        const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+        if (isExcel) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const buffer = e.target?.result as ArrayBuffer;
+                const decoder = new TextDecoder('utf-8', { fatal: false });
+                const text = decoder.decode(buffer);
+
+                const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
+                const matches = text.match(emailRegex) || [];
+                const uniqueEmails = Array.from(new Set(matches.map(m => m.toLowerCase().trim())));
+
+                if (uniqueEmails.length === 0) {
+                    toast.error('No se encontraron correos en el archivo Excel. Te sugerimos guardarlo como CSV e intentar de nuevo.');
+                } else {
+                    const rows: Recipient[] = uniqueEmails.map(email => ({ email, name: '' }));
+                    setState(s => ({ ...s, csvHeaders: ['email'], recipients: rows }));
+                    toast.success(`${rows.length} contactos extraídos del archivo Excel`);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let text = e.target?.result as string;
+                // Clean null bytes from UTF-16LE / ANSI encoding
+                text = text.replace(/\0/g, '');
+                const { headers, rows } = parseCSV(text);
+                setState(s => ({ ...s, csvHeaders: headers, recipients: rows }));
+                if (rows.length === 0) toast.error('No se encontraron emails válidos en el archivo CSV/TXT');
+                else toast.success(`${rows.length} contactos cargados`);
+            };
+            reader.readAsText(file);
+        }
     }, []);
 
     const handleSend = async () => {
@@ -803,9 +829,9 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                                 onDragLeave={() => setDragOver(false)}
                                 onClick={() => fileRef.current?.click()}
                             >
-                                <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+                                <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
                                 <Upload className="w-10 h-10 mx-auto mb-4" style={{ color: dragOver ? '#2dd4bf' : '#475569' }} />
-                                <p className="text-slate-300 font-bold mb-1">Arrastra tu CSV aquí</p>
+                                <p className="text-slate-300 font-bold mb-1">Arrastra tu archivo CSV o Excel aquí</p>
                                 <p className="text-slate-500 text-xs">Campos {state.config.mode === 'B2B' ? 'recomendados: email, name, empresa, cargo, industria' : 'recomendados: email, name, ciudad, descuento'}</p>
                             </div>
                             {state.recipients.length > 0 && (
