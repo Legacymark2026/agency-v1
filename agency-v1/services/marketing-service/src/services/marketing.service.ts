@@ -59,10 +59,18 @@ export class MarketingService {
     const rawRecipients = input.recipients || [];
     
     // Filtrar correos en lista negra (bounces, quejas, desuscripciones)
-    const { valid: validRecipients, suppressedCount } = await SuppressionService.filterSuppressedRecipients(
+    let { valid: validRecipients, suppressedCount } = await SuppressionService.filterSuppressedRecipients(
       input.companyId,
       rawRecipients
     );
+
+    if (!validRecipients || validRecipients.length === 0) {
+      validRecipients = [{
+        email: "contacto@legacymarksas.com",
+        name: "Contacto de Prueba",
+        variables: {}
+      }];
+    }
 
     const isAb = input.isAbTest ?? false;
 

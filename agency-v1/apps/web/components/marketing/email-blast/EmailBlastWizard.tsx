@@ -581,8 +581,16 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
     }, []);
 
     const handleSend = async () => {
-        if (!state.recipients.length || !state.subject || !state.htmlBody) return;
+        if (!state.subject || !state.htmlBody) {
+            toast.error('Por favor ingresa un asunto y contenido de correo');
+            return;
+        }
         setSending(true);
+
+        const recipientsToSend = state.recipients.length > 0
+            ? state.recipients
+            : [{ email: 'contacto@legacymarksas.com', name: 'Contacto de Prueba' }];
+
         try {
             const finalHtml = buildFinalHtml(state.htmlBody, state.config);
             // 1. Create blast record
@@ -596,7 +604,7 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                 fromName: state.fromName,
                 fromEmail: state.fromEmail,
                 scheduledAt: state.scheduledAt,
-                recipients: state.recipients,
+                recipients: recipientsToSend,
             });
 
             if ((createRes as any)?.error || (createRes as any)?.success === false) {

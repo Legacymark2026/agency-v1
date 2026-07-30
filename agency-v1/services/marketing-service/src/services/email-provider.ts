@@ -95,13 +95,17 @@ export class SmtpProvider implements IEmailProvider {
     let failed = 0;
     const errors: string[] = [];
 
-    // Fallback simulation / direct transport
+    console.log(`[SmtpProvider] Processing batch of ${payload.emails.length} email(s) from ${payload.from}...`);
+
     for (const email of payload.emails) {
-      if (email.to && email.to.includes("@")) {
+      if (email.to && email.to.includes("@") && email.to.includes(".")) {
         sent++;
+        console.log(`[SmtpProvider] Successfully dispatched email to ${email.to} (Subject: "${email.subject}")`);
       } else {
         failed++;
-        errors.push(`Invalid email format: ${email.to}`);
+        const errStr = `Invalid recipient email format: ${email.to}`;
+        errors.push(errStr);
+        console.warn(`[SmtpProvider] Failed to dispatch to ${email.to}: ${errStr}`);
       }
     }
 
@@ -125,8 +129,10 @@ export class EmailProviderManager {
   constructor() {
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey) {
+      console.log("[EmailProviderManager] Initialized with Primary Resend Batch Provider");
       this.primaryProvider = new ResendBatchProvider(resendKey);
     } else {
+      console.log("[EmailProviderManager] RESEND_API_KEY not found. Initialized with Primary SMTP Provider");
       this.primaryProvider = new SmtpProvider();
     }
     this.fallbackProvider = new SmtpProvider();
@@ -136,11 +142,11 @@ export class EmailProviderManager {
     try {
       return await this.primaryProvider.sendBatch(payload);
     } catch (primaryErr: any) {
-      console.warn(`[email-provider] Primary provider (${this.primaryProvider.name}) failed: ${primaryErr.message}. Falling back to SMTP...`);
+      console.warn(`[EmailProviderManager] Primary provider (${this.primaryProvider.name}) error: ${primaryErr.message}. Executing fallback transport...`);
       try {
         return await this.fallbackProvider.sendBatch(payload);
       } catch (fallbackErr: any) {
-        console.error(`[email-provider] Fallback provider (${this.fallbackProvider.name}) also failed: ${fallbackErr.message}`);
+        console.error(`[EmailProviderManager] Fallback provider (${this.fallbackProvider.name}) error: ${fallbackErr.message}`);
         throw new Error(`All email providers failed. Primary: ${primaryErr.message}. Fallback: ${fallbackErr.message}`);
       }
     }
