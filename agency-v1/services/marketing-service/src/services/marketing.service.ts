@@ -181,7 +181,7 @@ export class MarketingService {
         const batchResult = await providerManager.sendBatchWithFailover({
           from: fromAddress,
           emails: emailPayloads
-        });
+        }, companyId);
 
         totalSent += batchResult.sentCount;
         totalFailed += batchResult.failedCount;

@@ -255,3 +255,53 @@ export async function sendTestEmail(subject: string, html: string, toEmail: stri
     return { success: false, error: error.message || 'Error al enviar email de prueba' };
   }
 }
+
+// ── Configuración de Integración de Correo por Empresa ──────────────────────
+
+export async function getEmailIntegrationConfig() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: 'No autenticado' };
+    const companyId = await getCompanyId();
+
+    const config = await prisma.integrationConfig.findFirst({
+      where: { companyId, provider: { in: ['email', 'resend', 'smtp'] } }
+    });
+
+    return { success: true, config: config?.config || null, provider: config?.provider || 'resend' };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function saveEmailIntegrationConfig(provider: string, configData: { apiKey?: string; host?: string; port?: number; user?: string; pass?: string }) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: 'No autenticado' };
+    const companyId = await getCompanyId();
+
+    await prisma.integrationConfig.upsert({
+      where: {
+        companyId_provider: {
+          companyId,
+          provider
+        }
+      },
+      update: {
+        config: configData as any,
+        isEnabled: true,
+        updatedAt: new Date()
+      },
+      create: {
+        companyId,
+        provider,
+        config: configData as any,
+        isEnabled: true
+      }
+    });
+
+    return { success: true, message: 'Credenciales de correo guardadas exitosamente.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Error al guardar credenciales' };
+  }
+}

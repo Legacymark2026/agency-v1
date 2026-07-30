@@ -1,3 +1,5 @@
+import { prisma } from "@agency/database";
+
 export interface EmailRecipient {
   email: string;
   name?: string;
@@ -120,33 +122,52 @@ export class SmtpProvider implements IEmailProvider {
 }
 
 /**
- * Provider Manager with Auto-Failover
+ * Provider Manager with Auto-Failover & Per-Company Integration Lookup
  */
 export class EmailProviderManager {
-  private primaryProvider: IEmailProvider;
-  private fallbackProvider: IEmailProvider;
+  async getProviderForCompany(companyId?: string): Promise<IEmailProvider> {
+    if (companyId) {
+      try {
+        const integration = await (prisma as any).integrationConfig.findFirst({
+          where: {
+            companyId,
+            provider: { in: ["email", "resend", "smtp"] },
+            isEnabled: true
+          }
+        });
 
-  constructor() {
+        if (integration?.config) {
+          const cfg = typeof integration.config === "string" ? JSON.parse(integration.config) : integration.config;
+          if (cfg.apiKey) {
+            console.log(`[EmailProviderManager] Loaded tenant Resend API Key for company ${companyId}`);
+            return new ResendBatchProvider(cfg.apiKey);
+          }
+        }
+      } catch (err) {
+        console.warn(`[EmailProviderManager] Dynamic integration config lookup notice for ${companyId}:`, err);
+      }
+    }
+
+    // Global Environment Fallback
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey) {
-      console.log("[EmailProviderManager] Initialized with Primary Resend Batch Provider");
-      this.primaryProvider = new ResendBatchProvider(resendKey);
-    } else {
-      console.log("[EmailProviderManager] RESEND_API_KEY not found. Initialized with Primary SMTP Provider");
-      this.primaryProvider = new SmtpProvider();
+      return new ResendBatchProvider(resendKey);
     }
-    this.fallbackProvider = new SmtpProvider();
+    return new SmtpProvider();
   }
 
-  async sendBatchWithFailover(payload: SendBatchPayload): Promise<SendBatchResult> {
+  async sendBatchWithFailover(payload: SendBatchPayload, companyId?: string): Promise<SendBatchResult> {
+    const provider = await this.getProviderForCompany(companyId);
+
     try {
-      return await this.primaryProvider.sendBatch(payload);
+      return await provider.sendBatch(payload);
     } catch (primaryErr: any) {
-      console.warn(`[EmailProviderManager] Primary provider (${this.primaryProvider.name}) error: ${primaryErr.message}. Executing fallback transport...`);
+      console.warn(`[EmailProviderManager] Provider (${provider.name}) error: ${primaryErr.message}. Executing fallback transport...`);
       try {
-        return await this.fallbackProvider.sendBatch(payload);
+        const fallback = new SmtpProvider();
+        return await fallback.sendBatch(payload);
       } catch (fallbackErr: any) {
-        console.error(`[EmailProviderManager] Fallback provider (${this.fallbackProvider.name}) error: ${fallbackErr.message}`);
+        console.error(`[EmailProviderManager] Fallback provider error: ${fallbackErr.message}`);
         throw new Error(`All email providers failed. Primary: ${primaryErr.message}. Fallback: ${fallbackErr.message}`);
       }
     }

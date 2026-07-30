@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Mail, Plus, Send, CheckCircle, XCircle, Clock, BarChart2, Trash2, X, Eye, RotateCcw, AlertTriangle, Copy, Download, Search, Filter, Users } from 'lucide-react';
+import { Mail, Plus, Send, CheckCircle, XCircle, Clock, BarChart2, Trash2, X, Eye, RotateCcw, AlertTriangle, Copy, Download, Search, Filter, Users, Settings } from 'lucide-react';
 import { EmailBlastWizard } from './EmailBlastWizard';
+import { EmailConfigModal } from './EmailConfigModal';
 import { deleteEmailBlast, deleteEmailBlasts, getEmailBlastStats, cloneEmailBlast, retryFailedEmailBlast } from '@/actions/email-blast';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -218,6 +218,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
 
     const [blasts, setBlasts] = useState<BlastSummary[]>(safeInitialBlasts);
     const [showWizard, setShowWizard] = useState(false);
+    const [showConfigModal, setShowConfigModal] = useState(false);
     const [detail, setDetail] = useState<BlastDetail | null>(null);
     const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
     const [selectedBlasts, setSelectedBlasts] = useState<string[]>([]);
@@ -345,6 +346,13 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
                                 Gestor de Audiencias
                             </button>
                         </Link>
+                        <button
+                            onClick={() => setShowConfigModal(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 transition-all hover:bg-slate-800 border border-slate-700"
+                        >
+                            <Settings className="w-4 h-4 text-teal-400" />
+                            Credenciales API
+                        </button>
                         <button
                             onClick={() => setShowWizard(true)}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-105"
@@ -610,6 +618,9 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
                     </div>
                 </div>
             )}
+
+            {/* Email Provider Config Modal */}
+            <EmailConfigModal isOpen={showConfigModal} onClose={() => setShowConfigModal(false)} />
         </div>
     );
 }
