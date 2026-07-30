@@ -110,7 +110,7 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
     const rows: Recipient[] = [];
     const seenEmails = new Set<string>();
 
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i;
+    const emailRegex = /[^\s@<>";,:]+@[^\s@<>";,:]+\.[^\s@<>";,:]+/i;
 
     // Map common Spanish & English column names
     const findCol = (cols: string[], possibleNames: string[]): string | undefined => {
@@ -122,7 +122,7 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
     };
 
     // If first line contains an actual email address, it's a headerless list of emails
-    const startIdx = headers.some(h => emailRegex.test(h)) ? 0 : 1;
+    const startIdx = headers.some(h => h.includes('@')) ? 0 : 1;
 
     for (let i = startIdx; i < rawLines.length; i++) {
         const cols = splitLine(rawLines[i]);
@@ -130,23 +130,23 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
         // 1. Check mapped email column
         let emailVal = findCol(cols, ['email', 'correo', 'correo electronico', 'correo electrónico', 'mail', 'e-mail', 'contacto', 'para', 'destinatario', 'direccion']);
         
-        // 2. Fallback: search row cells for any string containing a valid email
+        // 2. Fallback: search row cells for any cell containing '@'
         if (!emailVal) {
             for (const col of cols) {
-                const match = col.match(emailRegex);
-                if (match) {
-                    emailVal = match[0];
+                if (col && col.includes('@')) {
+                    const match = col.match(emailRegex);
+                    emailVal = match ? match[0] : col;
                     break;
                 }
             }
-        } else {
+        } else if (emailVal.includes('@')) {
             const match = emailVal.match(emailRegex);
             if (match) emailVal = match[0];
         }
 
-        if (emailVal) {
-            const cleanEmail = emailVal.toLowerCase().trim();
-            if (!seenEmails.has(cleanEmail)) {
+        if (emailVal && emailVal.includes('@')) {
+            const cleanEmail = emailVal.replace(/^<|>$/g, '').toLowerCase().trim();
+            if (cleanEmail.length >= 5 && !seenEmails.has(cleanEmail)) {
                 seenEmails.add(cleanEmail);
                 
                 const nameVal = findCol(cols, ['name', 'nombre', 'nombre completo', 'cliente', 'contacto', 'razon social', 'empresa']) || '';
