@@ -56,7 +56,26 @@ export class MarketingService {
    * Crear campaña masiva filtrando automáticamente destinatarios suprimidos
    */
   static async createEmailBlast(input: CreateEmailBlastInput) {
-    const rawRecipients = input.recipients || [];
+    let rawRecipients = input.recipients || [];
+
+    // Si se pasa listId y no hay destinatarios explícitos, cargar los suscriptores de esa lista
+    if ((!rawRecipients || rawRecipients.length === 0) && (input as any).listId) {
+      try {
+        const subs = await (prisma as any).audienceSubscriber.findMany({
+          where: { listId: (input as any).listId, status: 'SUBSCRIBED', companyId: input.companyId },
+          select: { email: true, name: true, customFields: true }
+        });
+        if (subs.length > 0) {
+          rawRecipients = subs.map((s: any) => ({
+            email: s.email,
+            name: s.name || '',
+            variables: s.customFields || {}
+          }));
+        }
+      } catch (err) {
+        console.warn('[createEmailBlast] Error cargando suscriptores por listId:', err);
+      }
+    }
     
     // Filtrar correos en lista negra (bounces, quejas, desuscripciones)
     let { valid: validRecipients, suppressedCount } = await SuppressionService.filterSuppressedRecipients(

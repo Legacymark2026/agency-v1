@@ -305,3 +305,28 @@ export async function saveEmailIntegrationConfig(provider: string, configData: {
     return { success: false, error: err.message || 'Error al guardar credenciales' };
   }
 }
+
+// ── Obtener suscriptores de una lista de audiencia ────────────────────────
+
+export async function getAudienceListSubscribers(listId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: 'No autenticado' };
+    const companyId = await getCompanyId();
+
+    const subscribers = await prisma.audienceSubscriber.findMany({
+      where: { listId, status: 'SUBSCRIBED', companyId },
+      select: { email: true, name: true, customFields: true }
+    });
+
+    const recipients: RecipientInput[] = subscribers.map(s => ({
+      email: s.email,
+      name: s.name || undefined,
+      ...(typeof s.customFields === 'object' && s.customFields ? s.customFields as any : {})
+    }));
+
+    return { success: true, recipients };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Error al cargar suscriptores de la lista' };
+  }
+}

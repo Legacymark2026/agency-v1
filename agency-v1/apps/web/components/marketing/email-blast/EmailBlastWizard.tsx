@@ -92,9 +92,11 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
     const lines = clean.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (lines.length < 2) return { headers: [], rows: [] };
 
-    // Auto-detect separator: semicolon (Spanish Excel) or comma
+    // Auto-detect separator: semicolon (Spanish Excel), tab, or comma
     const firstLine = lines[0];
-    const sep = firstLine.includes(';') ? ';' : ',';
+    let sep = ',';
+    if (firstLine.includes(';')) sep = ';';
+    else if (firstLine.includes('\t')) sep = '\t';
 
     const splitLine = (line: string) =>
         line.split(sep).map((c) => c.trim().replace(/^"|"$/g, '').trim());
@@ -102,17 +104,40 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
     const headers = splitLine(firstLine);
     const rows: Recipient[] = [];
 
+    // Map common Spanish & English column names
+    const findCol = (cols: string[], possibleNames: string[]): string | undefined => {
+        for (const p of possibleNames) {
+            const idx = headers.findIndex(h => h.toLowerCase().trim() === p.toLowerCase());
+            if (idx !== -1 && cols[idx]) return cols[idx].trim();
+        }
+        return undefined;
+    };
+
     for (let i = 1; i < lines.length; i++) {
         const cols = splitLine(lines[i]);
-        const row: Recipient = { email: '' };
-        headers.forEach((h, idx) => {
-            row[h.toLowerCase().trim()] = cols[idx] ?? '';
-        });
-        // Clean trailing commas/spaces from email
-        const emailVal = (row.email ?? '').replace(/[,;]+$/, '').trim();
-        row.email = emailVal;
-        if (emailVal && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-            rows.push(row);
+        
+        // 1. Check mapped email column or auto-detect any cell with @
+        let emailVal = findCol(cols, ['email', 'correo', 'correo electronico', 'correo electrónico', 'mail', 'e-mail', 'contacto']);
+        
+        // Fallback: search row for first cell containing a valid email address
+        if (!emailVal) {
+            emailVal = cols.find(c => c && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.replace(/[,;]+$/, '').trim()));
+        }
+
+        if (emailVal) {
+            emailVal = emailVal.replace(/[,;]+$/, '').trim();
+            const nameVal = findCol(cols, ['name', 'nombre', 'nombre completo', 'cliente', 'contacto']) || '';
+            
+            const row: Recipient = { email: emailVal, name: nameVal };
+            headers.forEach((h, idx) => {
+                row[h.toLowerCase().trim()] = cols[idx] ?? '';
+            });
+            row.email = emailVal;
+            if (nameVal) row.name = nameVal;
+
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                rows.push(row);
+            }
         }
     }
     return { headers, rows };
@@ -566,6 +591,23 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                 ? (config.mode === 'B2B' ? B2B_TEMPLATE : B2C_TEMPLATE)
                 : s.htmlBody,
         }));
+    };
+
+    const handleSelectList = async (listId: string) => {
+        setState(s => ({ ...s, listId }));
+        const toastId = toast.loading('Cargando contactos de la lista...');
+        try {
+            const { getAudienceListSubscribers } = await import('@/actions/email-blast');
+            const res = await getAudienceListSubscribers(listId);
+            if (res.success && Array.isArray(res.recipients)) {
+                setState(s => ({ ...s, listId, recipients: res.recipients as any[] }));
+                toast.success(`${res.recipients.length} contactos cargados de la lista`, { id: toastId });
+            } else {
+                toast.error(res.error || 'Error al cargar contactos de la lista', { id: toastId });
+            }
+        } catch {
+            toast.error('Error al cargar la lista de audiencia', { id: toastId });
+        }
     };
 
     const handleFile = useCallback((file: File) => {
