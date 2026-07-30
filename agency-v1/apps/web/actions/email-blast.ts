@@ -6,19 +6,37 @@ import { prisma } from '@/lib/prisma';
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
-async function gw(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers }
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    if (res.status === 503 || err.error?.includes('degraded')) {
-      throw new Error(`El microservicio (${err.service || 'marketing'}) está iniciando en la infraestructura. Por favor reintenta en unos segundos.`);
+async function gw(path: string, options: RequestInit = {}, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`${GATEWAY_URL}${path}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...options.headers }
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      const isDegraded = res.status === 503 || err.error?.includes('degraded') || err.error?.includes('iniciando');
+
+      if (isDegraded && attempt < retries) {
+        console.warn(`[gw] Microservice starting up (Attempt ${attempt}/${retries}). Retrying in 2s...`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        continue;
+      }
+
+      if (isDegraded) {
+        throw new Error(`El microservicio (${err.service || 'marketing'}) está terminando de iniciar en la infraestructura. Por favor reintenta en un par de segundos.`);
+      }
+
+      throw new Error(err.error || `Error ${res.status}`);
+    } catch (err: any) {
+      if (attempt === retries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
-    throw new Error(err.error || `Error ${res.status}`);
   }
-  return res.json();
 }
 
 export interface RecipientInput {
