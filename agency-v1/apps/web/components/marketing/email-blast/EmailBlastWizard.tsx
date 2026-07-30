@@ -87,16 +87,20 @@ const DEFAULT_CONFIG: AdvancedConfig = {
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
-    // Strip UTF-8 BOM and clean carriage returns
-    const clean = text.replace(/^\uFEFF/, '').trim();
+    // Strip UTF-8 / UTF-16 BOM and clean carriage returns
+    const clean = text.replace(/^[\uFEFF\uFFFE\uEFBB\uBF]+/, '').trim();
     const rawLines = clean.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
     if (rawLines.length === 0) return { headers: [], rows: [] };
 
-    // Auto-detect separator: semicolon (Spanish Excel), comma, tab, or pipe
+    // Count separator occurrences in first line for reliable delimiter auto-detection
     const firstLine = rawLines[0];
+    const countSemi = (firstLine.match(/;/g) || []).length;
+    const countComma = (firstLine.match(/,/g) || []).length;
+    const countTab = (firstLine.match(/\t/g) || []).length;
+    
     let sep = ',';
-    if (firstLine.includes(';')) sep = ';';
-    else if (firstLine.includes('\t')) sep = '\t';
+    if (countSemi > countComma && countSemi >= countTab) sep = ';';
+    else if (countTab > countComma && countTab > countSemi) sep = '\t';
     else if (firstLine.includes('|')) sep = '|';
 
     const splitLine = (line: string) =>
@@ -106,7 +110,7 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
     const rows: Recipient[] = [];
     const seenEmails = new Set<string>();
 
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i;
 
     // Map common Spanish & English column names
     const findCol = (cols: string[], possibleNames: string[]): string | undefined => {
@@ -117,6 +121,7 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
         return undefined;
     };
 
+    // If first line contains an actual email address, it's a headerless list of emails
     const startIdx = headers.some(h => emailRegex.test(h)) ? 0 : 1;
 
     for (let i = startIdx; i < rawLines.length; i++) {

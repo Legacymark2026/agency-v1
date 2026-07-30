@@ -77,6 +77,10 @@ export class MarketingService {
       }
     }
     
+    if (!rawRecipients || rawRecipients.length === 0) {
+      throw new Error("El archivo CSV o la lista seleccionada no contenía ninguna dirección de correo electrónico válida. Por favor verifica tu archivo e intenta de nuevo.");
+    }
+    
     // Filtrar correos en lista negra (bounces, quejas, desuscripciones)
     let { valid: validRecipients, suppressedCount } = await SuppressionService.filterSuppressedRecipients(
       input.companyId,
@@ -84,7 +88,7 @@ export class MarketingService {
     );
 
     if (!validRecipients || validRecipients.length === 0) {
-      throw new Error("No hay destinatarios válidos para esta campaña. Todos los correos fueron filtrados o la lista/CSV no contenía correos válidos.");
+      throw new Error(`Todos los ${rawRecipients.length} destinatarios de tu archivo/lista están bloqueados en la lista de supresión/desuscripciones de tu empresa (${suppressedCount} suprimidos).`);
     }
 
     const isAb = input.isAbTest ?? false;
