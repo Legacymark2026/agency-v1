@@ -220,4 +220,80 @@ export class MarketingService {
       failed: totalFailed
     };
   }
+
+  /**
+   * Obtener un blast específico por ID
+   */
+  static async getEmailBlast(blastId: string, companyId: string) {
+    const blast = await (prisma as any).emailBlast.findFirst({
+      where: { id: blastId, companyId },
+      include: {
+        recipients: true
+      }
+    });
+    return blast;
+  }
+
+  /**
+   * Eliminar un blast por ID
+   */
+  static async deleteEmailBlast(blastId: string, companyId: string) {
+    await (prisma as any).emailBlastRecipient.deleteMany({
+      where: { blastId }
+    });
+    return (prisma as any).emailBlast.deleteMany({
+      where: { id: blastId, companyId }
+    });
+  }
+
+  /**
+   * Eliminar múltiples blasts por IDs
+   */
+  static async bulkDeleteEmailBlasts(blastIds: string[], companyId: string) {
+    await (prisma as any).emailBlastRecipient.deleteMany({
+      where: { blastId: { in: blastIds } }
+    });
+    return (prisma as any).emailBlast.deleteMany({
+      where: { id: { in: blastIds }, companyId }
+    });
+  }
+
+  /**
+   * Clonar un blast por ID
+   */
+  static async cloneEmailBlast(blastId: string, companyId: string, createdById: string) {
+    const original = await (prisma as any).emailBlast.findFirst({
+      where: { id: blastId, companyId },
+      include: { recipients: true }
+    });
+    if (!original) throw new Error("Campaña no encontrada");
+
+    const cloned = await (prisma as any).emailBlast.create({
+      data: {
+        name: `${original.name} (Copia)`,
+        subject: original.subject,
+        htmlBody: original.htmlBody,
+        designJson: original.designJson,
+        isAbTest: original.isAbTest,
+        subjectB: original.subjectB,
+        fromName: original.fromName,
+        fromEmail: original.fromEmail,
+        status: "DRAFT",
+        totalRecipients: original.recipients?.length || 0,
+        companyId,
+        createdById: createdById || original.createdById,
+        recipients: {
+          create: (original.recipients || []).map((r: any) => ({
+            email: r.email,
+            name: r.name,
+            variant: r.variant || "A",
+            variables: r.variables || {},
+            status: "PENDING"
+          }))
+        }
+      },
+      include: { recipients: true }
+    });
+    return cloned;
+  }
 }

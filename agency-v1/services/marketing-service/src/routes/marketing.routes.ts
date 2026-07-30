@@ -48,4 +48,8 @@ marketingRouter.delete("/email-blast/suppression-list", MarketingController.remo
 // Campañas de Email Masivo
 marketingRouter.get("/email-blast", MarketingController.getEmailBlasts);
 marketingRouter.post("/email-blast", validateRequest(createEmailBlastSchema), MarketingController.createEmailBlast);
+marketingRouter.post("/email-blast/bulk-delete", MarketingController.bulkDeleteEmailBlasts);
+marketingRouter.get("/email-blast/:id", MarketingController.getEmailBlast);
+marketingRouter.delete("/email-blast/:id", MarketingController.deleteEmailBlast);
 marketingRouter.post("/email-blast/:id/send", MarketingController.sendEmailBlast);
+marketingRouter.post("/email-blast/:id/clone", MarketingController.cloneEmailBlast);

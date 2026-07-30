@@ -183,57 +183,61 @@ export async function retryFailedEmailBlast(blastId: string) {
 // ── Estadísticas de un blast ──────────────────────────────────────────────
 
 export async function getEmailBlastStats(blastId: string) {
-  const companyId = await getCompanyId();
   try {
+    const companyId = await getCompanyId();
     const blast = await gw(`/api/email-blast/${blastId}?companyId=${companyId}`);
     return blast;
   } catch (error: any) {
-    throw new Error(error.message || 'Error al obtener estadísticas');
+    console.error('[getEmailBlastStats Error]:', error);
+    return { error: error.message || 'Error al obtener estadísticas de la campaña' };
   }
 }
 
 // ── Eliminar un blast ─────────────────────────────────────────────────────
 
 export async function deleteEmailBlast(blastId: string) {
-  const companyId = await getCompanyId();
   try {
+    const companyId = await getCompanyId();
     await gw(`/api/email-blast/${blastId}?companyId=${companyId}`, {
       method: 'DELETE'
     });
     return { success: true };
   } catch (error: any) {
-    throw new Error(error.message || 'Error al eliminar campaña');
+    console.error('[deleteEmailBlast Error]:', error);
+    return { success: false, error: error.message || 'Error al eliminar campaña' };
   }
 }
 
 export async function deleteEmailBlasts(blastIds: string[]) {
-  const companyId = await getCompanyId();
   try {
+    const companyId = await getCompanyId();
     await gw('/api/email-blast/bulk-delete', {
       method: 'POST',
       body: JSON.stringify({ blastIds, companyId })
     });
     return { success: true };
   } catch (error: any) {
-    throw new Error(error.message || 'Error al eliminar campañas');
+    console.error('[deleteEmailBlasts Error]:', error);
+    return { success: false, error: error.message || 'Error al eliminar campañas' };
   }
 }
 
 // ── Clonar un blast ───────────────────────────────────────────────────────
 
 export async function cloneEmailBlast(blastId: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error('No autenticado');
-  const companyId = await getCompanyId();
-
   try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: 'No autenticado' };
+    const companyId = await getCompanyId();
+
     const clone = await gw(`/api/email-blast/${blastId}/clone`, {
       method: 'POST',
       body: JSON.stringify({ companyId, userId: session.user.id })
     });
-    return clone;
+    return { success: true, clone };
   } catch (error: any) {
-    throw new Error(error.message || 'Error al clonar campaña');
+    console.error('[cloneEmailBlast Error]:', error);
+    return { success: false, error: error.message || 'Error al clonar campaña' };
   }
 }
 
@@ -245,8 +249,9 @@ export async function sendTestEmail(subject: string, html: string, toEmail: stri
       method: 'POST',
       body: JSON.stringify({ subject, html, toEmail })
     });
-    return res;
+    return { success: true, ...res };
   } catch (error: any) {
-    throw new Error(error.message || 'Error al enviar email de prueba');
+    console.error('[sendTestEmail Error]:', error);
+    return { success: false, error: error.message || 'Error al enviar email de prueba' };
   }
 }

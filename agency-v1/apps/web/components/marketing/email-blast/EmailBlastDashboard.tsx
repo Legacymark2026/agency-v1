@@ -280,9 +280,13 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
         setLoadingDetail(blast.id);
         try {
             const data = await getEmailBlastStats(blast.id);
-            setDetail(data as BlastDetail);
+            if ((data as any)?.error) {
+                toast.error((data as any).error);
+            } else {
+                setDetail(data as BlastDetail);
+            }
         } catch {
-            toast.error('Error al cargar el detalle');
+            toast.error('Error al cargar el detalle de la campaña');
         } finally {
             setLoadingDetail(null);
         }

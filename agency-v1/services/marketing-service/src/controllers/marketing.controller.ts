@@ -67,6 +67,81 @@ export class MarketingController {
   }
 
   /**
+   * GET /api/v1/email-blast/:id
+   */
+  static async getEmailBlast(req: Request, res: Response, next: NextFunction) {
+    try {
+      const blastId = String(req.params.id);
+      const companyId = await resolveCompanyId(req);
+      if (!companyId) {
+        return res.status(400).json({ success: false, error: "companyId is required" });
+      }
+
+      const blast = await MarketingService.getEmailBlast(blastId, companyId);
+      if (!blast) return res.status(404).json({ success: false, error: "Campaña no encontrada" });
+      res.json(blast);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * DELETE /api/v1/email-blast/:id
+   */
+  static async deleteEmailBlast(req: Request, res: Response, next: NextFunction) {
+    try {
+      const blastId = String(req.params.id);
+      const companyId = await resolveCompanyId(req);
+      if (!companyId) {
+        return res.status(400).json({ success: false, error: "companyId is required" });
+      }
+
+      await MarketingService.deleteEmailBlast(blastId, companyId);
+      res.json({ success: true, message: "Campaña eliminada exitosamente" });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/bulk-delete
+   */
+  static async bulkDeleteEmailBlasts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { blastIds } = req.body;
+      const companyId = await resolveCompanyId(req);
+      if (!companyId || !Array.isArray(blastIds)) {
+        return res.status(400).json({ success: false, error: "companyId and blastIds array are required" });
+      }
+
+      await MarketingService.bulkDeleteEmailBlasts(blastIds, companyId);
+      res.json({ success: true, message: "Campañas eliminadas exitosamente" });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/email-blast/:id/clone
+   */
+  static async cloneEmailBlast(req: Request, res: Response, next: NextFunction) {
+    try {
+      const blastId = String(req.params.id);
+      const companyId = await resolveCompanyId(req);
+      const createdById = String(req.body.userId || "system");
+
+      if (!companyId) {
+        return res.status(400).json({ success: false, error: "companyId is required" });
+      }
+
+      const cloned = await MarketingService.cloneEmailBlast(blastId, companyId, createdById);
+      res.status(201).json({ success: true, cloned });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * POST /api/v1/email-blast/:id/send
    */
   static async sendEmailBlast(req: Request, res: Response, next: NextFunction) {
