@@ -86,11 +86,11 @@ const DEFAULT_CONFIG: AdvancedConfig = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
-function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
+function parseCSV(text: string): { headers: string[]; rows: Recipient[]; skippedCount: number } {
     // Strip UTF-8 / UTF-16 BOM and clean carriage returns
     const clean = text.replace(/^[\uFEFF\uFFFE\uEFBB\uBF]+/, '').trim();
     const rawLines = clean.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-    if (rawLines.length === 0) return { headers: [], rows: [] };
+    if (rawLines.length === 0) return { headers: [], rows: [], skippedCount: 0 };
 
     // Count separator occurrences in first line for reliable delimiter auto-detection
     const firstLine = rawLines[0];
@@ -109,6 +109,7 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
     const headers = splitLine(firstLine);
     const rows: Recipient[] = [];
     const seenEmails = new Set<string>();
+    let skippedCount = 0;
 
     const emailRegex = /[^\s@<>";,:]+@[^\s@<>";,:]+\.[^\s@<>";,:]+/i;
 
@@ -160,10 +161,12 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
 
                 rows.push(row);
             }
+        } else {
+            skippedCount++;
         }
     }
 
-    return { headers, rows };
+    return { headers, rows, skippedCount };
 }
 
 function buildFinalHtml(html: string, config: AdvancedConfig): string {
@@ -659,15 +662,23 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
         } else {
             const reader = new FileReader();
             reader.onload = (e) => {
-                let text = e.target?.result as string;
-                // Clean null bytes from UTF-16LE / ANSI encoding
+                const buffer = e.target?.result as ArrayBuffer;
+                let text = new TextDecoder('utf-8').decode(buffer);
+                if (text.includes('\uFFFD')) {
+                    text = new TextDecoder('iso-8859-1').decode(buffer);
+                }
                 text = text.replace(/\0/g, '');
-                const { headers, rows } = parseCSV(text);
+                const { headers, rows, skippedCount } = parseCSV(text);
                 setState(s => ({ ...s, csvHeaders: headers, recipients: rows }));
-                if (rows.length === 0) toast.error('No se encontraron emails válidos en el archivo CSV/TXT');
-                else toast.success(`${rows.length} contactos cargados`);
+                if (rows.length === 0) {
+                    toast.error('No se encontraron direcciones de correo con @ en el archivo. Por favor revisa las celdas.');
+                } else if (skippedCount > 0) {
+                    toast.success(`${rows.length} contactos cargados (${skippedCount} fila(s) omitida(s) por no contener '@')`);
+                } else {
+                    toast.success(`${rows.length} contactos cargados correctamente`);
+                }
             };
-            reader.readAsText(file);
+            reader.readAsArrayBuffer(file);
         }
     }, []);
 
