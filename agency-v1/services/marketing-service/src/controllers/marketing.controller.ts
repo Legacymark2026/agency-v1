@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { prisma } from "@agency/database";
 import { MarketingService } from "../services/marketing.service";
 import { DnsValidatorService } from "../services/dns-validator";
 import { AiOptimizerService } from "../services/ai-optimizer.service";
@@ -11,13 +12,28 @@ import { ClientPreviewService } from "../services/client-preview.service";
 import { TimezoneDeliveryService } from "../services/timezone-delivery.service";
 import { RssAutomationService } from "../services/rss-automation.service";
 
+async function resolveCompanyId(req: Request): Promise<string> {
+  const explicitId = String(
+    req.headers["x-company-id"] || req.query.companyId || req.body?.companyId || ""
+  ).trim();
+  if (explicitId) return explicitId;
+
+  try {
+    const firstCompany = await (prisma as any).company.findFirst({ select: { id: true } });
+    if (firstCompany?.id) return firstCompany.id;
+  } catch (e) {
+    console.warn("[resolveCompanyId] Database lookup warning:", e);
+  }
+  return "";
+}
+
 export class MarketingController {
   /**
    * GET /api/v1/email-blast
    */
   static async getEmailBlasts(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
+      const companyId = await resolveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
@@ -34,7 +50,7 @@ export class MarketingController {
    */
   static async createEmailBlast(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "");
+      const companyId = await resolveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
@@ -56,7 +72,7 @@ export class MarketingController {
   static async sendEmailBlast(req: Request, res: Response, next: NextFunction) {
     try {
       const blastId = String(req.params.id);
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "");
+      const companyId = await resolveCompanyId(req);
       const baseUrl = `${req.protocol}://${req.get("host")}`;
 
       if (!companyId) {
@@ -120,7 +136,7 @@ export class MarketingController {
    */
   static async getSuppressionList(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
+      const companyId = await resolveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
@@ -356,7 +372,7 @@ export class MarketingController {
    */
   static async getImages(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "");
+      const companyId = await resolveCompanyId(req);
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
