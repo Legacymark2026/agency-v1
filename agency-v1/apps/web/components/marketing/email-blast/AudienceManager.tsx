@@ -113,7 +113,7 @@ export function AudienceManager() {
                                                 {s.status}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-slate-500">{new Date(s.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-4 py-3 text-slate-500" suppressHydrationWarning>{new Date(s.createdAt).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -198,14 +198,14 @@ export function AudienceManager() {
                             </thead>
                             <tbody className="divide-y divide-slate-800 bg-slate-900/30">
                                 {suppressed.length === 0 ? (
-                                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">La lista de supresi\u00f3n est\u00e1 vac\u00eda.</td></tr>
+                                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">La lista de supresión está vacía.</td></tr>
                                 ) : suppressed.map(s => (
                                     <tr key={s.id} className="hover:bg-slate-800/30">
                                         <td className="px-4 py-3 text-slate-300 font-mono">{s.email}</td>
                                         <td className="px-4 py-3">
                                             <span className="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400">{s.reason}</span>
                                         </td>
-                                        <td className="px-4 py-3 text-slate-500">{new Date(s.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-4 py-3 text-slate-500" suppressHydrationWarning>{new Date(s.createdAt).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
                             </tbody>

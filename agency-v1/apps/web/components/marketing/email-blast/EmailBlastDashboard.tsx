@@ -190,7 +190,7 @@ function DetailModal({ detail, onClose, onResend }: { detail: BlastDetail; onClo
                                             </p>
                                         )}
                                         {r.sentAt && (
-                                            <p className="text-xs text-slate-600 mt-0.5">
+                                            <p className="text-xs text-slate-600 mt-0.5" suppressHydrationWarning>
                                                 {new Date(r.sentAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         )}
@@ -493,7 +493,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
                                             <span className="opacity-50">•</span>
                                             <span>Por {blast.creatorName}</span>
                                             <span className="opacity-50">•</span>
-                                            <span>{dateStr}</span>
+                                            <span suppressHydrationWarning>{dateStr}</span>
                                         </p>
                                     </div>
 
