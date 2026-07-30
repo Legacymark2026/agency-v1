@@ -11,6 +11,8 @@
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
+    "@agency/service-auth": "file:../../packages/service-auth",
+    "@agency/observability": "file:../../packages/observability",
     "express": "^5.1.0",
     "cors": "^2.8.5",
     "helmet": "^8.1.0",
