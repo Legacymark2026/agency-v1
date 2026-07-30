@@ -27,12 +27,12 @@ COPY services/marketing-service/ ./services/marketing-service/
 WORKDIR /app/services/marketing-service
 RUN npx tsc --outDir dist
 
-
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/marketing-service/package.json ./services/marketing-service/
 RUN npm ci --omit=dev --workspace=@agency/marketing-service --ignore-scripts || npm install --omit=dev --workspace=@agency/marketing-service --ignore-scripts
 
@@ -44,6 +44,8 @@ COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
+COPY --from=builder /app/packages/service-auth/dist ./packages/service-auth/dist
+COPY --from=builder /app/packages/service-auth/package.json ./packages/service-auth/
 COPY --from=builder /app/services/marketing-service/dist ./dist
 COPY --from=builder /app/services/marketing-service/package.json ./
 COPY --from=deps /app/node_modules ./node_modules
