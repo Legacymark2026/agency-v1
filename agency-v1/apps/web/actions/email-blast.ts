@@ -13,7 +13,10 @@ async function gw(path: string, options: RequestInit = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `Gateway error ${res.status}`);
+    if (res.status === 503 || err.error?.includes('degraded')) {
+      throw new Error(`El microservicio (${err.service || 'marketing'}) está iniciando en la infraestructura. Por favor reintenta en unos segundos.`);
+    }
+    throw new Error(err.error || `Error ${res.status}`);
   }
   return res.json();
 }
