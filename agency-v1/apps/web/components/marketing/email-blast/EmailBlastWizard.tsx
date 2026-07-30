@@ -87,22 +87,26 @@ const DEFAULT_CONFIG: AdvancedConfig = {
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
-    // Strip UTF-8 BOM that Excel adds
+    // Strip UTF-8 BOM and clean carriage returns
     const clean = text.replace(/^\uFEFF/, '').trim();
-    const lines = clean.split(/\r?\n/).filter(l => l.trim().length > 0);
-    if (lines.length < 2) return { headers: [], rows: [] };
+    const rawLines = clean.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (rawLines.length === 0) return { headers: [], rows: [] };
 
-    // Auto-detect separator: semicolon (Spanish Excel), tab, or comma
-    const firstLine = lines[0];
+    // Auto-detect separator: semicolon (Spanish Excel), comma, tab, or pipe
+    const firstLine = rawLines[0];
     let sep = ',';
     if (firstLine.includes(';')) sep = ';';
     else if (firstLine.includes('\t')) sep = '\t';
+    else if (firstLine.includes('|')) sep = '|';
 
     const splitLine = (line: string) =>
-        line.split(sep).map((c) => c.trim().replace(/^"|"$/g, '').trim());
+        line.split(sep).map((c) => c.trim().replace(/^["']|["']$/g, '').trim());
 
     const headers = splitLine(firstLine);
     const rows: Recipient[] = [];
+    const seenEmails = new Set<string>();
+
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
 
     // Map common Spanish & English column names
     const findCol = (cols: string[], possibleNames: string[]): string | undefined => {
@@ -113,33 +117,47 @@ function parseCSV(text: string): { headers: string[]; rows: Recipient[] } {
         return undefined;
     };
 
-    for (let i = 1; i < lines.length; i++) {
-        const cols = splitLine(lines[i]);
+    const startIdx = headers.some(h => emailRegex.test(h)) ? 0 : 1;
+
+    for (let i = startIdx; i < rawLines.length; i++) {
+        const cols = splitLine(rawLines[i]);
         
-        // 1. Check mapped email column or auto-detect any cell with @
-        let emailVal = findCol(cols, ['email', 'correo', 'correo electronico', 'correo electrónico', 'mail', 'e-mail', 'contacto']);
+        // 1. Check mapped email column
+        let emailVal = findCol(cols, ['email', 'correo', 'correo electronico', 'correo electrónico', 'mail', 'e-mail', 'contacto', 'para', 'destinatario', 'direccion']);
         
-        // Fallback: search row for first cell containing a valid email address
+        // 2. Fallback: search row cells for any string containing a valid email
         if (!emailVal) {
-            emailVal = cols.find(c => c && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.replace(/[,;]+$/, '').trim()));
+            for (const col of cols) {
+                const match = col.match(emailRegex);
+                if (match) {
+                    emailVal = match[0];
+                    break;
+                }
+            }
+        } else {
+            const match = emailVal.match(emailRegex);
+            if (match) emailVal = match[0];
         }
 
         if (emailVal) {
-            emailVal = emailVal.replace(/[,;]+$/, '').trim();
-            const nameVal = findCol(cols, ['name', 'nombre', 'nombre completo', 'cliente', 'contacto']) || '';
-            
-            const row: Recipient = { email: emailVal, name: nameVal };
-            headers.forEach((h, idx) => {
-                row[h.toLowerCase().trim()] = cols[idx] ?? '';
-            });
-            row.email = emailVal;
-            if (nameVal) row.name = nameVal;
+            const cleanEmail = emailVal.toLowerCase().trim();
+            if (!seenEmails.has(cleanEmail)) {
+                seenEmails.add(cleanEmail);
+                
+                const nameVal = findCol(cols, ['name', 'nombre', 'nombre completo', 'cliente', 'contacto', 'razon social', 'empresa']) || '';
+                
+                const row: Recipient = { email: cleanEmail, name: nameVal };
+                headers.forEach((h, idx) => {
+                    row[h.toLowerCase().trim()] = cols[idx] ?? '';
+                });
+                row.email = cleanEmail;
+                if (nameVal) row.name = nameVal;
 
-            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
                 rows.push(row);
             }
         }
     }
+
     return { headers, rows };
 }
 
@@ -627,11 +645,13 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
             toast.error('Por favor ingresa un asunto y contenido de correo');
             return;
         }
-        setSending(true);
 
-        const recipientsToSend = state.recipients.length > 0
-            ? state.recipients
-            : [{ email: 'contacto@legacymarksas.com', name: 'Contacto de Prueba' }];
+        if (!state.recipients || state.recipients.length === 0) {
+            toast.error('No hay destinatarios cargados. Por favor sube un archivo CSV con correos o selecciona una lista de audiencias.');
+            return;
+        }
+
+        setSending(true);
 
         try {
             const finalHtml = buildFinalHtml(state.htmlBody, state.config);
@@ -646,7 +666,7 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                 fromName: state.fromName,
                 fromEmail: state.fromEmail,
                 scheduledAt: state.scheduledAt,
-                recipients: recipientsToSend,
+                recipients: state.recipients,
             });
 
             if ((createRes as any)?.error || (createRes as any)?.success === false) {

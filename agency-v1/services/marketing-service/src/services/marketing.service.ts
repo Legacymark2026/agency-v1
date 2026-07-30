@@ -84,11 +84,7 @@ export class MarketingService {
     );
 
     if (!validRecipients || validRecipients.length === 0) {
-      validRecipients = [{
-        email: "contacto@legacymarksas.com",
-        name: "Contacto de Prueba",
-        variables: {}
-      }];
+      throw new Error("No hay destinatarios válidos para esta campaña. Todos los correos fueron filtrados o la lista/CSV no contenía correos válidos.");
     }
 
     const isAb = input.isAbTest ?? false;
