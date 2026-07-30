@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
-async function gw(path: string, options: RequestInit = {}, retries = 3) {
+async function gw(path: string, options: RequestInit = {}, retries = 6) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const res = await fetch(`${GATEWAY_URL}${path}`, {
@@ -22,8 +22,8 @@ async function gw(path: string, options: RequestInit = {}, retries = 3) {
       const isDegraded = res.status === 503 || err.error?.includes('degraded') || err.error?.includes('iniciando');
 
       if (isDegraded && attempt < retries) {
-        console.warn(`[gw] Microservice starting up (Attempt ${attempt}/${retries}). Retrying in 2s...`);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        console.warn(`[gw] Microservice starting up (Attempt ${attempt}/${retries}). Retrying in 1.5s...`);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         continue;
       }
 
