@@ -516,7 +516,18 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
     const [sending, setSending] = useState(false);
     const [testEmail, setTestEmail] = useState('');
     const [availableLists, setAvailableLists] = useState<any[]>([]);
-    const [listMode, setListMode] = useState<'csv'|'list'>('csv');
+    const [listMode, setListMode] = useState<'csv'|'list'|'manual'>('csv');
+    const [manualInputText, setManualInputText] = useState('');
+
+    const handleParseManualText = (text: string) => {
+        setManualInputText(text);
+        if (!text.trim()) {
+            setState(s => ({ ...s, recipients: [] }));
+            return;
+        }
+        const { headers, rows } = parseCSV(text);
+        setState(s => ({ ...s, csvHeaders: headers, recipients: rows }));
+    };
     
     // Templates state
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
@@ -800,9 +811,10 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
             {/* Step 2: Audiencia */}
             {step === 2 && (
                 <div className="space-y-5">
-                    <div className="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700 w-fit mx-auto mb-6">
-                        <button className={`px-6 py-2 text-sm font-bold rounded-lg transition-all ${listMode === 'csv' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`} onClick={() => { setListMode('csv'); setState(s => ({ ...s, listId: null })); }}>Subir CSV</button>
-                        <button className={`px-6 py-2 text-sm font-bold rounded-lg transition-all ${listMode === 'list' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`} onClick={() => { setListMode('list'); setState(s => ({ ...s, recipients: [] })); }}>Elegir Lista</button>
+                    <div className="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700 w-fit mx-auto mb-6 gap-1">
+                        <button className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${listMode === 'csv' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`} onClick={() => { setListMode('csv'); setState(s => ({ ...s, listId: null })); }}>Subir CSV / Excel</button>
+                        <button className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${listMode === 'list' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`} onClick={() => { setListMode('list'); setState(s => ({ ...s, recipients: [] })); }}>Elegir Lista</button>
+                        <button className={`px-5 py-2 text-sm font-bold rounded-lg transition-all ${listMode === 'manual' ? 'bg-teal-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`} onClick={() => { setListMode('manual'); setState(s => ({ ...s, listId: null })); }}>Ingresar Manualmente</button>
                     </div>
 
                     {listMode === 'list' ? (
@@ -817,16 +829,48 @@ export function EmailBlastWizard({ onDone }: { onDone: () => void }) {
                                 <div className="grid grid-cols-2 gap-4">
                                     {availableLists.map(l => (
                                         <div key={l.id} 
-                                            onClick={() => setState(s => ({ ...s, listId: l.id }))}
+                                            onClick={() => handleSelectList(l.id)}
                                             className={`p-5 rounded-xl border cursor-pointer transition-all ${state.listId === l.id ? 'border-teal-500 bg-teal-500/10' : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'}`}>
                                             <div className="flex items-start justify-between">
                                                 <h4 className={`font-bold ${state.listId === l.id ? 'text-teal-400' : 'text-slate-200'}`}>{l.name}</h4>
                                                 {state.listId === l.id && <CheckCircle className="w-5 h-5 text-teal-500" />}
                                             </div>
-                                            <p className="text-2xl font-black text-white mt-3">{l._count.subscribers}</p>
+                                            <p className="text-2xl font-black text-white mt-3">{l._count?.subscribers || 0}</p>
                                             <p className="text-xs text-slate-500 mt-1">contactos</p>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : listMode === 'manual' ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-300 mb-1">Pega o escribe tus direcciones de correo</label>
+                                <p className="text-xs text-slate-500 mb-2">Ingresa una dirección por línea o separadas por comas. Ejemplo: <code className="text-teal-400">correo@ejemplo.com, Juan &lt;juan@ejemplo.com&gt;</code></p>
+                                <textarea
+                                    value={manualInputText}
+                                    onChange={e => handleParseManualText(e.target.value)}
+                                    placeholder={`juan@ejemplo.com\nmaria@ejemplo.com\nCarlos Perez <carlos@empresa.com>`}
+                                    rows={6}
+                                    className="w-full p-4 rounded-xl text-sm font-mono text-white placeholder-slate-600 outline-none focus:border-teal-500 transition-all resize-none"
+                                    style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.8)' }}
+                                />
+                            </div>
+
+                            {state.recipients.length > 0 && (
+                                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(30,41,59,0.8)' }}>
+                                    <div className="px-5 py-3 flex gap-3 items-center" style={{ background: 'rgba(15,23,42,0.8)' }}>
+                                        <Users className="w-4 h-4 text-teal-400" />
+                                        <span className="text-sm font-black text-white">{state.recipients.length} contactos detectados válidos</span>
+                                    </div>
+                                    {state.recipients.slice(0, 5).map((r, i) => (
+                                        <div key={i} className="px-5 py-2 flex gap-4 text-sm" style={{ borderTop: '1px solid rgba(30,41,59,0.4)' }}>
+                                            <CheckCircle className="w-3.5 h-3.5 text-teal-500 flex-shrink-0 mt-0.5" />
+                                            <span className="text-slate-300 font-mono">{r.email}</span>
+                                            {r.name && <span className="text-slate-500">{r.name}</span>}
+                                        </div>
+                                    ))}
+                                    {state.recipients.length > 5 && <div className="px-5 py-2 text-xs text-slate-600 italic" style={{ borderTop: '1px solid rgba(30,41,59,0.4)' }}>+ {state.recipients.length - 5} más...</div>}
                                 </div>
                             )}
                         </div>

@@ -50,13 +50,16 @@ export async function createMailingList(name: string, description?: string) {
     }
 }
 
-export async function getListSubscribers(listId: string) {
+export async function addSubscribersToList(listId: string, subscribers: Array<{ email: string; name?: string; customFields?: Record<string, any> }>) {
     try {
         const companyId = await getCompanyId();
-        const subscribers = await gw(`/api/mailing-lists/${listId}/subscribers?companyId=${companyId}`);
-        return subscribers;
-    } catch {
-        return [];
+        const data = await gw(`/api/mailing-lists/${listId}/subscribers`, {
+            method: 'POST',
+            body: JSON.stringify({ companyId, subscribers })
+        });
+        return { success: true, data };
+    } catch (err: any) {
+        return { success: false, error: err.message || 'Error al guardar contactos en la lista' };
     }
 }
 
