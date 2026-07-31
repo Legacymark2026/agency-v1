@@ -208,6 +208,8 @@ function DetailModal({ detail, onClose, onResend }: { detail: BlastDetail; onClo
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────
 
+import { AudienceManager } from './AudienceManager';
+
 export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSummary[] }) {
     const safeInitialBlasts = useMemo(() => {
         if (Array.isArray(initialBlasts)) return initialBlasts;
@@ -218,6 +220,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
     }, [initialBlasts]);
 
     const [blasts, setBlasts] = useState<BlastSummary[]>(safeInitialBlasts);
+    const [mainTab, setMainTab] = useState<'campaigns' | 'audience' | 'config'>('campaigns');
     const [showWizard, setShowWizard] = useState(false);
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [detail, setDetail] = useState<BlastDetail | null>(null);
@@ -321,263 +324,315 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
         <div className="min-h-screen p-6 lg:p-8" style={{ background: '#020617' }}>
             {/* Header */}
             <div className="mb-8">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,rgba(13,148,136,0.2),rgba(8,145,178,0.2))', border: '1px solid rgba(13,148,136,0.3)' }}>
-                            <Mail className="w-5 h-5 text-teal-400" />
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)', border: '1px solid rgba(45,212,191,0.3)' }}>
+                            <Mail className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-white tracking-tight">Email Masivo</h1>
-                            <p className="text-slate-500 text-sm">Sube tu base de datos y envía campañas personalizadas</p>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl font-black text-white tracking-tight">Email Marketing Pro</h1>
+                                <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30">v2.0</span>
+                            </div>
+                            <p className="text-slate-400 text-sm">Gestiona tus listas, crea campañas personalizadas y analiza tus métricas</p>
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        {selectedBlasts.length > 0 && (
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        {selectedBlasts.length > 0 && mainTab === 'campaigns' && (
                             <button
                                 onClick={handleBulkDelete}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors border border-red-500/20"
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-all border border-red-500/30"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 Eliminar ({selectedBlasts.length})
                             </button>
                         )}
-                        <Link href="/dashboard/marketing/email-blast/audience">
-                            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 transition-all hover:bg-slate-800 border border-slate-700">
-                                <Users className="w-4 h-4" />
-                                Gestor de Audiencias
-                            </button>
-                        </Link>
+                        
                         <button
                             onClick={() => setShowConfigModal(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-300 transition-all hover:bg-slate-800 border border-slate-700"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-300 transition-all hover:bg-slate-800 border border-slate-700/80 bg-slate-900/60 shadow-sm"
                         >
                             <Settings className="w-4 h-4 text-teal-400" />
-                            Credenciales API
+                            <span>Credenciales API</span>
                         </button>
+
                         <button
                             onClick={() => setShowWizard(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-105"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-teal-500/20"
                             style={{ background: 'linear-gradient(135deg,#0d9488,#0891b2)' }}
                         >
                             <Plus className="w-4 h-4" />
-                            Nueva campaña
+                            <span>Nueva Campaña</span>
                         </button>
                     </div>
                 </div>
+
+                {/* Reorganized Main Navigation Tabs */}
+                <div className="flex items-center gap-2 border-b border-slate-800/80 mt-6 pb-2">
+                    <button
+                        onClick={() => setMainTab('campaigns')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            mainTab === 'campaigns'
+                                ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        }`}
+                    >
+                        <Mail className="w-4 h-4" />
+                        <span>Campañas & Envíos</span>
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-slate-800 text-slate-400">{blasts.length}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setMainTab('audience')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            mainTab === 'audience'
+                                ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        }`}
+                    >
+                        <Users className="w-4 h-4" />
+                        <span>Gestor de Audiencias</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowConfigModal(true)}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            mainTab === 'config'
+                                ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        }`}
+                    >
+                        <Settings className="w-4 h-4" />
+                        <span>Integración & SMTP</span>
+                    </button>
+                </div>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {[
-                    { label: 'Campañas', value: blasts.length, icon: Mail, color: '#2dd4bf' },
-                    { label: 'Total enviados', value: totalSent, icon: Send, color: '#34d399' },
-                    { label: 'Fallidos', value: totalFailed, icon: XCircle, color: '#f87171' },
-                    { label: 'Tasa de éxito', value: `${avgRate}%`, icon: BarChart2, color: '#818cf8' },
-                ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="rounded-2xl p-5" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</span>
-                            <Icon className="w-4 h-4" style={{ color }} />
-                        </div>
-                        <p className="text-3xl font-black" style={{ color }}>{value}</p>
-                    </div>
-                ))}
-            </div>
-
-            {/* Search & Filter Bar */}
-            {blasts.length > 0 && (
-                <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                    {/* Search */}
-                    <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
-                        <Search className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, asunto o creador..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 outline-none"
-                        />
-                        {searchQuery && (
-                            <button onClick={() => setSearchQuery('')} className="text-slate-500 hover:text-white transition-colors">
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        )}
-                    </div>
-                    {/* Status filter */}
-                    <div className="flex items-center gap-1.5 p-1 rounded-xl" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
-                        <Filter className="w-3.5 h-3.5 text-slate-600 ml-2" />
-                        {(['ALL', 'DRAFT', 'SENDING', 'COMPLETED', 'FAILED'] as const).map((s) => {
-                            const cfg = s === 'ALL' ? { label: 'Todos', color: '#94a3b8' } : STATUS_CONFIG[s];
-                            const isActive = statusFilter === s;
-                            return (
-                                <button
-                                    key={s}
-                                    onClick={() => setStatusFilter(s)}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                                    style={{
-                                        background: isActive ? (s === 'ALL' ? 'rgba(30,41,59,0.8)' : STATUS_CONFIG[s]?.bg ?? 'rgba(30,41,59,0.8)') : 'transparent',
-                                        color: isActive ? (s === 'ALL' ? '#e2e8f0' : (STATUS_CONFIG[s]?.color ?? '#94a3b8')) : '#475569',
-                                    }}
-                                >
-                                    {s === 'ALL' ? 'Todos' : STATUS_CONFIG[s]?.label ?? s}
-                                </button>
-                            );
-                        })}
-                    </div>
+            {/* TAB CONTENT: AUDIENCES */}
+            {mainTab === 'audience' && (
+                <div className="rounded-2xl p-6" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                    <AudienceManager />
                 </div>
             )}
 
-            {/* Blast list */}
-            {blasts.length === 0 ? (
-                <div className="text-center py-24">
-                    <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(30,41,59,0.8)' }}>
-                        <Mail className="w-8 h-8 text-slate-600" />
-                    </div>
-                    <p className="text-slate-400 font-bold text-lg mb-2">Sin campañas todavía</p>
-                    <p className="text-slate-600 text-sm mb-6">Crea tu primera campaña de email masivo</p>
-                    <button
-                        onClick={() => setShowWizard(true)}
-                        className="px-6 py-3 rounded-xl text-sm font-black text-white"
-                        style={{ background: 'linear-gradient(135deg,#0d9488,#0891b2)' }}
-                    >
-                        Crear primera campaña
-                    </button>
-                </div>
-            ) : filteredBlasts.length === 0 ? (
-                <div className="text-center py-16 rounded-2xl" style={{ border: '1px solid rgba(30,41,59,0.4)', background: 'rgba(15,23,42,0.4)' }}>
-                    <Search className="w-8 h-8 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400 font-bold">Sin resultados</p>
-                    <p className="text-slate-600 text-sm mt-1">Prueba con otro término o limpia los filtros</p>
-                    <button onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }} className="mt-4 text-sm text-teal-400 hover:text-teal-300 transition-colors">
-                        Limpiar filtros
-                    </button>
-                </div>
-            ) : (
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(30,41,59,0.6)' }}>
-                    <div className="px-6 py-4 flex items-center gap-4" style={{ background: 'rgba(15,23,42,0.8)', borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
-                        <input
-                            type="checkbox"
-                            checked={filteredBlasts.length > 0 && selectedBlasts.length === filteredBlasts.length}
-                            onChange={toggleSelectAll}
-                            className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900 cursor-pointer"
-                        />
-                        <span className="text-sm font-black text-white">
-                            Historial de campañas
-                            {filteredBlasts.length !== blasts.length && (
-                                <span className="ml-2 text-slate-500 font-normal">{filteredBlasts.length} de {blasts.length}</span>
-                            )}
-                        </span>
-                    </div>
-                    <div style={{ background: 'rgba(2,6,23,0.6)' }}>
-                        {filteredBlasts.map((blast) => {
-                            const cfg = STATUS_CONFIG[blast.status] ?? STATUS_CONFIG.DRAFT;
-                            const Icon = cfg.Icon;
-                            const rate = blast.totalRecipients > 0 ? Math.round((blast.sent / blast.totalRecipients) * 100) : 0;
-                            const isLoading = loadingDetail === blast.id;
-                            const isSelected = selectedBlasts.includes(blast.id);
-
-                            const dateStr = new Date(blast.createdAt).toLocaleString('es-CO', {
-                                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                            });
-
-                            return (
-                                <div
-                                    key={blast.id}
-                                    className={`px-6 py-4 flex items-center gap-4 transition-colors hover:bg-slate-900/40 ${isSelected ? 'bg-slate-900/60' : ''}`}
-                                    style={{ borderBottom: '1px solid rgba(30,41,59,0.3)' }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={() => toggleSelect(blast.id)}
-                                        className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900 cursor-pointer"
-                                    />
-                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg, border: `1px solid ${cfg.color}33` }}>
-                                        <Icon className="w-4 h-4" style={{ color: cfg.color }} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-white truncate">{blast.name}</p>
-                                        <p className="text-xs text-slate-500 truncate flex items-center gap-2">
-                                            <span>{blast.subject}</span>
-                                            <span className="opacity-50">•</span>
-                                            <span>Por {blast.creatorName}</span>
-                                            <span className="opacity-50">•</span>
-                                            <span suppressHydrationWarning>{dateStr}</span>
-                                        </p>
-                                    </div>
-
-                                    {/* Stats */}
-                                    <div className="hidden md:flex items-center gap-6">
-                                        <div className="text-center">
-                                            <p className="text-sm font-black text-white">{blast.totalRecipients}</p>
-                                            <p className="text-xs text-slate-600">Total</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-black text-teal-400">{blast.sent}</p>
-                                            <p className="text-xs text-slate-600">Enviados</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-black" style={{ color: blast.failed > 0 ? '#f87171' : '#475569' }}>{blast.failed}</p>
-                                            <p className="text-xs text-slate-600">Fallidos</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-black text-violet-400">{rate}%</p>
-                                            <p className="text-xs text-slate-600">Tasa</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Status badge */}
-                                    <div className="px-2.5 py-1 rounded-lg text-xs font-bold" style={{ background: cfg.bg, color: cfg.color }}>
-                                        {cfg.label}
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-1">
-                                        {/* View detail */}
-                                        <button
-                                            onClick={() => handleViewDetail(blast)}
-                                            disabled={isLoading}
-                                            className="p-1.5 rounded-lg text-slate-500 hover:text-teal-400 transition-colors"
-                                            title="Ver detalle de envíos"
-                                        >
-                                            {isLoading ? (
-                                                <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
-                                            ) : (
-                                                <Eye className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                        {/* Clone */}
-                                        <button
-                                            onClick={() => handleClone(blast.id)}
-                                            className="p-1.5 rounded-lg text-slate-500 hover:text-violet-400 transition-colors"
-                                            title="Duplicar campaña como borrador"
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </button>
-                                        {/* Warning if has failures */}
-                                        {blast.failed > 0 && (
-                                            <button
-                                                onClick={() => handleViewDetail(blast)}
-                                                className="p-1.5 rounded-lg text-amber-500 hover:text-amber-400 transition-colors"
-                                                title={`${blast.failed} envíos fallidos — Click para ver`}
-                                            >
-                                                <AlertTriangle className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                        {/* Delete */}
-                                        <button
-                                            onClick={() => handleDelete(blast.id)}
-                                            className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 transition-colors"
-                                            title="Eliminar campaña"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+            {/* TAB CONTENT: CAMPAIGNS */}
+            {mainTab === 'campaigns' && (
+                <>
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        {[
+                            { label: 'Campañas Totales', value: blasts.length, icon: Mail, color: '#2dd4bf' },
+                            { label: 'Total enviados', value: totalSent, icon: Send, color: '#34d399' },
+                            { label: 'Fallidos', value: totalFailed, icon: XCircle, color: '#f87171' },
+                            { label: 'Tasa de éxito', value: `${avgRate}%`, icon: BarChart2, color: '#818cf8' },
+                        ].map(({ label, value, icon: Icon, color }) => (
+                            <div key={label} className="rounded-2xl p-5 transition-all hover:border-slate-700" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</span>
+                                    <Icon className="w-4 h-4" style={{ color }} />
                                 </div>
-                            );
-                        })}
+                                <p className="text-3xl font-black" style={{ color }}>{value}</p>
+                            </div>
+                        ))}
                     </div>
-                </div>
+
+                    {/* Search & Filter Bar */}
+                    {blasts.length > 0 && (
+                        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                            {/* Search */}
+                            <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                                <Search className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nombre, asunto o creador..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="flex-1 bg-transparent text-sm text-white placeholder-slate-600 outline-none"
+                                />
+                                {searchQuery && (
+                                    <button onClick={() => setSearchQuery('')} className="text-slate-500 hover:text-white transition-colors">
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                            {/* Status filter */}
+                            <div className="flex items-center gap-1.5 p-1 rounded-xl" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                                <Filter className="w-3.5 h-3.5 text-slate-600 ml-2" />
+                                {(['ALL', 'DRAFT', 'SENDING', 'COMPLETED', 'FAILED'] as const).map((s) => {
+                                    const cfg = s === 'ALL' ? { label: 'Todos', color: '#94a3b8' } : STATUS_CONFIG[s];
+                                    const isActive = statusFilter === s;
+                                    return (
+                                        <button
+                                            key={s}
+                                            onClick={() => setStatusFilter(s)}
+                                            className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                            style={{
+                                                background: isActive ? (s === 'ALL' ? 'rgba(30,41,59,0.8)' : STATUS_CONFIG[s]?.bg ?? 'rgba(30,41,59,0.8)') : 'transparent',
+                                                color: isActive ? (s === 'ALL' ? '#e2e8f0' : (STATUS_CONFIG[s]?.color ?? '#94a3b8')) : '#475569',
+                                            }}
+                                        >
+                                            {s === 'ALL' ? 'Todos' : STATUS_CONFIG[s]?.label ?? s}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Blast list */}
+                    {blasts.length === 0 ? (
+                        <div className="text-center py-24 rounded-2xl" style={{ background: 'rgba(15,23,42,0.4)', border: '1px border-dashed border-slate-800' }}>
+                            <div className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(30,41,59,0.8)' }}>
+                                <Mail className="w-8 h-8 text-teal-400" />
+                            </div>
+                            <p className="text-slate-300 font-bold text-lg mb-2">Sin campañas todavía</p>
+                            <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">Crea tu primera campaña de email masivo cargando tu archivo de Excel o CSV.</p>
+                            <button
+                                onClick={() => setShowWizard(true)}
+                                className="px-6 py-3 rounded-xl text-sm font-black text-white shadow-lg shadow-teal-500/20"
+                                style={{ background: 'linear-gradient(135deg,#0d9488,#0891b2)' }}
+                            >
+                                Crear primera campaña
+                            </button>
+                        </div>
+                    ) : filteredBlasts.length === 0 ? (
+                        <div className="text-center py-16 rounded-2xl" style={{ border: '1px solid rgba(30,41,59,0.4)', background: 'rgba(15,23,42,0.4)' }}>
+                            <Search className="w-8 h-8 text-slate-600 mx-auto mb-3" />
+                            <p className="text-slate-400 font-bold">Sin resultados</p>
+                            <p className="text-slate-600 text-sm mt-1">Prueba con otro término o limpia los filtros</p>
+                            <button onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }} className="mt-4 text-sm text-teal-400 hover:text-teal-300 transition-colors">
+                                Limpiar filtros
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl overflow-hidden shadow-xl" style={{ border: '1px solid rgba(30,41,59,0.6)' }}>
+                            <div className="px-6 py-4 flex items-center gap-4" style={{ background: 'rgba(15,23,42,0.8)', borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={filteredBlasts.length > 0 && selectedBlasts.length === filteredBlasts.length}
+                                    onChange={toggleSelectAll}
+                                    className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900 cursor-pointer"
+                                />
+                                <span className="text-sm font-black text-white">
+                                    Historial de campañas
+                                    {filteredBlasts.length !== blasts.length && (
+                                        <span className="ml-2 text-slate-500 font-normal">{filteredBlasts.length} de {blasts.length}</span>
+                                    )}
+                                </span>
+                            </div>
+                            <div style={{ background: 'rgba(2,6,23,0.6)' }}>
+                                {filteredBlasts.map((blast) => {
+                                    const cfg = STATUS_CONFIG[blast.status] ?? STATUS_CONFIG.DRAFT;
+                                    const Icon = cfg.Icon;
+                                    const rate = blast.totalRecipients > 0 ? Math.round((blast.sent / blast.totalRecipients) * 100) : 0;
+                                    const isLoading = loadingDetail === blast.id;
+                                    const isSelected = selectedBlasts.includes(blast.id);
+
+                                    const dateStr = new Date(blast.createdAt).toLocaleString('es-CO', {
+                                        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                                    });
+
+                                    return (
+                                        <div
+                                            key={blast.id}
+                                            className={`px-6 py-4 flex items-center gap-4 transition-colors hover:bg-slate-900/40 ${isSelected ? 'bg-slate-900/60' : ''}`}
+                                            style={{ borderBottom: '1px solid rgba(30,41,59,0.3)' }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleSelect(blast.id)}
+                                                className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900 cursor-pointer"
+                                            />
+                                            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg, border: `1px solid ${cfg.color}33` }}>
+                                                <Icon className="w-4 h-4" style={{ color: cfg.color }} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-white truncate">{blast.name}</p>
+                                                <p className="text-xs text-slate-500 truncate flex items-center gap-2">
+                                                    <span>{blast.subject}</span>
+                                                    <span className="opacity-50">•</span>
+                                                    <span>Por {blast.creatorName}</span>
+                                                    <span className="opacity-50">•</span>
+                                                    <span suppressHydrationWarning>{dateStr}</span>
+                                                </p>
+                                            </div>
+
+                                            {/* Stats */}
+                                            <div className="hidden md:flex items-center gap-6">
+                                                <div className="text-center">
+                                                    <p className="text-sm font-black text-white">{blast.totalRecipients}</p>
+                                                    <p className="text-xs text-slate-600">Total</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm font-black text-teal-400">{blast.sent}</p>
+                                                    <p className="text-xs text-slate-600">Enviados</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm font-black" style={{ color: blast.failed > 0 ? '#f87171' : '#475569' }}>{blast.failed}</p>
+                                                    <p className="text-xs text-slate-600">Fallidos</p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm font-black text-violet-400">{rate}%</p>
+                                                    <p className="text-xs text-slate-600">Tasa</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Status badge */}
+                                            <div className="px-2.5 py-1 rounded-lg text-xs font-bold" style={{ background: cfg.bg, color: cfg.color }}>
+                                                {cfg.label}
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex items-center gap-1">
+                                                {/* View detail */}
+                                                <button
+                                                    onClick={() => handleViewDetail(blast)}
+                                                    disabled={isLoading}
+                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-teal-400 transition-colors"
+                                                    title="Ver detalle de envíos"
+                                                >
+                                                    {isLoading ? (
+                                                        <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <Eye className="w-4 h-4" />
+                                                    )}
+                                                </button>
+                                                {/* Clone */}
+                                                <button
+                                                    onClick={() => handleClone(blast.id)}
+                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-violet-400 transition-colors"
+                                                    title="Duplicar campaña como borrador"
+                                                >
+                                                    <Copy className="w-4 h-4" />
+                                                </button>
+                                                {/* Warning if has failures */}
+                                                {blast.failed > 0 && (
+                                                    <button
+                                                        onClick={() => handleViewDetail(blast)}
+                                                        className="p-1.5 rounded-lg text-amber-500 hover:text-amber-400 transition-colors"
+                                                        title={`${blast.failed} envíos fallidos — Click para ver`}
+                                                    >
+                                                        <AlertTriangle className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {/* Delete */}
+                                                <button
+                                                    onClick={() => handleDelete(blast.id)}
+                                                    className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 transition-colors"
+                                                    title="Eliminar campaña"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Detail Modal */}
@@ -607,7 +662,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
                         <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
                             <div>
                                 <h2 className="text-lg font-black text-white">Nueva campaña de email</h2>
-                                <p className="text-sm text-slate-500">Sube tu CSV y personaliza el envío</p>
+                                <p className="text-sm text-slate-500">Sube tu CSV/Excel y personaliza el envío</p>
                             </div>
                             <button onClick={() => setShowWizard(false)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
                                 <X className="w-5 h-5" />
