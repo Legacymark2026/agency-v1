@@ -107,7 +107,7 @@ app.post("/api/v1/mailing-lists/:id/subscribers", async (req: Request, res: Resp
       return res.status(400).json({ error: "companyId and subscribers array required" });
     }
 
-    const created = [];
+    const created: any[] = [];
     for (const sub of subscribers) {
       if (sub.email && sub.email.includes("@")) {
         const item = await (prisma as any).audienceSubscriber.upsert({
