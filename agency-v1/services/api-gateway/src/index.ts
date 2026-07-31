@@ -438,7 +438,7 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
         }
       },
       proxyRes: (proxyRes, req: any, res) => {
-        if (proxyRes.statusCode && proxyRes.statusCode >= 500) {
+        if (proxyRes.statusCode && [502, 503, 504].includes(proxyRes.statusCode)) {
           breaker.recordFailure();
         } else {
           breaker.recordSuccess();

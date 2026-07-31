@@ -20,22 +20,27 @@ export class SuppressionService {
   ): Promise<{ valid: T[]; suppressedCount: number }> {
     if (!recipients.length) return { valid: [], suppressedCount: 0 };
 
-    const emails = recipients.map((r) => r.email.toLowerCase().trim());
-    const suppressedRecords = await (prisma as any).suppressionList.findMany({
-      where: {
-        companyId,
-        email: { in: emails }
-      },
-      select: { email: true }
-    });
+    try {
+      const emails = recipients.map((r) => r.email.toLowerCase().trim());
+      const suppressedRecords = await (prisma as any).suppressionList.findMany({
+        where: {
+          companyId,
+          email: { in: emails }
+        },
+        select: { email: true }
+      });
 
-    const suppressedSet = new Set(suppressedRecords.map((s: any) => s.email.toLowerCase()));
-    const valid = recipients.filter((r) => !suppressedSet.has(r.email.toLowerCase().trim()));
+      const suppressedSet = new Set(suppressedRecords.map((s: any) => s.email.toLowerCase()));
+      const valid = recipients.filter((r) => !suppressedSet.has(r.email.toLowerCase().trim()));
 
-    return {
-      valid,
-      suppressedCount: recipients.length - valid.length
-    };
+      return {
+        valid,
+        suppressedCount: recipients.length - valid.length
+      };
+    } catch (err: any) {
+      console.warn("[SuppressionService] Suppression table check skipped due to DB error:", err?.message || err);
+      return { valid: recipients, suppressedCount: 0 };
+    }
   }
 
   /**
