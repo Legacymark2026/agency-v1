@@ -6,11 +6,14 @@ import { prisma } from '@/lib/prisma';
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
-async function gw(path: string, options: RequestInit = {}, retries = 3, timeoutMs = 3000) {
+async function gw(path: string, options: RequestInit = {}, retries = 3, timeoutMs?: number) {
+  const isMutation = options.method && options.method !== 'GET';
+  const effectiveTimeout = timeoutMs ?? (isMutation ? 30000 : 5000);
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      const timeout = setTimeout(() => controller.abort(), effectiveTimeout);
 
       const res = await fetch(`${GATEWAY_URL}${path}`, {
         ...options,
@@ -41,7 +44,16 @@ async function gw(path: string, options: RequestInit = {}, retries = 3, timeoutM
 
       throw new Error(detailMsg);
     } catch (err: any) {
-      const isTransient = err.name === 'AbortError' || err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'UND_ERR_CONNECT_TIMEOUT' || err.message?.includes('fetch failed');
+      if (err.name === 'AbortError') {
+        if (attempt < retries) {
+          console.warn(`[gw] Request timeout (${effectiveTimeout}ms) on attempt ${attempt}/${retries}. Retrying...`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          continue;
+        }
+        throw new Error(isMutation ? 'El envío tardó más de lo esperado en procesar todos los correos. Se sigue ejecutando en segundo plano.' : 'Tiempo de espera agotado al conectar con el servidor.');
+      }
+
+      const isTransient = err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'UND_ERR_CONNECT_TIMEOUT' || err.message?.includes('fetch failed');
       if (attempt < retries && isTransient) {
         const delay = Math.min(600 * attempt, 1500);
         console.warn(`[gw] Network error on attempt ${attempt}/${retries}: ${err.message}. Retrying in ${delay}ms...`);
