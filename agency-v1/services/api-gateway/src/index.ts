@@ -339,8 +339,8 @@ class CircuitBreaker {
   public state: "CLOSED" | "OPEN" | "HALF-OPEN" = "CLOSED";
   private failureCount = 0;
   private lastStateChange = Date.now();
-  private readonly failureThreshold = 10;
-  private readonly cooldownPeriod = 2000; // 2 seconds
+  private readonly failureThreshold = 25;
+  private readonly cooldownPeriod = 5000; // 5 seconds
 
   constructor(public readonly serviceName: string) {}
 

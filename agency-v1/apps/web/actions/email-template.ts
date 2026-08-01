@@ -4,16 +4,31 @@ import { auth } from '@/lib/auth';
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
-async function gw(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers }
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `Gateway error ${res.status}`);
+async function gw(path: string, options: RequestInit = {}, retries = 8) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(`${GATEWAY_URL}${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', ...options.headers }
+      });
+      clearTimeout(timeout);
+
+      if (res.ok) return res.json();
+
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      if ([502, 503, 504].includes(res.status) && attempt < retries) {
+        await new Promise((r) => setTimeout(r, Math.min(1000 * attempt, 3000)));
+        continue;
+      }
+      throw new Error(err.error || `Gateway error ${res.status}`);
+    } catch (err: any) {
+      if (attempt === retries) throw err;
+      await new Promise((r) => setTimeout(r, Math.min(1000 * attempt, 3000)));
+    }
   }
-  return res.json();
 }
 
 async function getCompanyId(): Promise<string> {
