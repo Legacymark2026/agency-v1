@@ -453,10 +453,17 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
           breaker.recordSuccess();
         }
       },
-      error: async (err, req: any, res: any) => {
+      error: async (err: any, req: any, res: any) => {
         const resolvedTarget = await resolveServiceUrl(serviceName);
         console.error(`[CircuitBreaker] Proxy error for ${serviceName} to ${resolvedTarget}:`, err.message);
-        breaker.recordFailure();
+
+        // Do not record permanent circuit breaker failure for transient Docker DNS lookup errors (EAI_AGAIN)
+        if (err.code === 'EAI_AGAIN' || err.message?.includes('EAI_AGAIN')) {
+          console.warn(`[CircuitBreaker] Temporary Docker DNS lookup failure (EAI_AGAIN) for ${serviceName}. Waiting for container startup...`);
+        } else {
+          breaker.recordFailure();
+        }
+
         await handleFallback(req, res, serviceName, `Proxy error: ${err.message}`);
       }
     }
