@@ -4,255 +4,69 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+try {
+    require("@agency/observability/register");
+}
+catch { /* optional */ }
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
+const marketing_routes_1 = require("./routes/marketing.routes");
+const marketing_middleware_1 = require("./middlewares/marketing.middleware");
+// ── Local Graceful Shutdown (avoids @agency/service-auth compile dependency) ──
+function setupGracefulShutdown(server) {
+    const shutdown = async (signal) => {
+        console.log(`[marketing-service] Received ${signal}. Starting graceful shutdown...`);
+        server.close(async () => {
+            await database_1.prisma.$disconnect().catch(() => { });
+            console.log('[marketing-service] Shutdown complete.');
+            process.exit(0);
+        });
+        setTimeout(() => process.exit(1), 15000);
+    };
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
+}
 const app = (0, express_1.default)();
-const PORT = parseInt(process.env.PORT || '4009', 10);
-app.use((0, helmet_1.default)());
+const PORT = parseInt(process.env.PORT || "4009", 10);
+app.use((0, helmet_1.default)({ contentSecurityPolicy: false }));
 app.use((0, cors_1.default)());
-app.use(express_1.default.json({ limit: '10mb' }));
-// ─── Health ───────────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-    res.json({ status: 'healthy', service: 'marketing-service', version: '1.0.0', timestamp: new Date().toISOString() });
+app.use(express_1.default.json({ limit: "10mb" }));
+// ─── Health & Readiness ───────────────────────────────────────────────────────
+app.get("/health", (_req, res) => {
+    res.json({
+        status: "healthy",
+        service: "marketing-service",
+        version: "2.0.0",
+        timestamp: new Date().toISOString()
+    });
 });
-app.get('/ready', async (_req, res) => {
+app.get("/ready", async (_req, res) => {
     try {
         await database_1.prisma.$queryRaw `SELECT 1`;
-        res.json({ status: 'ready', db: 'connected' });
+        res.json({ status: "ready", db: "connected" });
     }
     catch (err) {
-        res.status(503).json({ status: 'not_ready', error: String(err) });
+        res.status(503).json({ status: "not_ready", error: String(err) });
     }
 });
-// ─── Email Blasts ─────────────────────────────────────────────────────────────
-app.post('/api/email-blast', async (req, res) => {
-    try {
-        const { name, subject, htmlBody, designJson, isAbTest, subjectB, htmlBodyB, fromName, fromEmail, status, scheduledAt, totalRecipients, companyId, createdById, recipients } = req.body;
-        const blast = await database_1.prisma.emailBlast.create({
-            data: {
-                name,
-                subject,
-                htmlBody,
-                designJson: designJson ?? null,
-                isAbTest: isAbTest ?? false,
-                subjectB: subjectB ?? null,
-                htmlBodyB: htmlBodyB ?? null,
-                fromName: fromName ?? 'LegacyMark',
-                fromEmail: fromEmail ?? 'noreply@legacymarksas.com',
-                status: status || (scheduledAt ? 'QUEUED' : 'DRAFT'),
-                scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-                totalRecipients: totalRecipients || recipients.length,
-                companyId,
-                createdById,
-                recipients: {
-                    create: recipients.map((r, i) => ({
-                        email: r.email,
-                        name: r.name,
-                        variant: isAbTest ? (i % 2 === 0 ? 'A' : 'B') : 'A',
-                        variables: Object.fromEntries(Object.entries(r).filter(([k]) => !['email', 'name'].includes(k))),
-                        status: 'PENDING'
-                    }))
-                }
-            },
-            include: { recipients: true }
-        });
-        res.status(201).json(blast);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.get('/api/email-blast', async (req, res) => {
+const enterprise_routes_1 = require("./routes/enterprise.routes");
+const drip_sequence_service_1 = require("./services/drip-sequence.service");
+// ─── Router Mounting ──────────────────────────────────────────────────────────
+// Mount under /api/v1 (versioned) and /api (backwards compatibility for proxy)
+app.use("/api/v1", marketing_routes_1.marketingRouter);
+app.use("/api/v1", enterprise_routes_1.enterpriseRouter);
+app.use("/api", marketing_routes_1.marketingRouter);
+app.use("/api", enterprise_routes_1.enterpriseRouter);
+// ─── Email Templates & Mailing Lists (Auxiliary Legacy Routes) ───────────────
+app.get("/api/v1/email-templates", async (req, res) => {
     try {
         const { companyId } = req.query;
         if (!companyId)
-            return res.status(400).json({ error: 'companyId required' });
-        const blasts = await database_1.prisma.emailBlast.findMany({
-            where: { companyId: String(companyId) },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                name: true,
-                subject: true,
-                status: true,
-                totalRecipients: true,
-                sent: true,
-                failed: true,
-                sentAt: true,
-                createdAt: true,
-                createdById: true
-            }
-        });
-        const userIds = Array.from(new Set(blasts.map((b) => b.createdById).filter(Boolean)));
-        const users = await database_1.prisma.user.findMany({
-            where: { id: { in: userIds } },
-            select: { id: true, name: true, email: true }
-        });
-        const userMap = new Map(users.map((u) => [u.id, u.name || u.email || 'Sistema']));
-        const results = blasts.map((b) => ({
-            ...b,
-            creatorName: b.createdById ? userMap.get(b.createdById) || 'Desconocido' : 'Sistema'
-        }));
-        res.json(results);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.get('/api/email-blast/:id', async (req, res) => {
-    try {
-        const { companyId } = req.query;
-        const blast = await database_1.prisma.emailBlast.findFirst({
-            where: { id: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) },
-            include: {
-                recipients: {
-                    select: { email: true, name: true, status: true, errorMessage: true, sentAt: true },
-                    orderBy: { status: 'asc' }
-                }
-            }
-        });
-        if (!blast)
-            return res.status(404).json({ error: 'Blast no encontrado' });
-        res.json(blast);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.post('/api/email-blast/:id/send', async (req, res) => {
-    try {
-        const { companyId } = req.body;
-        const blast = await database_1.prisma.emailBlast.findFirst({
-            where: { id: req.params.id, companyId: String(companyId) }
-        });
-        if (!blast)
-            return res.status(404).json({ error: 'Blast no encontrado' });
-        const updated = await database_1.prisma.emailBlast.update({
-            where: { id: req.params.id },
-            data: {
-                status: 'QUEUED',
-                scheduledAt: blast.scheduledAt ?? new Date()
-            }
-        });
-        res.json({ success: true, updated });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.post('/api/email-blast/:id/retry', async (req, res) => {
-    try {
-        const { companyId } = req.body;
-        const blast = await database_1.prisma.emailBlast.findFirst({
-            where: { id: req.params.id, companyId: String(companyId) }
-        });
-        if (!blast)
-            return res.status(404).json({ error: 'Blast no encontrado' });
-        await database_1.prisma.emailBlastRecipient.updateMany({
-            where: { blastId: req.params.id, status: { in: ['FAILED', 'PENDING'] } },
-            data: { status: 'PENDING', errorMessage: null }
-        });
-        const updated = await database_1.prisma.emailBlast.update({
-            where: { id: req.params.id },
-            data: {
-                status: 'QUEUED',
-                scheduledAt: new Date()
-            }
-        });
-        res.json({ success: true, updated });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.delete('/api/email-blast/:id', async (req, res) => {
-    try {
-        const { companyId } = req.query;
-        await database_1.prisma.emailBlast.delete({
-            where: { id: req.params.id, ...(companyId ? { companyId: String(companyId) } : {}) }
-        });
-        res.json({ success: true });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.post('/api/email-blast/bulk-delete', async (req, res) => {
-    try {
-        const { blastIds, companyId } = req.body;
-        await database_1.prisma.emailBlast.deleteMany({
-            where: { id: { in: blastIds }, companyId: String(companyId) }
-        });
-        res.json({ success: true });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.post('/api/email-blast/:id/clone', async (req, res) => {
-    try {
-        const { companyId, userId } = req.body;
-        const original = await database_1.prisma.emailBlast.findFirst({
-            where: { id: req.params.id, companyId: String(companyId) },
-            include: { recipients: { select: { email: true, name: true, variables: true } } }
-        });
-        if (!original)
-            return res.status(404).json({ error: 'Blast no encontrado' });
-        const clone = await database_1.prisma.emailBlast.create({
-            data: {
-                name: `${original.name} (Copia)`,
-                subject: original.subject,
-                htmlBody: original.htmlBody,
-                fromName: original.fromName,
-                fromEmail: original.fromEmail,
-                status: 'DRAFT',
-                totalRecipients: original.totalRecipients,
-                companyId,
-                createdById: userId,
-                recipients: {
-                    create: original.recipients.map((r) => ({
-                        email: r.email,
-                        name: r.name,
-                        variables: r.variables ?? {},
-                        status: 'PENDING'
-                    }))
-                }
-            }
-        });
-        res.status(201).json(clone);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.post('/api/email-blast/test', async (req, res) => {
-    try {
-        const { subject, html, toEmail } = req.body;
-        const apiKey = process.env.RESEND_API_KEY;
-        if (!apiKey)
-            return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
-        const result = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from: 'LegacyMark <noreply@legacymarksas.com>', to: toEmail, subject: `[PRUEBA] ${subject}`, html })
-        });
-        const data = await result.json();
-        res.json({ success: !!data.id, id: data.id });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-// ─── Email Templates ──────────────────────────────────────────────────────────
-app.get('/api/email-templates', async (req, res) => {
-    try {
-        const { companyId } = req.query;
-        if (!companyId)
-            return res.status(400).json({ error: 'companyId required' });
+            return res.status(400).json({ error: "companyId required" });
         const templates = await database_1.prisma.emailTemplate.findMany({
             where: { companyId: String(companyId) },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             select: { id: true, name: true, subject: true, category: true, createdAt: true }
         });
         res.json(templates);
@@ -261,80 +75,15 @@ app.get('/api/email-templates', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-app.get('/api/email-templates/:id', async (req, res) => {
-    try {
-        const { companyId } = req.query;
-        const tpl = await database_1.prisma.emailTemplate.findFirst({
-            where: { id: req.params.id, companyId: String(companyId) }
-        });
-        if (!tpl)
-            return res.status(404).json({ error: 'Plantilla no encontrada' });
-        res.json(tpl);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.post('/api/email-templates', async (req, res) => {
-    try {
-        const { name, subject, htmlBody, designJson, category, companyId } = req.body;
-        const tpl = await database_1.prisma.emailTemplate.create({
-            data: {
-                name,
-                subject,
-                body: htmlBody,
-                designJson: designJson ?? null,
-                category: category ?? 'MARKETING',
-                companyId
-            }
-        });
-        res.status(201).json(tpl);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.patch('/api/email-templates/:id', async (req, res) => {
-    try {
-        const { name, subject, htmlBody, designJson, category, companyId } = req.body;
-        const tpl = await database_1.prisma.emailTemplate.update({
-            where: { id: req.params.id, companyId: String(companyId) },
-            data: {
-                name,
-                subject,
-                body: htmlBody,
-                designJson: designJson ?? null,
-                category: category ?? 'MARKETING'
-            }
-        });
-        res.json(tpl);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-app.delete('/api/email-templates/:id', async (req, res) => {
-    try {
-        const { companyId } = req.query;
-        await database_1.prisma.emailTemplate.delete({
-            where: { id: req.params.id, companyId: String(companyId) }
-        });
-        res.json({ success: true });
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-// ─── Mailing Lists ────────────────────────────────────────────────────────────
-app.get('/api/mailing-lists', async (req, res) => {
+app.get("/api/v1/mailing-lists", async (req, res) => {
     try {
         const { companyId } = req.query;
         if (!companyId)
-            return res.status(400).json({ error: 'companyId required' });
+            return res.status(400).json({ error: "companyId required" });
         const lists = await database_1.prisma.mailingList.findMany({
             where: { companyId: String(companyId) },
             include: { _count: { select: { subscribers: true } } },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: "desc" }
         });
         res.json(lists);
     }
@@ -342,11 +91,13 @@ app.get('/api/mailing-lists', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-app.post('/api/mailing-lists', async (req, res) => {
+app.post("/api/v1/mailing-lists", async (req, res) => {
     try {
-        const { name, description, companyId } = req.body;
+        const { companyId, name, description } = req.body;
+        if (!companyId || !name)
+            return res.status(400).json({ error: "companyId and name required" });
         const list = await database_1.prisma.mailingList.create({
-            data: { name, description, companyId }
+            data: { companyId: String(companyId), name: String(name), description: description ? String(description) : null }
         });
         res.status(201).json(list);
     }
@@ -354,16 +105,15 @@ app.post('/api/mailing-lists', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-app.get('/api/mailing-lists/:id/subscribers', async (req, res) => {
+app.get("/api/v1/mailing-lists/:id/subscribers", async (req, res) => {
     try {
+        const { id } = req.params;
         const { companyId } = req.query;
-        const list = await database_1.prisma.mailingList.findFirst({
-            where: { id: req.params.id, companyId: String(companyId) }
-        });
-        if (!list)
-            return res.status(404).json({ error: 'Lista no encontrada' });
-        const subscribers = await database_1.prisma.mailingListSubscriber.findMany({
-            where: { listId: req.params.id, status: 'SUBSCRIBED' }
+        if (!companyId)
+            return res.status(400).json({ error: "companyId required" });
+        const subscribers = await database_1.prisma.audienceSubscriber.findMany({
+            where: { listId: String(id), companyId: String(companyId) },
+            orderBy: { createdAt: "desc" }
         });
         res.json(subscribers);
     }
@@ -371,40 +121,61 @@ app.get('/api/mailing-lists/:id/subscribers', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-// ─── Suppression List ─────────────────────────────────────────────────────────
-app.get('/api/suppression-lists', async (req, res) => {
+app.post("/api/v1/mailing-lists/:id/subscribers", async (req, res) => {
     try {
-        const { companyId } = req.query;
-        if (!companyId)
-            return res.status(400).json({ error: 'companyId required' });
-        const suppressionList = await database_1.prisma.suppressionList.findMany({
-            where: { companyId: String(companyId) },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.json(suppressionList);
+        const { id } = req.params;
+        const { companyId, subscribers } = req.body;
+        if (!companyId || !Array.isArray(subscribers)) {
+            return res.status(400).json({ error: "companyId and subscribers array required" });
+        }
+        const created = [];
+        for (const sub of subscribers) {
+            if (sub.email && sub.email.includes("@")) {
+                const item = await database_1.prisma.audienceSubscriber.upsert({
+                    where: {
+                        listId_email: {
+                            listId: String(id),
+                            email: sub.email.toLowerCase().trim()
+                        }
+                    },
+                    update: { name: sub.name || undefined, customFields: sub.customFields || undefined },
+                    create: {
+                        listId: String(id),
+                        companyId: String(companyId),
+                        email: sub.email.toLowerCase().trim(),
+                        name: sub.name || "",
+                        customFields: sub.customFields || {}
+                    }
+                });
+                created.push(item);
+            }
+        }
+        res.status(201).json({ success: true, count: created.length });
     }
     catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-app.post('/api/suppression-lists', async (req, res) => {
-    try {
-        const { companyId, email, reason } = req.body;
-        const data = await database_1.prisma.suppressionList.upsert({
-            where: { companyId_email: { companyId: String(companyId), email: String(email).toLowerCase() } },
-            create: { companyId: String(companyId), email: String(email).toLowerCase(), reason: reason || 'UNSUBSCRIBED' },
-            update: {}
-        });
-        res.status(201).json(data);
-    }
-    catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+const marketing_service_1 = require("./services/marketing.service");
+app.use(marketing_middleware_1.errorHandler);
+const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Marketing Service (Mass Email Platform v2.0) listening at http://localhost:${PORT}`);
 });
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Marketing Service listening at http://localhost:${PORT}`);
-});
-process.on('SIGTERM', async () => {
+// Cron worker en segundo plano para despachar campañas programadas cada 30 segundos
+setInterval(() => {
+    const publicUrl = process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.legacymarksas.com";
+    marketing_service_1.MarketingService.processScheduledBlasts(publicUrl).catch((err) => {
+        console.error("[Scheduled Blasts Worker Error]:", err);
+    });
+}, 30000);
+// Worker de secuencias drip: procesar pasos vencidos cada 60 segundos
+setInterval(() => {
+    drip_sequence_service_1.DripSequenceService.processDueSteps().catch((err) => {
+        console.error("[Drip Sequence Worker Error]:", err);
+    });
+}, 60000);
+setupGracefulShutdown(server);
+process.on("SIGTERM", async () => {
     await database_1.prisma.$disconnect();
     process.exit(0);
 });

@@ -1,5 +1,6 @@
 import { prisma } from "@agency/database";
-import nodemailer from "nodemailer";
+let nodemailer: any;
+try { nodemailer = require("nodemailer"); } catch {}
 
 export interface EmailRecipient {
   email: string;

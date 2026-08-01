@@ -49,4 +49,22 @@ export const validateRequest = (schema: ZodSchema, source: "body" | "query" | "p
   };
 };
 
-export { idempotencyMiddleware } from "@agency/service-auth";
+// ── Idempotency Middleware (local copy) ────────────────────────────────────────
+const _idempotencyStore = new Map<string, { status: number; body: unknown; createdAt: number }>();
+
+export const idempotencyMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  if (!['POST', 'PATCH'].includes(req.method)) { return next(); }
+  const key = req.headers['idempotency-key'] as string | undefined;
+  if (!key) { return next(); }
+  const cached = _idempotencyStore.get(`marketing:${key}`);
+  if (cached) {
+    res.status(cached.status).json(cached.body);
+    return;
+  }
+  const originalJson = res.json.bind(res);
+  res.json = (body: unknown) => {
+    _idempotencyStore.set(`marketing:${key}`, { status: res.statusCode, body, createdAt: Date.now() });
+    return originalJson(body);
+  };
+  next();
+};

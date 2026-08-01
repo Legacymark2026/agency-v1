@@ -1,13 +1,25 @@
 import express, { Request, Response } from "express";
-try {
-  require("@agency/observability/register");
-} catch { /* optional */ }
+try { require("@agency/observability/register"); } catch { /* optional */ }
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
-import { setupGracefulShutdown } from "@agency/service-auth";
 import { marketingRouter } from "./routes/marketing.routes";
 import { errorHandler } from "./middlewares/marketing.middleware";
+
+// ── Local Graceful Shutdown (avoids @agency/service-auth compile dependency) ──
+function setupGracefulShutdown(server: import('http').Server) {
+  const shutdown = async (signal: string) => {
+    console.log(`[marketing-service] Received ${signal}. Starting graceful shutdown...`);
+    server.close(async () => {
+      await prisma.$disconnect().catch(() => {});
+      console.log('[marketing-service] Shutdown complete.');
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 15000);
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4009", 10);
