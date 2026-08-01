@@ -39,7 +39,7 @@ export class ReportExportService {
    * Exportar datos a nivel de destinatario como CSV
    */
   static async generateCampaignCsv(blastId: string): Promise<string> {
-    const recipients = [
+    const recipients: any[] = [
       { email: 'test1@example.com', status: 'delivered', openedAt: new Date(), clickedAt: null, bouncedAt: null },
       { email: 'test2@example.com', status: 'opened', openedAt: new Date(), clickedAt: new Date(), bouncedAt: null },
     ];

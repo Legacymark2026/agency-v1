@@ -111,7 +111,7 @@ export class DomainReputationService {
    * Generar horario de calentamiento de dominio
    */
   static getDomainWarmupSchedule(domain: string, dailyTarget: number) {
-    const schedule = [];
+    const schedule: any[] = [];
     let currentAmount = 50;
     
     for (let day = 1; day <= 14; day++) {

@@ -30,7 +30,7 @@ export class AnalyticsService {
     const ctr = opens > 0 ? (clicks / opens) * 100 : 0;
     const bounceRate = total > 0 ? (bounces / total) * 100 : 0;
 
-    const timeSeries = [];
+    const timeSeries: any[] = [];
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
@@ -119,7 +119,7 @@ export class AnalyticsService {
       const avgOpenRate = totalSent > 0 ? (totalOpens / totalSent) * 100 : 0;
       const avgCtr = totalOpens > 0 ? (totalClicks / totalOpens) * 100 : 0;
 
-      let bestPerforming = null;
+      let bestPerforming: any = null;
       if (blasts.length > 0) {
           bestPerforming = blasts.sort((a: any, b: any) => {
               const rateA = a.sent > 0 ? (a.opens / a.sent) : 0;
