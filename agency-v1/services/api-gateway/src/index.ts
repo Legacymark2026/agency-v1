@@ -525,6 +525,16 @@ app.use("/api/creative", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/email-templates", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/mailing-lists", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/suppression-lists", resilientProxy("marketing", SERVICES.marketing));
+// Marketing Enterprise Features
+app.use("/api/analytics", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/email-validation", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/queue", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/sequences", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/domain-reputation", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/reports", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/segments", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/templates", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/compliance", resilientProxy("marketing", SERVICES.marketing));
 
 // Integration Service
 app.use("/api/integrations", resilientProxy("integration", SERVICES.integration));

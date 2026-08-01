@@ -35,10 +35,15 @@ app.get("/ready", async (_req: Request, res: Response) => {
   }
 });
 
+import { enterpriseRouter } from "./routes/enterprise.routes";
+import { DripSequenceService } from "./services/drip-sequence.service";
+
 // ─── Router Mounting ──────────────────────────────────────────────────────────
 // Mount under /api/v1 (versioned) and /api (backwards compatibility for proxy)
 app.use("/api/v1", marketingRouter);
+app.use("/api/v1", enterpriseRouter);
 app.use("/api", marketingRouter);
+app.use("/api", enterpriseRouter);
 
 // ─── Email Templates & Mailing Lists (Auxiliary Legacy Routes) ───────────────
 app.get("/api/v1/email-templates", async (req: Request, res: Response) => {
@@ -150,6 +155,13 @@ setInterval(() => {
     console.error("[Scheduled Blasts Worker Error]:", err);
   });
 }, 30000);
+
+// Worker de secuencias drip: procesar pasos vencidos cada 60 segundos
+setInterval(() => {
+  DripSequenceService.processDueSteps().catch((err) => {
+    console.error("[Drip Sequence Worker Error]:", err);
+  });
+}, 60000);
 
 setupGracefulShutdown(server);
 

@@ -209,6 +209,10 @@ function DetailModal({ detail, onClose, onResend }: { detail: BlastDetail; onClo
 // ─── Main Dashboard ───────────────────────────────────────────────────────
 
 import { AudienceManager } from './AudienceManager';
+import { AnalyticsPanel } from './AnalyticsPanel';
+import { SequencesPanel } from './SequencesPanel';
+import { TemplateGalleryPanel } from './TemplateGalleryPanel';
+import { CompliancePanel } from './CompliancePanel';
 
 export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSummary[] }) {
     const safeInitialBlasts = useMemo(() => {
@@ -220,7 +224,7 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
     }, [initialBlasts]);
 
     const [blasts, setBlasts] = useState<BlastSummary[]>(safeInitialBlasts);
-    const [mainTab, setMainTab] = useState<'campaigns' | 'audience' | 'config'>('campaigns');
+    const [mainTab, setMainTab] = useState<'campaigns' | 'audience' | 'analytics' | 'sequences' | 'templates' | 'compliance' | 'config'>('campaigns');
     const [showWizard, setShowWizard] = useState(false);
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [detail, setDetail] = useState<BlastDetail | null>(null);
@@ -369,10 +373,10 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
                 </div>
 
                 {/* Reorganized Main Navigation Tabs */}
-                <div className="flex items-center gap-2 border-b border-slate-800/80 mt-6 pb-2">
+                <div className="flex flex-wrap items-center gap-2 border-b border-slate-800/80 mt-6 pb-2">
                     <button
                         onClick={() => setMainTab('campaigns')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
                             mainTab === 'campaigns'
                                 ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -380,34 +384,98 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
                     >
                         <Mail className="w-4 h-4" />
                         <span>Campañas & Envíos</span>
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-slate-800 text-slate-400">{blasts.length}</span>
+                        <span className="px-2 py-0.5 text-[10px] rounded-full bg-slate-800 text-slate-400">{blasts.length}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setMainTab('analytics')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            mainTab === 'analytics'
+                                ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        }`}
+                    >
+                        <BarChart2 className="w-4 h-4" />
+                        <span>Analítica & Reputación</span>
+                    </button>
+
+                    <button
+                        onClick={() => setMainTab('sequences')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            mainTab === 'sequences'
+                                ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        }`}
+                    >
+                        <Send className="w-4 h-4" />
+                        <span>Secuencias Drip</span>
+                    </button>
+
+                    <button
+                        onClick={() => setMainTab('templates')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            mainTab === 'templates'
+                                ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        }`}
+                    >
+                        <Copy className="w-4 h-4" />
+                        <span>Galería Plantillas</span>
                     </button>
 
                     <button
                         onClick={() => setMainTab('audience')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
                             mainTab === 'audience'
                                 ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                         }`}
                     >
                         <Users className="w-4 h-4" />
-                        <span>Gestor de Audiencias</span>
+                        <span>Gestor Audiencias</span>
                     </button>
 
                     <button
-                        onClick={() => setShowConfigModal(true)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                            mainTab === 'config'
+                        onClick={() => setMainTab('compliance')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            mainTab === 'compliance'
                                 ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-sm'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                         }`}
                     >
                         <Settings className="w-4 h-4" />
-                        <span>Integración & SMTP</span>
+                        <span>Privacidad & GDPR</span>
                     </button>
                 </div>
             </div>
+
+            {/* TAB CONTENT: ANALYTICS */}
+            {mainTab === 'analytics' && (
+                <div className="rounded-2xl p-6" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                    <AnalyticsPanel />
+                </div>
+            )}
+
+            {/* TAB CONTENT: DRIP SEQUENCES */}
+            {mainTab === 'sequences' && (
+                <div className="rounded-2xl p-6" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                    <SequencesPanel />
+                </div>
+            )}
+
+            {/* TAB CONTENT: TEMPLATES */}
+            {mainTab === 'templates' && (
+                <div className="rounded-2xl p-6" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                    <TemplateGalleryPanel />
+                </div>
+            )}
+
+            {/* TAB CONTENT: COMPLIANCE */}
+            {mainTab === 'compliance' && (
+                <div className="rounded-2xl p-6" style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(30,41,59,0.6)' }}>
+                    <CompliancePanel />
+                </div>
+            )}
 
             {/* TAB CONTENT: AUDIENCES */}
             {mainTab === 'audience' && (
