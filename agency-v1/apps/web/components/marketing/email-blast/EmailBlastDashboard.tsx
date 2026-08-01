@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Mail, Plus, Send, CheckCircle, XCircle, Clock, BarChart2, Trash2, X, Eye, RotateCcw, AlertTriangle, Copy, Download, Search, Filter, Users, Settings } from 'lucide-react';
 import { EmailBlastWizard } from './EmailBlastWizard';
 import { EmailConfigModal } from './EmailConfigModal';
