@@ -12,7 +12,9 @@ export const metadata = {
 export default async function EmailBlastPage() {
     let blasts: any[] = [];
     try {
-        const res = await getEmailBlasts();
+        const fetchPromise = getEmailBlasts();
+        const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 1200));
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
         blasts = Array.isArray(res) ? res : [];
     } catch (err) {
         console.error('[EmailBlastPage Error]:', err);

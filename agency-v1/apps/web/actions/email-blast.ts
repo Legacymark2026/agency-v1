@@ -6,11 +6,11 @@ import { prisma } from '@/lib/prisma';
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
-async function gw(path: string, options: RequestInit = {}, retries = 12) {
+async function gw(path: string, options: RequestInit = {}, retries = 3, timeoutMs = 3000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
       const res = await fetch(`${GATEWAY_URL}${path}`, {
         ...options,
@@ -28,7 +28,7 @@ async function gw(path: string, options: RequestInit = {}, retries = 12) {
       const isDegraded = res.status === 502 || res.status === 503 || res.status === 504 || err.error?.includes('degraded') || err.error?.includes('iniciando');
 
       if (isDegraded && attempt < retries) {
-        const delay = Math.min(1000 * attempt, 3000);
+        const delay = Math.min(600 * attempt, 1500);
         console.warn(`[gw] Microservice starting up (Attempt ${attempt}/${retries}). Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
@@ -42,7 +42,7 @@ async function gw(path: string, options: RequestInit = {}, retries = 12) {
     } catch (err: any) {
       const isTransient = err.name === 'AbortError' || err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'UND_ERR_CONNECT_TIMEOUT' || err.message?.includes('fetch failed');
       if (attempt < retries && (isTransient || !err.message?.includes('microservicio'))) {
-        const delay = Math.min(1000 * attempt, 3000);
+        const delay = Math.min(600 * attempt, 1500);
         console.warn(`[gw] Network error on attempt ${attempt}/${retries}: ${err.message}. Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
@@ -170,7 +170,7 @@ export async function createEmailBlast(input: CreateEmailBlastInput) {
 export async function getEmailBlasts() {
   try {
     const companyId = await getCompanyId();
-    const res = await gw(`/api/email-blast?companyId=${companyId}`);
+    const res = await gw(`/api/email-blast?companyId=${companyId}`, {}, 2, 1500);
     if (Array.isArray(res)) return res;
     if (res && Array.isArray(res.blasts)) return res.blasts;
     return [];

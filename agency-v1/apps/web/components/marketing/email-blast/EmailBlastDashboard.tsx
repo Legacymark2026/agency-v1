@@ -231,6 +231,14 @@ export function EmailBlastDashboard({ initialBlasts }: { initialBlasts: BlastSum
     const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
     const [selectedBlasts, setSelectedBlasts] = useState<string[]>([]);
 
+    useEffect(() => {
+        import('@/actions/email-blast').then(({ getEmailBlasts }) => {
+            getEmailBlasts().then((res: any) => {
+                if (Array.isArray(res)) setBlasts(res);
+            }).catch(() => {});
+        });
+    }, []);
+
     // ── Search & Filter state ──
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'SENDING' | 'COMPLETED' | 'FAILED'>('ALL');
