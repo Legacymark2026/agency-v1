@@ -135,11 +135,21 @@ app.post("/api/v1/mailing-lists/:id/subscribers", async (req: Request, res: Resp
   }
 });
 
+import { MarketingService } from "./services/marketing.service";
+
 app.use(errorHandler);
 
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Marketing Service (Mass Email Platform v2.0) listening at http://localhost:${PORT}`);
 });
+
+// Cron worker en segundo plano para despachar campañas programadas cada 30 segundos
+setInterval(() => {
+  const publicUrl = process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://app.legacymarksas.com";
+  MarketingService.processScheduledBlasts(publicUrl).catch((err) => {
+    console.error("[Scheduled Blasts Worker Error]:", err);
+  });
+}, 30000);
 
 setupGracefulShutdown(server);
 

@@ -272,6 +272,33 @@ export class MarketingService {
   }
 
   /**
+   * Cron Worker para procesar automáticamente campañas programadas (status = 'SCHEDULED' o 'QUEUED')
+   */
+  static async processScheduledBlasts(baseUrl: string = "https://app.legacymarksas.com") {
+    try {
+      const now = new Date();
+      const dueBlasts = await (prisma as any).emailBlast.findMany({
+        where: {
+          status: { in: ["SCHEDULED", "QUEUED"] },
+          scheduledAt: { lte: now }
+        },
+        take: 10
+      });
+
+      for (const blast of dueBlasts) {
+        console.log(`[processScheduledBlasts] Despachando campaña programada "${blast.name}" (ID: ${blast.id})...`);
+        try {
+          await this.sendEmailBlast(blast.id, blast.companyId, baseUrl);
+        } catch (err) {
+          console.error(`[processScheduledBlasts] Error enviando campaña ${blast.id}:`, err);
+        }
+      }
+    } catch (err) {
+      console.warn("[processScheduledBlasts] Error buscando campañas programadas:", err);
+    }
+  }
+
+  /**
    * Obtener un blast específico por ID
    */
   static async getEmailBlast(blastId: string, companyId: string) {
