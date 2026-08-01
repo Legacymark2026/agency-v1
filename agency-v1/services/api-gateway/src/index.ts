@@ -485,6 +485,7 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
 
 // Auth Service
 app.use("/api/auth", resilientProxy("auth", SERVICES.auth));
+app.use("/api/v1/auth", resilientProxy("auth", SERVICES.auth));
 
 // CRM Service
 app.use("/api/leads", resilientProxy("crm", SERVICES.crm));
