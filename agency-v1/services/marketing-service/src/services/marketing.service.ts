@@ -205,18 +205,36 @@ export class MarketingService {
         totalSent += batchResult.sentCount;
         totalFailed += batchResult.failedCount;
 
-        // Actualizar estado de los receptores
-        const chunkIds = chunk.map((c: any) => c.id);
-        await (prisma as any).emailBlastRecipient.updateMany({
-          where: { id: { in: chunkIds } },
-          data: { status: "SENT", sentAt: new Date() }
-        });
+        // Actualizar estado de los receptores individualmente según el resultado real
+        if (batchResult.results && batchResult.results.length > 0) {
+          for (let idx = 0; idx < chunk.length; idx++) {
+            const recipient = chunk[idx];
+            const itemRes = batchResult.results[idx];
+            if (itemRes && itemRes.status === "SENT") {
+              await (prisma as any).emailBlastRecipient.update({
+                where: { id: recipient.id },
+                data: { status: "SENT", sentAt: new Date() }
+              });
+            } else {
+              await (prisma as any).emailBlastRecipient.update({
+                where: { id: recipient.id },
+                data: { status: "FAILED", errorMessage: itemRes?.error || "Error de entrega en el servidor de correo" }
+              });
+            }
+          }
+        } else {
+          const chunkIds = chunk.map((c: any) => c.id);
+          await (prisma as any).emailBlastRecipient.updateMany({
+            where: { id: { in: chunkIds } },
+            data: { status: "SENT", sentAt: new Date() }
+          });
+        }
       } catch (err: any) {
         totalFailed += chunk.length;
         const chunkIds = chunk.map((c: any) => c.id);
         await (prisma as any).emailBlastRecipient.updateMany({
           where: { id: { in: chunkIds } },
-          data: { status: "FAILED", errorMessage: err.message }
+          data: { status: "FAILED", errorMessage: err.message || "Error general del proveedor de correo" }
         });
       }
     }
