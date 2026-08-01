@@ -183,30 +183,38 @@ export async function getEmailBlasts() {
 // ── Enviar un blast ───────────────────────────────────────────────────────
 
 export async function sendEmailBlast(blastId: string) {
-  const companyId = await getCompanyId();
   try {
-    await gw(`/api/email-blast/${blastId}/send`, {
+    let companyId = 'default';
+    try { companyId = await getCompanyId(); } catch {}
+
+    const res = await gw(`/api/email-blast/${blastId}/send`, {
       method: 'POST',
+      headers: { 'x-company-id': companyId },
       body: JSON.stringify({ companyId })
     });
-    return { queued: true, message: 'La campaña ha sido encolada para su envío.' };
+    return { success: true, queued: true, message: 'La campaña ha sido encolada para su envío.', data: res };
   } catch (error: any) {
-    throw new Error(error.message || 'Error al enviar la campaña');
+    console.error('[sendEmailBlast Server Action Error]:', error);
+    return { success: false, error: error.message || 'Error al enviar la campaña' };
   }
 }
 
 // ── Reintentar envío a fallidos / pendientes ──────────────────────────────
 
 export async function retryFailedEmailBlast(blastId: string) {
-  const companyId = await getCompanyId();
   try {
-    await gw(`/api/email-blast/${blastId}/retry`, {
+    let companyId = 'default';
+    try { companyId = await getCompanyId(); } catch {}
+
+    const res = await gw(`/api/email-blast/${blastId}/retry`, {
       method: 'POST',
+      headers: { 'x-company-id': companyId },
       body: JSON.stringify({ companyId })
     });
-    return { queued: true, message: 'Contactos reencolados para reintento.' };
+    return { success: true, queued: true, message: 'Contactos reencolados para reintento.', data: res };
   } catch (error: any) {
-    throw new Error(error.message || 'Error al reintentar la campaña');
+    console.error('[retryFailedEmailBlast Server Action Error]:', error);
+    return { success: false, error: error.message || 'Error al reintentar la campaña' };
   }
 }
 
