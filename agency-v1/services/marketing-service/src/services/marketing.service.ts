@@ -237,6 +237,11 @@ export class MarketingService {
           data: { status: "FAILED", errorMessage: err.message || "Error general del proveedor de correo" }
         });
       }
+
+      // Pausa defensiva de 350ms entre lotes para respetar límites de velocidad del proveedor (2 req/s)
+      if (i + BATCH_SIZE < recipients.length) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
     }
 
     // Actualizar totales en EmailBlast

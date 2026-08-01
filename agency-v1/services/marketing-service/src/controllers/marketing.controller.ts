@@ -148,14 +148,26 @@ export class MarketingController {
     try {
       const blastId = String(req.params.id);
       const companyId = await resolveCompanyId(req);
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
 
       if (!companyId) {
         return res.status(400).json({ success: false, error: "companyId is required" });
       }
 
-      const result = await MarketingService.sendEmailBlast(blastId, companyId, baseUrl);
-      res.json({ success: true, result });
+      // Resolver la URL pública real del servidor para píxeles de rastreo y desuscripción
+      const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "https";
+      const host = (req.headers["x-forwarded-host"] as string) || req.get("host") || "app.legacymarksas.com";
+      const baseUrl = process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL || `${proto}://${host}`;
+
+      // Iniciar el proceso de envío en segundo plano para evitar bloqueos por timeout
+      MarketingService.sendEmailBlast(blastId, companyId, baseUrl).catch((err) => {
+        console.error(`[sendEmailBlast Background Error] Blast ID ${blastId}:`, err);
+      });
+
+      res.json({
+        success: true,
+        message: "Proceso de envío de campaña iniciado en segundo plano",
+        blastId
+      });
     } catch (err) {
       next(err);
     }
