@@ -25,23 +25,24 @@ async function gw(path: string, options: RequestInit = {}, retries = 3, timeoutM
       }
 
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      const isDegraded = res.status === 502 || res.status === 503 || res.status === 504 || err.error?.includes('degraded') || err.error?.includes('iniciando');
+      const isDegraded = res.status === 502 || res.status === 503 || res.status === 504;
 
       if (isDegraded && attempt < retries) {
         const delay = Math.min(600 * attempt, 1500);
-        console.warn(`[gw] Microservice starting up (Attempt ${attempt}/${retries}). Retrying in ${delay}ms...`);
+        console.warn(`[gw] Microservice unavailable (Attempt ${attempt}/${retries}). Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 
+      const detailMsg = err.reason || err.error || err.message || res.statusText || `Error ${res.status}`;
       if (isDegraded) {
-        throw new Error(`El microservicio (${err.service || 'marketing'}) está terminando de iniciar en la infraestructura. Por favor reintenta en un par de segundos.`);
+        throw new Error(`El microservicio (${err.service || 'marketing'}) no responde (${detailMsg}). Por favor verifica que el contenedor esté corriendo.`);
       }
 
-      throw new Error(err.error || `Error ${res.status}`);
+      throw new Error(detailMsg);
     } catch (err: any) {
       const isTransient = err.name === 'AbortError' || err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'UND_ERR_CONNECT_TIMEOUT' || err.message?.includes('fetch failed');
-      if (attempt < retries && (isTransient || !err.message?.includes('microservicio'))) {
+      if (attempt < retries && isTransient) {
         const delay = Math.min(600 * attempt, 1500);
         console.warn(`[gw] Network error on attempt ${attempt}/${retries}: ${err.message}. Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));

@@ -19,14 +19,16 @@ async function gw(path: string, options: RequestInit = {}, retries = 8) {
       if (res.ok) return res.json();
 
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      if ([502, 503, 504].includes(res.status) && attempt < retries) {
-        await new Promise((r) => setTimeout(r, Math.min(1000 * attempt, 3000)));
+      const isDegraded = [502, 503, 504].includes(res.status);
+      if (isDegraded && attempt < retries) {
+        await new Promise((r) => setTimeout(r, Math.min(600 * attempt, 1500)));
         continue;
       }
-      throw new Error(err.error || `Gateway error ${res.status}`);
+      const detailMsg = err.reason || err.error || err.message || res.statusText || `Gateway error ${res.status}`;
+      throw new Error(detailMsg);
     } catch (err: any) {
       if (attempt === retries) throw err;
-      await new Promise((r) => setTimeout(r, Math.min(1000 * attempt, 3000)));
+      await new Promise((r) => setTimeout(r, Math.min(600 * attempt, 1500)));
     }
   }
 }
