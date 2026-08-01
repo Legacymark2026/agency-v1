@@ -56,8 +56,8 @@ const NAV_GROUPS: NavGroup[] = [
         title: "Marketing y Contenidos", code: "MKT_CONTENT",
         accent: "teal", icon: <Target size={20} />,
         items: [
-            { href: "/dashboard/admin/marketing", label: "CMO Dashboard", icon: <BarChart2 size={14} />, code: "CMO" },
-            { href: "/dashboard/admin/marketing/campaigns", label: "Campañas (Live)", icon: <Target size={14} />, code: "LIV" },
+            { href: "/dashboard/marketing", label: "CMO Dashboard", icon: <BarChart2 size={14} />, code: "CMO" },
+            { href: "/dashboard/marketing/campaigns", label: "Campañas (Live)", icon: <Target size={14} />, code: "LIV" },
             { href: "/dashboard/marketing/calendar", label: "Planificador", icon: <Calendar size={14} />, code: "PUB" },
             { href: "/dashboard/marketing/email-blast", label: "Email Masivo", icon: <Mail size={14} />, code: "EML" },
             { href: "/dashboard/posts", label: "Blog", icon: <BookOpen size={14} />, code: "BLG" },
