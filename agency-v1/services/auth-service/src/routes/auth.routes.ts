@@ -24,6 +24,18 @@ export function createAuthRouter(privateKey: string | null): Router {
     AuthController.login(req, res, next, privateKey);
   });
 
+  router.post("/refresh", (req: Request, res: Response, next: NextFunction) => {
+    AuthController.refresh(req, res, next);
+  });
+
+  router.post("/logout-all", (req: Request, res: Response, next: NextFunction) => {
+    AuthController.logoutAll(req, res, next);
+  });
+
+  router.get("/sessions", (req: Request, res: Response, next: NextFunction) => {
+    AuthController.getSessions(req, res, next);
+  });
+
   router.get("/profile", (req: Request, res: Response, next: NextFunction) => {
     AuthController.getProfile(req, res, next);
   });

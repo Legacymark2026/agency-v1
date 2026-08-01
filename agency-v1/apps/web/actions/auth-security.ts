@@ -85,3 +85,35 @@ export async function getSecurityAuditLogs() {
     return { success: false, error: err.message };
   }
 }
+
+export async function refreshSessionToken(refreshToken: string) {
+  try {
+    return await gw('/api/v1/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken })
+    });
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function revokeAllSessions() {
+  try {
+    const { id } = await getUserId();
+    return await gw('/api/v1/auth/logout-all', {
+      method: 'POST',
+      body: JSON.stringify({ userId: id })
+    });
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getActiveSessions() {
+  try {
+    const { id } = await getUserId();
+    return await gw(`/api/v1/auth/sessions?userId=${id}`);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
