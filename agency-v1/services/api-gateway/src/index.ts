@@ -338,15 +338,17 @@ app.use((req, _res, next) => {
 class CircuitBreaker {
   public state: "CLOSED" | "OPEN" | "HALF-OPEN" = "CLOSED";
   private failureCount = 0;
+  private halfOpenFailures = 0;
   private lastStateChange = Date.now();
   private readonly failureThreshold = 25;
-  private readonly cooldownPeriod = 5000; // 5 seconds
+  private readonly cooldownPeriod = 3000; // 3 seconds
 
   constructor(public readonly serviceName: string) {}
 
   public checkState() {
     if (this.state === "OPEN" && Date.now() - this.lastStateChange > this.cooldownPeriod) {
       this.state = "HALF-OPEN";
+      this.halfOpenFailures = 0;
       this.lastStateChange = Date.now();
       console.log(`[CircuitBreaker] Circuit transitioned to HALF-OPEN for ${this.serviceName}`);
     }
@@ -354,7 +356,8 @@ class CircuitBreaker {
 
   public recordSuccess() {
     this.failureCount = 0;
-    if (this.state === "HALF-OPEN") {
+    this.halfOpenFailures = 0;
+    if (this.state === "HALF-OPEN" || this.state === "OPEN") {
       this.state = "CLOSED";
       this.lastStateChange = Date.now();
       console.log(`[CircuitBreaker] Circuit transitioned to CLOSED for ${this.serviceName}`);
@@ -364,7 +367,13 @@ class CircuitBreaker {
   public recordFailure() {
     this.failureCount++;
     this.lastStateChange = Date.now();
-    if (this.state === "HALF-OPEN" || this.failureCount >= this.failureThreshold) {
+    if (this.state === "HALF-OPEN") {
+      this.halfOpenFailures++;
+      if (this.halfOpenFailures >= 3) {
+        this.state = "OPEN";
+        console.warn(`[CircuitBreaker] Circuit transitioned back to OPEN for ${this.serviceName}`);
+      }
+    } else if (this.failureCount >= this.failureThreshold) {
       this.state = "OPEN";
       console.warn(`[CircuitBreaker] Circuit transitioned to OPEN for ${this.serviceName} due to failures (${this.failureCount})`);
     }
