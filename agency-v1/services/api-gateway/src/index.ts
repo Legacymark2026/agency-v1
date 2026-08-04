@@ -544,7 +544,6 @@ app.use("/api/email-templates", resilientProxy("marketing", SERVICES.marketing))
 app.use("/api/mailing-lists", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/suppression-lists", resilientProxy("marketing", SERVICES.marketing));
 // Marketing Enterprise Features
-app.use("/api/analytics", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/email-validation", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/queue", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/sequences", resilientProxy("marketing", SERVICES.marketing));
@@ -577,10 +576,32 @@ app.use("/api/admin", resilientProxy("admin", SERVICES.admin));
 app.use("/api/diagnostics", resilientProxy("admin", SERVICES.admin));
 app.use("/api/debug", resilientProxy("admin", SERVICES.admin));
 
-// Public API Service
+// Specific /api/v1/* routes for versioned microservices (MUST come before catch-all below)
+app.use("/api/v1/crm",          resilientProxy("crm",          SERVICES.crm));
+app.use("/api/v1/leads",        resilientProxy("crm",          SERVICES.crm));
+app.use("/api/v1/deals",        resilientProxy("crm",          SERVICES.crm));
+app.use("/api/v1/inbox",        resilientProxy("inbox",        SERVICES.inbox));
+app.use("/api/v1/invoices",     resilientProxy("finance",      SERVICES.finance));
+app.use("/api/v1/payroll",      resilientProxy("finance",      SERVICES.finance));
+app.use("/api/v1/marketing",    resilientProxy("marketing",    SERVICES.marketing));
+app.use("/api/v1/campaigns",    resilientProxy("marketing",    SERVICES.marketing));
+app.use("/api/v1/automation",   resilientProxy("automation",   SERVICES.automation));
+app.use("/api/v1/workflows",    resilientProxy("automation",   SERVICES.automation));
+app.use("/api/v1/notifications",resilientProxy("notification", SERVICES.notification));
+app.use("/api/v1/employees",    resilientProxy("hr",           SERVICES.hr));
+app.use("/api/v1/hr",           resilientProxy("hr",           SERVICES.hr));
+app.use("/api/v1/projects",     resilientProxy("project",      SERVICES.project));
+app.use("/api/v1/kanban",       resilientProxy("project",      SERVICES.project));
+app.use("/api/v1/tasks",        resilientProxy("project",      SERVICES.project));
+app.use("/api/v1/analytics",    resilientProxy("analytics",    SERVICES.analytics));
+app.use("/api/v1/calendar",     resilientProxy("calendar",     SERVICES.calendar));
+app.use("/api/v1/video",        resilientProxy("video",        SERVICES.video));
+app.use("/api/v1/integrations", resilientProxy("integration",  SERVICES.integration));
+
+// Public API Service — catch-all for /api/v1/* (MUST be LAST to avoid shadowing specific routes above)
 app.use("/api/v1", resilientProxy("publicApi", SERVICES.publicApi));
 app.use("/api/public", resilientProxy("publicApi", SERVICES.publicApi));
-app.use("/api/serve", resilientProxy("publicApi", SERVICES.publicApi));
+app.use("/api/serve",  resilientProxy("publicApi", SERVICES.publicApi));
 
 // Notification Service
 app.use("/api/notifications", resilientProxy("notification", SERVICES.notification));
