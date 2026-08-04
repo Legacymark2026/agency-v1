@@ -285,7 +285,12 @@ function WalletMeteringSection() {
                 </div>
                 <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-800/60">
                     <span>Microservicios Tarificados: ai-engine, crm-service, video-service, pos-service, finance-service</span>
-                    <Link href="/es/docs/api" className="text-teal-400 hover:underline">Ver Tarifario API →</Link>
+                    <div className="flex items-center gap-3">
+                        <Link href="/dashboard/settings/developer/pricing" className="text-amber-400 font-semibold hover:underline flex items-center gap-1">
+                            ⚙️ Configurar Tarifas (Admin)
+                        </Link>
+                        <Link href="/es/docs/api" className="text-teal-400 hover:underline">Ver Documentación →</Link>
+                    </div>
                 </div>
             </div>
         </div>

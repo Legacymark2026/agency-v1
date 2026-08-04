@@ -135,12 +135,46 @@ const rateLimitMiddleware = async (req: express.Request, res: express.Response, 
 app.use(rateLimitMiddleware);
 
 // ── Metered Usage & Monetization Middleware ─────────────────────────────────
-const API_COST_TABLE: Record<string, { unitType: string; costPerUnitUsd: number }> = {
+const DEFAULT_API_COST_TABLE: Record<string, { unitType: string; costPerUnitUsd: number }> = {
   "/api/v1/agents":  { unitType: "TOKENS", costPerUnitUsd: 0.0000025 }, // $0.0025 per 1k tokens
   "/api/v1/video":   { unitType: "SECONDS", costPerUnitUsd: 0.05 },      // $0.05 per sec
   "/api/v1/invoices": { unitType: "DOCUMENTS", costPerUnitUsd: 0.08 },   // $0.08 per invoice
   "default":         { unitType: "REQUESTS", costPerUnitUsd: 0.0005 },   // $0.0005 per request
 };
+
+let activeApiCostTable = { ...DEFAULT_API_COST_TABLE };
+
+// Carga inicial de Redis si existe
+redis.get("config:api_pricing").then((cached) => {
+  if (cached) {
+    try { activeApiCostTable = { ...DEFAULT_API_COST_TABLE, ...JSON.parse(cached) }; } catch {}
+  }
+}).catch(() => {});
+
+// Admin Endpoints para consultar y cambiar el tarifario en tiempo real
+app.get("/api/v1/admin/pricing", async (req, res) => {
+  try {
+    const cached = await redis.get("config:api_pricing");
+    const pricing = cached ? JSON.parse(cached) : activeApiCostTable;
+    res.json({ success: true, pricing });
+  } catch (err: any) {
+    res.json({ success: true, pricing: activeApiCostTable });
+  }
+});
+
+app.post("/api/v1/admin/pricing", async (req, res) => {
+  try {
+    const { pricing } = req.body;
+    if (!pricing || typeof pricing !== "object") {
+      return res.status(400).json({ success: false, error: "Objeto de tarifario inválido" });
+    }
+    activeApiCostTable = { ...DEFAULT_API_COST_TABLE, ...pricing };
+    await redis.set("config:api_pricing", JSON.stringify(activeApiCostTable));
+    res.json({ success: true, message: "Tarifario actualizado en tiempo real en todo el clúster", pricing: activeApiCostTable });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 const apiUsageMeteringMiddleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (!req.path.startsWith("/api/v1") && !req.path.startsWith("/api/agents")) return next();
@@ -152,10 +186,10 @@ const apiUsageMeteringMiddleware = async (req: express.Request, res: express.Res
       const apiKeyId = (req.headers["x-api-key-id"] || "public-api") as string;
       const durationMs = Date.now() - startTime;
       
-      let matchedConfig = API_COST_TABLE["default"];
-      for (const prefix of Object.keys(API_COST_TABLE)) {
+      let matchedConfig = activeApiCostTable["default"];
+      for (const prefix of Object.keys(activeApiCostTable)) {
         if (prefix !== "default" && req.path.startsWith(prefix)) {
-          matchedConfig = API_COST_TABLE[prefix];
+          matchedConfig = activeApiCostTable[prefix];
           break;
         }
       }
