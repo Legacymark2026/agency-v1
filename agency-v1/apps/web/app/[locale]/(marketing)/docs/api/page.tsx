@@ -75,6 +75,7 @@ export default function ApiDocsPage() {
         { id: "intro",           label: "Introducción",     icon: Book },
         { id: "autenticacion",   label: "Autenticación",    icon: Key },
         { id: "rate-limit",      label: "Rate Limiting",    icon: Zap },
+        { id: "tarifario-api",   label: "Tarifario de Consumo", icon: Sparkles },
         { id: "cognitive-engine",label: "Motor Cognitivo IA",icon: Cpu },
         { id: "leads",           label: "Leads CRM",        icon: Globe },
         { id: "contacts",        label: "Contactos",        icon: Globe },
@@ -223,6 +224,80 @@ export default function ApiDocsPage() {
                                     <tr><td className="px-4 py-3 font-semibold text-emerald-400">Enterprise</td><td className="px-4 py-3 font-mono text-emerald-400">500,000</td><td className="px-4 py-3 font-mono">200 req/s</td></tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </section>
+
+                    {/* Tarifario API & Consumo */}
+                    <section id="tarifario-api" className="scroll-mt-28 border-t border-slate-800/80 pt-10">
+                        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2.5">
+                            <Sparkles className="w-6 h-6 text-emerald-400" /> Tarifario de Consumo & Metered Billing
+                        </h2>
+                        <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+                            Monetización en tiempo real por uso de microservicios. Puedes consumir saldo de tu **Wallet Prepago** o facturar mensualmente con **Stripe Metered Billing**.
+                        </p>
+
+                        <div className="overflow-x-auto rounded-2xl border border-slate-800 mb-6 shadow-xl">
+                            <table className="w-full text-xs">
+                                <thead className="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider font-mono">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left">Microservicio</th>
+                                        <th className="px-4 py-3 text-left">Recurso / Endpoint</th>
+                                        <th className="px-4 py-3 text-left">Unidad de Medida</th>
+                                        <th className="px-4 py-3 text-right">Precio por Unidad (USD)</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-800/50 bg-slate-950 text-slate-300">
+                                    <tr className="hover:bg-slate-900/40">
+                                        <td className="px-4 py-3 font-semibold text-teal-400">Motor Cognitivo IA</td>
+                                        <td className="px-4 py-3 font-mono text-slate-300">/api/v1/agents/:id/run</td>
+                                        <td className="px-4 py-3 text-slate-400">1,000 Tokens LLM</td>
+                                        <td className="px-4 py-3 font-mono font-bold text-emerald-400 text-right">$0.0025 USD</td>
+                                    </tr>
+                                    <tr className="hover:bg-slate-900/40">
+                                        <td className="px-4 py-3 font-semibold text-violet-400">Video Engine</td>
+                                        <td className="px-4 py-3 font-mono text-slate-300">/api/v1/video/render</td>
+                                        <td className="px-4 py-3 text-slate-400">1 Segundo Renderizado</td>
+                                        <td className="px-4 py-3 font-mono font-bold text-emerald-400 text-right">$0.0500 USD</td>
+                                    </tr>
+                                    <tr className="hover:bg-slate-900/40">
+                                        <td className="px-4 py-3 font-semibold text-blue-400">Facturación DIAN</td>
+                                        <td className="px-4 py-3 font-mono text-slate-300">/api/v1/invoices</td>
+                                        <td className="px-4 py-3 text-slate-400">1 Factura Electrónica</td>
+                                        <td className="px-4 py-3 font-mono font-bold text-emerald-400 text-right">$0.0800 USD</td>
+                                    </tr>
+                                    <tr className="hover:bg-slate-900/40">
+                                        <td className="px-4 py-3 font-semibold text-amber-400">Marketing Enterprise</td>
+                                        <td className="px-4 py-3 font-mono text-slate-300">/api/v1/email-validation/validate</td>
+                                        <td className="px-4 py-3 text-slate-400">1 Email Validado</td>
+                                        <td className="px-4 py-3 font-mono font-bold text-emerald-400 text-right">$0.0010 USD</td>
+                                    </tr>
+                                    <tr className="hover:bg-slate-900/40">
+                                        <td className="px-4 py-3 font-semibold text-slate-400">Core REST (CRM, POS)</td>
+                                        <td className="px-4 py-3 font-mono text-slate-300">/api/v1/leads, /api/v1/pos/*</td>
+                                        <td className="px-4 py-3 text-slate-400">1 Petición HTTP</td>
+                                        <td className="px-4 py-3 font-mono font-bold text-emerald-400 text-right">$0.0005 USD</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
+                                <h4 className="text-xs font-bold text-white mb-1 flex items-center gap-1.5">
+                                    👛 Saldo Wallet Prepago
+                                </h4>
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    Cada cuenta recibe <strong className="text-teal-300">$50.00 USD de crédito inicial</strong> al crear su primera API Key. Las peticiones descuentan automáticamente saldo en tiempo real.
+                                </p>
+                            </div>
+                            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl">
+                                <h4 className="text-xs font-bold text-white mb-1 flex items-center gap-1.5">
+                                    ⚡ Auto-Recarga Configurable
+                                </h4>
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    Evita interrupciones en tu servicio configurando recargas automáticas (ej. recargar $50 USD cuando el saldo baje de $10 USD).
+                                </p>
+                            </div>
                         </div>
                     </section>
 
