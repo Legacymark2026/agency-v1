@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AiController } from "../controllers/ai.controller";
 import { ToolExecutorService } from "../services/tool-executor.service";
-import { PresetGalleryService } from "../../../agent-team-engine/src/services/preset-gallery.service";
+import { PresetGalleryService } from "../services/preset-gallery.service";
 import { AgentMemoryService } from "../services/agent-memory.service";
 import { validateRequest } from "../middlewares/ai.middleware";
 import { z } from "zod";
