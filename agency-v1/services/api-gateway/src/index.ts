@@ -508,6 +508,7 @@ app.use("/api/cron/process-sequences", resilientProxy("automation", SERVICES.aut
 
 // AI Engine
 app.use("/api/agents", resilientProxy("ai", SERVICES.ai));
+app.use("/api/v1/agents", resilientProxy("ai", SERVICES.ai));
 app.use("/api/ai", resilientProxy("ai", SERVICES.ai));
 app.use("/api/knowledge-bases", resilientProxy("ai", SERVICES.ai));
 
