@@ -7,6 +7,7 @@ import { validateRequest } from "../middlewares/ai.middleware";
 import { guardrailsMiddleware } from "../middlewares/guardrails.middleware";
 import { z } from "zod";
 
+// ── Schemas ─────────────────────────────────────────────────────────────────
 const runAgentSchema = z.object({
   userMessage: z.string().min(1, "User message is required"),
   conversationId: z.string().optional(),
@@ -15,23 +16,53 @@ const runAgentSchema = z.object({
   enableRefrag: z.boolean().optional()
 });
 
+const governanceSchema = z.object({
+  autonomyMode: z.enum(["AUTONOMOUS", "SEMI_AUTONOMOUS", "SUPERVISED_ONLY"]).optional(),
+  temperature: z.number().min(0).max(1).optional(),
+  dailyTokenBudget: z.number().int().positive().optional(),
+  monthlyUsdBudget: z.number().positive().optional(),
+  hitlConfidenceThreshold: z.number().min(0).max(1).optional(),
+  hitlHighValueQuoteUsd: z.number().positive().optional(),
+  allowedTools: z.array(z.string()).optional(),
+  systemPromptOverride: z.string().optional(),
+  isActive: z.boolean().optional()
+});
+
 export const aiRouter = Router();
 
-// ── 🤖 Core Agent Endpoints ────────────────────────────────────────────────
+// ── 🤖 Core Agent ──────────────────────────────────────────────────────────
 aiRouter.get("/agents", AiController.getAgents);
-aiRouter.post("/agents/:agentId/run", guardrailsMiddleware, validateRequest(runAgentSchema), AiController.runAgent);
+aiRouter.post("/agents/:agentId/run",
+  guardrailsMiddleware,
+  validateRequest(runAgentSchema),
+  AiController.runAgent
+);
 
-// ── 🔍 ReFRAG (Recursive RAG & Re-ranking) ─────────────────────────────────
+// ── 🎛️ Governance & Configuration ──────────────────────────────────────────
+aiRouter.get("/agents/governance", AiController.listGovernance);
+aiRouter.get("/agents/:agentId/governance", AiController.getGovernance);
+aiRouter.patch("/agents/:agentId/governance", validateRequest(governanceSchema), AiController.updateGovernance);
+
+// ── 📜 Reasoning Traces (Audit Logs) ────────────────────────────────────────
+aiRouter.get("/agents/traces", AiController.listTraces);
+aiRouter.get("/agents/traces/:traceId", AiController.getTrace);
+
+// ── 📣 Feedback (👍 / 👎 + Stars) ──────────────────────────────────────────
+aiRouter.post("/agents/:agentId/feedback", AiController.recordFeedback);
+aiRouter.get("/agents/:agentId/feedback/stats", AiController.getFeedbackStats);
+aiRouter.get("/agents/feedback/recent", AiController.listRecentFeedback);
+
+// ── 🔍 ReFRAG ───────────────────────────────────────────────────────────────
 aiRouter.post("/agents/refrag/query", AiController.queryRefrag);
 
-// ── 👤 Human-in-the-Loop (HITL Queue & Approval Decisions) ─────────────────
+// ── 👤 Human-in-the-Loop (HITL) ────────────────────────────────────────────
 aiRouter.get("/agents/hitl/pending", AiController.getPendingHitl);
 aiRouter.post("/agents/hitl/decision", AiController.processHitlDecision);
 
-// ── 🛡️ Guardrails & Safety Auditing ────────────────────────────────────────
+// ── 🛡️ Guardrails & Safety ─────────────────────────────────────────────────
 aiRouter.post("/agents/guardrails/check", AiController.checkGuardrails);
 
-// ── 🛠️ Hub Metadata & Marketplace Presets ──────────────────────────────────
+// ── 🏪 Marketplace & Hub Metadata ──────────────────────────────────────────
 aiRouter.get("/agents/tools", (_req, res) => {
   res.json({ success: true, tools: ToolExecutorService.getAvailableTools() });
 });
@@ -46,17 +77,15 @@ aiRouter.get("/agents/presets", (_req, res) => {
 
 aiRouter.get("/agents/memory/:conversationId", async (req, res, next) => {
   try {
-    const { conversationId } = req.params;
-    const limit = parseInt(String(req.query.limit || '20'), 10);
-    const history = await AgentMemoryService.getConversationContext(conversationId, limit);
-    res.json({ success: true, conversationId, memoryCount: history.length, history });
+    const limit = parseInt(String(req.query.limit || "20"), 10);
+    const history = await AgentMemoryService.getConversationContext(req.params.conversationId, limit);
+    res.json({ success: true, conversationId: req.params.conversationId, memoryCount: history.length, history });
   } catch (err) { next(err); }
 });
 
 aiRouter.delete("/agents/memory/:conversationId", async (req, res, next) => {
   try {
-    const { conversationId } = req.params;
-    await AgentMemoryService.clearMemory(conversationId);
-    res.json({ success: true, message: `Memoria de conversación ${conversationId} limpiada.` });
+    await AgentMemoryService.clearMemory(req.params.conversationId);
+    res.json({ success: true, message: `Memoria de conversación ${req.params.conversationId} limpiada.` });
   } catch (err) { next(err); }
 });
