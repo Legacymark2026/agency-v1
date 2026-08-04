@@ -2,14 +2,17 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        const posServiceUrl = process.env.POS_SERVICE_URL || "http://localhost:4020";
-        const res = await fetch(`${posServiceUrl}/api/pos/products`, { cache: "no-store" });
+        const posServiceUrl = process.env.POS_SERVICE_URL || process.env.API_GATEWAY_URL || "http://api-gateway:8080";
+        const res = await fetch(`${posServiceUrl}/api/pos/products`, {
+            cache: "no-store",
+            signal: AbortSignal.timeout(3000)
+        });
         if (res.ok) {
             const data = await res.json();
             return NextResponse.json(data);
         }
     } catch {
-        // Fallback gracefully to default catalog
+        // Fallback gracefully to default catalog without timing out
     }
 
     return NextResponse.json({

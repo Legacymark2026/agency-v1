@@ -155,6 +155,7 @@ const SERVICES = {
   hr:            process.env.HR_SERVICE_URL             || "http://hr-service:4017",
   project:       process.env.PROJECT_SERVICE_URL        || "http://project-service:4018",
   affiliate:     process.env.AFFILIATE_SERVICE_URL      || "http://affiliate-service:4019",
+  pos:           process.env.POS_SERVICE_URL            || "http://pos-service:4020",
 };
 
 // Dynamic Service Discovery Helper
@@ -619,6 +620,10 @@ app.use("/api/kanban", resilientProxy("project", SERVICES.project));
 app.use("/api/tasks", resilientProxy("project", SERVICES.project));
 app.use("/api/portfolio", resilientProxy("project", SERVICES.project));
 app.use("/api/cms", resilientProxy("project", SERVICES.project));
+
+// POS Service
+app.use("/api/v1/pos", resilientProxy("pos", SERVICES.pos));
+app.use("/api/pos", resilientProxy("pos", SERVICES.pos));
 
 // Affiliate Service
 app.use("/r", resilientProxy("affiliate", SERVICES.affiliate));

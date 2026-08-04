@@ -97,6 +97,9 @@ const INITIAL_DOCUMENTS: DianDocumentRecord[] = [
 ];
 
 export function DianElectronicBillingHub() {
+    const [mounted, setMounted] = React.useState(false);
+    React.useEffect(() => { setMounted(true); }, []);
+
     const [documents, setDocuments] = useState<DianDocumentRecord[]>(INITIAL_DOCUMENTS);
     const [activeTab, setActiveTab] = useState<"ALL" | "FE" | "NC" | "ND" | "DS">("ALL");
     const [searchTerm, setSearchTerm] = useState("");

@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function InvoicingPage() {
     return (
-        <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+        <div suppressHydrationWarning className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
             <DianElectronicBillingHub />
         </div>
     );
