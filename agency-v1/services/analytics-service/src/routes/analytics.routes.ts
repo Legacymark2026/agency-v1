@@ -12,4 +12,5 @@ const trackActivitySchema = z.object({
 export const analyticsRouter = Router();
 
 analyticsRouter.get("/analytics/activity", AnalyticsController.getUserActivityLogs);
+analyticsRouter.get("/analytics/metered-usage", AnalyticsController.getMeteredUsage);
 analyticsRouter.post("/track", validateRequest(trackActivitySchema), AnalyticsController.trackActivity);

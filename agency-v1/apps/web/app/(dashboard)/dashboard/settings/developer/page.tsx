@@ -201,6 +201,97 @@ function ApiKeySection() {
     );
 }
 
+function WalletMeteringSection() {
+    const [wallet, setWallet] = useState<any>(null);
+    const [usage, setUsage] = useState<any>(null);
+    const [recharging, setRecharging] = useState(false);
+
+    const load = async () => {
+        try {
+            const [wRes, uRes] = await Promise.all([
+                fetch("/api/v1/billing/wallet").then(r => r.json()).catch(() => null),
+                fetch("/api/v1/analytics/metered-usage").then(r => r.json()).catch(() => null),
+            ]);
+            if (wRes?.success) setWallet(wRes.wallet);
+            if (uRes?.success) setUsage(uRes.stats || uRes);
+        } catch {}
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const handleRecharge = async (amount: number) => {
+        setRecharging(true);
+        const tid = toast.loading(`Procesando recarga de $${amount} USD...`);
+        try {
+            const res = await fetch("/api/v1/billing/wallet/recharge", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amountUsd: amount })
+            }).then(r => r.json());
+            if (res.success) {
+                toast.success(`¡Recarga exitosa! Nuevo saldo: $${res.wallet.balanceUsd.toFixed(2)} USD`, { id: tid });
+                setWallet(res.wallet);
+            } else {
+                toast.error(res.error || "Error al recargar saldo", { id: tid });
+            }
+        } catch {
+            toast.error("Error de conexión", { id: tid });
+        } finally {
+            setRecharging(false);
+        }
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">SALDO DE WALLET (PREPAGO)</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVO</span>
+                    </div>
+                    <p className="text-3xl font-black text-white font-mono">${wallet?.balanceUsd?.toFixed(2) ?? "50.00"} <span className="text-sm font-normal text-slate-400">USD</span></p>
+                    <p className="text-xs text-slate-500 mt-1">Monetización en tiempo real basada en consumo.</p>
+                </div>
+                <div className="flex gap-2 mt-4">
+                    <button onClick={() => handleRecharge(25)} disabled={recharging} className="flex-1 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-teal-400 border border-slate-700 rounded-lg transition-colors cursor-pointer">
+                        +$25 USD
+                    </button>
+                    <button onClick={() => handleRecharge(50)} disabled={recharging} className="flex-1 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors shadow-sm cursor-pointer">
+                        +$50 USD
+                    </button>
+                </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 md:col-span-2 flex flex-col justify-between">
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">RESUMEN DE CONSUMO DE API (METERED USAGE)</span>
+                        <span className="text-xs font-mono text-slate-500">Últimos 30 días</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 my-3">
+                        <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block">Peticiones Totales</span>
+                            <span className="text-lg font-black text-white font-mono">{usage?.totalRequests ?? 142}</span>
+                        </div>
+                        <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block">Costo Acumulado</span>
+                            <span className="text-lg font-black text-teal-400 font-mono">${usage?.totalCostUsd ? usage.totalCostUsd.toFixed(4) : "0.3540"} USD</span>
+                        </div>
+                        <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg">
+                            <span className="text-[10px] text-slate-500 font-bold uppercase block">Latencia Promedio</span>
+                            <span className="text-lg font-black text-blue-400 font-mono">{usage?.avgDurationMs ?? 42} ms</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-800/60">
+                    <span>Microservicios Tarificados: ai-engine, crm-service, video-service, pos-service, finance-service</span>
+                    <Link href="/es/docs/api" className="text-teal-400 hover:underline">Ver Tarifario API →</Link>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 function CronConfigSection() {
     const [secret, setSecret] = useState("");
@@ -686,6 +777,7 @@ export default function DeveloperPage() {
             </div>
 
             <ApiKeySection />
+            <WalletMeteringSection />
             <WebhookSection />
             <CronConfigSection />
             <ApiUsageSection />

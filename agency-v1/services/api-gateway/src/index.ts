@@ -134,6 +134,63 @@ const rateLimitMiddleware = async (req: express.Request, res: express.Response, 
 
 app.use(rateLimitMiddleware);
 
+// ── Metered Usage & Monetization Middleware ─────────────────────────────────
+const API_COST_TABLE: Record<string, { unitType: string; costPerUnitUsd: number }> = {
+  "/api/v1/agents":  { unitType: "TOKENS", costPerUnitUsd: 0.0000025 }, // $0.0025 per 1k tokens
+  "/api/v1/video":   { unitType: "SECONDS", costPerUnitUsd: 0.05 },      // $0.05 per sec
+  "/api/v1/invoices": { unitType: "DOCUMENTS", costPerUnitUsd: 0.08 },   // $0.08 per invoice
+  "default":         { unitType: "REQUESTS", costPerUnitUsd: 0.0005 },   // $0.0005 per request
+};
+
+const apiUsageMeteringMiddleware = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!req.path.startsWith("/api/v1") && !req.path.startsWith("/api/agents")) return next();
+  const startTime = Date.now();
+
+  res.on("finish", async () => {
+    try {
+      const companyId = (req.headers["x-company-id"] || "company-default") as string;
+      const apiKeyId = (req.headers["x-api-key-id"] || "public-api") as string;
+      const durationMs = Date.now() - startTime;
+      
+      let matchedConfig = API_COST_TABLE["default"];
+      for (const prefix of Object.keys(API_COST_TABLE)) {
+        if (prefix !== "default" && req.path.startsWith(prefix)) {
+          matchedConfig = API_COST_TABLE[prefix];
+          break;
+        }
+      }
+
+      const unitsHeader = res.getHeader("x-units-consumed");
+      const unitsConsumed = unitsHeader ? parseFloat(String(unitsHeader)) : 1.0;
+      const totalCostUsd = unitsConsumed * matchedConfig.costPerUnitUsd;
+
+      const eventPayload = {
+        companyId,
+        apiKeyId,
+        serviceName: req.path.split("/")[2] || "core",
+        endpoint: req.path,
+        method: req.method,
+        statusCode: String(res.statusCode),
+        durationMs: String(durationMs),
+        requestBytes: String(req.headers["content-length"] || 0),
+        responseBytes: String(res.getHeader("content-length") || 0),
+        unitsConsumed: String(unitsConsumed),
+        unitType: matchedConfig.unitType,
+        totalCostUsd: String(totalCostUsd),
+        timestamp: new Date().toISOString(),
+      };
+
+      await redis.xadd("api_usage_stream", "*", ...Object.entries(eventPayload).flat());
+    } catch (err: any) {
+      console.warn("[Metering] Redis Stream push error:", err.message);
+    }
+  });
+
+  next();
+};
+
+app.use(apiUsageMeteringMiddleware);
+
 // ── Service Discovery Config ─────────────────────────────────────────────────
 const SERVICES = {
   auth:       process.env.AUTH_SERVICE_URL       || "http://auth-service:4001",

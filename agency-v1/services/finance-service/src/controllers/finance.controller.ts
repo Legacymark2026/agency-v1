@@ -38,5 +38,38 @@ export class FinanceController {
     } catch (err) {
       next(err);
     }
+  /**
+   * GET /api/v1/billing/wallet
+   */
+  static async getWallet(req: Request, res: Response, next: NextFunction) {
+    try {
+      const raw = req.headers["x-company-id"] || req.query.companyId || "company-default";
+      const companyId = Array.isArray(raw) ? String(raw[0]) : String(raw);
+
+      const { WalletService } = await import("../services/wallet.service");
+      const wallet = await WalletService.getWalletBalance(companyId);
+
+      res.json({ success: true, wallet });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/billing/wallet/recharge
+   */
+  static async rechargeWallet(req: Request, res: Response, next: NextFunction) {
+    try {
+      const raw = req.headers["x-company-id"] || req.body.companyId || "company-default";
+      const companyId = Array.isArray(raw) ? String(raw[0]) : String(raw);
+      const amountUsd = Number(req.body.amountUsd || 50);
+
+      const { WalletService } = await import("../services/wallet.service");
+      const wallet = await WalletService.rechargeWallet(companyId, amountUsd);
+
+      res.json({ success: true, wallet });
+    } catch (err) {
+      next(err);
+    }
   }
 }

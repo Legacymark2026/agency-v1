@@ -67,6 +67,11 @@ async function runPartitionMaintenance() {
 const server = app.listen(port, () => {
   console.log(`Analytics Service listening at http://localhost:${port}`);
   
+  // Start Metered Usage Stream Worker
+  import("./services/metering-aggregator.service").then(({ MeteringAggregatorService }) => {
+    MeteringAggregatorService.startStreamWorker();
+  }).catch(err => console.error("Error starting stream worker:", err));
+
   // Run on startup
   runPartitionMaintenance().catch(err => console.error('Error in startup partition check:', err));
   

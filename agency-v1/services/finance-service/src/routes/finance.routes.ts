@@ -14,3 +14,5 @@ export const financeRouter = Router();
 
 financeRouter.get("/invoices", FinanceController.getInvoices);
 financeRouter.post("/invoices", validateRequest(createInvoiceSchema), FinanceController.createInvoice);
+financeRouter.get("/billing/wallet", FinanceController.getWallet);
+financeRouter.post("/billing/wallet/recharge", FinanceController.rechargeWallet);

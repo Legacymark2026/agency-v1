@@ -38,5 +38,21 @@ export class AnalyticsController {
     } catch (err) {
       next(err);
     }
+  /**
+   * GET /api/v1/analytics/metered-usage
+   */
+  static async getMeteredUsage(req: Request, res: Response, next: NextFunction) {
+    try {
+      const raw = req.headers["x-company-id"] || req.query.companyId || "company-default";
+      const companyId = Array.isArray(raw) ? String(raw[0]) : String(raw);
+      const days = req.query.days ? parseInt(String(req.query.days), 10) : 30;
+
+      const { MeteringAggregatorService } = await import("../services/metering-aggregator.service");
+      const stats = await MeteringAggregatorService.getCompanyUsageStats(companyId, days);
+
+      res.json({ success: true, ...stats });
+    } catch (err) {
+      next(err);
+    }
   }
 }

@@ -285,6 +285,8 @@ model Company {
   agentConversations        AgentConversation[]
   aiAgents                  AIAgent[]
   apiKeys                   ApiKey[]
+  apiUsageLogs              ApiUsageLog[]
+  wallet                    CompanyWallet?
   assetCollections          AssetCollection[]
   brandKit                  BrandKit?
   campaignAssets            CampaignAsset[]
@@ -3964,4 +3966,47 @@ model VideoRenderJob {
   @@map("tbl_video_render_jobs")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════
+// API MONETIZATION & METERED BILLING
+// ══════════════════════════════════════════════════════════════
+
+model ApiUsageLog {
+  id             String   @id @default(uuid())
+  companyId      String   @map("company_id")
+  apiKeyId       String   @map("api_key_id")
+  serviceName    String   @map("service_name")
+  endpoint       String   @map("endpoint")
+  method         String   @map("method")
+  statusCode     Int      @map("status_code")
+  durationMs     Int      @map("duration_ms")
+  requestBytes   Int      @default(0) @map("request_bytes")
+  responseBytes  Int      @default(0) @map("response_bytes")
+  unitsConsumed  Float    @default(1.0) @map("units_consumed")
+  unitType       String   @default("REQUESTS") @map("unit_type")
+  totalCostUsd   Float    @default(0.0) @map("total_cost_usd")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+  @@index([apiKeyId, createdAt])
+  @@index([serviceName, createdAt])
+  @@map("tbl_api_usage_logs")
+}
+
+model CompanyWallet {
+  id                  String   @id @default(uuid())
+  companyId           String   @unique @map("company_id")
+  balanceUsd          Float    @default(0.0) @map("balance_usd")
+  autoRechargeEnabled Boolean  @default(false) @map("auto_recharge_enabled")
+  autoRechargeThreshold Float  @default(10.0) @map("auto_recharge_threshold")
+  autoRechargeAmount  Float    @default(50.0) @map("auto_recharge_amount")
+  currency            String   @default("USD")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("tbl_company_wallets")
 }
