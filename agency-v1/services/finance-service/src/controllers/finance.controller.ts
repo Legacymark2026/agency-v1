@@ -38,6 +38,8 @@ export class FinanceController {
     } catch (err) {
       next(err);
     }
+  }
+
   /**
    * GET /api/v1/billing/wallet
    */
