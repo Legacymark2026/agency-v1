@@ -44,12 +44,58 @@ export async function getAgentPresets() {
   }
 }
 
-export async function runAgentExecution(agentId: string, userMessage: string, conversationId?: string) {
+export async function runAgentExecution(agentId: string, userMessage: string, conversationId?: string, leadId?: string) {
   try {
     const companyId = await getCompanyId();
     return await gw(`/api/v1/agents/${agentId}/run`, {
       method: 'POST',
-      body: JSON.stringify({ companyId, userMessage, conversationId })
+      body: JSON.stringify({ companyId, userMessage, conversationId, leadId })
+    });
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function queryRefragDocs(query: string, topK = 5) {
+  try {
+    const companyId = await getCompanyId();
+    return await gw('/api/v1/agents/refrag/query', {
+      method: 'POST',
+      body: JSON.stringify({ companyId, query, topK })
+    });
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getPendingHitlReviews() {
+  try {
+    const companyId = await getCompanyId();
+    return await gw(`/api/v1/agents/hitl/pending?companyId=${companyId}`);
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function processHitlDecision(hitlId: string, decision: 'APPROVED' | 'REJECTED' | 'MODIFIED', modifiedResponse?: string) {
+  try {
+    const companyId = await getCompanyId();
+    const session = await auth();
+    const userId = session?.user?.id || 'user-supervisor';
+    return await gw('/api/v1/agents/hitl/decision', {
+      method: 'POST',
+      body: JSON.stringify({ companyId, hitlId, decision, userId, modifiedResponse })
+    });
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function checkGuardrailsText(text: string) {
+  try {
+    return await gw('/api/v1/agents/guardrails/check', {
+      method: 'POST',
+      body: JSON.stringify({ text })
     });
   } catch (err: any) {
     return { success: false, error: err.message };
