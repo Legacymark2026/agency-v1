@@ -83,7 +83,7 @@ export class HitlWorkflowService {
 
     // Emitir evento para notificación en tiempo real en la app web
     try {
-      await eventBus.publish('agent.hitl_review_required', item);
+      await (eventBus as any).publish('agent.hitl_review_required', item);
     } catch {}
 
     return item;
@@ -124,7 +124,7 @@ export class HitlWorkflowService {
 
     // Publicar evento de resolución
     try {
-      await eventBus.publish('agent.hitl_decision_made', item);
+      await (eventBus as any).publish('agent.hitl_decision_made', item);
     } catch {}
 
     return item;

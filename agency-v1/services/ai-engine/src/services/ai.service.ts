@@ -67,7 +67,7 @@ export class AiService {
     await AgentMemoryService.addMemory(input.agentId, conversationId, 'user', cleanUserMessage);
 
     // ── 🔍 PILAR 3: ReFRAG (Recursive RAG & Cross-Encoder Re-ranking) ──────────────
-    let refragResult = null;
+    let refragResult: { chunks: any[]; compressedContext: string } | null = null;
     if (input.enableRefrag !== false) {
       refragResult = await RefragService.retrieveAndRerank(cleanUserMessage, input.companyId, {
         topK: 3,
@@ -149,7 +149,7 @@ export class AiService {
       toolExecutionResult?.toolName
     );
 
-    let pendingHitlItem = null;
+    let pendingHitlItem: any = null;
     if (hitlCheck.requiresReview) {
       pendingHitlItem = await HitlWorkflowService.createPendingReview({
         agentId: input.agentId,
@@ -174,7 +174,7 @@ export class AiService {
 
     // Publicar evento en Bus Redis
     try {
-      await eventBus.publish("agent.response_ready", {
+      await (eventBus as any).publish("agent.response_ready", {
         agentId: input.agentId,
         companyId: input.companyId,
         conversationId,
