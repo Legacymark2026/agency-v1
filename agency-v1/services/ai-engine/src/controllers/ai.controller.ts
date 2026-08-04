@@ -7,6 +7,20 @@ import { AgentGovernanceService } from "../services/agent-governance.service";
 import { ReasoningTraceService } from "../services/reasoning-trace.service";
 import { FeedbackService } from "../services/feedback.service";
 
+/** Safely extract a single string from req.headers (which may return string | string[]) */
+function extractCompanyId(req: Request): string {
+  const raw = req.headers["x-company-id"] || req.query.companyId || req.body?.companyId || "company-default";
+  if (Array.isArray(raw)) return String(raw[0]);
+  return String(raw);
+}
+
+function extractUserId(req: Request): string {
+  const raw = req.headers["x-user-id"] || req.body?.userId || "user-default";
+  if (Array.isArray(raw)) return String(raw[0]);
+  return String(raw);
+}
+
+
 export class AiController {
   // ─────────────────────────────────────────────────────────────────────────
   // Core Agent Execution
@@ -14,7 +28,7 @@ export class AiController {
 
   static async getAgents(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const agents = await AiService.getAgents(companyId);
       res.json({ success: true, agents });
     } catch (err) { next(err); }
@@ -23,7 +37,7 @@ export class AiController {
   static async runAgent(req: Request, res: Response, next: NextFunction) {
     try {
       const { agentId } = req.params;
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const result = await AiService.runAgent({
         agentId: String(agentId),
         companyId,
@@ -45,7 +59,7 @@ export class AiController {
   /** GET /api/v1/agents/governance → list all configs for company */
   static async listGovernance(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const configs = await AgentGovernanceService.listConfigs(companyId);
       res.json({ success: true, configs });
     } catch (err) { next(err); }
@@ -54,7 +68,7 @@ export class AiController {
   /** GET /api/v1/agents/:agentId/governance → get config for specific agent */
   static async getGovernance(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const { agentId } = req.params;
       const config = await AgentGovernanceService.getConfig(companyId, String(agentId));
       res.json({ success: true, config });
@@ -64,7 +78,7 @@ export class AiController {
   /** PATCH /api/v1/agents/:agentId/governance → update governance config */
   static async updateGovernance(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const { agentId } = req.params;
 
       const {
@@ -104,7 +118,7 @@ export class AiController {
   /** GET /api/v1/agents/traces → paginated list of traces */
   static async listTraces(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const limit = Math.min(parseInt(String(req.query.limit || "20")), 50);
       const offset = parseInt(String(req.query.offset || "0"));
       const traces = await ReasoningTraceService.listTraces(companyId, limit, offset);
@@ -115,8 +129,8 @@ export class AiController {
   /** GET /api/v1/agents/traces/:traceId → single trace detail */
   static async getTrace(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
-      const { traceId } = req.params;
+      const companyId = extractCompanyId(req);
+      const traceId = String(req.params.traceId);
       const trace = await ReasoningTraceService.getTrace(companyId, traceId);
       if (!trace) return res.status(404).json({ success: false, error: "Trace no encontrado" });
       res.json({ success: true, trace });
@@ -130,8 +144,8 @@ export class AiController {
   /** POST /api/v1/agents/:agentId/feedback */
   static async recordFeedback(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "company-default");
-      const userId = String(req.headers["x-user-id"] || req.body.userId || "end-user");
+      const companyId = extractCompanyId(req);
+      const userId = extractUserId(req);
       const { agentId } = req.params;
       const { rating, stars, comment, conversationId, traceId } = req.body;
 
@@ -159,7 +173,7 @@ export class AiController {
   /** GET /api/v1/agents/:agentId/feedback/stats */
   static async getFeedbackStats(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const { agentId } = req.params;
       const stats = await FeedbackService.getStats(companyId, String(agentId));
       res.json({ success: true, stats });
@@ -169,7 +183,7 @@ export class AiController {
   /** GET /api/v1/agents/feedback/recent */
   static async listRecentFeedback(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const limit = parseInt(String(req.query.limit || "20"));
       const feedback = await FeedbackService.listRecentFeedback(companyId, limit);
       res.json({ success: true, count: feedback.length, feedback });
@@ -182,7 +196,7 @@ export class AiController {
 
   static async queryRefrag(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const { query, topK, minScoreThreshold } = req.body;
       if (!query) return res.status(400).json({ success: false, error: "query is required" });
       const result = await RefragService.retrieveAndRerank(query, companyId, {
@@ -194,7 +208,7 @@ export class AiController {
 
   static async getPendingHitl(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.query.companyId || "company-default");
+      const companyId = extractCompanyId(req);
       const pendingItems = await HitlWorkflowService.getPendingReviews(companyId);
       res.json({ success: true, count: pendingItems.length, pendingItems });
     } catch (err) { next(err); }
@@ -202,8 +216,8 @@ export class AiController {
 
   static async processHitlDecision(req: Request, res: Response, next: NextFunction) {
     try {
-      const companyId = String(req.headers["x-company-id"] || req.body.companyId || "company-default");
-      const userId = String(req.headers["x-user-id"] || req.body.userId || "user-supervisor");
+      const companyId = extractCompanyId(req);
+      const userId = extractUserId(req);
       const { hitlId, decision, modifiedResponse } = req.body;
       if (!hitlId || !["APPROVED", "REJECTED", "MODIFIED"].includes(decision)) {
         return res.status(400).json({ success: false, error: "hitlId y decision válida (APPROVED, REJECTED, MODIFIED) son requeridos" });

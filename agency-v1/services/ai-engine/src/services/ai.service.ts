@@ -91,7 +91,8 @@ export class AiService {
       await ReasoningTraceService.saveTrace(tb.build());
       throw new Error(quotaCheck.message);
     }
-    tb.addStep("QUOTA_CHECK", `Cuota OK — Restante: ${quotaCheck.remainingTokens || "∞"} tokens`, "OK");
+    const remainingTokens = quotaCheck.limit - quotaCheck.currentUsage;
+    tb.addStep("QUOTA_CHECK", `Cuota OK — Restante: ${remainingTokens.toLocaleString()} tokens`, "OK");
 
     // ── 🗄️ PILAR 4: Variables CRM Dinámicas ────────────────────────────────
     const crmContext = await CrmVariableParserService.loadContextFromDb(input.companyId, input.leadId);
