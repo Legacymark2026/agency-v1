@@ -30,7 +30,7 @@ export class AnalyticsController {
     try {
       const log = await AnalyticsService.trackActivity({
         ...req.body,
-        ipAddress: req.ip || req.headers["x-forwarded-for"] as string || "127.0.0.1",
+        ipAddress: req.ip || (req.headers["x-forwarded-for"] as string) || "127.0.0.1",
         userAgent: req.headers["user-agent"]
       });
 
@@ -38,6 +38,8 @@ export class AnalyticsController {
     } catch (err) {
       next(err);
     }
+  }
+
   /**
    * GET /api/v1/analytics/metered-usage
    */
