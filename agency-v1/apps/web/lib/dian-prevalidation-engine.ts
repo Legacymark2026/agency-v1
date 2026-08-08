@@ -3,6 +3,8 @@
  * Anexo Técnico 1.9 DIAN - Facturación Electrónica UBL 2.1
  */
 
+import crypto from "crypto";
+
 export interface DianPreValidationRulesResult {
     isValid: boolean;
     errorsCount: number;
@@ -31,12 +33,8 @@ export function generateDianCufe(params: {
 }): string {
     const rawString = `${params.numFac}${params.fecFac}${params.horFac}${params.valFac}${params.codImp1}${params.valImp1}${params.codImp2}${params.valImp2}${params.codImp3}${params.valImp3}${params.valTolFac}${params.nitOfe}${params.numAdq}${params.claveTecnica}${params.tipoAmbiente}`;
     
-    // In production, computes SHA-384. Here we simulate a valid 96-char hex CUFE
-    let hash = "";
-    for (let i = 0; i < 96; i++) {
-        hash += "0123456789abcdef"[Math.floor(Math.random() * 16)];
-    }
-    return hash;
+    // Real Cryptographic SHA-384 Hash per DIAN Anexo Técnico 1.9
+    return crypto.createHash("sha384").update(rawString).digest("hex");
 }
 
 export function generateDianQrText(params: {
