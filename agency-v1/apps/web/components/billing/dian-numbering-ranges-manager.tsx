@@ -189,8 +189,8 @@ export function DianNumberingRangesManager() {
                         {ranges.map((r) => (
                             <tr key={r.id} className="hover:bg-slate-900/50 transition-colors">
                                 <td className="p-3.5">
-                                    <div className="font-bold text-white text-sm">{docTypeLabels[r.documentType]}</div>
-                                    <div className="text-teal-400 font-mono font-bold text-xs">Prefijo: {r.prefix}</div>
+                                    <div className="font-bold text-white text-sm">{docTypeLabels[r?.documentType] || r?.documentType || "Factura Electrónica de Venta (FE)"}</div>
+                                    <div className="text-teal-400 font-mono font-bold text-xs">Prefijo: {r?.prefix || "FE"}</div>
                                 </td>
                                 <td className="p-3.5 font-mono text-slate-200 font-bold">{r.resolutionNumber}</td>
                                 <td className="p-3.5 text-center font-mono text-slate-400">

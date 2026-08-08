@@ -90,11 +90,14 @@ export interface DianInvoiceData {
 }
 
 interface DianInvoiceViewerProps {
-    data: DianInvoiceData;
+    data?: DianInvoiceData;
+    invoice?: DianInvoiceData;
     onClose?: () => void;
 }
 
-export function DianInvoiceViewer({ data, onClose }: DianInvoiceViewerProps) {
+export function DianInvoiceViewer({ data: propData, invoice, onClose }: DianInvoiceViewerProps) {
+    const data = propData || invoice || ({} as DianInvoiceData);
+
     const handlePrint = () => {
         window.print();
     };
