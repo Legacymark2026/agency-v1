@@ -30,6 +30,7 @@ import { DianNumberingRangesManager } from "./dian-numbering-ranges-manager";
 import { DianBuyersManager } from "./dian-buyers-manager";
 import { DianProductsServicesManager } from "./dian-products-services-manager";
 import { DianMicroserviceDiagnosticsCard } from "./dian-microservice-diagnostics-card";
+import { DianInvoicingSettings } from "@/components/settings/dian-invoicing-settings";
 
 import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
 
@@ -433,6 +434,14 @@ export function DianElectronicBillingHub() {
                         >
                             Diagnóstico Microservicio ⚡
                         </button>
+                        <button
+                            onClick={() => setActiveTab("SAAS_CONFIG")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "SAAS_CONFIG" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Configuración SaaS & Producción 🚀
+                        </button>
                     </div>
 
                     <div className="relative w-full md:w-72">
@@ -479,6 +488,10 @@ export function DianElectronicBillingHub() {
                 ) : activeTab === "DIAGNOSTICS" ? (
                     <div className="pt-2">
                         <DianMicroserviceDiagnosticsCard />
+                    </div>
+                ) : activeTab === "SAAS_CONFIG" ? (
+                    <div className="pt-2">
+                        <DianInvoicingSettings />
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
