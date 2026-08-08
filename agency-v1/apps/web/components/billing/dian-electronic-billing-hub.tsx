@@ -26,6 +26,9 @@ import { DianWithholdingCalculator } from "./dian-withholding-calculator";
 import { DianTaxParametersManager } from "./dian-tax-parameters-manager";
 import { DianLiveSyncMonitor } from "./dian-live-sync-monitor";
 import { DianTaxAiScannerCard } from "./dian-tax-ai-scanner-card";
+import { DianNumberingRangesManager } from "./dian-numbering-ranges-manager";
+import { DianBuyersManager } from "./dian-buyers-manager";
+import { DianProductsServicesManager } from "./dian-products-services-manager";
 
 import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
 
@@ -390,6 +393,30 @@ export function DianElectronicBillingHub() {
                             Monitor Sincronización TRM/UVT
                         </button>
                         <button
+                            onClick={() => setActiveTab("NUMBERING_RANGES")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "NUMBERING_RANGES" ? "bg-teal-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Rangos de Numeración DIAN
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("BUYERS")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "BUYERS" ? "bg-indigo-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Adquirientes / Compradores
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("PRODUCTS_SERVICES")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "PRODUCTS_SERVICES" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Productos & Servicios
+                        </button>
+                        <button
                             onClick={() => setActiveTab("AI_SCAN")}
                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                                 activeTab === "AI_SCAN" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 animate-pulse" : "text-slate-400 hover:text-white"
@@ -427,6 +454,18 @@ export function DianElectronicBillingHub() {
                 ) : activeTab === "AI_SCAN" ? (
                     <div className="pt-2">
                         <DianTaxAiScannerCard />
+                    </div>
+                ) : activeTab === "NUMBERING_RANGES" ? (
+                    <div className="pt-2">
+                        <DianNumberingRangesManager />
+                    </div>
+                ) : activeTab === "BUYERS" ? (
+                    <div className="pt-2">
+                        <DianBuyersManager />
+                    </div>
+                ) : activeTab === "PRODUCTS_SERVICES" ? (
+                    <div className="pt-2">
+                        <DianProductsServicesManager />
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
