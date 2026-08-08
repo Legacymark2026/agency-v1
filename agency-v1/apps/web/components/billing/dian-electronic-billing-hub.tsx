@@ -29,6 +29,7 @@ import { DianTaxAiScannerCard } from "./dian-tax-ai-scanner-card";
 import { DianNumberingRangesManager } from "./dian-numbering-ranges-manager";
 import { DianBuyersManager } from "./dian-buyers-manager";
 import { DianProductsServicesManager } from "./dian-products-services-manager";
+import { DianMicroserviceDiagnosticsCard } from "./dian-microservice-diagnostics-card";
 
 import { evaluateDianSystemReadiness } from "@/lib/dian-readiness-check";
 
@@ -424,6 +425,14 @@ export function DianElectronicBillingHub() {
                         >
                             Auditor AI DIAN 2026 🤖
                         </button>
+                        <button
+                            onClick={() => setActiveTab("DIAGNOSTICS")}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                activeTab === "DIAGNOSTICS" ? "bg-teal-600 text-white shadow-md" : "text-slate-400 hover:text-white"
+                            }`}
+                        >
+                            Diagnóstico Microservicio ⚡
+                        </button>
                     </div>
 
                     <div className="relative w-full md:w-72">
@@ -466,6 +475,10 @@ export function DianElectronicBillingHub() {
                 ) : activeTab === "PRODUCTS_SERVICES" ? (
                     <div className="pt-2">
                         <DianProductsServicesManager />
+                    </div>
+                ) : activeTab === "DIAGNOSTICS" ? (
+                    <div className="pt-2">
+                        <DianMicroserviceDiagnosticsCard />
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
