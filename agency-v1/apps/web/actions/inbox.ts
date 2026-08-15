@@ -171,14 +171,27 @@ export async function getMessages(conversationId: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
-        const resData = await response.json();
-
-        if (!response.ok) {
-            return { success: false, error: resData.error || "Failed to fetch messages" };
+        let rawMessages: any[] = [];
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
+            if (response.ok) {
+                const resData = await response.json();
+                rawMessages = resData.messages || [];
+            }
+        } catch (gwErr) {
+            console.warn("Gateway fetch messages failed, using Prisma fallback");
         }
 
-        const messagesWithAttachments = (resData.messages || []).map((m: any) => ({
+        // Prisma DB fallback if Gateway did not return messages
+        if (!rawMessages || rawMessages.length === 0) {
+            const { prisma } = await import("@/lib/prisma");
+            rawMessages = await prisma.message.findMany({
+                where: { conversationId },
+                orderBy: { createdAt: 'asc' }
+            });
+        }
+
+        const messagesWithAttachments = rawMessages.map((m: any) => ({
             ...m,
             attachments: m.attachments && m.attachments.length > 0
                 ? m.attachments
@@ -191,6 +204,7 @@ export async function getMessages(conversationId: string) {
         return { success: false, error: "Failed to fetch messages" };
     }
 }
+
 
 export async function markConversationAsRead(conversationId: string) {
     try {

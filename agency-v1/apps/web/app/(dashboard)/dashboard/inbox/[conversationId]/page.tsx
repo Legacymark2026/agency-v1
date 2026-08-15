@@ -72,10 +72,11 @@ export default async function InboxConversationPage({
                 {activeConversation ? (
                     <ChatWindow
                         conversation={activeConversation as any}
-                        messages={messages || []}
+                        messages={(messages && messages.length > 0) ? messages : (activeConversation?.messages || [])}
                         currentUserId={currentUserId}
                     />
                 ) : (
+
                     <EmptyState
                         variant="inbox"
                         title="Conversation not found"
