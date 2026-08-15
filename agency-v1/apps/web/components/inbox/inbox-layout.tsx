@@ -53,7 +53,6 @@ export function InboxLayout({ children, conversationList, leadProfile, currentUs
             >
                 {/* Panel 1: Folders & Filters (Left) */}
                 <div style={{
-                    display: "none",
                     flexDirection: "column",
                     borderRight: "1px solid rgba(30,41,59,0.8)",
                     background: "rgba(8,12,20,0.98)",
@@ -124,7 +123,6 @@ export function InboxLayout({ children, conversationList, leadProfile, currentUs
 
                 {/* Panel 2: Conversation List */}
                 <div style={{
-                    display: "none",
                     flexDirection: "column",
                     width: "360px",
                     flexShrink: 0,
@@ -134,6 +132,7 @@ export function InboxLayout({ children, conversationList, leadProfile, currentUs
                 }} className="hidden md:flex">
                     {conversationList}
                 </div>
+
 
                 {/* Panel 3: Main Chat Area */}
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "rgba(11,15,25,0.95)", position: "relative" }}>
