@@ -210,23 +210,31 @@ export async function getConversationById(conversationId: string) {
             if (!conversation) {
                 const lead = await prisma.lead.findUnique({ where: { id: conversationId } });
                 if (lead) {
-                    conversation = await prisma.conversation.create({
-                        data: {
-                            companyId: lead.companyId || session.user.companyId || 'default-company',
-                            leadId: lead.id,
-                            contactName: lead.name || 'Cliente CRM',
-                            channel: 'WEB_FORM',
-                            status: 'OPEN',
-                            lastMessagePreview: 'Conversación iniciada desde el CRM',
-                        },
-                        include: {
-                            lead: true,
-                            messages: {
-                                take: 50,
-                                orderBy: { createdAt: 'asc' }
+                    let realCompanyId = lead.companyId || session?.user?.companyId;
+                    if (!realCompanyId || realCompanyId === 'default-company') {
+                        const firstCompany = await prisma.company.findFirst({ select: { id: true } });
+                        realCompanyId = firstCompany?.id;
+                    }
+
+                    if (realCompanyId) {
+                        conversation = await prisma.conversation.create({
+                            data: {
+                                companyId: realCompanyId,
+                                leadId: lead.id,
+                                contactName: lead.name || 'Cliente CRM',
+                                channel: 'WEB_FORM',
+                                status: 'OPEN',
+                                lastMessagePreview: 'Conversación iniciada desde el CRM',
+                            },
+                            include: {
+                                lead: true,
+                                messages: {
+                                    take: 50,
+                                    orderBy: { createdAt: 'asc' }
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }
@@ -238,6 +246,7 @@ export async function getConversationById(conversationId: string) {
         return { success: false, error: error.message };
     }
 }
+
 
 
 
@@ -1131,19 +1140,27 @@ export async function getConversationForLead(leadId: string) {
         if (!conversation) {
             const lead = await prisma.lead.findUnique({ where: { id: leadId } });
             if (lead) {
-                const compId = lead.companyId || session.user.companyId;
-                conversation = await prisma.conversation.create({
-                    data: {
-                        companyId: compId || 'default-company',
-                        leadId: lead.id,
-                        contactName: lead.name || 'Cliente CRM',
-                        channel: 'WEB_FORM',
-                        status: 'OPEN',
-                        lastMessagePreview: 'Conversación iniciada desde el CRM',
-                    }
-                });
+                let realCompanyId = lead.companyId || session?.user?.companyId;
+                if (!realCompanyId || realCompanyId === 'default-company') {
+                    const firstCompany = await prisma.company.findFirst({ select: { id: true } });
+                    realCompanyId = firstCompany?.id;
+                }
+
+                if (realCompanyId) {
+                    conversation = await prisma.conversation.create({
+                        data: {
+                            companyId: realCompanyId,
+                            leadId: lead.id,
+                            contactName: lead.name || 'Cliente CRM',
+                            channel: 'WEB_FORM',
+                            status: 'OPEN',
+                            lastMessagePreview: 'Conversación iniciada desde el CRM',
+                        }
+                    });
+                }
             }
         }
+
 
         return conversation?.id || null;
     } catch (error) {
