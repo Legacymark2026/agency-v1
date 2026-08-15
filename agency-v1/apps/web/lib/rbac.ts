@@ -129,6 +129,10 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Video Editor ──────────────────────────────────────
     "/dashboard/tools/video-editor": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/video": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/voice": [
+        UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER,
+        UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER,
+    ],
 
     // ── Preferencias de Notificaciones ────────────────────
     "/dashboard/settings/notifications": [
