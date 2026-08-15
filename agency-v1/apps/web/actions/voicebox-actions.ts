@@ -1,7 +1,7 @@
 'use server';
 
 import { VoiceboxClient } from '@agency/voicebox';
-import { prisma } from '@agency/database';
+import { prisma } from '@/lib/prisma';
 
 const voiceboxClient = new VoiceboxClient();
 
