@@ -129,7 +129,7 @@ export default async function DashboardLayout({
         "/dashboard/users", "/dashboard/roles", "/dashboard/admin/team", "/dashboard/security", "/dashboard/admin/payroll",
         "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses",
         "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/inbox/macros",
-        "/dashboard/settings/audit-logs", "/dashboard/settings/privacy",
+        "/dashboard/settings/audit-logs", "/dashboard/settings/privacy", "/dashboard/booking",
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/video-editor",
         "/dashboard/video", "/dashboard/voice", "/dashboard/admin/hr",
         "/dashboard/affiliate", "/dashboard/affiliate/referrals",

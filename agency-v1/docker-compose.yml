@@ -761,7 +761,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.calendar.rule=PathPrefix(`/api/calendar`) || PathPrefix(`/api/scheduling`)"
+      - "traefik.http.routers.calendar.rule=PathPrefix(`/api/calendar`) || PathPrefix(`/api/scheduling`) || PathPrefix(`/api/booking`)"
       - "traefik.http.routers.calendar.entrypoints=web"
       - "traefik.http.services.calendar.loadbalancer.server.port=4008"
 
