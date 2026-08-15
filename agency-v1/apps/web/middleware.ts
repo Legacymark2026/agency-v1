@@ -59,15 +59,15 @@ export default auth(function middleware(req: NextRequest) {
     // NO hacer NextResponse.next() aquí — eso bypasaría el RBAC.
     // auth() wrapper aplica authorized() antes de llegar a este handler.
     
-    // Si la ruta contiene un locale prefix seguido de dashboard/admin, lo removemos
-    const matchDashboardWithLocale = pathname.match(/^\/(en|es)\/(dashboard|admin)(.*)/);
+    // Si la ruta contiene un locale prefix seguido de dashboard/admin/book, lo removemos
+    const matchDashboardWithLocale = pathname.match(/^\/(en|es)\/(dashboard|admin|book)(.*)/);
     if (matchDashboardWithLocale) {
         const url = req.nextUrl.clone();
         url.pathname = `/${matchDashboardWithLocale[2]}${matchDashboardWithLocale[3]}`;
         return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+    if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin") || pathname.startsWith("/book")) {
         return NextResponse.next({
             request: {
                 headers: requestHeaders,
