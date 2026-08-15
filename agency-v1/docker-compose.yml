@@ -279,7 +279,10 @@ services:
 
   # ── Voicebox AI Studio (TTS, Voice Cloning & STT) ──────────────────────────
   voicebox:
-    image: jamiepine/voicebox:latest
+    build:
+      context: https://github.com/jamiepine/voicebox.git#main
+      dockerfile: Dockerfile
+    image: voicebox-studio:latest
     container_name: agency-v1-voicebox
     restart: unless-stopped
     logging: *default-logging
