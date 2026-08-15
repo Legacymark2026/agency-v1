@@ -208,7 +208,7 @@ export class BookingService {
     // Publish event for notifications (Email/WhatsApp)
     if (eventBus) {
       try {
-        await eventBus.publish("appointment.created", {
+        await (eventBus as any).publish("appointment.created", {
           appointmentId: appointment.id,
           companyId: appointment.companyId,
           customerName: appointment.customerName,
