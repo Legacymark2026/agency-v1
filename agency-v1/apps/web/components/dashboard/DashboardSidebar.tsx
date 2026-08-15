@@ -75,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/admin/marketing/creative-studio", label: "Creative Studio", icon: <Wand2 size={14} />, code: "CRE" },
             { href: "/dashboard/tools/video-editor", label: "Video Editor IA", icon: <Wand2 size={14} />, code: "VED" },
+            { href: "/dashboard/voice", label: "Voice Studio (Voicebox)", icon: <Wand2 size={14} />, code: "VOX" },
             { href: "/dashboard/settings/agents", label: "Agentes IA", icon: <Bot size={14} />, code: "AGT" },
         ],
     },

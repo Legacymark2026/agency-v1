@@ -4,7 +4,11 @@
     "noEmit": false,
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "baseUrl": "./",
+    "paths": {
+      "@agency/voicebox": ["../voicebox/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*"]
 }

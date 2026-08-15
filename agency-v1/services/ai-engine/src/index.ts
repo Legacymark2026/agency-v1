@@ -63,6 +63,21 @@ app.post("/api/agents/:agentId/run", async (req, res) => {
   }
 });
 
+// POST /api/agents/voice/speak — Synthesize Agent Voice output via Voicebox
+import { voiceboxSpeakTool } from "./mcp/voicebox-tool";
+
+app.post("/api/agents/voice/speak", async (req, res) => {
+  try {
+    const { text, profileId, profileName, engine, language, effectsPreset } = req.body;
+    if (!text) return res.status(400).json({ error: "text is required" });
+
+    const result = await voiceboxSpeakTool.execute({ text, profileId, profileName, engine, language, effectsPreset });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // POST /api/agents/triage — Auto-route to best agent (Swarm)
 app.post("/api/agents/triage", async (req, res) => {
   try {

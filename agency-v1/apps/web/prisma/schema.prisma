@@ -4010,3 +4010,45 @@ model CompanyWallet {
 
   @@map("tbl_company_wallets")
 }
+
+model VoiceProfile {
+  id             String         @id @default(uuid())
+  companyId      String         @map("company_id")
+  name           String
+  description    String?
+  language       String         @default("es")
+  engine         String         @default("kokoro")
+  sampleUrl      String         @map("sample_url")
+  effectsConfig  Json?          @map("effects_config")
+  isDefault      Boolean        @default(false) @map("is_default")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  schemaVersion  Int            @default(0) @map("col_schema_version")
+  deletedAt      DateTime?      @map("col_deleted_at")
+
+  voiceCaptures  VoiceCapture[]
+
+  @@index([companyId])
+  @@map("tbl_voice_profiles")
+}
+
+model VoiceCapture {
+  id                String        @id @default(uuid())
+  companyId         String        @map("company_id")
+  userId            String?       @map("user_id")
+  voiceProfileId    String?       @map("voice_profile_id")
+  audioUrl          String        @map("audio_url")
+  rawTranscript     String        @map("raw_transcript")
+  refinedTranscript String        @map("refined_transcript")
+  durationSeconds   Float         @default(0.0) @map("duration_seconds")
+  language          String        @default("es")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  schemaVersion     Int           @default(0) @map("col_schema_version")
+  deletedAt         DateTime?     @map("col_deleted_at")
+
+  voiceProfile      VoiceProfile? @relation(fields: [voiceProfileId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("tbl_voice_captures")
+}

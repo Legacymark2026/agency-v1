@@ -666,4 +666,6 @@ CHECKLIST PRE-RENDER:
 - Formato: Optimizado para plataforma destino
 `;
 
+export { VoiceNarrator, type ScriptNarrativeBlock, type NarrationResult } from './audio/voice-narrator.js';
+
 export default VideoEditorModule;

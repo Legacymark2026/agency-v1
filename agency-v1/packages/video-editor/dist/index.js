@@ -508,4 +508,5 @@ CHECKLIST PRE-RENDER:
 - Transiciones: Narrativa, no decorativa
 - Formato: Optimizado para plataforma destino
 `;
+export { VoiceNarrator } from './audio/voice-narrator.js';
 export default VideoEditorModule;
