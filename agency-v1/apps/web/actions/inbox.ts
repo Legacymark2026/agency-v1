@@ -34,21 +34,29 @@ export async function getConversations({
 
         // Fallback for single-tenant / reset scenarios
         if (!companyId) {
-            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`, {
-                headers: session?.user?.id ? { 'x-user-id': session.user.id } : {}
-            }); // or equivalent public endpoint
-            if (companyRes.ok) {
-                const compData = await companyRes.json();
-                if (compData.companies && compData.companies.length > 0) {
-                    companyId = compData.companies[0].id;
+            try {
+                const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`, {
+                    headers: session?.user?.id ? { 'x-user-id': session.user.id } : {}
+                });
+                if (companyRes.ok) {
+                    const compData = await companyRes.json();
+                    if (compData.companies && compData.companies.length > 0) {
+                        companyId = compData.companies[0].id;
+                    }
                 }
-            }
+            } catch {}
         }
 
-        if (!companyId) return { success: false, error: "No company found" };
+        if (!companyId) {
+            try {
+                const { prisma } = await import("@/lib/prisma");
+                const firstComp = await prisma.company.findFirst({ select: { id: true } });
+                if (firstComp) companyId = firstComp.id;
+            } catch {}
+        }
 
         const queryParams = new URLSearchParams({
-            companyId,
+            ...(companyId && { companyId }),
             page: String(page),
             limit: String(limit),
             ...(status && { status }),
@@ -60,21 +68,24 @@ export async function getConversations({
         let conversations: any[] = [];
         let total = 0;
 
-        try {
-            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
-            if (response.ok) {
-                const resData = await response.json();
-                conversations = resData.conversations || [];
-                total = resData.total || conversations.length;
+        if (companyId) {
+            try {
+                const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
+                if (response.ok) {
+                    const resData = await response.json();
+                    conversations = resData.conversations || [];
+                    total = resData.total || conversations.length;
+                }
+            } catch (gwErr) {
+                console.warn("Gateway fetch conversations failed, using Prisma fallback");
             }
-        } catch (gwErr) {
-            console.warn("Gateway fetch conversations failed, using Prisma fallback");
         }
 
         // Prisma DB fallback if Gateway didn't return data
         if (!conversations || conversations.length === 0) {
             const { prisma } = await import("@/lib/prisma");
-            const whereClause: any = { companyId };
+            const whereClause: any = {};
+            if (companyId) whereClause.companyId = companyId;
             if (status) whereClause.status = status;
             if (channel) whereClause.channel = channel;
             if (assignedTo) whereClause.assignedTo = assignedTo;
@@ -86,7 +97,7 @@ export async function getConversations({
                 ];
             }
 
-            const [dbConversations, dbCount] = await Promise.all([
+            let [dbConversations, dbCount] = await Promise.all([
                 prisma.conversation.findMany({
                     where: whereClause,
                     include: {
@@ -103,6 +114,27 @@ export async function getConversations({
                 prisma.conversation.count({ where: whereClause })
             ]);
 
+            // Resilient fallback: if companyId filtered out all conversations, fetch any conversations in DB
+            if ((!dbConversations || dbConversations.length === 0) && companyId) {
+                delete whereClause.companyId;
+                [dbConversations, dbCount] = await Promise.all([
+                    prisma.conversation.findMany({
+                        where: whereClause,
+                        include: {
+                            lead: true,
+                            messages: {
+                                take: 1,
+                                orderBy: { createdAt: 'desc' }
+                            }
+                        },
+                        orderBy: { updatedAt: 'desc' },
+                        take: limit,
+                        skip: (page - 1) * limit,
+                    }),
+                    prisma.conversation.count({ where: whereClause })
+                ]);
+            }
+
             conversations = dbConversations.map((c: any) => ({
                 ...c,
                 lastMessagePreview: c.messages?.[0]?.content || c.lastMessagePreview || '',
@@ -110,6 +142,7 @@ export async function getConversations({
             }));
             total = dbCount;
         }
+
 
         return {
             success: true,

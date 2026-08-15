@@ -276,7 +276,14 @@ function buildThreads(messages: Message[]): Thread[] {
 interface ThreadViewProps { messages: Message[]; currentUserId?: string; }
 
 export function ThreadView({ messages, currentUserId }: ThreadViewProps) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(messages.map(m => m.id)));
+
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      setExpandedIds(new Set(messages.map(m => m.id)));
+    }
+  }, [messages]);
+
   const threads = buildThreads(messages);
 
   const toggle = (id: string) => setExpandedIds(prev => {
@@ -284,6 +291,15 @@ export function ThreadView({ messages, currentUserId }: ThreadViewProps) {
     next.has(id) ? next.delete(id) : next.add(id);
     return next;
   });
+
+  if (!messages || messages.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', color: D.textMuted, fontFamily: D.mono, fontSize: '12px' }}>
+        <MessageSquare size={24} style={{ marginBottom: '8px', opacity: 0.4 }} />
+        <span>Sin mensajes en esta conversación</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px' }}>
@@ -293,3 +309,4 @@ export function ThreadView({ messages, currentUserId }: ThreadViewProps) {
     </div>
   );
 }
+
