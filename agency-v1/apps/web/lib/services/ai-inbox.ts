@@ -48,7 +48,7 @@ export async function analyzeIncomingMessage(messageContent: string): Promise<In
   }
 }
 
-export async function draftCopilotReply(conversationId: string): Promise<string> {
+export async function draftCopilotReply(conversationId: string, userInstruction?: string): Promise<string> {
     try {
         const activeConversation = await db.conversation.findUnique({
             where: { id: conversationId },
@@ -96,6 +96,7 @@ export async function draftCopilotReply(conversationId: string): Promise<string>
         const prompt = `
             Eres un copiloto de ventas de muy alto nivel para una empresa ultra-profesional.
             Tu objetivo es leer el contexto del cliente y redactar UNA ÚNICA respuesta clara, empática y persuasiva que el agente humano enviará.
+            ${userInstruction ? `SOLICITUD ESPECÍFICA DEL AGENTE: "${userInstruction}"` : ''}
 
             CONTEXTO DEL LEAD:
             - Nombre: ${lead?.name ?? 'Desconocido'}
@@ -111,6 +112,7 @@ export async function draftCopilotReply(conversationId: string): Promise<string>
             3. No incluyas placeholders como "[Tu Nombre]".
             4. DEBES DEVOLVER ÚNICAMENTE EL TEXTO DE LA RESPUESTA LISTO PARA PEGARSE. NADA MÁS.
         `;
+
 
         const result = await model.generateContent({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],

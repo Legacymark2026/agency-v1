@@ -401,13 +401,16 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             setIsRecording(false);
             try {
                 const file = await stopRecordingAndGetFile();
-                setPendingFiles(prev => [...prev, file]);
-                setTimeout(handleSend, 50);
+                const snapshotFiles = [...pendingFiles, file];
+                const snapshotText = newItem.trim();
+                setPendingFiles([]);
+                await _executeSend(snapshotText, snapshotFiles);
             } catch {
                 toast.error('Error al procesar la nota de voz');
             }
             return;
         }
+
 
         // Snapshot state NOW before any async operation to avoid stale closures (BUG-001 fix)
         const snapshotFiles = [...pendingFiles];
@@ -1094,9 +1097,30 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                                 <span className="text-xs text-white font-black uppercase tracking-widest">COPILOT</span>
                             </div>
                             <div className="flex items-center gap-1 pr-2">
-                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={(e) => { e.preventDefault(); toast.success('AI: Resumen copiado al portapapeles'); }}>Resumir Chat</button>
+                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={async (e) => {
+                                    e.preventDefault();
+                                    const id = toast.loading('IA Generando resumen...');
+                                    const res = await draftCopilotServerAction(conversation.id, "Genera un resumen ejecutivo muy breve (max 2 oraciones) de esta conversación.");
+                                    if (res.success && res.draft) {
+                                        navigator.clipboard.writeText(res.draft);
+                                        toast.success('Resumen copiado al portapapeles', { id });
+                                    } else {
+                                        toast.error(res.error || 'Error al resumir', { id });
+                                    }
+                                }}>Resumir Chat</button>
                                 <div className="w-px h-3 bg-white/10"></div>
-                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={(e) => { e.preventDefault(); toast.loading('IA Mejorando tono...', { duration: 1500 }); setTimeout(() => setNewItem('Hola! Excelente día. ¿En qué puedo apoyarte hoy?'), 1500); }}>Mejorar Tono</button>
+                                <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={async (e) => {
+                                    e.preventDefault();
+                                    const textToImprove = newItem.trim() || "Hola, ¿en qué puedo ayudarte hoy?";
+                                    const id = toast.loading('IA Mejorando tono...');
+                                    const res = await draftCopilotServerAction(conversation.id, `Reescribe el siguiente texto con un tono ultra profesional, cálido y persuasivo: "${textToImprove}"`);
+                                    if (res.success && res.draft) {
+                                        setNewItem(res.draft);
+                                        toast.success('Tono mejorado por IA', { id });
+                                    } else {
+                                        toast.error(res.error || 'Error al mejorar tono', { id });
+                                    }
+                                }}>Mejorar Tono</button>
                                 <div className="w-px h-3 bg-white/10"></div>
                                 <button className="text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-all" onClick={async (e) => { 
                                     e.preventDefault(); 
@@ -1109,6 +1133,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                                         toast.error('Error generando borrador', { id });
                                     }
                                 }}>Sugerir Respuesta</button>
+
                             </div>
                         </div>
 

@@ -34,6 +34,9 @@ export async function getRealCopilotSuggestion(query: string) {
 
 export async function processRealChatbotStep(userMessage: string, currentState?: ChatbotState) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const botResponse = processChatbotStep(userMessage, currentState);
         return { success: true, botResponse };
     } catch (error: any) {
@@ -45,12 +48,16 @@ export async function processRealChatbotStep(userMessage: string, currentState?:
 
 export async function translateRealInboxMessage(text: string, targetLang: SupportedLanguage = 'es') {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const translation = translateMessage(text, targetLang);
         return { success: true, translation };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
 }
+
 
 // ── 4. CSAT & NPS RATING ACTION ───────────────────────────────────────────────
 

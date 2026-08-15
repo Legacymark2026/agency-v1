@@ -84,12 +84,12 @@ export function InboxCopilot({ conversationContext, onInsertSuggestion }: InboxC
             // Fallback to demo suggestions below
         }
 
-        // Fallback to curated demo suggestions
-        await new Promise((r) => setTimeout(r, 700));
+        // Fallback to curated suggestions
         setSuggestions(DEMO_SUGGESTIONS[action.label] || [
             `Mensaje generado por IA para: ${action.label}. ${conversationContext.customerName ? `Estimado/a ${conversationContext.customerName}` : "Estimado/a cliente"}, con gusto le atendemos.`,
         ]);
     }, [conversationContext]);
+
 
     const handleInsert = (text: string) => {
         onInsertSuggestion(text);

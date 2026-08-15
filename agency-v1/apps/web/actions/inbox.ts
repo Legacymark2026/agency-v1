@@ -596,13 +596,13 @@ export async function getLeadDetails(leadId: string) {
     }
 }
 
-export async function draftCopilotServerAction(conversationId: string) {
+export async function draftCopilotServerAction(conversationId: string, userInstruction?: string) {
     try {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
         const { draftCopilotReply } = await import("@/lib/services/ai-inbox");
-        const reply = await draftCopilotReply(conversationId);
+        const reply = await draftCopilotReply(conversationId, userInstruction);
 
         return { success: true, draft: reply };
     } catch (error: any) {
@@ -610,6 +610,7 @@ export async function draftCopilotServerAction(conversationId: string) {
         return { success: false, error: error.message };
     }
 }
+
 
 export async function executeMacro(conversationId: string, macroId: string) {
     try {

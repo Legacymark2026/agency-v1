@@ -52,7 +52,11 @@ export async function sendMessage_Advanced(
 ) {
     try {
         const session = await auth();
-        const senderId = session?.user?.id || 'admin-system-user';
+        if (!session?.user?.id) {
+            return { success: false, error: "Unauthorized: User session required" };
+        }
+        const senderId = session.user.id;
+
 
         const { direction = "OUTBOUND", externalId, inReplyToHeader } = options;
 
