@@ -17,7 +17,8 @@ export interface GetConversationsParams {
 }
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
-const FETCH_TIMEOUT_MS = 1500;
+const FETCH_TIMEOUT_MS = 300;
+
 
 async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
@@ -789,14 +790,24 @@ export async function syncMetaConversations() {
 export async function getLeadDetails(leadId: string) {
     try {
         const response = await safeFetch(`${GATEWAY_URL}/api/leads/${leadId}`);
-        if (!response.ok) return null;
-        const resData = await response.json();
-        return resData.lead;
+        if (response.ok) {
+            const resData = await response.json();
+            if (resData.lead) return resData.lead;
+        }
+    } catch {}
+
+    try {
+        const { prisma } = await import("@/lib/prisma");
+        const lead = await prisma.lead.findUnique({
+            where: { id: leadId }
+        });
+        return lead;
     } catch (error) {
-        console.error("Error fetching lead details:", error);
+        console.error("Error fetching lead details fallback:", error);
         return null;
     }
 }
+
 
 export async function draftCopilotServerAction(conversationId: string, userInstruction?: string) {
     try {
