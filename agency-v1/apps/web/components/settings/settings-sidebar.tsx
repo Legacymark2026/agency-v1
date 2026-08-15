@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Shield, Blocks, Bell, Palette, ArrowLeft, Building2, Users, Bot, Wand2, CreditCard, Code2 } from "lucide-react";
+import { User, Shield, Blocks, Bell, Palette, ArrowLeft, Building2, Users, Bot, Wand2, CreditCard, Code2, Sliders } from "lucide-react";
 
 interface NavGroup {
     title: string;
