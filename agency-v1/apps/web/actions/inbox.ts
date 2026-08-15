@@ -1074,3 +1074,39 @@ export async function bulkUpdateConversations(
         return { success: false, error: error.message };
     }
 }
+
+export async function getConversationForLead(leadId: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return null;
+
+        const { prisma } = await import("@/lib/prisma");
+        let conversation = await prisma.conversation.findFirst({
+            where: { leadId },
+            orderBy: { updatedAt: 'desc' }
+        });
+
+        if (!conversation) {
+            const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+            if (lead) {
+                const compId = lead.companyId || session.user.companyId;
+                conversation = await prisma.conversation.create({
+                    data: {
+                        companyId: compId || 'default-company',
+                        leadId: lead.id,
+                        contactName: lead.name || 'Cliente CRM',
+                        channel: 'WEB_FORM',
+                        status: 'OPEN',
+                        lastMessagePreview: 'Conversación iniciada desde el CRM',
+                    }
+                });
+            }
+        }
+
+        return conversation?.id || null;
+    } catch (error) {
+        console.error("Error finding conversation for lead:", error);
+        return null;
+    }
+}
+

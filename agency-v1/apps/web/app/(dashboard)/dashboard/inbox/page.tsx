@@ -1,4 +1,5 @@
-import { getConversations } from "@/actions/inbox";
+import { redirect } from 'next/navigation';
+import { getConversations, getConversationForLead } from "@/actions/inbox";
 import { InboxLayout } from "@/components/inbox/inbox-layout";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageSquare, Info } from "lucide-react";
@@ -9,6 +10,21 @@ import { MetaSyncButton } from "@/components/inbox/meta-sync-button";
 
 export default async function InboxPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const resolvedSearchParams = await searchParams;
+
+    // Direct redirection when opening from CRM or notifications (e.g. ?conversation=123 or ?leadId=456)
+    const targetConvoId = (resolvedSearchParams?.conversation || resolvedSearchParams?.conversationId) as string;
+    if (targetConvoId) {
+        redirect(`/dashboard/inbox/${targetConvoId}`);
+    }
+
+    const targetLeadId = (resolvedSearchParams?.leadId || resolvedSearchParams?.lead) as string;
+    if (targetLeadId) {
+        const convoId = await getConversationForLead(targetLeadId);
+        if (convoId) {
+            redirect(`/dashboard/inbox/${convoId}`);
+        }
+    }
+
     const statusFilter = resolvedSearchParams?.status as string | undefined;
 
     // Fetch conversations
@@ -16,6 +32,7 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
         limit: 50,
         ...(statusFilter && { status: statusFilter }),
     });
+
 
 
 
