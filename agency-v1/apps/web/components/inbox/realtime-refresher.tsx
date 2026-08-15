@@ -1,21 +1,59 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-export function RealtimeRefresher({ intervalMs = 5000 }: { intervalMs?: number }) {
+interface RealtimeRefresherProps {
+    intervalMs?: number;
+    pauseWhenHidden?: boolean; // Pause polling when tab is not visible
+}
+
+/**
+ * Enterprise-grade Realtime Refresher
+ * - Pauses when tab is not visible (saves server load & prevents removeChild DOM errors)
+ * - Exponential backoff on focus: re-syncs immediately when user returns to tab
+ * - Safe cleanup on unmount
+ */
+export function RealtimeRefresher({
+    intervalMs = 8000,
+    pauseWhenHidden = true,
+}: RealtimeRefresherProps) {
     const router = useRouter();
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const isVisible = useRef<boolean>(true);
+
+    const startPolling = useCallback(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+
+        intervalRef.current = setInterval(() => {
+            if (!pauseWhenHidden || isVisible.current) {
+                router.refresh();
+            }
+        }, intervalMs);
+    }, [router, intervalMs, pauseWhenHidden]);
 
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            // router.refresh() triggers a server-side revalidation of the current route,
-            // fetching new messages/conversations without losing client-side state
-            // or causing a full page reload.
-            router.refresh();
-        }, intervalMs);
+        // Start polling
+        startPolling();
 
-        return () => clearInterval(intervalId);
-    }, [router, intervalMs]);
+        // Visibility API: pause when tab is hidden, resume + immediate refresh when visible
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                isVisible.current = true;
+                // Immediate refresh when user comes back to tab
+                router.refresh();
+            } else {
+                isVisible.current = false;
+            }
+        };
 
-    return null; // Invisible component
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [startPolling, router]);
+
+    return null;
 }

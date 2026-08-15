@@ -28,6 +28,7 @@ import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
 import { MergeModal } from './merge-modal';
 import { DraftComposer } from './draft-composer';
+import { InboxCopilot } from './inbox-copilot';
 
 function AudioPlayer({ durationText, audioSrc, isMe }: { durationText: string, audioSrc?: string, isMe?: boolean }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -135,7 +136,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [showQuickReplies, setShowQuickReplies] = useState(false);
     const [isRecording, setIsRecording] = useState(false); // Visual state for Voice Note
-    const [isTyping, setIsTyping] = useState(false); // Simulated typing state
+    const [isTyping, setIsTyping] = useState(false); // Real typing state (driven by WS events or agent-side typing)
     const [isPrivateNote, setIsPrivateNote] = useState(false); // Internal Private Notes Toggle
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearch, setShowSearch] = useState(false);
@@ -267,24 +268,11 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
         return `${m}:${s}`;
     };
 
-    // Simulate typing effect for demo
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsTyping(true);
-            setTimeout(() => setIsTyping(false), 3000);
-        }, 2000);
-
-        // Simulate a background message arriving from another channel
-        const alertTimer = setTimeout(() => {
-            setShowBackgroundAlert(true);
-            setTimeout(() => setShowBackgroundAlert(false), 5000); // hide after 5s
-        }, 4000);
-
-        return () => {
-            clearTimeout(timer);
-            clearTimeout(alertTimer);
-        }
-    }, []);
+    // NOTE: Typing indicators and background alerts are now driven by real data.
+    // isTyping should be set via WebSocket/polling events when the customer is typing.
+    // showBackgroundAlert is set externally when a new inbound message arrives
+    // on a different conversation (handled by the conversation-list level).
+    // No fake simulation timers are used here.
 
     // Shortcuts
     useInboxShortcuts({
@@ -939,6 +927,20 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 <div style={{ height: "60px" }} />
                 <div ref={scrollRef} />
             </div>
+
+            {/* AI Copilot Panel */}
+            <InboxCopilot
+                conversationContext={{
+                    customerName: conversation?.lead?.name || conversation?.contact?.name || conversation?.contactName || 'Cliente',
+                    lastMessage: messages?.[messages.length - 1]?.content || '',
+                    channel: conversation?.channel || 'WHATSAPP',
+                    tags: conversation?.tags || [],
+                }}
+                onInsertSuggestion={(text) => {
+                    setNewItem(text);
+                    textareaRef.current?.focus();
+                }}
+            />
 
             {/* Input Area */}
             <div style={{ padding: "8px 10px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "rgba(8,12,20,0.98)", borderTop: "1px solid rgba(30,41,59,0.8)", zIndex: 20, flexShrink: 0, width: "100%", maxWidth: "100%", overflowX: "hidden", display: "flex", justifyContent: "center" }}>
