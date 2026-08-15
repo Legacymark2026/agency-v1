@@ -34,7 +34,9 @@ export async function getConversations({
 
         // Fallback for single-tenant / reset scenarios
         if (!companyId) {
-            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`); // or equivalent public endpoint
+            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`, {
+                headers: session?.user?.id ? { 'x-user-id': session.user.id } : {}
+            }); // or equivalent public endpoint
             if (companyRes.ok) {
                 const compData = await companyRes.json();
                 if (compData.companies && compData.companies.length > 0) {
@@ -80,6 +82,9 @@ export async function getConversations({
 
 export async function getMessages(conversationId: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
         const resData = await response.json();
 
@@ -103,6 +108,9 @@ export async function getMessages(conversationId: string) {
 
 export async function markConversationAsRead(conversationId: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -762,5 +770,173 @@ export async function deleteConversation(conversationId: string) {
     } catch (error: any) {
         console.error("Error deleting conversation:", error);
         return { success: false, error: error?.message || "Failed to delete conversation" };
+    }
+}
+
+export async function updateConversationAssignment(conversationId: string, agentId: string | null) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assignedTo: agentId })
+        });
+
+        if (!response.ok) {
+            // Prisma fallback
+            const { prisma } = await import('@/lib/prisma');
+            await prisma.conversation.update({
+                where: { id: conversationId },
+                data: { assignedTo: agentId }
+            });
+        }
+
+        revalidatePath('/dashboard/inbox');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error updating assignment:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getAgentList(companyId?: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized', data: [] };
+
+        const resolvedCompanyId = companyId || session.user.companyId;
+        if (!resolvedCompanyId) return { success: false, error: 'No company', data: [] };
+
+        const response = await fetch(`${GATEWAY_URL}/api/admin/agents?companyId=${resolvedCompanyId}`);
+        if (response.ok) {
+            const data = await response.json();
+            return { success: true, data: data.agents || [] };
+        }
+
+        // Prisma fallback
+        const { prisma } = await import('@/lib/prisma');
+        const agents = await prisma.user.findMany({
+            where: { companyId: resolvedCompanyId, isActive: true },
+            select: { id: true, name: true, email: true, image: true, role: true }
+        });
+        return { success: true, data: agents };
+    } catch (error: any) {
+        console.error('Error fetching agents:', error);
+        return { success: false, error: error.message, data: [] };
+    }
+}
+
+export async function markConversationAsSpam(conversationId: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'SPAM', tags: ['SPAM'] })
+        });
+
+        if (!response.ok) {
+            const { prisma } = await import('@/lib/prisma');
+            await prisma.conversation.update({
+                where: { id: conversationId },
+                data: { status: 'SPAM' }
+            });
+        }
+
+        revalidatePath('/dashboard/inbox');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function pinConversation(conversationId: string, pinned: boolean) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const { prisma } = await import('@/lib/prisma');
+        // Store pin state in metadata field
+        const current = await prisma.conversation.findUnique({ where: { id: conversationId }, select: { metadata: true } });
+        const meta = (current?.metadata as any) || {};
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { metadata: { ...meta, pinned, pinnedAt: pinned ? new Date().toISOString() : null } }
+        });
+
+        revalidatePath('/dashboard/inbox');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function saveInternalNote(conversationId: string, content: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+        if (!content?.trim()) return { success: false, error: 'Note content required' };
+
+        // Save as an INTERNAL direction message in the conversation
+        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: content.trim(),
+                direction: 'INTERNAL',
+                senderId: session.user.id,
+                status: 'SENT',
+                type: 'NOTE'
+            })
+        });
+
+        if (!response.ok) {
+            // Prisma fallback
+            const { prisma } = await import('@/lib/prisma');
+            await prisma.message.create({
+                data: {
+                    conversationId,
+                    content: content.trim(),
+                    direction: 'INTERNAL',
+                    senderId: session.user.id,
+                    status: 'SENT',
+                }
+            });
+        }
+
+        revalidatePath(`/dashboard/inbox`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function bulkUpdateConversations(
+    conversationIds: string[],
+    action: 'close' | 'assign' | 'spam' | 'unassign',
+    payload?: { agentId?: string; tag?: string }
+) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+        if (!conversationIds.length) return { success: false, error: 'No conversations selected' };
+
+        const updates: Promise<any>[] = conversationIds.map(id => {
+            if (action === 'close') return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'CLOSED' }) });
+            if (action === 'spam') return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'SPAM' }) });
+            if (action === 'assign' && payload?.agentId) return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedTo: payload.agentId }) });
+            if (action === 'unassign') return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedTo: null }) });
+            return Promise.resolve();
+        });
+
+        await Promise.allSettled(updates);
+        revalidatePath('/dashboard/inbox');
+        return { success: true, count: conversationIds.length };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
 }

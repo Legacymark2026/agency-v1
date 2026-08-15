@@ -13,7 +13,7 @@ async function checkCompanyAccess(companyId: string, userId: string): Promise<bo
             return !!resData.hasAccess;
         }
     } catch {
-        // Fallback gracefully
+        return false; // Deny access on error — never grant access on exception
     }
     return true;
 }
@@ -82,7 +82,10 @@ export async function sendMessage_Advanced(
         if (!conversation) {
             const { prisma } = await import("@/lib/prisma");
             const firstCompany = await prisma.company.findFirst({ select: { id: true } });
-            const companyId = session?.user?.companyId || firstCompany?.id || 'default-company';
+            const companyId = session?.user?.companyId || firstCompany?.id;
+            if (!companyId) {
+                return { success: false, error: 'No company ID found for this user. Please contact support.' };
+            }
             
             conversation = await prisma.conversation.create({
                 data: {

@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { User, Users, UserX } from 'lucide-react';
 import { toast } from 'sonner';
-import { syncMetaConversations } from '@/actions/inbox';
+import { syncMetaConversations, bulkUpdateConversations } from '@/actions/inbox';
 import { SlaBadge } from './sla-badge';
 import { useInboxSocket } from '@/hooks/use-inbox-socket';
 
@@ -90,7 +90,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
     };
 
     // Real-time via socket (falls back to 5s polling automatically)
-    useInboxSocket({ companyId: conversations[0]?.companyId });
+    useInboxSocket({ companyId: conversations[0]?.companyId || (currentUser as any)?.companyId || undefined });
 
     // Filter logic
     const filteredConversations = conversations.filter(convo => {
@@ -111,7 +111,7 @@ export function ConversationList({ conversations, currentUser }: { conversations
         if (folderParam === 'resolved') matchesFolder = convo.status === 'CLOSED';
 
         let matchesTag = true;
-        if (tagParam) matchesTag = (convo.tags as string[])?.includes(tagParam);
+        if (tagParam) matchesTag = (Array.isArray(convo.tags) ? convo.tags : []).some((t: any) => String(t) === tagParam);
 
         return matchesSearch && matchesStatus && matchesTab && matchesChannel && matchesFolder && matchesTag;
     });
@@ -232,6 +232,24 @@ export function ConversationList({ conversations, currentUser }: { conversations
                 {selectionMode && selectedIds.length > 0 && (
                     <div className="bg-teal-500/10 border border-teal-500/30 rounded-lg p-2 flex items-center justify-between">
                         <span className="text-xs font-extrabold text-teal-400 font-mono">{selectedIds.length} seleccionados</span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={async () => {
+                                    const res = await bulkUpdateConversations(selectedIds, 'close') as any;
+                                    if (res?.success) { toast.success(`${res.count} conversaciones cerradas`); setSelectedIds([]); router.refresh(); }
+                                    else toast.error('Error en acción masiva');
+                                }}
+                                className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1 rounded-lg font-semibold transition-all"
+                            >Cerrar Todas</button>
+                            <button
+                                onClick={async () => {
+                                    const res = await bulkUpdateConversations(selectedIds, 'spam') as any;
+                                    if (res?.success) { toast.success(`${res.count} marcadas como spam`); setSelectedIds([]); router.refresh(); }
+                                    else toast.error('Error');
+                                }}
+                                className="text-xs bg-red-900/30 hover:bg-red-800/40 text-red-400 px-3 py-1 rounded-lg font-semibold transition-all"
+                            >Spam</button>
+                        </div>
                     </div>
                 )}
             </div>

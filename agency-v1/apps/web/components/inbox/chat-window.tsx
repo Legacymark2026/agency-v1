@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { sendMessage, updateConversationStatus, draftCopilotServerAction, updateLeadStatusFromInbox, deleteConversation, deleteMessage, markConversationAsRead } from '@/actions/inbox';
+import { sendMessage, updateConversationStatus, draftCopilotServerAction, updateLeadStatusFromInbox, deleteConversation, deleteMessage, markConversationAsRead, markConversationAsSpam, pinConversation } from '@/actions/inbox';
 import { sendMessage_Advanced } from '@/actions/inbox-advanced';
 import { ChannelIcon } from './channel-icon';
 import {
@@ -29,6 +29,9 @@ import { toast } from 'sonner';
 import { MergeModal } from './merge-modal';
 import { DraftComposer } from './draft-composer';
 import { InboxCopilot } from './inbox-copilot';
+import { WhatsappTemplateSelector } from './whatsapp-template-selector';
+import { CsatModal } from './csat-modal';
+
 
 function AudioPlayer({ durationText, audioSrc, isMe }: { durationText: string, audioSrc?: string, isMe?: boolean }) {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -144,6 +147,14 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
     const [showMergeModal, setShowMergeModal] = useState(false);
 
     const [showBackgroundAlert, setShowBackgroundAlert] = useState(false);
+    const [showTemplateAlert, setShowTemplateAlert] = useState(false);
+    const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+    const [showCsatModal, setShowCsatModal] = useState(false);
+
+    const frtDisplay = conversation?.slaConfig?.firstResponseTimeMinutes 
+        ? `${conversation.slaConfig.firstResponseTimeMinutes}m` : '—';
+    const trtDisplay = conversation?.slaConfig?.resolutionTimeHours 
+        ? `${conversation.slaConfig.resolutionTimeHours}h` : '—';
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<BlobPart[]>([]);
 
@@ -501,7 +512,12 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             
             if (result && result.success === false) {
                 console.warn("[Send Message Warning]:", result.error);
-                toast.error(result.error || "No se pudo sincronizar el mensaje.");
+                if ((result as any).requiresTemplate) {
+                    setShowTemplateAlert(true);
+                    toast.warning('⚠️ Ventana de 24h expirada. Usa una Plantilla HSM para recontactar al cliente.', { duration: 6000 });
+                } else {
+                    toast.error(result.error || "No se pudo sincronizar el mensaje.");
+                }
                 setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, status: 'FAILED' } : m));
             } else {
                 setMessages((prev: any) => prev.map((m: any) => m.id === optimisticMsg.id ? { ...m, id: result?.messageId || m.id, status: 'SENT' } : m));
@@ -568,10 +584,10 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                             </span>
                             <span style={{ width: "3px", height: "3px", borderRadius: "50%", background: "#1e293b" }} />
                             <span style={{ fontSize: "10px", color: "#334155", display: "flex", alignItems: "center", gap: "3px", background: "rgba(30,41,59,0.6)", padding: "1px 6px", borderRadius: "6px", fontFamily: "monospace" }}>
-                                <Timer size={9} style={{ color: "#475569" }} /> FRT: 3m
+                                <Timer size={9} style={{ color: "#475569" }} /> FRT: {frtDisplay}
                             </span>
                             <span style={{ fontSize: "10px", color: "#334155", display: "flex", alignItems: "center", gap: "3px", background: "rgba(30,41,59,0.6)", padding: "1px 6px", borderRadius: "6px", fontFamily: "monospace" }}>
-                                <Clock size={9} style={{ color: "#475569" }} /> TRT: 45m
+                                <Clock size={9} style={{ color: "#475569" }} /> TRT: {trtDisplay}
                             </span>
                         </div>
                     </div>
@@ -619,7 +635,11 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={() => toast.info('Opening contact details...')}>View Contact Details</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast.success('Pinned to top')}>Pin to Top</DropdownMenuItem>
+                            <DropdownMenuItem onClick={async () => {
+                                const res = await pinConversation(conversation.id, true) as any;
+                                if (res?.success) toast.success('Conversación fijada al inicio');
+                                else toast.warning('No se pudo fijar');
+                            }}>Pin to Top</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => updateConversationStatus(conversation.id, 'SNOOZED')}>Snooze Conversation</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2 text-teal-600 focus:text-teal-600" onClick={() => toast.success('Transcript exported as PDF')}>
                                 <Download size={14} /> Export Transcript
@@ -627,8 +647,12 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                             <DropdownMenuItem className="gap-2 text-purple-500 focus:text-purple-500" onClick={() => setShowMergeModal(true)}>
                                 <GitMerge size={14} /> Merge Conversation
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-amber-600 focus:text-amber-600" onClick={() => toast.warning('Conversation marked as spam')}>Mark as Spam</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { updateConversationStatus(conversation.id, 'CLOSED'); toast.success('Conversación cerrada'); }}>Close Conversation</DropdownMenuItem>
+                            <DropdownMenuItem className="text-amber-600 focus:text-amber-600" onClick={async () => { 
+                                const res = await markConversationAsSpam(conversation.id) as any;
+                                if (res?.success) toast.success('Conversación marcada como spam');
+                                else toast.warning('No se pudo marcar como spam');
+                            }}>Mark as Spam</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { updateConversationStatus(conversation.id, 'CLOSED'); toast.success('Conversación cerrada'); setTimeout(() => setShowCsatModal(true), 500); }}>Close Conversation</DropdownMenuItem>
                             <DropdownMenuItem className="text-emerald-500 focus:text-emerald-500" onClick={handleCloseDeal}>🏆 Mark as Won Deal</DropdownMenuItem>
                             {isAdmin && (
                                 <>
@@ -964,6 +988,30 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                 }}
             />
 
+            {showTemplateAlert && (
+                <div className="flex items-center justify-between px-4 py-2.5 bg-amber-500/10 border-t border-amber-500/20">
+                    <div className="flex items-center gap-2">
+                        <span className="text-amber-400 text-lg">⚠️</span>
+                        <div>
+                            <p className="text-xs font-bold text-amber-300">Ventana de 24h de WhatsApp expirada</p>
+                            <p className="text-[11px] text-amber-500/80">Usa una Plantilla HSM pre-aprobada para recontactar al cliente.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowTemplateSelector(true)}
+                            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg transition-all"
+                        >
+                            📋 Elegir Plantilla
+                        </button>
+                        <button onClick={() => setShowTemplateAlert(false)} className="text-amber-500 hover:text-amber-300 p-1">
+                            <X size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+
             {/* Input Area */}
             <div style={{ padding: "8px 10px", paddingBottom: "max(12px, env(safe-area-inset-bottom))", background: "rgba(8,12,20,0.98)", borderTop: "1px solid rgba(30,41,59,0.8)", zIndex: 20, flexShrink: 0, width: "100%", maxWidth: "100%", overflowX: "hidden", display: "flex", justifyContent: "center" }}>
                 <div className="flex gap-2 items-end w-full max-w-4xl mx-auto">
@@ -1099,8 +1147,34 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
 
                         {/* Rich Text Toolbar */}
                         <div style={{ display: "flex", paddingBottom: "6px", paddingRight: "4px", gap: "2px", alignItems: "center", borderTop: "1px solid rgba(30,41,59,0.6)", paddingTop: "4px", margin: "0 6px" }}>
-                            <button style={{ height: "22px", width: "22px", background: "none", border: "none", cursor: "pointer", color: "#334155", fontSize: "11px", fontWeight: 800, borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>B</button>
-                            <button style={{ height: "22px", width: "22px", background: "none", border: "none", cursor: "pointer", color: "#334155", fontSize: "11px", fontStyle: "italic", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>I</button>
+                            <button 
+                                onClick={() => {
+                                    if (!textareaRef.current) return;
+                                    const start = textareaRef.current.selectionStart;
+                                    const end = textareaRef.current.selectionEnd;
+                                    const selected = newItem.slice(start, end);
+                                    if (selected) {
+                                        setNewItem(newItem.slice(0, start) + `*${selected}*` + newItem.slice(end));
+                                    } else {
+                                        setNewItem(newItem + '**');
+                                    }
+                                    setTimeout(() => textareaRef.current?.focus(), 0);
+                                }}
+                                style={{ height: "22px", width: "22px", background: "none", border: "none", cursor: "pointer", color: "#334155", fontSize: "11px", fontWeight: 800, borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>B</button>
+                            <button 
+                                onClick={() => {
+                                    if (!textareaRef.current) return;
+                                    const start = textareaRef.current.selectionStart;
+                                    const end = textareaRef.current.selectionEnd;
+                                    const selected = newItem.slice(start, end);
+                                    if (selected) {
+                                        setNewItem(newItem.slice(0, start) + `_${selected}_` + newItem.slice(end));
+                                    } else {
+                                        setNewItem(newItem + '__');
+                                    }
+                                    setTimeout(() => textareaRef.current?.focus(), 0);
+                                }}
+                                style={{ height: "22px", width: "22px", background: "none", border: "none", cursor: "pointer", color: "#334155", fontSize: "11px", fontStyle: "italic", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>I</button>
                             <div style={{ width: "1px", height: "10px", background: "rgba(30,41,59,0.8)", margin: "0 3px" }} />
                             <button
                                 style={{ height: "22px", padding: "0 6px", background: isPrivateNote ? "rgba(234,179,8,0.15)" : "none", border: isPrivateNote ? "1px solid rgba(234,179,8,0.3)" : "none", cursor: "pointer", color: isPrivateNote ? "#fbbf24" : "#334155", fontSize: "10px", fontWeight: 800, borderRadius: "4px", fontFamily: "monospace" }}
@@ -1162,7 +1236,7 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             <DraftComposer
                 conversationId={conversation.id}
                 currentUserId={currentUserId}
-                userRole="admin" /* Using admin to allow all approval features in this phase */
+                userRole={userRole} /* Using admin to allow all approval features in this phase */
                 onDraftApproved={(content) => {
                     setNewItem(content);
                 }}
@@ -1217,9 +1291,44 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     }}
                 />
             )}
+
+            {/* ── WhatsApp Template Selector ───────────────────────── */}
+            {showTemplateSelector && (
+                <WhatsappTemplateSelector
+                    conversationId={conversation.id}
+                    contactName={conversation?.lead?.name || conversation?.contactName}
+                    onClose={() => setShowTemplateSelector(false)}
+                    onSelect={async (template) => {
+                        setShowTemplateSelector(false);
+                        setShowTemplateAlert(false);
+                        toast.loading('Enviando plantilla HSM...', { id: 'tpl-send' });
+                        const result = await sendMessage(conversation.id, `[Template: ${template.name}]`, currentUserId, [], {
+                            name: template.name,
+                            language: template.language,
+                        });
+                        if (result?.success) {
+                            toast.success('Plantilla enviada correctamente', { id: 'tpl-send' });
+                        } else {
+                            toast.error(result?.error || 'Error enviando plantilla', { id: 'tpl-send' });
+                        }
+                    }}
+                />
+            )}
+
+            {/* ── CSAT Modal ───────────────────────────────────────── */}
+            {showCsatModal && (
+                <CsatModal
+                    conversationId={conversation.id}
+                    agentId={currentUserId}
+                    agentName={conversation?.assignee?.name}
+                    contactName={conversation?.lead?.name || conversation?.contactName}
+                    onClose={() => setShowCsatModal(false)}
+                />
+            )}
         </div>
     );
 }
+
 
 function PlusIcon({ size, className }: any) {
     return (

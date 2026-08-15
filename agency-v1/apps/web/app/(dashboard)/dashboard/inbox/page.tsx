@@ -8,10 +8,15 @@ import { SimulationPanel } from "@/components/inbox/simulation-panel";
 import { MetaSyncButton } from "@/components/inbox/meta-sync-button";
 
 export default async function InboxPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
-    // Fetch conversations
+    const resolvedSearchParams = await searchParams;
+    const statusFilter = (resolvedSearchParams?.status as string) || 'OPEN';
+
+    // Fetch conversations — default to OPEN to avoid loading all CLOSED conversations at scale
     const { data: conversations } = await getConversations({
-        limit: 50
+        limit: 50,
+        status: statusFilter,
     });
+
 
     const session = await auth();
     const currentUser = session?.user;

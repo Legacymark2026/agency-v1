@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChannelIcon } from './channel-icon';
 import { toast } from 'sonner';
-import { executeMacro } from '@/actions/inbox';
+import { executeMacro, saveInternalNote, draftCopilotServerAction, getAgentList, updateConversationAssignment } from '@/actions/inbox';
 import { getInboxMacros } from '@/actions/inbox-macros';
 import { convertLeadToDeal } from '@/modules/leads/actions/leads';
 import { addTagToConversation_Advanced, removeTagFromConversation_Advanced } from '@/actions/inbox-advanced';
@@ -38,10 +38,9 @@ const D = {
     mono: "monospace",
 };
 
-export function RightSidebar({ conversation, leadDetails }: { conversation: any, leadDetails?: any }) {
+const AVAILABLE_TAGS = ['Ventas', 'Soporte VIP', 'Dudas', 'URGENTE', 'Urgente', 'Consulta', 'Postventa', 'Demo', 'Onboarding'];
 
-
-    const lead = leadDetails || conversation?.lead || {};
+export function RightSidebar({ conversation, leadDetails }: { conversation: any, leadDetails?: any }) {    const lead = leadDetails || conversation?.lead || {};
     const leadScore = lead.score || 0;
     const temperature = leadScore > 70 ? 'Hot 🔥' : leadScore > 40 ? 'Warm ☀️' : 'Cold 🧊';
     const tempColor = leadScore > 70 ? '#f87171' : leadScore > 40 ? '#fbbf24' : '#60a5fa';
@@ -68,6 +67,16 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
     const [isExecutingMacro, setIsExecutingMacro] = useState<string | null>(null);
     const [macros, setMacros] = useState<any[]>([]);
 
+    const [agents, setAgents] = useState<any[]>([]);
+    
+    useEffect(() => {
+        if (conversation?.companyId) {
+            getAgentList(conversation.companyId).then(res => {
+                if (res.success) setAgents(res.data || []);
+            });
+        }
+    }, [conversation?.companyId]);
+
     useEffect(() => {
         if (conversation?.companyId) {
             getInboxMacros(conversation.companyId).then(res => {
@@ -91,23 +100,41 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
     }, []);
 
     const msgIdRef = useRef(0);
-    const handleCopilotSend = () => {
+    const handleCopilotSend = async () => {
         if (!copilotInput.trim() || isCopilotTyping) return;
         
-        const newMsg = { id: `msg-${++msgIdRef.current}`, role: 'user' as const, content: copilotInput };
+        const userQuery = copilotInput.trim();
+        const newMsg = { id: `msg-${++msgIdRef.current}`, role: 'user' as const, content: userQuery };
         setCopilotMessages(p => [...p, newMsg]);
         setCopilotInput('');
         setIsCopilotTyping(true);
 
-        // Simulate AI thinking and replying
-        setTimeout(() => {
+        try {
+            // Try real AI endpoint first
+            const res = await draftCopilotServerAction(conversation.id, userQuery);
+            if (res.success && res.draft) {
+                setCopilotMessages(p => [...p, {
+                    id: `msg-${++msgIdRef.current}`,
+                    role: 'assistant',
+                    content: res.draft
+                }]);
+            } else {
+                // Fallback: helpful message
+                setCopilotMessages(p => [...p, {
+                    id: `msg-${++msgIdRef.current}`,
+                    role: 'assistant',
+                    content: `Analizando historial de ${lead.name || 'este cliente'}... Puedo ayudarte a redactar respuestas, resumir la conversación o sugerir el siguiente paso. ¿Qué necesitas?`
+                }]);
+            }
+        } catch {
             setCopilotMessages(p => [...p, {
                 id: `msg-${++msgIdRef.current}`,
                 role: 'assistant',
-                content: `Analizando el historial de ${lead.name}... \n\nPuedo sugerirte redactar un correo con el plan Enterprise o marcar este deal como Prioridad Alta. ¿Qué prefieres?`
+                content: 'Error al conectar con el servicio de IA. Intenta de nuevo.'
             }]);
+        } finally {
             setIsCopilotTyping(false);
-        }, 1500);
+        }
     };
 
     if (!conversation) return (
@@ -177,10 +204,27 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-56 z-50">
-                            <div className="px-2 py-1.5 text-xs text-slate-400 font-mono">
-                                La asignación de agentes requiere integración con el backend.
-                            </div>
-                            <DropdownMenuItem className="text-red-600" onClick={() => toast.info('Desasignado')}><X size={12} /> Desasignar</DropdownMenuItem>
+                            {agents.length > 0 ? agents.map((agent: any) => (
+                                <DropdownMenuItem key={agent.id} onClick={async () => {
+                                    const res = await updateConversationAssignment(conversation.id, agent.id) as any;
+                                    if (res?.success) toast.success(`Asignado a ${agent.name}`);
+                                    else toast.error(res?.error || 'Error al asignar');
+                                }}>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white text-[8px] font-bold">
+                                            {agent.name?.substring(0,2).toUpperCase()}
+                                        </div>
+                                        <span className="text-xs">{agent.name}</span>
+                                    </div>
+                                </DropdownMenuItem>
+                            )) : (
+                                <DropdownMenuItem disabled className="text-slate-500 text-xs">Cargando agentes...</DropdownMenuItem>
+                            )}
+                            <div className="h-px bg-slate-800 my-1" />
+                            <DropdownMenuItem className="text-red-600" onClick={async () => {
+                                const res = await updateConversationAssignment(conversation.id, null) as any;
+                                if (res?.success) toast.success('Desasignado');
+                            }}><X size={12} /> Desasignar</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -193,7 +237,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                                 <button style={{ background: "none", border: "none", cursor: "pointer", color: D.teal, padding: "2px" }}><Plus size={12} /></button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                {['Ventas', 'Soporte VIP', 'Dudas', 'URGENTE'].filter(t => !activeTags.includes(t)).map(tag => (
+                                {AVAILABLE_TAGS.filter(t => !activeTags.includes(t)).map(tag => (
                                     <DropdownMenuItem key={tag} onClick={async () => {
                                         const res = await addTagToConversation_Advanced(conversation.id, tag) as any;
                                         if (res?.success) { setActiveTags(prev => [...prev, tag]); toast.success(`Etiqueta: ${tag}`); }
@@ -225,7 +269,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start">
-                                {['Ventas', 'Soporte VIP', 'Dudas', 'URGENTE'].filter(t => !activeTags.includes(t)).map(tag => (
+                                {AVAILABLE_TAGS.filter(t => !activeTags.includes(t)).map(tag => (
                                     <DropdownMenuItem key={tag} onClick={async () => {
                                         const res = await addTagToConversation_Advanced(conversation.id, tag) as any;
                                         if (res?.success) { setActiveTags(prev => [...prev, tag]); toast.success(`Etiqueta: ${tag}`); }
@@ -329,7 +373,7 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                             </div>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                 <span style={{ fontSize: "10px", color: "#10b981", fontFamily: D.mono }}>Total Orders</span>
-                                <span style={{ fontSize: "10px", fontWeight: 800, color: "#34d399", fontFamily: D.mono }}>{lead.score > 0 ? Math.floor(lead.score / 15) : 0}</span>
+                                <span style={{ fontSize: "10px", fontWeight: 800, color: "#34d399", fontFamily: D.mono }}>{lead.totalOrders || lead.ordersCount || '-'}</span>
                             </div>
                         </div>
                     </div>
@@ -435,7 +479,17 @@ export function RightSidebar({ conversation, leadDetails }: { conversation: any,
                         <button
                             style={{ width: "100%", padding: "8px", borderRadius: "8px", border: `1px solid ${D.tealBorder}`, background: noteDraft.trim() ? D.tealBg : "transparent", color: noteDraft.trim() ? D.teal : D.textDim, fontSize: "12px", fontWeight: 800, cursor: noteDraft.trim() ? "pointer" : "not-allowed", fontFamily: D.mono, transition: "all 0.15s" }}
                             disabled={!noteDraft.trim()}
-                            onClick={() => { setSavedNotes(p => [...p, noteDraft]); setNoteDraft(''); toast.success('Note saved'); }}
+                            onClick={async () => {
+                                if (!noteDraft.trim()) return;
+                                const res = await saveInternalNote(conversation.id, noteDraft) as any;
+                                if (res?.success) {
+                                    setSavedNotes(p => [...p, noteDraft]);
+                                    setNoteDraft('');
+                                    toast.success('Nota guardada');
+                                } else {
+                                    toast.error(res?.error || 'Error al guardar nota');
+                                }
+                            }}
                         >
                             Save Note
                         </button>

@@ -1,5 +1,7 @@
 'use server';
 
+import { auth } from '@/lib/auth';
+
 /**
  * apps/web/actions/inbox-enterprise-actions.ts
  * ─────────────────────────────────────────────────────────────────────────────
@@ -18,6 +20,9 @@ import { queueBroadcastCampaign, BroadcastRecipient } from "@/lib/inbox/broadcas
 
 export async function getRealCopilotSuggestion(query: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const suggestion = generateCopilotSuggestion(query);
         return { success: true, suggestion };
     } catch (error: any) {
@@ -51,6 +56,9 @@ export async function translateRealInboxMessage(text: string, targetLang: Suppor
 
 export async function submitRealCsatRating(conversationId: string, agentId: string, score: number, feedbackText?: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const rating: CsatRating = {
             id: `csat-${Date.now()}`,
             conversationId,
@@ -72,6 +80,9 @@ export async function submitRealCsatRating(conversationId: string, agentId: stri
 
 export async function queueRealBroadcastCampaign(templateText: string, recipients: BroadcastRecipient[]) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
         const campaign = queueBroadcastCampaign(templateText, recipients);
         return { success: true, campaign };
     } catch (error: any) {
