@@ -5,6 +5,7 @@ COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/service-auth/package.json ./packages/service-auth/
+COPY packages/voicebox/package.json ./packages/voicebox/
 COPY services/ai-engine/package.json ./services/ai-engine/
 
 RUN npm ci || npm install
@@ -12,6 +13,7 @@ RUN npm ci || npm install
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
 COPY packages/service-auth/ ./packages/service-auth/
+COPY packages/voicebox/ ./packages/voicebox/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
 WORKDIR /app/packages/database
@@ -21,6 +23,8 @@ WORKDIR /app/packages/events
 RUN npx tsc --outDir dist
 WORKDIR /app/packages/service-auth
 RUN npx tsc --outDir dist
+WORKDIR /app/packages/voicebox
+RUN npx tsc -p tsconfig.json --noEmit false
 
 WORKDIR /app
 COPY services/ai-engine/ ./services/ai-engine/
@@ -44,6 +48,8 @@ COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
+COPY --from=builder /app/packages/voicebox/dist ./packages/voicebox/dist
+COPY --from=builder /app/packages/voicebox/package.json ./packages/voicebox/
 COPY --from=builder /app/services/ai-engine/dist ./dist
 COPY --from=builder /app/services/ai-engine/package.json ./
 COPY --from=deps /app/node_modules ./node_modules
