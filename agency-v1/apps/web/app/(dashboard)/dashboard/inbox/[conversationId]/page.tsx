@@ -31,17 +31,22 @@ export default async function InboxConversationPage({
 
 
 
+    let conversationListArray = (conversations as any[]) || [];
+    if (activeConversation && !conversationListArray.some((c: any) => c.id === activeConversation.id)) {
+        conversationListArray = [activeConversation, ...conversationListArray];
+    }
+
     const session = await auth();
     const currentUser = session?.user;
 
     const metrics = {
-        unassigned: conversations?.filter((c: any) => !c.assignedTo).length || 0,
-        mine: conversations?.filter((c: any) => c.assignedTo === currentUser?.id).length || 0,
-        pending: conversations?.filter((c: any) => c.status === 'OPEN').length || 0,
-        resolved: conversations?.filter((c: any) => c.status === 'CLOSED').length || 0,
-        vip: conversations?.filter((c: any) => (c.tags as string[])?.includes('Soporte VIP')).length || 0,
-        sales: conversations?.filter((c: any) => (c.tags as string[])?.includes('Ventas')).length || 0,
-        questions: conversations?.filter((c: any) => (c.tags as string[])?.includes('Dudas')).length || 0,
+        unassigned: conversationListArray.filter((c: any) => !c.assignedTo).length || 0,
+        mine: conversationListArray.filter((c: any) => c.assignedTo === currentUser?.id).length || 0,
+        pending: conversationListArray.filter((c: any) => c.status === 'OPEN').length || 0,
+        resolved: conversationListArray.filter((c: any) => c.status === 'CLOSED').length || 0,
+        vip: conversationListArray.filter((c: any) => (c.tags as string[])?.includes('Soporte VIP')).length || 0,
+        sales: conversationListArray.filter((c: any) => (c.tags as string[])?.includes('Ventas')).length || 0,
+        questions: conversationListArray.filter((c: any) => (c.tags as string[])?.includes('Dudas')).length || 0,
     };
 
     // Fetch Full Lead Intelligence (Phase 4)
@@ -58,8 +63,9 @@ export default async function InboxConversationPage({
             currentUser={currentUser}
             metrics={metrics}
             conversationList={
-                <ConversationList conversations={conversations as any || []} currentUser={currentUser} />
+                <ConversationList conversations={conversationListArray} currentUser={currentUser} />
             }
+
             leadProfile={
                 <div className="h-full bg-slate-50 border-l border-slate-200">
                     <RightSidebar
