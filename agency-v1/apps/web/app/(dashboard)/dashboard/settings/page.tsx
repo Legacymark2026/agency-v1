@@ -6,7 +6,7 @@ import {
     Shield, Globe, Bell, CreditCard, Users, Code2, Palette,
     Plug2, Key, Webhook, AlertTriangle, CheckCircle2, Activity,
     ArrowRight, Zap, Server, TrendingUp, Bot, Wand2, UserCheck,
-    Building2, Sparkles, Sliders
+    Building2, Sparkles, Sliders, FileText, Lock
 } from "lucide-react";
 import { getSettingsOverview, getUsageStats, getIntegrationHealthDashboard } from "@/actions/developer";
 
@@ -32,7 +32,12 @@ const AI_PLATFORM_SECTIONS = [
     { href: "/dashboard/settings/agents", icon: <Bot className="w-5 h-5 text-purple-400" />, label: "Agentes de IA", desc: "Configuración de agentes cognitivos asignados a la empresa" },
     { href: "/dashboard/voice", icon: <Wand2 className="w-5 h-5 text-emerald-400" />, label: "Voice Studio (Voicebox)", desc: "Estudio de voz por IA: clonación, síntesis expresiva y STT Whisper" },
     { href: "/dashboard/settings/inbox/macros", icon: <Sliders className="w-5 h-5 text-amber-400" />, label: "Macros & Atajos de Inbox", desc: "Respuestas automáticas, plantillas y etiquetas de conversación" },
-    { href: "/dashboard/settings/developer", icon: <Code2 className="w-5 h-5 text-sky-400" />, label: "Developer & API Keys", desc: "Claves de API, Webhooks empresariales y registro de auditoría" },
+];
+
+const ENTERPRISE_DEV_SECTIONS = [
+    { href: "/dashboard/settings/developer", icon: <Code2 className="w-5 h-5 text-sky-400" />, label: "Developer & API Keys", desc: "Claves de API de la organización, Webhooks e historial de peticiones" },
+    { href: "/dashboard/settings/audit-logs", icon: <FileText className="w-5 h-5 text-emerald-400" />, label: "Bitácora de Auditoría", desc: "Registro inalterable de actividad, accesos y cambios en la organización" },
+    { href: "/dashboard/settings/privacy", icon: <Lock className="w-5 h-5 text-amber-400" />, label: "Privacidad & Cumplimiento", desc: "Políticas GDPR/Habeas Data, retención de datos y solicitudes de borrado" },
 ];
 
 const STATUS_CFG: Record<string, { cls: string; dot: string; label: string }> = {
@@ -73,9 +78,9 @@ export default function SettingsHubPage() {
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>CENTRO DE CONTROL SaaS MULTI-TENANT</span>
                 </div>
-                <h1 className="text-3xl font-black tracking-tight text-white">Panel de Configuración</h1>
+                <h1 className="text-3xl font-black tracking-tight text-white">Panel de Configuración Global</h1>
                 <p className="text-[var(--ds-text-secondary)] text-sm mt-1">
-                    Gestiona tu perfil personal, la identidad de tu empresa y la infraestructura de Inteligencia Artificial.
+                    Gestiona tu perfil de usuario, los parámetros de tu empresa, los motores de Inteligencia Artificial y las APIs empresariales.
                 </p>
             </div>
 
@@ -227,14 +232,14 @@ export default function SettingsHubPage() {
                     </div>
                 </div>
 
-                {/* CATEGORÍA 3: IA & MOTOR DE PLATAFORMA (Nivel Plataforma & Infraestructura) */}
+                {/* CATEGORÍA 3: IA & CANALES (Nivel Plataforma & Infraestructura) */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
                         <h3 className="text-xs font-mono font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
                             <span>Motor de Inteligencia Artificial & Canales</span>
                         </h3>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold">
-                            SISTEMA & DESARROLLADOR
+                            TECNOLOGÍA IA
                         </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -248,6 +253,32 @@ export default function SettingsHubPage() {
                                     <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
                                 </div>
                                 <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                {/* CATEGORÍA 4: SEGURIDAD ENTERPRISE & DESARROLLADOR */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                        <h3 className="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                            <span>Seguridad Enterprise & Desarrollador</span>
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 font-semibold">
+                            INFRAESTRUCTURA & APIs
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {ENTERPRISE_DEV_SECTIONS.map(s => (
+                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-sky-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                    {s.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                             </Link>
                         ))}
                     </div>

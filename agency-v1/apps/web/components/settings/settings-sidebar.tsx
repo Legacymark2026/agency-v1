@@ -30,12 +30,19 @@ const NAV_GROUPS: NavGroup[] = [
         ]
     },
     {
-        title: "Motor de IA & APIs",
+        title: "Motor de IA & Canales",
         items: [
             { name: "Agentes de IA", href: "/dashboard/settings/agents", icon: Bot },
             { name: "Voice Studio (Voicebox)", href: "/dashboard/voice", icon: Wand2 },
             { name: "Macros de Inbox", href: "/dashboard/settings/inbox/macros", icon: Wand2 },
+        ]
+    },
+    {
+        title: "Seguridad Enterprise & Dev",
+        items: [
             { name: "Developer & API Keys", href: "/dashboard/settings/developer", icon: Code2 },
+            { name: "Bitácora de Auditoría", href: "/dashboard/settings/audit-logs", icon: Shield },
+            { name: "Privacidad & Cumplimiento", href: "/dashboard/settings/privacy", icon: Building2 },
         ]
     }
 ];

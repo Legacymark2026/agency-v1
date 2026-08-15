@@ -139,6 +139,8 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
         UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER,
         UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER,
     ],
+    "/dashboard/settings/audit-logs": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/settings/privacy": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
 
     // ── RRHH / Time Tracking ──────────────────────────────
     "/dashboard/admin/hr": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
