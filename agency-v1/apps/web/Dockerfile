@@ -15,6 +15,7 @@ COPY packages/rbac/package.json ./packages/rbac/
 COPY packages/video-agent/package.json ./packages/video-agent/
 COPY packages/video-editor/package.json ./packages/video-editor/
 COPY packages/video-learning/package.json ./packages/video-learning/
+COPY packages/voicebox/package.json ./packages/voicebox/
 COPY apps/web/package.json ./apps/web/
 
 # Install dependencies
@@ -27,6 +28,7 @@ COPY packages/rbac/ ./packages/rbac/
 COPY packages/video-agent/ ./packages/video-agent/
 COPY packages/video-editor/ ./packages/video-editor/
 COPY packages/video-learning/ ./packages/video-learning/
+COPY packages/voicebox/ ./packages/voicebox/
 
 # Copy web files
 COPY apps/web/ ./apps/web/
@@ -34,6 +36,13 @@ COPY apps/web/ ./apps/web/
 # Generate Prisma client using schema in web app
 WORKDIR /app/apps/web
 RUN npx prisma generate
+
+# Build shared TypeScript packages
+WORKDIR /app/packages/voicebox
+RUN npx tsc -p tsconfig.json --noEmit false
+
+WORKDIR /app/packages/video-editor
+RUN npx tsc -p tsconfig.json --noEmit false
 
 # Build Next.js app using turbo from the root
 WORKDIR /app

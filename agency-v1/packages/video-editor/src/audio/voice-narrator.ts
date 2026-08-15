@@ -1,4 +1,4 @@
-import { VoiceboxClient, type AudioEffectPreset, type TTSEngine, type ParalinguisticTag } from '../../../voicebox/dist/index.js';
+import { VoiceboxClient, type AudioEffectPreset, type TTSEngine, type ParalinguisticTag } from '@agency/voicebox';
 import type { AudioTrack } from '../index.js';
 
 export interface ScriptNarrativeBlock {
