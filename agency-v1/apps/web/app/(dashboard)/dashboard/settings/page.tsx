@@ -6,7 +6,7 @@ import {
     Shield, Globe, Bell, CreditCard, Users, Code2, Palette,
     Plug2, Key, Webhook, AlertTriangle, CheckCircle2, Activity,
     ArrowRight, Zap, Server, TrendingUp, Bot, Wand2, UserCheck,
-    Building2, Sparkles, Sliders, FileText, Lock
+    Building2, Sparkles, Sliders, FileText, Lock, Filter, Layers
 } from "lucide-react";
 import { getSettingsOverview, getUsageStats, getIntegrationHealthDashboard } from "@/actions/developer";
 
@@ -47,11 +47,20 @@ const STATUS_CFG: Record<string, { cls: string; dot: string; label: string }> = 
     UNCONFIGURED: { cls: "text-slate-500", dot: "bg-slate-600", label: "NO CONFIG" },
 };
 
+const CATEGORIES_NAV = [
+    { id: "all", label: "Todas las Secciones", icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: "user", label: "Usuario", icon: <UserCheck className="w-3.5 h-3.5" />, color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+    { id: "org", label: "Organización", icon: <Globe className="w-3.5 h-3.5" />, color: "text-teal-400 border-teal-500/30 bg-teal-500/10" },
+    { id: "ai", label: "IA & Canales", icon: <Bot className="w-3.5 h-3.5" />, color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
+    { id: "dev", label: "Enterprise & APIs", icon: <Code2 className="w-3.5 h-3.5" />, color: "text-sky-400 border-sky-500/30 bg-sky-500/10" },
+];
+
 export default function SettingsHubPage() {
     const [overview, setOverview] = useState<any>(null);
     const [usage, setUsage] = useState<any>(null);
     const [health, setHealth] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState("all");
 
     const load = useCallback(async () => {
         setIsLoading(true);
@@ -71,7 +80,7 @@ export default function SettingsHubPage() {
     const healthyCount = health.filter(h => h.status === "OK").length;
 
     return (
-        <div className="space-y-10 pb-12 max-w-5xl">
+        <div className="space-y-8 pb-12 max-w-5xl">
             {/* Header */}
             <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] text-xs font-mono mb-3 shadow-[var(--ds-shadow-teal)]">
@@ -82,6 +91,29 @@ export default function SettingsHubPage() {
                 <p className="text-[var(--ds-text-secondary)] text-sm mt-1">
                     Gestiona tu perfil de usuario, los parámetros de tu empresa, los motores de Inteligencia Artificial y las APIs empresariales.
                 </p>
+            </div>
+
+            {/* STICKY TOP TAB MENU */}
+            <div className="sticky top-0 z-30 pt-2 pb-3 bg-[var(--ds-bg)]/90 backdrop-blur-md border-b border-[var(--ds-border)]">
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
+                    {CATEGORIES_NAV.map((tab) => {
+                        const isSelected = activeTab === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                                    isSelected
+                                        ? "bg-[var(--ds-teal-dim)] border-[var(--ds-border-glow)] text-white shadow-[var(--ds-shadow-teal)]"
+                                        : "bg-[var(--ds-surface)] border-[var(--ds-border)] text-[var(--ds-text-secondary)] hover:text-white hover:bg-[var(--ds-surface-2)]"
+                                }`}
+                            >
+                                <span className={tab.color || "text-[var(--ds-teal-md)]"}>{tab.icon}</span>
+                                {tab.label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Alerts */}
@@ -181,108 +213,116 @@ export default function SettingsHubPage() {
             {/* Categorized SaaS Navigation */}
             <div className="space-y-8">
                 {/* CATEGORÍA 1: AJUSTES PERSONALES (Nivel Usuario) */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
-                        <h3 className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                            <span>Ajustes Personales de Cuenta</span>
-                        </h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold">
-                            NIVEL USUARIO
-                        </span>
+                {(activeTab === "all" || activeTab === "user") && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                            <h3 className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                                <span>Ajustes Personales de Cuenta</span>
+                            </h3>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold">
+                                NIVEL USUARIO
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {PERSONAL_SECTIONS.map(s => (
+                                <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-blue-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                    <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                        {s.icon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                        <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                                </Link>
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {PERSONAL_SECTIONS.map(s => (
-                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-blue-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
-                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
-                                    {s.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
-                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+                )}
 
                 {/* CATEGORÍA 2: CONFIGURACIÓN DE EMPRESA (Nivel Tenant) */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
-                        <h3 className="text-xs font-mono font-bold text-[var(--ds-teal-md)] uppercase tracking-widest flex items-center gap-2">
-                            <span>Configuración de la Organización</span>
-                        </h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] font-semibold">
-                            NIVEL ORGANIZACIÓN / TENANT
-                        </span>
+                {(activeTab === "all" || activeTab === "org") && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                            <h3 className="text-xs font-mono font-bold text-[var(--ds-teal-md)] uppercase tracking-widest flex items-center gap-2">
+                                <span>Configuración de la Organización</span>
+                            </h3>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] font-semibold">
+                                NIVEL ORGANIZACIÓN / TENANT
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {ORG_SECTIONS.map(s => (
+                                <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                    <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                        {s.icon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                        <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-[var(--ds-teal-md)] group-hover:translate-x-0.5 transition-all shrink-0" />
+                                </Link>
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {ORG_SECTIONS.map(s => (
-                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
-                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
-                                    {s.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
-                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-[var(--ds-teal-md)] group-hover:translate-x-0.5 transition-all shrink-0" />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+                )}
 
                 {/* CATEGORÍA 3: IA & CANALES (Nivel Plataforma & Infraestructura) */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
-                        <h3 className="text-xs font-mono font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
-                            <span>Motor de Inteligencia Artificial & Canales</span>
-                        </h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold">
-                            TECNOLOGÍA IA
-                        </span>
+                {(activeTab === "all" || activeTab === "ai") && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                            <h3 className="text-xs font-mono font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                                <span>Motor de Inteligencia Artificial & Canales</span>
+                            </h3>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold">
+                                TECNOLOGÍA IA
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {AI_PLATFORM_SECTIONS.map(s => (
+                                <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-purple-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                    <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                        {s.icon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                        <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                                </Link>
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {AI_PLATFORM_SECTIONS.map(s => (
-                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-purple-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
-                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
-                                    {s.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
-                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all shrink-0" />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+                )}
 
                 {/* CATEGORÍA 4: SEGURIDAD ENTERPRISE & DESARROLLADOR */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
-                        <h3 className="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
-                            <span>Seguridad Enterprise & Desarrollador</span>
-                        </h3>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 font-semibold">
-                            INFRAESTRUCTURA & APIs
-                        </span>
+                {(activeTab === "all" || activeTab === "dev") && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                            <h3 className="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                                <span>Seguridad Enterprise & Desarrollador</span>
+                            </h3>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 font-semibold">
+                                INFRAESTRUCTURA & APIs
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {ENTERPRISE_DEV_SECTIONS.map(s => (
+                                <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-sky-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                    <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                        {s.icon}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                        <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                    </div>
+                                    <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                                </Link>
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {ENTERPRISE_DEV_SECTIONS.map(s => (
-                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-sky-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
-                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
-                                    {s.icon}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
-                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all shrink-0" />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );
