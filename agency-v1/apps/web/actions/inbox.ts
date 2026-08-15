@@ -57,21 +57,68 @@ export async function getConversations({
             ...(search && { search }),
         });
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
-        const resData = await response.json();
+        let conversations: any[] = [];
+        let total = 0;
 
-        if (!response.ok) {
-            return { success: false, error: resData.error || "Failed to fetch conversations" };
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
+            if (response.ok) {
+                const resData = await response.json();
+                conversations = resData.conversations || [];
+                total = resData.total || conversations.length;
+            }
+        } catch (gwErr) {
+            console.warn("Gateway fetch conversations failed, using Prisma fallback");
+        }
+
+        // Prisma DB fallback if Gateway didn't return data
+        if (!conversations || conversations.length === 0) {
+            const { prisma } = await import("@/lib/prisma");
+            const whereClause: any = { companyId };
+            if (status) whereClause.status = status;
+            if (channel) whereClause.channel = channel;
+            if (assignedTo) whereClause.assignedTo = assignedTo;
+            if (search) {
+                whereClause.OR = [
+                    { contactName: { contains: search, mode: 'insensitive' } },
+                    { lastMessagePreview: { contains: search, mode: 'insensitive' } },
+                    { lead: { name: { contains: search, mode: 'insensitive' } } },
+                ];
+            }
+
+            const [dbConversations, dbCount] = await Promise.all([
+                prisma.conversation.findMany({
+                    where: whereClause,
+                    include: {
+                        lead: true,
+                        messages: {
+                            take: 1,
+                            orderBy: { createdAt: 'desc' }
+                        }
+                    },
+                    orderBy: { updatedAt: 'desc' },
+                    take: limit,
+                    skip: (page - 1) * limit,
+                }),
+                prisma.conversation.count({ where: whereClause })
+            ]);
+
+            conversations = dbConversations.map((c: any) => ({
+                ...c,
+                lastMessagePreview: c.messages?.[0]?.content || c.lastMessagePreview || '',
+                unreadCount: c.unreadCount || 0,
+            }));
+            total = dbCount;
         }
 
         return {
             success: true,
-            data: resData.conversations,
+            data: conversations,
             pagination: {
-                total: resData.total,
+                total,
                 page,
                 limit,
-                totalPages: Math.ceil(resData.total / limit)
+                totalPages: Math.ceil(total / limit) || 1
             }
         };
     } catch (error) {
@@ -79,6 +126,45 @@ export async function getConversations({
         return { success: false, error: "Failed to fetch conversations" };
     }
 }
+
+export async function getConversationById(conversationId: string) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+
+        let conversation: any = null;
+        try {
+            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+            if (response.ok) {
+                const resData = await response.json();
+                conversation = resData.conversation;
+            }
+        } catch (gwErr) {
+            console.warn("Gateway fetch conversation failed, using Prisma fallback");
+        }
+
+        if (!conversation) {
+            const { prisma } = await import("@/lib/prisma");
+            conversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                include: {
+                    lead: true,
+                    messages: {
+                        take: 50,
+                        orderBy: { createdAt: 'asc' }
+                    }
+                }
+            });
+        }
+
+        if (!conversation) return { success: false, error: "Conversation not found" };
+        return { success: true, data: conversation };
+    } catch (error: any) {
+        console.error("Error fetching conversation by ID:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 
 export async function getMessages(conversationId: string) {
     try {

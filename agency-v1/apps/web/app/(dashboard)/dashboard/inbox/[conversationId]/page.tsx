@@ -18,9 +18,17 @@ export default async function InboxConversationPage({
     const { data: conversations } = await getConversations({ limit: 50 });
 
     // Fetch active conversation details & messages
-    const activeConversation = conversations?.find((c: any) => c.id === conversationId);
+    let activeConversation = conversations?.find((c: any) => c.id === conversationId);
+    if (!activeConversation) {
+        const { getConversationById } = await import("@/actions/inbox");
+        const singleRes = await getConversationById(conversationId);
+        if (singleRes.success) {
+            activeConversation = singleRes.data;
+        }
+    }
 
     const { data: messages } = await getMessages(conversationId);
+
 
     const session = await auth();
     const currentUser = session?.user;

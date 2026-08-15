@@ -9,13 +9,14 @@ import { MetaSyncButton } from "@/components/inbox/meta-sync-button";
 
 export default async function InboxPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const resolvedSearchParams = await searchParams;
-    const statusFilter = (resolvedSearchParams?.status as string) || 'OPEN';
+    const statusFilter = resolvedSearchParams?.status as string | undefined;
 
-    // Fetch conversations — default to OPEN to avoid loading all CLOSED conversations at scale
+    // Fetch conversations
     const { data: conversations } = await getConversations({
         limit: 50,
-        status: statusFilter,
+        ...(statusFilter && { status: statusFilter }),
     });
+
 
 
     const session = await auth();
