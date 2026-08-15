@@ -22,12 +22,68 @@ export default async function InboxConversationPage({
     if (!activeConversation) {
         const { getConversationById } = await import("@/actions/inbox");
         const singleRes = await getConversationById(conversationId);
-        if (singleRes.success) {
+        if (singleRes.success && singleRes.data) {
             activeConversation = singleRes.data;
         }
     }
 
+    // Direct server-side Prisma fallback to ensure 100% resolution for any conversation ID or Lead ID
+    if (!activeConversation) {
+        try {
+            const { prisma } = await import("@/lib/prisma");
+
+            // 1. Search by Conversation ID
+            activeConversation = await prisma.conversation.findUnique({
+                where: { id: conversationId },
+                include: {
+                    lead: true,
+                    messages: { take: 50, orderBy: { createdAt: 'asc' } }
+                }
+            });
+
+            // 2. Search by Lead ID
+            if (!activeConversation) {
+                activeConversation = await prisma.conversation.findFirst({
+                    where: { leadId: conversationId },
+                    include: {
+                        lead: true,
+                        messages: { take: 50, orderBy: { createdAt: 'asc' } }
+                    },
+                    orderBy: { updatedAt: 'desc' }
+                });
+            }
+
+            // 3. Auto-create for Lead if Lead exists in CRM
+            if (!activeConversation) {
+                const lead = await prisma.lead.findUnique({ where: { id: conversationId } });
+                if (lead) {
+                    const firstCompany = await prisma.company.findFirst({ select: { id: true } });
+                    const compId = lead.companyId || firstCompany?.id;
+                    if (compId) {
+                        activeConversation = await prisma.conversation.create({
+                            data: {
+                                companyId: compId,
+                                leadId: lead.id,
+                                contactName: lead.name || 'Cliente CRM',
+                                channel: 'WEB_FORM',
+                                status: 'OPEN',
+                                lastMessagePreview: 'Conversación iniciada desde el CRM',
+                            },
+                            include: {
+                                lead: true,
+                                messages: { take: 50, orderBy: { createdAt: 'asc' } }
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (dbErr) {
+            console.error("[Inbox Page] Server-side Prisma fallback error:", dbErr);
+        }
+    }
+
     const { data: messages } = await getMessages(activeConversation?.id || conversationId);
+
 
 
 
