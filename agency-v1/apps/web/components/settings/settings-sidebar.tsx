@@ -41,6 +41,7 @@ const NAV_GROUPS: NavGroup[] = [
         title: "Seguridad Enterprise & Dev",
         items: [
             { name: "Developer & API Keys", href: "/dashboard/settings/developer", icon: Code2 },
+            { name: "Parámetros del Sistema (CRUD)", href: "/dashboard/settings/system-parameters", icon: Sliders },
             { name: "Bitácora de Auditoría", href: "/dashboard/settings/audit-logs", icon: Shield },
             { name: "Privacidad & Cumplimiento", href: "/dashboard/settings/privacy", icon: Building2 },
         ]
