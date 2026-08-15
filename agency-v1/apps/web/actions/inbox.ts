@@ -178,6 +178,8 @@ export async function getConversationById(conversationId: string) {
 
         if (!conversation) {
             const { prisma } = await import("@/lib/prisma");
+
+            // Stage 1: Lookup by Conversation ID
             conversation = await prisma.conversation.findUnique({
                 where: { id: conversationId },
                 include: {
@@ -188,6 +190,45 @@ export async function getConversationById(conversationId: string) {
                     }
                 }
             });
+
+            // Stage 2: Lookup by Lead ID (when navigating from CRM with Lead UUID)
+            if (!conversation) {
+                conversation = await prisma.conversation.findFirst({
+                    where: { leadId: conversationId },
+                    include: {
+                        lead: true,
+                        messages: {
+                            take: 50,
+                            orderBy: { createdAt: 'asc' }
+                        }
+                    },
+                    orderBy: { updatedAt: 'desc' }
+                });
+            }
+
+            // Stage 3: Auto-create conversation if Lead exists but has no active conversation
+            if (!conversation) {
+                const lead = await prisma.lead.findUnique({ where: { id: conversationId } });
+                if (lead) {
+                    conversation = await prisma.conversation.create({
+                        data: {
+                            companyId: lead.companyId || session.user.companyId || 'default-company',
+                            leadId: lead.id,
+                            contactName: lead.name || 'Cliente CRM',
+                            channel: 'WEB_FORM',
+                            status: 'OPEN',
+                            lastMessagePreview: 'Conversación iniciada desde el CRM',
+                        },
+                        include: {
+                            lead: true,
+                            messages: {
+                                take: 50,
+                                orderBy: { createdAt: 'asc' }
+                            }
+                        }
+                    });
+                }
+            }
         }
 
         if (!conversation) return { success: false, error: "Conversation not found" };
@@ -197,6 +238,7 @@ export async function getConversationById(conversationId: string) {
         return { success: false, error: error.message };
     }
 }
+
 
 
 export async function getMessages(conversationId: string) {

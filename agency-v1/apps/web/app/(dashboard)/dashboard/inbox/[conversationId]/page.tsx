@@ -27,7 +27,8 @@ export default async function InboxConversationPage({
         }
     }
 
-    const { data: messages } = await getMessages(conversationId);
+    const { data: messages } = await getMessages(activeConversation?.id || conversationId);
+
 
 
     const session = await auth();
