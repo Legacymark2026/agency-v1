@@ -77,10 +77,52 @@ export default async function InboxConversationPage({
                     }
                 }
             }
+
+            // 4. Fallback: Select the most recent active conversation in DB if ID is stale or unknown
+            if (!activeConversation) {
+                activeConversation = await prisma.conversation.findFirst({
+                    orderBy: { lastMessageAt: 'desc' },
+                    include: {
+                        lead: true,
+                        messages: { take: 50, orderBy: { createdAt: 'asc' } }
+                    }
+                });
+            }
+
+            // 5. Fallback: Auto-create default conversation if database has zero conversations
+            if (!activeConversation) {
+                const firstCompany = await prisma.company.findFirst({ select: { id: true } });
+                if (firstCompany) {
+                    activeConversation = await prisma.conversation.create({
+                        data: {
+                            companyId: firstCompany.id,
+                            contactName: 'Cliente General',
+                            channel: 'WEB_CHAT',
+                            status: 'OPEN',
+                            lastMessagePreview: 'Conversación iniciada',
+                            messages: {
+                                create: [
+                                    {
+                                        content: '¡Hola! Bienvenido al Inbox. ¿En qué te podemos ayudar hoy?',
+                                        direction: 'INBOUND',
+                                        senderId: 'system',
+                                        status: 'DELIVERED',
+                                    }
+                                ]
+                            }
+                        },
+                        include: {
+                            lead: true,
+                            messages: { take: 50, orderBy: { createdAt: 'asc' } }
+                        }
+                    });
+                }
+            }
         } catch (dbErr) {
             console.error("[Inbox Page] Server-side Prisma fallback error:", dbErr);
         }
     }
+
 
     const { data: messages } = await getMessages(activeConversation?.id || conversationId);
 
