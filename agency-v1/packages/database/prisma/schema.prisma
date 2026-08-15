@@ -4113,20 +4113,22 @@ model Payout {
 }
 
 model BookingType {
-  id              String         @id @default(uuid())
-  companyId       String         @map("company_id")
-  name            String
-  slug            String
-  description     String?
-  durationMinutes Int            @default(30) @map("duration_minutes")
-  bufferMinutes   Int            @default(10) @map("buffer_minutes")
-  price           Float          @default(0.0)
-  currency        String         @default("USD")
-  locationType    String         @default("google_meet") @map("location_type")
-  color           String         @default("#0d9488")
-  isActive        Boolean        @default(true) @map("is_active")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  id                 String         @id @default(uuid())
+  companyId          String         @map("company_id")
+  name               String
+  slug               String
+  description        String?
+  durationMinutes    Int            @default(30) @map("duration_minutes")
+  bufferMinutes      Int            @default(10) @map("buffer_minutes")
+  price              Float          @default(0.0)
+  currency           String         @default("USD")
+  locationType       String         @default("google_meet") @map("location_type")
+  color              String         @default("#0d9488")
+  assignmentStrategy String         @default("ROUND_ROBIN") @map("assignment_strategy")
+  requiresPayment    Boolean        @default(false) @map("requires_payment")
+  isActive           Boolean        @default(true) @map("is_active")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
 
   appointments    Appointment[]
 
@@ -4152,20 +4154,23 @@ model AvailabilityRule {
 }
 
 model Appointment {
-  id            String       @id @default(uuid())
-  companyId     String       @map("company_id")
-  bookingTypeId String       @map("booking_type_id")
-  customerName  String       @map("customer_name")
-  customerEmail String       @map("customer_email")
-  customerPhone String?      @map("customer_phone")
-  startTime     DateTime     @map("start_time")
-  endTime       DateTime     @map("end_time")
-  status        String       @default("CONFIRMED") @map("status")
-  meetingUrl    String?      @map("meeting_url")
-  notes         String?
-  assignedTo    String?      @map("assigned_to")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  id              String       @id @default(uuid())
+  companyId       String       @map("company_id")
+  bookingTypeId   String       @map("booking_type_id")
+  customerName    String       @map("customer_name")
+  customerEmail   String       @map("customer_email")
+  customerPhone   String?      @map("customer_phone")
+  startTime       DateTime     @map("start_time")
+  endTime         DateTime     @map("end_time")
+  status          String       @default("CONFIRMED") @map("status")
+  meetingUrl      String?      @map("meeting_url")
+  notes           String?
+  assignedTo      String?      @map("assigned_to")
+  leadId          String?      @map("lead_id")
+  paymentStatus   String       @default("FREE") @map("payment_status")
+  stripeSessionId String?      @map("stripe_session_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
 
   bookingType   BookingType  @relation(fields: [bookingTypeId], references: [id], onDelete: Cascade)
 
@@ -4173,6 +4178,7 @@ model Appointment {
   @@index([bookingTypeId])
   @@index([startTime])
   @@index([status])
+  @@index([leadId])
   @@map("tbl_appointments")
 }
 

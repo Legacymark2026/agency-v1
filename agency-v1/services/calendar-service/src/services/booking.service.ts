@@ -20,6 +20,8 @@ export interface CreateBookingTypeInput {
   currency?: string;
   locationType?: string;
   color?: string;
+  assignmentStrategy?: string;
+  requiresPayment?: boolean;
 }
 
 export interface CreateAppointmentInput {
@@ -62,6 +64,8 @@ export class BookingService {
         currency: input.currency || "USD",
         locationType: input.locationType || "google_meet",
         color: input.color || "#0d9488",
+        assignmentStrategy: input.assignmentStrategy || "ROUND_ROBIN",
+        requiresPayment: input.requiresPayment || false,
       },
       update: {
         name: input.name,
@@ -71,6 +75,8 @@ export class BookingService {
         price: input.price,
         locationType: input.locationType,
         color: input.color,
+        assignmentStrategy: input.assignmentStrategy,
+        requiresPayment: input.requiresPayment,
       },
     });
   }
@@ -95,12 +101,10 @@ export class BookingService {
       where: { companyId, dayOfWeek, isActive: true },
     });
 
-    // Default working hours if no custom rule exists (Mon-Fri 09:00 - 17:00)
     let startHour = 9;
     let endHour = 17;
 
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      // Weekend closed by default unless rules specify
       if (rules.length === 0) return [];
     }
 
@@ -155,7 +159,7 @@ export class BookingService {
   }
 
   /**
-   * Book an appointment with validation
+   * Book an appointment with CRM Lead Auto-Sync & Notifications
    */
   static async createAppointment(input: CreateAppointmentInput) {
     const bookingType = await (prisma as any).bookingType.findUnique({
@@ -184,6 +188,39 @@ export class BookingService {
       throw new Error("El horario seleccionado ya no está disponible.");
     }
 
+    // CRM Lead Auto-Sync
+    let leadId: string | null = null;
+    try {
+      const existingLead = await (prisma as any).lead.findFirst({
+        where: { companyId: input.companyId, email: input.customerEmail },
+      });
+
+      if (existingLead) {
+        leadId = existingLead.id;
+        await (prisma as any).lead.update({
+          where: { id: existingLead.id },
+          data: {
+            status: "MEETING_SCHEDULED",
+            notes: `[Agendamiento] Cita para el ${startTime.toISOString()}. Notas: ${input.notes || "Sin notas"}`,
+          },
+        });
+      } else {
+        const newLead = await (prisma as any).lead.create({
+          data: {
+            companyId: input.companyId,
+            email: input.customerEmail,
+            name: input.customerName,
+            status: "MEETING_SCHEDULED",
+            source: "BOOKING_PAGE",
+            notes: `Cita agendada para el ${startTime.toISOString()}`,
+          },
+        });
+        leadId = newLead.id;
+      }
+    } catch (err) {
+      console.warn("Could not sync lead in booking.service", err);
+    }
+
     const meetId = Math.random().toString(36).substring(2, 7) + "-" + Math.random().toString(36).substring(2, 6);
     const meetingUrl = `https://meet.google.com/${meetId}`;
 
@@ -199,13 +236,15 @@ export class BookingService {
         meetingUrl,
         notes: input.notes,
         status: "CONFIRMED",
+        leadId,
+        paymentStatus: bookingType.requiresPayment ? "PENDING_PAYMENT" : "FREE",
       },
       include: {
         bookingType: true,
       },
     });
 
-    // Publish event for notifications (Email/WhatsApp)
+    // Publish event for WhatsApp / Email notifications
     if (eventBus) {
       try {
         await (eventBus as any).publish("appointment.created", {
@@ -213,8 +252,10 @@ export class BookingService {
           companyId: appointment.companyId,
           customerName: appointment.customerName,
           customerEmail: appointment.customerEmail,
+          customerPhone: appointment.customerPhone,
           startTime: appointment.startTime,
           meetingUrl: appointment.meetingUrl,
+          leadId: appointment.leadId,
         });
       } catch (err) {
         console.warn("Failed to publish appointment.created event", err);
