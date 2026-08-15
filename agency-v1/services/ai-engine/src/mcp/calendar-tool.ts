@@ -38,7 +38,7 @@ export const calendarGetSlotsTool = {
       const url = `${CALENDAR_SERVICE_URL}/api/v1/booking/slots?companyId=${companyId}&bookingTypeId=${input.bookingTypeId}&date=${date}`;
 
       const res = await fetch(url);
-      const json = await res.json();
+      const json = (await res.json()) as any;
 
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Error al consultar disponibilidad de horarios");
@@ -96,7 +96,7 @@ export const calendarBookAppointmentTool = {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...input, companyId }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as any;
 
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Error al agendar cita");
