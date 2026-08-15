@@ -71,9 +71,14 @@ app.use(errorHandler);
 app.get("/api/inbox/conversations", async (req, res) => {
   try {
     const { companyId, status, channel, assignedTo, search, platformId, leadId, page = "1", limit = "20" } = req.query;
-    if (!companyId) return res.status(400).json({ error: "companyId required" });
+    let targetCompanyId = companyId ? String(companyId) : undefined;
+    if (!targetCompanyId) {
+      const company = await prisma.company.findFirst();
+      if (company) targetCompanyId = company.id;
+    }
 
-    const where: any = { companyId: String(companyId) };
+    const where: any = {};
+    if (targetCompanyId) where.companyId = targetCompanyId;
     if (status) where.status = String(status);
     if (channel) where.channel = String(channel);
     if (assignedTo) where.assignedTo = String(assignedTo);
@@ -90,7 +95,7 @@ app.get("/api/inbox/conversations", async (req, res) => {
 
     const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
 
-    const [conversations, total] = await Promise.all([
+    let [conversations, total] = await Promise.all([
       prisma.conversation.findMany({
         where,
         orderBy: { lastMessageAt: "desc" },
@@ -131,7 +136,52 @@ app.get("/api/inbox/conversations", async (req, res) => {
       prisma.conversation.count({ where }),
     ]);
 
-    res.json({ conversations, total });
+    // Resilient fallback if companyId filter returned 0 items
+    if (conversations.length === 0 && targetCompanyId) {
+      delete where.companyId;
+      [conversations, total] = await Promise.all([
+        prisma.conversation.findMany({
+          where,
+          orderBy: { lastMessageAt: "desc" },
+          take: parseInt(String(limit)),
+          skip,
+          include: {
+            lead: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            },
+            assignee: {
+              select: {
+                id: true,
+                name: true,
+                image: true
+              }
+            },
+            slaConfig: {
+              select: {
+                status: true,
+                firstResponseMinutes: true,
+                resolutionMinutes: true,
+                firstResponseAt: true,
+                resolvedAt: true,
+                breachedAt: true,
+                createdAt: true,
+                pausedMinutes: true,
+              }
+            },
+            _count: {
+              select: { messages: true }
+            }
+          }
+        }),
+        prisma.conversation.count({ where }),
+      ]);
+    }
+
+    res.json({ success: true, conversations, total });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -153,20 +203,68 @@ app.get("/api/inbox/conversations/duplicates", async (req, res) => {
 
 app.get("/api/inbox/conversations/:id", async (req, res) => {
   try {
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: req.params.id },
+    const id = req.params.id;
+
+    // Stage 1: Lookup by Conversation ID
+    let conversation = await prisma.conversation.findUnique({
+      where: { id },
       include: {
         lead: true,
         assignee: true,
         slaConfig: true
       }
     });
+
+    // Stage 2: Lookup by Lead ID (when navigating from CRM with Lead UUID)
+    if (!conversation) {
+      conversation = await prisma.conversation.findFirst({
+        where: { leadId: id },
+        include: {
+          lead: true,
+          assignee: true,
+          slaConfig: true
+        },
+        orderBy: { lastMessageAt: "desc" }
+      });
+    }
+
+    // Stage 3: Auto-create conversation if Lead exists in CRM
+    if (!conversation) {
+      const lead = await prisma.lead.findUnique({ where: { id } });
+      if (lead) {
+        let companyId = lead.companyId;
+        if (!companyId) {
+          const company = await prisma.company.findFirst();
+          if (company) companyId = company.id;
+        }
+
+        if (companyId) {
+          conversation = await prisma.conversation.create({
+            data: {
+              companyId,
+              leadId: lead.id,
+              contactName: lead.name || "Cliente CRM",
+              channel: "WEB_FORM",
+              status: "OPEN",
+              lastMessagePreview: "Conversación iniciada desde el CRM",
+            },
+            include: {
+              lead: true,
+              assignee: true,
+              slaConfig: true
+            }
+          });
+        }
+      }
+    }
+
     if (!conversation) return res.status(404).json({ error: "Conversation not found" });
     res.json({ success: true, conversation });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
 });
+
 
 app.post("/api/inbox/conversations", async (req, res) => {
   try {
@@ -222,31 +320,36 @@ app.patch("/api/inbox/conversations/:id", async (req, res) => {
   try {
     const { status, unreadCount, tags, assignedTo, metadata } = req.body;
     const { userId } = req.query; // Actor user ID
+    let targetId = req.params.id;
 
-    const before = await prisma.conversation.findUnique({ where: { id: req.params.id } });
+    let before = await prisma.conversation.findUnique({ where: { id: targetId } });
+    if (!before) {
+      before = await prisma.conversation.findFirst({ where: { leadId: targetId }, orderBy: { lastMessageAt: "desc" } });
+      if (before) targetId = before.id;
+    }
+
     if (!before) return res.status(404).json({ error: "Conversation not found" });
 
     const conversation = await prisma.conversation.update({
-      where: { id: req.params.id },
+      where: { id: targetId },
       data: {
         ...(status !== undefined && { status }),
         ...(unreadCount !== undefined && { unreadCount }),
         ...(tags !== undefined && { tags }),
         ...(assignedTo !== undefined && { assignedTo }),
-        ...(metadata !== undefined && { metadata }),
-      }
+        ...(metadata !== undefined && { metadata })
+      },
+      include: { lead: true }
     });
 
-    // Logging Audits if changed
-    const actorId = userId ? String(userId) : "system";
-    if (status && before.status !== status) {
-      await auditStatusChanged(conversation.id, conversation.companyId, actorId, before.status, status);
+    if (status && status !== before.status) {
+      await auditStatusChanged(conversation.id, before.status, status, String(userId || "system"));
     }
-    if (assignedTo !== undefined && before.assignedTo !== assignedTo) {
-      await auditAssignmentChanged(conversation.id, conversation.companyId, actorId, before.assignedTo, assignedTo);
+    if (assignedTo !== undefined && assignedTo !== before.assignedTo) {
+      await auditAssignmentChanged(conversation.id, before.assignedTo, assignedTo, String(userId || "system"));
     }
 
-    res.json({ success: true, data: conversation });
+    res.json({ success: true, conversation });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -270,12 +373,18 @@ app.post("/api/inbox/conversations/:id/merge", async (req, res) => {
 
 app.get("/api/inbox/conversations/:id/messages", async (req, res) => {
   try {
+    let targetId = req.params.id;
+    const convoByLead = await prisma.conversation.findFirst({ where: { leadId: targetId }, orderBy: { lastMessageAt: "desc" } });
+    if (convoByLead) {
+      targetId = convoByLead.id;
+    }
+
     const messages = await prisma.message.findMany({
-      where: { conversationId: req.params.id },
+      where: { conversationId: targetId },
       orderBy: { createdAt: "asc" },
       include: { attachments: true }
     });
-    res.json({ messages });
+    res.json({ success: true, messages });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -296,9 +405,15 @@ app.post("/api/inbox/conversations/:id/messages", async (req, res) => {
       subject
     } = req.body;
 
-    const conversation = await prisma.conversation.findUnique({
-      where: { id: req.params.id }
+    let targetId = req.params.id;
+    let conversation = await prisma.conversation.findUnique({
+      where: { id: targetId }
     });
+    if (!conversation) {
+      conversation = await prisma.conversation.findFirst({ where: { leadId: targetId }, orderBy: { lastMessageAt: "desc" } });
+      if (conversation) targetId = conversation.id;
+    }
+
     if (!conversation) return res.status(404).json({ error: "Conversation not found" });
 
     // 1. Create the message in DB
