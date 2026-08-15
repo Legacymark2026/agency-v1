@@ -41,13 +41,16 @@ export function InboxLayout({ children, conversationList, leadProfile, currentUs
 
     return (
         <TooltipProvider>
-            <div style={{
-                display: "flex",
-                height: "calc(100dvh - 65px)",
-                overflow: "hidden",
-                background: "rgba(11,15,25,0.95)",
-                borderTop: "1px solid rgba(30,41,59,0.8)",
-            }}>
+            <div
+                suppressHydrationWarning={true}
+                style={{
+                    display: "flex",
+                    height: "calc(100dvh - 65px)",
+                    overflow: "hidden",
+                    background: "rgba(11,15,25,0.95)",
+                    borderTop: "1px solid rgba(30,41,59,0.8)",
+                }}
+            >
                 {/* Panel 1: Folders & Filters (Left) */}
                 <div style={{
                     display: "none",

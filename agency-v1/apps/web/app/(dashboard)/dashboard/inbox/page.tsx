@@ -27,8 +27,9 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
     };
 
     return (
-        <InboxLayout
-            currentUser={currentUser}
+        <div suppressHydrationWarning={true} className="h-full w-full">
+            <InboxLayout
+                currentUser={currentUser}
             metrics={metrics}
             conversationList={
                 <ConversationList conversations={conversations as any || []} currentUser={currentUser} />
@@ -73,5 +74,6 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
                 </div>
             </div>
         </InboxLayout>
+        </div>
     );
 }
