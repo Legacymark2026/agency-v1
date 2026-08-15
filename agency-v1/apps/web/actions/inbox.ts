@@ -17,8 +17,26 @@ export interface GetConversationsParams {
 }
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
+const FETCH_TIMEOUT_MS = 1500;
+
+async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timer);
+        return response;
+    } catch (err) {
+        clearTimeout(timer);
+        throw err;
+    }
+}
 
 export async function getConversations({
+
     status,
     channel,
     assignedTo,
@@ -35,7 +53,7 @@ export async function getConversations({
         // Fallback for single-tenant / reset scenarios
         if (!companyId) {
             try {
-                const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`, {
+                const companyRes = await safeFetch(`${GATEWAY_URL}/api/admin/companies`, {
                     headers: session?.user?.id ? { 'x-user-id': session.user.id } : {}
                 });
                 if (companyRes.ok) {
@@ -70,7 +88,7 @@ export async function getConversations({
 
         if (companyId) {
             try {
-                const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
+                const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations?${queryParams.toString()}`);
                 if (response.ok) {
                     const resData = await response.json();
                     conversations = resData.conversations || [];
@@ -167,7 +185,7 @@ export async function getConversationById(conversationId: string) {
 
         let conversation: any = null;
         try {
-            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+            const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
             if (response.ok) {
                 const resData = await response.json();
                 conversation = resData.conversation;
@@ -257,7 +275,7 @@ export async function getMessages(conversationId: string) {
 
         let rawMessages: any[] = [];
         try {
-            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
+            const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
             if (response.ok) {
                 const resData = await response.json();
                 rawMessages = resData.messages || [];
@@ -295,7 +313,7 @@ export async function markConversationAsRead(conversationId: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ unreadCount: 0 })
@@ -325,7 +343,7 @@ export async function sendMessage(conversationId: string, content: string, userI
         let message: any = null;
 
         try {
-            const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+            const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -367,7 +385,7 @@ export async function sendMessage(conversationId: string, content: string, userI
 
         let conversation: any = null;
         try {
-            const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+            const convoRes = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
             if (convoRes.ok) {
                 const convoData = await convoRes.json();
                 conversation = convoData.conversation;
@@ -398,7 +416,7 @@ export async function sendMessage(conversationId: string, content: string, userI
                     page.access_token
                 );
                 if (result && result.success === false) {
-                    await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                    await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status: 'FAILED' })
@@ -406,7 +424,7 @@ export async function sendMessage(conversationId: string, content: string, userI
                     return { success: false, error: "Meta API falló: " + JSON.stringify(result.error) };
                 }
             } else {
-                await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'FAILED' })
@@ -415,7 +433,7 @@ export async function sendMessage(conversationId: string, content: string, userI
             }
         } else if (conversation && conversation.channel === 'WHATSAPP') {
             if (!template) {
-                const messagesRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
+                const messagesRes = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`);
                 const messagesData = await messagesRes.json();
                 const lastInboundMsg = (messagesData.messages || [])
                     .reverse()
@@ -424,7 +442,7 @@ export async function sendMessage(conversationId: string, content: string, userI
                 if (lastInboundMsg) {
                     const hoursSinceLastMessage = (Date.now() - new Date(lastInboundMsg.createdAt).getTime()) / (1000 * 60 * 60);
                     if (hoursSinceLastMessage >= 24) {
-                        await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                        await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: 'FAILED' })
@@ -448,7 +466,7 @@ export async function sendMessage(conversationId: string, content: string, userI
                         template,
                     });
                     if (tplResult && tplResult.success === false) {
-                        await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                        await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status: 'FAILED' })
@@ -492,7 +510,7 @@ export async function sendMessage(conversationId: string, content: string, userI
                 }
 
                 if (waResult && waResult.success === false) {
-                    await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                    await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status: 'FAILED' })
@@ -500,7 +518,7 @@ export async function sendMessage(conversationId: string, content: string, userI
                     return { success: false, error: "WhatsApp API falló: " + JSON.stringify(waResult.error) };
                 }
             } else {
-                await fetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
+                await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${message.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'FAILED' })
@@ -536,7 +554,7 @@ export async function updateLeadStatusFromInbox(conversationId: string, newStatu
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        const convoRes = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
         const convoData = await convoRes.json();
         const conversation = convoData.conversation;
 
@@ -544,7 +562,7 @@ export async function updateLeadStatusFromInbox(conversationId: string, newStatu
             return { success: false, error: "Lead no encontrado en la conversación" };
         }
 
-        const leadUpdateRes = await fetch(`${GATEWAY_URL}/api/leads/${conversation.leadId}`, {
+        const leadUpdateRes = await safeFetch(`${GATEWAY_URL}/api/leads/${conversation.leadId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
@@ -564,7 +582,7 @@ export async function updateLeadStatusFromInbox(conversationId: string, newStatu
 
 export async function createConversation(companyId: string, leadId: string, channel: string) {
     try {
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ companyId, leadId, channel })
@@ -584,7 +602,7 @@ export async function createConversation(companyId: string, leadId: string, chan
 
 export async function updateConversationStatus(conversationId: string, status: string) {
     try {
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
@@ -607,7 +625,7 @@ export async function logLeadContact(leadId: string, channel: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/log-contact`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/log-contact`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ leadId, channel })
@@ -646,7 +664,7 @@ export async function simulateIncomingMessage(params: {
 
         if (!companyId) {
             // Find a default company via gateway
-            const companyRes = await fetch(`${GATEWAY_URL}/api/admin/companies`);
+            const companyRes = await safeFetch(`${GATEWAY_URL}/api/admin/companies`);
             if (companyRes.ok) {
                 const compData = await companyRes.json();
                 if (compData.companies && compData.companies.length > 0) {
@@ -659,7 +677,7 @@ export async function simulateIncomingMessage(params: {
 
         // 1. Find or Create Lead via CRM REST API
         let lead;
-        const leadSearchRes = await fetch(`${GATEWAY_URL}/api/leads?companyId=${companyId}&search=${senderHandle}`);
+        const leadSearchRes = await safeFetch(`${GATEWAY_URL}/api/leads?companyId=${companyId}&search=${senderHandle}`);
         if (leadSearchRes.ok) {
             const searchData = await leadSearchRes.json();
             if (searchData.leads && searchData.leads.length > 0) {
@@ -668,7 +686,7 @@ export async function simulateIncomingMessage(params: {
         }
 
         if (!lead) {
-            const leadCreateRes = await fetch(`${GATEWAY_URL}/api/leads`, {
+            const leadCreateRes = await safeFetch(`${GATEWAY_URL}/api/leads`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -689,7 +707,7 @@ export async function simulateIncomingMessage(params: {
         if (!lead) throw new Error("Could not find or create lead");
 
         // 2. Create/Reopen Conversation
-        const convoResponse = await fetch(`${GATEWAY_URL}/api/inbox/conversations`, {
+        const convoResponse = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ companyId, leadId: lead.id, channel })
@@ -699,7 +717,7 @@ export async function simulateIncomingMessage(params: {
         const conversation = convoData.data;
 
         // 3. Create Inbound Message
-        const msgResponse = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}/messages`, {
+        const msgResponse = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -770,7 +788,7 @@ export async function syncMetaConversations() {
 
 export async function getLeadDetails(leadId: string) {
     try {
-        const response = await fetch(`${GATEWAY_URL}/api/leads/${leadId}`);
+        const response = await safeFetch(`${GATEWAY_URL}/api/leads/${leadId}`);
         if (!response.ok) return null;
         const resData = await response.json();
         return resData.lead;
@@ -801,12 +819,12 @@ export async function executeMacro(conversationId: string, macroId: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const convoRes = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
+        const convoRes = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`);
         const convoData = await convoRes.json();
         const conversation = convoData.conversation;
         if (!conversation) return { success: false, error: "Conversation not found" };
 
-        const macroRes = await fetch(`${GATEWAY_URL}/api/inbox/macros`);
+        const macroRes = await safeFetch(`${GATEWAY_URL}/api/inbox/macros`);
         const macrosData = await macroRes.json();
         const macro = (macrosData.data || []).find((m: any) => m.id === macroId);
 
@@ -832,7 +850,7 @@ export async function executeMacro(conversationId: string, macroId: string) {
                 const newTags = payload.tagsToAdd || [];
                 const mergedTags = Array.from(new Set([...currentTags, ...newTags]));
 
-                await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
+                await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tags: mergedTags })
@@ -843,9 +861,9 @@ export async function executeMacro(conversationId: string, macroId: string) {
             case 'ESCALATE': {
                 const targetUserId = payload.assignToId;
                 if (targetUserId) {
-                    const userRes = await fetch(`${GATEWAY_URL}/api/admin/users/${targetUserId}`); // or public equivalent
+                    const userRes = await safeFetch(`${GATEWAY_URL}/api/admin/users/${targetUserId}`); // or public equivalent
                     if (userRes.ok) {
-                        await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
+                        await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversation.id}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ assignedTo: targetUserId })
@@ -860,7 +878,7 @@ export async function executeMacro(conversationId: string, macroId: string) {
                 break;
             }
             case 'SEND_PAYMENT_LINK': {
-                const invoicesRes = await fetch(`${GATEWAY_URL}/api/invoices?companyId=${conversation.companyId}`);
+                const invoicesRes = await safeFetch(`${GATEWAY_URL}/api/invoices?companyId=${conversation.companyId}`);
                 const invoicesData = await invoicesRes.json();
                 const leadInvoice = (invoicesData.invoices || []).find((inv: any) => inv.leadId === conversation.leadId);
 
@@ -892,7 +910,7 @@ export async function executeMacro(conversationId: string, macroId: string) {
         }
 
         if (systemNoteText && !messageToSend) {
-            await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+            await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -905,7 +923,7 @@ export async function executeMacro(conversationId: string, macroId: string) {
             });
         }
 
-        await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+        await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -927,7 +945,7 @@ export async function deleteMessage(messageId: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/messages/${messageId}`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/messages/${messageId}`, {
             method: 'DELETE'
         });
         if (!response.ok) return { success: false, error: "Failed to delete message" };
@@ -945,7 +963,7 @@ export async function deleteConversation(conversationId: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: "Unauthorized" };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'DELETE'
         });
         if (!response.ok) return { success: false, error: "Failed to delete conversation" };
@@ -963,7 +981,7 @@ export async function updateConversationAssignment(conversationId: string, agent
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assignedTo: agentId })
@@ -994,7 +1012,7 @@ export async function getAgentList(companyId?: string) {
         const resolvedCompanyId = companyId || session.user.companyId;
         if (!resolvedCompanyId) return { success: false, error: 'No company', data: [] };
 
-        const response = await fetch(`${GATEWAY_URL}/api/admin/agents?companyId=${resolvedCompanyId}`);
+        const response = await safeFetch(`${GATEWAY_URL}/api/admin/agents?companyId=${resolvedCompanyId}`);
         if (response.ok) {
             const data = await response.json();
             return { success: true, data: data.agents || [] };
@@ -1018,7 +1036,7 @@ export async function markConversationAsSpam(conversationId: string) {
         const session = await auth();
         if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
 
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'SPAM', tags: ['SPAM'] })
@@ -1067,7 +1085,7 @@ export async function saveInternalNote(conversationId: string, content: string) 
         if (!content?.trim()) return { success: false, error: 'Note content required' };
 
         // Save as an INTERNAL direction message in the conversation
-        const response = await fetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
+        const response = await safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${conversationId}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1111,10 +1129,10 @@ export async function bulkUpdateConversations(
         if (!conversationIds.length) return { success: false, error: 'No conversations selected' };
 
         const updates: Promise<any>[] = conversationIds.map(id => {
-            if (action === 'close') return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'CLOSED' }) });
-            if (action === 'spam') return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'SPAM' }) });
-            if (action === 'assign' && payload?.agentId) return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedTo: payload.agentId }) });
-            if (action === 'unassign') return fetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedTo: null }) });
+            if (action === 'close') return safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'CLOSED' }) });
+            if (action === 'spam') return safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'SPAM' }) });
+            if (action === 'assign' && payload?.agentId) return safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedTo: payload.agentId }) });
+            if (action === 'unassign') return safeFetch(`${GATEWAY_URL}/api/inbox/conversations/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedTo: null }) });
             return Promise.resolve();
         });
 
