@@ -14,27 +14,28 @@ const NAV_GROUPS: NavGroup[] = [
         title: "Ajustes Personales",
         items: [
             { name: "Perfil y Cuenta", href: "/dashboard/settings/profile", icon: User },
-            { name: "Apariencia", href: "/dashboard/settings/appearance", icon: Palette },
+            { name: "Apariencia & UI", href: "/dashboard/settings/appearance", icon: Palette },
             { name: "Notificaciones", href: "/dashboard/settings/notifications", icon: Bell },
+            { name: "Seguridad Personal", href: "/dashboard/settings/security", icon: Shield },
         ]
     },
     {
         title: "Configuración de Empresa",
         items: [
-            { name: "Compañía y Marca", href: "/dashboard/settings/company", icon: Building2 },
-            { name: "Equipo y Roles", href: "/dashboard/settings/members", icon: Users },
-            { name: "Roles y Permisos", href: "/dashboard/settings/roles", icon: Shield },
-            { name: "Integraciones", href: "/dashboard/admin/marketing/settings", icon: Blocks },
-            { name: "Facturación B2B", href: "/dashboard/settings/billing", icon: CreditCard },
-            { name: "Developer & API", href: "/dashboard/settings/developer", icon: Code2 },
+            { name: "Compañía & Marca Blanca", href: "/dashboard/settings/company", icon: Building2 },
+            { name: "Equipo & Roles", href: "/dashboard/settings/members", icon: Users },
+            { name: "Roles y Permisos (RBAC)", href: "/dashboard/settings/roles", icon: Shield },
+            { name: "Facturación & Plan B2B", href: "/dashboard/settings/billing", icon: CreditCard },
+            { name: "Biblioteca de Integraciones", href: "/dashboard/admin/marketing/settings", icon: Blocks },
         ]
     },
     {
-        title: "IA & Canales",
+        title: "Motor de IA & APIs",
         items: [
             { name: "Agentes de IA", href: "/dashboard/settings/agents", icon: Bot },
+            { name: "Voice Studio (Voicebox)", href: "/dashboard/voice", icon: Wand2 },
             { name: "Macros de Inbox", href: "/dashboard/settings/inbox/macros", icon: Wand2 },
-            { name: "Seguridad y Accesos", href: "/dashboard/settings/security", icon: Shield },
+            { name: "Developer & API Keys", href: "/dashboard/settings/developer", icon: Code2 },
         ]
     }
 ];

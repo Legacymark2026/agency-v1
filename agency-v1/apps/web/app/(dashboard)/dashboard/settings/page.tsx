@@ -5,26 +5,34 @@ import Link from "next/link";
 import {
     Shield, Globe, Bell, CreditCard, Users, Code2, Palette,
     Plug2, Key, Webhook, AlertTriangle, CheckCircle2, Activity,
-    ArrowRight, Zap, Server, TrendingUp, RefreshCw
+    ArrowRight, Zap, Server, TrendingUp, Bot, Wand2, UserCheck,
+    Building2, Sparkles, Sliders
 } from "lucide-react";
 import { getSettingsOverview, getUsageStats, getIntegrationHealthDashboard } from "@/actions/developer";
 
 const fmt = (n: number) => new Intl.NumberFormat("es-CO").format(n);
 const pct = (val: number, limit: number) => Math.min(Math.round((val / limit) * 100), 100);
 
-const ORG_SECTIONS = [
-    { href: "/dashboard/settings/company", icon: <Globe className="w-5 h-5 text-teal-400" />, label: "Empresa & Marca Blanca", desc: "Logo, dominio, datos fiscales y personalización de marca" },
-    { href: "/dashboard/settings/members", icon: <Users className="w-5 h-5 text-emerald-400" />, label: "Equipo & Roles", desc: "Gestión de miembros, invitaciones y permisos de acceso" },
-    { href: "/dashboard/admin/marketing/settings", icon: <Plug2 className="w-5 h-5 text-violet-400" />, label: "Biblioteca de Integraciones", desc: "Google, Meta, Stripe, Twilio, OpenAI y APIs" },
-    { href: "/dashboard/settings/billing", icon: <CreditCard className="w-5 h-5 text-amber-400" />, label: "Facturación & Plan", desc: "Plan contratado, consumos de cuota, facturas y método de pago" },
-    { href: "/dashboard/settings/developer", icon: <Code2 className="w-5 h-5 text-cyan-400" />, label: "Developer & API", desc: "Claves de API, webhooks y registros de solicitudes" },
+const PERSONAL_SECTIONS = [
+    { href: "/dashboard/settings/profile", icon: <UserCheck className="w-5 h-5 text-blue-400" />, label: "Mi Perfil y Cuenta", desc: "Foto de perfil, datos públicos, idioma y zona horaria" },
+    { href: "/dashboard/settings/appearance", icon: <Palette className="w-5 h-5 text-pink-400" />, label: "Apariencia & UI", desc: "Modos visuales (Oscuro/Claro), acento y densidad de pantalla" },
+    { href: "/dashboard/settings/notifications", icon: <Bell className="w-5 h-5 text-rose-400" />, label: "Notificaciones Personales", desc: "Preferencias de alertas por Email, WhatsApp, Push e In-App" },
+    { href: "/dashboard/settings/security", icon: <Shield className="w-5 h-5 text-red-400" />, label: "Seguridad Personal", desc: "Autenticación 2FA, contraseña y dispositivos activos" },
 ];
 
-const PERSONAL_SECTIONS = [
-    { href: "/dashboard/settings/profile", icon: <Users className="w-5 h-5 text-blue-400" />, label: "Mi Perfil", desc: "Foto de perfil, datos públicos, idioma y zona horaria" },
-    { href: "/dashboard/settings/notifications", icon: <Bell className="w-5 h-5 text-rose-400" />, label: "Notificaciones", desc: "Preferencias de alertas por Email, WhatsApp, Slack y Push" },
-    { href: "/dashboard/settings/appearance", icon: <Palette className="w-5 h-5 text-pink-400" />, label: "Apariencia & UI", desc: "Temas visuales, colores de acento y densidad de interfaz" },
-    { href: "/dashboard/settings/security", icon: <Shield className="w-5 h-5 text-red-400" />, label: "Seguridad y Auditoría", desc: "Autenticación 2FA, historial de sesiones y bitácora de seguridad" },
+const ORG_SECTIONS = [
+    { href: "/dashboard/settings/company", icon: <Globe className="w-5 h-5 text-teal-400" />, label: "Compañía & Marca Blanca", desc: "Logo, dominio CNAME, datos fiscales (RUT/NIT) y personalización" },
+    { href: "/dashboard/settings/members", icon: <Users className="w-5 h-5 text-emerald-400" />, label: "Equipo & Colaboradores", desc: "Gestión de miembros, invitaciones y asignación de puestos" },
+    { href: "/dashboard/settings/roles", icon: <Shield className="w-5 h-5 text-amber-400" />, label: "Roles & Permisos (RBAC)", desc: "Matriz de control de acceso por roles estándar y personalizados" },
+    { href: "/dashboard/settings/billing", icon: <CreditCard className="w-5 h-5 text-violet-400" />, label: "Facturación & Plan B2B", desc: "Suscripción contratada, consumo de cuotas, facturas e historial" },
+    { href: "/dashboard/admin/marketing/settings", icon: <Plug2 className="w-5 h-5 text-cyan-400" />, label: "Biblioteca de Integraciones", desc: "Conexiones empresariales: Meta, WhatsApp, Google, Stripe y Twilio" },
+];
+
+const AI_PLATFORM_SECTIONS = [
+    { href: "/dashboard/settings/agents", icon: <Bot className="w-5 h-5 text-purple-400" />, label: "Agentes de IA", desc: "Configuración de agentes cognitivos asignados a la empresa" },
+    { href: "/dashboard/voice", icon: <Wand2 className="w-5 h-5 text-emerald-400" />, label: "Voice Studio (Voicebox)", desc: "Estudio de voz por IA: clonación, síntesis expresiva y STT Whisper" },
+    { href: "/dashboard/settings/inbox/macros", icon: <Sliders className="w-5 h-5 text-amber-400" />, label: "Macros & Atajos de Inbox", desc: "Respuestas automáticas, plantillas y etiquetas de conversación" },
+    { href: "/dashboard/settings/developer", icon: <Code2 className="w-5 h-5 text-sky-400" />, label: "Developer & API Keys", desc: "Claves de API, Webhooks empresariales y registro de auditoría" },
 ];
 
 const STATUS_CFG: Record<string, { cls: string; dot: string; label: string }> = {
@@ -58,15 +66,17 @@ export default function SettingsHubPage() {
     const healthyCount = health.filter(h => h.status === "OK").length;
 
     return (
-        <div className="space-y-8 pb-10 max-w-5xl">
+        <div className="space-y-10 pb-12 max-w-5xl">
             {/* Header */}
             <div>
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-sm bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] text-xs font-mono mb-3">
-                    <Activity className="w-3.5 h-3.5" />
-                    <span>CENTRO DE CONTROL — CONFIGURACIÓN GLOBAL</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] text-xs font-mono mb-3 shadow-[var(--ds-shadow-teal)]">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>CENTRO DE CONTROL SaaS MULTI-TENANT</span>
                 </div>
                 <h1 className="text-3xl font-black tracking-tight text-white">Panel de Configuración</h1>
-                <p className="text-[var(--ds-text-secondary)] text-sm mt-1">Configura las propiedades de tu organización y tus preferencias de perfil personal.</p>
+                <p className="text-[var(--ds-text-secondary)] text-sm mt-1">
+                    Gestiona tu perfil personal, la identidad de tu empresa y la infraestructura de Inteligencia Artificial.
+                </p>
             </div>
 
             {/* Alerts */}
@@ -104,7 +114,7 @@ export default function SettingsHubPage() {
             {usage && (
                 <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl p-5 transition-all duration-300 hover:border-[var(--ds-border-glow)] hover:shadow-[var(--ds-shadow-teal)]">
                     <h3 className="text-sm font-semibold text-[var(--ds-text-primary)] mb-4 flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-[var(--ds-teal-md)]" /> Consumo del Plan — Mes Actual
+                        <TrendingUp className="w-4 h-4 text-[var(--ds-teal-md)]" /> Consumo del Plan de Empresa — Mes Actual
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {[
@@ -139,7 +149,7 @@ export default function SettingsHubPage() {
                 <div className="bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl p-5 transition-all duration-300 hover:border-[var(--ds-border-glow)] hover:shadow-[var(--ds-shadow-teal)]">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-[var(--ds-text-primary)] flex items-center gap-2">
-                            <Server className="w-4 h-4 text-blue-400" /> Estado de Integraciones
+                            <Server className="w-4 h-4 text-blue-400" /> Estado de Conexiones e Integraciones
                         </h3>
                         <Link href="/dashboard/admin/marketing/settings" className="text-xs text-[var(--ds-teal-md)] hover:text-[var(--ds-teal-bright)] flex items-center gap-1">
                             Ver todas <ArrowRight className="w-3 h-3" />
@@ -163,11 +173,44 @@ export default function SettingsHubPage() {
                 </div>
             )}
 
-            {/* Navigation Grid by Categories */}
-            <div className="space-y-6">
-                {/* 1. System/Organization Settings */}
+            {/* Categorized SaaS Navigation */}
+            <div className="space-y-8">
+                {/* CATEGORÍA 1: AJUSTES PERSONALES (Nivel Usuario) */}
                 <div className="space-y-4">
-                    <h3 className="text-xs font-mono font-bold text-[var(--ds-teal-md)] uppercase tracking-widest border-b border-[var(--ds-border)] pb-2">Configuración de la Organización</h3>
+                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                        <h3 className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                            <span>Ajustes Personales de Cuenta</span>
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold">
+                            NIVEL USUARIO
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {PERSONAL_SECTIONS.map(s => (
+                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-blue-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                                <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
+                                    {s.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
+                                    <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                {/* CATEGORÍA 2: CONFIGURACIÓN DE EMPRESA (Nivel Tenant) */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                        <h3 className="text-xs font-mono font-bold text-[var(--ds-teal-md)] uppercase tracking-widest flex items-center gap-2">
+                            <span>Configuración de la Organización</span>
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--ds-teal-dim)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] font-semibold">
+                            NIVEL ORGANIZACIÓN / TENANT
+                        </span>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {ORG_SECTIONS.map(s => (
                             <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
@@ -184,12 +227,19 @@ export default function SettingsHubPage() {
                     </div>
                 </div>
 
-                {/* 2. Personal Settings */}
-                <div className="space-y-4 pt-4">
-                    <h3 className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest border-b border-[var(--ds-border)] pb-2">Ajustes Personales de Cuenta</h3>
+                {/* CATEGORÍA 3: IA & MOTOR DE PLATAFORMA (Nivel Plataforma & Infraestructura) */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-[var(--ds-border)] pb-2">
+                        <h3 className="text-xs font-mono font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                            <span>Motor de Inteligencia Artificial & Canales</span>
+                        </h3>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold">
+                            SISTEMA & DESARROLLADOR
+                        </span>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {PERSONAL_SECTIONS.map(s => (
-                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-[var(--ds-border-glow)] hover:bg-[var(--ds-surface-2)]/60 transition-all group">
+                        {AI_PLATFORM_SECTIONS.map(s => (
+                            <Link key={s.href} href={s.href} className="flex items-center gap-4 p-4 bg-[var(--ds-surface)] border border-[var(--ds-border)] rounded-xl hover:border-purple-500/40 hover:bg-[var(--ds-surface-2)]/60 transition-all group">
                                 <div className="p-2.5 bg-[var(--ds-bg-deep)] border border-[var(--ds-border)]/50 rounded-lg shrink-0 group-hover:scale-110 transition-transform">
                                     {s.icon}
                                 </div>
@@ -197,7 +247,7 @@ export default function SettingsHubPage() {
                                     <div className="text-sm font-semibold text-[var(--ds-text-primary)]">{s.label}</div>
                                     <div className="text-xs text-[var(--ds-text-muted)] truncate">{s.desc}</div>
                                 </div>
-                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                                <ArrowRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                             </Link>
                         ))}
                     </div>
