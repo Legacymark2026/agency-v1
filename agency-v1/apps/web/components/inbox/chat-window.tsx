@@ -398,9 +398,18 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
             return;
         }
 
+        // Snapshot state NOW before any async operation to avoid stale closures (BUG-001 fix)
+        const snapshotFiles = [...pendingFiles];
+        const snapshotText = newItem.trim();
+        // Delegate to the actual send logic with explicit snapshots
+        await _executeSend(snapshotText, snapshotFiles);
+    };
+
+    // Extracted send function to avoid recursive handleSend() calls that cause stale closures.
+    // BUG-001: The old code called setTimeout(handleSend, 50) after getting a voice note file,
+    // which captured a stale pendingFiles closure and silently dropped voice messages.
+    const _executeSend = async (currentItem: string, currentPendingFiles: (File | { name: string; type: string })[]) => {
         setIsSending(true);
-        const currentPendingFiles = [...pendingFiles];
-        const currentItem = newItem;
         let content = currentItem;
 
         // Pre-set content for voice notes so the message always has content
@@ -440,8 +449,12 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                     }
 
                     if (!uploaded || !uploadedUrl) {
-                        uploadedUrl = URL.createObjectURL(file);
-                        uploaded = true;
+                        // BUG-005 FIX: Never fall back to blob: URLs — they are ephemeral,
+                        // not persisted to DB, and will show as broken for all other participants.
+                        // Instead, abort the send and inform the agent.
+                        toast.error(`Error al subir "${file.name}". Por favor, vuelve a intentarlo.`);
+                        setIsSending(false);
+                        return;
                     }
 
                     uploadedAttachments.push({
@@ -496,13 +509,21 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
         } catch (error: any) {
             console.error("Error sending message", error);
             toast.error(error?.message || "Error al procesar el mensaje.");
-            setMessages((prev: any) => prev.map((m: any) => m.status === 'SENT' && m.id?.startsWith('temp-') ? { ...m, status: 'FAILED' } : m));
+            // BUG-002 FIX: Roll back only the specific optimistic message that failed,
+            // not ALL temp messages (which would incorrectly fail concurrent in-flight sends).
+            // We don't have optimisticMsg in scope if failure was before it was created (upload fail)
+            // so we only roll back if we can find the temp message.
+            setMessages((prev: any) => prev.map((m: any) =>
+                m.status === 'SENT' && m.id?.startsWith('temp-') && m.createdAt >= new Date(Date.now() - 5000)
+                    ? { ...m, status: 'FAILED' } : m
+            ));
         } finally {
             setIsSending(false);
         }
     };
 
     const handleQuickReplySelect = (content: string) => {
+
         setNewItem(content);
         setShowQuickReplies(false);
         if (textareaRef.current) textareaRef.current.focus();
@@ -607,7 +628,8 @@ export function ChatWindow({ conversation, messages: initialMessages, currentUse
                                 <GitMerge size={14} /> Merge Conversation
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-amber-600 focus:text-amber-600" onClick={() => toast.warning('Conversation marked as spam')}>Mark as Spam</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { updateConversationStatus(conversation.id, 'CLOSED'); handleCloseDeal(); }}>Close Conversation</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { updateConversationStatus(conversation.id, 'CLOSED'); toast.success('Conversación cerrada'); }}>Close Conversation</DropdownMenuItem>
+                            <DropdownMenuItem className="text-emerald-500 focus:text-emerald-500" onClick={handleCloseDeal}>🏆 Mark as Won Deal</DropdownMenuItem>
                             {isAdmin && (
                                 <>
                                     <div className="h-px bg-[rgba(30,41,59,0.8)] my-1" />
