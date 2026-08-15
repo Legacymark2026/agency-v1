@@ -48,7 +48,7 @@ rm -f "$CERT_DIR"/*.req "$CERT_DIR"/*.srl
 # 4. Set secure permissions
 echo "Setting permissions..."
 chmod 644 "$CERT_DIR"/*.crt
-chmod 600 "$CERT_DIR"/*.key
+chmod 644 "$CERT_DIR"/*.key
 
 # If running on Linux/VPS, adjust ownership for Postgres container (UID 999)
 if [ "$(id -u)" -eq 0 ]; then
