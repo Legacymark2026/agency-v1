@@ -13,4 +13,9 @@ const sendMessageSchema = z.object({
 export const inboxRouter = Router();
 
 inboxRouter.get("/conversations", InboxController.getConversations);
+inboxRouter.get("/conversations/:id", InboxController.getConversationById);
+inboxRouter.get("/conversations/:id/messages", InboxController.getMessages);
+inboxRouter.post("/conversations/:id/messages", InboxController.sendMessage);
+inboxRouter.patch("/conversations/:id", InboxController.updateConversation);
 inboxRouter.post("/messages", validateRequest(sendMessageSchema), InboxController.sendMessage);
+
