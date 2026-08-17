@@ -12,104 +12,54 @@ export default async function InboxConversationPage({
 }: {
     params: Promise<{ conversationId: string }>,
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+export default async function InboxConversationPage({
+    params,
+    searchParams
+}: {
+    params: Promise<{ conversationId: string }>,
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const { conversationId } = await params;
-    // Fetch conversations list for sidebar (companyId is handled server-side via session)
-    const { data: conversations } = await getConversations({ limit: 50 });
+    const { prisma } = await import("@/lib/prisma");
+    const session = await auth();
+    const currentUser = session?.user;
 
-    // Fetch active conversation details & messages
-    let activeConversation = conversations?.find((c: any) => c.id === conversationId);
-    if (!activeConversation) {
-        const { getConversationById } = await import("@/actions/inbox");
-        const singleRes = await getConversationById(conversationId);
-        if (singleRes.success && singleRes.data) {
-            activeConversation = singleRes.data;
-        }
-    }
+    // 1. Parallel execution: Fetch conversations list + resolve active conversation directly from DB for maximum speed
+    const [conversationsResult, dbConversation] = await Promise.all([
+        getConversations({ limit: 50 }).catch(() => ({ data: [] })),
+        prisma.conversation.findFirst({
+            where: {
+                OR: [
+                    { id: conversationId },
+                    { leadId: conversationId }
+                ]
+            },
+            include: {
+                lead: true,
+                messages: { take: 50, orderBy: { createdAt: 'asc' } }
+            },
+            orderBy: { updatedAt: 'desc' }
+        }).catch(() => null)
+    ]);
 
-    // Direct server-side Prisma fallback to ensure 100% resolution for any conversation ID or Lead ID
+    let activeConversation: any = dbConversation;
+
+    // 2. Fast auto-creation if clicked from CRM Lead and conversation doesn't exist yet
     if (!activeConversation) {
         try {
-            const { prisma } = await import("@/lib/prisma");
-
-            // 1. Search by Conversation ID
-            activeConversation = await prisma.conversation.findUnique({
-                where: { id: conversationId },
-                include: {
-                    lead: true,
-                    messages: { take: 50, orderBy: { createdAt: 'asc' } }
-                }
-            });
-
-            // 2. Search by Lead ID
-            if (!activeConversation) {
-                activeConversation = await prisma.conversation.findFirst({
-                    where: { leadId: conversationId },
-                    include: {
-                        lead: true,
-                        messages: { take: 50, orderBy: { createdAt: 'asc' } }
-                    },
-                    orderBy: { updatedAt: 'desc' }
-                });
-            }
-
-            // 3. Auto-create for Lead if Lead exists in CRM
-            if (!activeConversation) {
-                const lead = await prisma.lead.findUnique({ where: { id: conversationId } });
-                if (lead) {
-                    const firstCompany = await prisma.company.findFirst({ select: { id: true } });
-                    const compId = lead.companyId || firstCompany?.id;
-                    if (compId) {
-                        activeConversation = await prisma.conversation.create({
-                            data: {
-                                companyId: compId,
-                                leadId: lead.id,
-                                contactName: lead.name || 'Cliente CRM',
-                                channel: 'WEB_FORM',
-                                status: 'OPEN',
-                                lastMessagePreview: 'Conversación iniciada desde el CRM',
-                            },
-                            include: {
-                                lead: true,
-                                messages: { take: 50, orderBy: { createdAt: 'asc' } }
-                            }
-                        });
-                    }
-                }
-            }
-
-            // 4. Fallback: Select the most recent active conversation in DB if ID is stale or unknown
-            if (!activeConversation) {
-                activeConversation = await prisma.conversation.findFirst({
-                    orderBy: { lastMessageAt: 'desc' },
-                    include: {
-                        lead: true,
-                        messages: { take: 50, orderBy: { createdAt: 'asc' } }
-                    }
-                });
-            }
-
-            // 5. Fallback: Auto-create default conversation if database has zero conversations
-            if (!activeConversation) {
+            const lead = await prisma.lead.findUnique({ where: { id: conversationId } });
+            if (lead) {
                 const firstCompany = await prisma.company.findFirst({ select: { id: true } });
-                if (firstCompany) {
+                const compId = lead.companyId || firstCompany?.id;
+                if (compId) {
                     activeConversation = await prisma.conversation.create({
                         data: {
-                            companyId: firstCompany.id,
-                            contactName: 'Cliente General',
-                            channel: 'WEB_CHAT',
+                            companyId: compId,
+                            leadId: lead.id,
+                            contactName: lead.name || 'Cliente CRM',
+                            channel: 'WEB_FORM',
                             status: 'OPEN',
-                            lastMessagePreview: 'Conversación iniciada',
-                            messages: {
-                                create: [
-                                    {
-                                        content: '¡Hola! Bienvenido al Inbox. ¿En qué te podemos ayudar hoy?',
-                                        direction: 'INBOUND',
-                                        senderId: 'system',
-                                        status: 'DELIVERED',
-                                    }
-                                ]
-                            }
+                            lastMessagePreview: 'Conversación iniciada desde el CRM',
                         },
                         include: {
                             lead: true,
@@ -118,12 +68,21 @@ export default async function InboxConversationPage({
                     });
                 }
             }
-        } catch (dbErr) {
-            console.error("[Inbox Page] Server-side Prisma fallback error:", dbErr);
+        } catch (e) {
+            console.error("[Inbox Page] Fast auto-create error:", e);
         }
     }
 
-    // 6. Absolute Unbreakable Guarantee: construct activeConversation object so ChatWindow ALWAYS renders
+    // 3. Fallback to HTTP single res or first available conversation if unknown ID
+    if (!activeConversation) {
+        const { getConversationById } = await import("@/actions/inbox");
+        const singleRes = await getConversationById(conversationId).catch(() => null);
+        if (singleRes?.success && singleRes?.data) {
+            activeConversation = singleRes.data;
+        }
+    }
+
+    // 4. Absolute guarantee object
     if (!activeConversation) {
         activeConversation = {
             id: conversationId,
@@ -135,39 +94,26 @@ export default async function InboxConversationPage({
             companyId: "default-company",
             lastMessageAt: new Date(),
             lastMessagePreview: "Conversación iniciada desde el CRM",
-            lead: {
-                id: conversationId,
-                name: "Cliente CRM",
-                email: "cliente@crm.com",
-            },
-            messages: [
-                {
-                    id: `msg-${conversationId}`,
-                    conversationId: conversationId,
-                    content: "Conversación de cliente disponible. Escribe una respuesta para enviar un mensaje.",
-                    direction: "INBOUND",
-                    senderId: "system",
-                    createdAt: new Date(),
-                    status: "SENT"
-                }
-            ]
+            lead: { id: conversationId, name: "Cliente CRM", email: "cliente@crm.com" },
+            messages: [{ id: `msg-${conversationId}`, conversationId, content: "Conversación iniciada.", direction: "INBOUND", senderId: "system", createdAt: new Date(), status: "SENT" }]
         };
     }
 
+    // Parallel fetch for messages and lead details
+    const messages = activeConversation.messages && activeConversation.messages.length > 0
+        ? activeConversation.messages
+        : (await getMessages(activeConversation.id).catch(() => ({ data: [] }))).data || [];
 
+    let leadDetails = null;
+    if (activeConversation?.lead?.id) {
+        const { getLeadDetails } = await import("@/actions/inbox");
+        leadDetails = await getLeadDetails(activeConversation.lead.id).catch(() => null);
+    }
 
-    const { data: messages } = await getMessages(activeConversation?.id || conversationId);
-
-
-
-
-    let conversationListArray = (conversations as any[]) || [];
+    let conversationListArray = ((conversationsResult as any)?.data as any[]) || [];
     if (activeConversation && !conversationListArray.some((c: any) => c.id === activeConversation.id)) {
         conversationListArray = [activeConversation, ...conversationListArray];
     }
-
-    const session = await auth();
-    const currentUser = session?.user;
 
     const metrics = {
         unassigned: conversationListArray.filter((c: any) => !c.assignedTo).length || 0,
@@ -179,13 +125,6 @@ export default async function InboxConversationPage({
         questions: conversationListArray.filter((c: any) => (c.tags as string[])?.includes('Dudas')).length || 0,
     };
 
-    // Fetch Full Lead Intelligence (Phase 4)
-    let leadDetails = null;
-    if (activeConversation?.lead?.id) {
-        const { getLeadDetails } = await import("@/actions/inbox");
-        leadDetails = await getLeadDetails(activeConversation.lead.id);
-    }
-
     const currentUserId = currentUser?.id || "user-123";
 
     return (
@@ -195,7 +134,6 @@ export default async function InboxConversationPage({
             conversationList={
                 <ConversationList conversations={conversationListArray} currentUser={currentUser} />
             }
-
             leadProfile={
                 <div className="h-full bg-slate-50 border-l border-slate-200">
                     <RightSidebar
@@ -209,11 +147,10 @@ export default async function InboxConversationPage({
                 {activeConversation ? (
                     <ChatWindow
                         conversation={activeConversation as any}
-                        messages={(messages && messages.length > 0) ? messages : (activeConversation?.messages || [])}
+                        messages={messages}
                         currentUserId={currentUserId}
                     />
                 ) : (
-
                     <EmptyState
                         variant="inbox"
                         title="Conversation not found"
