@@ -517,6 +517,8 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
       proxyReq: (proxyReq, req: any) => {
         if (req.headers["x-correlation-id"]) {
           proxyReq.setHeader("x-correlation-id", req.headers["x-correlation-id"]);
+        }
+
         // Remove client-supplied identity headers to prevent header spoofing
         proxyReq.removeHeader("x-user-id");
         proxyReq.removeHeader("x-company-id");
