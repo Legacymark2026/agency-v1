@@ -6,6 +6,7 @@ import { ArrowLeft, Check, ChevronRight, Globe, Scale, DollarSign, ShieldAlert, 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { IsoComplianceSection } from "@/components/iso-compliance-section";
 
 // Subcomponents
 
@@ -294,6 +295,13 @@ export function TermsContent() {
                                     </a>
                                 </div>
                             </div>
+                        </div>
+
+                        </div>
+
+                        {/* ISO Standards & Compliance Section */}
+                        <div className="pt-12">
+                            <IsoComplianceSection />
                         </div>
 
                         <div className="text-center text-sm text-gray-500 pt-8 border-t border-gray-200 dark:border-slate-800">
