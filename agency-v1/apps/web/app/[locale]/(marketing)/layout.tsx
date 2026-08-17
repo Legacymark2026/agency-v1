@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { TopBar } from "@/components/layout/top-bar";
+import { GranularCookieConsent } from "@/components/ui/granular-cookie-consent";
 
 export function generateStaticParams() {
     return routing.locales.map((locale) => ({ locale }));
@@ -32,6 +33,7 @@ export default async function LocaleMarketingLayout({
                 <main className="flex-1">{children}</main>
                 <Footer />
                 <WhatsAppButton />
+                <GranularCookieConsent />
             </div>
         </NextIntlClientProvider>
     );
