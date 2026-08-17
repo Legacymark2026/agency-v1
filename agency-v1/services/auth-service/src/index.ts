@@ -145,6 +145,20 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ error: "Email and password required" });
     }
 
+    // Rate Limiting (ISO 27001 A.12.1 — Brute Force Protection)
+    const clientIp = req.ip || req.headers["x-forwarded-for"] || "unknown";
+    const rateLimitKey = `ratelimit:login:${clientIp}:${email.toLowerCase().trim()}`;
+    const attempts = await redis.incr(rateLimitKey);
+    if (attempts === 1) {
+      await redis.expire(rateLimitKey, 300); // 5 minute window
+    }
+    if (attempts > 5) {
+      await logActivity(null, "login_blocked_rate_limit", { email, ip: clientIp, attempts }, req);
+      return res.status(429).json({
+        error: "Too many failed login attempts. Account temporarily locked for 5 minutes for security."
+      });
+    }
+
     // Step 1: Fetch user from AUTH DB (no cross-DB include)
     const user = await prisma.user.findUnique({
       where: { email },
@@ -219,6 +233,9 @@ app.post("/api/auth/login", async (req, res) => {
         userAgent: req.headers["user-agent"],
       },
     });
+
+    // Reset rate limit attempts counter on successful login
+    await redis.del(rateLimitKey);
 
     // Log successful login to ANALYTICS DB (fire-and-forget)
     await logActivity(user.id, "login_success", { sessionId: session.id, email: user.email }, req);

@@ -517,16 +517,20 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
       proxyReq: (proxyReq, req: any) => {
         if (req.headers["x-correlation-id"]) {
           proxyReq.setHeader("x-correlation-id", req.headers["x-correlation-id"]);
-        }
-        // Extract validated claims from JWT if present to prevent IDOR parameter tampering downstream
+        // Remove client-supplied identity headers to prevent header spoofing
+        proxyReq.removeHeader("x-user-id");
+        proxyReq.removeHeader("x-company-id");
+
+        // Extract validated claims from JWT if present
         const token = req.headers.authorization || (req.headers.Authorization as string);
         if (token && token.startsWith("Bearer ")) {
           try {
             const payloadBase64 = token.split(".")[1];
             if (payloadBase64) {
               const decoded = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf8"));
-              if (decoded?.userId) {
-                proxyReq.setHeader("x-user-id", String(decoded.userId));
+              const userId = decoded?.sub || decoded?.userId || decoded?.id;
+              if (userId) {
+                proxyReq.setHeader("x-user-id", String(userId));
               }
               const companyId = decoded?.companyId || decoded?.companies?.[0]?.companyId;
               if (companyId) {
@@ -534,7 +538,7 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
               }
             }
           } catch (err) {
-            // Ignore malformed tokens; auth-service will handle 401
+            // Ignore malformed tokens; downstream services will reject
           }
         }
       },
