@@ -340,10 +340,10 @@ app.patch("/api/inbox/conversations/:id", async (req, res) => {
     });
 
     if (status && status !== before.status) {
-      await auditStatusChanged(conversation.id, before.status, status, String(userId || "system"));
+      await auditStatusChanged(conversation.id, conversation.companyId, String(userId || "system"), before.status, status);
     }
     if (assignedTo !== undefined && assignedTo !== before.assignedTo) {
-      await auditAssignmentChanged(conversation.id, before.assignedTo, assignedTo, String(userId || "system"));
+      await auditAssignmentChanged(conversation.id, conversation.companyId, String(userId || "system"), before.assignedTo, assignedTo);
     }
 
     res.json({ success: true, conversation });

@@ -28,7 +28,7 @@ export class InboxController {
    */
   static async getConversationById(req: Request, res: Response, next: NextFunction) {
     try {
-      const conversationId = req.params.id;
+      const conversationId = String(req.params.id);
       const conversation = await InboxService.getConversationById(conversationId);
 
       if (!conversation) {
@@ -46,7 +46,7 @@ export class InboxController {
    */
   static async getMessages(req: Request, res: Response, next: NextFunction) {
     try {
-      const conversationId = req.params.id;
+      const conversationId = String(req.params.id);
       const messages = await InboxService.getMessages(conversationId);
 
       res.json({ success: true, messages });
@@ -60,7 +60,7 @@ export class InboxController {
    */
   static async updateConversation(req: Request, res: Response, next: NextFunction) {
     try {
-      const conversationId = req.params.id;
+      const conversationId = String(req.params.id);
       const conversation = await InboxService.updateConversation(conversationId, req.body);
 
       res.json({ success: true, conversation });

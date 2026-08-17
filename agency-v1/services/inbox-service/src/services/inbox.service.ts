@@ -139,7 +139,7 @@ export class InboxService {
       include: { lead: true }
     });
 
-    await eventBus.publish("conversation.updated", {
+    await eventBus.publish("deal.stage_changed", {
       conversationId: conversation.id,
       status: conversation.status,
       assignedTo: conversation.assignedTo,
