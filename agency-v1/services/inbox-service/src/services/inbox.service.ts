@@ -23,7 +23,8 @@ export class InboxService {
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { contactName: { contains: search, mode: 'insensitive' } },
+        { lead: { name: { contains: search, mode: 'insensitive' } } },
+        { lead: { email: { contains: search, mode: 'insensitive' } } },
         { lastMessagePreview: { contains: search, mode: 'insensitive' } },
       ];
     }

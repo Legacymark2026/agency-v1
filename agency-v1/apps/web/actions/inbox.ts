@@ -17,7 +17,7 @@ export interface GetConversationsParams {
 }
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
-const FETCH_TIMEOUT_MS = 300;
+const FETCH_TIMEOUT_MS = 5000;
 
 
 async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {

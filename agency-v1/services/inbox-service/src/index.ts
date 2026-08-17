@@ -60,12 +60,7 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
-import { inboxRouter } from "./routes/inbox.routes";
 import { errorHandler } from "./middlewares/inbox.middleware";
-
-app.use("/api/v1/inbox", inboxRouter);
-app.use("/api/inbox", inboxRouter);
-app.use(errorHandler);
 
 
 // ── Conversations ────────────────────────────────────────────────────────────
@@ -913,6 +908,9 @@ app.get("/api/webhooks/whatsapp", (req, res) => {
     res.status(403).send("Forbidden");
   }
 });
+
+// Error handler must be registered after all routes
+app.use(errorHandler);
 
 const eventBus = new EventBus(REDIS_URL, "inbox-service");
 eventBus.subscribe("agent.response_ready", async (payload) => {
