@@ -27,11 +27,28 @@ export default async function InboxPage({ searchParams }: { searchParams: Promis
 
     const statusFilter = resolvedSearchParams?.status as string | undefined;
 
-    // Fetch conversations
-    const { data: conversations } = await getConversations({
-        limit: 50,
-        ...(statusFilter && { status: statusFilter }),
-    });
+    // Fetch conversations with resilient DB fallback to prevent 504 Gateway Timeouts
+    const { prisma } = await import("@/lib/prisma");
+    let conversations: any[] = [];
+    try {
+        const res = await getConversations({
+            limit: 50,
+            ...(statusFilter && { status: statusFilter }),
+        });
+        if (res?.data && res.data.length > 0) {
+            conversations = res.data;
+        }
+    } catch {}
+
+    if (conversations.length === 0) {
+        try {
+            conversations = await prisma.conversation.findMany({
+                take: 50,
+                orderBy: { updatedAt: 'desc' },
+                include: { lead: true }
+            });
+        } catch {}
+    }
 
 
 

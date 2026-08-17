@@ -15,7 +15,7 @@ interface RealtimeRefresherProps {
  * - Safe cleanup on unmount
  */
 export function RealtimeRefresher({
-    intervalMs = 8000,
+    intervalMs = 30000,
     pauseWhenHidden = true,
 }: RealtimeRefresherProps) {
     const router = useRouter();
