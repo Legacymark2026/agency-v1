@@ -297,8 +297,6 @@ export function TermsContent() {
                             </div>
                         </div>
 
-                        </div>
-
                         {/* ISO Standards & Compliance Section */}
                         <div className="pt-12">
                             <IsoComplianceSection />

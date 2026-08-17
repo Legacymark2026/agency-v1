@@ -12,12 +12,6 @@ export default async function InboxConversationPage({
 }: {
     params: Promise<{ conversationId: string }>,
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-export default async function InboxConversationPage({
-    params,
-    searchParams
-}: {
-    params: Promise<{ conversationId: string }>,
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const { conversationId } = await params;
     const { prisma } = await import("@/lib/prisma");
