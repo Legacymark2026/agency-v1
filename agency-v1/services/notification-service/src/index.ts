@@ -103,6 +103,13 @@ import { errorHandler } from "./middlewares/notification.middleware";
 app.use("/api/v1", notificationRouter);
 app.use(errorHandler);
 
+// ── BullMQ Queue & Worker Imports ───────────────────────────────────────────
+import { enqueueNotification, getDLQStats, getDLQJobs, replayDLQJob, purgeDLQ } from "./queue/notification.queue";
+import { startNotificationWorker } from "./queue/notification.worker";
+
+// Initialize resilient background worker
+startNotificationWorker();
+
 // ── Notification Types Registry ──────────────────────────────────────────────
 
 const NOTIFICATION_CATEGORIES = [
@@ -199,43 +206,24 @@ app.post("/api/notifications", requireAuth, async (req, res) => {
 
     const effectiveChannels: NotificationChannel[] = channels || ["IN_APP"];
 
-    // Batch create IN_APP notifications
-    if (effectiveChannels.includes("IN_APP")) {
-      await prisma.notification.createMany({
-        data: targetUserIds.map((userId) => ({
-          userId,
-          companyId: String(companyId),
-          title: cleanTitle,
-          message: cleanMessage,
-          type: String(type || "SYSTEM"),
-          isRead: false,
-          data: data ? JSON.stringify(data) : undefined,
-        })),
-      });
-    }
-
-    // Queue email delivery (async, non-blocking)
-    if (effectiveChannels.includes("EMAIL")) {
-      for (const userId of targetUserIds) {
-        await redisClient.lpush(
-          "notification:email_queue",
-          JSON.stringify({ userId, companyId, title: cleanTitle, message: cleanMessage, type, priority, ts: Date.now() })
-        );
-      }
-    }
-
-    // Publish event for real-time delivery
-    await eventBus.publish("notification.dispatched", {
-      companyId,
+    // ── Resilient Decoupled Enqueue (BullMQ Queue System) ───────────────────
+    const job = await enqueueNotification({
+      companyId: String(companyId),
       userIds: targetUserIds,
-      type,
       title: cleanTitle,
-      channelsUsed: effectiveChannels,
+      message: cleanMessage,
+      type: String(type || "SYSTEM"),
+      priority,
+      channels: effectiveChannels,
+      data,
     });
 
-    res.status(201).json({
+    // Fast HTTP response (Decoupled execution < 10ms)
+    res.status(202).json({
       success: true,
-      delivered: targetUserIds.length,
+      status: "queued",
+      jobId: job.id,
+      targetUserCount: targetUserIds.length,
       channels: effectiveChannels,
     });
   } catch (err) {
@@ -388,6 +376,7 @@ app.get("/api/notifications/stats", async (req, res) => {
     ]);
 
     const emailQueueLength = await redisClient.llen("notification:email_queue");
+    const dlqStats = await getDLQStats();
 
     res.json({
       period,
@@ -396,9 +385,58 @@ app.get("/api/notifications/stats", async (req, res) => {
       readRate: total > 0 ? ((total - unread) / total * 100).toFixed(1) + "%" : "0%",
       byType: byType.map((t: typeof byType[number]) => ({ type: t.type, count: t._count })),
       emailQueueLength,
+      dlqStats,
     });
   } catch (err) {
     res.status(500).json({ error: String(err) });
+  }
+});
+
+// ── Dead Letter Queue (DLQ) REST Endpoints ────────────────────────────────────
+
+// GET /api/v1/notifications/dlq — Query DLQ stats and failed jobs
+app.get("/api/v1/notifications/dlq", requireAuth, async (req, res) => {
+  try {
+    const authUser = (req as any).authUser;
+    if (authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const { start = "0", end = "20" } = req.query;
+    const stats = await getDLQStats();
+    const jobs = await getDLQJobs(parseInt(String(start)), parseInt(String(end)));
+    res.json({ success: true, stats, jobs });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/v1/notifications/dlq/replay — Replay failed job from DLQ
+app.post("/api/v1/notifications/dlq/replay", requireAuth, async (req, res) => {
+  try {
+    const authUser = (req as any).authUser;
+    if (authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const { jobId } = req.body;
+    if (!jobId) return res.status(400).json({ error: "jobId is required" });
+    const result = await replayDLQJob(String(jobId));
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/v1/notifications/dlq — Purge DLQ
+app.delete("/api/v1/notifications/dlq", requireAuth, async (req, res) => {
+  try {
+    const authUser = (req as any).authUser;
+    if (authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    const result = await purgeDLQ();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -870,7 +908,7 @@ notifGrpcServer.addService(
   }
 );
 
-notifGrpcServer.start(NOTIF_GRPC_PORT).catch(err => {
+notifGrpcServer.start(NOTIF_GRPC_PORT).catch((err: any) => {
   console.error("[notification-service] Failed to start gRPC server:", err.message);
 });
 
