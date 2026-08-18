@@ -676,6 +676,74 @@ const EVENT_MAPPINGS: Record<string, { type: string; titleFn: (data: any) => str
     type: "SYSTEM",
     titleFn: (d) => `⚠️ Fallo de Entrega de Webhook Externo a ${d.targetUrl || "Tercero"}`,
   },
+
+  // ── Recursos Humanos & Nómina Electrónica (HR) ──
+  "hr.employee_onboarded": {
+    type: "HR",
+    titleFn: (d) => `👤 Nuevo Empleado / Contratista registrado: ${d.employeeName || "Personal"}`,
+  },
+  "hr.leave_requested": {
+    type: "HR",
+    titleFn: (d) => `📅 Solicitud de Vacaciones / Licencia recibida de ${d.employeeName || "Empleado"}`,
+  },
+  "hr.leave_approved": {
+    type: "HR",
+    titleFn: (d) => `✅ Solicitud de Vacaciones / Licencia Aprobada`,
+  },
+  "hr.pila_submission_failed": {
+    type: "HR",
+    titleFn: (d) => `🚨 Fallo en Liquidación de Planilla PILA / Seguridad Social`,
+  },
+
+  // ── Marketing de Contenidos & SEO ──
+  "content.post_published": {
+    type: "CONTENT",
+    titleFn: (d) => `📰 Nuevo Artículo de Blog Publicado: ${d.postTitle || "Entrada"}`,
+  },
+  "content.comment_flagged": {
+    type: "CONTENT",
+    titleFn: (d) => `⚠️ Comentario en Blog marcado para moderación`,
+  },
+  "seo.ranking_drop": {
+    type: "SEO",
+    titleFn: (d) => `📉 Alerta SEO: Caída de posición en palabra clave "${d.keyword || ""}"`,
+  },
+
+  // ── Integraciones & Anuncios (Meta / Google / Shopify) ──
+  "integration.connected": {
+    type: "SYSTEM",
+    titleFn: (d) => `🔌 Nueva Integración Conectada: ${d.provider || "Servicio"}`,
+  },
+  "integration.auth_expired": {
+    type: "SYSTEM",
+    titleFn: (d) => `🔑 Token OAuth Expirado en Integración: ${d.provider || "Servicio"}`,
+  },
+  "meta_ads.budget_exhausted": {
+    type: "MARKETING",
+    titleFn: (d) => `💰 Presupuesto Diario Agotado en Meta Ads (${d.campaignName || "Campaña"})`,
+  },
+
+  // ── Seguridad Avanzada, IAM & Privacidad ISO 27001 / 27701 ──
+  "security.password_changed": {
+    type: "IAM",
+    titleFn: (d) => `🔑 Contraseña cambiada exitosamente para ${d.email || "tu cuenta"}`,
+  },
+  "security.mfa_disabled": {
+    type: "IAM",
+    titleFn: (d) => `⚠️ Autenticación de Dos Factores (2FA) deshabilitada en la cuenta`,
+  },
+  "compliance.anonymization_completed": {
+    type: "IAM",
+    titleFn: (d) => `🛡️ Anonimización de Datos Personales (Derecho al Olvido) completada`,
+  },
+  "security.api_key_created": {
+    type: "IAM",
+    titleFn: (d) => `🔑 Nueva API Key de Integración Creada: ${d.keyName || "API Key"}`,
+  },
+  "security.api_key_revoked": {
+    type: "IAM",
+    titleFn: (d) => `🚫 API Key Revocada: ${d.keyName || "API Key"}`,
+  },
 };
 
 for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
