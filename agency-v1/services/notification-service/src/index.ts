@@ -744,6 +744,56 @@ const EVENT_MAPPINGS: Record<string, { type: string; titleFn: (data: any) => str
     type: "IAM",
     titleFn: (d) => `🚫 API Key Revocada: ${d.keyName || "API Key"}`,
   },
+
+  // ── Detección de Fraude & Anomalías Transaccionales (ISO 27001) ──
+  "security.impossible_travel_detected": {
+    type: "IAM",
+    titleFn: (d) => `🚨 Alerta de Seguridad: Login sospechoso desde ubicación inusual (${d.country || "IP Remota"})`,
+  },
+  "payment.fraud_alert_triggered": {
+    type: "FINANCE",
+    titleFn: (d) => `🛑 Alerta de Fraude: Patrón de pago o tarjeta altamente sospechoso detenido`,
+  },
+
+  // ── Continuidad de Negocio & Recuperación de Desastres (ISO 22301) ──
+  "disaster_recovery.failover_triggered": {
+    type: "SYSTEM",
+    titleFn: (d) => `🔄 Conmutación por Fallo (Failover) activada hacia servidor de réplica`,
+  },
+  "disaster_recovery.service_restored": {
+    type: "SYSTEM",
+    titleFn: (d) => `✅ Servicio e Infraestructura restaurados completamente tras contingencia`,
+  },
+
+  // ── Inteligencia de Clientes & Predicción de Churn (AI CRM) ──
+  "crm.churn_risk_high": {
+    type: "CRM",
+    titleFn: (d) => `⚠️ Riesgo de Cancelación Alto detectado por IA en cliente ${d.clientName || "Cliente"}`,
+  },
+  "crm.upsell_opportunity_detected": {
+    type: "CRM",
+    titleFn: (d) => `💡 Oportunidad de Venta Cruzada / Upsell identificada para ${d.clientName || "Cliente"}`,
+  },
+
+  // ── Cumplimiento Fiscal DIAN / RADIAN ──
+  "dian.certificate_expiring_soon": {
+    type: "FINANCE",
+    titleFn: (d) => `⏰ Certificado Digital de Firma DIAN próximo a vencer (Expira en ${d.daysLeft || 0} días)`,
+  },
+  "dian.consecutive_range_exhausted": {
+    type: "FINANCE",
+    titleFn: (d) => `🚨 Rango de Numeración de Facturación DIAN próximo a agotarse (${d.remainingNumbers || 0} disponibles)`,
+  },
+
+  // ── Logística & Control de Inventarios ──
+  "inventory.expired_batch_warning": {
+    type: "SYSTEM",
+    titleFn: (d) => `⚠️ Lote de Producto Próximo a Vencer: ${d.productName || "Lote"}`,
+  },
+  "logistics.shipment_delayed": {
+    type: "FINANCE",
+    titleFn: (d) => `🚚 Envío Retrasado en Guía Logística #${d.trackingNumber || ""}`,
+  },
 };
 
 for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
