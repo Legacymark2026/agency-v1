@@ -1089,20 +1089,3 @@ export async function updateChannelConfig(channel: string, value: string) {
         return { success: false };
     }
 }
-
-export async function getApiUsageLogs() {
-    try {
-        const session = await auth();
-        if (!session?.user?.companyId) return { success: false, data: [] };
-
-        const logs = await prisma.usageLog.findMany({
-            where: { companyId: session.user.companyId },
-            orderBy: { recordedAt: "desc" },
-            take: 50,
-        });
-
-        return { success: true, data: logs };
-    } catch (error: any) {
-        return { success: false, data: [], error: error.message };
-    }
-}
