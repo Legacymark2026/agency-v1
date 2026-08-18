@@ -170,8 +170,8 @@ const requireAdminGateway = async (req: express.Request, res: express.Response, 
     return res.status(401).json({ error: "Authentication required" });
   }
   try {
-    const result = await authGrpcClient.call("ValidateToken", { token: authHeader.slice(7) }, async () => {
-      return { valid: false, error: "gRPC unavailable" };
+    const result: any = await authGrpcClient.call("ValidateToken", { token: authHeader.slice(7) }, async () => {
+      return { valid: false, role: "", error: "gRPC unavailable" };
     });
     if (!result.valid || (result.role !== "super_admin" && result.role !== "admin")) {
       return res.status(403).json({ error: "Admin access required" });
@@ -334,15 +334,14 @@ const resolvers = {
 
         let companyId: string | null = null;
         try {
-          const tokenResult = await authGrpcClient.call("ValidateToken", { token: tokenStr }, async () => {
-            return { valid: false };
+          const tokenResult: any = await authGrpcClient.call("ValidateToken", { token: tokenStr }, async () => {
+            return { valid: false, companyId: "" };
           });
           if (!tokenResult.valid) return [];
           companyId = tokenResult.companyId;
         } catch {
           return [];
         }
-        if (!companyId) return [];
         if (!companyId) return [];
 
         const serviceUrl = await resolveServiceUrl("crm");
@@ -567,29 +566,30 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
         const token = req.headers.authorization || (req.headers.Authorization as string);
         if (token && token.startsWith("Bearer ")) {
           const rawToken = token.slice(7);
-          try {
-            // Fast path: verify token via gRPC with circuit breaker + fallback
-            const result = await authGrpcClient.call("ValidateToken", { token: rawToken }, async () => {
-              // Fallback: HTTP call to auth-service /api/auth/me
-              const authUrl = await resolveServiceUrl("auth");
-              const resp = await fetch(`${authUrl}/api/auth/me`, {
-                headers: { Authorization: token }
+          (async () => {
+            try {
+              // Fast path: verify token via gRPC with circuit breaker + fallback
+              const result: any = await authGrpcClient.call("ValidateToken", { token: rawToken }, async () => {
+                // Fallback: HTTP call to auth-service /api/auth/me
+                const authUrl = await resolveServiceUrl("auth");
+                const resp = await fetch(`${authUrl}/api/auth/me`, {
+                  headers: { Authorization: token }
+                });
+                if (!resp.ok) return { valid: false, userId: "", companyId: "" };
+                const data: any = await resp.json();
+                return { valid: true, userId: data.user?.id || "", companyId: "" };
               });
-              if (!resp.ok) return { valid: false, userId: "", companyId: "" };
-              const data: any = await resp.json();
-              return { valid: true, userId: data.user?.id || "", companyId: "" };
-            });
 
-            if (result.valid && result.userId) {
-              proxyReq.setHeader("x-user-id", String(result.userId));
-              if (result.companyId) {
-                proxyReq.setHeader("x-company-id", String(result.companyId));
+              if (result.valid && result.userId) {
+                proxyReq.setHeader("x-user-id", String(result.userId));
+                if (result.companyId) {
+                  proxyReq.setHeader("x-company-id", String(result.companyId));
+                }
               }
+            } catch (err) {
+              // If both gRPC and HTTP verification fail, do NOT inject headers
             }
-          } catch (err) {
-            // If both gRPC and HTTP verification fail, do NOT inject headers
-            // Downstream services will reject the request without x-user-id
-          }
+          })();
         }
       },
       proxyRes: (proxyRes, req: any, res) => {
