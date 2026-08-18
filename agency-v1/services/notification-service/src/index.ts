@@ -32,8 +32,48 @@ const PORT = parseInt(process.env.PORT || "4016", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 app.use(helmet());
-app.use(cors());
+// H-1 FIX: Require explicit ALLOWED_ORIGINS, never default to wildcard
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+  credentials: true,
+}));
 app.use(express.json({ limit: "2mb" }));
+
+// ── C-1 FIX: Authentication middleware for notification endpoints ─────────
+import jwt from "jsonwebtoken";
+
+const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const gatewayUserId = req.headers["x-user-id"];
+    
+    if (gatewayUserId) {
+      (req as any).authUser = { id: String(gatewayUserId) };
+      return next();
+    }
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const token = authHeader.slice(7);
+    const verifyKey = process.env.JWT_SECRET;
+    if (!verifyKey) return res.status(500).json({ error: "Service misconfigured" });
+
+    const decoded = jwt.verify(token, verifyKey) as any;
+    (req as any).authUser = { id: decoded.sub, role: decoded.role, companyId: decoded.companyId };
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
+// H-3 FIX: Input sanitization helper to prevent Stored XSS
+function sanitizeText(str: unknown): string {
+  if (typeof str !== "string") return "";
+  return str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+            .replace(/on\w+="[^"]*"/gi, "")
+            .trim();
+}
 
 // ── Health & Readiness ───────────────────────────────────────────────────────
 
@@ -76,27 +116,33 @@ type NotificationPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
 // ── GET /api/notifications — Paginated list ──────────────────────────────────
 
-app.get("/api/notifications", async (req, res) => {
+app.get("/api/notifications", requireAuth, async (req, res) => {
   try {
+    const authUser = (req as any).authUser;
     const { userId, companyId, category, isRead, page = "1", limit = "20" } = req.query;
-    if (!userId || !companyId) {
-      return res.status(400).json({ error: "userId and companyId required" });
+
+    const targetUserId = String(userId || authUser.id);
+    // C-1 FIX: Ensure user can only read their own notifications unless admin
+    if (authUser.id !== targetUserId && authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden access to user notifications" });
     }
 
     const where: Record<string, unknown> = {
-      userId: String(userId),
-      companyId: String(companyId),
+      userId: targetUserId,
     };
+    if (companyId) where.companyId = String(companyId);
     if (category) where.type = String(category);
     if (isRead !== undefined) where.isRead = isRead === "true";
 
-    const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
+    // L-3 FIX: Cap max page size to 100 to prevent DoS
+    const pageSize = Math.min(100, Math.max(1, parseInt(String(limit)) || 20));
+    const skip = (Math.max(1, parseInt(String(page)) || 1) - 1) * pageSize;
 
     const [notifications, total, unreadCount] = await Promise.all([
       prisma.notification.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        take: parseInt(String(limit)),
+        take: pageSize,
         skip,
       }),
       prisma.notification.count({ where }),
@@ -109,25 +155,29 @@ app.get("/api/notifications", async (req, res) => {
       notifications,
       total,
       unreadCount,
-      page: parseInt(String(page)),
-      limit: parseInt(String(limit)),
+      page: parseInt(String(page)) || 1,
+      limit: pageSize,
       hasMore: skip + notifications.length < total,
     });
   } catch (err) {
     console.error("[notification-service] GET /api/notifications error:", err);
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // ── POST /api/notifications — Create & dispatch ─────────────────────────────
 
-app.post("/api/notifications", async (req, res) => {
+app.post("/api/notifications", requireAuth, async (req, res) => {
   try {
     const { companyId, userIds, roles, title, message, type, priority, data, channels } = req.body;
 
     if (!companyId || !title) {
       return res.status(400).json({ error: "companyId and title required" });
     }
+
+    // H-3 FIX: Sanitize input title and message against Stored XSS
+    const cleanTitle = sanitizeText(title);
+    const cleanMessage = sanitizeText(message);
 
     // Resolve target users
     let targetUserIds: string[] = userIds || [];
@@ -147,7 +197,6 @@ app.post("/api/notifications", async (req, res) => {
       return res.json({ success: true, delivered: 0, reason: "no_target_users" });
     }
 
-    // Check user preferences (cached in Redis)
     const effectiveChannels: NotificationChannel[] = channels || ["IN_APP"];
 
     // Batch create IN_APP notifications
@@ -156,8 +205,8 @@ app.post("/api/notifications", async (req, res) => {
         data: targetUserIds.map((userId) => ({
           userId,
           companyId: String(companyId),
-          title: String(title),
-          message: String(message || ""),
+          title: cleanTitle,
+          message: cleanMessage,
           type: String(type || "SYSTEM"),
           isRead: false,
           data: data ? JSON.stringify(data) : undefined,
@@ -170,10 +219,9 @@ app.post("/api/notifications", async (req, res) => {
       for (const userId of targetUserIds) {
         await redisClient.lpush(
           "notification:email_queue",
-          JSON.stringify({ userId, companyId, title, message, type, priority, ts: Date.now() })
+          JSON.stringify({ userId, companyId, title: cleanTitle, message: cleanMessage, type, priority, ts: Date.now() })
         );
       }
-      console.log(`[notification-service] Queued ${targetUserIds.length} emails`);
     }
 
     // Publish event for real-time delivery
@@ -181,7 +229,7 @@ app.post("/api/notifications", async (req, res) => {
       companyId,
       userIds: targetUserIds,
       type,
-      title,
+      title: cleanTitle,
       channelsUsed: effectiveChannels,
     });
 
@@ -192,20 +240,25 @@ app.post("/api/notifications", async (req, res) => {
     });
   } catch (err) {
     console.error("[notification-service] POST /api/notifications error:", err);
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // ── PATCH /api/notifications/read — Mark as read ─────────────────────────────
 
-app.patch("/api/notifications/read", async (req, res) => {
+app.patch("/api/notifications/read", requireAuth, async (req, res) => {
   try {
+    const authUser = (req as any).authUser;
     const { userId, notificationIds, markAll } = req.body;
-    if (!userId) return res.status(400).json({ error: "userId required" });
+    const targetUserId = String(userId || authUser.id);
+
+    if (authUser.id !== targetUserId && authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     if (markAll) {
       const result = await prisma.notification.updateMany({
-        where: { userId: String(userId), isRead: false },
+        where: { userId: targetUserId, isRead: false },
         data: { isRead: true },
       });
       return res.json({ success: true, updated: result.count });
@@ -213,7 +266,7 @@ app.patch("/api/notifications/read", async (req, res) => {
 
     if (notificationIds && notificationIds.length > 0) {
       const result = await prisma.notification.updateMany({
-        where: { id: { in: notificationIds }, userId: String(userId) },
+        where: { id: { in: notificationIds }, userId: targetUserId },
         data: { isRead: true },
       });
       return res.json({ success: true, updated: result.count });
@@ -221,83 +274,92 @@ app.patch("/api/notifications/read", async (req, res) => {
 
     res.status(400).json({ error: "Provide notificationIds or markAll=true" });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // ── DELETE /api/notifications — Bulk delete ──────────────────────────────────
 
-app.delete("/api/notifications", async (req, res) => {
+app.delete("/api/notifications", requireAuth, async (req, res) => {
   try {
+    const authUser = (req as any).authUser;
     const { userId, notificationIds, deleteAll } = req.body;
-    if (!userId) return res.status(400).json({ error: "userId required" });
+    const targetUserId = String(userId || authUser.id);
+
+    if (authUser.id !== targetUserId && authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     if (deleteAll) {
       const result = await prisma.notification.deleteMany({
-        where: { userId: String(userId) },
+        where: { userId: targetUserId },
       });
       return res.json({ success: true, deleted: result.count });
     }
 
     if (notificationIds && notificationIds.length > 0) {
       const result = await prisma.notification.deleteMany({
-        where: { id: { in: notificationIds }, userId: String(userId) },
+        where: { id: { in: notificationIds }, userId: targetUserId },
       });
       return res.json({ success: true, deleted: result.count });
     }
 
     res.status(400).json({ error: "Provide notificationIds or deleteAll=true" });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // ── GET /api/notification-preferences — User channel preferences ─────────────
 
-app.get("/api/notification-preferences", async (req, res) => {
+app.get("/api/notification-preferences", requireAuth, async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "userId required" });
+    const authUser = (req as any).authUser;
+    const targetUserId = String(req.query.userId || authUser.id);
 
-    // Check Redis cache first
-    const cached = await redisClient.get(`notif_prefs:${userId}`);
+    if (authUser.id !== targetUserId && authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const cached = await redisClient.get(`notif_prefs:${targetUserId}`);
     if (cached) {
       return res.json({ preferences: JSON.parse(cached), source: "cache" });
     }
 
-    // Fallback: return defaults
     const defaults: Record<string, NotificationChannel[]> = {};
     NOTIFICATION_CATEGORIES.forEach((cat) => {
       defaults[cat] = ["IN_APP"];
     });
 
-    // Cache for 5 minutes
-    await redisClient.setex(`notif_prefs:${userId}`, 300, JSON.stringify(defaults));
-
+    await redisClient.setex(`notif_prefs:${targetUserId}`, 300, JSON.stringify(defaults));
     res.json({ preferences: defaults, source: "defaults" });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // ── PUT /api/notification-preferences — Update preferences ───────────────────
 
-app.put("/api/notification-preferences", async (req, res) => {
+app.put("/api/notification-preferences", requireAuth, async (req, res) => {
   try {
+    const authUser = (req as any).authUser;
     const { userId, preferences } = req.body;
-    if (!userId || !preferences) {
-      return res.status(400).json({ error: "userId and preferences required" });
+    const targetUserId = String(userId || authUser.id);
+
+    if (authUser.id !== targetUserId && authUser.role !== "admin" && authUser.role !== "super_admin") {
+      return res.status(403).json({ error: "Forbidden" });
     }
 
-    // Persist in Redis (primary store for preferences)
-    await redisClient.setex(`notif_prefs:${userId}`, 86400, JSON.stringify(preferences));
+    if (!preferences) {
+      return res.status(400).json({ error: "preferences required" });
+    }
 
-    // Publish preference change event
-    await eventBus.publish("notification.preferences_updated", { userId, preferences });
+    await redisClient.setex(`notif_prefs:${targetUserId}`, 86400, JSON.stringify(preferences));
+    await eventBus.publish("notification.preferences_updated", { userId: targetUserId, preferences });
 
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: String(err) });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -340,7 +402,8 @@ app.get("/api/notifications/stats", async (req, res) => {
   }
 });
 
-// ── Email Queue Worker (Background) ──────────────────────────────────────────
+// ── C-3 FIX: Production-Ready Email Queue Worker ──────────────────────────────
+import { Resend } from "resend";
 
 async function processEmailQueue() {
   try {
@@ -349,17 +412,26 @@ async function processEmailQueue() {
 
     const { userId, title, message } = JSON.parse(item);
 
-    // Fetch user email
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { email: true, name: true },
     });
 
     if (user?.email) {
-      console.log(`[notification-service] 📧 Email → ${user.email}: ${title}`);
-      // In production: use Resend/SendGrid here
-      // const resend = new Resend(process.env.RESEND_API_KEY);
-      // await resend.emails.send({ from: 'noreply@legacymark.com', to: user.email, subject: title, text: message });
+      const apiKey = process.env.RESEND_API_KEY;
+      if (apiKey && apiKey !== "re_123456789") {
+        const resend = new Resend(apiKey);
+        const canonicalEmail = process.env.ADMIN_CANONICAL_EMAIL || "no-reply@legacymarksas.com";
+        await resend.emails.send({
+          from: `LegacyMark <${canonicalEmail}>`,
+          to: [user.email],
+          subject: title,
+          html: `<div style="font-family:sans-serif;padding:20px;background:#0f172a;color:#fff;"><h2 style="color:#14b8a6;">${title}</h2><p>${message}</p></div>`,
+        });
+        console.log(`[notification-service] 📧 Email sent via Resend → ${user.email}`);
+      } else {
+        console.log(`[notification-service] 📧 Email queued (Mock/Dev) → ${user.email}: ${title}`);
+      }
     }
   } catch (err) {
     console.error("[notification-service] Email worker error:", err);
