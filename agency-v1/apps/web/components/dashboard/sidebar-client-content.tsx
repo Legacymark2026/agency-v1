@@ -10,6 +10,7 @@ import {
 import Image from "next/image";
 import { useState, useEffect, useTransition } from "react";
 import { NotificationBell } from "./notification-bell";
+import { PLATFORM_VERSION } from "@/lib/version";
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; code?: string; }
 interface NavGroup { title: string; code: string; accent?: string; icon?: React.ReactNode; items: NavItem[]; }
@@ -215,14 +216,23 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                             })}
                         </nav>
 
-                        {/* Footer Right Pane: Logout & User info */}
+                        {/* Footer Right Pane: Logout, User info & Version Badge */}
                         <div className="p-4 shrink-0" style={{ borderTop: '1px solid rgba(30,41,59,0.4)' }}>
                             <div className="flex flex-col mb-3">
-                                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-1">Sesión Actual</span>
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">Sesión Actual</span>
+                                    <span className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400/90 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-800/50" title={`Build: ${PLATFORM_VERSION.buildNumber} (${PLATFORM_VERSION.buildDate})`}>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                        {PLATFORM_VERSION.version}
+                                    </span>
+                                </div>
                                 <span className="text-xs text-slate-300 truncate">{userInfo.email}</span>
-                                <div className="mt-1">
+                                <div className="mt-1 flex items-center justify-between">
                                     <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono rounded-sm border ${userInfo.badge.color}`}>
                                         {userInfo.badge.label}
+                                    </span>
+                                    <span className="text-[9px] text-slate-500 font-mono" title={PLATFORM_VERSION.releaseName}>
+                                        {PLATFORM_VERSION.buildNumber.slice(0, 10)}
                                     </span>
                                 </div>
                             </div>

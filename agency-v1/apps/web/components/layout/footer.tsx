@@ -5,6 +5,7 @@ import NextImage from "next/image";
 import { siteConfig } from "@/lib/site-config";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { PLATFORM_VERSION } from "@/lib/version";
 
 // ─── Social Icon Component ─────────────────────────────────────────────────────
 interface SocialLinkProps {
@@ -321,13 +322,19 @@ export function Footer() {
 
                 {/* ── Bottom bar ── */}
                 <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-between">
-                    {/* ── 24. Copyright with year + entity name styled ── */}
-                    <p className="text-center text-xs text-slate-400 sm:text-left">
-                        © {year}{" "}
-                        <span className="font-semibold text-slate-300">LegacyMark SAS</span>
-                        {" "}— {t('rightsEnd')}{" "}
-                        <span className="text-slate-400">NIT {siteConfig.nit}</span>
-                    </p>
+                    {/* ── 24. Copyright with year + entity name + version badge ── */}
+                    <div className="flex flex-col sm:flex-row items-center gap-2 text-center text-xs text-slate-400 sm:text-left">
+                        <p>
+                            © {year}{" "}
+                            <span className="font-semibold text-slate-300">LegacyMark SAS</span>
+                            {" "}— {t('rightsEnd')}{" "}
+                            <span className="text-slate-400">NIT {siteConfig.nit}</span>
+                        </p>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900 border border-teal-500/30 text-[10px] font-mono text-teal-400" title={`Release: ${PLATFORM_VERSION.releaseName} | Build: ${PLATFORM_VERSION.buildNumber}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                            {PLATFORM_VERSION.version}
+                        </span>
+                    </div>
 
                     {/* ── 25. Legal links with separators ── */}
                     <nav className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 text-xs text-gray-600">

@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:turbo": "next dev",
-    "build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx prisma generate && set NODE_OPTIONS=--max-old-space-size=8192 && next build",
+    "build": "node ../../scripts/auto-version-bump.js || true && set NODE_OPTIONS=--max-old-space-size=8192 && npx prisma generate && set NODE_OPTIONS=--max-old-space-size=8192 && next build",
     "start": "next start",
     "lint": "eslint",
     "type-check": "node --max-old-space-size=4096 ../../node_modules/typescript/bin/tsc --noEmit",
