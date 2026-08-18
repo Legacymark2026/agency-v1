@@ -748,7 +748,7 @@ app.patch('/api/auth/users/:id/mfa', requireAuth, async (req, res) => {
 app.post('/api/auth/role-configs', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { roleName, allowedRoutes, description, isActive } = req.body;
-    const name = roleName.trim().toLowerCase();
+    const name = String(roleName || '').trim().toLowerCase();
     const config = await prisma.roleConfig.upsert({
       where: { roleName: name },
       create: {
@@ -769,7 +769,8 @@ app.post('/api/auth/role-configs', requireAuth, requireAdmin, async (req, res) =
 
 app.delete('/api/auth/role-configs/:roleName', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const name = req.params.roleName.trim().toLowerCase();
+    const rawRoleName = req.params.roleName;
+    const name = String(Array.isArray(rawRoleName) ? rawRoleName[0] : rawRoleName || '').trim().toLowerCase();
     await prisma.roleConfig.delete({ where: { roleName: name } });
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -801,9 +802,10 @@ app.get('/api/auth/global-users', requireAuth, requireAdmin, async (req, res) =>
 app.patch('/api/auth/global-users/:id/role', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { role } = req.body;
-    const name = role.trim().toLowerCase();
+    const name = String(role || '').trim().toLowerCase();
+    const targetId = String(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
     const user = await prisma.user.update({
-      where: { id: req.params.id },
+      where: { id: targetId },
       data: { role: name },
     });
     res.json({ success: true, user });
