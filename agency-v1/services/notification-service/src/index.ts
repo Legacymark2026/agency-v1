@@ -519,13 +519,13 @@ notifGrpcServer.addService(
   {
     SendDirectNotification: async (call: any, callback: any) => {
       try {
-        const { userId, title, message, type } = call.request;
+        const { userId, companyId, title, message, type } = call.request;
         const notification = await prisma.notification.create({
           data: {
             userId,
-            companyId: "default",
-            title,
-            message,
+            companyId: companyId || "default",
+            title: sanitizeText(title),
+            message: sanitizeText(message),
             type: type || "SYSTEM",
             isRead: false,
           },
