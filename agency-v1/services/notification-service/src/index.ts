@@ -103,9 +103,11 @@ import { errorHandler } from "./middlewares/notification.middleware";
 app.use("/api/v1", notificationRouter);
 app.use(errorHandler);
 
-// ── BullMQ Queue & Worker Imports ───────────────────────────────────────────
+// ── BullMQ Queue, Cache & Observability Imports ──────────────────────────────
 import { enqueueNotification, getDLQStats, getDLQJobs, replayDLQJob, purgeDLQ } from "./queue/notification.queue";
 import { startNotificationWorker } from "./queue/notification.worker";
+import { getUnreadCountCached, invalidateUnreadCount } from "./cache/notification.cache";
+import { traceSpan } from "./observability/tracer";
 
 // Initialize resilient background worker
 startNotificationWorker();
@@ -145,7 +147,7 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
     const pageSize = Math.min(100, Math.max(1, parseInt(String(limit)) || 20));
     const skip = (Math.max(1, parseInt(String(page)) || 1) - 1) * pageSize;
 
-    const [notifications, total, unreadCount] = await Promise.all([
+    const [notifications, total] = await Promise.all([
       prisma.notification.findMany({
         where,
         orderBy: { createdAt: "desc" },
@@ -153,10 +155,10 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
         skip,
       }),
       prisma.notification.count({ where }),
-      prisma.notification.count({
-        where: { ...where, isRead: false },
-      }),
     ]);
+
+    // Distributed Redis Cache for unread count
+    const unreadCount = await getUnreadCountCached(targetUserId, String(companyId || ""));
 
     res.json({
       notifications,
@@ -206,16 +208,22 @@ app.post("/api/notifications", requireAuth, async (req, res) => {
 
     const effectiveChannels: NotificationChannel[] = channels || ["IN_APP"];
 
-    // ── Resilient Decoupled Enqueue (BullMQ Queue System) ───────────────────
-    const job = await enqueueNotification({
-      companyId: String(companyId),
-      userIds: targetUserIds,
-      title: cleanTitle,
-      message: cleanMessage,
-      type: String(type || "SYSTEM"),
-      priority,
-      channels: effectiveChannels,
-      data,
+    // ── Resilient Decoupled Enqueue with OpenTelemetry Ingest Trace ─────────
+    const job = await traceSpan("notification.ingest", async (span) => {
+      span.setAttribute("companyId", String(companyId));
+      span.setAttribute("targetUserCount", targetUserIds.length);
+      span.setAttribute("channels", effectiveChannels.join(","));
+
+      return enqueueNotification({
+        companyId: String(companyId),
+        userIds: targetUserIds,
+        title: cleanTitle,
+        message: cleanMessage,
+        type: String(type || "SYSTEM"),
+        priority,
+        channels: effectiveChannels,
+        data,
+      });
     });
 
     // Fast HTTP response (Decoupled execution < 10ms)
@@ -249,6 +257,7 @@ app.patch("/api/notifications/read", requireAuth, async (req, res) => {
         where: { userId: targetUserId, isRead: false },
         data: { isRead: true },
       });
+      await invalidateUnreadCount(targetUserId);
       return res.json({ success: true, updated: result.count });
     }
 
@@ -257,6 +266,7 @@ app.patch("/api/notifications/read", requireAuth, async (req, res) => {
         where: { id: { in: notificationIds }, userId: targetUserId },
         data: { isRead: true },
       });
+      await invalidateUnreadCount(targetUserId);
       return res.json({ success: true, updated: result.count });
     }
 
@@ -282,6 +292,7 @@ app.delete("/api/notifications", requireAuth, async (req, res) => {
       const result = await prisma.notification.deleteMany({
         where: { userId: targetUserId },
       });
+      await invalidateUnreadCount(targetUserId);
       return res.json({ success: true, deleted: result.count });
     }
 
@@ -289,6 +300,7 @@ app.delete("/api/notifications", requireAuth, async (req, res) => {
       const result = await prisma.notification.deleteMany({
         where: { id: { in: notificationIds }, userId: targetUserId },
       });
+      await invalidateUnreadCount(targetUserId);
       return res.json({ success: true, deleted: result.count });
     }
 

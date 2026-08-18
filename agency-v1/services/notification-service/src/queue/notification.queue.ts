@@ -27,6 +27,7 @@ export interface NotificationJobData {
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
   channels: ("IN_APP" | "EMAIL" | "PUSH" | "SMS")[];
   data?: Record<string, unknown>;
+  traceparent?: string;
   createdAt?: string;
 }
 
@@ -40,9 +41,29 @@ export const dispatchQueue = new Queue<NotificationJobData>("notification:dispat
       type: "exponential",
       delay: 5000, // Initial 5s delay -> 15s -> 45s -> 135s -> 405s
     },
-    removeOnComplete: { age: 86400, count: 5000 }, // Keep stats for 24h
-    removeOnFail: false, // Keep failed jobs for DLQ transfer
+    removeOnComplete: { age: 86400, count: 5000 },
+    removeOnFail: false,
   },
+});
+
+// ── Per-Channel Rate-Limited Queues ──────────────────────────────────────────
+
+// Email Queue: 100 emails / sec (Resend API Rate Compliance)
+export const emailQueue = new Queue<NotificationJobData>("notification:email", {
+  connection: redisConnection as any,
+  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
+});
+
+// SMS Queue: 10 SMS / sec (Twilio API Rate Compliance)
+export const smsQueue = new Queue<NotificationJobData>("notification:sms", {
+  connection: redisConnection as any,
+  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
+});
+
+// Push Queue: 500 push / sec (WebPush/FCM Rate Compliance)
+export const pushQueue = new Queue<NotificationJobData>("notification:push", {
+  connection: redisConnection as any,
+  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
 
 // ── Dead Letter Queue (DLQ) ──────────────────────────────────────────────────
