@@ -15,7 +15,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html>
+    <html lang="es">
       <body className="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center shadow-2xl">
           <div className="w-14 h-14 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4">
@@ -26,7 +26,10 @@ export default function GlobalError({
             Ha ocurrido un inconveniente inesperado en la interfaz. Por favor, reintenta cargar la página.
           </p>
           <button
-            onClick={() => reset()}
+            onClick={() => {
+              if (typeof window !== 'undefined') window.location.reload();
+              else reset();
+            }}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm transition-all"
           >
             <RotateCcw className="w-4 h-4" />
