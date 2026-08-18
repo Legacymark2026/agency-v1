@@ -54,11 +54,11 @@ try {
   console.warn("[auth-service] Key load warning:", err.message);
 }
 
-// Auto-generate RSA 2048-bit KeyPair if missing
+// H-2 FIX: Auto-generate RSA 4096-bit KeyPair if missing (minimum secure size)
 if (!privateKey || !publicKey) {
-  console.log("[auth-service] Auto-generating 2048-bit RSA KeyPair for RS256 signing and JWKS...");
+  console.warn("[auth-service] ⚠️  No RSA keys found — auto-generating 4096-bit keypair. Mount persistent keys in /certs/ for production!");
   const { privateKey: genPrivate, publicKey: genPublic } = crypto.generateKeyPairSync("rsa", {
-    modulusLength: 2048,
+    modulusLength: 4096,
     publicKeyEncoding: { type: "spki", format: "pem" },
     privateKeyEncoding: { type: "pkcs8", format: "pem" },
   });
@@ -68,7 +68,11 @@ if (!privateKey || !publicKey) {
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(",") || "*" }));
+// H-4 FIX: Never allow wildcard CORS — require explicit ALLOWED_ORIGINS
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+  credentials: true,
+}));
 app.use(express.json({ limit: "1mb" }));
 
 // ── JWKS Endpoint (JSON Web Key Set - Inter-service Public Key Verification) ──
@@ -202,8 +206,14 @@ app.post("/api/auth/login", async (req, res) => {
 
     // Generate JWT
     const jwt = await import("jsonwebtoken");
-    const signKey = privateKey || process.env.JWT_SECRET || "dev-secret-change-me";
-    const signOptions: any = { expiresIn: "24h" };
+    // H-1 FIX: No hardcoded fallback secrets — fail loudly if misconfigured
+    const signKey = privateKey || process.env.JWT_SECRET;
+    if (!signKey) {
+      console.error("[auth-service] FATAL: No JWT signing key configured");
+      return res.status(500).json({ error: "Authentication service misconfigured" });
+    }
+    // H-7 FIX: Align JWT TTL with NextAuth session (1 hour)
+    const signOptions: any = { expiresIn: "1h" };
     if (privateKey) {
       signOptions.algorithm = "RS256";
     }
@@ -223,12 +233,13 @@ app.post("/api/auth/login", async (req, res) => {
       signOptions
     );
 
-    // Create session in AUTH DB
+    // H-3 FIX: Store SHA-256 hash of token, never the raw JWT
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const session = await prisma.session.create({
       data: {
         userId: user.id,
-        sessionToken: token,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        sessionToken: tokenHash,
+        expires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour aligned with JWT TTL
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
       },
@@ -275,7 +286,9 @@ app.get("/api/auth/me", async (req, res) => {
     }
 
     const jwt = await import("jsonwebtoken");
-    const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    // H-1 FIX: No hardcoded fallback
+    const verifyKey = publicKey || process.env.JWT_SECRET;
+    if (!verifyKey) return res.status(500).json({ error: "Auth service misconfigured" });
     const verifyOptions: any = {};
     if (publicKey) {
       verifyOptions.algorithms = ["RS256"];
@@ -318,7 +331,8 @@ app.post("/api/auth/logout", async (req, res) => {
 
     const token = authHeader.slice(7);
     const jwt = await import("jsonwebtoken");
-    const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    const verifyKey = publicKey || process.env.JWT_SECRET;
+    if (!verifyKey) return res.status(500).json({ error: "Auth service misconfigured" });
     const verifyOptions: any = {};
     if (publicKey) {
       verifyOptions.algorithms = ["RS256"];
@@ -337,9 +351,10 @@ app.post("/api/auth/logout", async (req, res) => {
     // Add to Redis blacklist
     await redis.setex(`jwt:blacklist:${token}`, ttl, "revoked");
 
-    // Clean up SQL session table
+    // Clean up SQL session table (H-3: match by hashed token)
+    const logoutTokenHash = crypto.createHash("sha256").update(token).digest("hex");
     await prisma.session.deleteMany({
-      where: { sessionToken: token },
+      where: { sessionToken: logoutTokenHash },
     });
 
     // Log logout to ANALYTICS DB (fire-and-forget)
@@ -363,7 +378,9 @@ app.post("/api/auth/logout", async (req, res) => {
 app.post("/api/auth/validate", async (req, res) => {
   // Verify internal service secret
   const authHeader = req.headers.authorization;
-  const internalSecret = process.env.INTERNAL_SECRET || "video-service-secret-change-in-production";
+  // H-1 FIX: No hardcoded fallback for inter-service secret
+  const internalSecret = process.env.INTERNAL_SECRET;
+  if (!internalSecret) return res.status(500).json({ error: "Internal secret not configured" });
   if (!authHeader || authHeader !== `Bearer ${internalSecret}`) {
     return res.status(401).json({ error: "Unauthorized inter-service request" });
   }
@@ -378,7 +395,8 @@ app.post("/api/auth/validate", async (req, res) => {
     }
 
     const jwt = await import("jsonwebtoken");
-    const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+    const verifyKey = publicKey || process.env.JWT_SECRET;
+    if (!verifyKey) return res.json({ valid: false, reason: "misconfigured" });
     const verifyOptions: any = {};
     if (publicKey) {
       verifyOptions.algorithms = ["RS256"];
@@ -434,21 +452,55 @@ app.post("/api/auth/check-permission", async (req, res) => {
   }
 });
 
+// ── C-4 FIX: Authentication middleware for all RBAC/admin routes ──────────
+// Extracts and verifies JWT from Authorization header before allowing access
+const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const token = authHeader.slice(7);
+    const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
+    if (isBlacklisted) return res.status(401).json({ error: "Token revoked" });
+
+    const jwt = await import("jsonwebtoken");
+    const verifyKey = publicKey || process.env.JWT_SECRET;
+    if (!verifyKey) return res.status(500).json({ error: "Auth misconfigured" });
+    const verifyOptions: any = publicKey ? { algorithms: ["RS256"] } : {};
+    const decoded = jwt.verify(token, verifyKey, verifyOptions) as any;
+
+    (req as any).authUser = { id: decoded.sub, role: decoded.role, email: decoded.email };
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
+// Require super_admin role for sensitive operations
+const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const user = (req as any).authUser;
+  if (!user || (user.role !== "super_admin" && user.role !== "admin")) {
+    return res.status(403).json({ error: "Insufficient permissions" });
+  }
+  next();
+};
+
 // GET /api/auth/roles/:companyId — Get roles for a company
-app.get("/api/auth/roles/:companyId", async (req, res) => {
+app.get("/api/auth/roles/:companyId", requireAuth, async (req, res) => {
   try {
     const roles = await prisma.role.findMany({
       where: { companyId: req.params.companyId, isActive: true },
       include: { permissions: { include: { permission: true } } },
     });
     res.json({ roles });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+  } catch (err: any) {
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Custom Roles CRUD
-app.get('/api/auth/roles/full/:companyId', async (req, res) => {
+app.get('/api/auth/roles/full/:companyId', requireAuth, async (req, res) => {
   try {
     const roles = await prisma.role.findMany({
       where: { companyId: req.params.companyId, isActive: true },
@@ -466,7 +518,7 @@ app.get('/api/auth/roles/full/:companyId', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/auth/roles/:id/detail', async (req, res) => {
+app.get('/api/auth/roles/:id/detail', requireAuth, async (req, res) => {
   try {
     const role = await prisma.role.findFirst({
       where: { id: req.params.id },
@@ -483,7 +535,7 @@ app.get('/api/auth/roles/:id/detail', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/auth/roles', async (req, res) => {
+app.post('/api/auth/roles', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { companyId, name, description, isDefault, priority, permissionIds } = req.body;
     const existing = await prisma.role.findFirst({ where: { companyId, name } });
@@ -510,7 +562,7 @@ app.post('/api/auth/roles', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.patch('/api/auth/roles/:id', async (req, res) => {
+app.patch('/api/auth/roles/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { companyId, name, description, isDefault, isActive, priority, permissionIds } = req.body;
     const existing = await prisma.role.findFirst({ where: { id: req.params.id } });
@@ -544,7 +596,7 @@ app.patch('/api/auth/roles/:id', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/auth/roles/:id', async (req, res) => {
+app.delete('/api/auth/roles/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const role = await prisma.role.findUnique({ where: { id: req.params.id } });
     if (!role) return res.status(404).json({ error: 'Rol no encontrado' });
@@ -562,7 +614,7 @@ app.delete('/api/auth/roles/:id', async (req, res) => {
 });
 
 // User Assignment & RBAC Stats
-app.patch('/api/auth/assign-role', async (req, res) => {
+app.patch('/api/auth/assign-role', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { userId, companyId, roleId } = req.body;
     // companyUser lives in CORE DB — accessed via proxy
@@ -581,7 +633,7 @@ app.patch('/api/auth/assign-role', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/auth/users-with-roles/:companyId', async (req, res) => {
+app.get('/api/auth/users-with-roles/:companyId', requireAuth, async (req, res) => {
   try {
     // Step 1: Get company members from CORE DB
     const members = await (prisma as any).companyUser.findMany({
@@ -619,7 +671,7 @@ app.get('/api/auth/users-with-roles/:companyId', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/auth/permissions', async (req, res) => {
+app.get('/api/auth/permissions', requireAuth, async (req, res) => {
   try {
     const permissions = await prisma.permission.findMany({
       where: { isActive: true },
@@ -629,7 +681,7 @@ app.get('/api/auth/permissions', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/auth/permissions/sync', async (req, res) => {
+app.post('/api/auth/permissions/sync', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { permissions } = req.body;
     const existing = await prisma.permission.findMany({ select: { name: true } });
@@ -647,28 +699,53 @@ app.post('/api/auth/permissions/sync', async (req, res) => {
 });
 
 // MFA Endpoints
-app.get('/api/auth/users/:id/mfa', async (req, res) => {
+// C-2 FIX: Never expose mfaSecret or backupCodes in GET response
+app.get('/api/auth/users/:id/mfa', requireAuth, async (req, res) => {
   try {
+    // Ensure user can only query their own MFA status
+    const authUser = (req as any).authUser;
+    if (authUser.id !== req.params.id && authUser.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
-      select: { email: true, mfaEnabled: true, mfaSecret: true, backupCodes: true }
+      select: { email: true, mfaEnabled: true, backupCodes: true }
     });
-    res.json(user);
-  } catch (err: any) { res.status(500).json({ error: err.message }); }
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    // Only return whether MFA is enabled and how many backup codes remain
+    const backupCodes = (user.backupCodes as string[]) || [];
+    const unusedCount = backupCodes.filter((c: string) => c !== 'USED').length;
+    res.json({
+      email: user.email,
+      mfaEnabled: user.mfaEnabled,
+      backupCodesRemaining: unusedCount,
+    });
+  } catch (err: any) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
-app.patch('/api/auth/users/:id/mfa', async (req, res) => {
+// C-3 FIX: Whitelist allowed MFA fields — prevent mass assignment / privilege escalation
+app.patch('/api/auth/users/:id/mfa', requireAuth, async (req, res) => {
   try {
+    const authUser = (req as any).authUser;
+    if (authUser.id !== req.params.id && authUser.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    // Only allow MFA-related fields — NEVER pass req.body directly
+    const { mfaEnabled, mfaSecret, backupCodes } = req.body;
     await prisma.user.update({
       where: { id: req.params.id },
-      data: req.body
+      data: {
+        ...(mfaEnabled !== undefined && { mfaEnabled: Boolean(mfaEnabled) }),
+        ...(mfaSecret !== undefined && { mfaSecret: String(mfaSecret) }),
+        ...(backupCodes !== undefined && { backupCodes }),
+      },
     });
     res.json({ success: true });
-  } catch (err: any) { res.status(500).json({ error: err.message }); }
+  } catch (err: any) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // RoleConfig & Global Users Endpoints
-app.post('/api/auth/role-configs', async (req, res) => {
+app.post('/api/auth/role-configs', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { roleName, allowedRoutes, description, isActive } = req.body;
     const name = roleName.trim().toLowerCase();
@@ -690,7 +767,7 @@ app.post('/api/auth/role-configs', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/auth/role-configs/:roleName', async (req, res) => {
+app.delete('/api/auth/role-configs/:roleName', requireAuth, requireAdmin, async (req, res) => {
   try {
     const name = req.params.roleName.trim().toLowerCase();
     await prisma.roleConfig.delete({ where: { roleName: name } });
@@ -698,14 +775,14 @@ app.delete('/api/auth/role-configs/:roleName', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/auth/role-configs', async (req, res) => {
+app.get('/api/auth/role-configs', requireAuth, async (req, res) => {
   try {
     const configs = await prisma.roleConfig.findMany({ orderBy: { roleName: 'asc' } });
     res.json(configs);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/auth/global-users', async (req, res) => {
+app.get('/api/auth/global-users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -721,7 +798,7 @@ app.get('/api/auth/global-users', async (req, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
-app.patch('/api/auth/global-users/:id/role', async (req, res) => {
+app.patch('/api/auth/global-users/:id/role', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { role } = req.body;
     const name = role.trim().toLowerCase();
@@ -757,7 +834,8 @@ grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
         return callback(null, { valid: false, error: "Token has been revoked" });
       }
 
-      const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+      const verifyKey = publicKey || process.env.JWT_SECRET;
+      if (!verifyKey) return callback(null, { valid: false, error: "Auth misconfigured" });
       const verifyOptions: any = {};
       if (publicKey) verifyOptions.algorithms = ["RS256"];
 

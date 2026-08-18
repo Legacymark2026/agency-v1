@@ -127,10 +127,22 @@ const rateLimitMiddleware = async (req: express.Request, res: express.Response, 
     }
     next();
   } catch (err: any) {
-    console.error(`[RateLimiter] Redis error for IP ${clientIp}:`, err.message);
-    next(); // Fail-open to avoid service outage if Redis fails
+    // H-5 FIX: Fail-closed with in-memory fallback when Redis is down
+    console.error(`[RateLimiter] Redis error for IP ${clientIp}: ${err.message}. Applying in-memory fallback.`);
+    // Emergency in-memory counter (basic DoS protection when Redis fails)
+    const memKey = `${clientIp}:${req.path}`;
+    const memCount = (inMemoryRateLimits.get(memKey) || 0) + 1;
+    inMemoryRateLimits.set(memKey, memCount);
+    if (memCount > 200) { // Higher threshold since in-memory is per-instance
+      return res.status(429).json({ error: "Too many requests (fallback)" });
+    }
+    next();
   }
 };
+
+// In-memory fallback rate limit counters (reset every 60s)
+const inMemoryRateLimits = new Map<string, number>();
+setInterval(() => inMemoryRateLimits.clear(), 60_000);
 
 app.use(rateLimitMiddleware);
 
@@ -151,8 +163,26 @@ redis.get("config:api_pricing").then((cached) => {
   }
 }).catch(() => {});
 
-// Admin Endpoints para consultar y cambiar el tarifario en tiempo real
-app.get("/api/v1/admin/pricing", async (req, res) => {
+// H-6 FIX: Protect admin pricing endpoints with internal auth check
+const requireAdminGateway = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  try {
+    const result = await authGrpcClient.call("ValidateToken", { token: authHeader.slice(7) }, async () => {
+      return { valid: false, error: "gRPC unavailable" };
+    });
+    if (!result.valid || (result.role !== "super_admin" && result.role !== "admin")) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    next();
+  } catch {
+    return res.status(401).json({ error: "Authentication failed" });
+  }
+};
+
+app.get("/api/v1/admin/pricing", requireAdminGateway, async (req, res) => {
   try {
     const cached = await redis.get("config:api_pricing");
     const pricing = cached ? JSON.parse(cached) : activeApiCostTable;
@@ -162,7 +192,7 @@ app.get("/api/v1/admin/pricing", async (req, res) => {
   }
 });
 
-app.post("/api/v1/admin/pricing", async (req, res) => {
+app.post("/api/v1/admin/pricing", requireAdminGateway, async (req, res) => {
   try {
     const { pricing } = req.body;
     if (!pricing || typeof pricing !== "object") {
@@ -298,13 +328,21 @@ const resolvers = {
     leads: async (user: any, _args: any, context: any) => {
       if (!context.token) return [];
       try {
-        // Native JWT Payload Decode (Lightweight base64 url decode)
+        // M-7 FIX: Verify JWT via gRPC instead of decoding without signature check
         const tokenStr = context.token.replace("Bearer ", "");
-        const payloadBase64 = tokenStr.split(".")[1];
-        if (!payloadBase64) return [];
-        
-        const decodedPayload = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf8"));
-        const companyId = decodedPayload?.companies?.[0]?.companyId;
+        if (!tokenStr) return [];
+
+        let companyId: string | null = null;
+        try {
+          const tokenResult = await authGrpcClient.call("ValidateToken", { token: tokenStr }, async () => {
+            return { valid: false };
+          });
+          if (!tokenResult.valid) return [];
+          companyId = tokenResult.companyId;
+        } catch {
+          return [];
+        }
+        if (!companyId) return [];
         if (!companyId) return [];
 
         const serviceUrl = await resolveServiceUrl("crm");
@@ -386,7 +424,9 @@ const edgeCacheMiddleware = async (req: express.Request, res: express.Response, 
     return next();
   }
 
-  const cacheKey = `edge_cache:${req.path}`;
+  // M-6 FIX: Include auth state in cache key to prevent cross-user cache leaks
+  const authId = (req.headers.authorization || "anon").slice(0, 20);
+  const cacheKey = `edge_cache:${authId}:${req.path}`;
   try {
     const cachedData = await redis.get(cacheKey);
     if (cachedData) {
@@ -523,24 +563,32 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
         proxyReq.removeHeader("x-user-id");
         proxyReq.removeHeader("x-company-id");
 
-        // Extract validated claims from JWT if present
+        // C-5 FIX: Verify JWT signature via gRPC before injecting identity headers
         const token = req.headers.authorization || (req.headers.Authorization as string);
         if (token && token.startsWith("Bearer ")) {
+          const rawToken = token.slice(7);
           try {
-            const payloadBase64 = token.split(".")[1];
-            if (payloadBase64) {
-              const decoded = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf8"));
-              const userId = decoded?.sub || decoded?.userId || decoded?.id;
-              if (userId) {
-                proxyReq.setHeader("x-user-id", String(userId));
-              }
-              const companyId = decoded?.companyId || decoded?.companies?.[0]?.companyId;
-              if (companyId) {
-                proxyReq.setHeader("x-company-id", String(companyId));
+            // Fast path: verify token via gRPC with circuit breaker + fallback
+            const result = await authGrpcClient.call("ValidateToken", { token: rawToken }, async () => {
+              // Fallback: HTTP call to auth-service /api/auth/me
+              const authUrl = await resolveServiceUrl("auth");
+              const resp = await fetch(`${authUrl}/api/auth/me`, {
+                headers: { Authorization: token }
+              });
+              if (!resp.ok) return { valid: false, userId: "", companyId: "" };
+              const data: any = await resp.json();
+              return { valid: true, userId: data.user?.id || "", companyId: "" };
+            });
+
+            if (result.valid && result.userId) {
+              proxyReq.setHeader("x-user-id", String(result.userId));
+              if (result.companyId) {
+                proxyReq.setHeader("x-company-id", String(result.companyId));
               }
             }
           } catch (err) {
-            // Ignore malformed tokens; downstream services will reject
+            // If both gRPC and HTTP verification fail, do NOT inject headers
+            // Downstream services will reject the request without x-user-id
           }
         }
       },

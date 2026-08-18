@@ -16,7 +16,12 @@ const registerSchema = z.object({
     firstName: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     lastName: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
     email: z.string().email("Email inválido"),
-    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+    // L-4 FIX: Unify password policy — require uppercase, lowercase, and number everywhere
+    password: z.string()
+        .min(8, "La contraseña debe tener al menos 8 caracteres")
+        .regex(/[A-Z]/, "Debe contener al menos una letra mayúscula")
+        .regex(/[a-z]/, "Debe contener al menos una letra minúscula")
+        .regex(/[0-9]/, "Debe contener al menos un número"),
 });
 
 export async function registerUser(formData: z.infer<typeof registerSchema>) {
@@ -43,8 +48,8 @@ export async function registerUser(formData: z.infer<typeof registerSchema>) {
         return { error: "Este email ya está registrado" };
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    // M-4 FIX: Use 12 bcrypt rounds consistently across the entire system
+    const passwordHash = await bcrypt.hash(password, 12);
 
     // Create user
     try {
@@ -89,7 +94,7 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
     }
 
     try {
-        process.stderr.write(`[ENV-CHECK] AUTH_DATABASE_URL=${process.env.AUTH_DATABASE_URL ? 'SET' : 'MISSING'} | DATABASE_URL=${process.env.DATABASE_URL ? 'SET' : 'MISSING'} | CORE=${process.env.CORE_DATABASE_URL ? 'SET' : 'MISSING'}\n`);
+        // M-5 FIX: Removed ENV diagnostics that leak configuration details to stderr in production
         const user = await prisma.user.findUnique({ where: { email } });
         const redirectTo = user?.role === UserRole.EXTERNAL_CLIENT ? '/dashboard/client' : '/dashboard';
 
@@ -120,10 +125,12 @@ export async function loginUser(prevState: string | undefined, formData: FormDat
             }
         }
 
-        const errMsg = error instanceof Error ? error.message : String(error);
-        const errStack = error instanceof Error ? (error.stack || '').split('\n').slice(0, 5).join(' | ') : '';
-        process.stderr.write(`[LOGIN ERROR] ${errMsg}\n[STACK] ${errStack}\n`);
-        return `Error: ${errMsg.slice(0, 300)}`;
+        // M-5 FIX: Don't expose raw error message to client in production
+        if (process.env.NODE_ENV === 'development') {
+            const errMsg = error instanceof Error ? error.message : String(error);
+            process.stderr.write(`[LOGIN ERROR] ${errMsg}\n`);
+        }
+        return 'Ocurrió un error al iniciar sesión. Intenta nuevamente.';
     }
 }
 
@@ -131,6 +138,13 @@ export async function loginWithOAuth(provider: string) {
     try {
         await signIn(provider, { redirectTo: '/dashboard' });
     } catch (error) {
+        // M-8 FIX: Re-throw NEXT_REDIRECT so Next.js can complete the OAuth redirect
+        const isNextRedirect =
+            error instanceof Error &&
+            (error.message === 'NEXT_REDIRECT' ||
+                (error as { digest?: string }).digest?.startsWith('NEXT_REDIRECT'));
+        if (isNextRedirect) throw error;
+
         console.error('[LoginWithOAuth] OAuth login error:', error);
         return { error: 'No se pudo iniciar sesión con el proveedor seleccionado. Intenta nuevamente.' };
     }
@@ -230,6 +244,12 @@ export async function resetPassword(
     }
 
     const { token, password } = parsed.data;
+
+    // H-8 FIX: Rate limit password reset token attempts to prevent brute force
+    const isAllowed = await rateLimit(`reset_password:${token.substring(0, 8)}`, 5, 15 * 60 * 1000);
+    if (!isAllowed) {
+        return { error: "Demasiados intentos. Espera 15 minutos." };
+    }
 
     try {
         const resetToken = await prisma.passwordResetToken.findUnique({

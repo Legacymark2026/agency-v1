@@ -7,13 +7,15 @@ const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fa
 
 export const authConfig: NextAuthConfig = {
     secret: authSecret,
-    debug: true,
+    // M-3 FIX: Never enable debug in production — leaks tokens and internal state to logs
+    debug: process.env.NODE_ENV === "development",
     trustHost: true,
     
     // SESSION HARDENING - Security Best Practices
     session: {
         strategy: "jwt",
-        maxAge: 30 * 60, // 30 minutes in seconds
+        // H-7 FIX: Align with auth-service JWT TTL (1 hour) for consistent session management
+        maxAge: 60 * 60, // 1 hour in seconds (aligned with auth-service JWT expiresIn: "1h")
     },
     
     pages: {
