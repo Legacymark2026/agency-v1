@@ -596,6 +596,86 @@ const EVENT_MAPPINGS: Record<string, { type: string; titleFn: (data: any) => str
     type: "IAM",
     titleFn: (d) => `📦 Paquete de Datos ARCO / Ley 1581 listo para descarga`,
   },
+
+  // ── E-Commerce & Comercio Integrado (Shopify / WooCommerce / POS) ──
+  "cart.abandoned": {
+    type: "MARKETING",
+    titleFn: (d) => `🛒 Carrito Abandonado: ${d.customerEmail || "Cliente"} ($${d.total?.toLocaleString() || "0"})`,
+  },
+  "order.created": {
+    type: "FINANCE",
+    titleFn: (d) => `🛍️ Nuevo Pedido E-Commerce #${d.orderId || "001"} — $${d.total?.toLocaleString() || "0"}`,
+  },
+  "inventory.low_stock": {
+    type: "SYSTEM",
+    titleFn: (d) => `📦 Alerta de Stock Mínimo: ${d.productName || "Producto"} (${d.stockRemaining || 0} unidades restantes)`,
+  },
+
+  // ── Gestión Documental & Firma Digital (e-Sign) ──
+  "document.signature_requested": {
+    type: "CRM",
+    titleFn: (d) => `📜 Solicitud de Firma enviada a ${d.signerEmail || "Cliente"}`,
+  },
+  "document.expiring_soon": {
+    type: "CRM",
+    titleFn: (d) => `⏳ Contrato Próximo a Vencer: ${d.documentTitle || "Documento"}`,
+  },
+
+  // ── Video Studio & Voz IA ──
+  "video.rendering_completed": {
+    type: "CONTENT",
+    titleFn: (d) => `🎬 Renderizado de Video IA Finalizado: ${d.videoTitle || "Proyecto"}`,
+  },
+  "video.rendering_failed": {
+    type: "CONTENT",
+    titleFn: (d) => `⚠️ Fallo en Renderizado de Video: ${d.videoTitle || "Proyecto"}`,
+  },
+  "voice.synthesis_completed": {
+    type: "CONTENT",
+    titleFn: (d) => `🎙️ Audio Sintetizado / Clonación de Voz Lista`,
+  },
+
+  // ── Monitoreo de Infraestructura & DevOps ──
+  "system.circuit_breaker_opened": {
+    type: "SYSTEM",
+    titleFn: (d) => `🚨 Circuit Breaker Abierto: Servicio ${d.serviceName || "Microservicio"} degradado`,
+  },
+  "system.high_resource_usage": {
+    type: "SYSTEM",
+    titleFn: (d) => `⚡ Alerta de Infraestructura: Uso de ${d.resource || "CPU/RAM"} > 85% en contenedor`,
+  },
+  "system.db_backup_completed": {
+    type: "SYSTEM",
+    titleFn: (d) => `💾 Copia de Seguridad de Base de Datos realizada exitosamente`,
+  },
+  "system.db_backup_failed": {
+    type: "SYSTEM",
+    titleFn: (d) => `🚨 FALLO en Copia de Seguridad de Base de Datos`,
+  },
+
+  // ── Programa de Afiliados & Referidos ──
+  "affiliate.referral_signed_up": {
+    type: "CRM",
+    titleFn: (d) => `🤝 Nuevo Referido Registrado mediante enlace de afiliado ${d.affiliateCode || ""}`,
+  },
+  "affiliate.commission_earned": {
+    type: "FINANCE",
+    titleFn: (d) => `💸 Comisión Generada por Venta de Referido — $${d.commissionAmount?.toLocaleString() || "0"}`,
+  },
+  "affiliate.payout_requested": {
+    type: "FINANCE",
+    titleFn: (d) => `🏦 Solicitud de Retiro de Fondos de Afiliado — $${d.amount?.toLocaleString() || "0"}`,
+  },
+
+  // ── Pasarelas de Pago & Webhooks ──
+  "payment.dispute_opened": {
+    type: "FINANCE",
+    titleFn: (d) => `🚨 Contracargo / Disputa Abierta en Stripe/PayPal — $${d.amount?.toLocaleString() || "0"}`,
+  },
+  "webhook.delivery_failed": {
+    type: "SYSTEM",
+    titleFn: (d) => `⚠️ Fallo de Entrega de Webhook Externo a ${d.targetUrl || "Tercero"}`,
+  },
 };
 
 for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
