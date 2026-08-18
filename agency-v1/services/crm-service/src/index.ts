@@ -20,11 +20,17 @@ import { routeLead } from "./assignment-engine";
 
 import { leadRouter } from "./routes/lead.routes";
 import { errorHandler } from "./middlewares/crm.middleware";
+import { startCrmGrpcServer } from "./grpc/crm-grpc.server";
+import { executeCreateLeadCommand, executeUpdateDealStageCommand } from "./cqrs/commands";
+import { executeGetLeadsQuery, executeGetPipelineQuery } from "./cqrs/queries";
 
 const app = express();
 app.use(metricsMiddleware("crm-service"));
 const PORT = parseInt(process.env.PORT || "4002", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+
+// Start High-Speed Synchronous gRPC Server (Port 50052)
+startCrmGrpcServer();
 
 app.use(helmet());
 app.use(cors());

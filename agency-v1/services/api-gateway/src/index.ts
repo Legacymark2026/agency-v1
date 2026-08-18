@@ -31,6 +31,16 @@ const authGrpcClient = GrpcClientHelper.getClient(
   { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
 );
 
+const CRM_GRPC_URL = process.env.CRM_GRPC_URL || "crm-service:50052";
+const crmGrpcClient = GrpcClientHelper.getClient(
+  "crm-service",
+  PROTO_PATHS.crm,
+  "crm",
+  "CrmService",
+  CRM_GRPC_URL,
+  { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
+);
+
 const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 

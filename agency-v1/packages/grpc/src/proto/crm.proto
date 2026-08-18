@@ -3,29 +3,61 @@ syntax = "proto3";
 package crm;
 
 service CrmService {
-  rpc GetLeadDetails (GetLeadDetailsRequest) returns (GetLeadDetailsResponse);
-  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+  rpc GetLead (GetLeadRequest) returns (LeadResponse);
+  rpc CreateLead (CreateLeadRequest) returns (LeadResponse);
+  rpc GetPipeline (GetPipelineRequest) returns (PipelineResponse);
+  rpc CheckHealth (HealthCheckRequest) returns (HealthCheckResponse);
 }
 
-message GetLeadDetailsRequest {
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string service = 2;
+  int64 timestamp = 3;
+}
+
+message GetLeadRequest {
   string leadId = 1;
   string companyId = 2;
 }
 
-message GetLeadDetailsResponse {
-  bool found = 1;
+message CreateLeadRequest {
+  string companyId = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string source = 5;
+  int32 score = 6;
+}
+
+message LeadResponse {
+  bool success = 1;
   string leadId = 2;
   string name = 3;
   string email = 4;
-  string status = 5;
-  string assignedAgentId = 6;
-  string error = 7;
+  string phone = 5;
+  string status = 6;
+  int32 score = 7;
+  string companyId = 8;
+  string error = 9;
 }
 
-message HealthRequest {}
+message GetPipelineRequest {
+  string companyId = 1;
+}
 
-message HealthResponse {
-  string status = 1;
-  string service = 2;
-  int64 timestamp = 3;
+message StageSummary {
+  string stage = 1;
+  int32 count = 2;
+  double totalValue = 3;
+}
+
+message PipelineResponse {
+  bool success = 1;
+  string companyId = 2;
+  repeated StageSummary stages = 3;
+  int32 totalDeals = 4;
+  double totalValue = 5;
+  string error = 6;
 }
