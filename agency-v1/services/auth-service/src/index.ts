@@ -54,17 +54,35 @@ try {
   console.warn("[auth-service] Key load warning:", err.message);
 }
 
-// H-2 FIX: Auto-generate RSA 4096-bit KeyPair if missing (minimum secure size)
-if (!privateKey || !publicKey) {
-  console.warn("[auth-service] ⚠️  No RSA keys found — auto-generating 4096-bit keypair. Mount persistent keys in /certs/ for production!");
-  const { privateKey: genPrivate, publicKey: genPublic } = crypto.generateKeyPairSync("rsa", {
-    modulusLength: 4096,
-    publicKeyEncoding: { type: "spki", format: "pem" },
-    privateKeyEncoding: { type: "pkcs8", format: "pem" },
-  });
-  privateKey = genPrivate;
-  publicKey = genPublic;
+// ── HashiCorp Vault Secrets Ingestion ───────────────────────────────────────
+import { VaultService } from "./services/vault";
+
+async function loadSecretsFromVault() {
+  try {
+    const secrets = await VaultService.getSecret<{ privateKey: string; publicKey: string; jwtSecret: string }>("secret/data/auth");
+    if (secrets) {
+      if (secrets.privateKey) privateKey = secrets.privateKey;
+      if (secrets.publicKey) publicKey = secrets.publicKey;
+      if (secrets.jwtSecret) process.env.JWT_SECRET = secrets.jwtSecret;
+    }
+  } catch (err: any) {
+    console.error("[auth-service] Vault secret load failed:", err.message);
+  }
 }
+
+// Load dynamically before fallback keys generation
+loadSecretsFromVault().then(() => {
+  if (!privateKey || !publicKey) {
+    console.warn("[auth-service] ⚠️  No RSA keys found — auto-generating 4096-bit keypair. Mount persistent keys in /certs/ for production!");
+    const { privateKey: genPrivate, publicKey: genPublic } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 4096,
+      publicKeyEncoding: { type: "spki", format: "pem" },
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    });
+    privateKey = genPrivate;
+    publicKey = genPublic;
+  }
+});
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(helmet());
@@ -204,6 +222,19 @@ app.post("/api/auth/login", async (req, res) => {
       console.warn("[auth-service] Could not fetch company memberships for user:", user.id, err);
     }
 
+    // DPoP Validation (RFC 9449)
+    const dpopHeader = req.headers.dpop as string;
+    let dpopConfirmation: any = undefined;
+
+    if (dpopHeader) {
+      const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const verification = await verifyDPoPProof(dpopHeader, req.method, fullUrl);
+      if (!verification.success) {
+        return res.status(400).json({ error: `DPoP proof verification failed: ${verification.error}` });
+      }
+      dpopConfirmation = { jkt: verification.thumbprint };
+    }
+
     // Generate JWT
     const jwt = await import("jsonwebtoken");
     // H-1 FIX: No hardcoded fallback secrets — fail loudly if misconfigured
@@ -228,6 +259,7 @@ app.post("/api/auth/login", async (req, res) => {
           roleName: c.roleName,
           companyName: c.company?.name ?? "",
         })),
+        ...(dpopConfirmation && { cnf: dpopConfirmation }),
       },
       signKey,
       signOptions
@@ -820,6 +852,7 @@ import { GrpcServerHelper, PROTO_PATHS } from "@agency/grpc";
 import jwt from "jsonwebtoken";
 
 import { isTokenRevoked } from "./utils/blacklist";
+import { verifyDPoPProof } from "./utils/dpop";
 
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
 const grpcServer = new GrpcServerHelper();
@@ -827,7 +860,7 @@ const grpcServer = new GrpcServerHelper();
 grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
   ValidateToken: async (call: any, callback: any) => {
     try {
-      const { token } = call.request;
+      const { token, dpopProof, httpMethod, httpUrl } = call.request;
       if (!token) {
         return callback(null, { valid: false, error: "Token is required" });
       }
@@ -844,6 +877,17 @@ grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
       if (publicKey) verifyOptions.algorithms = ["RS256"];
 
       const decoded = jwt.verify(token, verifyKey, verifyOptions) as any;
+
+      // ── DPoP Confirmation Claim Verification (RFC 9449) ───────────────────
+      if (decoded.cnf?.jkt) {
+        if (!dpopProof) {
+          return callback(null, { valid: false, error: "DPoP proof required for this token" });
+        }
+        const verification = await verifyDPoPProof(dpopProof, httpMethod || "GET", httpUrl || "");
+        if (!verification.success || verification.thumbprint !== decoded.cnf.jkt) {
+          return callback(null, { valid: false, error: verification.error || "DPoP proof signature mismatch" });
+        }
+      }
       
       const user = await prisma.user.findUnique({
         where: { id: decoded.sub },

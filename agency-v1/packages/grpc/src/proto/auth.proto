@@ -9,6 +9,9 @@ service AuthService {
 
 message ValidateTokenRequest {
   string token = 1;
+  string dpopProof = 2;
+  string httpMethod = 3;
+  string httpUrl = 4;
 }
 
 message ValidateTokenResponse {
