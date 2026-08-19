@@ -60,6 +60,7 @@ COPY --from=builder /app/packages/observability/dist ./packages/observability/di
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/auth-service/dist ./dist
 COPY --from=builder /app/services/auth-service/package.json ./
+COPY --from=builder /app/services/auth-service/tsconfig.json ./
 COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 4001
