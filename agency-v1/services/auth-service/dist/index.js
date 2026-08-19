@@ -47,7 +47,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require("@agency/observability/register");
+try {
+    require("@agency/observability/register");
+}
+catch { /* optional */ }
+const service_auth_1 = require("@agency/service-auth");
 const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -62,8 +66,9 @@ app.use((0, observability_1.metricsMiddleware)("auth-service"));
 const PORT = parseInt(process.env.PORT || "4001", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const redis = new ioredis_1.default(REDIS_URL);
+const crypto_1 = __importDefault(require("crypto"));
 redis.on("error", (err) => console.error("[auth-service] Redis error:", err.message));
-// Load RS256 keys if present
+// Load or Auto-Generate RS256 Keys for JWT Signing & JWKS Verification
 let privateKey = null;
 let publicKey = null;
 try {
@@ -83,12 +88,69 @@ try {
     }
 }
 catch (err) {
-    console.warn("[auth-service] Failed to load RSA keys, falling back to HS256:", err.message);
+    console.warn("[auth-service] Key load warning:", err.message);
 }
+// ── HashiCorp Vault Secrets Ingestion ───────────────────────────────────────
+const vault_1 = require("./services/vault");
+async function loadSecretsFromVault() {
+    try {
+        const secrets = await vault_1.VaultService.getSecret("secret/data/auth");
+        if (secrets) {
+            if (secrets.privateKey)
+                privateKey = secrets.privateKey;
+            if (secrets.publicKey)
+                publicKey = secrets.publicKey;
+            if (secrets.jwtSecret)
+                process.env.JWT_SECRET = secrets.jwtSecret;
+        }
+    }
+    catch (err) {
+        console.error("[auth-service] Vault secret load failed:", err.message);
+    }
+}
+// Load dynamically before fallback keys generation
+loadSecretsFromVault().then(() => {
+    if (!privateKey || !publicKey) {
+        console.warn("[auth-service] ⚠️  No RSA keys found — auto-generating 4096-bit keypair. Mount persistent keys in /certs/ for production!");
+        const { privateKey: genPrivate, publicKey: genPublic } = crypto_1.default.generateKeyPairSync("rsa", {
+            modulusLength: 4096,
+            publicKeyEncoding: { type: "spki", format: "pem" },
+            privateKeyEncoding: { type: "pkcs8", format: "pem" },
+        });
+        privateKey = genPrivate;
+        publicKey = genPublic;
+    }
+});
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({ origin: process.env.ALLOWED_ORIGINS?.split(",") || "*" }));
+// H-4 FIX: Never allow wildcard CORS — require explicit ALLOWED_ORIGINS
+app.use((0, cors_1.default)({
+    origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+    credentials: true,
+}));
 app.use(express_1.default.json({ limit: "1mb" }));
+// ── JWKS Endpoint (JSON Web Key Set - Inter-service Public Key Verification) ──
+app.get("/.well-known/jwks.json", (_req, res) => {
+    try {
+        if (!publicKey)
+            return res.status(500).json({ error: "Public key unavailable" });
+        const pubKeyObj = crypto_1.default.createPublicKey(publicKey);
+        const jwk = pubKeyObj.export({ format: "jwk" });
+        res.json({
+            keys: [
+                {
+                    ...jwk,
+                    use: "sig",
+                    alg: "RS256",
+                    kid: "auth-service-rs256-key-1",
+                },
+            ],
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // ── Helper: write activity log (fire-and-forget, never throws) ────────────────
 async function logActivity(userId, action, details, req) {
     try {
@@ -120,13 +182,30 @@ app.get("/ready", async (_req, res) => {
         res.status(503).json({ status: "not_ready", db: "disconnected", error: String(err) });
     }
 });
-// ── Auth Routes ──────────────────────────────────────────────────────────────
+const auth_routes_1 = require("./routes/auth.routes");
+const auth_middleware_1 = require("./middlewares/auth.middleware");
+app.use("/api/v1/auth", (0, auth_routes_1.createAuthRouter)(privateKey));
+app.use(auth_middleware_1.errorHandler);
+// ── Auth Routes (Legacy Endpoints Backup) ───────────────────────────────────
 // POST /api/auth/login
 app.post("/api/auth/login", async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: "Email and password required" });
+        }
+        // Rate Limiting (ISO 27001 A.12.1 — Brute Force Protection)
+        const clientIp = req.ip || req.headers["x-forwarded-for"] || "unknown";
+        const rateLimitKey = `ratelimit:login:${clientIp}:${email.toLowerCase().trim()}`;
+        const attempts = await redis.incr(rateLimitKey);
+        if (attempts === 1) {
+            await redis.expire(rateLimitKey, 300); // 5 minute window
+        }
+        if (attempts > 5) {
+            await logActivity(null, "login_blocked_rate_limit", { email, ip: clientIp, attempts }, req);
+            return res.status(429).json({
+                error: "Too many failed login attempts. Account temporarily locked for 5 minutes for security."
+            });
         }
         // Step 1: Fetch user from AUTH DB (no cross-DB include)
         const user = await database_1.prisma.user.findUnique({
@@ -159,10 +238,27 @@ app.post("/api/auth/login", async (req, res) => {
             // Non-fatal — user can log in without company data
             console.warn("[auth-service] Could not fetch company memberships for user:", user.id, err);
         }
+        // DPoP Validation (RFC 9449)
+        const dpopHeader = req.headers.dpop;
+        let dpopConfirmation = undefined;
+        if (dpopHeader) {
+            const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+            const verification = await (0, dpop_1.verifyDPoPProof)(dpopHeader, req.method, fullUrl);
+            if (!verification.success) {
+                return res.status(400).json({ error: `DPoP proof verification failed: ${verification.error}` });
+            }
+            dpopConfirmation = { jkt: verification.thumbprint };
+        }
         // Generate JWT
         const jwt = await Promise.resolve().then(() => __importStar(require("jsonwebtoken")));
-        const signKey = privateKey || process.env.JWT_SECRET || "dev-secret-change-me";
-        const signOptions = { expiresIn: "24h" };
+        // H-1 FIX: No hardcoded fallback secrets — fail loudly if misconfigured
+        const signKey = privateKey || process.env.JWT_SECRET;
+        if (!signKey) {
+            console.error("[auth-service] FATAL: No JWT signing key configured");
+            return res.status(500).json({ error: "Authentication service misconfigured" });
+        }
+        // H-7 FIX: Align JWT TTL with NextAuth session (1 hour)
+        const signOptions = { expiresIn: "1h" };
         if (privateKey) {
             signOptions.algorithm = "RS256";
         }
@@ -176,17 +272,21 @@ app.post("/api/auth/login", async (req, res) => {
                 roleName: c.roleName,
                 companyName: c.company?.name ?? "",
             })),
+            ...(dpopConfirmation && { cnf: dpopConfirmation }),
         }, signKey, signOptions);
-        // Create session in AUTH DB
+        // H-3 FIX: Store SHA-256 hash of token, never the raw JWT
+        const tokenHash = crypto_1.default.createHash("sha256").update(token).digest("hex");
         const session = await database_1.prisma.session.create({
             data: {
                 userId: user.id,
-                sessionToken: token,
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                sessionToken: tokenHash,
+                expires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour aligned with JWT TTL
                 ipAddress: req.ip,
                 userAgent: req.headers["user-agent"],
             },
         });
+        // Reset rate limit attempts counter on successful login
+        await redis.del(rateLimitKey);
         // Log successful login to ANALYTICS DB (fire-and-forget)
         await logActivity(user.id, "login_success", { sessionId: session.id, email: user.email }, req);
         res.json({
@@ -221,7 +321,10 @@ app.get("/api/auth/me", async (req, res) => {
             return res.status(401).json({ error: "Token has been revoked" });
         }
         const jwt = await Promise.resolve().then(() => __importStar(require("jsonwebtoken")));
-        const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+        // H-1 FIX: No hardcoded fallback
+        const verifyKey = publicKey || process.env.JWT_SECRET;
+        if (!verifyKey)
+            return res.status(500).json({ error: "Auth service misconfigured" });
         const verifyOptions = {};
         if (publicKey) {
             verifyOptions.algorithms = ["RS256"];
@@ -258,7 +361,9 @@ app.post("/api/auth/logout", async (req, res) => {
         }
         const token = authHeader.slice(7);
         const jwt = await Promise.resolve().then(() => __importStar(require("jsonwebtoken")));
-        const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+        const verifyKey = publicKey || process.env.JWT_SECRET;
+        if (!verifyKey)
+            return res.status(500).json({ error: "Auth service misconfigured" });
         const verifyOptions = {};
         if (publicKey) {
             verifyOptions.algorithms = ["RS256"];
@@ -273,9 +378,10 @@ app.post("/api/auth/logout", async (req, res) => {
         }
         // Add to Redis blacklist
         await redis.setex(`jwt:blacklist:${token}`, ttl, "revoked");
-        // Clean up SQL session table
+        // Clean up SQL session table (H-3: match by hashed token)
+        const logoutTokenHash = crypto_1.default.createHash("sha256").update(token).digest("hex");
         await database_1.prisma.session.deleteMany({
-            where: { sessionToken: token },
+            where: { sessionToken: logoutTokenHash },
         });
         // Log logout to ANALYTICS DB (fire-and-forget)
         if (decoded.sub) {
@@ -297,7 +403,10 @@ app.post("/api/auth/logout", async (req, res) => {
 app.post("/api/auth/validate", async (req, res) => {
     // Verify internal service secret
     const authHeader = req.headers.authorization;
-    const internalSecret = process.env.INTERNAL_SECRET || "video-service-secret-change-in-production";
+    // H-1 FIX: No hardcoded fallback for inter-service secret
+    const internalSecret = process.env.INTERNAL_SECRET;
+    if (!internalSecret)
+        return res.status(500).json({ error: "Internal secret not configured" });
     if (!authHeader || authHeader !== `Bearer ${internalSecret}`) {
         return res.status(401).json({ error: "Unauthorized inter-service request" });
     }
@@ -309,7 +418,9 @@ app.post("/api/auth/validate", async (req, res) => {
             return res.json({ valid: false, reason: "revoked" });
         }
         const jwt = await Promise.resolve().then(() => __importStar(require("jsonwebtoken")));
-        const verifyKey = publicKey || process.env.JWT_SECRET || "dev-secret-change-me";
+        const verifyKey = publicKey || process.env.JWT_SECRET;
+        if (!verifyKey)
+            return res.json({ valid: false, reason: "misconfigured" });
         const verifyOptions = {};
         if (publicKey) {
             verifyOptions.algorithms = ["RS256"];
@@ -321,8 +432,76 @@ app.post("/api/auth/validate", async (req, res) => {
         res.json({ valid: false });
     }
 });
+// POST /api/auth/check-permission — ACL Granular Permission Evaluator (RBAC + ACL Overrides)
+app.post("/api/auth/check-permission", async (req, res) => {
+    try {
+        const { userId, permissionCode } = req.body;
+        if (!userId || !permissionCode) {
+            return res.status(400).json({ allowed: false, error: "userId and permissionCode are required" });
+        }
+        const user = await database_1.prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, role: true, globalRole: true },
+        });
+        if (!user) {
+            return res.json({ allowed: false, reason: "User not found" });
+        }
+        // SuperAdmin bypasses all permission checks
+        if (user.role === "super_admin" || user.globalRole === "super_admin") {
+            return res.json({ allowed: true, grantedBy: "SUPER_ADMIN" });
+        }
+        // Check Role Permissions
+        const roleConfig = await database_1.prisma.roleConfig.findUnique({
+            where: { roleName: user.role || "guest" },
+        });
+        const allowedRoutes = roleConfig?.allowedRoutes || [];
+        const isAllowed = allowedRoutes.some((pattern) => pattern === permissionCode || pattern === "/api/*" || permissionCode.startsWith(pattern.replace("*", "")));
+        res.json({
+            allowed: isAllowed,
+            grantedBy: isAllowed ? "ROLE_PERMISSIONS" : "NONE",
+            permissionCode,
+            role: user.role,
+        });
+    }
+    catch (err) {
+        res.status(500).json({ allowed: false, error: err.message });
+    }
+});
+// ── C-4 FIX: Authentication middleware for all RBAC/admin routes ──────────
+// Extracts and verifies JWT from Authorization header before allowing access
+const requireAuth = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith("Bearer ")) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+        const token = authHeader.slice(7);
+        const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
+        if (isBlacklisted)
+            return res.status(401).json({ error: "Token revoked" });
+        const jwt = await Promise.resolve().then(() => __importStar(require("jsonwebtoken")));
+        const verifyKey = publicKey || process.env.JWT_SECRET;
+        if (!verifyKey)
+            return res.status(500).json({ error: "Auth misconfigured" });
+        const verifyOptions = publicKey ? { algorithms: ["RS256"] } : {};
+        const decoded = jwt.verify(token, verifyKey, verifyOptions);
+        req.authUser = { id: decoded.sub, role: decoded.role, email: decoded.email };
+        next();
+    }
+    catch {
+        return res.status(401).json({ error: "Invalid or expired token" });
+    }
+};
+// Require super_admin role for sensitive operations
+const requireAdmin = async (req, res, next) => {
+    const user = req.authUser;
+    if (!user || (user.role !== "super_admin" && user.role !== "admin")) {
+        return res.status(403).json({ error: "Insufficient permissions" });
+    }
+    next();
+};
 // GET /api/auth/roles/:companyId — Get roles for a company
-app.get("/api/auth/roles/:companyId", async (req, res) => {
+app.get("/api/auth/roles/:companyId", requireAuth, async (req, res) => {
     try {
         const roles = await database_1.prisma.role.findMany({
             where: { companyId: req.params.companyId, isActive: true },
@@ -331,11 +510,11 @@ app.get("/api/auth/roles/:companyId", async (req, res) => {
         res.json({ roles });
     }
     catch (err) {
-        res.status(500).json({ error: String(err) });
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 // Custom Roles CRUD
-app.get('/api/auth/roles/full/:companyId', async (req, res) => {
+app.get('/api/auth/roles/full/:companyId', requireAuth, async (req, res) => {
     try {
         const roles = await database_1.prisma.role.findMany({
             where: { companyId: req.params.companyId, isActive: true },
@@ -355,7 +534,7 @@ app.get('/api/auth/roles/full/:companyId', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get('/api/auth/roles/:id/detail', async (req, res) => {
+app.get('/api/auth/roles/:id/detail', requireAuth, async (req, res) => {
     try {
         const role = await database_1.prisma.role.findFirst({
             where: { id: req.params.id },
@@ -374,7 +553,7 @@ app.get('/api/auth/roles/:id/detail', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post('/api/auth/roles', async (req, res) => {
+app.post('/api/auth/roles', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { companyId, name, description, isDefault, priority, permissionIds } = req.body;
         const existing = await database_1.prisma.role.findFirst({ where: { companyId, name } });
@@ -402,7 +581,7 @@ app.post('/api/auth/roles', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.patch('/api/auth/roles/:id', async (req, res) => {
+app.patch('/api/auth/roles/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { companyId, name, description, isDefault, isActive, priority, permissionIds } = req.body;
         const existing = await database_1.prisma.role.findFirst({ where: { id: req.params.id } });
@@ -436,7 +615,7 @@ app.patch('/api/auth/roles/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.delete('/api/auth/roles/:id', async (req, res) => {
+app.delete('/api/auth/roles/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const role = await database_1.prisma.role.findUnique({ where: { id: req.params.id } });
         if (!role)
@@ -456,7 +635,7 @@ app.delete('/api/auth/roles/:id', async (req, res) => {
     }
 });
 // User Assignment & RBAC Stats
-app.patch('/api/auth/assign-role', async (req, res) => {
+app.patch('/api/auth/assign-role', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { userId, companyId, roleId } = req.body;
         // companyUser lives in CORE DB — accessed via proxy
@@ -477,7 +656,7 @@ app.patch('/api/auth/assign-role', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get('/api/auth/users-with-roles/:companyId', async (req, res) => {
+app.get('/api/auth/users-with-roles/:companyId', requireAuth, async (req, res) => {
     try {
         // Step 1: Get company members from CORE DB
         const members = await database_1.prisma.companyUser.findMany({
@@ -513,7 +692,7 @@ app.get('/api/auth/users-with-roles/:companyId', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get('/api/auth/permissions', async (req, res) => {
+app.get('/api/auth/permissions', requireAuth, async (req, res) => {
     try {
         const permissions = await database_1.prisma.permission.findMany({
             where: { isActive: true },
@@ -525,7 +704,7 @@ app.get('/api/auth/permissions', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post('/api/auth/permissions/sync', async (req, res) => {
+app.post('/api/auth/permissions/sync', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { permissions } = req.body;
         const existing = await database_1.prisma.permission.findMany({ select: { name: true } });
@@ -546,35 +725,61 @@ app.post('/api/auth/permissions/sync', async (req, res) => {
     }
 });
 // MFA Endpoints
-app.get('/api/auth/users/:id/mfa', async (req, res) => {
+// C-2 FIX: Never expose mfaSecret or backupCodes in GET response
+app.get('/api/auth/users/:id/mfa', requireAuth, async (req, res) => {
     try {
+        // Ensure user can only query their own MFA status
+        const authUser = req.authUser;
+        if (authUser.id !== req.params.id && authUser.role !== 'super_admin') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
         const user = await database_1.prisma.user.findUnique({
             where: { id: req.params.id },
-            select: { email: true, mfaEnabled: true, mfaSecret: true, backupCodes: true }
+            select: { email: true, mfaEnabled: true, backupCodes: true }
         });
-        res.json(user);
+        if (!user)
+            return res.status(404).json({ error: 'User not found' });
+        // Only return whether MFA is enabled and how many backup codes remain
+        const backupCodes = user.backupCodes || [];
+        const unusedCount = backupCodes.filter((c) => c !== 'USED').length;
+        res.json({
+            email: user.email,
+            mfaEnabled: user.mfaEnabled,
+            backupCodesRemaining: unusedCount,
+        });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
-app.patch('/api/auth/users/:id/mfa', async (req, res) => {
+// C-3 FIX: Whitelist allowed MFA fields — prevent mass assignment / privilege escalation
+app.patch('/api/auth/users/:id/mfa', requireAuth, async (req, res) => {
     try {
+        const authUser = req.authUser;
+        if (authUser.id !== req.params.id && authUser.role !== 'super_admin') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+        // Only allow MFA-related fields — NEVER pass req.body directly
+        const { mfaEnabled, mfaSecret, backupCodes } = req.body;
         await database_1.prisma.user.update({
             where: { id: req.params.id },
-            data: req.body
+            data: {
+                ...(mfaEnabled !== undefined && { mfaEnabled: Boolean(mfaEnabled) }),
+                ...(mfaSecret !== undefined && { mfaSecret: String(mfaSecret) }),
+                ...(backupCodes !== undefined && { backupCodes }),
+            },
         });
         res.json({ success: true });
     }
     catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 // RoleConfig & Global Users Endpoints
-app.post('/api/auth/role-configs', async (req, res) => {
+app.post('/api/auth/role-configs', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { roleName, allowedRoutes, description, isActive } = req.body;
-        const name = roleName.trim().toLowerCase();
+        const name = String(roleName || '').trim().toLowerCase();
         const config = await database_1.prisma.roleConfig.upsert({
             where: { roleName: name },
             create: {
@@ -595,9 +800,10 @@ app.post('/api/auth/role-configs', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.delete('/api/auth/role-configs/:roleName', async (req, res) => {
+app.delete('/api/auth/role-configs/:roleName', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const name = req.params.roleName.trim().toLowerCase();
+        const rawRoleName = req.params.roleName;
+        const name = String(Array.isArray(rawRoleName) ? rawRoleName[0] : rawRoleName || '').trim().toLowerCase();
         await database_1.prisma.roleConfig.delete({ where: { roleName: name } });
         res.json({ success: true });
     }
@@ -605,7 +811,7 @@ app.delete('/api/auth/role-configs/:roleName', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get('/api/auth/role-configs', async (req, res) => {
+app.get('/api/auth/role-configs', requireAuth, async (req, res) => {
     try {
         const configs = await database_1.prisma.roleConfig.findMany({ orderBy: { roleName: 'asc' } });
         res.json(configs);
@@ -614,7 +820,7 @@ app.get('/api/auth/role-configs', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get('/api/auth/global-users', async (req, res) => {
+app.get('/api/auth/global-users', requireAuth, requireAdmin, async (req, res) => {
     try {
         const users = await database_1.prisma.user.findMany({
             select: {
@@ -632,12 +838,13 @@ app.get('/api/auth/global-users', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.patch('/api/auth/global-users/:id/role', async (req, res) => {
+app.patch('/api/auth/global-users/:id/role', requireAuth, requireAdmin, async (req, res) => {
     try {
         const { role } = req.body;
-        const name = role.trim().toLowerCase();
+        const name = String(role || '').trim().toLowerCase();
+        const targetId = String(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
         const user = await database_1.prisma.user.update({
-            where: { id: req.params.id },
+            where: { id: targetId },
             data: { role: name },
         });
         res.json({ success: true, user });
@@ -648,15 +855,101 @@ app.patch('/api/auth/global-users/:id/role', async (req, res) => {
 });
 // ── Event Bus Setup ──────────────────────────────────────────────────────────
 const eventBus = new events_1.EventBus(REDIS_URL, "auth-service");
+// ── High-Speed Synchronous gRPC Server Setup ──────────────────────────────────
+const grpc_1 = require("@agency/grpc");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const blacklist_1 = require("./utils/blacklist");
+const dpop_1 = require("./utils/dpop");
+const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
+const grpcServer = new grpc_1.GrpcServerHelper();
+grpcServer.addService(grpc_1.PROTO_PATHS.auth, "auth", "AuthService", {
+    ValidateToken: async (call, callback) => {
+        try {
+            const { token, dpopProof, httpMethod, httpUrl } = call.request;
+            if (!token) {
+                return callback(null, { valid: false, error: "Token is required" });
+            }
+            // Check Redis blacklist using sha256 helper
+            const isRevoked = await (0, blacklist_1.isTokenRevoked)(token);
+            if (isRevoked) {
+                return callback(null, { valid: false, error: "Token has been revoked" });
+            }
+            const verifyKey = publicKey || process.env.JWT_SECRET;
+            if (!verifyKey)
+                return callback(null, { valid: false, error: "Auth misconfigured" });
+            const verifyOptions = {};
+            if (publicKey)
+                verifyOptions.algorithms = ["RS256"];
+            const decoded = jsonwebtoken_1.default.verify(token, verifyKey, verifyOptions);
+            // ── DPoP Confirmation Claim Verification (RFC 9449) ───────────────────
+            if (decoded.cnf?.jkt) {
+                if (!dpopProof) {
+                    return callback(null, { valid: false, error: "DPoP proof required for this token" });
+                }
+                const verification = await (0, dpop_1.verifyDPoPProof)(dpopProof, httpMethod || "GET", httpUrl || "");
+                if (!verification.success || verification.thumbprint !== decoded.cnf.jkt) {
+                    return callback(null, { valid: false, error: verification.error || "DPoP proof signature mismatch" });
+                }
+            }
+            const user = await database_1.prisma.user.findUnique({
+                where: { id: decoded.sub },
+                select: { id: true, email: true, role: true }
+            });
+            if (!user) {
+                return callback(null, { valid: false, error: "User not found" });
+            }
+            callback(null, {
+                valid: true,
+                userId: user.id,
+                email: user.email,
+                role: user.role || "user",
+                companyId: decoded.companyId || "",
+                error: ""
+            });
+        }
+        catch (err) {
+            callback(null, { valid: false, error: err.message || "Invalid token" });
+        }
+    },
+    GetUserPermissions: async (call, callback) => {
+        try {
+            const { userId } = call.request;
+            const user = await database_1.prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, role: true }
+            });
+            if (!user) {
+                return callback(null, { userId, permissions: [], role: "" });
+            }
+            const roleConfig = await database_1.prisma.roleConfig.findUnique({
+                where: { roleName: user.role || "user" }
+            });
+            const permissions = roleConfig?.allowedRoutes || ["/api/*"];
+            callback(null, {
+                userId: user.id,
+                permissions,
+                role: user.role || "user"
+            });
+        }
+        catch (err) {
+            callback(null, { userId: call.request.userId, permissions: [], role: "" });
+        }
+    }
+});
+grpcServer.start(GRPC_PORT).catch((err) => {
+    console.error("[auth-service] Failed to start gRPC server:", err.message);
+});
 // ── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🔐 Auth Service running on port ${PORT}`);
+const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);
     console.log(`   Health: http://localhost:${PORT}/health`);
     console.log(`   Ready:  http://localhost:${PORT}/ready`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 // Graceful shutdown
 process.on("SIGTERM", async () => {
     console.log("[auth-service] SIGTERM received. Shutting down...");
+    await grpcServer.forceShutdown();
     await eventBus.disconnect();
     await database_1.prisma.$disconnect();
     process.exit(0);

@@ -1,43 +1,35 @@
 /**
- * services/auth-service/src/utils/crypto.ts
+ * services/auth-service/src/utilities/crypto.ts
  * ─────────────────────────────────────────────────────────────────────────────
- * AES-256-GCM Field-Level Encryption Helper
- * Protects sensitive database fields (MFA Secrets, phone numbers, backups) in storage.
+ * AES-256-GCM Field-Level Encryption Helper using config.
  */
 
 import crypto from "crypto";
+import { envConfig } from "@config/env.config";
 
 const ALGORITHM = "aes-256-gcm";
-// Derive a 32-byte encryption key from the environment secret
 const ENCRYPTION_KEY = crypto
   .createHash("sha256")
-  .update(process.env.DB_ENCRYPTION_KEY || "fallback_db_encryption_key_minimum_32_bytes")
+  .update(envConfig.dbEncryptionKey)
   .digest();
 
-/**
- * Encrypts cleartext string to AES-256-GCM ciphertext format:
- * iv_hex:auth_tag_hex:encrypted_hex
- */
 export function encrypt(text: string): string {
-  const iv = crypto.randomBytes(12); // 12-byte initialization vector (standard for GCM)
+  const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGORITHM, ENCRYPTION_KEY, iv);
   
   let encrypted = cipher.update(text, "utf8", "hex");
   encrypted += cipher.final("hex");
   
-  const tag = cipher.getAuthTag().toString("hex"); // 16-byte authentication tag
+  const tag = cipher.getAuthTag().toString("hex");
   
   return `${iv.toString("hex")}:${tag}:${encrypted}`;
 }
 
-/**
- * Decrypts AES-256-GCM ciphertext back to cleartext.
- */
 export function decrypt(encryptedText: string): string {
   try {
     const parts = encryptedText.split(":");
     if (parts.length !== 3) {
-      return encryptedText; // Pass through if not in encrypted format
+      return encryptedText;
     }
     
     const iv = Buffer.from(parts[0], "hex");
@@ -52,7 +44,6 @@ export function decrypt(encryptedText: string): string {
     
     return decrypted;
   } catch (err) {
-    // Return original string if decryption fails (fallback for legacy cleartext values)
     return encryptedText;
   }
 }

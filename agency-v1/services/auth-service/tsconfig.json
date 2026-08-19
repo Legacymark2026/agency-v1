@@ -9,8 +9,14 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@config/*": ["src/config/*"],
+      "@controllers/*": ["src/controllers/*"],
+      "@routes/*": ["src/routes/*"],
+      "@models/*": ["src/models/*"],
       "@services/*": ["src/services/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utilities/*": ["src/utilities/*"],
+      "@types/*": ["src/types/*"],
+      "@validators/*": ["src/validators/*"]
     }
   },
   "include": ["src/**/*"],

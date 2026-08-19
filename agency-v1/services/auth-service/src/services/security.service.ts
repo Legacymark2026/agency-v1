@@ -1,7 +1,7 @@
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import { prisma } from '@agency/database';
-import { encrypt, decrypt } from '../utils/crypto';
+import { encrypt, decrypt } from '@utilities/crypto';
 
 // ── 🔒 Native TOTP Helper (RFC 6238 / RFC 4226) ──────────────────────────────
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';

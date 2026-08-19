@@ -55,7 +55,7 @@ try {
 }
 
 // ── HashiCorp Vault Secrets Ingestion ───────────────────────────────────────
-import { VaultService } from "./services/vault";
+import { VaultService } from "@services/vault";
 
 async function loadSecretsFromVault() {
   try {
@@ -851,8 +851,8 @@ const eventBus = new EventBus(REDIS_URL, "auth-service");
 import { GrpcServerHelper, PROTO_PATHS } from "@agency/grpc";
 import jwt from "jsonwebtoken";
 
-import { isTokenRevoked } from "./utils/blacklist";
-import { verifyDPoPProof } from "./utils/dpop";
+import { isTokenRevoked } from "@utilities/blacklist";
+import { verifyDPoPProof } from "@utilities/dpop";
 
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
 const grpcServer = new GrpcServerHelper();
