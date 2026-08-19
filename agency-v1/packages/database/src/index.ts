@@ -53,17 +53,32 @@ const logConfig =
 const createClient = (url: string | undefined): PrismaClient => {
   let connectionUrl = url;
 
-  writeDebug(`Creating PrismaClient with URL: ${connectionUrl ? connectionUrl.replace(/:[^:@]+@/, ":****@") : "undefined"}`);
-
-  if (
-    connectionUrl &&
-    !connectionUrl.startsWith("prisma://") &&
-    getRuntimeEnv("NODE_ENV") === "production" &&
-    !connectionUrl.includes("connection_limit")
-  ) {
+  if (connectionUrl && !connectionUrl.startsWith("prisma://")) {
     const separator = connectionUrl.includes("?") ? "&" : "?";
-    connectionUrl = `${connectionUrl}${separator}connection_limit=5&pool_timeout=20`;
+    
+    // Ensure connection_limit is set
+    if (!connectionUrl.includes("connection_limit")) {
+      connectionUrl = `${connectionUrl}${separator}connection_limit=5`;
+    }
+    
+    // Ensure a low pool_timeout (3s) to prevent infinite or long hangs
+    const sep2 = connectionUrl.includes("?") ? "&" : "?";
+    if (!connectionUrl.includes("pool_timeout")) {
+      connectionUrl = `${connectionUrl}${sep2}pool_timeout=3`;
+    } else {
+      connectionUrl = connectionUrl.replace(/pool_timeout=\d+/, "pool_timeout=3");
+    }
+    
+    // Ensure a low connect_timeout (3s) to prevent infinite or long hangs
+    const sep3 = connectionUrl.includes("?") ? "&" : "?";
+    if (!connectionUrl.includes("connect_timeout")) {
+      connectionUrl = `${connectionUrl}${sep3}connect_timeout=3`;
+    } else {
+      connectionUrl = connectionUrl.replace(/connect_timeout=\d+/, "connect_timeout=3");
+    }
   }
+
+  writeDebug(`Creating PrismaClient with URL: ${connectionUrl ? connectionUrl.replace(/:[^:@]+@/, ":****@") : "undefined"}`);
 
   // Use datasourceUrl instead of datasources.db.url to bypass schema env var validation
   return new PrismaClient({

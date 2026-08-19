@@ -42,7 +42,8 @@
   "dependencies": {
     "@esbuild/linux-x64": "^0.28.0",
     "puppeteer": "^24.43.0",
-    "puppeteer-cluster": "^0.25.0"
+    "puppeteer-cluster": "^0.25.0",
+    "tsconfig-paths": "^4.2.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*",
