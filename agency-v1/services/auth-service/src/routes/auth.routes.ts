@@ -2,7 +2,12 @@ import { Router, Request, Response, NextFunction } from "express";
 import { AuthController } from "../controllers/auth.controller";
 import { validateRequest } from "../middlewares/auth.middleware";
 import { SecurityService } from "../services/security.service";
-import { z } from "zod";
+import { 
+  loginSchema, 
+  enable2FASchema, 
+  verify2FASchema, 
+  disable2FASchema 
+} from "../validators/auth.validators";
 
 function getStr(val: any): string {
   if (!val) return '';
@@ -12,13 +17,6 @@ function getStr(val: any): string {
 
 export function createAuthRouter(privateKey: string | null): Router {
   const router = Router();
-
-  const loginSchema = z.object({
-    body: z.object({
-      email: z.string().email("Formato de email inválido"),
-      password: z.string().min(1, "La contraseña es requerida"),
-    }),
-  });
 
   router.post("/login", validateRequest(loginSchema), (req: Request, res: Response, next: NextFunction) => {
     AuthController.login(req, res, next, privateKey);
@@ -49,7 +47,7 @@ export function createAuthRouter(privateKey: string | null): Router {
     } catch (err) { next(err); }
   });
 
-  router.post("/2fa/enable", async (req: Request, res: Response, next: NextFunction) => {
+  router.post("/2fa/enable", validateRequest(enable2FASchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { userId, secret, token } = req.body;
       const result = await SecurityService.enable2FA(getStr(userId), getStr(secret), getStr(token), req.ip, getStr(req.headers['user-agent']));
@@ -57,7 +55,7 @@ export function createAuthRouter(privateKey: string | null): Router {
     } catch (err) { next(err); }
   });
 
-  router.post("/2fa/verify", async (req: Request, res: Response, next: NextFunction) => {
+  router.post("/2fa/verify", validateRequest(verify2FASchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { userId, tokenOrBackupCode } = req.body;
       const result = await SecurityService.verify2FA(getStr(userId), getStr(tokenOrBackupCode), req.ip, getStr(req.headers['user-agent']));
@@ -65,7 +63,7 @@ export function createAuthRouter(privateKey: string | null): Router {
     } catch (err) { next(err); }
   });
 
-  router.post("/2fa/disable", async (req: Request, res: Response, next: NextFunction) => {
+  router.post("/2fa/disable", validateRequest(disable2FASchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { userId } = req.body;
       const result = await SecurityService.disable2FA(getStr(userId), req.ip, getStr(req.headers['user-agent']));
