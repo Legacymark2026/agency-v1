@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: auth-service-policy
+  namespace: agency-v1
+spec:
+  podSelector:
+    matchLabels:
+      app: auth-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic ONLY from the API Gateway and CRM service
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: crm-service
+      ports:
+        - protocol: TCP
+          port: 4001
+        - protocol: TCP
+          port: 50051
+  egress:
+    # Allow egress ONLY to Redis and database services
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis-service
+        - podSelector:
+            matchLabels:
+              app: postgres-service
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 5432

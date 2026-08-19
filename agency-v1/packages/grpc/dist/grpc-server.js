@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GrpcServerHelper = void 0;
 const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
+const fs = __importStar(require("fs"));
 class GrpcServerHelper {
     server;
     constructor() {
@@ -57,7 +58,26 @@ class GrpcServerHelper {
     start(port) {
         const bindAddress = `0.0.0.0:${port}`;
         return new Promise((resolve, reject) => {
-            this.server.bindAsync(bindAddress, grpc.ServerCredentials.createInsecure(), (err, portBound) => {
+            let credentials = grpc.ServerCredentials.createInsecure();
+            const caPath = process.env.GRPC_SSL_CA_CERT_PATH || "/certs/ca.pem";
+            const certPath = process.env.GRPC_SSL_SERVER_CERT_PATH || "/certs/server.pem";
+            const keyPath = process.env.GRPC_SSL_SERVER_KEY_PATH || "/certs/server.key";
+            if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+                try {
+                    const rootCert = fs.existsSync(caPath) ? fs.readFileSync(caPath) : null;
+                    const keyPairs = [{
+                            private_key: fs.readFileSync(keyPath),
+                            cert_chain: fs.readFileSync(certPath)
+                        }];
+                    credentials = grpc.ServerCredentials.createSsl(rootCert, keyPairs, rootCert !== null // Enforce client certificate validation (mTLS) if root CA is provided
+                    );
+                    console.log(`[gRPC Server] SSL/mTLS enabled for bindAddress: ${bindAddress}`);
+                }
+                catch (err) {
+                    console.error(`[gRPC Server] SSL/mTLS init failed: ${err.message}. Falling back to insecure.`);
+                }
+            }
+            this.server.bindAsync(bindAddress, credentials, (err, portBound) => {
                 if (err)
                     return reject(err);
                 console.log(`[gRPC Server] High-speed gRPC server listening on ${bindAddress}`);

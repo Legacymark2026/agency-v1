@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GrpcClientHelper = void 0;
 const grpc = __importStar(require("@grpc/grpc-js"));
 const protoLoader = __importStar(require("@grpc/proto-loader"));
+const fs = __importStar(require("fs"));
 const circuit_breaker_1 = require("./circuit-breaker");
 class GrpcClientHelper {
     static clientCache = new Map();
@@ -61,7 +62,23 @@ class GrpcClientHelper {
         if (!this.clientCache.has(cacheKey)) {
             const proto = this.loadProto(protoPath);
             const ServiceCtor = proto[packageName][serviceClass];
-            const client = new ServiceCtor(targetAddress, grpc.credentials.createInsecure());
+            const caPath = process.env.GRPC_SSL_CA_CERT_PATH || "/certs/ca.pem";
+            const clientCertPath = process.env.GRPC_SSL_CLIENT_CERT_PATH || "/certs/client.pem";
+            const clientKeyPath = process.env.GRPC_SSL_CLIENT_KEY_PATH || "/certs/client.key";
+            let credentials = grpc.credentials.createInsecure();
+            if (fs.existsSync(clientCertPath) && fs.existsSync(clientKeyPath)) {
+                try {
+                    const rootCerts = fs.existsSync(caPath) ? fs.readFileSync(caPath) : null;
+                    const privateKey = fs.readFileSync(clientKeyPath);
+                    const certChain = fs.readFileSync(clientCertPath);
+                    credentials = grpc.credentials.createSsl(rootCerts, privateKey, certChain);
+                    console.log(`[gRPC Client] SSL/mTLS enabled for client target: ${targetAddress}`);
+                }
+                catch (err) {
+                    console.error(`[gRPC Client] SSL/mTLS client init failed: ${err.message}. Falling back to insecure.`);
+                }
+            }
+            const client = new ServiceCtor(targetAddress, credentials);
             this.clientCache.set(cacheKey, client);
         }
         if (!this.breakers.has(cacheKey)) {

@@ -819,6 +819,8 @@ const eventBus = new EventBus(REDIS_URL, "auth-service");
 import { GrpcServerHelper, PROTO_PATHS } from "@agency/grpc";
 import jwt from "jsonwebtoken";
 
+import { isTokenRevoked } from "./utils/blacklist";
+
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
 const grpcServer = new GrpcServerHelper();
 
@@ -830,9 +832,9 @@ grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
         return callback(null, { valid: false, error: "Token is required" });
       }
 
-      // Check Redis blacklist
-      const isBlacklisted = await redis.get(`jwt:blacklist:${token}`);
-      if (isBlacklisted) {
+      // Check Redis blacklist using sha256 helper
+      const isRevoked = await isTokenRevoked(token);
+      if (isRevoked) {
         return callback(null, { valid: false, error: "Token has been revoked" });
       }
 
@@ -894,7 +896,7 @@ grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
   }
 });
 
-grpcServer.start(GRPC_PORT).catch(err => {
+grpcServer.start(GRPC_PORT).catch((err: any) => {
   console.error("[auth-service] Failed to start gRPC server:", err.message);
 });
 
