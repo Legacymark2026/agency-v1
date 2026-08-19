@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import { prisma } from '@agency/database';
+import { encrypt, decrypt } from '../utils/crypto';
 
 // ── 🔒 Native TOTP Helper (RFC 6238 / RFC 4226) ──────────────────────────────
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -108,12 +109,15 @@ export class SecurityService {
     }
 
     try {
+      const encryptedSecret = encrypt(secret);
+      const encryptedBackupCodes = backupCodes.map(code => encrypt(code));
+
       await (prisma as any).user.update({
         where: { id: userId },
         data: {
           twoFactorEnabled: true,
-          twoFactorSecret: secret,
-          twoFactorBackupCodes: backupCodes
+          twoFactorSecret: encryptedSecret,
+          twoFactorBackupCodes: encryptedBackupCodes
         }
       });
     } catch (e: any) {
@@ -137,8 +141,10 @@ export class SecurityService {
       });
     } catch (e) {}
 
-    const secret = user?.twoFactorSecret || '';
-    const backupCodes: string[] = user?.twoFactorBackupCodes || [];
+    const encryptedSecret = user?.twoFactorSecret || '';
+    const secret = decrypt(encryptedSecret);
+    const encryptedBackupCodes: string[] = user?.twoFactorBackupCodes || [];
+    const backupCodes = encryptedBackupCodes.map(code => decrypt(code));
 
     const cleanedCode = tokenOrBackupCode.trim().replace(/\s+/g, '');
 
@@ -154,7 +160,7 @@ export class SecurityService {
     // 2. Verificación por código de recuperación de emergencia (single-use)
     const matchedIdx = backupCodes.findIndex(c => c.replace('-', '') === cleanedCode.replace('-', ''));
     if (matchedIdx !== -1) {
-      const updatedCodes = backupCodes.filter((_, idx) => idx !== matchedIdx);
+      const updatedCodes = backupCodes.filter((_, idx) => idx !== matchedIdx).map(code => encrypt(code));
       try {
         await (prisma as any).user.update({
           where: { id: userId },

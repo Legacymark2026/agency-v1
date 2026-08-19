@@ -60,11 +60,15 @@ export class AuthController {
       const userId = result.user?.id || result.userId || 'user-1';
       const tokens = await TokenRotationService.issueTokenPair(userId, email, clientIp, userAgent);
 
+      res.setHeader(
+        "Set-Cookie",
+        `refresh_token=${encodeURIComponent(tokens.refreshToken)}; Path=/api/v1/auth/refresh; HttpOnly; Secure; SameSite=Strict; Max-Age=${7 * 24 * 60 * 60}`
+      );
+
       res.json({
         success: true,
         ...result,
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn
       });
     } catch (err: any) {
@@ -77,7 +81,13 @@ export class AuthController {
    */
   static async refresh(req: Request, res: Response, next: NextFunction) {
     try {
-      const { refreshToken } = req.body;
+      let refreshToken = req.body.refreshToken;
+      if (!refreshToken) {
+        const cookies = req.headers.cookie || "";
+        const match = cookies.match(/(?:^|; )refresh_token=([^;]*)/);
+        refreshToken = match ? decodeURIComponent(match[1]) : undefined;
+      }
+
       if (!refreshToken) {
         return res.status(400).json({ success: false, error: "refreshToken es requerido" });
       }
@@ -86,7 +96,13 @@ export class AuthController {
       const userAgent = getStr(req.headers['user-agent']);
 
       const tokens = await TokenRotationService.rotateRefreshToken(refreshToken, clientIp, userAgent);
-      res.json({ success: true, ...tokens });
+
+      res.setHeader(
+        "Set-Cookie",
+        `refresh_token=${encodeURIComponent(tokens.refreshToken)}; Path=/api/v1/auth/refresh; HttpOnly; Secure; SameSite=Strict; Max-Age=${7 * 24 * 60 * 60}`
+      );
+
+      res.json({ success: true, accessToken: tokens.accessToken, expiresIn: tokens.expiresIn });
     } catch (err: any) {
       res.status(401).json({ success: false, error: err.message || 'Refresh token inválido' });
     }
