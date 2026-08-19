@@ -42,6 +42,28 @@ export declare const userCreatedSchema: z.ZodObject<{
     email: string;
     name?: string | undefined;
 }>;
+export declare const userUpdatedSchema: z.ZodObject<{
+    userId: z.ZodString;
+    email: z.ZodOptional<z.ZodString>;
+    name: z.ZodOptional<z.ZodString>;
+    role: z.ZodOptional<z.ZodString>;
+    twoFactorEnabled: z.ZodOptional<z.ZodBoolean>;
+    updatedAt: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    userId: string;
+    name?: string | undefined;
+    email?: string | undefined;
+    role?: string | undefined;
+    twoFactorEnabled?: boolean | undefined;
+    updatedAt?: string | undefined;
+}, {
+    userId: string;
+    name?: string | undefined;
+    email?: string | undefined;
+    role?: string | undefined;
+    twoFactorEnabled?: boolean | undefined;
+    updatedAt?: string | undefined;
+}>;
 export declare const invoiceCreatedSchema: z.ZodEffects<z.ZodObject<{
     id: z.ZodOptional<z.ZodString>;
     invoiceId: z.ZodOptional<z.ZodString>;
@@ -129,12 +151,16 @@ export declare const affiliateClickRegisteredSchema: z.ZodObject<{
 export declare const EVENT_SCHEMAS: Record<string, z.ZodSchema>;
 export type LeadCreatedPayload = z.infer<typeof leadCreatedSchema>;
 export type UserCreatedPayload = z.infer<typeof userCreatedSchema>;
+export type UserUpdatedPayload = z.infer<typeof userUpdatedSchema>;
 export type InvoiceCreatedPayload = z.infer<typeof invoiceCreatedSchema>;
 export type OrderCompletedPayload = z.infer<typeof orderCompletedSchema>;
 export type OrderRefundedPayload = z.infer<typeof orderRefundedSchema>;
 export type AffiliateClickRegisteredPayload = z.infer<typeof affiliateClickRegisteredSchema>;
 export declare const EVENTS: {
     readonly "user.created": {
+        readonly source: "auth-service";
+    };
+    readonly "user.updated": {
         readonly source: "auth-service";
     };
     readonly "user.role_changed": {

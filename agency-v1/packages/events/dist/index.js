@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventBus = exports.EVENTS = exports.EVENT_SCHEMAS = exports.affiliateClickRegisteredSchema = exports.orderRefundedSchema = exports.orderCompletedSchema = exports.invoiceCreatedSchema = exports.userCreatedSchema = exports.leadCreatedSchema = void 0;
+exports.EventBus = exports.EVENTS = exports.EVENT_SCHEMAS = exports.affiliateClickRegisteredSchema = exports.orderRefundedSchema = exports.orderCompletedSchema = exports.invoiceCreatedSchema = exports.userUpdatedSchema = exports.userCreatedSchema = exports.leadCreatedSchema = void 0;
 const ioredis_1 = __importDefault(require("ioredis"));
 const zod_1 = require("zod");
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,6 +31,14 @@ exports.leadCreatedSchema = zod_1.z.object({
 exports.userCreatedSchema = zod_1.z.object({
     email: zod_1.z.string({ required_error: "email is required" }),
     name: zod_1.z.string().optional(),
+});
+exports.userUpdatedSchema = zod_1.z.object({
+    userId: zod_1.z.string({ required_error: "userId is required" }),
+    email: zod_1.z.string().optional(),
+    name: zod_1.z.string().optional(),
+    role: zod_1.z.string().optional(),
+    twoFactorEnabled: zod_1.z.boolean().optional(),
+    updatedAt: zod_1.z.string().optional(),
 });
 exports.invoiceCreatedSchema = zod_1.z.object({
     id: zod_1.z.string().optional(),
@@ -67,6 +75,7 @@ exports.affiliateClickRegisteredSchema = zod_1.z.object({
 exports.EVENT_SCHEMAS = {
     "lead.created": exports.leadCreatedSchema,
     "user.created": exports.userCreatedSchema,
+    "user.updated": exports.userUpdatedSchema,
     "invoice.created": exports.invoiceCreatedSchema,
     "order.completed": exports.orderCompletedSchema,
     "order.refunded": exports.orderRefundedSchema,
@@ -78,6 +87,7 @@ exports.EVENT_SCHEMAS = {
 exports.EVENTS = {
     // Auth Service Events
     "user.created": { source: "auth-service" },
+    "user.updated": { source: "auth-service" },
     "user.role_changed": { source: "auth-service" },
     "user.deactivated": { source: "auth-service" },
     // CRM Service Events

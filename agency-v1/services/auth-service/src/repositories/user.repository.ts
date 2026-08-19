@@ -6,6 +6,10 @@
 
 import { prisma } from "@agency/database";
 import { UserEntity } from "@models/user.model";
+import { EventBus } from "@agency/events";
+
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const eventBus = new EventBus(REDIS_URL, "auth-repository");
 
 export interface IUserRepository {
   findById(id: string): Promise<UserEntity | null>;
@@ -44,6 +48,17 @@ export class PrismaUserRepository implements IUserRepository {
         where: { id },
         data: data as any,
       });
+
+      // CDC / Dual-Write synchronization event emission
+      await eventBus.publish("user.updated", {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        twoFactorEnabled: user.twoFactorEnabled,
+        updatedAt: user.updatedAt.toISOString(),
+      }).catch(err => console.warn("[UserRepository] Failed to publish user.updated event:", err.message));
+
       return user as UserEntity;
     } catch (err: any) {
       console.error(`[PrismaUserRepository] update error: ${err.message}`);

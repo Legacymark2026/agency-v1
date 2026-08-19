@@ -943,10 +943,25 @@ grpcServer.start(GRPC_PORT).catch((err: any) => {
 });
 
 // ── Start Server ─────────────────────────────────────────────────────────────
+import { ReconciliationService } from "@services/reconciliation.service";
+
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);
   console.log(`   Health: http://localhost:${PORT}/health`);
   console.log(`   Ready:  http://localhost:${PORT}/ready`);
+
+  // Run DB reconciliation on startup after a 10s delay, and schedule it daily
+  setTimeout(() => {
+    ReconciliationService.runUserReconciliation()
+      .then((stats) => console.log(`[Reconciliation] Startup run complete:`, stats))
+      .catch((err) => console.error(`[Reconciliation] Startup run failed:`, err));
+  }, 10000);
+
+  setInterval(() => {
+    ReconciliationService.runUserReconciliation()
+      .then((stats) => console.log(`[Reconciliation] Scheduled run complete:`, stats))
+      .catch((err) => console.error(`[Reconciliation] Scheduled run failed:`, err));
+  }, 24 * 60 * 60 * 1000);
 });
 setupGracefulShutdown(server);
 

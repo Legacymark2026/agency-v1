@@ -31,6 +31,15 @@ export const userCreatedSchema = z.object({
   name: z.string().optional(),
 });
 
+export const userUpdatedSchema = z.object({
+  userId: z.string({ required_error: "userId is required" }),
+  email: z.string().optional(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+  twoFactorEnabled: z.boolean().optional(),
+  updatedAt: z.string().optional(),
+});
+
 export const invoiceCreatedSchema = z.object({
   id: z.string().optional(),
   invoiceId: z.string().optional(),
@@ -70,6 +79,7 @@ export const affiliateClickRegisteredSchema = z.object({
 export const EVENT_SCHEMAS: Record<string, z.ZodSchema> = {
   "lead.created": leadCreatedSchema,
   "user.created": userCreatedSchema,
+  "user.updated": userUpdatedSchema,
   "invoice.created": invoiceCreatedSchema,
   "order.completed": orderCompletedSchema,
   "order.refunded": orderRefundedSchema,
@@ -79,6 +89,7 @@ export const EVENT_SCHEMAS: Record<string, z.ZodSchema> = {
 // Inferred Types
 export type LeadCreatedPayload = z.infer<typeof leadCreatedSchema>;
 export type UserCreatedPayload = z.infer<typeof userCreatedSchema>;
+export type UserUpdatedPayload = z.infer<typeof userUpdatedSchema>;
 export type InvoiceCreatedPayload = z.infer<typeof invoiceCreatedSchema>;
 export type OrderCompletedPayload = z.infer<typeof orderCompletedSchema>;
 export type OrderRefundedPayload = z.infer<typeof orderRefundedSchema>;
@@ -91,6 +102,7 @@ export type AffiliateClickRegisteredPayload = z.infer<typeof affiliateClickRegis
 export const EVENTS = {
   // Auth Service Events
   "user.created": { source: "auth-service" },
+  "user.updated": { source: "auth-service" },
   "user.role_changed": { source: "auth-service" },
   "user.deactivated": { source: "auth-service" },
 
