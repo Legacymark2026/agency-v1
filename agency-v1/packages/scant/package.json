@@ -1,0 +1,18 @@
+{
+  "name": "@agency/scant",
+  "version": "1.0.0",
+  "description": "AST-based API analyzer and OpenAPI documentation generator for microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --outDir dist"
+  },
+  "dependencies": {
+    "@agency/openapi": "file:../openapi",
+    "typescript": "^5.4.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

@@ -104,7 +104,7 @@ export class AgencyOpenAPIRegistry {
  */
 export const serveSwaggerUI = (spec: ReturnType<AgencyOpenAPIRegistry["generateSpec"]>): RequestHandler[] => {
   return [
-    swaggerUi.serve,
+    ...swaggerUi.serve,
     swaggerUi.setup(spec, {
       customSiteTitle: "LegacyMark API Docs",
       customCss: `

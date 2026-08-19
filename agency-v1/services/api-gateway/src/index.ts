@@ -532,7 +532,8 @@ const getBreaker = (serviceName: string) => {
 const handleFallback = async (req: express.Request, res: express.Response, serviceName: string, reason: string) => {
   if (req.method === "GET") {
     // Try to get from Redis cache
-    const cacheKey = `edge_cache:${req.path}`;
+    const authId = (req.headers.authorization || "anon").slice(0, 20);
+    const cacheKey = `edge_cache:${authId}:${req.path}`;
     try {
       const cachedData = await redis.get(cacheKey);
       if (cachedData) {

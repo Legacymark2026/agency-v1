@@ -95,4 +95,5 @@ scrape_configs:
           - "api-gateway:8080"
           - "auth-service:4001"
           - "crm-service:4002"
+          - "traefik:8082"
 

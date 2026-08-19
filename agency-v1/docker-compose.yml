@@ -325,10 +325,17 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.forwardedHeaders.insecure=true"
       - "--entrypoints.web.http.middlewares=security-headers@file"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.forwardedHeaders.insecure=true"
       - "--entrypoints.websecure.http3"
+      - "--entrypoints.websecure.http3.advertisedport=8443"
       - "--entrypoints.websecure.http.middlewares=security-headers@file"
+      - "--entrypoints.metrics.address=:8082"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entrypoint=metrics"
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@legacymark.com}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.le.acme.httpchallenge=true"
@@ -343,6 +350,7 @@ services:
       - "8081:80"
       - "8443:443"
       - "8443:443/udp"
+      - "8085:8082"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "letsencrypt:/letsencrypt"
@@ -404,7 +412,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.web.rule=Host(`legacymarksas.com`) || Host(`www.legacymarksas.com`) || PathPrefix(`/`)"
-      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.routers.web.entrypoints=websecure"
+      - "traefik.http.routers.web.tls=true"
+      - "traefik.http.routers.web.tls.certresolver=le"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
       - "traefik.http.routers.web.priority=1"
     networks:
@@ -463,7 +473,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=PathPrefix(`/graphql`)"
-      - "traefik.http.routers.api-gateway.entrypoints=web"
+      - "traefik.http.routers.api-gateway.entrypoints=websecure"
+      - "traefik.http.routers.api-gateway.tls=true"
+      - "traefik.http.routers.api-gateway.tls.certresolver=le"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
     networks:
       - backend-net
@@ -512,7 +524,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
-      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls=true"
+      - "traefik.http.routers.auth.tls.certresolver=le"
       - "traefik.http.services.auth.loadbalancer.server.port=4001"
 
   # ── Goldneez Rewards Service ──────────────────────────────────────────────
@@ -537,7 +551,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.goldneez-rewards.rule=PathPrefix(`/api/goldneez-rewards`)"
-      - "traefik.http.routers.goldneez-rewards.entrypoints=web"
+      - "traefik.http.routers.goldneez-rewards.entrypoints=websecure"
+      - "traefik.http.routers.goldneez-rewards.tls=true"
+      - "traefik.http.routers.goldneez-rewards.tls.certresolver=le"
       - "traefik.http.services.goldneez-rewards.loadbalancer.server.port=4020"
 
   # ── CRM Service ──────────────────────────────────────────────────────────
@@ -579,7 +595,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm.rule=PathPrefix(`/api/leads`) || PathPrefix(`/api/deals`) || PathPrefix(`/api/crm`)"
-      - "traefik.http.routers.crm.entrypoints=web"
+      - "traefik.http.routers.crm.entrypoints=websecure"
+      - "traefik.http.routers.crm.tls=true"
+      - "traefik.http.routers.crm.tls.certresolver=le"
       - "traefik.http.services.crm.loadbalancer.server.port=4002"
 
   # ── Automation Service ────────────────────────────────────────────────────
@@ -606,7 +624,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.automation.rule=PathPrefix(`/api/workflows`) || PathPrefix(`/api/automation`) || PathPrefix(`/api/cron/run-automation`) || PathPrefix(`/api/cron/social-publisher`) || PathPrefix(`/api/cron/process-sequences`)"
-      - "traefik.http.routers.automation.entrypoints=web"
+      - "traefik.http.routers.automation.entrypoints=websecure"
+      - "traefik.http.routers.automation.tls=true"
+      - "traefik.http.routers.automation.tls.certresolver=le"
       - "traefik.http.services.automation.loadbalancer.server.port=4003"
 
   # ── AI Engine ─────────────────────────────────────────────────────────────
@@ -635,7 +655,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ai.rule=PathPrefix(`/api/agents`) || PathPrefix(`/api/ai`) || PathPrefix(`/api/knowledge-bases`)"
-      - "traefik.http.routers.ai.entrypoints=web"
+      - "traefik.http.routers.ai.entrypoints=websecure"
+      - "traefik.http.routers.ai.tls=true"
+      - "traefik.http.routers.ai.tls.certresolver=le"
       - "traefik.http.services.ai.loadbalancer.server.port=4004"
 
   # ── Inbox Service ─────────────────────────────────────────────────────────
@@ -658,7 +680,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inbox.rule=PathPrefix(`/api/inbox`) || PathPrefix(`/api/webhooks/whatsapp`) || PathPrefix(`/api/webhooks/meta`) || PathPrefix(`/api/webhooks/channels`) || PathPrefix(`/api/cron/email-worker`)"
-      - "traefik.http.routers.inbox.entrypoints=web"
+      - "traefik.http.routers.inbox.entrypoints=websecure"
+      - "traefik.http.routers.inbox.tls=true"
+      - "traefik.http.routers.inbox.tls.certresolver=le"
       - "traefik.http.services.inbox.loadbalancer.server.port=4005"
 
   # ── Finance Service ───────────────────────────────────────────────────────
@@ -683,7 +707,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.finance.rule=PathPrefix(`/api/invoices`) || PathPrefix(`/api/payroll`) || PathPrefix(`/api/expenses`) || PathPrefix(`/api/payments`) || PathPrefix(`/api/subscriptions`) || PathPrefix(`/api/webhooks`) || PathPrefix(`/api/cron/subscriptions`)"
-      - "traefik.http.routers.finance.entrypoints=web"
+      - "traefik.http.routers.finance.entrypoints=websecure"
+      - "traefik.http.routers.finance.tls=true"
+      - "traefik.http.routers.finance.tls.certresolver=le"
       - "traefik.http.services.finance.loadbalancer.server.port=4006"
 
   # ── POS Service (Punto de Venta) ───────────────────────────────────────────
@@ -706,7 +732,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pos.rule=PathPrefix(`/api/pos`)"
-      - "traefik.http.routers.pos.entrypoints=web"
+      - "traefik.http.routers.pos.entrypoints=websecure"
+      - "traefik.http.routers.pos.tls=true"
+      - "traefik.http.routers.pos.tls.certresolver=le"
       - "traefik.http.services.pos.loadbalancer.server.port=4020"
 
   # ── Video Service ─────────────────────────────────────────────────────────
@@ -739,7 +767,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.video.rule=PathPrefix(`/api/video`)"
-      - "traefik.http.routers.video.entrypoints=web"
+      - "traefik.http.routers.video.entrypoints=websecure"
+      - "traefik.http.routers.video.tls=true"
+      - "traefik.http.routers.video.tls.certresolver=le"
       - "traefik.http.services.video.loadbalancer.server.port=4007"
 
   # ── Calendar Service ──────────────────────────────────────────────────────
@@ -762,7 +792,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.calendar.rule=PathPrefix(`/api/calendar`) || PathPrefix(`/api/scheduling`) || PathPrefix(`/api/booking`)"
-      - "traefik.http.routers.calendar.entrypoints=web"
+      - "traefik.http.routers.calendar.entrypoints=websecure"
+      - "traefik.http.routers.calendar.tls=true"
+      - "traefik.http.routers.calendar.tls.certresolver=le"
       - "traefik.http.services.calendar.loadbalancer.server.port=4008"
 
   # ── Marketing Service ─────────────────────────────────────────────────────
@@ -790,7 +822,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.marketing.rule=PathPrefix(`/api/marketing`) || PathPrefix(`/api/campaigns`) || PathPrefix(`/api/email-blast`) || PathPrefix(`/api/creative`)"
-      - "traefik.http.routers.marketing.entrypoints=web"
+      - "traefik.http.routers.marketing.entrypoints=websecure"
+      - "traefik.http.routers.marketing.tls=true"
+      - "traefik.http.routers.marketing.tls.certresolver=le"
       - "traefik.http.services.marketing.loadbalancer.server.port=4009"
 
   # ── Integration Service ───────────────────────────────────────────────────
@@ -813,7 +847,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.integration.rule=PathPrefix(`/api/integrations`) || PathPrefix(`/api/webhooks/shopify`) || PathPrefix(`/api/webhooks/wix`)"
-      - "traefik.http.routers.integration.entrypoints=web"
+      - "traefik.http.routers.integration.entrypoints=websecure"
+      - "traefik.http.routers.integration.tls=true"
+      - "traefik.http.routers.integration.tls.certresolver=le"
       - "traefik.http.services.integration.loadbalancer.server.port=4010"
 
   # ── Document Service ──────────────────────────────────────────────────────
@@ -837,7 +873,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.document.rule=PathPrefix(`/api/proposals`) || PathPrefix(`/api/propuesta`) || PathPrefix(`/api/kb`)"
-      - "traefik.http.routers.document.entrypoints=web"
+      - "traefik.http.routers.document.entrypoints=websecure"
+      - "traefik.http.routers.document.tls=true"
+      - "traefik.http.routers.document.tls.certresolver=le"
       - "traefik.http.services.document.loadbalancer.server.port=4011"
 
   # ── Agent Team Engine ─────────────────────────────────────────────────────
@@ -860,7 +898,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.agentTeam.rule=PathPrefix(`/api/agent`) || PathPrefix(`/api/test-flow`)"
-      - "traefik.http.routers.agentTeam.entrypoints=web"
+      - "traefik.http.routers.agentTeam.entrypoints=websecure"
+      - "traefik.http.routers.agentTeam.tls=true"
+      - "traefik.http.routers.agentTeam.tls.certresolver=le"
       - "traefik.http.services.agentTeam.loadbalancer.server.port=4012"
 
   # ── Analytics Service ─────────────────────────────────────────────────────
@@ -884,7 +924,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.analytics.rule=PathPrefix(`/api/analytics`) || PathPrefix(`/api/track`)"
-      - "traefik.http.routers.analytics.entrypoints=web"
+      - "traefik.http.routers.analytics.entrypoints=websecure"
+      - "traefik.http.routers.analytics.tls=true"
+      - "traefik.http.routers.analytics.tls.certresolver=le"
       - "traefik.http.services.analytics.loadbalancer.server.port=4013"
 
   # ── Admin Service ─────────────────────────────────────────────────────────
@@ -907,7 +949,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`) || PathPrefix(`/api/diagnostics`) || PathPrefix(`/api/debug`)"
-      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.routers.admin.entrypoints=websecure"
+      - "traefik.http.routers.admin.tls=true"
+      - "traefik.http.routers.admin.tls.certresolver=le"
       - "traefik.http.services.admin.loadbalancer.server.port=4014"
 
   # ── Public API Service ────────────────────────────────────────────────────
@@ -930,7 +974,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.publicApi.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/public`)"
-      - "traefik.http.routers.publicApi.entrypoints=web"
+      - "traefik.http.routers.publicApi.entrypoints=websecure"
+      - "traefik.http.routers.publicApi.tls=true"
+      - "traefik.http.routers.publicApi.tls.certresolver=le"
       - "traefik.http.services.publicApi.loadbalancer.server.port=4015"
 
   # ── Notification Service ──────────────────────────────────────────────────
@@ -955,7 +1001,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.notification.rule=PathPrefix(`/api/notifications`) || PathPrefix(`/api/notification-preferences`)"
-      - "traefik.http.routers.notification.entrypoints=web"
+      - "traefik.http.routers.notification.entrypoints=websecure"
+      - "traefik.http.routers.notification.tls=true"
+      - "traefik.http.routers.notification.tls.certresolver=le"
       - "traefik.http.services.notification.loadbalancer.server.port=4016"
 
   # ── HR Service ────────────────────────────────────────────────────────────
@@ -978,7 +1026,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hr.rule=PathPrefix(`/api/employees`) || PathPrefix(`/api/hr`) || PathPrefix(`/api/time-tracking`) || PathPrefix(`/api/payroll-hr`)"
-      - "traefik.http.routers.hr.entrypoints=web"
+      - "traefik.http.routers.hr.entrypoints=websecure"
+      - "traefik.http.routers.hr.tls=true"
+      - "traefik.http.routers.hr.tls.certresolver=le"
       - "traefik.http.services.hr.loadbalancer.server.port=4017"
 
   # ── Project Service ───────────────────────────────────────────────────────
@@ -1002,7 +1052,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.project.rule=PathPrefix(`/api/projects`) || PathPrefix(`/api/kanban`) || PathPrefix(`/api/tasks`)"
-      - "traefik.http.routers.project.entrypoints=web"
+      - "traefik.http.routers.project.entrypoints=websecure"
+      - "traefik.http.routers.project.tls=true"
+      - "traefik.http.routers.project.tls.certresolver=le"
       - "traefik.http.services.project.loadbalancer.server.port=4018"
 
   # ── Affiliate Service ─────────────────────────────────────────────────────
@@ -1025,7 +1077,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.affiliate.rule=PathPrefix(`/r`) || PathPrefix(`/api/affiliates`)"
-      - "traefik.http.routers.affiliate.entrypoints=web"
+      - "traefik.http.routers.affiliate.entrypoints=websecure"
+      - "traefik.http.routers.affiliate.tls=true"
+      - "traefik.http.routers.affiliate.tls.certresolver=le"
       - "traefik.http.services.affiliate.loadbalancer.server.port=4019"
 
 

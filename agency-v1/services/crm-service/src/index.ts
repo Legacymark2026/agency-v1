@@ -23,6 +23,8 @@ import { leadRepository } from "@repositories/lead.repository";
 import { leadRouter } from "./routes/lead.routes";
 import { errorHandler } from "./middlewares/crm.middleware";
 import { startCrmGrpcServer } from "./grpc/crm-grpc.server";
+import { serveServiceDocs } from "@agency/scant";
+import * as path from "path";
 import { executeCreateLeadCommand, executeUpdateDealStageCommand } from "./cqrs/commands";
 import { executeGetLeadsQuery, executeGetPipelineQuery } from "./cqrs/queries";
 
@@ -38,6 +40,9 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
 app.use("/api/v1", leadRouter);
+
+// ── Interactive API Documentation (Swagger via Scant) ───────────────────────────
+app.use("/api/docs", serveServiceDocs(path.resolve(__dirname, "..")));
 
 // ── Health Checks ────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {

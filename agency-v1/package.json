@@ -40,12 +40,12 @@
     "turbo": "^2.0.0"
   },
   "dependencies": {
-    "@esbuild/linux-x64": "^0.28.0",
     "puppeteer": "^24.43.0",
     "puppeteer-cluster": "^0.25.0",
     "tsconfig-paths": "^4.2.0"
   },
   "optionalDependencies": {
+    "@esbuild/linux-x64": "^0.28.0",
     "@rollup/rollup-linux-x64-gnu": "*",
     "@rollup/rollup-linux-x64-musl": "*"
   }

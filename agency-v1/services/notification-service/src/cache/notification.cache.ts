@@ -10,7 +10,7 @@
  */
 
 import Redis from "ioredis";
-import { prisma } from "@agency/database";
+import { prisma, hybridCache } from "@agency/database";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 export const redisCache = new Redis(REDIS_URL);
@@ -68,25 +68,14 @@ export interface CachedUserProfile {
 
 export async function getUserProfileCached(userId: string): Promise<CachedUserProfile | null> {
   const cacheKey = `notif:user_profile:${userId}`;
-  try {
-    const cached = await redisCache.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  } catch {}
-
-  // Fallback to PostgreSQL
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true, name: true },
-  });
-
-  if (user) {
-    try {
-      // Cache for 10 minutes (600 seconds)
-      await redisCache.setex(cacheKey, 600, JSON.stringify(user));
-    } catch {}
-  }
-
-  return user;
+  return hybridCache.get(
+    cacheKey,
+    async () => {
+      return prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, name: true },
+      });
+    },
+    { ttlL2Seconds: 600 }
+  );
 }
