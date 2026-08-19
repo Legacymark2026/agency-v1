@@ -1,8 +1,12 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 import { withSentryConfig } from '@sentry/nextjs';
+import nextBundleAnalyzer from '@next/bundle-analyzer';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+const withBundleAnalyzer = nextBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const isProd = process.env.NODE_ENV === 'production';
 const cspHeader = `
@@ -178,7 +182,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-const finalConfig = withNextIntl(nextConfig);
+const finalConfig = withBundleAnalyzer(withNextIntl(nextConfig));
 
 export default process.env.SENTRY_AUTH_TOKEN
   ? withSentryConfig(
