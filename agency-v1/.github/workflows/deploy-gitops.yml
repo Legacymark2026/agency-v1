@@ -26,6 +26,17 @@ jobs:
       - name: Build Monorepo Workspaces
         run: npm run build
 
+      - name: 🛡️ Audit NPM Dependencies for Vulnerabilities
+        run: npm audit --audit-level=high || echo "Audit complete. Address high vulnerabilities progressively."
+
+      - name: 🔍 Run Trivy Security Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+
   docker-build-push:
     name: 🐳 Docker Build & Push Image
     needs: build-and-test
