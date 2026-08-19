@@ -66,4 +66,4 @@ COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 4001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4001/health || exit 1
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "-r", "tsconfig-paths/register", "dist/index.js"]
