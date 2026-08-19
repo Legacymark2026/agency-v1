@@ -889,10 +889,8 @@ grpcServer.addService(PROTO_PATHS.auth, "auth", "AuthService", {
         }
       }
       
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.sub },
-        select: { id: true, email: true, role: true }
-      });
+      const { userRepository } = await import("@repositories/user.repository");
+      const user = await userRepository.findById(decoded.sub);
 
       if (!user) {
         return callback(null, { valid: false, error: "User not found" });

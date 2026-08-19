@@ -14,6 +14,7 @@ export interface UserEntity {
   twoFactorEnabled: boolean;
   twoFactorSecret?: string | null;
   twoFactorBackupCodes?: string[] | null;
+  image?: string | null;
   deactivatedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;

@@ -1,6 +1,8 @@
-import { prisma } from "@agency/database";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { userRepository } from "@repositories/user.repository";
+import { sessionRepository } from "@repositories/session.repository";
+import { prisma } from "@agency/database"; // keep for cross-db company memberships if needed
 
 export interface LoginInput {
   email: string;
@@ -16,9 +18,7 @@ export class AuthService {
   static async login(input: LoginInput, privateKey: string | null) {
     const { email, password, ipAddress, userAgent } = input;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await userRepository.findByEmail(email);
 
     if (!user || !user.passwordHash) {
       throw new Error("INVALID_CREDENTIALS");
@@ -72,14 +72,12 @@ export class AuthService {
       signOptions
     );
 
-    const session = await prisma.session.create({
-      data: {
-        userId: user.id,
-        sessionToken: token,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        ipAddress: ipAddress ?? null,
-        userAgent: userAgent ?? null,
-      },
+    const session = await sessionRepository.create({
+      userId: user.id,
+      sessionToken: token,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      ipAddress: ipAddress ?? null,
+      userAgent: userAgent ?? null,
     });
 
     return {
@@ -100,23 +98,20 @@ export class AuthService {
    * Obtener perfil de usuario autenticado
    */
   static async getUserProfile(userId: string) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        globalRole: true,
-        image: true,
-        createdAt: true,
-      },
-    });
+    const user = await userRepository.findById(userId);
 
     if (!user) {
       throw new Error("USER_NOT_FOUND");
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      globalRole: user.globalRole,
+      image: user.image,
+      createdAt: user.createdAt,
+    };
   }
 }
