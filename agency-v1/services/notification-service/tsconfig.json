@@ -17,7 +17,8 @@
     "paths": {
       "@/*": ["src/*"],
       "@services/*": ["src/services/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@repositories/*": ["src/repositories/*"]
     }
   },
   "include": ["src/**/*"],

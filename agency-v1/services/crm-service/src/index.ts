@@ -18,6 +18,8 @@ import { Client } from "pg";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { routeLead } from "./assignment-engine";
 
+import { leadRepository } from "@repositories/lead.repository";
+
 import { leadRouter } from "./routes/lead.routes";
 import { errorHandler } from "./middlewares/crm.middleware";
 import { startCrmGrpcServer } from "./grpc/crm-grpc.server";
@@ -106,13 +108,13 @@ app.get("/api/leads", async (req, res) => {
     const skip = (p - 1) * limit;
 
     const [leads, total] = await Promise.all([
-      prisma.lead.findMany({
+      leadRepository.findMany({
         where,
         orderBy: { [String(sortBy)]: String(sortOrder) as any },
         skip,
         take: limit,
       }),
-      prisma.lead.count({ where }),
+      leadRepository.count(where),
     ]);
 
     res.json({
@@ -131,12 +133,7 @@ app.get("/api/leads/analytics/source", async (req, res) => {
     const { companyId } = req.query;
     if (!companyId) return res.status(400).json({ error: "companyId required" });
 
-    const analytics = await prisma.lead.groupBy({
-      by: ["source"],
-      where: { companyId: String(companyId) },
-      _count: { id: true },
-      _avg: { score: true },
-    });
+    const analytics = await leadRepository.groupBySource(String(companyId));
 
     const result = analytics.map((a: any) => ({
       source: a.source,

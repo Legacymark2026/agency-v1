@@ -26,6 +26,7 @@ import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
 import Redis from "ioredis";
+import { notificationRepository } from "@repositories/notification.repository";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4016", 10);
@@ -148,13 +149,13 @@ app.get("/api/notifications", requireAuth, async (req, res) => {
     const skip = (Math.max(1, parseInt(String(page)) || 1) - 1) * pageSize;
 
     const [notifications, total] = await Promise.all([
-      prisma.notification.findMany({
+      notificationRepository.findMany({
         where,
         orderBy: { createdAt: "desc" },
         take: pageSize,
         skip,
       }),
-      prisma.notification.count({ where }),
+      notificationRepository.count(where),
     ]);
 
     // Distributed Redis Cache for unread count
@@ -253,7 +254,7 @@ app.patch("/api/notifications/read", requireAuth, async (req, res) => {
     }
 
     if (markAll) {
-      const result = await prisma.notification.updateMany({
+      const result = await notificationRepository.updateMany({
         where: { userId: targetUserId, isRead: false },
         data: { isRead: true },
       });
@@ -262,7 +263,7 @@ app.patch("/api/notifications/read", requireAuth, async (req, res) => {
     }
 
     if (notificationIds && notificationIds.length > 0) {
-      const result = await prisma.notification.updateMany({
+      const result = await notificationRepository.updateMany({
         where: { id: { in: notificationIds }, userId: targetUserId },
         data: { isRead: true },
       });
@@ -289,7 +290,7 @@ app.delete("/api/notifications", requireAuth, async (req, res) => {
     }
 
     if (deleteAll) {
-      const result = await prisma.notification.deleteMany({
+      const result = await notificationRepository.deleteMany({
         where: { userId: targetUserId },
       });
       await invalidateUnreadCount(targetUserId);
@@ -297,7 +298,7 @@ app.delete("/api/notifications", requireAuth, async (req, res) => {
     }
 
     if (notificationIds && notificationIds.length > 0) {
-      const result = await prisma.notification.deleteMany({
+      const result = await notificationRepository.deleteMany({
         where: { id: { in: notificationIds }, userId: targetUserId },
       });
       await invalidateUnreadCount(targetUserId);

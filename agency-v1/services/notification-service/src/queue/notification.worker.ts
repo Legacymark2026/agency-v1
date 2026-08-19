@@ -11,11 +11,11 @@
  */
 
 import { Worker, Job } from "bullmq";
-import { prisma } from "@agency/database";
 import { NotificationJobData, redisConnection, dlqQueue } from "./notification.queue";
 import { emailCircuitBreaker, pushCircuitBreaker } from "../circuit-breaker/provider.breaker";
 import { traceSpan } from "../observability/tracer";
 import { getUserProfileCached, invalidateUnreadCount } from "../cache/notification.cache";
+import { notificationRepository } from "@repositories/notification.repository";
 
 export function startNotificationWorker() {
   const worker = new Worker<NotificationJobData>(
@@ -34,8 +34,8 @@ export function startNotificationWorker() {
         // 1. IN_APP Channel Processing
         if (channels.includes("IN_APP")) {
           await traceSpan("notification.channel_in_app", async () => {
-            await prisma.notification.createMany({
-              data: userIds.map((userId) => ({
+            await notificationRepository.createMany(
+              userIds.map((userId) => ({
                 userId,
                 companyId: String(companyId),
                 title: cleanTitle,
@@ -43,8 +43,8 @@ export function startNotificationWorker() {
                 type: String(type || "SYSTEM"),
                 isRead: false,
                 data: data ? JSON.stringify(data) : undefined,
-              })),
-            });
+              }))
+            );
 
             // Invalidate Redis unread count cache for all target users
             for (const userId of userIds) {
