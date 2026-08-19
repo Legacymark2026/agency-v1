@@ -7,6 +7,8 @@ COPY packages/events/package.json ./packages/events/
 COPY packages/service-auth/package.json ./packages/service-auth/
 COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
+COPY packages/openapi/package.json ./packages/openapi/
+COPY packages/scant/package.json ./packages/scant/
 COPY services/crm-service/package.json ./services/crm-service/
 
 RUN npm ci || npm install
@@ -16,6 +18,8 @@ COPY packages/events/ ./packages/events/
 COPY packages/service-auth/ ./packages/service-auth/
 COPY packages/grpc/ ./packages/grpc/
 COPY packages/observability/ ./packages/observability/
+COPY packages/openapi/ ./packages/openapi/
+COPY packages/scant/ ./packages/scant/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
 WORKDIR /app/packages/database
@@ -29,6 +33,10 @@ WORKDIR /app/packages/grpc
 RUN npm run build
 WORKDIR /app/packages/observability
 RUN npx tsc --outDir dist
+WORKDIR /app/packages/openapi
+RUN npm run build
+WORKDIR /app/packages/scant
+RUN npm run build
 
 WORKDIR /app
 COPY services/crm-service/ ./services/crm-service/
@@ -49,6 +57,10 @@ COPY --from=builder /app/packages/grpc/dist ./packages/grpc/dist
 COPY --from=builder /app/packages/grpc/package.json ./packages/grpc/
 COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
 COPY --from=builder /app/packages/observability/package.json ./packages/observability/
+COPY --from=builder /app/packages/openapi/dist ./packages/openapi/dist
+COPY --from=builder /app/packages/openapi/package.json ./packages/openapi/
+COPY --from=builder /app/packages/scant/dist ./packages/scant/dist
+COPY --from=builder /app/packages/scant/package.json ./packages/scant/
 COPY --from=builder /app/services/crm-service/dist ./dist
 COPY --from=builder /app/services/crm-service/package.json ./
 COPY --from=builder /app/services/crm-service/tsconfig.json ./
