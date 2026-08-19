@@ -5,7 +5,13 @@
     "strict": true, "noImplicitAny": false,
     "esModuleInterop": true, "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true, "resolveJsonModule": true,
-    "declaration": true, "sourceMap": true
+    "declaration": true, "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@services/*": ["src/services/*"],
+      "@utils/*": ["src/utils/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
