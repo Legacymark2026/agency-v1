@@ -62,7 +62,6 @@ COPY --from=builder /app/packages/openapi/package.json ./packages/openapi/
 COPY --from=builder /app/packages/scant/dist ./packages/scant/dist
 COPY --from=builder /app/packages/scant/package.json ./packages/scant/
 COPY --from=builder /app/services/crm-service/dist ./dist
-COPY --from=builder /app/services/crm-service/src ./src
 COPY --from=builder /app/services/crm-service/package.json ./
 COPY --from=builder /app/services/crm-service/tsconfig.json ./
 COPY --from=builder /app/node_modules ./node_modules

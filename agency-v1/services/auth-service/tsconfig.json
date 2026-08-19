@@ -8,16 +8,16 @@
     "declaration": true, "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@config/*": ["src/config/*"],
-      "@controllers/*": ["src/controllers/*"],
-      "@routes/*": ["src/routes/*"],
-      "@models/*": ["src/models/*"],
-      "@services/*": ["src/services/*"],
-      "@utilities/*": ["src/utilities/*"],
-      "@types/*": ["src/types/*"],
-      "@repositories/*": ["src/repositories/*"],
-      "@validators/*": ["src/validators/*"]
+      "@/*": ["src/*", "dist/*"],
+      "@config/*": ["src/config/*", "dist/config/*"],
+      "@controllers/*": ["src/controllers/*", "dist/controllers/*"],
+      "@routes/*": ["src/routes/*", "dist/routes/*"],
+      "@models/*": ["src/models/*", "dist/models/*"],
+      "@services/*": ["src/services/*", "dist/services/*"],
+      "@utilities/*": ["src/utilities/*", "dist/utilities/*"],
+      "@types/*": ["src/types/*", "dist/types/*"],
+      "@repositories/*": ["src/repositories/*", "dist/repositories/*"],
+      "@validators/*": ["src/validators/*", "dist/validators/*"]
     }
   },
   "include": ["src/**/*"],
