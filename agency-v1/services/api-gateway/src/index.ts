@@ -721,7 +721,8 @@ app.use("/api/propuesta", resilientProxy("document", SERVICES.document));
 app.use("/api/kb", resilientProxy("document", SERVICES.document));
 
 // Agent Team Engine
-app.use("/api/agent", resilientProxy("agentTeam", SERVICES.agentTeam));
+app.use("/api/agent/teams", resilientProxy("agentTeam", SERVICES.agentTeam));
+app.use("/api/agent/presets", resilientProxy("agentTeam", SERVICES.agentTeam));
 app.use("/api/test-flow", resilientProxy("agentTeam", SERVICES.agentTeam));
 
 // Analytics Service

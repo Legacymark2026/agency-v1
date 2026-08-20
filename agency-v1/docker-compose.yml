@@ -894,7 +894,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.agentTeam.rule=PathPrefix(`/api/agent`) || PathPrefix(`/api/test-flow`)"
+      - "traefik.http.routers.agentTeam.rule=PathPrefix(`/api/agent/teams`) || PathPrefix(`/api/agent/presets`) || PathPrefix(`/api/test-flow`)"
       - "traefik.http.routers.agentTeam.entrypoints=websecure"
       - "traefik.http.routers.agentTeam.tls=true"
       - "traefik.http.routers.agentTeam.tls.certresolver=le"
