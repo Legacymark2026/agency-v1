@@ -1120,6 +1120,9 @@ services:
     image: grafana/grafana:10.4.0
     restart: unless-stopped
     logging: *default-logging
+    environment:
+      - GF_SERVER_ROOT_URL=https://legacymarksas.com/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     ports:
       - "3002:3000"
     volumes:
