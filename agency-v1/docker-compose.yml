@@ -1143,6 +1143,9 @@ services:
     image: prom/prometheus:v2.51.0
     restart: unless-stopped
     logging: *default-logging
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=https://legacymarksas.com/prometheus/'
     ports:
       - "9090:9090"
     volumes:
