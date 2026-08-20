@@ -49,6 +49,16 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
+// Route versioning support: rewrite /api/v1/inbox and /api/v1/webhooks to their legacy equivalents
+app.use((req, res, next) => {
+  if (req.url.startsWith("/api/v1/inbox")) {
+    req.url = req.url.replace("/api/v1/inbox", "/api/inbox");
+  } else if (req.url.startsWith("/api/v1/webhooks")) {
+    req.url = req.url.replace("/api/v1/webhooks", "/api/webhooks");
+  }
+  next();
+});
+
 // ── Health & Readiness ───────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "inbox-service" });

@@ -8,121 +8,1231 @@ datasource db {
   url      = env("MEDIA_DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Content & AI (Media, Blogs, Automations, Agents)
-// ─────────────────────────────────────────────────────────────────────────────
+enum AffiliateStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PlanType {
+  FIXED
+  PERCENTAGE
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
 
 model Post {
-  id              String   @id @default(uuid())
-  title           String
-  slug            String   @unique
-  content         String
-  authorId        String   @map("author_id") // Soft link to Auth DB
-  published       Boolean  @default(false)
-  status          String   @default("draft")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
 
+  id              String      @id @default(uuid())
+  title           String
+  slug            String      @unique
+  excerpt         String?
+  content         String
+  coverImage      String?     @map("cover_image")
+  imageAlt        String?     @map("image_alt")
+  published       Boolean     @default(false)
+  metaTitle       String?     @map("meta_title")
+  metaDescription String?     @map("meta_description")
+  canonicalUrl    String?     @map("canonical_url")
+  focusKeyword    String?     @map("focus_keyword")
+  status          String      @default("draft")
+  scheduledDate   DateTime?   @map("scheduled_date")
+  authorId        String      @map("author_id")
+  seriesId        String?     @map("series_id")
+  seriesOrder     Int?        @map("series_order")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
   categories      Category[]
   tags            Tag[]
+  comments        Comment[]
+  likes           PostLike[]
+  series          PostSeries? @relation(fields: [seriesId], references: [id])
+  faqs            Json?       @default("[]")
 
   @@index([authorId])
+  @@index([seriesId])
   @@map("tbl_posts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Project {
+
+  id                  String                @id @default(uuid())
+  title               String
+  slug                String                @unique
+  description         String
+  content             String?
+  client              String?
+  coverImage          String?               @map("cover_image")
+  imageAlt            String?               @map("image_alt")
+  gallery             Json?                 @default("[]")
+  published           Boolean               @default(false)
+  metaTitle           String?               @map("meta_title")
+  metaDescription     String?               @map("meta_description")
+  focusKeyword        String?               @map("focus_keyword")
+  status              String                @default("draft")
+  scheduledDate       DateTime?             @map("scheduled_date")
+  featured            Boolean               @default(false)
+  displayOrder        Int                   @default(0) @map("display_order")
+  startDate           DateTime?             @map("start_date")
+  endDate             DateTime?             @map("end_date")
+  testimonial         String?
+  results             Json?                 @default("[]")
+  projectUrl          String?               @map("project_url")
+  categoryId          String?               @map("category_id")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  clientLogo          String?               @map("client_logo")
+  pdfUrl              String?               @map("pdf_url")
+  private             Boolean               @default(false)
+  seoScore            Int                   @default(0)
+  team                Json?                 @default("[]")
+  techStack           Json?                 @default("[]")
+  videoUrl            String?               @map("video_url")
+  category            ProjectCategory?      @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([featured])
+  @@map("tbl_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ProjectCategory {
+
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  color       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  projects    Project[]
+
+  @@map("tbl_project_categories")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ProjectTag {
+
+  id                  String                @id @default(uuid())
+  name                String                @unique
+
+  @@map("tbl_project_tags")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Tag {
+
+  id    String @id @default(uuid())
+  name  String @unique
+  posts Post[]
+
+  @@map("tbl_tags")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Category {
+
   id    String @id @default(uuid())
   name  String @unique
   slug  String @unique
   posts Post[]
 
   @@map("tbl_categories")
-}
-
-model Tag {
-  id    String @id @default(uuid())
-  name  String @unique
-  posts Post[]
-
-  @@map("tbl_tags")
-}
-
-model Project {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  description String
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("tbl_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Workflow {
-  id            String   @id @default(uuid())
-  companyId     String?  @map("company_id") // Soft link to Core DB
+
+  id            String              @id @default(uuid())
   name          String
-  isActive      Boolean  @default(false) @map("is_active")
-  triggerType   String   @map("trigger_type")
-  triggerConfig Json     @map("trigger_config")
+  description   String?
+  isActive      Boolean             @default(false) @map("is_active")
+  triggerType   String              @map("trigger_type")
+  triggerConfig Json                @map("trigger_config")
   steps         Json
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  versions      Json?               @default("[]")
+  isTemplate    Boolean             @default(false) @map("is_template")
+  category      String?             @map("category")
+  companyId     String?             @map("company_id")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
 
   @@index([companyId])
   @@map("tbl_workflows")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PostLike {
+
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  sessionId String   @map("session_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sessionId])
+  @@index([postId])
+  @@map("tbl_post_likes")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Comment {
+
+  id          String        @id @default(uuid())
+  content     String
+  authorName  String        @map("author_name")
+  authorEmail String        @map("author_email")
+  authorUrl   String?       @map("author_url")
+  postId      String        @map("post_id")
+  parentId    String?       @map("parent_id")
+  approved    Boolean       @default(false)
+  flagged     Boolean       @default(false)
+  ipHash      String?       @map("ip_hash")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deleted     Boolean       @default(false) @map("deleted")
+  likeCount   Int           @default(0) @map("like_count")
+  likes       CommentLike[]
+  parent      Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[]     @relation("CommentReplies")
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([parentId])
+  @@index([approved])
+  @@index([deleted])
+  @@map("tbl_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CommentLike {
+
+  id        String   @id @default(uuid())
+  commentId String   @map("comment_id")
+  ipHash    String   @map("ip_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, ipHash])
+  @@index([commentId])
+  @@map("tbl_comment_likes")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model NewsletterSubscription {
+
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String?
+  source         String    @default("blog")
+  confirmed      Boolean   @default(false)
+  confirmToken   String?   @map("confirm_token")
+  frequency      String    @default("weekly")
+  interests      Json?     @default("[]")
+  unsubscribed   Boolean   @default(false)
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([confirmed])
+  @@index([unsubscribed])
+  @@map("tbl_newsletter_subscriptions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PostSeries {
+
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?
+  coverImage  String?  @map("cover_image")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  posts       Post[]
+
+  @@map("tbl_post_series")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ReadingListItem {
+
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  postSlug String   @map("post_slug")
+  addedAt  DateTime @default(now()) @map("added_at")
+
+  @@unique([userId, postSlug])
+  @@index([userId])
+  @@map("tbl_reading_list_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Campaign {
-  id          String   @id @default(uuid())
-  companyId   String   @map("company_id") // Soft link to Core DB
-  name        String
-  status      String   @default("draft")
-  budget      Float    @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
-  
+
+  id              String           @id @default(uuid())
+  name            String
+  code            String           @unique
+  platform        String
+  status          String           @default("ACTIVE")
+  budget          Float?
+  startDate       DateTime?        @map("start_date")
+  endDate         DateTime?        @map("end_date")
+  description     String?
+  impressions     Int              @default(0)
+  clicks          Int              @default(0)
+  conversions     Int              @default(0)
+  spend           Float            @default(0)
+  companyId       String           @map("company_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  approvalStatus  String           @default("DRAFT") @map("approval_status")
+  approvedById    String?          @map("approved_by_id")
+  launchStatus    String           @default("PENDING") @map("launch_status")
+  launchedAt      DateTime?        @map("launched_at")
+  parameters      Json?
+  trackingConfig  Json?            @map("tracking_config")
+  targeting       Json?            // Structured targeting: age, gender, locations, interests, lookalike, remarketing
+  creative        Json?            // Headlines, descriptions, primaryTexts, CTA, assetUrls, adGroups
+  dayParting      Json?            @map("day_parting") // Weekly schedule grid
+  brandManual     Json?            @map("brand_manual") // Brand identity and guidelines
+  abTestConfig    Json?            @map("ab_test_config") // A/B test variants config
+  utmConfig       Json?            @map("utm_config") // UTM source/medium/campaign/content
+  platformConfigs Json?            @map("platform_configs") // Per-platform advanced settings (keywords, pixel, etc)
+  budgetType      String?          @default("DAILY") @map("budget_type") // DAILY or LIFETIME
+  bidStrategy     String?          @map("bid_strategy") // LOWEST_COST, COST_CAP, etc
+  bidAmount       Float?           @map("bid_amount")
+  pacing          String?          @default("STANDARD") // STANDARD or ACCELERATED
+  currency        String?          @default("USD")
+  objective       String?          // LEAD_GENERATION, CONVERSIONS, etc
+
   @@index([companyId])
+  @@index([code])
+  @@index([status])
   @@map("tbl_campaigns")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Expert {
+
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  bio         String?
+  imageUrl    String?  @map("image_url")
+  socialLinks Json?    @default("{}") @map("social_links")
+  order       Int      @default(0)
+  isVisible   Boolean  @default(true) @map("is_visible")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  badgeId     String?  @map("badge_id")
+  iconName    String?  @map("icon_name")
+  skills      String[] @default([])
+
+  @@index([order])
+  @@index([isVisible])
+  @@map("tbl_experts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Experiment {
+
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  status      String    @default("DRAFT")
+  type        String    @default("AB_TEST")
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+  variants    Json
+  metrics     Json
+  results     Json?
+  winnerId    String?   @map("winner_id")
+  companyId   String    @map("company_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([status])
+  @@map("tbl_experiments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Annotation {
+
+  id        String   @id @default(uuid())
+  date      DateTime
+  content   String
+  category  String
+  authorId  String?  @map("author_id")
+  companyId String   @map("company_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@index([date])
+  @@map("tbl_annotations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model SocialPost {
-  id          String   @id @default(uuid())
-  companyId   String   @map("company_id") // Soft link
-  platform    String
-  content     String
-  status      String   @default("draft")
-  scheduledAt DateTime? @map("scheduled_at")
-  createdAt   DateTime @default(now()) @map("created_at")
+
+  id             String              @id @default(uuid())
+  content        String
+  mediaUrls      Json?               @default("[]")
+  platforms      Json                @default("[]")
+  status         String              @default("DRAFT")
+  scheduledAt    DateTime?           @map("scheduled_at")
+  publishedAt    DateTime?           @map("published_at")
+  authorId       String              @map("author_id")
+  campaignId     String?             @map("campaign_id")
+  companyId      String              @map("company_id")
+  approvalStatus String              @default("PENDING") @map("approval_status")
+  approvedById   String?             @map("approved_by_id")
+  internalNotes  String?             @map("internal_notes")
+  isEvergreen    Boolean             @default(false) @map("is_evergreen")
+  timezone       String?
+  targetUrl      String?             @map("target_url")
+  tiktokAudioId  String?             @map("tiktok_audio_id")
+  firstComment   String?             @map("first_comment")
+  utmCampaign    String?             @map("utm_campaign")
+  utmSource      String?             @map("utm_source")
+  utmMedium      String?             @map("utm_medium")
+  metrics        Json?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
 
   @@index([companyId])
+  @@index([status])
+  @@index([approvalStatus])
   @@map("tbl_social_posts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentConversation {
+
+  id              String         @id @default(uuid())
+  title           String         @default("Nueva conversación")
+  userId          String?        @map("user_id")
+  companyId       String         @map("company_id")
+  agentId         String?        @map("agent_id")
+  contactId       String?        @map("contact_id")
+  status          String         @default("ACTIVE")
+  suspendedUntil  DateTime?      @map("suspended_until")
+  suspendedReason String?        @map("suspended_reason")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  agent           AIAgent?       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  messages        AgentMessage[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([agentId, status])
+  @@map("tbl_agent_conversations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentMessage {
+
+  id              String            @id @default(uuid())
+  conversationId  String            @map("conversation_id")
+  role            String
+  content         String
+  rawContent      String?           @map("raw_content")
+  sentimentScore  Float?            @map("sentiment_score")
+  isHumanOverride Boolean           @default(false) @map("is_human_override")
+  tokensUsed      Int?              @map("tokens_used")
+  latencyMs       Int?              @map("latency_ms")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  conversation    AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@map("tbl_agent_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentConfig {
+
+  id                 String   @id @default(uuid())
+  companyId          String   @unique @map("company_id")
+  isActive           Boolean  @default(true) @map("is_active")
+  systemPrompt       String?  @map("system_prompt")
+  llmModel           String   @default("gemini-2.0-flash-lite") @map("llm_model")
+  temperature        Float    @default(0.7)
+  maxTokens          Int      @default(1024) @map("max_tokens")
+  adminWhatsappPhone String?  @map("admin_whatsapp_phone")
+  monthlySalesTarget Float?   @map("monthly_sales_target")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_agent_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AIAgent {
-  id          String   @id @default(uuid())
-  companyId   String   @map("company_id") // Soft link
-  name        String
-  prompt      String
-  model       String   @default("gpt-4")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
 
-  memories    AgentMemory[]
+  id                        String              @id @default(uuid())
+  companyId                 String              @map("company_id")
+  name                      String
+  description               String?
+  agentType                 String              @default("CUSTOM") @map("agent_type")
+  isActive                  Boolean             @default(true) @map("is_active")
+  isInboxAgent              Boolean             @default(false) @map("is_inbox_agent")
+  systemPrompt              String              @map("system_prompt")
+  llmModel                  String              @default("gemini-2.0-flash") @map("llm_model")
+  temperature               Float               @default(0.4)
+  maxTokens                 Int                 @default(400) @map("max_tokens")
+  enabledTools              Json                @default("[]") @map("enabled_tools")
+  strictRagMode             Boolean             @default(false) @map("strict_rag_mode")
+  humanTransferWebhook      String?             @map("human_transfer_webhook")
+  suspensionDurationMinutes Int                 @default(30) @map("suspension_duration_minutes")
+  priorityAlpha             Boolean             @default(true) @map("priority_alpha")
+  frustrationThreshold      Float               @default(0.8) @map("frustration_threshold")
+  enforceTempClamp          Boolean             @default(false) @map("enforce_temp_clamp")
+  enforceTokenLimit         Boolean             @default(true) @map("enforce_token_limit")
+  simulateLatency           Boolean             @default(true) @map("simulate_latency")
+  filterRoboticLists        Boolean             @default(true) @map("filter_robotic_lists")
+  learningMode              String              @default("MANUAL") @map("learning_mode")
+  voiceId                   String?             @map("voice_id")
+  stability                 Float               @default(0.5)
+  similarityBoost           Float               @default(0.75) @map("similarity_boost")
+  accentRegion              String?             @map("accent_region")
+  gender                    String?
+  createdAt                 DateTime            @default(now()) @map("created_at")
+  updatedAt                 DateTime            @updatedAt @map("updated_at")
+  conversations             AgentConversation[]
+  agentSkills               AgentSkill[]
+  skillChains               AgentSkillChain[]
+  agentMemories             AgentMemory[]
+  agentTeamMembers          AgentTeamMember[]
 
   @@index([companyId])
+  @@index([isActive])
+  @@index([companyId, isActive])
   @@map("tbl_ai_agents")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentSpecialization {
+
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   @default("GENERAL") // SALES, SUPPORT, MARKETING, OPERATIONS, CUSTOM
+  icon        String?
+  color       String   @default("#0d9488")
+  isSystem    Boolean  @default(false) @map("is_system") // System defaults cannot be deleted
+  isActive    Boolean  @default(true) @map("is_active")
+  order       Int      @default(0)
+  companyId   String?  @map("company_id") // Null for global/system specializations
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  skills  AgentSkill[]
+  presets AgentConfigurationPreset[]
+
+  @@index([companyId])
+  @@index([category])
+  @@index([isActive])
+  @@map("tbl_agent_specializations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentSkill {
+
+  id               String   @id @default(uuid())
+  name             String
+  description      String?
+  category         String   @default("GENERAL") // COMMUNICATION, ANALYSIS, AUTOMATION, NEGOTIATION, etc.
+  parameters       Json     @default("{}") // Dynamic parameters for this skill
+  isActive         Boolean  @default(true) @map("is_active")
+  priority         Int      @default(0) // Order of execution
+  specializationId String   @map("specialization_id")
+  agentId          String?  @map("agent_id") // Null = available for any agent
+  companyId        String   @map("company_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  specialization AgentSpecialization @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+  agent          AIAgent?            @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([specializationId])
+  @@index([agentId])
+  @@index([companyId])
+  @@index([isActive])
+  @@map("tbl_agent_skills")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model SkillTemplate {
+
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   @default("GENERAL")
+  content     Json // Skill configuration content
+  parameters  Json     @default("{}") // Default parameters
+  isGlobal    Boolean  @default(false) @map("is_global") // Available to all companies
+  isPremium   Boolean  @default(false) @map("is_premium") // Requires specific subscription
+  tags        String[] @default([])
+  downloads   Int      @default(0) @map("downloads")
+  companyId   String?  @map("company_id") // Creator company (null = system)
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+
+  @@index([isGlobal])
+  @@index([category])
+  @@index([companyId])
+  @@map("tbl_skill_templates")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentConfigurationPreset {
+
+  id               String   @id @default(uuid())
+  name             String
+  description      String?
+  config           Json // Full agent configuration preset
+  specializationId String?  @map("specialization_id")
+  isDefault        Boolean  @default(false) @map("is_default")
+  isGlobal         Boolean  @default(false) @map("is_global")
+  companyId        String?  @map("company_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  specialization AgentSpecialization? @relation(fields: [specializationId], references: [id], onDelete: Cascade)
+
+  @@index([specializationId])
+  @@index([companyId])
+  @@index([isGlobal])
+  @@map("tbl_agent_configuration_presets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AssetAnnotation {
+
+  id        String        @id @default(uuid())
+  assetId   String        @map("asset_id")
+  authorId  String        @map("author_id")
+  content   String
+  xPercent  Float         @map("x_percent")
+  yPercent  Float         @map("y_percent")
+  status    String        @default("OPEN")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([assetId])
+  @@index([authorId])
+  @@map("tbl_asset_annotations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AssetCollection {
+
+  id          String                @id @default(uuid())
+  name        String
+  description String?
+  companyId   String                @map("company_id")
+  createdById String                @map("created_by_id")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  items       AssetCollectionItem[]
+
+  @@index([companyId])
+  @@map("tbl_asset_collections")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AssetCollectionItem {
+
+  id           String          @id @default(uuid())
+  collectionId String          @map("collection_id")
+  assetId      String          @map("asset_id")
+  order        Int             @default(0)
+  addedAt      DateTime        @default(now()) @map("added_at")
+  collection   AssetCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, assetId])
+  @@index([collectionId])
+  @@map("tbl_asset_collection_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AssetVersion {
+
+  id          String        @id @default(uuid())
+  assetId     String        @map("asset_id")
+  version     Int
+  url         String
+  prompt      String?
+  changeNote  String?       @map("change_note")
+  createdById String        @map("created_by_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@unique([assetId, version])
+  @@index([assetId])
+  @@map("tbl_asset_versions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoEditorProject {
+
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  name         String
+  config       Json // ProjectConfig
+  clips        Json // Clip[]
+  audioTracks  Json // AudioTrack[]
+  textOverlays Json // TextOverlay[]
+  colorGrades  Json // ColorGrade[]
+  speedRamps   Json // SpeedRamp[]
+  soundLayers  Json // SoundLayer[]
+  timeline     Json? // Timeline
+  qualityCheck Json? // { passed, issues }
+  activeSessionId String? @unique @map("active_session_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  performanceLogs VideoPerformanceLog[]
+  renderJobs      VideoRenderJob[]
+  aiSessions      VideoAISession[]      @relation("ProjectSessions")
+  activeSession   VideoAISession?       @relation("ActiveSession", fields: [activeSessionId], references: [id], onDelete: SetNull)
+  brandStyle      BrandStyle?           @relation(fields: [brandStyleId], references: [id], onDelete: SetNull)
+  brandStyleId    String?               @map("brand_style_id")
+  versions        VersionSnapshot[]
+  comments        VideoComment[]
+  exportJobs      ExportJob[]
+
+  @@index([companyId])
+  @@map("tbl_video_editor_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoAISession {
+
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  projectId   String   @map("project_id")
+  status      String   @default("ACTIVE")  // ACTIVE | COMPLETED | ABANDONED
+  prompt      String?  @map("initial_prompt") @db.Text  // "Edita esto estilo TikTok..."
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project        VideoEditorProject  @relation("ProjectSessions", fields: [projectId], references: [id], onDelete: Cascade)
+  activeProject  VideoEditorProject? @relation("ActiveSession")
+  messages       VideoAIMessage[]
+  historyLogs    VideoEditHistory[]
+  editProposals  EditProposal[]
+  editConflicts  EditConflict[]
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([status])
+  @@map("tbl_video_ai_sessions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoAIMessage {
+
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  role        String    // "user" | "assistant" | "system" | "tool"
+  content     String    @db.Text
+  toolCalls   Json?     @map("tool_calls")   // [{name: "cut_track", args: {...}}]
+  toolResults Json?     @map("tool_results")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([role])
+  @@map("tbl_video_ai_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoEditHistory {
+
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  action      String    // "cut" | "insert_text" | "color_grade" | "speed_ramp" | "smart_crop" | "inject_broll"
+  author      String    @default("human") @map("edit_author")  // "ai" | "human" | "merged"
+  confidence  Float     @default(1.0) @map("edit_confidence")
+  description String    @db.Text
+  beforeState Json      @map("before_state")
+  afterState  Json      @map("after_state")
+  undone      Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([action])
+  @@index([undone])
+  @@index([author])
+  @@map("tbl_video_edit_history")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EditProposal {
+
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  projectId   String    @map("project_id")
+  type        String    @map("proposal_type")  // "cut" | "color" | "text" | "audio" | "transition" | "broll" | "crop"
+  title       String
+  description String    @db.Text
+  confidence  Float     @map("proposal_confidence")  // 0.0 - 1.0
+  status      String    @default("pending")  // "pending" | "approved" | "rejected" | "applied"
+  beforeState Json      @map("before_state")
+  afterState  Json      @map("after_state")
+  metadata    Json?     // {reason, impact, alternatives}
+  createdAt   DateTime  @default(now()) @map("created_at")
+  respondedAt DateTime? @map("responded_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([projectId])
+  @@index([status])
+  @@index([confidence])
+  @@map("tbl_edit_proposals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EditConflict {
+
+  id          String    @id @default(uuid())
+  sessionId   String    @map("session_id")
+  projectId   String    @map("project_id")
+  elementId   String    @map("element_id")
+  elementType String    @map("element_type")  // "clip" | "text" | "audio" | "color"
+  aiEdit      Json      @map("ai_edit")
+  humanEdit   Json      @map("human_edit")
+  resolved    Boolean   @default(false)
+  resolution  String?   @map("conflict_resolution")  // "ai" | "human" | "merged" | "discarded"
+  resolutionNote String? @map("resolution_note") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at")
+  resolvedAt  DateTime? @map("resolved_at")
+
+  session     VideoAISession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([projectId])
+  @@index([resolved])
+  @@map("tbl_edit_conflicts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VersionSnapshot {
+
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  name        String
+  description String    @db.Text
+  state       Json
+  author      String    @default("human") @map("snapshot_author")
+  clipCount   Int       @default(0) @map("clip_count")
+  duration    Float     @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("tbl_version_snapshots")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AICorrection {
+
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  sessionId   String?   @map("session_id")
+  actionType  String    @map("action_type")  // "cut" | "color" | "text" | "audio" | "transition"
+  aiSuggestion Json     @map("ai_suggestion")
+  userCorrection Json   @map("user_correction")
+  category    String?   @map("correction_category")
+  pattern     String?   @map("correction_pattern")
+  confidenceDelta Float? @map("confidence_delta")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@index([actionType])
+  @@index([category])
+  @@map("tbl_ai_corrections")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoComment {
+
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  authorId    String    @map("author_id")
+  authorName  String    @map("author_name")
+  clipId      String?   @map("clip_id")
+  timestamp   Float?    @map("comment_timestamp")  // Position in video
+  content     String    @db.Text
+  resolved    Boolean   @default(false)
+  parentId    String?   @map("parent_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([clipId])
+  @@index([resolved])
+  @@map("tbl_video_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AutoCaption {
+
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  clipId      String    @map("clip_id")
+  word        String
+  startTime   Float     @map("start_time")
+  endTime     Float     @map("end_time")
+  confidence  Float
+  language    String    @default("es")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([clipId])
+  @@map("tbl_auto_captions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ExportJob {
+
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  format      String    @map("export_format")  // "mp4" | "webm" | "gif" | "thumbnail"
+  preset      String    @map("export_preset")  // "tiktok" | "reels" | "youtube" | "custom"
+  status      String    @default("pending")
+  progress    Int       @default(0)
+  outputUrl   String?   @map("output_url")
+  fileSize    Int?      @map("file_size")
+  errorMessage String?  @map("error_message")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("tbl_export_jobs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model BrandStyle {
+
+  id             String    @id @default(uuid())
+  companyId      String    @unique @map("company_id")
+  clientName     String    @map("client_name")
+  primaryColor   String    @default("#6D28D9") @map("primary_color")
+  secondaryColor String    @default("#FFFFFF") @map("secondary_color")
+  accentColor    String    @default("#10B981") @map("accent_color")
+  fontFamily     String    @default("Inter")   @map("font_family")
+  subtitlePreset Json      @map("subtitle_preset")  // {size, color, shadow, animation, position}
+  styleEmbedding String?   @map("style_embedding")  // vector(1536) como string base64
+  preferences    Json?     // {preferredTransitions, preferredSFX, colorTendency, etc.}
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  projects       VideoEditorProject[]
+
+  @@index([companyId])
+  @@map("tbl_brand_styles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AssetCatalog {
+
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  type        String    @map("asset_type")  // "transition" | "sfx" | "lut" | "broll"
+  name        String
+  url         String
+  tags        String[]  @default([])
+  metadata    Json?     // {emotionalTag, duration, format, etc.}
+  isPremium   Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+
+  @@index([companyId])
+  @@index([type])
+  @@index([tags])
+  @@map("tbl_asset_catalogs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MLCompanyWeights {
+
+  id        String  @id @default(uuid())
+  companyId String  @map("company_id")
+
+  platform String @default("default")
+  weights  Json
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([companyId, platform])
+  @@map("tbl_ml_company_weights")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoPerformanceLog {
+
+  id        String             @id @default(uuid())
+  projectId String             @map("project_id")
+  project     VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  predictedScore Float @map("predicted_score")
+  actualScore    Float @map("actual_score")
+  retentionRate  Float @map("retention_rate")
+  views          Int   @default(0)
+
+  ingestedAt DateTime @default(now()) @map("ingested_at")
+
+  @@map("tbl_video_performance_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AIAuditLog {
+
+  id           String   @id @default(cuid())
+  companyId    String
+  userId       String?
+  agentName    String
+  action       String
+  parameters   Json
+  status       String // "SUCCESS" | "DENIED" | "ERROR"
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("tbl_aiaudit_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AgentMemory {
-  id          String   @id @default(uuid())
-  agentId     String   @map("agent_id")
-  key         String
-  value       Json
-  createdAt   DateTime @default(now()) @map("created_at")
 
-  agent       AIAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  id        String                      @id @default(cuid())
+  companyId String
+  userId    String?
+  agentId   String?
+  agentName String?
+  fact      String                      @db.Text
+  createdAt DateTime                    @default(now())
+  updatedAt DateTime                    @updatedAt
+
+  agent   AIAgent? @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([agentId])
+  @@map("tbl_agent_memorys")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentSkillChain {
+
+  id          String   @id @default(cuid())
+  companyId   String
+  agentId     String
+  name        String
+  description String?
+  tools       Json     @default("[]") // Array of tool identifiers
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agent   AIAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
   @@index([agentId])
-  @@map("tbl_agent_memories")
+  @@index([companyId])
+  @@map("tbl_agent_skill_chains")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentTeam {
+
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  objective   String   @db.Text // What this team is designed to accomplish
+  strategy    String   @default("PARALLEL") // PARALLEL | SEQUENTIAL | VOTE
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members AgentTeamMember[]
+  runs    AgentTeamRun[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("tbl_agent_teams")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentTeamMember {
+
+  id       String @id @default(cuid())
+  teamId   String
+  agentId  String
+  role     String @default("WORKER") // ORCHESTRATOR | WORKER | REVIEWER | SYNTHESIZER
+  priority Int    @default(0) // Execution order for SEQUENTIAL strategy
+
+  team  AgentTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  agent AIAgent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, agentId])
+  @@index([teamId])
+  @@map("tbl_agent_team_members")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AgentTeamRun {
+
+  id          String   @id @default(cuid())
+  teamId      String
+  companyId   String
+  trigger     String   @default("MANUAL") // MANUAL | WEBHOOK | SCHEDULE
+  input       String   @db.Text
+  status      String   @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  outputs     Json     @default("{}") // { agentId: response }
+  synthesis   String?  @db.Text // Synthesized final output
+  latencyMs   Int?
+  tokensTotal Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team    AgentTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([companyId])
+  @@index([status])
+  @@map("tbl_agent_team_runs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MediaAsset {
+
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  uploadedById String   @map("uploaded_by_id")
+  name         String
+  originalName String   @map("original_name")
+  url          String   // path relativo: /api/serve/uploads/...
+  mimeType     String   @map("mime_type")
+  type         String   // 'image' | 'video' | 'document' | 'audio' | 'other'
+  sizeBytes    Int      @map("size_bytes")
+  duration     Float?   // para videos/audio, en segundos
+  width        Int?     // para imágenes/videos
+  height       Int?     // para imágenes/videos
+  fps          Float?   // para videos
+  resolution   String?  // ej. '1920x1080'
+  tags         String[] @default([])
+  isPublic     Boolean  @default(false) @map("is_public")
+  metadata     Json?    @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+
+  @@index([companyId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("tbl_media_assets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model VideoRenderJob {
+
+  id           String    @id @default(uuid())
+  companyId    String    @map("company_id")
+  projectId    String    @map("project_id")
+  status       String    @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  progress     Int       @default(0)         // 0-100
+  inputData    Json      @map("input_data")  // { timeline, colorGrades, audioTracks, textOverlays, config }
+  outputUrl    String?   @map("output_url")  // URL del video renderizado en VPS
+  errorMessage String?   @map("error_message")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  durationMs   Int?      @map("duration_ms")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  project VideoEditorProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([projectId])
+  @@index([status])
+  @@map("tbl_video_render_jobs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }

@@ -28,7 +28,7 @@ export function startCrmGrpcServer() {
         });
       },
 
-      GetLead: async (call: any, callback: any) => {
+      GetLeadDetails: async (call: any, callback: any) => {
         try {
           const { leadId } = call.request;
           const lead = await prisma.lead.findUnique({ where: { id: leadId } });

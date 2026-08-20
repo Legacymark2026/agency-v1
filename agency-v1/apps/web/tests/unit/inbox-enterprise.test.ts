@@ -26,6 +26,11 @@ vi.mock('@/lib/prisma', () => ({
     },
 }));
 
+// Mock Auth
+vi.mock('@/lib/auth', () => ({
+    auth: vi.fn().mockResolvedValue({ user: { id: 'usr-123', email: 'test@example.com' } }),
+}));
+
 import {
     getRealCopilotSuggestion,
     processRealChatbotStep,

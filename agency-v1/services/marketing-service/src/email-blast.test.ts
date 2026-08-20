@@ -36,6 +36,12 @@ vi.mock("@agency/database", () => {
 });
 
 describe("Mass Email Platform (v2.0) - Integrated Suite", () => {
+  beforeEach(() => {
+    process.env.SMTP_HOST = "localhost";
+    process.env.SMTP_USER = "test";
+    process.env.SMTP_PASS = "test";
+  });
+
   describe("Phase 1: Engine Provider & Batching", () => {
     it("should process batch payload using SmtpProvider", async () => {
       const provider = new SmtpProvider();

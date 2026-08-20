@@ -164,135 +164,32 @@ export const getPrismaAnalyticsRead = (): PrismaClient => {
   return _prismaAnalyticsRead;
 };
 
-// Mapa para asociar cada modelo con su cliente primario
-const modelToClientGetter: Record<string, () => PrismaClient> = {
-  // Auth & RBAC
-  user: getPrismaAuth,
-  userProfile: getPrismaAuth,
-  account: getPrismaAuth,
-  session: getPrismaAuth,
-  verificationToken: getPrismaAuth,
-  passwordResetToken: getPrismaAuth,
-  roleConfig: getPrismaAuth,
-  role: getPrismaAuth,
-  permission: getPrismaAuth,
-  rolePermission: getPrismaAuth,
-  resourcePermission: getPrismaAuth,
-  apiKey: getPrismaAuth,
+// Dynamic Model Routing Lists based on domain split
+const authModelsList = [
+  "user", "userProfile", "account", "session", "verificationToken", "passwordResetToken",
+  "roleConfig", "role", "permission", "rolePermission", "resourcePermission", "apiKey", "authRefreshToken"
+];
 
-  // Core & CRM
-  company: getPrismaCore,
-  companyUser: getPrismaCore,
-  team: getPrismaCore,
-  lead: getPrismaCore,
-  deal: getPrismaCore,
-  invoice: getPrismaCore,
-  expense: getPrismaCore,
-  servicePrice: getPrismaCore,
-  kanbanProject: getPrismaCore,
-  leadAssignmentRule: getPrismaCore,
-  leadAssignmentRoundRobinState: getPrismaCore,
-  affiliateProfile: getPrismaCore,
-  commissionPlan: getPrismaCore,
-  click: getPrismaCore,
-  referral: getPrismaCore,
-  payout: getPrismaCore,
-  inboxMacro: getPrismaCore,
-  emailTemplate: getPrismaCore,
-  outboxEvent: getPrismaCore,
+const analyticsModelsList = [
+  "userActivityLog", "projectView", "postView", "usageLog", "integrationLog", "notificationDeliveryLog",
+  "analyticsEvent", "analyticsSession", "analyticsGoal", "analyticsDailyStats"
+];
 
-  // Media, AI & Workflows
-  post: getPrismaMedia,
-  category: getPrismaMedia,
-  tag: getPrismaMedia,
-  project: getPrismaMedia,
-  projectCategory: getPrismaMedia,
-  projectTag: getPrismaMedia,
-  projectView: getPrismaMedia,
-  workflow: getPrismaMedia,
-  campaign: getPrismaMedia,
-  socialPost: getPrismaMedia,
-  aiAgent: getPrismaMedia,
-  agentMemory: getPrismaMedia,
-  comment: getPrismaMedia,
-  commentLike: getPrismaMedia,
-  postLike: getPrismaMedia,
-  postSeries: getPrismaMedia,
-  readingListItem: getPrismaMedia,
-  newsletterSubscription: getPrismaMedia,
+const mediaModelsList = [
+  "post", "category", "tag", "project", "projectCategory", "projectTag",
+  "workflow", "campaign", "socialPost", "aiAgent", "agentMemory", "comment", "commentLike",
+  "postLike", "postSeries", "readingListItem", "newsletterSubscription", "expert", "experiment",
+  "annotation", "agentConversation", "agentMessage", "agentConfig", "agentSpecialization",
+  "agentSkill", "skillTemplate", "agentConfigurationPreset", "agentSkillChain", "agentTeam",
+  "agentTeamMember", "agentTeamRun", "videoEditorProject", "videoAISession", "videoAIMessage",
+  "videoEditHistory", "editProposal", "editConflict", "versionSnapshot", "aiCorrection",
+  "videoComment", "autoCaption", "exportJob", "brandStyle", "assetCatalog", "mlCompanyWeights",
+  "videoPerformanceLog", "aiAuditLog", "mediaAsset", "videoRenderJob", "assetAnnotation",
+  "assetCollection", "assetCollectionItem", "assetVersion"
+];
 
-  // Analytics & Logs
-  userActivityLog: getPrismaAnalytics,
-  postView: getPrismaAnalytics,
-  usageLog: getPrismaAnalytics,
-  integrationLog: getPrismaAnalytics,
-  notificationDeliveryLog: getPrismaAnalytics,
-};
-
-// Mapa para asociar cada modelo con su cliente de réplica de lectura
-const modelToReadClientGetter: Record<string, () => PrismaClient> = {
-  // Auth & RBAC
-  user: getPrismaAuthRead,
-  userProfile: getPrismaAuthRead,
-  account: getPrismaAuthRead,
-  session: getPrismaAuthRead,
-  verificationToken: getPrismaAuthRead,
-  passwordResetToken: getPrismaAuthRead,
-  roleConfig: getPrismaAuthRead,
-  role: getPrismaAuthRead,
-  permission: getPrismaAuthRead,
-  rolePermission: getPrismaAuthRead,
-  resourcePermission: getPrismaAuthRead,
-  apiKey: getPrismaAuthRead,
-
-  // Core & CRM
-  company: getPrismaCoreRead,
-  companyUser: getPrismaCoreRead,
-  team: getPrismaCoreRead,
-  lead: getPrismaCoreRead,
-  deal: getPrismaCoreRead,
-  invoice: getPrismaCoreRead,
-  expense: getPrismaCoreRead,
-  servicePrice: getPrismaCoreRead,
-  kanbanProject: getPrismaCoreRead,
-  leadAssignmentRule: getPrismaCoreRead,
-  leadAssignmentRoundRobinState: getPrismaCoreRead,
-  affiliateProfile: getPrismaCoreRead,
-  commissionPlan: getPrismaCoreRead,
-  click: getPrismaCoreRead,
-  referral: getPrismaCoreRead,
-  payout: getPrismaCoreRead,
-  inboxMacro: getPrismaCoreRead,
-  emailTemplate: getPrismaCoreRead,
-  outboxEvent: getPrismaCoreRead,
-
-  // Media, AI & Workflows
-  post: getPrismaMediaRead,
-  category: getPrismaMediaRead,
-  tag: getPrismaMediaRead,
-  project: getPrismaMediaRead,
-  projectCategory: getPrismaMediaRead,
-  projectTag: getPrismaMediaRead,
-  projectView: getPrismaMediaRead,
-  workflow: getPrismaMediaRead,
-  campaign: getPrismaMediaRead,
-  socialPost: getPrismaMediaRead,
-  aiAgent: getPrismaMediaRead,
-  agentMemory: getPrismaMediaRead,
-  comment: getPrismaMediaRead,
-  commentLike: getPrismaMediaRead,
-  postLike: getPrismaMediaRead,
-  postSeries: getPrismaMediaRead,
-  readingListItem: getPrismaMediaRead,
-  newsletterSubscription: getPrismaMediaRead,
-
-  // Analytics & Logs
-  userActivityLog: getPrismaAnalyticsRead,
-  postView: getPrismaAnalyticsRead,
-  usageLog: getPrismaAnalyticsRead,
-  integrationLog: getPrismaAnalyticsRead,
-  notificationDeliveryLog: getPrismaAnalyticsRead,
-};
+const modelToClientGetter: Record<string, () => PrismaClient> = {};
+const modelToReadClientGetter: Record<string, () => PrismaClient> = {};
 
 // Singleton global para Next.js hot-reload
 const globalForPrisma = globalThis as unknown as {
@@ -309,6 +206,24 @@ export const prisma =
       if (prop === "$queryRaw" || prop === "$queryRawUnsafe") {
         const client = primaryDatabaseStorage.getStore() ? getPrismaCore() : getPrismaCoreRead();
         return (...args: any[]) => (client as any)[prop](...args);
+      }
+
+      // Interceptar accesos a propiedades de modelos y registrarlos dinámicamente si es necesario
+      if (typeof prop === "string" && prop[0] !== "$" && !modelToClientGetter[prop]) {
+        if (authModelsList.includes(prop)) {
+          modelToClientGetter[prop] = getPrismaAuth;
+          modelToReadClientGetter[prop] = getPrismaAuthRead;
+        } else if (analyticsModelsList.includes(prop)) {
+          modelToClientGetter[prop] = getPrismaAnalytics;
+          modelToReadClientGetter[prop] = getPrismaAnalyticsRead;
+        } else if (mediaModelsList.includes(prop)) {
+          modelToClientGetter[prop] = getPrismaMedia;
+          modelToReadClientGetter[prop] = getPrismaMediaRead;
+        } else {
+          // Por defecto todo lo demás va a Core (CRM, Finance, Kanban, etc.)
+          modelToClientGetter[prop] = getPrismaCore;
+          modelToReadClientGetter[prop] = getPrismaCoreRead;
+        }
       }
 
       // Redirigir el acceso al modelo correspondiente si está mapeado

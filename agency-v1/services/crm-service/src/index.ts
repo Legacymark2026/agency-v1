@@ -34,7 +34,7 @@ const PORT = parseInt(process.env.PORT || "4002", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 // Start High-Speed Synchronous gRPC Server (Port 50052)
-startCrmGrpcServer();
+const crmGrpcServer = startCrmGrpcServer();
 
 app.use(helmet());
 app.use(cors());
@@ -2482,61 +2482,7 @@ import { GrpcServerHelper, GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
 const CRM_GRPC_PORT = parseInt(process.env.GRPC_PORT || "50052", 10);
 const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
 
-// 1. gRPC Server for CRM Service
-const crmGrpcServer = new GrpcServerHelper();
-
-crmGrpcServer.addService(PROTO_PATHS.crm, "crm", "CrmService", {
-  GetLeadDetails: async (call: any, callback: any) => {
-    try {
-      const { leadId, companyId } = call.request;
-      if (!leadId) {
-        return callback(null, { found: false, error: "leadId is required" });
-      }
-
-      const lead = await prisma.lead.findFirst({
-        where: {
-          id: leadId,
-          ...(companyId ? { companyId } : {})
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          status: true,
-          assignedAgentId: true
-        }
-      });
-
-      if (!lead) {
-        return callback(null, { found: false, error: "Lead not found" });
-      }
-
-      callback(null, {
-        found: true,
-        leadId: lead.id,
-        name: lead.name || "",
-        email: lead.email || "",
-        status: lead.status || "new",
-        assignedAgentId: lead.assignedAgentId || "",
-        error: ""
-      });
-    } catch (err: any) {
-      callback(null, { found: false, error: err.message || "Error fetching lead" });
-    }
-  },
-
-  CheckHealth: async (_call: any, callback: any) => {
-    callback(null, {
-      status: "healthy",
-      service: "crm-service",
-      timestamp: Date.now()
-    });
-  }
-});
-
-crmGrpcServer.start(CRM_GRPC_PORT).catch(err => {
-  console.error("[crm-service] Failed to start gRPC server:", err.message);
-});
+// 1. gRPC Server for CRM Service (Handled by startCrmGrpcServer() at startup)
 
 // 2. gRPC Client to Auth Service (with Circuit Breaker)
 export const authGrpcClient = GrpcClientHelper.getClient(

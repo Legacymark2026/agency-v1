@@ -8,86 +8,263 @@ datasource db {
   url      = env("ANALYTICS_DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Analytics & Audit Logs (High Write Volume)
-// ─────────────────────────────────────────────────────────────────────────────
+enum AffiliateStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PlanType {
+  FIXED
+  PERCENTAGE
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
 
 model UserActivityLog {
-  id        String   @default(uuid()) @db.VarChar(36)
-  userId    String?  @map("user_id") @db.VarChar(36) // Soft link
-  action    String   @db.VarChar(255)
-  details   Json?
-  ipAddress String?  @map("ip_address") @db.VarChar(45)
-  userAgent String?  @map("user_agent") @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@id([id, createdAt])
-  @@index([userId])
-  @@index([createdAt])
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@map("tbl_user_activity_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model ProjectView {
+
   id        String   @id @default(uuid())
-  projectId String   @map("project_id") // Soft link
+  projectId String   @map("project_id")
   ipHash    String   @map("ip_hash")
   userAgent String?  @map("user_agent")
   referer   String?
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@unique([projectId, ipHash, createdAt])
   @@index([projectId])
   @@index([createdAt])
   @@map("tbl_project_views")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model PostView {
+
   id        String   @id @default(uuid())
-  postId    String   @map("post_id") // Soft link
+  postId    String   @map("post_id")
   ipHash    String   @map("ip_hash")
   userAgent String?  @map("user_agent")
   referer   String?
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@unique([postId, ipHash, createdAt])
   @@index([postId])
   @@index([createdAt])
   @@map("tbl_post_views")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AnalyticsEvent {
+
+  id          String           @id @default(uuid())
+  eventType   String           @map("event_type")
+  eventName   String?          @map("event_name")
+  path        String
+  title       String?
+  referrer    String?
+  utmSource   String?          @map("utm_source")
+  utmMedium   String?          @map("utm_medium")
+  utmCampaign String?          @map("utm_campaign")
+  utmTerm     String?          @map("utm_term")
+  utmContent  String?          @map("utm_content")
+  sessionId   String           @map("session_id")
+  visitorId   String           @map("visitor_id")
+  userId      String?          @map("user_id")
+  device      String?
+  browser     String?
+  browserVer  String?          @map("browser_ver")
+  os          String?
+  osVersion   String?          @map("os_version")
+  screenRes   String?          @map("screen_res")
+  country     String?
+  countryCode String?          @map("country_code")
+  region      String?
+  city        String?
+  timezone    String?
+  loadTime    Int?             @map("load_time")
+  domReady    Int?             @map("dom_ready")
+  duration    Int?
+  scrollDepth Int?             @map("scroll_depth")
+  clicks      Int              @default(0)
+  metadata    Json?            @default("{}")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  session     AnalyticsSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([path])
+  @@index([visitorId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([utmSource, utmMedium, utmCampaign])
+  @@index([country, createdAt])
+  @@index([device, createdAt])
+  @@map("tbl_analytics_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AnalyticsSession {
+
+  id              String           @id @default(uuid())
+  visitorId       String           @map("visitor_id")
+  userId          String?          @map("user_id")
+  startedAt       DateTime         @default(now()) @map("started_at")
+  endedAt         DateTime?        @map("ended_at")
+  duration        Int              @default(0)
+  isActive        Boolean          @default(true) @map("is_active")
+  pageViews       Int              @default(1) @map("page_views")
+  entryPage       String           @map("entry_page")
+  exitPage        String?          @map("exit_page")
+  isBounce        Boolean          @default(true) @map("is_bounce")
+  referrer        String?
+  utmSource       String?          @map("utm_source")
+  utmMedium       String?          @map("utm_medium")
+  utmCampaign     String?          @map("utm_campaign")
+  device          String?
+  browser         String?
+  os              String?
+  country         String?
+  countryCode     String?          @map("country_code")
+  city            String?
+  converted       Boolean          @default(false)
+  goalId          String?          @map("goal_id")
+  conversionValue Float?           @map("conversion_value")
+  engagementScore Int?             @map("engagement_score")
+  events          AnalyticsEvent[]
+
+  @@index([visitorId])
+  @@index([userId])
+  @@index([startedAt])
+  @@index([isActive])
+  @@index([country, startedAt])
+  @@index([utmSource, utmMedium])
+  @@index([device, startedAt])
+  @@index([isBounce, startedAt])
+  @@map("tbl_analytics_sessions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AnalyticsGoal {
+
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  type        String
+  matchType   String   @map("match_type")
+  matchValue  String   @map("match_value")
+  goalValue   Float    @default(0) @map("goal_value")
+  targetCount Int?     @map("target_count")
+  completions Int      @default(0)
+  totalValue  Float    @default(0) @map("total_value")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([isActive])
+  @@map("tbl_analytics_goals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AnalyticsDailyStats {
+
+  id              String   @id @default(uuid())
+  date            DateTime @unique @db.Date
+  visitors        Int      @default(0)
+  sessions        Int      @default(0)
+  pageViews       Int      @default(0) @map("page_views")
+  avgDuration     Float    @default(0) @map("avg_duration")
+  bounceRate      Float    @default(0) @map("bounce_rate")
+  pagesPerSession Float    @default(0) @map("pages_per_session")
+  conversions     Int      @default(0)
+  conversionRate  Float    @default(0) @map("conversion_rate")
+  revenue         Float    @default(0)
+  byDevice        Json?    @map("by_device")
+  byCountry       Json?    @map("by_country")
+  bySource        Json?    @map("by_source")
+  topPages        Json?    @map("top_pages")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([date])
+  @@map("tbl_analytics_daily_stats")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model UsageLog {
-  id        String   @default(uuid()) @db.VarChar(36)
-  companyId String   @map("company_id") @db.VarChar(36) // Soft link
-  feature   String   @db.VarChar(255)
-  metric    Int      @default(1)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@id([id, createdAt])
-  @@index([companyId])
-  @@index([createdAt])
+  id             String   @id @default(uuid())
+  companyId      String   @map("company_id")
+  metric         String // "AI_MESSAGE", "WHATSAPP_MSG", etc.
+  value          Float
+  stripeReported Boolean  @default(false) @map("stripe_reported")
+  recordedAt     DateTime @default(now()) @map("recorded_at")
+
+
+  @@index([companyId, metric, stripeReported])
+  @@index([companyId, recordedAt])
   @@map("tbl_usage_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model IntegrationLog {
-  id            String   @id @default(uuid())
-  integrationId String   @map("integration_id") // Soft link
-  status        String
-  payload       Json?
-  errorMessage  String?  @map("error_message")
-  createdAt     DateTime @default(now()) @map("created_at")
 
-  @@index([integrationId])
-  @@index([status])
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  integration String
+  status      String
+  latencyMs   Int?     @map("latency_ms")
+  message     String?
+  checkedAt   DateTime @default(now()) @map("checked_at")
+
+  @@index([companyId])
+  @@index([companyId, integration])
   @@map("tbl_integration_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model NotificationDeliveryLog {
-  id             String   @id @default(uuid())
-  notificationId String   @map("notification_id")
-  userId         String   @map("user_id") // Soft link
-  channel        String
-  status         String
-  createdAt      DateTime @default(now()) @map("created_at")
 
+  id             String        @id @default(uuid())
+  notificationId String?       @map("notification_id")
+  companyId      String        @map("company_id")
+  userId         String        @map("user_id")
+  channel        String
+  providerInfo   Json?         @map("provider_info")
+  status         String        @default("SENT")
+  errorMessage   String?       @map("error_message")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([companyId])
   @@index([userId])
-  @@index([status])
+  @@index([channel, status])
   @@map("tbl_notification_delivery_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }

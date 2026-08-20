@@ -3931,11 +3931,12 @@ model OutboxEvent {
   correlationId String    @map("col_correlation_id")
   createdAt     DateTime  @default(now()) @map("col_created_at")
   processedAt   DateTime? @map("col_processed_at")
-  schemaVersion Int       @default(1) @map("col_schema_version")
 
   @@index([status])
   @@index([correlationId])
   @@map("tbl_outbox_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3994,6 +3995,8 @@ model ApiUsageLog {
   @@index([apiKeyId, createdAt])
   @@index([serviceName, createdAt])
   @@map("tbl_api_usage_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CompanyWallet {
@@ -4009,6 +4012,8 @@ model CompanyWallet {
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@map("tbl_company_wallets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model VoiceProfile {
@@ -4023,13 +4028,13 @@ model VoiceProfile {
   isDefault      Boolean        @default(false) @map("is_default")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
-  schemaVersion  Int            @default(0) @map("col_schema_version")
-  deletedAt      DateTime?      @map("col_deleted_at")
 
   voiceCaptures  VoiceCapture[]
 
   @@index([companyId])
   @@map("tbl_voice_profiles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model VoiceCapture {
@@ -4043,14 +4048,14 @@ model VoiceCapture {
   durationSeconds   Float         @default(0.0) @map("duration_seconds")
   language          String        @default("es")
   createdAt         DateTime      @default(now()) @map("created_at")
-  schemaVersion     Int           @default(0) @map("col_schema_version")
-  deletedAt         DateTime?     @map("col_deleted_at")
 
   voiceProfile      VoiceProfile? @relation(fields: [voiceProfileId], references: [id], onDelete: SetNull)
 
   @@index([companyId])
   @@index([userId])
   @@map("tbl_voice_captures")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model BookingType {
@@ -4076,6 +4081,8 @@ model BookingType {
   @@unique([companyId, slug])
   @@index([companyId])
   @@map("tbl_booking_types")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AvailabilityRule {
@@ -4092,6 +4099,8 @@ model AvailabilityRule {
   @@index([companyId])
   @@index([userId])
   @@map("tbl_availability_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Appointment {
@@ -4121,4 +4130,6 @@ model Appointment {
   @@index([status])
   @@index([leadId])
   @@map("tbl_appointments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }

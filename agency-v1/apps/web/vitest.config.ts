@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import path from 'path';
 
 /**
  * Vitest Configuration — LegacyMark Agency V1
@@ -11,10 +12,20 @@ import tsconfigPaths from 'vite-tsconfig-paths';
  */
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  resolve: {
+    alias: {
+      "next/server": path.resolve(__dirname, "./tests/mocks/next-server.ts")
+    }
+  },
   test: {
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['next-auth', '@auth/core']
+      }
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

@@ -8,192 +8,6 @@ datasource db {
   url      = env("CORE_DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Business Core (CRM, Finance, Admin)
-// ─────────────────────────────────────────────────────────────────────────────
-
-model Company {
-  id                        String   @id @default(uuid())
-  name                      String
-  slug                      String   @unique
-  logoUrl                   String?  @map("logo_url")
-  industry                  String?
-  website                   String?
-  subscriptionTier          String   @default("free") @map("subscription_tier")
-  subscriptionStatus        String   @default("active") @map("subscription_status")
-  onboardingCompleted       Boolean  @default(false) @map("onboarding_completed")
-  createdAt                 DateTime @default(now()) @map("created_at")
-  stripeCustomerId          String?  @map("stripe_customer_id")
-  stripeSubscriptionId      String?  @map("stripe_subscription_id")
-
-  // Core Relations
-  teams                     Team[]
-  members                   CompanyUser[]
-  deals                     Deal[]
-  leads                     Lead[]
-  invoices                  Invoice[]
-  expenses                  Expense[]
-  servicePrices             ServicePrice[]
-  kanbanProjects            KanbanProject[]
-
-  @@map("tbl_companies")
-}
-
-model CompanyUser {
-  id             String   @id @default(uuid())
-  userId         String   @map("user_id") // Soft link to Auth DB
-  companyId      String   @map("company_id")
-  permissions    Json?    @default("[]")
-  invitedBy      String?  @map("invited_by")
-  joinedAt       DateTime @default(now()) @map("joined_at")
-  teamId         String?  @map("team_id")
-  roleName       String   @default("member") @map("role_name")
-  
-  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  team           Team?    @relation(fields: [teamId], references: [id])
-
-  @@unique([userId, companyId])
-  @@map("tbl_company_users")
-}
-
-model Team {
-  id            String   @id @default(uuid())
-  name          String
-  description   String?
-  companyId     String   @map("company_id")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  members       CompanyUser[]
-  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_teams")
-}
-
-model Lead {
-  id                    String             @id @default(uuid())
-  name                  String?
-  email                 String?
-  phone                 String?
-  company               String?
-  jobTitle              String?            @map("job_title")
-  message               String?
-  source                String?
-  medium                String?
-  utmSource             String?            @map("utm_source")
-  utmMedium             String?            @map("utm_medium")
-  utmCampaign           String?            @map("utm_campaign")
-  utmTerm               String?            @map("utm_term")
-  utmContent            String?            @map("utm_content")
-  referer               String?
-  landingPage           String?            @map("landing_page")
-  ipAddress             String?            @map("ip_address")
-  userAgent             String?            @map("user_agent")
-  country               String?
-  city                  String?
-  campaignId            String?            @map("campaign_id")
-  status                String             @default("new")
-  score                 Int                @default(0)
-  convertedToDealId     String?            @map("converted_to_deal_id")
-  convertedAt           DateTime?          @map("converted_at")
-  formId                String?            @map("form_id")
-  formData              Json?              @map("form_data")
-  tags                  String[]           @default([])
-  notes                 String?
-  assignedTo            String?            @map("assigned_to")
-  companyId             String             @map("company_id")
-  createdAt             DateTime           @default(now()) @map("created_at")
-  updatedAt             DateTime           @updatedAt @map("updated_at")
-  conversionProbability Float?             @map("conversion_probability")
-  fbc                   String?
-  fbclid                String?
-  fbp                   String?
-  gclid                 String?
-  liFatId               String?            @map("li_fat_id")
-  predictionFactors     Json?              @map("prediction_factors")
-  ttclid                String?
-  schema_version        Int                @default(0) @map("col_schema_version")
-  deleted_at            DateTime?          @map("col_deleted_at")
-  
-  companyRef            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_leads")
-}
-
-model Deal {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  name      String
-  value     Float    @default(0)
-  stage     String   @default("lead")
-  assignedToUserId String? @map("assigned_to_user_id") // Soft link
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_deals")
-}
-
-model Invoice {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  amount    Float
-  status    String   @default("pending")
-  dueDate   DateTime @map("due_date")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_invoices")
-}
-
-model Expense {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  amount    Float
-  category  String
-  date      DateTime
-  createdAt DateTime @default(now()) @map("created_at")
-
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_expenses")
-}
-
-model ServicePrice {
-  id               String   @id @default(uuid())
-  companyId        String   @map("company_id")
-  nombre_servicio  String
-  categoria        String
-  precio_base      Float
-  estado           String   @default("activo")
-  createdAt        DateTime @default(now()) @map("created_at")
-  
-  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_service_prices")
-}
-
-model KanbanProject {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  name      String
-  status    String   @default("active")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@map("tbl_kanban_projects")
-}
-
 enum AffiliateStatus {
   ACTIVE
   INACTIVE
@@ -212,7 +26,2214 @@ enum PayoutStatus {
   PAID
 }
 
+model Company {
+
+  id                        String                     @id @default(uuid())
+  name                      String
+  slug                      String                     @unique
+  logoUrl                   String?                    @map("logo_url")
+  industry                  String?
+  website                   String?
+  subscriptionTier          String                     @default("free") @map("subscription_tier")
+  subscriptionStatus        String                     @default("active") @map("subscription_status")
+  onboardingCompleted       Boolean                    @default(false) @map("onboarding_completed")
+  createdAt                 DateTime                   @default(now()) @map("created_at")
+  defaultCompanySettings    Json?                      @map("default_settings")
+  passwordPolicy            Json?                      @map("password_policy")
+  stripeCustomerId          String?                    @map("stripe_customer_id")
+  stripeSubscriptionId      String?                    @map("stripe_subscription_id")
+  whiteLabeling             Json?                      @map("white_labeling")
+  customObjectDefinitions   CustomObjectDefinition[]
+  whatsappIntegrations      WhatsAppIntegration[]
+  emailDomainVerifications  EmailDomainVerification[]
+  abTests                   ABTest[]
+  adSpends                  AdSpend[]
+  brandKit                  BrandKit?
+  campaignAssets            CampaignAsset[]
+  campaignRules             CampaignRule[]
+  commissionPayments        CommissionPayment[]
+  commissionRules           CommissionRule[]
+  members                   CompanyUser[]
+  conversations             Conversation[]
+  automationRules           DealAutomationRule[]
+  deals                     Deal[]
+  emailSequences            EmailSequence[]
+  emailTemplates            EmailTemplate[]
+  employeeBenefits          EmployeeBenefit[]
+  employees                 Employee[]
+  events                    Event[]
+  expenseCategories         ExpenseCategory[]
+  expenses                  Expense[]
+  financialAccounts         FinancialAccount[]
+  inboxMacros               InboxMacro[]
+  inboxAuditLogs            InboxAuditLog[]
+  integrationConfigs        IntegrationConfig[]
+  invoices                  Invoice[]
+  kanbanProjects            KanbanProject[]
+  knowledgeBases            KnowledgeBase[]
+  scoringRules              LeadScoringRule[]
+  leads                     Lead[]
+  marketingEvents           MarketingEvent[]
+  notificationPrefs         NotificationPreference[]
+  Notification              Notification[]
+  payrolls                  Payroll[]
+  proposals                 Proposal[]
+  salesGoals                SalesGoal[]
+  servicePrices             ServicePrice[]
+  shortLinks                ShortLink[]
+  tasks                     Task[]
+  teams                     Team[]
+  webhooks                  Webhook[]
+  leadAssignmentRules       LeadAssignmentRule[]
+
+  @@map("tbl_companies")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ServicePrice {
+
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  codigo_id        String?  @map("codigo_id")
+  nombre_servicio  String
+  categoria        String
+  tipo_formato     String?  @map("tipo_formato")
+  tiempo_estimado  String?  @map("tiempo_estimado")
+  herramientas     String?
+  descripcion      String
+  precio_base      Float
+  iva_porcentaje   Float    @default(19.0)
+  retefuente_porc  Float    @default(11.0)
+  reteiva_porc     Float    @default(2.85)
+  ica_porc         Float    @default(0.6)
+  precio_urgente   Float?
+  isExpress        Boolean  @default(false)
+  estado           String   @default("activo")
+  orderIndex       Int      @default(0) @map("order_index")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  ica_valor        Float?   @default(0) @map("ica_valor")
+  iva_valor        Float?   @default(0) @map("iva_valor")
+  retefuente_valor Float?   @default(0) @map("retefuente_valor")
+  reteiva_valor    Float?   @default(0) @map("reteiva_valor")
+  subtotal         Float?   @default(0)
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_service_prices")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model BrandKit {
+
+  id             String   @id @default(uuid())
+  companyId      String   @unique @map("company_id")
+  name           String   @default("Brand Kit")
+  primaryColor   String   @default("#6D28D9") @map("primary_color")
+  secondaryColor String   @default("#FFFFFF") @map("secondary_color")
+  accentColor    String   @default("#10B981") @map("accent_color")
+  logoUrl        String?  @map("logo_url")
+  fontFamily     String   @default("Inter") @map("font_family")
+  toneOfVoice    String   @default("professional") @map("tone_of_voice")
+  brandValues    String[] @map("brand_values")
+  targetAudience String?  @map("target_audience")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("tbl_brand_kits")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CompanyUser {
+
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  companyId      String   @map("company_id")
+  permissions    Json?    @default("[]")
+  invitedBy      String?  @map("invited_by")
+  joinedAt       DateTime @default(now()) @map("joined_at")
+  teamId         String?  @map("team_id")
+  phoneExtension String?  @map("phone_extension")
+  roleId         String?  @map("role_id")
+  roleName       String   @default("member") @map("role_name")
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  team           Team?    @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, companyId])
+  @@index([roleName])
+  @@index([roleId])
+  @@map("tbl_company_users")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Team {
+
+  id            String                   @id @default(uuid())
+  name          String
+  description   String?
+  path          String                   @default("/")
+  level         Int                      @default(0)
+  parentId      String?                  @map("parent_id")
+  companyId     String                   @map("company_id")
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  updatedAt     DateTime                 @updatedAt @map("updated_at")
+  maxHeadcount  Int?                     @map("max_headcount")
+  monthlyBudget Float?                   @map("monthly_budget")
+  permissions   CustomObjectPermission[]
+  bounties      Bounty[]
+  members       CompanyUser[]
+  company       Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent        Team?                    @relation("TeamHierarchy", fields: [parentId], references: [id])
+  children      Team[]                   @relation("TeamHierarchy")
+
+  @@index([companyId])
+  @@index([path])
+  @@map("tbl_teams")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CustomObjectDefinition {
+
+  id                String                     @id @default(cuid())
+  name              String
+  label             String
+  description       String?
+  companyId         String
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  company           Company                    @relation(fields: [companyId], references: [id])
+  fields            CustomObjectField[]
+  permissions       CustomObjectPermission[]
+  relationshipsFrom CustomObjectRelationship[] @relation("RelationshipFrom")
+  relationshipsTo   CustomObjectRelationship[] @relation("RelationshipTo")
+  records           CustomObjectRecord[]
+
+  @@unique([companyId, name])
+  @@map("tbl_custom_object_definitions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CustomObjectField {
+
+  id           String                 @id @default(cuid())
+  name         String
+  label        String
+  type         String
+  required     Boolean                @default(false)
+  options      String?
+  definitionId String
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  definition   CustomObjectDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  @@map("tbl_custom_object_fields")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CustomObjectRelationship {
+
+  id        String                 @id @default(cuid())
+  name      String
+  type      String
+  fromId    String
+  toId      String
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  from      CustomObjectDefinition @relation("RelationshipFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        CustomObjectDefinition @relation("RelationshipTo", fields: [toId], references: [id], onDelete: Cascade)
+  @@map("tbl_custom_object_relationships")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CustomObjectPermission {
+
+  id           String                 @id @default(cuid())
+  teamId       String
+  definitionId String
+  canCreate    Boolean                @default(false)
+  canRead      Boolean                @default(false)
+  canUpdate    Boolean                @default(false)
+  canDelete    Boolean                @default(false)
+  definition   CustomObjectDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  team         Team                   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, definitionId])
+  @@map("tbl_custom_object_permissions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CustomObjectRecord {
+
+  id           String                 @id @default(uuid())
+  definitionId String                 @map("definition_id")
+  data         Json
+  createdBy    String?                @map("created_by")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+  definition   CustomObjectDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+
+  @@index([definitionId])
+  @@map("tbl_custom_object_records")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Service {
+
+  id               String             @id @default(uuid())
+  name             String
+  slug             String             @unique
+  icon             String?
+  description      String?
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  ProjectToService ProjectToService[]
+
+  @@map("tbl_services")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model WorkflowExecution {
+
+  id              String    @id @default(uuid())
+  status          String // RUNNING | SUCCESS | FAILED | WAITING
+  logs            Json?
+  workflowId      String    @map("workflow_id")
+  startedAt       DateTime  @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+  currentStep     Int       @default(0) @map("current_step")
+  resumeAt        DateTime? @map("resume_at")
+  contextSnapshot Json?     @map("context_snapshot") // Persisted DAG context for WAIT node resume
+
+  @@index([workflowId])
+  @@index([status])
+  @@map("tbl_workflow_executions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Bounty {
+
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  rewardAmount Float    @map("reward_amount")
+  status       String   @default("OPEN")
+  teamId       String   @map("team_id")
+  createdBy    String   @map("created_by")
+  claimedBy    String?  @map("claimed_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([status])
+  @@map("tbl_bounties")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Deal {
+
+  id                  String                    @id @default(uuid())
+  title               String
+  value               Float                     @default(0)
+  currency            String                    @default("USD")
+  stage               String                    @default("NEW")
+  probability         Int                       @default(0)
+  contactName         String?                   @map("contact_name")
+  contactEmail        String?                   @map("contact_email")
+  companyId           String                    @map("company_id")
+  priority            String                    @default("MEDIUM")
+  notes               String?
+  lostReason          String?                   @map("lost_reason")
+  lastActivity        DateTime                  @default(now()) @map("last_activity")
+  tags                String[]                  @default([])
+  source              String?                   @default("Unknown")
+  expectedClose       DateTime?                 @map("expected_close")
+  createdAt           DateTime                  @default(now()) @map("created_at")
+  updatedAt           DateTime                  @updatedAt @map("updated_at")
+  assignedTo          String?                   @map("assigned_to")
+  kanbanTaskId        String?                   @unique @map("kanban_task_id")
+  commissions         CommissionPayment[]
+  activities          CRMActivity[]
+  stageHistory        DealStageHistory[]
+  company             Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  kanbanTask          KanbanTask?               @relation(fields: [kanbanTaskId], references: [id])
+  sequenceEnrollments EmailSequenceEnrollment[]
+  events              Event[]
+  invoices            Invoice[]
+  kanbanProject       KanbanProject?
+  proposals           Proposal[]
+
+  @@index([companyId])
+  @@index([stage])
+  @@index([priority])
+  @@index([assignedTo])
+  @@index([stage, companyId]) // getSalesFunnel, getTopDeals
+  @@index([contactEmail, companyId]) // bidirectional Lead<>Deal sync
+  @@index([expectedClose]) // forecasting queries
+  @@index([value]) // getTopDeals ORDER BY value
+  @@map("tbl_deals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CRMActivity {
+
+  id        String   @id @default(uuid())
+  type      String
+  content   String
+  dealId    String   @map("deal_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("tbl_crm_activities")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model DealStageHistory {
+
+  id        String   @id @default(uuid())
+  dealId    String   @map("deal_id")
+  fromStage String   @map("from_stage")
+  toStage   String   @map("to_stage")
+  changedBy String?  @map("changed_by")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@index([createdAt])
+  @@map("tbl_deal_stage_history")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model SalesGoal {
+
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  userId       String?  @map("user_id")
+  departmentId String?  @map("department_id")
+  level        String   @default("INDIVIDUAL")
+  period       String
+  targetAmount Float    @map("target_amount")
+  currency     String   @default("USD")
+  label        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId, period])
+  @@index([companyId])
+  @@index([period])
+  @@map("tbl_sales_goals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CommissionRule {
+
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  userId       String?  @map("user_id")
+  rate         Float
+  minDealValue Float    @default(0) @map("min_deal_value")
+  capAmount    Float?   @map("cap_amount")
+  isActive     Boolean  @default(true) @map("is_active")
+  label        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_commission_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CommissionPayment {
+
+  id        String    @id @default(uuid())
+  companyId String    @map("company_id")
+  dealId    String    @map("deal_id")
+  userId    String    @map("user_id")
+  ruleId    String?   @map("rule_id")
+  amount    Float
+  rate      Float
+  type      String    @default("STANDARD")
+  status    String    @default("PENDING")
+  paidAt    DateTime? @map("paid_at")
+  notes     String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal      Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([dealId])
+  @@index([status])
+  @@map("tbl_commission_payments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model DealAutomationRule {
+
+  id             String          @id @default(uuid())
+  companyId      String          @map("company_id")
+  name           String
+  description    String?
+  isActive       Boolean         @default(true) @map("is_active")
+  triggerType    String          @map("trigger_type")
+  triggerStage   String?         @map("trigger_stage")
+  triggerDays    Int?            @map("trigger_days")
+  actionType     String          @map("action_type")
+  actionPayload  Json            @map("action_payload")
+  lastRunAt      DateTime?       @map("last_run_at")
+  executionCount Int             @default(0) @map("execution_count")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  logs           AutomationLog[]
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("tbl_deal_automation_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AutomationLog {
+
+  id        String             @id @default(uuid())
+  ruleId    String             @map("rule_id")
+  dealId    String?            @map("deal_id")
+  result    String
+  message   String?
+  createdAt DateTime           @default(now()) @map("created_at")
+  rule      DealAutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@map("tbl_automation_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmailSequence {
+
+  id           String                    @id @default(uuid())
+  companyId    String                    @map("company_id")
+  name         String
+  description  String?
+  triggerStage String?                   @map("trigger_stage")
+  isActive     Boolean                   @default(true) @map("is_active")
+  steps        Json                      @default("[]")
+  createdAt    DateTime                  @default(now()) @map("created_at")
+  updatedAt    DateTime                  @updatedAt @map("updated_at")
+  enrollments  EmailSequenceEnrollment[]
+  company      Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_email_sequences")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmailSequenceEnrollment {
+
+  id          String        @id @default(uuid())
+  sequenceId  String        @map("sequence_id")
+  dealId      String        @map("deal_id")
+  currentStep Int           @default(0) @map("current_step")
+  status      String        @default("ACTIVE")
+  nextRunAt   DateTime?     @map("next_run_at")
+  completedAt DateTime?     @map("completed_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deal        Deal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@unique([sequenceId, dealId])
+  @@index([sequenceId])
+  @@index([dealId])
+  @@index([status, nextRunAt])
+  @@map("tbl_email_sequence_enrollments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Task {
+
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  dueDate     DateTime? @map("due_date")
+  priority    String    @default("MEDIUM")
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+  dealId      String?   @map("deal_id")
+  leadId      String?   @map("lead_id")
+  assignedTo  String?   @map("assigned_to")
+  createdBy   String    @map("created_by")
+  companyId   String    @map("company_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([assignedTo])
+  @@index([dealId])
+  @@index([dueDate])
+  @@index([completed])
+  @@map("tbl_tasks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmailTemplate {
+
+  id             String   @id @default(uuid())
+  name           String
+  subject        String
+  body           String
+  description    String?
+  variables      String[] @default([])
+  category       String   @default("GENERAL")
+  companyId      String   @map("company_id")
+  designJson     Json?    @map("design_json")
+  useDragAndDrop Boolean  @default(false) @map("use_drag_and_drop")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([category])
+  @@map("tbl_email_templates")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model LeadScoringRule {
+
+  id        String   @id @default(uuid())
+  name      String
+  field     String
+  operator  String
+  value     String?
+  points    Int
+  active    Boolean  @default(true)
+  companyId String   @map("company_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([active])
+  @@map("tbl_lead_scoring_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Lead {
+
+  id                    String             @id @default(uuid())
+  name                  String?
+  email                 String
+  phone                 String?
+  company               String?
+  jobTitle              String?            @map("job_title")
+  message               String?
+  source                String
+  medium                String?
+  utmSource             String?            @map("utm_source")
+  utmMedium             String?            @map("utm_medium")
+  utmCampaign           String?            @map("utm_campaign")
+  utmTerm               String?            @map("utm_term")
+  utmContent            String?            @map("utm_content")
+  referer               String?
+  landingPage           String?            @map("landing_page")
+  ipAddress             String?            @map("ip_address")
+  userAgent             String?            @map("user_agent")
+  country               String?
+  city                  String?
+  campaignId            String?            @map("campaign_id")
+  status                String             @default("NEW")
+  score                 Int                @default(0)
+  convertedToDealId     String?            @map("converted_to_deal_id")
+  convertedAt           DateTime?          @map("converted_at")
+  formId                String?            @map("form_id")
+  formData              Json?              @map("form_data")
+  tags                  String[]           @default([])
+  notes                 String?
+  assignedTo            String?            @map("assigned_to")
+  companyId             String             @map("company_id")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+  conversionProbability Float?             @map("conversion_probability")
+  fbc                   String?
+  fbclid                String?
+  fbp                   String?
+  gclid                 String?
+  li_fat_id             String?
+  predictionFactors     Json?              @map("prediction_factors")
+  ttclid                String?
+  conversations         Conversation[]
+  eventParticipations   EventParticipant[]
+  invoices              Invoice[]
+  crmCompany            Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  marketingEvents       MarketingEvent[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([source])
+  @@index([campaignId])
+  @@index([createdAt])
+  @@index([email])
+  @@index([status])
+  @@index([status, companyId]) // getLeads filter + pagination
+  @@index([score]) // lead scoring UI, ranking
+  @@index([email, companyId]) // checkDuplicateEmail, sync
+  @@map("tbl_leads")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model LeadAssignmentRule {
+
+  id                String                           @id @default(uuid())
+  name              String
+  priority          Int                              @default(0)
+  isActive          Boolean                          @default(true) @map("is_active")
+  conditions        Json                             // Array of { field: string, operator: string, value: string }
+  assignedUserId    String?                          @map("assigned_user_id")
+  teamId            String?                          @map("team_id")
+  roundRobinEnabled Boolean                          @default(false) @map("round_robin_enabled")
+  companyId         String                           @map("company_id")
+  createdAt         DateTime                         @default(now()) @map("created_at")
+  updatedAt         DateTime                         @updatedAt @map("updated_at")
+  company           Company                          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  roundRobinStates  LeadAssignmentRoundRobinState[]
+
+  @@index([companyId])
+  @@map("tbl_lead_assignment_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model LeadAssignmentRoundRobinState {
+
+  id                 String             @id @default(uuid())
+  ruleId             String?            @map("rule_id")
+  teamId             String?            @map("team_id")
+  lastAssignedUserId String             @map("last_assigned_user_id")
+  companyId          String             @map("company_id")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  rule               LeadAssignmentRule? @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, ruleId])
+  @@unique([companyId, teamId])
+  @@map("tbl_lead_assignment_round_robin_states")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MarketingEvent {
+
+  id         String    @id @default(uuid())
+  eventType  String
+  eventName  String?
+  url        String?
+  referrer   String?
+  userAgent  String?
+  ipAddress  String?
+  visitorId  String?   @map("visitor_id")
+  leadId     String?   @map("lead_id")
+  userId     String?   @map("user_id")
+  properties Json?     @default("{}")
+  sessionId  String?   @map("session_id")
+  campaignId String?   @map("campaign_id")
+  companyId  String    @map("company_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lead       Lead?     @relation(fields: [leadId], references: [id])
+
+  @@index([companyId])
+  @@index([leadId])
+  @@index([visitorId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("tbl_marketing_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AdSpend {
+
+  id          String    @id @default(uuid())
+  date        DateTime  @db.Date
+  platform    String
+  amount      Float
+  currency    String    @default("USD")
+  impressions Int       @default(0)
+  clicks      Int       @default(0)
+  conversions Int       @default(0)
+  campaignId  String?   @map("campaign_id")
+  companyId   String    @map("company_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  cpc         Float     @default(0)
+  cpm         Float     @default(0)
+  ctr         Float     @default(0)
+  revenue     Float     @default(0)
+  roas        Float     @default(0)
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([date, campaignId, platform])
+  @@index([companyId])
+  @@index([date])
+  @@map("tbl_ad_spend")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CampaignRule {
+
+  id            String    @id @default(uuid())
+  campaignId    String    @map("campaign_id")
+  companyId     String    @map("company_id")
+  name          String
+  conditionKey  String    @map("condition_key")
+  operator      String
+  threshold     Float
+  actionType    String    @map("action_type")
+  actionValue   String?   @map("action_value")
+  isActive      Boolean   @default(true) @map("is_active")
+  lastTriggered DateTime? @map("last_triggered")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([campaignId])
+  @@index([isActive])
+  @@map("tbl_campaign_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model CampaignAsset {
+
+  id              String                @id @default(uuid())
+  campaignId      String?               @map("campaign_id")
+  companyId       String                @map("company_id")
+  url             String
+  type            String
+  width           Int?
+  height          Int?
+  sizeBytes       Int?                  @map("size_bytes")
+  duration        Int?
+  altText         String?               @map("alt_text")
+  mimeType        String?               @map("mime_type")
+  name            String?
+  createdAt       DateTime              @default(now()) @map("created_at")
+  abVariants      ABTestVariant[]
+  company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([campaignId])
+  @@map("tbl_campaign_assets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ABTest {
+
+  id         String          @id @default(uuid())
+  campaignId String          @map("campaign_id")
+  companyId  String          @map("company_id")
+  name       String
+  metric     String
+  status     String          @default("RUNNING")
+  winnerId   String?         @map("winner_id")
+  startDate  DateTime        @map("start_date")
+  endDate    DateTime?       @map("end_date")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  variants   ABTestVariant[]
+  company    Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([companyId])
+  @@map("tbl_ab_tests")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ABTestVariant {
+
+  id          String         @id @default(uuid())
+  abTestId    String         @map("ab_test_id")
+  assetId     String?        @map("asset_id")
+  name        String
+  weight      Float          @default(0.5)
+  impressions Int            @default(0)
+  clicks      Int            @default(0)
+  conversions Int            @default(0)
+  spend       Float          @default(0)
+  abTest      ABTest         @relation(fields: [abTestId], references: [id], onDelete: Cascade)
+  asset       CampaignAsset? @relation(fields: [assetId], references: [id])
+
+  @@index([abTestId])
+  @@map("tbl_ab_test_variants")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ShortLink {
+
+  id             String    @id @default(uuid())
+  slug           String    @unique
+  destinationUrl String    @map("destination_url")
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  clicks         Int       @default(0)
+  lastClick      DateTime? @map("last_click")
+  isActive       Boolean   @default(true) @map("is_active")
+  expiresAt      DateTime? @map("expires_at")
+  companyId      String    @map("company_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_short_links")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Conversation {
+
+  id                 String               @id @default(uuid())
+  channel            String
+  platformId         String?              @map("platform_id")
+  status             String               @default("OPEN")
+  priority           String               @default("MEDIUM")
+  unreadCount        Int                  @default(0) @map("unread_count")
+  leadId             String?              @map("lead_id")
+  companyId          String               @map("company_id")
+  assignedTo         String?              @map("assigned_to")
+  lastMessageAt      DateTime             @default(now()) @map("last_message_at")
+  lastMessagePreview String?              @map("last_message_preview")
+  tags               String[]             @default([])
+  metadata           Json?                @default("{}")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  sentiment          String?
+  topic              String?
+  contactName        String?              @map("contact_name")
+  company            Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lead               Lead?                @relation(fields: [leadId], references: [id])
+  messages           Message[]
+  slaConfig          ConversationSLA?
+  drafts             MessageDraft[]
+  auditLogs          InboxAuditLog[]
+  tagAssignments     InboxTagAssignment[]
+
+  @@unique([platformId, channel])
+  @@index([companyId])
+  @@index([status])
+  @@index([channel])
+  @@index([lastMessageAt])
+  @@map("tbl_conversations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Message {
+
+  id             String              @id @default(uuid())
+  conversationId String              @map("conversation_id")
+  content        String?
+  type           String              @default("TEXT")
+  direction      String
+  senderId       String?             @map("sender_id")
+  status         String              @default("SENT")
+  mediaUrl       String?             @map("media_url")
+  mediaType      String?             @map("media_type")
+  externalId     String?             @map("external_id")
+  metadata       Json?               @default("{}")
+  senderType     String?             @map("sender_type")
+  channel        String?             @map("channel")
+  inReplyToId    String?             @map("in_reply_to_id")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  attachments    MessageAttachment[]
+  drafts         MessageDraft[]
+
+  @@unique([externalId, conversationId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([inReplyToId])
+  @@map("tbl_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MessageAttachment {
+
+  id         String   @id @default(uuid())
+  messageId  String   @map("message_id")
+  fileName   String   @map("file_name")
+  mediaUrl   String   @map("media_url")
+  mediaType  String   @map("media_type")
+  fileSize   Int      @map("file_size")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("tbl_message_attachments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MessageDraft {
+
+  id             String       @id @default(uuid())
+  messageId      String?      @map("message_id") // nullable: draft may exist before message is sent
+  conversationId String       @map("conversation_id")
+  content        String
+  version        Int          @default(1)
+  status         String       @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED
+  createdBy      String       @map("created_by")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  approvedBy     String?      @map("approved_by")
+  approvedAt     DateTime?    @map("approved_at")
+  message        Message?     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([conversationId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tbl_message_drafts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ConversationSLA {
+
+  id                   String       @id @default(uuid())
+  conversationId       String       @unique @map("conversation_id")
+  firstResponseMinutes Int          @map("first_response_minutes")
+  resolutionMinutes    Int          @map("resolution_minutes")
+  status               String       @default("OPEN") // OPEN, MET, BREACHED, PAUSED
+  firstResponseAt      DateTime?    @map("first_response_at")
+  resolvedAt           DateTime?    @map("resolved_at")
+  breachedAt           DateTime?    @map("breached_at")
+  warningNotifiedAt    DateTime?    @map("warning_notified_at")
+  pausedAt             DateTime?    @map("paused_at")
+  pausedMinutes        Int          @default(0) @map("paused_minutes")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([status])
+  @@index([breachedAt])
+  @@map("tbl_conversation_slas")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model InboxAuditLog {
+
+  id             String        @id @default(uuid())
+  conversationId String?       @map("conversation_id")
+  companyId      String        @map("company_id")
+  userId         String?       @map("user_id")
+  action         String // message_sent, status_changed, assigned_to, macro_executed, tag_added, tag_removed
+  resourceType   String        @map("resource_type") // conversation, message, macro
+  resourceId     String        @map("resource_id")
+  oldValue       Json?         @map("old_value")
+  newValue       Json?         @map("new_value")
+  ipAddress      String?       @map("ip_address")
+  userAgent      String?       @map("user_agent")
+  metadata       Json?         @default("{}")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
+  @@map("tbl_inbox_audit_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model InboxTagAssignment {
+
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  tagName        String       @map("tag_name")
+  assignedBy     String       @map("assigned_by")
+  assignedAt     DateTime     @default(now()) @map("assigned_at")
+  removedBy      String?      @map("removed_by")
+  removedAt      DateTime?    @map("removed_at")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, tagName, removedAt]) // Allow same tag re-added
+  @@index([conversationId])
+  @@index([tagName])
+  @@index([assignedAt])
+  @@map("tbl_inbox_tag_assignments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model InboxMacroPermission {
+
+  id         String  @id @default(uuid())
+  macroId    String  @map("macro_id")
+  roleId     String  @map("role_id")
+  canExecute Boolean @default(true) @map("can_execute")
+
+  @@unique([macroId, roleId])
+  @@index([macroId])
+  @@index([roleId])
+  @@map("tbl_inbox_macro_permissions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model IntegrationConfig {
+
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  provider  String
+  config    Json
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, provider])
+  @@map("tbl_integration_configs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Event {
+
+  id             String             @id @default(uuid())
+  title          String
+  description    String?
+  type           String
+  status         String             @default("SCHEDULED")
+  startDate      DateTime           @map("start_date")
+  endDate        DateTime           @map("end_date")
+  timeZone       String             @default("UTC") @map("time_zone")
+  isAllDay       Boolean            @default(false) @map("is_all_day")
+  recurrenceRule String?            @map("recurrence_rule")
+  metadata       Json?              @default("{}")
+  organizerId    String             @map("organizer_id")
+  companyId      String             @map("company_id")
+  clientId       String?            @map("client_id")
+  tags           String[]           @default([])
+  isApproved     Boolean            @default(true) @map("is_approved")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  dealId         String?            @map("deal_id")
+  participants   EventParticipant[]
+  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal           Deal?              @relation(fields: [dealId], references: [id])
+
+  @@index([companyId])
+  @@index([organizerId])
+  @@index([startDate, endDate])
+  @@index([status])
+  @@index([type])
+  @@map("tbl_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EventParticipant {
+
+  id         String   @id @default(uuid())
+  eventId    String   @map("event_id")
+  userId     String?  @map("user_id")
+  leadId     String?  @map("lead_id")
+  rsvpStatus String   @default("PENDING") @map("rsvp_status")
+  guestEmail String?  @map("guest_email")
+  guestName  String?  @map("guest_name")
+  attended   Boolean  @default(false)
+  joinedAt   DateTime @default(now()) @map("joined_at")
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  lead       Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@unique([eventId, leadId])
+  @@index([eventId])
+  @@index([userId])
+  @@index([leadId])
+  @@index([rsvpStatus])
+  @@map("tbl_event_participants")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ProjectToProjectTag {
+
+  A            String
+  B            String
+
+  @@unique([A, B], map: "_ProjectToProjectTag_AB_unique")
+  @@index([B], map: "_ProjectToProjectTag_B_index")
+  @@map("tbl__ProjectToProjectTag")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmailBlast {
+
+  id              String                @id @default(uuid())
+  name            String
+  subject         String
+  htmlBody        String                @map("html_body")
+  fromName        String                @default("LegacyMark") @map("from_name")
+  fromEmail       String                @default("noreply@legacymarksas.com") @map("from_email")
+  status          String                @default("DRAFT")
+  totalRecipients Int                   @default(0) @map("total_recipients")
+  sent            Int                   @default(0)
+  failed          Int                   @default(0)
+  opens           Int                   @default(0)
+  clicks          Int                   @default(0)
+  companyId       String                @map("company_id")
+  createdById     String                @map("created_by_id")
+  scheduledAt     DateTime?             @map("scheduled_at")
+  designJson      Json?                 @map("design_json")
+  isAbTest        Boolean               @default(false) @map("is_ab_test")
+  subjectB        String?               @map("subject_b")
+  htmlBodyB       String?               @map("html_body_b")
+  sentAt          DateTime?             @map("sent_at")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  recipients      EmailBlastRecipient[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("tbl_email_blasts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmailBlastRecipient {
+
+  id           String     @id @default(uuid())
+  blastId      String     @map("blast_id")
+  email        String
+  name         String?
+  variables    Json?      @default("{}")
+  status       String     @default("PENDING")
+  errorMessage String?    @map("error_message")
+  variant      String     @default("A")
+  sentAt       DateTime?  @map("sent_at")
+  openedAt     DateTime?  @map("opened_at")
+  clickedAt    DateTime?  @map("clicked_at")
+  bouncedAt    DateTime?  @map("bounced_at")
+  complainedAt DateTime?  @map("complained_at")
+  blast        EmailBlast @relation(fields: [blastId], references: [id], onDelete: Cascade)
+
+  @@index([blastId])
+  @@index([status])
+  @@index([email])
+  @@map("tbl_email_blast_recipients")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model SuppressionList {
+
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  email     String
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@map("tbl_suppression_list")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MailingList {
+
+  id          String                  @id @default(uuid())
+  companyId   String                  @map("company_id")
+  name        String
+  description String?
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+  subscribers MailingListSubscriber[]
+
+  @@index([companyId])
+  @@map("tbl_mailing_lists")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model MailingListSubscriber {
+
+  id        String      @id @default(uuid())
+  listId    String      @map("list_id")
+  email     String
+  name      String?
+  variables Json?       @default("{}")
+  status    String      @default("SUBSCRIBED")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  list      MailingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, email])
+  @@index([listId])
+  @@index([email])
+  @@map("tbl_mailing_list_subscribers")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model SocialPostComment {
+
+  id        String     @id @default(uuid())
+  content   String
+  postId    String     @map("post_id")
+  userId    String     @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([postId])
+  @@index([userId])
+  @@map("tbl_social_post_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model SocialPostLog {
+
+  id        String     @id @default(uuid())
+  action    String
+  details   Json?
+  postId    String     @map("post_id")
+  userId    String     @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@index([postId])
+  @@index([userId])
+  @@map("tbl_social_post_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Invoice {
+
+  id                 String                 @id @default(uuid())
+  clientName         String                 @map("client_name")
+  clientNit          String?                @map("client_nit")
+  clientAddress      String?                @map("client_address")
+  clientCity         String?                @map("client_city")
+  clientPhone        String?                @map("client_phone")
+  serviceDescription String?                @map("service_description")
+  subtotalAmount     Float                  @default(0) @map("subtotal_amount")
+  taxAmount          Float                  @default(0) @map("tax_amount")
+  discountAmount     Float                  @default(0) @map("discount_amount")
+  totalAmount        Float                  @map("total_amount")
+  advanceAmount      Float                  @map("advance_amount")
+  finalAmount        Float                  @map("final_amount")
+  status             String                 @default("DRAFT_AWAITING_PAYMENT")
+  dueDate            DateTime?              @map("due_date")
+  notes              String?
+  terms              String?
+  companyId          String                 @map("company_id")
+  leadId             String?                @map("lead_id")
+  dealId             String?                @map("deal_id")
+  stripeInvoiceId    String?                @map("stripe_invoice_id")
+  paymentUrl         String?                @map("payment_url")
+  pdfUrl             String?                @map("pdf_url")
+  token              String?                @unique @default(uuid())
+  currency           String                 @default("USD")
+  isElectronic       Boolean                @default(true) @map("is_electronic")
+  dianStatus         String?                @map("dian_status")
+  cufe               String?
+  qrCode             String?                @map("qr_code")
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  transactions       FinancialTransaction[]
+  items              InvoiceLineItem[]
+  company            Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal               Deal?                  @relation(fields: [dealId], references: [id])
+  lead               Lead?                  @relation(fields: [leadId], references: [id])
+
+  @@index([companyId])
+  @@index([status])
+  @@index([leadId])
+  @@index([dealId])
+  @@index([token])
+  @@map("tbl_invoices")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model InvoiceLineItem {
+
+  id          String   @id @default(uuid())
+  invoiceId   String   @map("invoice_id")
+  title       String
+  description String?
+  quantity    Int      @default(1)
+  unitPrice   Float    @default(0) @map("unit_price")
+  taxRate     Float    @default(0) @map("tax_rate")
+  totalAmount Float    @default(0) @map("total_amount")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("tbl_invoice_line_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanProject {
+
+  id          String             @id @default(uuid())
+  name        String
+  description String?
+  status      String             @default("ACTIVE")
+  companyId   String             @map("company_id")
+  dealId      String?            @unique @map("deal_id")
+  startDate   DateTime?          @map("start_date")
+  endDate     DateTime?          @map("end_date")
+  budget      Float?
+  spentAmount Float              @default(0) @map("spent_amount")
+  healthScore Int                @default(100) @map("health_score")
+  isPublic    Boolean            @default(false) @map("is_public")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal        Deal?              @relation(fields: [dealId], references: [id])
+  swimlanes   KanbanSwimlane[]
+  kanbanTasks KanbanTask[]
+  healthLogs  ProjectHealthLog[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("tbl_kanban_projects")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanSwimlane {
+
+  id          String        @id @default(uuid())
+  projectId   String        @map("project_id")
+  name        String
+  order       Int           @default(0)
+  wipLimit    Int?          @map("wip_limit")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  project     KanbanProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  kanbanTasks KanbanTask[]
+
+  @@index([projectId])
+  @@map("tbl_kanban_swimlanes")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ProjectHealthLog {
+
+  id          String        @id @default(uuid())
+  projectId   String        @map("project_id")
+  timestamp   DateTime      @default(now())
+  healthScore Int
+  notes       String?
+  project     KanbanProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("tbl_project_health_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanTask {
+
+  id             String                  @id @default(uuid())
+  title          String
+  description    String?
+  status         String                  @default("TODO")
+  priority       String                  @default("MEDIUM")
+  order          Int                     @default(0)
+  projectId      String                  @map("project_id")
+  assigneeId     String?                 @map("assignee_id")
+  creatorId      String                  @map("creator_id")
+  dueDate        DateTime?               @map("due_date")
+  estimatedHours Float?                  @map("estimated_hours")
+  swimlaneId     String?                 @map("swimlane_id")
+  labels         Json                    @default("[]")
+  storyPoints    Int?                    @map("story_points")
+  mediaUrls      Json                    @default("[]") @map("media_urls")
+  costPerHour    Float?                  @map("cost_per_hour")
+  budgetCap      Float?                  @map("budget_cap")
+  slaDeadline    DateTime?               @map("sla_deadline")
+  archived       Boolean                 @default(false)
+  archivedAt     DateTime?               @map("archived_at")
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
+  deal           Deal?
+  annotations    KanbanAssetAnnotation[]
+  auditLogs      KanbanAuditLog[]
+  comments       KanbanComment[]
+  subtasks       KanbanSubtask[]
+  project        KanbanProject           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  swimlane       KanbanSwimlane?         @relation(fields: [swimlaneId], references: [id])
+  timeEntries    TimeEntry[]
+
+  @@index([projectId])
+  @@index([swimlaneId])
+  @@index([assigneeId])
+  @@index([status])
+  @@map("tbl_kanban_tasks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanComment {
+
+  id        String     @id @default(uuid())
+  taskId    String     @map("task_id")
+  content   String
+  authorId  String     @map("author_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  task      KanbanTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("tbl_kanban_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanSubtask {
+
+  id           String     @id @default(uuid())
+  parentTaskId String     @map("parent_task_id")
+  title        String
+  completed    Boolean    @default(false)
+  isBlocking   Boolean    @default(false) @map("is_blocking")
+  order        Int        @default(0)
+  creatorId    String     @map("creator_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  parentTask   KanbanTask @relation(fields: [parentTaskId], references: [id], onDelete: Cascade)
+
+  @@index([parentTaskId])
+  @@map("tbl_kanban_subtasks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanAuditLog {
+
+  id        String     @id @default(uuid())
+  taskId    String     @map("task_id")
+  actorId   String     @map("actor_id")
+  action    String
+  fromValue String?    @map("from_value")
+  toValue   String?    @map("to_value")
+  metadata  Json?
+  createdAt DateTime   @default(now()) @map("created_at")
+  task      KanbanTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([actorId])
+  @@map("tbl_kanban_audit_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanProjectTemplate {
+
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?  @default("📋")
+  companyId   String?  @map("company_id")
+  structure   Json
+  isGlobal    Boolean  @default(false) @map("is_global")
+  usageCount  Int      @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@map("tbl_kanban_project_templates")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KanbanAssetAnnotation {
+
+  id        String     @id @default(uuid())
+  taskId    String     @map("task_id")
+  assetUrl  String     @map("asset_url")
+  xPercent  Float      @map("x_percent")
+  yPercent  Float      @map("y_percent")
+  timestamp Float?
+  comment   String
+  resolved  Boolean    @default(false)
+  authorId  String     @map("author_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  task      KanbanTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("tbl_kanban_asset_annotations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Proposal {
+
+  id           String         @id @default(uuid())
+  title        String
+  content      String?
+  status       String         @default("DRAFT")
+  value        Float          @default(0)
+  currency     String         @default("USD")
+  companyId    String         @map("company_id")
+  dealId       String?        @map("deal_id")
+  creatorId    String         @map("creator_id")
+  contactName  String?        @map("contact_name")
+  contactEmail String?        @map("contact_email")
+  expiresAt    DateTime?      @map("expires_at")
+  signedAt     DateTime?      @map("signed_at")
+  signature    String?
+  clientIp     String?        @map("client_ip")
+  token        String         @unique @default(uuid())
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  items        ProposalItem[]
+  company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal         Deal?          @relation(fields: [dealId], references: [id])
+
+  @@index([companyId])
+  @@index([status])
+  @@index([token])
+  @@map("tbl_proposals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ProposalItem {
+
+  id          String   @id @default(uuid())
+  proposalId  String   @map("proposal_id")
+  title       String
+  description String?
+  quantity    Int      @default(1)
+  price       Float    @default(0)
+  taxRate     Float    @default(0) @map("tax_rate")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  proposal    Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("tbl_proposal_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model InboxMacro {
+
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  title       String
+  description String?
+  icon        String?  @default("Wand2")
+  color       String   @default("#10b981")
+  actionType  String   @default("TEXT_REPLY")
+  payload     Json?    @default("{}")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([actionType])
+  @@index([isActive])
+  @@map("tbl_inbox_macros")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model TimeEntry {
+
+  id           String     @id @default(uuid())
+  kanbanTaskId String     @map("kanban_task_id")
+  userId       String     @map("user_id")
+  description  String?
+  duration     Int
+  startedAt    DateTime   @default(now()) @map("started_at")
+  endedAt      DateTime?  @map("ended_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  timesheetId  String?    @map("timesheet_id")
+  kanbanTask   KanbanTask @relation(fields: [kanbanTaskId], references: [id], onDelete: Cascade)
+  timesheet    Timesheet? @relation(fields: [timesheetId], references: [id])
+
+  @@index([timesheetId])
+  @@index([kanbanTaskId])
+  @@index([userId])
+  @@map("tbl_time_entries")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Employee {
+
+  id                    String            @id @default(uuid())
+  companyId             String            @map("company_id")
+  firstName             String            @map("first_name")
+  lastName              String            @map("last_name")
+  documentType          String            @default("CC") @map("document_type")
+  documentNumber        String            @map("document_number")
+  email                 String?
+  phone                 String?
+  contractType          String            @map("contract_type")
+  position              String
+  department            String?
+  baseSalary            Float             @map("base_salary")
+  ptoDays               Int               @default(15) @map("pto_days")
+  joiningDate           DateTime?         @map("joining_date") @db.Date
+  isActive              Boolean           @default(true) @map("is_active")
+  bankName              String?           @map("bank_name")
+  bankAccount           String?           @map("bank_account")
+  bankAccountType       String?           @default("AHORROS") @map("bank_account_type")
+  epsName               String?           @map("eps_name")
+  epsNumber             String?           @map("eps_number")
+  afpName               String?           @map("afp_name")
+  afpNumber             String?           @map("afp_number")
+  arlName               String?           @map("arl_name")
+  compensationBox       String?           @map("compensation_box")
+  riskLevel             Int               @default(1) @map("risk_level")
+  emergencyContactName  String?           @map("emergency_contact_name")
+  emergencyContactPhone String?           @map("emergency_contact_phone")
+  emergencyContactRel   String?           @map("emergency_contact_rel")
+  address               String?
+  city                  String?
+  birthDate             DateTime?         @map("birth_date") @db.Date
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  benefits              EmployeeBenefit[]
+  company               Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payrolls              Payroll[]
+  timeOffs              TimeOffRequest[]
+  timesheets            Timesheet[]
+
+  @@unique([companyId, documentNumber])
+  @@index([companyId])
+  @@index([isActive])
+  @@map("tbl_employees")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Payroll {
+
+  id              String                @id @default(uuid())
+  companyId       String                @map("company_id")
+  employeeId      String                @map("employee_id")
+  periodStart     DateTime              @map("period_start") @db.Date
+  periodEnd       DateTime              @map("period_end") @db.Date
+  issueDate       DateTime              @default(now()) @map("issue_date")
+  status          String                @default("PENDING")
+  totalEarnings   Float                 @default(0) @map("total_earnings")
+  totalDeductions Float                 @default(0) @map("total_deductions")
+  netPay          Float                 @default(0) @map("net_pay")
+  isElectronic    Boolean               @default(true) @map("is_electronic")
+  dianStatus      String?               @map("dian_status")
+  cune            String?
+  paymentMethod   String                @default("TRANSFER") @map("payment_method")
+  notes           String?
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  transaction     FinancialTransaction?
+  auditLogs       PayrollAuditLog[]
+  items           PayrollItem[]
+  company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee        Employee              @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@map("tbl_payrolls")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PayrollItem {
+
+  id          String   @id @default(uuid())
+  payrollId   String   @map("payroll_id")
+  type        String
+  concept     String
+  description String?
+  amount      Float
+  baseAmount  Float?   @map("base_amount")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  payroll     Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
+  @@index([type])
+  @@map("tbl_payroll_items")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model FinancialAccount {
+
+  id           String                 @id @default(uuid())
+  companyId    String                 @map("company_id")
+  name         String
+  type         String                 @default("BANK_ACCOUNT")
+  currency     String                 @default("COP")
+  balance      Float                  @default(0)
+  isActive     Boolean                @default(true) @map("is_active")
+  description  String?
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+  expenses     Expense[]
+  company      Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+
+  @@index([companyId])
+  @@index([isActive])
+  @@map("tbl_financial_accounts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model FinancialTransaction {
+
+  id          String           @id @default(uuid())
+  accountId   String           @map("account_id")
+  type        String
+  amount      Float
+  category    String
+  description String?
+  date        DateTime         @default(now()) @db.Date
+  reference   String?
+  invoiceId   String?          @map("invoice_id")
+  payrollId   String?          @unique @map("payroll_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  account     FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  invoice     Invoice?         @relation(fields: [invoiceId], references: [id])
+  payroll     Payroll?         @relation(fields: [payrollId], references: [id])
+
+  @@index([accountId])
+  @@index([type])
+  @@index([category])
+  @@index([date])
+  @@map("tbl_financial_transactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Timesheet {
+
+  id           String      @id @default(uuid())
+  employeeId   String      @map("employee_id")
+  periodStart  DateTime    @map("period_start") @db.Date
+  periodEnd    DateTime    @map("period_end") @db.Date
+  status       String      @default("DRAFT")
+  totalHours   Float       @default(0) @map("total_hours")
+  notes        String?
+  approvedById String?     @map("approved_by_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  timeEntries  TimeEntry[]
+  employee     Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("tbl_timesheets")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model TimeOffRequest {
+
+  id           String   @id @default(uuid())
+  employeeId   String   @map("employee_id")
+  type         String
+  startDate    DateTime @map("start_date") @db.Date
+  endDate      DateTime @map("end_date") @db.Date
+  status       String   @default("PENDING")
+  reason       String?
+  approvedById String?  @map("approved_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("tbl_time_off_requests")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmployeeBenefit {
+
+  id          String    @id @default(uuid())
+  employeeId  String    @map("employee_id")
+  companyId   String    @map("company_id")
+  name        String
+  amount      Float
+  frequency   String    @default("MONTHLY")
+  isActive    Boolean   @default(true) @map("is_active")
+  description String?
+  startDate   DateTime  @default(now()) @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([companyId])
+  @@map("tbl_employee_benefits")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ExpenseCategory {
+
+  id        String    @id @default(uuid())
+  companyId String    @map("company_id")
+  name      String
+  code      String?
+  color     String?   @default("#6366f1")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses  Expense[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("tbl_expense_categories")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Expense {
+
+  id            String            @id @default(uuid())
+  companyId     String            @map("company_id")
+  categoryId    String?           @map("category_id")
+  title         String
+  description   String?
+  amount        Float
+  currency      String            @default("COP")
+  date          DateTime          @db.Date
+  vendor        String?
+  reference     String?
+  receiptUrl    String?           @map("receipt_url")
+  status        String            @default("PENDING")
+  paymentMethod String?           @default("TRANSFER") @map("payment_method")
+  accountId     String?           @map("account_id")
+  approvedById  String?           @map("approved_by_id")
+  approvedAt    DateTime?         @map("approved_at")
+  paidAt        DateTime?         @map("paid_at")
+  notes         String?
+  createdById   String            @map("created_by_id")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  account       FinancialAccount? @relation(fields: [accountId], references: [id])
+  category      ExpenseCategory?  @relation(fields: [categoryId], references: [id])
+  company       Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([date])
+  @@map("tbl_expenses")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PayrollAuditLog {
+
+  id        String   @id @default(uuid())
+  payrollId String   @map("payroll_id")
+  userId    String   @map("user_id")
+  action    String
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+  payroll   Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
+  @@index([userId])
+  @@map("tbl_payroll_audit_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Webhook {
+
+  id              String               @id @default(uuid())
+  name            String
+  url             String
+  secret          String
+  events          String[]             @default([])
+  companyId       String               @map("company_id")
+  isActive        Boolean              @default(true) @map("is_active")
+  lastDeliveredAt DateTime?            @map("last_delivered_at")
+  lastStatusCode  Int?                 @map("last_status_code")
+  failureCount    Int                  @default(0) @map("failure_count")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  deliveryLogs    WebhookDeliveryLog[]
+  company         Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_webhooks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model WebhookDeliveryLog {
+
+  id           String   @id @default(uuid())
+  webhookId    String   @map("webhook_id")
+  event        String
+  statusCode   Int?     @map("status_code")
+  responseBody String?  @map("response_body")
+  payload      String?
+  durationMs   Int?     @map("duration_ms")
+  success      Boolean  @default(false)
+  deliveredAt  DateTime @default(now()) @map("delivered_at")
+  webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@map("tbl_webhook_delivery_logs")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model NotificationPreference {
+
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  companyId String   @map("company_id")
+  channel   String
+  event     String
+  enabled   Boolean  @default(true)
+  digest    String   @default("IMMEDIATE")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, channel, event])
+  @@index([userId, companyId])
+  @@map("tbl_notification_preferences")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model KnowledgeBase {
+
+  id          String                      @id @default(uuid())
+  companyId   String                      @map("company_id")
+  name        String
+  description String?
+  sourceType  String                      @default("TEXT") @map("source_type")
+  sourceUrl   String?                     @map("source_url")
+  mimeType    String?                     @map("mime_type")
+  fileUri     String?                     @map("file_uri")
+  content     String
+  isActive    Boolean                     @default(true) @map("is_active")
+  createdAt   DateTime                    @default(now()) @map("created_at")
+  updatedAt   DateTime                    @updatedAt @map("updated_at")
+  company     Company                     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("tbl_knowledge_bases")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Notification {
+
+  id                      String                    @id @default(uuid())
+  companyId               String                    @map("company_id")
+  userId                  String                    @map("user_id")
+  type                    String
+  title                   String
+  message                 String
+  link                    String?
+  isRead                  Boolean                   @default(false) @map("is_read")
+  metadata                Json?                     @default("{}")
+  createdAt               DateTime                  @default(now()) @map("created_at")
+  readAt                  DateTime?                 @map("read_at")
+  company                 Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("tbl_notifications")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model WebhookEvent {
+
+  id          String   @id @default(uuid())
+  externalId  String   @unique @map("external_id")
+  eventType   String   @map("event_type")
+  platform    String
+  payload     Json?
+  processedAt DateTime @default(now()) @map("processed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([platform])
+  @@index([eventType])
+  @@map("tbl_webhook_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ProjectToService {
+
+  A        String
+  B        String
+  services Service @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_ProjectToService_AB_pkey")
+  @@index([B], map: "_ProjectToService_B_index")
+  @@map("tbl__ProjectToService")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model SocialProfile {
+
+  id             String   @id @default(uuid())
+  platform       String // "instagram" | "tiktok" | "facebook"
+  username       String
+  displayName    String   @map("display_name")
+  avatarUrl      String?  @map("avatar_url")
+  bio            String?
+  website        String?
+  followersCount Int      @default(0) @map("followers_count")
+  followingCount Int      @default(0) @map("following_count")
+  emoji          String?  @default("😎")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([platform])
+  @@map("tbl_social_profiles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model WhatsAppIntegration {
+
+  id              String   @id @default(uuid())
+  companyId       String   @map("company_id")
+  wabaId          String   @map("waba_id")
+  phoneNumberId   String   @map("phone_number_id")
+  phoneNumber     String   @map("phone_number")
+  accessToken     String   @map("access_token")
+  status          String   @default("pending") // pending, active, disconnected
+  webhookVerified Boolean  @default(false) @map("webhook_verified")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([phoneNumberId])
+  @@unique([phoneNumber])
+  @@index([companyId])
+  @@map("tbl_whatsapp_integrations")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EmailDomainVerification {
+
+  id         String   @id @default(uuid())
+  companyId  String   @map("company_id")
+  domain     String
+  status     String   @default("pending") // pending, verified, failed
+  dnsRecords Json?    @map("dns_records") // To store TXT/DKIM records needed
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([domain])
+  @@index([companyId])
+  @@map("tbl_email_domain_verifications")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model OutboxEvent {
+
+  id            String    @id @default(uuid())
+  eventName     String    @map("col_event_name")
+  payload       Json      @map("col_payload")
+  status        String    @default("PENDING") @map("col_status")
+  attempts      Int       @default(0) @map("col_attempts")
+  correlationId String    @map("col_correlation_id")
+  createdAt     DateTime  @default(now()) @map("col_created_at")
+  processedAt   DateTime? @map("col_processed_at")
+
+  @@index([status])
+  @@index([correlationId])
+  @@map("tbl_outbox_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
 model AffiliateProfile {
+
   id              String          @id @default(uuid())
   userId          String          @unique @map("user_id") // Soft link a Auth DB (User)
   code            String          @unique @map("code") // ej: "JUAN10"
@@ -225,14 +2246,15 @@ model AffiliateProfile {
 
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
-  schemaVersion   Int             @default(0) @map("col_schema_version")
-  deletedAt       DateTime?       @map("col_deleted_at")
 
   @@index([code])
   @@map("tbl_affiliate_profiles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CommissionPlan {
+
   id                String             @id @default(uuid())
   name              String             @map("name")
   type              PlanType           @map("type")
@@ -242,13 +2264,14 @@ model CommissionPlan {
 
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
-  schemaVersion     Int                @default(0) @map("col_schema_version")
-  deletedAt         DateTime?          @map("col_deleted_at")
 
   @@map("tbl_commission_plans")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Click {
+
   id            String           @id @default(uuid())
   affiliateCode String           @map("affiliate_code")
   ip            String           @map("ip")
@@ -258,15 +2281,16 @@ model Click {
   affiliate     AffiliateProfile @relation(fields: [affiliateCode], references: [code])
 
   createdAt     DateTime         @default(now()) @map("created_at")
-  schemaVersion Int              @default(0) @map("col_schema_version")
-  deletedAt     DateTime?        @map("col_deleted_at")
 
   @@index([affiliateCode])
   @@index([ip, affiliateCode])
   @@map("tbl_affiliate_clicks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Referral {
+
   id              String           @id @default(uuid())
   affiliateId     String           @map("affiliate_id")
   referredUserId  String           @unique @map("referred_user_id") // Comprador
@@ -281,15 +2305,16 @@ model Referral {
 
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
-  schemaVersion   Int              @default(0) @map("col_schema_version")
-  deletedAt       DateTime?        @map("col_deleted_at")
 
   @@index([affiliateId])
   @@index([orderId])
   @@map("tbl_affiliate_referrals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Payout {
+
   id          String     @id @default(uuid())
   affiliateId String     @map("affiliate_id")
   amount      Decimal    @db.Decimal(10, 2) @map("amount")
@@ -299,26 +2324,88 @@ model Payout {
 
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
-  schemaVersion Int      @default(0) @map("col_schema_version")
-  deletedAt   DateTime?  @map("col_deleted_at")
 
   @@index([affiliateId])
   @@map("tbl_affiliate_payouts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
-model OutboxEvent {
-  id            String    @id @default(uuid())
-  eventName     String    @map("col_event_name")
-  payload       Json      @map("col_payload")
-  status        String    @default("PENDING") @map("col_status")
-  attempts      Int       @default(0) @map("col_attempts")
-  correlationId String    @map("col_correlation_id")
-  createdAt     DateTime  @default(now()) @map("col_created_at")
-  processedAt   DateTime? @map("col_processed_at")
-  schemaVersion Int       @default(1) @map("col_schema_version")
+model BookingType {
 
+  id                 String         @id @default(uuid())
+  companyId          String         @map("company_id")
+  name               String
+  slug               String
+  description        String?
+  durationMinutes    Int            @default(30) @map("duration_minutes")
+  bufferMinutes      Int            @default(10) @map("buffer_minutes")
+  price              Float          @default(0.0)
+  currency           String         @default("USD")
+  locationType       String         @default("google_meet") @map("location_type")
+  color              String         @default("#0d9488")
+  assignmentStrategy String         @default("ROUND_ROBIN") @map("assignment_strategy")
+  requiresPayment    Boolean        @default(false) @map("requires_payment")
+  isActive           Boolean        @default(true) @map("is_active")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  appointments    Appointment[]
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+  @@map("tbl_booking_types")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AvailabilityRule {
+
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  userId      String?  @map("user_id")
+  dayOfWeek   Int      @map("day_of_week")
+  startTime   String   @map("start_time")
+  endTime     String   @map("end_time")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([userId])
+  @@map("tbl_availability_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model Appointment {
+
+  id              String       @id @default(uuid())
+  companyId       String       @map("company_id")
+  bookingTypeId   String       @map("booking_type_id")
+  customerName    String       @map("customer_name")
+  customerEmail   String       @map("customer_email")
+  customerPhone   String?      @map("customer_phone")
+  startTime       DateTime     @map("start_time")
+  endTime         DateTime     @map("end_time")
+  status          String       @default("CONFIRMED") @map("status")
+  meetingUrl      String?      @map("meeting_url")
+  notes           String?
+  assignedTo      String?      @map("assigned_to")
+  leadId          String?      @map("lead_id")
+  paymentStatus   String       @default("FREE") @map("payment_status")
+  stripeSessionId String?      @map("stripe_session_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  bookingType   BookingType  @relation(fields: [bookingTypeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([bookingTypeId])
+  @@index([startTime])
   @@index([status])
-  @@index([correlationId])
-  @@map("tbl_outbox_events")
+  @@index([leadId])
+  @@map("tbl_appointments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
-

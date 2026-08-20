@@ -1367,6 +1367,8 @@ model LeadAssignmentRule {
 
   @@index([companyId])
   @@map("tbl_lead_assignment_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model LeadAssignmentRoundRobinState {
@@ -1381,6 +1383,8 @@ model LeadAssignmentRoundRobinState {
   @@unique([companyId, ruleId])
   @@unique([companyId, teamId])
   @@map("tbl_lead_assignment_round_robin_states")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model MarketingEvent {
@@ -3966,11 +3970,12 @@ model OutboxEvent {
   correlationId String    @map("col_correlation_id")
   createdAt     DateTime  @default(now()) @map("col_created_at")
   processedAt   DateTime? @map("col_processed_at")
-  schemaVersion Int       @default(1) @map("col_schema_version")
 
   @@index([status])
   @@index([correlationId])
   @@map("tbl_outbox_events")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4034,11 +4039,11 @@ model AffiliateProfile {
 
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
-  schemaVersion   Int             @default(0) @map("col_schema_version")
-  deletedAt       DateTime?       @map("col_deleted_at")
 
   @@index([code])
   @@map("tbl_affiliate_profiles")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model CommissionPlan {
@@ -4051,10 +4056,10 @@ model CommissionPlan {
 
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
-  schemaVersion     Int                @default(0) @map("col_schema_version")
-  deletedAt         DateTime?          @map("col_deleted_at")
 
   @@map("tbl_commission_plans")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Click {
@@ -4067,12 +4072,12 @@ model Click {
   affiliate     AffiliateProfile @relation(fields: [affiliateCode], references: [code])
 
   createdAt     DateTime         @default(now()) @map("created_at")
-  schemaVersion Int              @default(0) @map("col_schema_version")
-  deletedAt     DateTime?        @map("col_deleted_at")
 
   @@index([affiliateCode])
   @@index([ip, affiliateCode])
   @@map("tbl_affiliate_clicks")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Referral {
@@ -4090,12 +4095,12 @@ model Referral {
 
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
-  schemaVersion   Int              @default(0) @map("col_schema_version")
-  deletedAt       DateTime?        @map("col_deleted_at")
 
   @@index([affiliateId])
   @@index([orderId])
   @@map("tbl_affiliate_referrals")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Payout {
@@ -4108,11 +4113,11 @@ model Payout {
 
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
-  schemaVersion Int      @default(0) @map("col_schema_version")
-  deletedAt   DateTime?  @map("col_deleted_at")
 
   @@index([affiliateId])
   @@map("tbl_affiliate_payouts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model BookingType {
@@ -4138,6 +4143,8 @@ model BookingType {
   @@unique([companyId, slug])
   @@index([companyId])
   @@map("tbl_booking_types")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model AvailabilityRule {
@@ -4154,6 +4161,8 @@ model AvailabilityRule {
   @@index([companyId])
   @@index([userId])
   @@map("tbl_availability_rules")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 model Appointment {
@@ -4183,6 +4192,8 @@ model Appointment {
   @@index([status])
   @@index([leadId])
   @@map("tbl_appointments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
 }
 
 

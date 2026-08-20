@@ -155,128 +155,29 @@ const getPrismaAnalyticsRead = () => {
     return _prismaAnalyticsRead;
 };
 exports.getPrismaAnalyticsRead = getPrismaAnalyticsRead;
-// Mapa para asociar cada modelo con su cliente primario
-const modelToClientGetter = {
-    // Auth & RBAC
-    user: exports.getPrismaAuth,
-    userProfile: exports.getPrismaAuth,
-    account: exports.getPrismaAuth,
-    session: exports.getPrismaAuth,
-    verificationToken: exports.getPrismaAuth,
-    passwordResetToken: exports.getPrismaAuth,
-    roleConfig: exports.getPrismaAuth,
-    role: exports.getPrismaAuth,
-    permission: exports.getPrismaAuth,
-    rolePermission: exports.getPrismaAuth,
-    resourcePermission: exports.getPrismaAuth,
-    apiKey: exports.getPrismaAuth,
-    // Core & CRM
-    company: exports.getPrismaCore,
-    companyUser: exports.getPrismaCore,
-    team: exports.getPrismaCore,
-    lead: exports.getPrismaCore,
-    deal: exports.getPrismaCore,
-    invoice: exports.getPrismaCore,
-    expense: exports.getPrismaCore,
-    servicePrice: exports.getPrismaCore,
-    kanbanProject: exports.getPrismaCore,
-    leadAssignmentRule: exports.getPrismaCore,
-    leadAssignmentRoundRobinState: exports.getPrismaCore,
-    affiliateProfile: exports.getPrismaCore,
-    commissionPlan: exports.getPrismaCore,
-    click: exports.getPrismaCore,
-    referral: exports.getPrismaCore,
-    payout: exports.getPrismaCore,
-    inboxMacro: exports.getPrismaCore,
-    emailTemplate: exports.getPrismaCore,
-    outboxEvent: exports.getPrismaCore,
-    // Media, AI & Workflows
-    post: exports.getPrismaMedia,
-    category: exports.getPrismaMedia,
-    tag: exports.getPrismaMedia,
-    project: exports.getPrismaMedia,
-    projectCategory: exports.getPrismaMedia,
-    projectTag: exports.getPrismaMedia,
-    projectView: exports.getPrismaMedia,
-    workflow: exports.getPrismaMedia,
-    campaign: exports.getPrismaMedia,
-    socialPost: exports.getPrismaMedia,
-    aiAgent: exports.getPrismaMedia,
-    agentMemory: exports.getPrismaMedia,
-    comment: exports.getPrismaMedia,
-    commentLike: exports.getPrismaMedia,
-    postLike: exports.getPrismaMedia,
-    postSeries: exports.getPrismaMedia,
-    readingListItem: exports.getPrismaMedia,
-    newsletterSubscription: exports.getPrismaMedia,
-    // Analytics & Logs
-    userActivityLog: exports.getPrismaAnalytics,
-    postView: exports.getPrismaAnalytics,
-    usageLog: exports.getPrismaAnalytics,
-    integrationLog: exports.getPrismaAnalytics,
-    notificationDeliveryLog: exports.getPrismaAnalytics,
-};
-// Mapa para asociar cada modelo con su cliente de réplica de lectura
-const modelToReadClientGetter = {
-    // Auth & RBAC
-    user: exports.getPrismaAuthRead,
-    userProfile: exports.getPrismaAuthRead,
-    account: exports.getPrismaAuthRead,
-    session: exports.getPrismaAuthRead,
-    verificationToken: exports.getPrismaAuthRead,
-    passwordResetToken: exports.getPrismaAuthRead,
-    roleConfig: exports.getPrismaAuthRead,
-    role: exports.getPrismaAuthRead,
-    permission: exports.getPrismaAuthRead,
-    rolePermission: exports.getPrismaAuthRead,
-    resourcePermission: exports.getPrismaAuthRead,
-    apiKey: exports.getPrismaAuthRead,
-    // Core & CRM
-    company: exports.getPrismaCoreRead,
-    companyUser: exports.getPrismaCoreRead,
-    team: exports.getPrismaCoreRead,
-    lead: exports.getPrismaCoreRead,
-    deal: exports.getPrismaCoreRead,
-    invoice: exports.getPrismaCoreRead,
-    expense: exports.getPrismaCoreRead,
-    servicePrice: exports.getPrismaCoreRead,
-    kanbanProject: exports.getPrismaCoreRead,
-    leadAssignmentRule: exports.getPrismaCoreRead,
-    leadAssignmentRoundRobinState: exports.getPrismaCoreRead,
-    affiliateProfile: exports.getPrismaCoreRead,
-    commissionPlan: exports.getPrismaCoreRead,
-    click: exports.getPrismaCoreRead,
-    referral: exports.getPrismaCoreRead,
-    payout: exports.getPrismaCoreRead,
-    inboxMacro: exports.getPrismaCoreRead,
-    emailTemplate: exports.getPrismaCoreRead,
-    outboxEvent: exports.getPrismaCoreRead,
-    // Media, AI & Workflows
-    post: exports.getPrismaMediaRead,
-    category: exports.getPrismaMediaRead,
-    tag: exports.getPrismaMediaRead,
-    project: exports.getPrismaMediaRead,
-    projectCategory: exports.getPrismaMediaRead,
-    projectTag: exports.getPrismaMediaRead,
-    projectView: exports.getPrismaMediaRead,
-    workflow: exports.getPrismaMediaRead,
-    campaign: exports.getPrismaMediaRead,
-    socialPost: exports.getPrismaMediaRead,
-    aiAgent: exports.getPrismaMediaRead,
-    agentMemory: exports.getPrismaMediaRead,
-    comment: exports.getPrismaMediaRead,
-    commentLike: exports.getPrismaMediaRead,
-    postLike: exports.getPrismaMediaRead,
-    postSeries: exports.getPrismaMediaRead,
-    readingListItem: exports.getPrismaMediaRead,
-    newsletterSubscription: exports.getPrismaMediaRead,
-    // Analytics & Logs
-    userActivityLog: exports.getPrismaAnalyticsRead,
-    postView: exports.getPrismaAnalyticsRead,
-    usageLog: exports.getPrismaAnalyticsRead,
-    integrationLog: exports.getPrismaAnalyticsRead,
-    notificationDeliveryLog: exports.getPrismaAnalyticsRead,
-};
+// Dynamic Model Routing Lists based on domain split
+const authModelsList = [
+    "user", "userProfile", "account", "session", "verificationToken", "passwordResetToken",
+    "roleConfig", "role", "permission", "rolePermission", "resourcePermission", "apiKey", "authRefreshToken"
+];
+const analyticsModelsList = [
+    "userActivityLog", "projectView", "postView", "usageLog", "integrationLog", "notificationDeliveryLog",
+    "analyticsEvent", "analyticsSession", "analyticsGoal", "analyticsDailyStats"
+];
+const mediaModelsList = [
+    "post", "category", "tag", "project", "projectCategory", "projectTag",
+    "workflow", "campaign", "socialPost", "aiAgent", "agentMemory", "comment", "commentLike",
+    "postLike", "postSeries", "readingListItem", "newsletterSubscription", "expert", "experiment",
+    "annotation", "agentConversation", "agentMessage", "agentConfig", "agentSpecialization",
+    "agentSkill", "skillTemplate", "agentConfigurationPreset", "agentSkillChain", "agentTeam",
+    "agentTeamMember", "agentTeamRun", "videoEditorProject", "videoAISession", "videoAIMessage",
+    "videoEditHistory", "editProposal", "editConflict", "versionSnapshot", "aiCorrection",
+    "videoComment", "autoCaption", "exportJob", "brandStyle", "assetCatalog", "mlCompanyWeights",
+    "videoPerformanceLog", "aiAuditLog", "mediaAsset", "videoRenderJob", "assetAnnotation",
+    "assetCollection", "assetCollectionItem", "assetVersion"
+];
+const modelToClientGetter = {};
+const modelToReadClientGetter = {};
 // Singleton global para Next.js hot-reload
 const globalForPrisma = globalThis;
 exports.prisma = globalForPrisma.prisma ??
@@ -288,6 +189,26 @@ exports.prisma = globalForPrisma.prisma ??
             if (prop === "$queryRaw" || prop === "$queryRawUnsafe") {
                 const client = exports.primaryDatabaseStorage.getStore() ? (0, exports.getPrismaCore)() : (0, exports.getPrismaCoreRead)();
                 return (...args) => client[prop](...args);
+            }
+            // Interceptar accesos a propiedades de modelos y registrarlos dinámicamente si es necesario
+            if (typeof prop === "string" && prop[0] !== "$" && !modelToClientGetter[prop]) {
+                if (authModelsList.includes(prop)) {
+                    modelToClientGetter[prop] = exports.getPrismaAuth;
+                    modelToReadClientGetter[prop] = exports.getPrismaAuthRead;
+                }
+                else if (analyticsModelsList.includes(prop)) {
+                    modelToClientGetter[prop] = exports.getPrismaAnalytics;
+                    modelToReadClientGetter[prop] = exports.getPrismaAnalyticsRead;
+                }
+                else if (mediaModelsList.includes(prop)) {
+                    modelToClientGetter[prop] = exports.getPrismaMedia;
+                    modelToReadClientGetter[prop] = exports.getPrismaMediaRead;
+                }
+                else {
+                    // Por defecto todo lo demás va a Core (CRM, Finance, Kanban, etc.)
+                    modelToClientGetter[prop] = exports.getPrismaCore;
+                    modelToReadClientGetter[prop] = exports.getPrismaCoreRead;
+                }
             }
             // Redirigir el acceso al modelo correspondiente si está mapeado
             const clientGetter = modelToClientGetter[prop];
