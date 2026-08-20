@@ -33,6 +33,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/agent-team-engine/package.json ./services/agent-team-engine/
 RUN npm ci --omit=dev --workspace=@agency/agent-team-engine --ignore-scripts || npm install --omit=dev --workspace=@agency/agent-team-engine --ignore-scripts
 

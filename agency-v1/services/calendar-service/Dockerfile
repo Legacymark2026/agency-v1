@@ -33,6 +33,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/calendar-service/package.json ./services/calendar-service/
 RUN npm ci --omit=dev --workspace=@agency/calendar-service --ignore-scripts || npm install --omit=dev --workspace=@agency/calendar-service --ignore-scripts
 
