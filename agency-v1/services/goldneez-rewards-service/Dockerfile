@@ -3,12 +3,16 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY packages/service-auth/package.json ./packages/service-auth/
+COPY packages/observability/package.json ./packages/observability/
 COPY services/goldneez-rewards-service/package.json ./services/goldneez-rewards-service/
 
 RUN npm ci || npm install
 
 COPY packages/service-auth/ ./packages/service-auth/
+COPY packages/observability/ ./packages/observability/
 WORKDIR /app/packages/service-auth
+RUN npx tsc --outDir dist
+WORKDIR /app/packages/observability
 RUN npx tsc --outDir dist
 
 WORKDIR /app
@@ -22,6 +26,8 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/packages/service-auth/dist ./packages/service-auth/dist
 COPY --from=builder /app/packages/service-auth/package.json ./packages/service-auth/
+COPY --from=builder /app/packages/observability/dist ./packages/observability/dist
+COPY --from=builder /app/packages/observability/package.json ./packages/observability/
 COPY --from=builder /app/services/goldneez-rewards-service/dist ./dist
 COPY --from=builder /app/services/goldneez-rewards-service/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
