@@ -2,6 +2,7 @@
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -13,6 +14,8 @@ import { startEventConsumers } from "./events/consumer";
 import { startReferralReleaseScheduler, releaseReferrals } from "./cron/release-referrals";
 
 const app = express();
+app.use(metricsMiddleware("affiliate-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4019", 10);
 
 app.use(helmet());

@@ -3,6 +3,7 @@
  * Port: 4005 | Sticky Sessions Required (WebSocket)
  */
 try { require("@agency/observability/register"); } catch { /* optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
@@ -39,6 +40,8 @@ import { sendWebhook } from "./lib/inbox/webhooks";
 import { mergeConversations, findDuplicateConversations } from "./lib/inbox/merge";
 
 const app = express();
+app.use(metricsMiddleware("inbox-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4005", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 

@@ -3,6 +3,7 @@
  * Port: 4006 | Low frequency, high data criticality
  */
 try { require("@agency/observability/register"); } catch { /* optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
@@ -13,6 +14,8 @@ import { prisma } from "@agency/database";
 import { EventBus } from "@agency/events";
 
 const app = express();
+app.use(metricsMiddleware("finance-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4006", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";

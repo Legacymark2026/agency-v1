@@ -4,6 +4,7 @@
  * Port: 4017 (internal)
  */
 
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 // Observability registration — must be first
 try {
@@ -17,6 +18,8 @@ import { EventBus } from "@agency/events";
 import Redis from "ioredis";
 
 const app = express();
+app.use(metricsMiddleware("hr-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4017", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 

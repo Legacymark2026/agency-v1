@@ -15,6 +15,7 @@
  * Port: 4016 (internal)
  */
 
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 // Observability registration — must be first
 try {
@@ -29,6 +30,8 @@ import Redis from "ioredis";
 import { notificationRepository } from "@repositories/notification.repository";
 
 const app = express();
+app.use(metricsMiddleware("notification-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4016", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 

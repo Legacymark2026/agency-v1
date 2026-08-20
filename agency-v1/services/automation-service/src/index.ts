@@ -7,6 +7,7 @@
  * CRITICAL SERVICE — Most CPU-intensive, needs aggressive auto-scaling (3→15 pods)
  */
 
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 try {
   require("@agency/observability/register");
@@ -20,6 +21,8 @@ import { setupGracefulShutdown } from "@agency/service-auth";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const app = express();
+app.use(metricsMiddleware("automation-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4003", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 

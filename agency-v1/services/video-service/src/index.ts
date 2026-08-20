@@ -2,6 +2,7 @@
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { prisma } from '@agency/database';
@@ -25,6 +26,8 @@ import { suggestColorMatch, batchColorMatch, generateColorMatchFFmpegFilter, ext
 import { extractBestFrames, extractFrameAtTimestamp, generateThumbnailGrid, pickBestThumbnail, type BatchThumbnailResult, type ThumbnailResult } from './thumbnails';
 
 const app = express();
+app.use(metricsMiddleware("video-service"));
+app.get("/metrics", metricsEndpoint);
 const server = createServer(app);
 const port = process.env.PORT || 4007;
 

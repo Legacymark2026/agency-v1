@@ -2,6 +2,7 @@
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -11,6 +12,8 @@ import { z } from "zod";
 import crypto from "crypto";
 
 const app = express();
+app.use(metricsMiddleware("goldneez-rewards-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4020", 10);
 const GOLDNEEZ_DB_URL = process.env.GOLDNEEZ_DB_URL || "postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@187.77.195.9:5432/legacymark?schema=goldneez&search_path=goldneez,public";
 

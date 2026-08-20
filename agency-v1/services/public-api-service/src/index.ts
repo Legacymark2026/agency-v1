@@ -2,12 +2,15 @@
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
+app.use(metricsMiddleware("public-api-service"));
+app.get("/metrics", metricsEndpoint);
 const port = process.env.PORT || 4015;
 
 app.use(helmet());

@@ -1,3 +1,4 @@
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 try {
   require("@agency/observability/register");
@@ -10,6 +11,8 @@ import { errorHandler } from "./middlewares/calendar.middleware";
 import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
+app.use(metricsMiddleware("calendar-service"));
+app.get("/metrics", metricsEndpoint);
 const port = process.env.PORT || 4008;
 
 app.use(helmet());

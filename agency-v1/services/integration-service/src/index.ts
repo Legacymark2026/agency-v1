@@ -1,3 +1,4 @@
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from 'express';
 try {
   require("@agency/observability/register");
@@ -8,6 +9,8 @@ import { prisma } from '@agency/database';
 import { setupGracefulShutdown } from "@agency/service-auth";
 
 const app = express();
+app.use(metricsMiddleware("integration-service"));
+app.get("/metrics", metricsEndpoint);
 const port = process.env.PORT || 4010;
 
 app.use(helmet());

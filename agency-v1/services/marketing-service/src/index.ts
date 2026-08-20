@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 try { require("@agency/observability/register"); } catch { /* optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
@@ -22,6 +23,8 @@ function setupGracefulShutdown(server: import('http').Server) {
 }
 
 const app = express();
+app.use(metricsMiddleware("marketing-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4009", 10);
 
 app.use(helmet({ contentSecurityPolicy: false }));

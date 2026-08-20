@@ -12,6 +12,7 @@ try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
 
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -22,6 +23,8 @@ import { runAIAgent, triageAndRouteMessage, disconnectRedis } from "./agent-runn
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const app = express();
+app.use(metricsMiddleware("ai-engine"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4004", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 

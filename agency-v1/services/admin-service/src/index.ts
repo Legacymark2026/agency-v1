@@ -1,3 +1,4 @@
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 // Observability registration — must be first
 try {
@@ -9,6 +10,8 @@ import helmet from "helmet";
 import { prisma } from "@agency/database";
 
 const app = express();
+app.use(metricsMiddleware("admin-service"));
+app.get("/metrics", metricsEndpoint);
 const port = process.env.PORT || 4014;
 
 app.use(helmet());

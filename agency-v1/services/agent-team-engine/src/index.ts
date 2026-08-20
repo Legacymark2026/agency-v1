@@ -2,6 +2,7 @@
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -10,6 +11,8 @@ import { agentTeamRouter } from './routes/agent-team.routes';
 import { errorHandler } from './middlewares/agent-team.middleware';
 
 const app = express();
+app.use(metricsMiddleware("agent-team-engine"));
+app.get("/metrics", metricsEndpoint);
 const port = process.env.PORT || 4012;
 
 app.use(helmet());

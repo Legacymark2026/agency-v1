@@ -5,6 +5,7 @@
  */
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
@@ -14,6 +15,8 @@ import { EventBus } from "@agency/events";
 import Redis from "ioredis";
 
 const app = express();
+app.use(metricsMiddleware("project-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4018", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 

@@ -2,6 +2,7 @@
  * POS Service — Enterprise Point of Sale & Retail Register Microservice
  * Port: 4020 | High concurrency, Offline-First Sync, AI Forecasting & Fraud Detection
  */
+import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 // Observability registration — must be first
 try {
@@ -25,6 +26,8 @@ import { CatalogGRPCServer } from "./grpc-server";
 import { InvoicingGRPCServer } from "./invoicing-grpc-server";
 
 const app = express();
+app.use(metricsMiddleware("pos-service"));
+app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4020", 10);
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
 const INVOICING_GRPC_PORT = parseInt(process.env.INVOICING_GRPC_PORT || "50052", 10);
