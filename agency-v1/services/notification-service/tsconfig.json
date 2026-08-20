@@ -15,10 +15,10 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@services/*": ["src/services/*"],
-      "@utils/*": ["src/utils/*"],
-      "@repositories/*": ["src/repositories/*"]
+      "@/*": ["src/*", "dist/*"],
+      "@services/*": ["src/services/*", "dist/services/*"],
+      "@utils/*": ["src/utils/*", "dist/utils/*"],
+      "@repositories/*": ["src/repositories/*", "dist/repositories/*"]
     }
   },
   "include": ["src/**/*"],

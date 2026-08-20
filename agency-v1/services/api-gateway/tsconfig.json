@@ -8,9 +8,9 @@
     "declaration": true, "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@services/*": ["src/services/*"],
-      "@utils/*": ["src/utils/*"]
+      "@/*": ["src/*", "dist/*"],
+      "@services/*": ["src/services/*", "dist/services/*"],
+      "@utils/*": ["src/utils/*", "dist/utils/*"]
     }
   },
   "include": ["src/**/*"],
