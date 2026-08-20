@@ -182,7 +182,7 @@
             "type": "loki",
             "uid": "Loki"
           },
-          "expr": "{container=~\"api-gateway|auth-service|crm-service\"}",
+          "expr": "{container=~\".*(api-gateway|auth-service|crm-service|admin-service|affiliate-service|agent-team-engine|ai-engine|analytics-service|automation-service|calendar-service|document-service|finance-service|goldneez-rewards-service|hr-service|inbox-service|integration-service|marketing-service|notification-service|pos-service|project-service|public-api-service|video-service).*\"}",
           "legendFormat": "{{container}}"
         }
       ],
