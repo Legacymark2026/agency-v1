@@ -26,6 +26,7 @@ import { analyticsRouter } from "./routes/analytics.routes";
 import { errorHandler } from "./middlewares/analytics.middleware";
 
 app.use("/api/v1", analyticsRouter);
+app.use("/api", analyticsRouter);
 app.use("/", analyticsRouter);
 app.use(errorHandler);
 
