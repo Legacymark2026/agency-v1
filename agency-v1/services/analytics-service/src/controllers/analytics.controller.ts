@@ -28,13 +28,51 @@ export class AnalyticsController {
    */
   static async trackActivity(req: Request, res: Response, next: NextFunction) {
     try {
+      const action = req.body.action || req.body.eventType || req.body.eventName || "TRACK";
+      const details = req.body.details || req.body.metadata || req.body;
       const log = await AnalyticsService.trackActivity({
-        ...req.body,
+        userId: req.body.userId || null,
+        action,
+        details,
         ipAddress: req.ip || (req.headers["x-forwarded-for"] as string) || "127.0.0.1",
         userAgent: req.headers["user-agent"]
       });
 
-      res.status(201).json({ success: true, log });
+      res.status(201).json({ success: true, eventId: log.id, log });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/heartbeat
+   */
+  static async heartbeat(req: Request, res: Response, next: NextFunction) {
+    try {
+      const log = await AnalyticsService.trackActivity({
+        action: "SESSION_HEARTBEAT",
+        details: req.body || {},
+        ipAddress: req.ip || (req.headers["x-forwarded-for"] as string) || "127.0.0.1",
+        userAgent: req.headers["user-agent"]
+      });
+      res.status(200).json({ success: true, eventId: log.id });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/end-session
+   */
+  static async endSession(req: Request, res: Response, next: NextFunction) {
+    try {
+      const log = await AnalyticsService.trackActivity({
+        action: "SESSION_END",
+        details: req.body || {},
+        ipAddress: req.ip || (req.headers["x-forwarded-for"] as string) || "127.0.0.1",
+        userAgent: req.headers["user-agent"]
+      });
+      res.status(200).json({ success: true, eventId: log.id });
     } catch (err) {
       next(err);
     }
