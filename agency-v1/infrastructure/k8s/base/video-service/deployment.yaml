@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-service
+  labels: { app: video-service, tier: backend }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: video-service }
+  template:
+    metadata:
+      labels: { app: video-service }
+    spec:
+      containers:
+        - name: video-service
+          image: docker.io/legacymark2026/video-service:latest
+          ports: [{ containerPort: 4007 }]
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits: { cpu: "1000m", memory: "512Mi" }
+          envFrom: [{ secretRef: { name: service-secrets } }]
+          env:
+            - { name: PORT, value: "4007" }
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: redis-credentials, key: url } } }
+            - { name: POSTGRES_EXTERNAL_URL, valueFrom: { secretKeyRef: { name: db-credentials, key: url } } }
+          livenessProbe:
+            httpGet: { path: /health, port: 4007 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /ready, port: 4007 }
+            initialDelaySeconds: 5
+            periodSeconds: 10

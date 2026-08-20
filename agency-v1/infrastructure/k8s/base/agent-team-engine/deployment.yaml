@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-team-engine
+  labels: { app: agent-team-engine, tier: backend }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: agent-team-engine }
+  template:
+    metadata:
+      labels: { app: agent-team-engine }
+    spec:
+      containers:
+        - name: agent-team-engine
+          image: docker.io/legacymark2026/agent-team-engine:latest
+          ports: [{ containerPort: 4012 }]
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits: { cpu: "1000m", memory: "512Mi" }
+          envFrom: [{ secretRef: { name: service-secrets } }]
+          env:
+            - { name: PORT, value: "4012" }
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: redis-credentials, key: url } } }
+            - { name: POSTGRES_EXTERNAL_URL, valueFrom: { secretKeyRef: { name: db-credentials, key: url } } }
+          livenessProbe:
+            httpGet: { path: /health, port: 4012 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /ready, port: 4012 }
+            initialDelaySeconds: 5
+            periodSeconds: 10

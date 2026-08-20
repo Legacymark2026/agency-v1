@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pos-service
+  labels: { app: pos-service, tier: backend }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: pos-service }
+  template:
+    metadata:
+      labels: { app: pos-service }
+    spec:
+      containers:
+        - name: pos-service
+          image: docker.io/legacymark2026/pos-service:latest
+          ports: [{ containerPort: 4020 }]
+          resources:
+            requests: { cpu: "250m", memory: "256Mi" }
+            limits: { cpu: "1000m", memory: "512Mi" }
+          envFrom: [{ secretRef: { name: service-secrets } }]
+          env:
+            - { name: PORT, value: "4020" }
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: redis-credentials, key: url } } }
+            - { name: POSTGRES_EXTERNAL_URL, valueFrom: { secretKeyRef: { name: db-credentials, key: url } } }
+          livenessProbe:
+            httpGet: { path: /health, port: 4020 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /ready, port: 4020 }
+            initialDelaySeconds: 5
+            periodSeconds: 10

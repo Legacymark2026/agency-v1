@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: affiliate-service
+spec:
+  type: ClusterIP
+  selector: { app: affiliate-service }
+  ports: [{ port: 4019, targetPort: 4019 }]

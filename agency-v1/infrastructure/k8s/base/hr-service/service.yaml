@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hr-service
+spec:
+  type: ClusterIP
+  selector: { app: hr-service }
+  ports: [{ port: 4017, targetPort: 4017 }]

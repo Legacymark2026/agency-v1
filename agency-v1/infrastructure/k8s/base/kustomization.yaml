@@ -34,6 +34,66 @@ resources:
   - finance-service/deployment.yaml
   - finance-service/service.yaml
   - finance-service/hpa.yaml
+  # Admin Service
+  - admin-service/deployment.yaml
+  - admin-service/service.yaml
+  - admin-service/hpa.yaml
+  # Affiliate Service
+  - affiliate-service/deployment.yaml
+  - affiliate-service/service.yaml
+  - affiliate-service/hpa.yaml
+  # Agent Team Engine
+  - agent-team-engine/deployment.yaml
+  - agent-team-engine/service.yaml
+  - agent-team-engine/hpa.yaml
+  # Analytics Service
+  - analytics-service/deployment.yaml
+  - analytics-service/service.yaml
+  - analytics-service/hpa.yaml
+  # Calendar Service
+  - calendar-service/deployment.yaml
+  - calendar-service/service.yaml
+  - calendar-service/hpa.yaml
+  # Document Service
+  - document-service/deployment.yaml
+  - document-service/service.yaml
+  - document-service/hpa.yaml
+  # Goldneez Rewards Service
+  - goldneez-rewards-service/deployment.yaml
+  - goldneez-rewards-service/service.yaml
+  - goldneez-rewards-service/hpa.yaml
+  # HR Service
+  - hr-service/deployment.yaml
+  - hr-service/service.yaml
+  - hr-service/hpa.yaml
+  # Integration Service
+  - integration-service/deployment.yaml
+  - integration-service/service.yaml
+  - integration-service/hpa.yaml
+  # Marketing Service
+  - marketing-service/deployment.yaml
+  - marketing-service/service.yaml
+  - marketing-service/hpa.yaml
+  # Notification Service
+  - notification-service/deployment.yaml
+  - notification-service/service.yaml
+  - notification-service/hpa.yaml
+  # POS Service
+  - pos-service/deployment.yaml
+  - pos-service/service.yaml
+  - pos-service/hpa.yaml
+  # Project Service
+  - project-service/deployment.yaml
+  - project-service/service.yaml
+  - project-service/hpa.yaml
+  # Public API Service
+  - public-api-service/deployment.yaml
+  - public-api-service/service.yaml
+  - public-api-service/hpa.yaml
+  # Video Service
+  - video-service/deployment.yaml
+  - video-service/service.yaml
+  - video-service/hpa.yaml
   # CronJobs
   - cronjobs.yaml
 
