@@ -703,7 +703,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.finance.rule=PathPrefix(`/api/invoices`) || PathPrefix(`/api/payroll`) || PathPrefix(`/api/expenses`) || PathPrefix(`/api/payments`) || PathPrefix(`/api/subscriptions`) || PathPrefix(`/api/webhooks`) || PathPrefix(`/api/cron/subscriptions`)"
+      - "traefik.http.routers.finance.rule=PathPrefix(`/api/invoices`) || PathPrefix(`/api/payroll`) || PathPrefix(`/api/expenses`) || PathPrefix(`/api/payments`) || PathPrefix(`/api/subscriptions`) || PathPrefix(`/api/webhooks/stripe`) || PathPrefix(`/api/webhooks/wompi`) || PathPrefix(`/api/webhooks/paypal`) || PathPrefix(`/api/cron/subscriptions`)"
       - "traefik.http.routers.finance.entrypoints=websecure"
       - "traefik.http.routers.finance.tls=true"
       - "traefik.http.routers.finance.tls.certresolver=le"
