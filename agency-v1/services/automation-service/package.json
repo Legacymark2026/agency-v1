@@ -13,14 +13,16 @@
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
+    "@agency/observability": "file:../../packages/observability",
+    "@agency/service-auth": "file:../../packages/service-auth",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "handlebars": "^4.7.9",
     "helmet": "^8.1.0",
     "ioredis": "^5.6.1",
     "resend": "^4.8.0",
-    "zod": "^3.24.0",
-    "dotenv": "^16.4.7"
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

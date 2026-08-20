@@ -13,6 +13,7 @@
     "@agency/events": "file:../../packages/events",
     "@agency/grpc": "file:../../packages/grpc",
     "@agency/observability": "file:../../packages/observability",
+    "@agency/service-auth": "file:../../packages/service-auth",
     "@grpc/grpc-js": "^1.12.6",
     "@grpc/proto-loader": "^0.7.13",
     "@opentelemetry/api": "^1.9.0",

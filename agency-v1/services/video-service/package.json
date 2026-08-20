@@ -10,6 +10,8 @@
   "dependencies": {
     "@agency/database": "file:../../packages/database",
     "@agency/events": "file:../../packages/events",
+    "@agency/observability": "file:../../packages/observability",
+    "@agency/service-auth": "file:../../packages/service-auth",
     "bullmq": "^5.77.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
