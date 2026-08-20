@@ -1090,7 +1090,6 @@ services:
       - ./infrastructure/monitoring/loki-config.yml:/etc/loki/local-config.yaml
       - lokidata:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
-    profiles: ["monitoring"]
     networks:
       - backend-net
     deploy:
@@ -1109,7 +1108,6 @@ services:
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       loki: { condition: service_started }
-    profiles: ["monitoring"]
     networks:
       - backend-net
     deploy:
@@ -1130,7 +1128,6 @@ services:
       - grafanadata:/var/lib/grafana
     depends_on:
       loki: { condition: service_started }
-    profiles: ["monitoring"]
     networks:
       - backend-net
     deploy:
@@ -1147,7 +1144,6 @@ services:
       - "9090:9090"
     volumes:
       - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-    profiles: ["monitoring"]
     networks:
       - backend-net
     deploy:
@@ -1166,7 +1162,6 @@ services:
       - "16686:16686"
       - "4317:4317"
       - "4318:4318"
-    profiles: ["monitoring"]
     networks:
       - backend-net
     deploy:
