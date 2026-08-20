@@ -19,7 +19,7 @@ import { notificationRepository } from "@repositories/notification.repository";
 
 export function startNotificationWorker() {
   const worker = new Worker<NotificationJobData>(
-    "notification:dispatch",
+    "notification-dispatch",
     async (job: Job<NotificationJobData>) => {
       return traceSpan("notification.worker_process", async (span) => {
         const { companyId, userIds, title, message, type, channels, data, id } = job.data;

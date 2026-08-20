@@ -33,7 +33,7 @@ export interface NotificationJobData {
 
 // ── Main Dispatch Queue ──────────────────────────────────────────────────────
 
-export const dispatchQueue = new Queue<NotificationJobData>("notification:dispatch", {
+export const dispatchQueue = new Queue<NotificationJobData>("notification-dispatch", {
   connection: redisConnection as any,
   defaultJobOptions: {
     attempts: 5,
@@ -49,19 +49,19 @@ export const dispatchQueue = new Queue<NotificationJobData>("notification:dispat
 // ── Per-Channel Rate-Limited Queues ──────────────────────────────────────────
 
 // Email Queue: 100 emails / sec (Resend API Rate Compliance)
-export const emailQueue = new Queue<NotificationJobData>("notification:email", {
+export const emailQueue = new Queue<NotificationJobData>("notification-email", {
   connection: redisConnection as any,
   defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
 
 // SMS Queue: 10 SMS / sec (Twilio API Rate Compliance)
-export const smsQueue = new Queue<NotificationJobData>("notification:sms", {
+export const smsQueue = new Queue<NotificationJobData>("notification-sms", {
   connection: redisConnection as any,
   defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
 
 // Push Queue: 500 push / sec (WebPush/FCM Rate Compliance)
-export const pushQueue = new Queue<NotificationJobData>("notification:push", {
+export const pushQueue = new Queue<NotificationJobData>("notification-push", {
   connection: redisConnection as any,
   defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
@@ -69,7 +69,7 @@ export const pushQueue = new Queue<NotificationJobData>("notification:push", {
 // ── Dead Letter Queue (DLQ) ──────────────────────────────────────────────────
 
 export const dlqQueue = new Queue<NotificationJobData & { errorReason?: string; failedAt?: string }>(
-  "notification:dlq",
+  "notification-dlq",
   {
     connection: redisConnection as any,
     defaultJobOptions: {
