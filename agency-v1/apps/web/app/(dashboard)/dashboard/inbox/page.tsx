@@ -1,134 +1,119 @@
-"use client";
+import { redirect } from 'next/navigation';
+import { getConversations, getConversationForLead } from "@/actions/inbox";
+import { InboxLayout } from "@/components/inbox/inbox-layout";
+import { ConversationList } from "@/components/inbox/conversation-list";
+import { MessageSquare, Info } from "lucide-react";
+import { auth } from "@/lib/auth";
 
-import React, { useState } from "react";
+import { SimulationPanel } from "@/components/inbox/simulation-panel";
+import { MetaSyncButton } from "@/components/inbox/meta-sync-button";
 
-export default function InboxDashboardPage() {
-  const [activeChannel, setActiveChannel] = useState<"ALL" | "WHATSAPP" | "EMAIL" | "WEBCHAT">("ALL");
-  const [selectedThread, setSelectedThread] = useState<any>({
-    id: "th_01",
-    client: "Carlos Mendoza (Agencia Bogotá)",
-    channel: "WHATSAPP",
-    sentiment: "POSITIVE",
-    lastMessage: "Hola, quisiera solicitar la factura de la renovación de la licencia Pro.",
-    time: "10:14 AM",
-  });
-  const [replyText, setReplyText] = useState("");
-  const [aiSuggestion, setAiSuggestion] = useState("");
+export default async function InboxPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+    const resolvedSearchParams = await searchParams;
 
-  const handleGenerateAiReply = () => {
-    setAiSuggestion(
-      "Hola Carlos, con gusto. Tu factura electrónica fue enviada a tu correo registrado y está disponible en la sección /dashboard/invoicing."
+    // Direct redirection when opening from CRM or notifications (e.g. ?conversation=123 or ?leadId=456)
+    const targetConvoId = (resolvedSearchParams?.conversation || resolvedSearchParams?.conversationId) as string;
+    if (targetConvoId) {
+        redirect(`/dashboard/inbox/${targetConvoId}`);
+    }
+
+    const targetLeadId = (resolvedSearchParams?.leadId || resolvedSearchParams?.lead) as string;
+    if (targetLeadId) {
+        const convoId = await getConversationForLead(targetLeadId);
+        if (convoId) {
+            redirect(`/dashboard/inbox/${convoId}`);
+        }
+    }
+
+    const statusFilter = resolvedSearchParams?.status as string | undefined;
+
+    // Fetch conversations with resilient DB fallback to prevent 504 Gateway Timeouts
+    const { prisma } = await import("@/lib/prisma");
+    let conversations: any[] = [];
+    try {
+        const res = await getConversations({
+            limit: 50,
+            ...(statusFilter && { status: statusFilter }),
+        });
+        if (res?.data && res.data.length > 0) {
+            conversations = res.data;
+        }
+    } catch {}
+
+    if (conversations.length === 0) {
+        try {
+            conversations = await prisma.conversation.findMany({
+                take: 50,
+                orderBy: { updatedAt: 'desc' },
+                include: { lead: true }
+            });
+        } catch {}
+    }
+
+
+
+
+    const session = await auth();
+    const currentUser = session?.user;
+
+    const metrics = {
+        unassigned: conversations?.filter((c: any) => !c.assignedTo).length || 0,
+        mine: conversations?.filter((c: any) => c.assignedTo === currentUser?.id).length || 0,
+        pending: conversations?.filter((c: any) => c.status === 'OPEN').length || 0,
+        resolved: conversations?.filter((c: any) => c.status === 'CLOSED').length || 0,
+        vip: conversations?.filter((c: any) => (c.tags as string[])?.includes('Soporte VIP')).length || 0,
+        sales: conversations?.filter((c: any) => (c.tags as string[])?.includes('Ventas')).length || 0,
+        questions: conversations?.filter((c: any) => (c.tags as string[])?.includes('Dudas')).length || 0,
+    };
+
+    return (
+        <div suppressHydrationWarning={true} className="h-full w-full">
+            <InboxLayout
+                currentUser={currentUser}
+            metrics={metrics}
+            conversationList={
+                <ConversationList conversations={conversations as any || []} currentUser={currentUser} />
+            }
+            leadProfile={
+                <div className="flex flex-col h-full items-center justify-center p-6 bg-[#080c14] border-l border-slate-800 text-slate-500 text-sm">
+                    <div className="w-12 h-12 bg-slate-900/80 rounded-xl flex items-center justify-center mb-3 border border-slate-800/50">
+                        <Info size={20} className="text-slate-600" />
+                    </div>
+                    <p className="text-center font-mono text-xs tracking-wider uppercase text-slate-600">Perfil del Cliente</p>
+                    <p className="text-center mt-2 max-w-[200px]">Seleccione un chat activo para visualizar el historial y perfil del lead.</p>
+                </div>
+            }
+        >
+            <div className="h-full flex flex-col items-center justify-center bg-[#0b0f19] relative overflow-hidden">
+                {/* Subtle Grid Background Pattern */}
+                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02] pointer-events-none mix-blend-screen z-0"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[radial-gradient(ellipse_at_center,rgba(13,148,136,0.05)_0%,transparent_70%)] pointer-events-none z-0"></div>
+
+                <div className="z-10 flex flex-col items-center">
+                    <div className="w-20 h-20 bg-slate-900/50 rounded-2xl border border-slate-800/80 shadow-[0_0_40px_rgba(13,148,136,0.05)] flex items-center justify-center mb-6 backdrop-blur-sm">
+                        <MessageSquare size={32} className="text-teal-600/70" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-200 tracking-tight">Centro de Comunicaciones</h3>
+                    <p className="text-sm max-w-sm text-center mt-2 mb-10 text-slate-500">
+                        Selecciona una conversación del panel lateral para iniciar el seguimiento o gestionar incidencias.
+                    </p>
+
+                    {/* Developer Tools / Quick Actions */}
+                    <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+                        <div className="w-full bg-slate-900/40 border border-slate-800/60 rounded-xl p-5 backdrop-blur-sm transition-all hover:border-slate-700/80">
+                            <p className="text-[10px] uppercase tracking-[0.15em] font-mono font-bold text-teal-600/80 mb-4 text-center">Entorno de Pruebas</p>
+                            <SimulationPanel />
+                        </div>
+
+                        {/* Meta Sync Button */}
+                        <div className="w-full bg-slate-900/40 border border-slate-800/60 rounded-xl p-5 backdrop-blur-sm transition-all hover:border-slate-700/80">
+                            <p className="text-[10px] uppercase tracking-[0.15em] font-mono font-bold text-[#1877f2]/80 mb-4 text-center">Sincronización Meta</p>
+                            <MetaSyncButton />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </InboxLayout>
+        </div>
     );
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
-      {/* Header */}
-      <div className="border-b border-slate-800 pb-6">
-        <h1 className="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">
-          Bandeja de Entrada Multicanal Unificada (Inbox AI)
-        </h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Centraliza conversaciones de WhatsApp, Correo, Chat Web e Instagram con sugerencias de respuesta IA.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Thread List */}
-        <div className="bg-slate-900/80 border border-slate-800 backdrop-blur-xl p-6 rounded-2xl shadow-xl space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h2 className="text-sm font-bold text-slate-200">Conversaciones Activas</h2>
-            <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-full">
-              4 Nuevas
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {[
-              { id: "th_01", client: "Carlos Mendoza", channel: "WHATSAPP", time: "10:14 AM", text: "Solicitar factura de renovación..." },
-              { id: "th_02", client: "Inversiones Medellín", channel: "EMAIL", time: "09:45 AM", text: "Propuesta comercial para 50 agentes..." },
-              { id: "th_03", client: "Laura Gómez", channel: "WEBCHAT", time: "Ayer", text: "¿Tienen integración con Wompi?" },
-            ].map((t) => (
-              <div
-                key={t.id}
-                onClick={() => setSelectedThread(t)}
-                className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                  selectedThread.id === t.id
-                    ? "bg-slate-800/90 border-cyan-500/50"
-                    : "bg-slate-950/60 border-slate-800 hover:bg-slate-950"
-                }`}
-              >
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-200">{t.client}</span>
-                  <span className="text-[10px] text-slate-500">{t.time}</span>
-                </div>
-                <div className="text-xs text-slate-400 mt-1 truncate">{t.text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Conversation View & AI Assistant */}
-        <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 backdrop-blur-xl p-6 rounded-2xl shadow-xl space-y-6 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-slate-100">{selectedThread.client}</h3>
-                <span className="text-xs text-cyan-400 font-semibold">{selectedThread.channel}</span>
-              </div>
-              <button
-                onClick={handleGenerateAiReply}
-                className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-600 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
-              >
-                ✨ Sugerir Respuesta con IA
-              </button>
-            </div>
-
-            {/* Chat Bubble */}
-            <div className="py-6 space-y-4">
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl max-w-md text-xs text-slate-200">
-                {selectedThread.lastMessage}
-              </div>
-
-              {aiSuggestion && (
-                <div className="p-4 bg-cyan-950/40 border border-cyan-500/40 rounded-2xl max-w-md text-xs text-cyan-200 space-y-2">
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">Sugerencia IA Smart Reply:</span>
-                  <p>{aiSuggestion}</p>
-                  <button
-                    onClick={() => {
-                      setReplyText(aiSuggestion);
-                      setAiSuggestion("");
-                    }}
-                    className="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-[10px] rounded-lg transition-all"
-                  >
-                    Usar esta respuesta
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Reply Box */}
-          <div className="space-y-3">
-            <textarea
-              rows={3}
-              placeholder="Escribe tu mensaje o usa la sugerencia de la IA..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
-            />
-            <button
-              onClick={() => {
-                alert("Mensaje enviado exitosamente.");
-                setReplyText("");
-              }}
-              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
-            >
-              🚀 Enviar Mensaje Multicanal
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
