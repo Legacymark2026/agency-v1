@@ -197,7 +197,7 @@ async function run() {
     const connectWithFallback = async (useSsl: boolean) => {
       const c = new Client({ 
         connectionString: dbUrlObj.toString(),
-        ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+        ssl: useSsl ? { rejectUnauthorized: false } : false,
         connectionTimeoutMillis: 3000,
       });
       await c.connect();

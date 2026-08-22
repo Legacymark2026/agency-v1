@@ -28,7 +28,7 @@ function test(name: string, fn: () => void | Promise<void>) {
           passed++;
         })
         .catch((err) => {
-          console.error(`  ❌ ${name}: ${err instanceof Error ? err.message : err}`);
+          console.error(`  ❌ ${name}:`, err instanceof Error ? err.stack : err);
           failed++;
         });
     } else {
@@ -36,7 +36,7 @@ function test(name: string, fn: () => void | Promise<void>) {
       passed++;
     }
   } catch (err) {
-    console.error(`  ❌ ${name}: ${err instanceof Error ? err.message : err}`);
+    console.error(`  ❌ ${name}:`, err instanceof Error ? err.stack : err);
     failed++;
   }
 }
@@ -98,24 +98,25 @@ async function run() {
     const connectWithFallback = async (useSsl: boolean) => {
       const c = new Client({ 
         connectionString: dbUrlObj.toString(),
-        ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+        ssl: useSsl ? { rejectUnauthorized: false } : false,
         connectionTimeoutMillis: 3000,
       });
       await c.connect();
       return c;
     };
 
-    let client: Client;
+    let client: Client | null = null;
     try {
-      client = await connectWithFallback(hasSsl || isPgbouncer);
-    } catch (sslErr: any) {
-      if (sslErr.message && sslErr.message.includes("does not support SSL")) {
-        client = await connectWithFallback(false);
-      } else {
-        throw sslErr;
+      try {
+        client = await connectWithFallback(hasSsl || isPgbouncer);
+      } catch (sslErr: any) {
+        if (sslErr.message && sslErr.message.includes("does not support SSL")) {
+          client = await connectWithFallback(false);
+        } else {
+          throw sslErr;
+        }
       }
-    }
-    try {
+
       const dbStart = Date.now();
       
       // Execute 20 read queries in sequence
@@ -130,7 +131,7 @@ async function run() {
       
       await client.end();
     } catch (err: any) {
-      await client.end().catch(() => {});
+      if (client) await client.end().catch(() => {});
       console.warn(`     ⚠️  Read replica database not reachable: ${err.message || err}. Skipping live DB performance checks.`);
     }
   });
