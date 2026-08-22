@@ -26,7 +26,9 @@ exports.analyticsRouter.post("/analytics/track", (0, analytics_middleware_1.vali
 // Heartbeat
 exports.analyticsRouter.post("/heartbeat", analytics_controller_1.AnalyticsController.heartbeat);
 exports.analyticsRouter.post("/analytics/heartbeat", analytics_controller_1.AnalyticsController.heartbeat);
-// End Session
 exports.analyticsRouter.post("/end-session", analytics_controller_1.AnalyticsController.endSession);
 exports.analyticsRouter.post("/analytics/end-session", analytics_controller_1.AnalyticsController.endSession);
+const analytics_ext_controller_js_1 = require("../controllers/analytics-ext.controller.js");
+exports.analyticsRouter.get("/analytics/predict-sales", analytics_ext_controller_js_1.AnalyticsExtController.predictSales);
+exports.analyticsRouter.get("/analytics/report/pdf", analytics_ext_controller_js_1.AnalyticsExtController.getPdfReport);
 //# sourceMappingURL=analytics.routes.js.map

@@ -8,4 +8,12 @@ export declare class VideoController {
      * POST /api/video/render
      */
     static createRenderJob(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
+     * POST /api/video/optimize
+     */
+    static optimizeVideo(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
+     * POST /api/video/watermark
+     */
+    static applyWatermark(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 }

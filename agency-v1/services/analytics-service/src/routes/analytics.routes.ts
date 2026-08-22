@@ -30,6 +30,9 @@ analyticsRouter.post("/analytics/track", validateRequest(trackActivitySchema), A
 analyticsRouter.post("/heartbeat", AnalyticsController.heartbeat);
 analyticsRouter.post("/analytics/heartbeat", AnalyticsController.heartbeat);
 
-// End Session
 analyticsRouter.post("/end-session", AnalyticsController.endSession);
 analyticsRouter.post("/analytics/end-session", AnalyticsController.endSession);
+
+import { AnalyticsExtController } from "../controllers/analytics-ext.controller.js";
+analyticsRouter.get("/analytics/predict-sales", AnalyticsExtController.predictSales);
+analyticsRouter.get("/analytics/report/pdf", AnalyticsExtController.getPdfReport);

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { HrController } from "../controllers/hr.controller";
-import { validateRequest } from "../middlewares/hr.middleware";
+import { HrController } from "../controllers/hr.controller.js";
+import { validateRequest } from "../middlewares/hr.middleware.js";
 import { z } from "zod";
 
 const createEmployeeSchema = z.object({
@@ -16,3 +16,6 @@ export const hrRouter = Router();
 
 hrRouter.get("/employees", HrController.getEmployees);
 hrRouter.post("/employees", validateRequest(createEmployeeSchema), HrController.createEmployee);
+
+import { PayrollController } from "../controllers/payroll.controller.js";
+hrRouter.post("/payroll/calculate", PayrollController.calculatePayroll);

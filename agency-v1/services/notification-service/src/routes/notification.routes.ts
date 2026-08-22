@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { NotificationController } from "../controllers/notification.controller";
-import { validateRequest } from "../middlewares/notification.middleware";
+import { NotificationController } from "../controllers/notification.controller.js";
+import { validateRequest } from "../middlewares/notification.middleware.js";
 import { z } from "zod";
 
 const dispatchSchema = z.object({
@@ -14,3 +14,6 @@ export const notificationRouter = Router();
 
 notificationRouter.get("/notifications", NotificationController.getUserNotifications);
 notificationRouter.post("/notifications/dispatch", validateRequest(dispatchSchema), NotificationController.dispatchNotification);
+
+import { NotificationExtController } from "../controllers/notification-ext.controller.js";
+notificationRouter.post("/notifications/enqueue", NotificationExtController.enqueue);

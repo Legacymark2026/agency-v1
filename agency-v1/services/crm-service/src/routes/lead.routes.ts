@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { LeadController } from "../controllers/lead.controller";
-import { validateRequest } from "../middlewares/crm.middleware";
+import { LeadController } from "../controllers/lead.controller.js";
+import { validateRequest } from "../middlewares/crm.middleware.js";
 
 export const leadRouter = Router();
 
@@ -19,3 +19,6 @@ const createLeadSchema = z.object({
 leadRouter.get("/leads", LeadController.getLeads);
 leadRouter.get("/leads/:id", LeadController.getLeadById);
 leadRouter.post("/leads", validateRequest(createLeadSchema, "body"), LeadController.createLead);
+
+import { PreferencesController } from "../controllers/preferences.controller.js";
+leadRouter.post("/leads/unsubscribe", PreferencesController.unsubscribe);
