@@ -482,3 +482,6 @@ export class EventBus {
 }
 
 export default EventBus;
+
+export * from "./resilient-cache-client";
+
