@@ -18,4 +18,6 @@ inboxRouter.get("/conversations/:id/messages", InboxController.getMessages);
 inboxRouter.post("/conversations/:id/messages", InboxController.sendMessage);
 inboxRouter.patch("/conversations/:id", InboxController.updateConversation);
 inboxRouter.post("/messages", validateRequest(sendMessageSchema), InboxController.sendMessage);
+inboxRouter.get("/conversations/:id/analyze-sentiment", InboxController.analyzeSentiment);
+inboxRouter.get("/conversations/:id/suggested-reply", InboxController.getSuggestedReply);
 

@@ -58,4 +58,41 @@ export class BookingController {
       return res.status(400).json({ success: false, error: err.message });
     }
   }
+
+  static async getAvailableSlotsTz(req: Request, res: Response) {
+    try {
+      const companyId = (req.query.companyId as string) || "default-company";
+      const bookingTypeId = req.query.bookingTypeId as string;
+      const date = (req.query.date as string) || new Date().toISOString().split("T")[0];
+      const timezone = (req.query.timezone as string) || "UTC";
+
+      if (!bookingTypeId) {
+        return res.status(400).json({ success: false, error: "bookingTypeId es requerido" });
+      }
+
+      const slots = await BookingService.getCrossTimezoneSlots(companyId, bookingTypeId, date, timezone);
+      return res.json({ success: true, data: slots });
+    } catch (err: any) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+  }
+
+  static async processNotes(req: Request, res: Response) {
+    try {
+      const appointmentId = String(req.params.appointmentId || "");
+      const companyId = String(req.body.companyId || "default-company");
+      const notes = String(req.body.notes || "");
+
+      if (!notes) {
+        return res.status(400).json({ success: false, error: "notes es requerido" });
+      }
+
+      const { NotesProcessorService } = await import("../services/notes-processor.service");
+      const tasks = await NotesProcessorService.processMeetingNotes(appointmentId, companyId, notes);
+
+      return res.json({ success: true, appointmentId, tasksCount: tasks.length, tasks });
+    } catch (err: any) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+  }
 }

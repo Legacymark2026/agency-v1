@@ -18,4 +18,6 @@ exports.inboxRouter.get("/conversations/:id/messages", inbox_controller_1.InboxC
 exports.inboxRouter.post("/conversations/:id/messages", inbox_controller_1.InboxController.sendMessage);
 exports.inboxRouter.patch("/conversations/:id", inbox_controller_1.InboxController.updateConversation);
 exports.inboxRouter.post("/messages", (0, inbox_middleware_1.validateRequest)(sendMessageSchema), inbox_controller_1.InboxController.sendMessage);
+exports.inboxRouter.get("/conversations/:id/analyze-sentiment", inbox_controller_1.InboxController.analyzeSentiment);
+exports.inboxRouter.get("/conversations/:id/suggested-reply", inbox_controller_1.InboxController.getSuggestedReply);
 //# sourceMappingURL=inbox.routes.js.map

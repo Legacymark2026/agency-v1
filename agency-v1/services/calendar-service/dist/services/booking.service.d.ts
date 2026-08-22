@@ -46,4 +46,5 @@ export declare class BookingService {
      * List all appointments for a company
      */
     static getAppointments(companyId: string): Promise<any>;
+    static getCrossTimezoneSlots(companyId: string, bookingTypeId: string, dateStr: string, clientTimezone: string): Promise<any>;
 }

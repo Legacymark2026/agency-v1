@@ -20,4 +20,12 @@ export declare class InboxController {
      * POST /api/messages
      */
     static sendMessage(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * GET /api/conversations/:id/analyze-sentiment
+     */
+    static analyzeSentiment(req: Request, res: Response, next: NextFunction): Promise<void>;
+    /**
+     * GET /api/conversations/:id/suggested-reply
+     */
+    static getSuggestedReply(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

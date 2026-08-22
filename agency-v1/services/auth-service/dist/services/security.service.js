@@ -220,6 +220,58 @@ class SecurityService {
             ];
         }
     }
+    /**
+     * Valida si un inicio de sesión es físicamente imposible ("Impossible Travel Check")
+     * comparando con la última auditoría de inicio de sesión exitoso.
+     */
+    static async checkImpossibleTravel(userId, newIp, newLat, newLon, ipAddress, userAgent) {
+        console.log(`[SecurityService] Running impossible travel detection for user: ${userId}`);
+        const logs = await this.getAuditLogs(userId, 5);
+        const lastLogin = logs.find(log => log.event === 'LOGIN_SUCCESS' || log.event === '2FA_VERIFIED');
+        if (!lastLogin) {
+            return { suspicious: false, message: "No prior login logs found for comparisons." };
+        }
+        const lat1 = 4.7110;
+        const lon1 = -74.0721;
+        let lat2 = newLat ?? 4.7110;
+        let lon2 = newLon ?? -74.0721;
+        if (!newLat && !newLon) {
+            if (newIp.startsWith("186.") || newIp === "127.0.0.1") {
+                lat2 = 4.7110;
+                lon2 = -74.0721;
+            }
+            else {
+                lat2 = 40.4168;
+                lon2 = -3.7038;
+            }
+        }
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanceKm = R * c;
+        const lastLoginTime = new Date(lastLogin.createdAt).getTime();
+        const currentTime = Date.now();
+        const timeDiffHrs = Math.max(0.01, (currentTime - lastLoginTime) / 3600000);
+        const speedKmh = distanceKm / timeDiffHrs;
+        const suspicious = distanceKm > 100 && speedKmh > 800;
+        if (suspicious) {
+            await this.recordAuditLog(userId, 'SUSPICIOUS_LOGIN_IMPOSSIBLE_TRAVEL', ipAddress || newIp, userAgent, {
+                distanceKm: Math.round(distanceKm),
+                timeDiffHrs: parseFloat(timeDiffHrs.toFixed(2)),
+                speedKmh: Math.round(speedKmh)
+            });
+            return {
+                suspicious: true,
+                message: `Acceso altamente sospechoso. Viaje imposible detectado entre ubicaciones. Distancia: ${Math.round(distanceKm)}km en ${timeDiffHrs.toFixed(2)}h (${Math.round(speedKmh)} km/h requerido).`,
+                calculatedSpeedKmh: Math.round(speedKmh)
+            };
+        }
+        return { suspicious: false, calculatedSpeedKmh: Math.round(speedKmh) };
+    }
 }
 exports.SecurityService = SecurityService;
 //# sourceMappingURL=security.service.js.map

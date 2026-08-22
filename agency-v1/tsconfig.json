@@ -5,7 +5,16 @@
     "paths": {
       "@/*": ["./apps/web/*"],
       "@/modules/*": ["./apps/web/modules/*"],
-      "@/shared/*": ["./apps/web/shared/*"]
+      "@/shared/*": ["./apps/web/shared/*"],
+      "@utilities/*": ["./services/auth-service/src/utilities/*"],
+      "@repositories/*": ["./services/auth-service/src/repositories/*"],
+      "@config/*": ["./services/auth-service/src/config/*"],
+      "@controllers/*": ["./services/auth-service/src/controllers/*"],
+      "@routes/*": ["./services/auth-service/src/routes/*"],
+      "@models/*": ["./services/auth-service/src/models/*"],
+      "@services/*": ["./services/auth-service/src/services/*"],
+      "@types/*": ["./services/auth-service/src/types/*"],
+      "@validators/*": ["./services/auth-service/src/validators/*"]
     }
   },
   "files": [],

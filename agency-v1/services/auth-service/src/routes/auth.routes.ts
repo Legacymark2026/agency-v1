@@ -80,5 +80,14 @@ export function createAuthRouter(privateKey: string | null): Router {
     } catch (err) { next(err); }
   });
 
+  router.post("/auth/check-impossible-travel", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = getStr(req.body.userId || req.headers['x-user-id']);
+      const { newIp, lat, lon } = req.body;
+      const result = await SecurityService.checkImpossibleTravel(userId, getStr(newIp), lat, lon, req.ip, getStr(req.headers['user-agent']));
+      res.json({ success: true, data: result });
+    } catch (err) { next(err); }
+  });
+
   return router;
 }

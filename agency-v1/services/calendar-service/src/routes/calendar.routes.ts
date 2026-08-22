@@ -23,3 +23,5 @@ calendarRouter.post("/booking/types", BookingController.createBookingType);
 calendarRouter.get("/booking/slots", BookingController.getAvailableSlots);
 calendarRouter.post("/booking/appointments", BookingController.createAppointment);
 calendarRouter.get("/booking/appointments", BookingController.getAppointments);
+calendarRouter.get("/booking/slots-tz", BookingController.getAvailableSlotsTz);
+calendarRouter.post("/appointments/:appointmentId/process-notes", BookingController.processNotes);

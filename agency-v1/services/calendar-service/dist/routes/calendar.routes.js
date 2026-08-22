@@ -22,4 +22,6 @@ exports.calendarRouter.post("/booking/types", booking_controller_1.BookingContro
 exports.calendarRouter.get("/booking/slots", booking_controller_1.BookingController.getAvailableSlots);
 exports.calendarRouter.post("/booking/appointments", booking_controller_1.BookingController.createAppointment);
 exports.calendarRouter.get("/booking/appointments", booking_controller_1.BookingController.getAppointments);
+exports.calendarRouter.get("/booking/slots-tz", booking_controller_1.BookingController.getAvailableSlotsTz);
+exports.calendarRouter.post("/appointments/:appointmentId/process-notes", booking_controller_1.BookingController.processNotes);
 //# sourceMappingURL=calendar.routes.js.map

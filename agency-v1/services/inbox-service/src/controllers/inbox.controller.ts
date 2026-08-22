@@ -87,5 +87,37 @@ export class InboxController {
       next(err);
     }
   }
+
+  /**
+   * GET /api/conversations/:id/analyze-sentiment
+   */
+  static async analyzeSentiment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const conversationId = String(req.params.id);
+      const messages = await InboxService.getMessages(conversationId);
+      const lastMsg = messages[messages.length - 1];
+      const textToAnalyze = lastMsg ? lastMsg.content : "No messages found";
+      
+      const { InboxAnalysisService } = await import("../services/inbox-analysis.service");
+      const analysis = await InboxAnalysisService.analyzeSentiment(textToAnalyze);
+      res.json({ success: true, conversationId, lastMessage: textToAnalyze, ...analysis });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /api/conversations/:id/suggested-reply
+   */
+  static async getSuggestedReply(req: Request, res: Response, next: NextFunction) {
+    try {
+      const conversationId = String(req.params.id);
+      const { InboxAnalysisService } = await import("../services/inbox-analysis.service");
+      const suggestion = await InboxAnalysisService.generateSuggestedReply(conversationId);
+      res.json({ success: true, conversationId, suggestion });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 

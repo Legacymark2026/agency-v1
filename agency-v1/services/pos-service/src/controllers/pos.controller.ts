@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { PosService } from "../services/pos.service";
+import { PosService } from "../services/pos.service.js";
+import { OfflineSyncService } from "../services/offline-sync.service.js";
 
 export class PosController {
   /**
@@ -38,6 +39,38 @@ export class PosController {
       });
 
       res.status(201).json({ success: true, session });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v1/pos/sync-offline
+   */
+  static async syncOffline(req: Request, res: Response, next: NextFunction) {
+    try {
+      const companyId = String(req.headers["x-company-id"] || req.query.companyId || req.body.companyId || "company-default");
+      const { transactions } = req.body;
+      if (!transactions || !Array.isArray(transactions)) {
+        return res.status(400).json({ success: false, error: "transactions array is required" });
+      }
+
+      const result = await OfflineSyncService.syncOfflineTransactions(companyId, transactions);
+
+      res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * GET /api/v1/pos/tickets/:id/qr
+   */
+  static async getTicketQr(req: Request, res: Response, next: NextFunction) {
+    try {
+      const orderId = String(req.params.id);
+      const qrDataUrl = await PosService.renderTicketQr(orderId);
+      res.json({ success: true, orderId, qrDataUrl });
     } catch (err) {
       next(err);
     }

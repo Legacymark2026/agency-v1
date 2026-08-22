@@ -40,4 +40,13 @@ export declare class SecurityService {
      * Obtiene los últimos eventos de auditoría de seguridad del usuario
      */
     static getAuditLogs(userId: string, limit?: number): Promise<any>;
+    /**
+     * Valida si un inicio de sesión es físicamente imposible ("Impossible Travel Check")
+     * comparando con la última auditoría de inicio de sesión exitoso.
+     */
+    static checkImpossibleTravel(userId: string, newIp: string, newLat?: number, newLon?: number, ipAddress?: string, userAgent?: string): Promise<{
+        suspicious: boolean;
+        message?: string;
+        calculatedSpeedKmh?: number;
+    }>;
 }

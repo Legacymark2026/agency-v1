@@ -227,6 +227,48 @@ class BookingService {
             orderBy: { startTime: "asc" },
         });
     }
+    static async getCrossTimezoneSlots(companyId, bookingTypeId, dateStr, clientTimezone) {
+        console.log(`[BookingService] Resolving cross-timezone slots for ${clientTimezone} on date ${dateStr}`);
+        let baseSlots;
+        try {
+            baseSlots = await this.getAvailableSlots(companyId, bookingTypeId, dateStr);
+        }
+        catch {
+            const dateStart = new Date(dateStr);
+            dateStart.setUTCHours(9, 0, 0, 0);
+            const dateEnd = new Date(dateStr);
+            dateEnd.setUTCHours(9, 30, 0, 0);
+            baseSlots = [{
+                    startTime: dateStart.toISOString(),
+                    endTime: dateEnd.toISOString(),
+                    available: true
+                }];
+        }
+        return baseSlots.map(slot => {
+            try {
+                const utcStart = new Date(slot.startTime);
+                const utcEnd = new Date(slot.endTime);
+                const options = {
+                    timeZone: clientTimezone,
+                    year: "numeric", month: "2-digit", day: "2-digit",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit",
+                    hour12: false
+                };
+                const formatter = new Intl.DateTimeFormat("en-US", options);
+                const formattedStart = formatter.format(utcStart);
+                const formattedEnd = formatter.format(utcEnd);
+                return {
+                    ...slot,
+                    clientTimezone,
+                    clientLocalStartTime: formattedStart,
+                    clientLocalEndTime: formattedEnd
+                };
+            }
+            catch {
+                return slot;
+            }
+        });
+    }
 }
 exports.BookingService = BookingService;
 //# sourceMappingURL=booking.service.js.map
