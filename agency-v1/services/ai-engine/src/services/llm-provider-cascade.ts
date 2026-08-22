@@ -78,7 +78,6 @@ export async function executeResilientLLM(options: CascadeOptions): Promise<Casc
         system: options.systemPrompt,
         prompt: options.userMessage,
         temperature: options.temperature ?? 0.7,
-        maxTokens: options.maxTokens ?? 1000,
       });
 
       if (response.text && response.text.trim().length > 0) {
