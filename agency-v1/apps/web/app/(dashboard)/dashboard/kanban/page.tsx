@@ -11,10 +11,10 @@ export default function KanbanDashboardPage() {
   ]);
 
   const stages = [
-    { key: "PROSPECION", name: "Prospección inicial", color: "border-cyan-500/40 text-cyan-400" },
-    { key: "CALIFICADO", name: "Calificado por IA", color: "border-amber-500/40 text-amber-400" },
-    { key: "PROPUESTA", name: "Propuesta enviada", color: "border-violet-500/40 text-violet-400" },
-    { key: "CERRADO_GANADO", name: "Cerrado Ganado", color: "border-emerald-500/40 text-emerald-400" },
+    { key: "PROSPECION", name: "Prospección Inicial", color: "from-cyan-500/20 to-blue-500/20 text-cyan-400 border-cyan-500/40" },
+    { key: "CALIFICADO", name: "Calificado por IA", color: "from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/40" },
+    { key: "PROPUESTA", name: "Propuesta Enviada", color: "from-purple-500/20 to-violet-500/20 text-purple-300 border-purple-500/40" },
+    { key: "CERRADO_GANADO", name: "Cerrado Ganado", color: "from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/40" },
   ];
 
   const calculateStageTotal = (stageKey: string) => {
@@ -25,14 +25,17 @@ export default function KanbanDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 space-y-8">
+      {/* Background ambient lighting */}
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 pointer-events-none" />
+
       {/* Header */}
-      <div className="border-b border-slate-800 pb-6 flex justify-between items-center">
+      <div className="relative z-10 border-b border-slate-800/80 pb-6 flex justify-between items-center backdrop-blur-md">
         <div>
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(20,184,166,0.25)]">
             Tablero Kanban de Tratos & Embudos CRM
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Gestión visual de oportunidades comerciales, predicción de cierre y valor acumulado por etapa.
+            Gestión visual de oportunidades comerciales, predicción de cierre y valor acumulado en tiempo real.
           </p>
         </div>
         <button
@@ -45,43 +48,61 @@ export default function KanbanDashboardPage() {
               ]);
             }
           }}
-          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
+          className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105"
         >
           ➕ Crear Nuevo Trato Comercial
         </button>
       </div>
 
       {/* Kanban Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6">
         {stages.map((stg) => {
           const stageDeals = deals.filter((d) => d.stage === stg.key);
           const stageTotal = calculateStageTotal(stg.key);
 
           return (
-            <div key={stg.key} className="bg-slate-900/80 border border-slate-800 backdrop-blur-xl p-4 rounded-2xl space-y-4 shadow-xl flex flex-col justify-between">
+            <div
+              key={stg.key}
+              className="bg-slate-900/90 border border-slate-800/80 backdrop-blur-2xl p-5 rounded-2xl space-y-4 shadow-2xl flex flex-col justify-between"
+            >
               <div>
-                <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                  <span className={`text-xs font-extrabold uppercase tracking-wider ${stg.color}`}>{stg.name}</span>
-                  <span className="px-2 py-0.5 bg-slate-950 text-slate-400 text-[10px] font-bold rounded-full border border-slate-800">
+                <div className={`p-3 rounded-xl bg-gradient-to-r ${stg.color} border flex justify-between items-center mb-2`}>
+                  <span className="text-xs font-extrabold uppercase tracking-wider">{stg.name}</span>
+                  <span className="px-2.5 py-0.5 bg-slate-950/80 text-white text-[10px] font-extrabold rounded-full border border-slate-700">
                     {stageDeals.length}
                   </span>
                 </div>
-                <div className="text-xs font-bold text-slate-400 mt-2">
-                  Total: <span className="text-slate-100 font-extrabold">${stageTotal.toLocaleString()} COP</span>
+                <div className="text-xs font-bold text-slate-400 mb-4 px-1">
+                  Acumulado: <span className="text-emerald-400 font-extrabold">${stageTotal.toLocaleString()} COP</span>
                 </div>
 
                 {/* Deal Cards */}
-                <div className="mt-4 space-y-3">
+                <div className="space-y-3">
                   {stageDeals.map((d) => (
                     <div
                       key={d.id}
-                      className="bg-slate-950/80 border border-slate-800 hover:border-teal-500/50 p-4 rounded-xl space-y-2 cursor-pointer transition-all hover:bg-slate-950"
+                      className="group bg-slate-950/90 border border-slate-800/90 hover:border-teal-500/60 p-4 rounded-xl space-y-3 cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(20,184,166,0.15)] transform hover:-translate-y-0.5"
                     >
-                      <div className="text-xs font-bold text-slate-100">{d.title}</div>
-                      <div className="text-[10px] text-slate-400">{d.client}</div>
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-800/80 text-[10px]">
+                      <div className="text-xs font-bold text-slate-100 group-hover:text-teal-300 transition-colors">{d.title}</div>
+                      <div className="text-[10px] text-slate-400 font-medium">{d.client}</div>
+
+                      {/* Probability Gauge Bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[9px] font-semibold text-slate-400">
+                          <span>Probabilidad</span>
+                          <span className="text-amber-400 font-extrabold">{d.prob}%</span>
+                        </div>
+                        <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                          <div
+                            className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full transition-all duration-500"
+                            style={{ width: `${d.prob}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-800/80 text-xs">
                         <span className="font-extrabold text-emerald-400">${d.value.toLocaleString()}</span>
-                        <span className="text-amber-400 font-semibold">{d.prob}% Probabilidad</span>
+                        <span className="text-[9px] text-slate-500 font-mono">ID: {d.id}</span>
                       </div>
                     </div>
                   ))}
