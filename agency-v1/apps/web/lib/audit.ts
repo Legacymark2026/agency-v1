@@ -1,22 +1,26 @@
 /**
- * lib/audit.ts
+ * Real Production Audit Trail Logger (PostgreSQL + Prisma)
  * ─────────────────────────────────────────────────────────────────────────────
- * Sistema centralizado de Audit Logs.
+ * Writes real, persistent user and AI activity logs directly to PostgreSQL.
  */
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export type AuditAction = 
+export type AuditAction =
   | "auth.login"
   | "auth.logout"
   | "auth.mfa_enable"
   | "auth.mfa_disable"
   | "user.create"
   | "user.update"
+  | "invoice.create"
+  | "invoice.dian_sync"
   | "lead.create"
   | "lead.update"
-  | "deal.create";
+  | "deal.create"
+  | "ai.agent_execution"
+  | "webhook.dispatch";
 
 export interface AuditContext {
   action: AuditAction;
@@ -35,14 +39,15 @@ export async function audit(ctx: AuditContext): Promise<string> {
         action: ctx.action,
         details: JSON.stringify({
           outcome: ctx.outcome,
-          details: ctx.details,
+          timestamp: new Date().toISOString(),
+          details: ctx.details || {},
         }),
       },
     });
 
     return entry.id;
   } catch (error) {
-    console.error("[Audit] Failed to log:", error);
+    console.error("[Audit] Failed to log to PostgreSQL:", error);
     return "";
   }
 }
