@@ -92,6 +92,9 @@ const createClient = (url: string | undefined): PrismaClient => {
       connectionUrl = `${connectionUrl}${sep3}connect_timeout=3`;
     } else {
       connectionUrl = connectionUrl.replace(/connect_timeout=\d+/, "connect_timeout=3");
+    // If connecting to internal pgbouncer/postgres container, relax sslmode=require to sslmode=prefer to avoid TLS handshake hangs
+    if (connectionUrl.includes("pgbouncer") || connectionUrl.includes("postgres") || connectionUrl.includes("127.0.0.1") || connectionUrl.includes("localhost")) {
+      connectionUrl = connectionUrl.replace("sslmode=require", "sslmode=prefer");
     }
   }
 
@@ -355,6 +358,9 @@ export const prisma =
                     const isConnErr =
                       err?.message?.includes("Can't reach database server") ||
                       err?.message?.includes("pgbouncer-replica") ||
+                      err?.message?.includes("TLS") ||
+                      err?.message?.includes("ssl") ||
+                      err?.message?.includes("handshake") ||
                       err?.code === "P1001" ||
                       err?.code === "P1002" ||
                       err?.code === "ECONNREFUSED";
