@@ -92,6 +92,8 @@ const createClient = (url: string | undefined): PrismaClient => {
       connectionUrl = `${connectionUrl}${sep3}connect_timeout=3`;
     } else {
       connectionUrl = connectionUrl.replace(/connect_timeout=\d+/, "connect_timeout=3");
+    }
+
     // If connecting to internal pgbouncer/postgres container, relax sslmode=require to sslmode=prefer to avoid TLS handshake hangs
     if (connectionUrl.includes("pgbouncer") || connectionUrl.includes("postgres") || connectionUrl.includes("127.0.0.1") || connectionUrl.includes("localhost")) {
       connectionUrl = connectionUrl.replace("sslmode=require", "sslmode=prefer");
