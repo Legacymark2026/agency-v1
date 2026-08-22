@@ -1,11 +1,19 @@
 import { Request, Response, NextFunction } from "express";
-import { ResilientCacheClient } from "@agency/events";
 
 let cache: any = null;
+const memoryStore = new Map<string, string>();
+
 function getCache() {
   if (!cache) {
-    const { ResilientCacheClient } = require("@agency/events");
-    cache = new ResilientCacheClient(process.env.REDIS_URL);
+    try {
+      const { ResilientCacheClient } = require("@agency/events");
+      cache = new ResilientCacheClient(process.env.REDIS_URL);
+    } catch {
+      cache = {
+        get: async (k: string) => memoryStore.get(k) || null,
+        set: async (k: string, v: string) => memoryStore.set(k, v),
+      };
+    }
   }
   return cache;
 }
