@@ -19,6 +19,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
         try {
             file = await readFile(filePath);
         } catch (e) {
+            const extension = fileName.split('.').pop()?.toLowerCase() || '';
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension);
+            if (isImage) {
+                const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="#1e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#64748b" font-size="12">Sin Imagen</text></svg>`;
+                return new NextResponse(placeholderSvg, {
+                    headers: {
+                        'Content-Type': 'image/svg+xml',
+                        'Cache-Control': 'no-cache',
+                    },
+                });
+            }
             return new NextResponse('File not found', { status: 404 });
         }
 

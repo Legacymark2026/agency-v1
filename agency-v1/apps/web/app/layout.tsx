@@ -198,6 +198,24 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // Patch Google Translate & extension DOM node removal conflicts
+                if (typeof Node !== 'undefined' && Node.prototype) {
+                  var originalRemoveChild = Node.prototype.removeChild;
+                  Node.prototype.removeChild = function(child) {
+                    if (child && child.parentNode !== this) {
+                      return child;
+                    }
+                    return originalRemoveChild.apply(this, arguments);
+                  };
+                  var originalInsertBefore = Node.prototype.insertBefore;
+                  Node.prototype.insertBefore = function(newNode, referenceNode) {
+                    if (referenceNode && referenceNode.parentNode !== this) {
+                      return newNode;
+                    }
+                    return originalInsertBefore.apply(this, arguments);
+                  };
+                }
+
                 var errDiv = null;
                 function logError(type, message, source, lineno, colno, error) {
                   try {
