@@ -23,6 +23,11 @@ const httpRequestDuration = new client.Histogram({
 export function metricsMiddleware(serviceName: string) {
   return (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const start = process.hrtime();
+    
+    // Inject or reuse Distributed Correlation ID
+    const correlationId = (req.headers["x-correlation-id"] as string) || `corr_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+    (req as any).correlationId = correlationId;
+    res.setHeader("x-correlation-id", correlationId);
 
     res.on("finish", () => {
       const diff = process.hrtime(start);

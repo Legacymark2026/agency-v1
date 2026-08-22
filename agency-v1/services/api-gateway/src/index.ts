@@ -9,7 +9,7 @@
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
-import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
+import { metricsMiddleware, metricsEndpoint, resilientRateLimiter } from "@agency/observability";
 import express from "express";
 import { setupGracefulShutdown } from "@agency/service-auth";
 import cors from "cors";
@@ -45,6 +45,7 @@ const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 
 app.use(metricsMiddleware("api-gateway"));
+app.use(resilientRateLimiter({ maxRequests: 300, windowSeconds: 60 }));
 app.use(helmet());
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
