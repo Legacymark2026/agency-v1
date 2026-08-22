@@ -254,6 +254,39 @@ app.get("/api/v1/goldneez-rewards/points/:userId", async (req, res) => {
   }
 });
 
+function getTierFromPoints(points: number): string {
+  if (points >= 3000) return "Platinum";
+  if (points >= 1000) return "Gold";
+  return "Silver";
+}
+
+async function dispatchLoyaltyNotification(userId: string, title: string, message: string) {
+  try {
+    const response = await fetch("http://127.0.0.1:4016/api/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": userId
+      },
+      body: JSON.stringify({
+        companyId: "company-default",
+        userIds: [userId],
+        title,
+        message,
+        type: "CRM",
+        priority: "HIGH",
+        channels: ["IN_APP", "PUSH"]
+      }),
+      signal: AbortSignal.timeout(3000)
+    });
+    if (response.ok) {
+      console.log(`[Loyalty Notifications] Notification successfully sent to user ${userId}`);
+    }
+  } catch (err: any) {
+    console.warn("[Loyalty Notifications] Push notification dispatch skipped:", err.message);
+  }
+}
+
 app.post("/api/v1/goldneez-rewards/points/add", async (req, res) => {
   try {
     const schema = z.object({
@@ -266,6 +299,8 @@ app.post("/api/v1/goldneez-rewards/points/add", async (req, res) => {
     const { points: currentPoints, city, registeredAt } = await getUserPointsAndMetadata(userId);
 
     const newPoints = currentPoints + puntos;
+    const oldTier = getTierFromPoints(currentPoints);
+    const newTier = getTierFromPoints(newPoints);
 
     // Actualizar perfil
     await updateUserPointsAndMetadata(userId, newPoints, city, registeredAt);
@@ -275,6 +310,15 @@ app.post("/api/v1/goldneez-rewards/points/add", async (req, res) => {
       "INSERT INTO tbl_goldneez_points_history (id, user_id, puntos, tipo, concepto, created_at) VALUES ($1, $2, $3, $4, $5, NOW())",
       [crypto.randomUUID(), userId, puntos, "earned", concepto]
     );
+
+    // Trigger notification if upgraded
+    if (oldTier !== newTier && newTier !== "Silver") {
+      await dispatchLoyaltyNotification(
+        userId, 
+        `🎉 ¡Felicidades! Subiste a nivel ${newTier}`, 
+        `Has alcanzado el nivel ${newTier} en el Club Goldneez. ¡Disfruta de tus nuevos beneficios!`
+      );
+    }
 
     res.json({ success: true, points: newPoints });
   } catch (err: any) {
@@ -298,6 +342,8 @@ app.post("/api/v1/goldneez-rewards/points/redeem", async (req, res) => {
     }
 
     const newPoints = currentPoints - puntosRequeridos;
+    const oldTier = getTierFromPoints(currentPoints);
+    const newTier = getTierFromPoints(newPoints);
 
     // Actualizar perfil
     await updateUserPointsAndMetadata(userId, newPoints, city, registeredAt);
@@ -308,7 +354,55 @@ app.post("/api/v1/goldneez-rewards/points/redeem", async (req, res) => {
       [crypto.randomUUID(), userId, -puntosRequeridos, "redeemed", concepto]
     );
 
+    // Trigger notification if downgraded
+    if (oldTier !== newTier) {
+      await dispatchLoyaltyNotification(
+        userId, 
+        `⚠️ Tu nivel de socio cambió a ${newTier}`, 
+        `Tu nivel en el Club Goldneez ahora es ${newTier} debido al canje de puntos.`
+      );
+    }
+
     res.json({ success: true, points: newPoints });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post("/api/v1/goldneez-rewards/coupons/generate", async (req, res) => {
+  try {
+    const schema = z.object({
+      userId: z.string().uuid(),
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+      lowActivity: z.boolean().optional()
+    });
+
+    const { userId, latitude, longitude, lowActivity } = schema.parse(req.body);
+    const code = `GOLD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+    let discount = 10;
+    let description = "Descuento de lealtad Goldneez.";
+
+    if (latitude && longitude) {
+      discount = 20;
+      description = "Descuento especial por estar cerca de nuestra sucursal boutique.";
+    } else if (lowActivity) {
+      discount = 25;
+      description = "¡Te extrañamos! Usa este cupón para tu próximo café de especialidad.";
+    }
+
+    await pool.query(
+      "INSERT INTO tbl_goldneez_referrals (id, referrer_id, codigo, estado, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW())",
+      [crypto.randomUUID(), userId, code, "coupon"]
+    );
+
+    res.json({
+      success: true,
+      couponCode: code,
+      discountPercent: discount,
+      description
+    });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

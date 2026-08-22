@@ -10,18 +10,26 @@ export declare class AuthService {
      */
     static login(input: LoginInput, privateKey: string | null): Promise<{
         token: string;
-        sessionId: any;
+        sessionId: string;
         user: {
-            id: any;
-            email: any;
-            name: any;
-            role: any;
-            globalRole: any;
-            image: any;
+            id: string;
+            email: string;
+            name: string | null | undefined;
+            role: string;
+            globalRole: string | null | undefined;
+            image: string | null | undefined;
         };
     }>;
     /**
      * Obtener perfil de usuario autenticado
      */
-    static getUserProfile(userId: string): Promise<any>;
+    static getUserProfile(userId: string): Promise<{
+        id: string;
+        email: string;
+        name: string | null | undefined;
+        role: string;
+        globalRole: string | null | undefined;
+        image: string | null | undefined;
+        createdAt: Date;
+    }>;
 }

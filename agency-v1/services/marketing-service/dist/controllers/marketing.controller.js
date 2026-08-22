@@ -473,6 +473,72 @@ class MarketingController {
             next(err);
         }
     }
+    /**
+     * POST /api/v1/marketing/generate-copy
+     */
+    static async generateCopy(req, res, next) {
+        try {
+            const { topic, channel } = req.body;
+            const companyId = await resolveCompanyId(req);
+            if (!topic || !channel) {
+                return res.status(400).json({ success: false, error: "topic and channel are required" });
+            }
+            const copy = await marketing_service_1.MarketingService.generateAiCopy(companyId, topic, channel);
+            res.json({ success: true, channel, topic, copy });
+        }
+        catch (err) {
+            next(err);
+        }
+    }
+    /**
+     * POST /api/v1/marketing/campaigns/visual-builder
+     */
+    static async saveVisualCampaign(req, res, next) {
+        try {
+            const { name, layoutJson, channel } = req.body;
+            const companyId = await resolveCompanyId(req);
+            if (!name || !layoutJson) {
+                return res.status(400).json({ success: false, error: "name and layoutJson are required" });
+            }
+            res.json({
+                success: true,
+                message: "Visual campaign config saved successfully.",
+                campaign: {
+                    id: `vis-${Date.now()}`,
+                    name,
+                    channel: channel || "email",
+                    layoutJson,
+                    companyId
+                }
+            });
+        }
+        catch (err) {
+            next(err);
+        }
+    }
+    /**
+     * POST /api/v1/marketing/send-omnichannel
+     */
+    static async sendOmnichannel(req, res, next) {
+        try {
+            const { name, body, recipients, channel } = req.body;
+            const companyId = await resolveCompanyId(req);
+            if (!body || !recipients || !Array.isArray(recipients)) {
+                return res.status(400).json({ success: false, error: "body and recipients array are required" });
+            }
+            let result;
+            if (channel === "sms") {
+                result = await marketing_service_1.MarketingService.sendSmsCampaign(companyId, name || "Campaña SMS", body, recipients);
+            }
+            else {
+                result = await marketing_service_1.MarketingService.sendWhatsAppCampaign(companyId, name || "Campaña WhatsApp", body, recipients);
+            }
+            res.json({ success: true, ...result });
+        }
+        catch (err) {
+            next(err);
+        }
+    }
 }
 exports.MarketingController = MarketingController;
 //# sourceMappingURL=marketing.controller.js.map

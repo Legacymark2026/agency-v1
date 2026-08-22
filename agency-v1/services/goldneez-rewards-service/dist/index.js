@@ -3,13 +3,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
+const service_auth_1 = require("@agency/service-auth");
 const pg_1 = require("pg");
 const zod_1 = require("zod");
 const crypto_1 = __importDefault(require("crypto"));
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("goldneez-rewards-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4020", 10);
 const GOLDNEEZ_DB_URL = process.env.GOLDNEEZ_DB_URL || "postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@187.77.195.9:5432/legacymark?schema=goldneez&search_path=goldneez,public";
 // Configurar el Pool de conexión a la base de datos
@@ -21,7 +30,10 @@ const pool = new pg_1.Pool({
 });
 // Establecer el esquema goldneez automáticamente en cada nueva conexión
 pool.on("connect", (client) => {
-    client.query("SET search_path TO goldneez, public;");
+    client.query("SET search_path TO goldneez, public;").catch(err => console.error("[PG] search_path set error:", err));
+});
+pool.on("error", (err) => {
+    console.error("[PG] Unexpected error on idle client:", err);
 });
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({ origin: "*" }));
@@ -127,7 +139,7 @@ async function updateUserPointsAndMetadata(userId, points, city, registeredAt) {
     await pool.query("UPDATE tbl_user_profiles SET metadata = $1 WHERE user_id = $2", [JSON.stringify(currentMeta), userId]);
 }
 // ── 1. Perfil de Sabor Endpoints ─────────────────────────────────────────────
-app.get("/api/goldneez-rewards/flavor-profile/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/flavor-profile/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         const result = await pool.query("SELECT * FROM tbl_goldneez_flavor_profiles WHERE user_id = $1", [userId]);
@@ -137,7 +149,7 @@ app.get("/api/goldneez-rewards/flavor-profile/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/flavor-profile", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/flavor-profile", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -172,7 +184,7 @@ app.post("/api/goldneez-rewards/flavor-profile", async (req, res) => {
     }
 });
 // ── 2. Recompensas & Puntos Endpoints ────────────────────────────────────────
-app.get("/api/goldneez-rewards/rewards", async (_req, res) => {
+app.get("/api/v1/goldneez-rewards/rewards", async (_req, res) => {
     try {
         const result = await pool.query("SELECT id, title, cost, description FROM tbl_goldneez_rewards WHERE is_active = true ORDER BY cost ASC");
         res.json(result.rows);
@@ -181,7 +193,7 @@ app.get("/api/goldneez-rewards/rewards", async (_req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get("/api/goldneez-rewards/points/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/points/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         const { points } = await getUserPointsAndMetadata(userId);
@@ -204,7 +216,41 @@ app.get("/api/goldneez-rewards/points/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/points/add", async (req, res) => {
+function getTierFromPoints(points) {
+    if (points >= 3000)
+        return "Platinum";
+    if (points >= 1000)
+        return "Gold";
+    return "Silver";
+}
+async function dispatchLoyaltyNotification(userId, title, message) {
+    try {
+        const response = await fetch("http://127.0.0.1:4016/api/notifications", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-user-id": userId
+            },
+            body: JSON.stringify({
+                companyId: "company-default",
+                userIds: [userId],
+                title,
+                message,
+                type: "CRM",
+                priority: "HIGH",
+                channels: ["IN_APP", "PUSH"]
+            }),
+            signal: AbortSignal.timeout(3000)
+        });
+        if (response.ok) {
+            console.log(`[Loyalty Notifications] Notification successfully sent to user ${userId}`);
+        }
+    }
+    catch (err) {
+        console.warn("[Loyalty Notifications] Push notification dispatch skipped:", err.message);
+    }
+}
+app.post("/api/v1/goldneez-rewards/points/add", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -214,17 +260,23 @@ app.post("/api/goldneez-rewards/points/add", async (req, res) => {
         const { userId, puntos, concepto } = schema.parse(req.body);
         const { points: currentPoints, city, registeredAt } = await getUserPointsAndMetadata(userId);
         const newPoints = currentPoints + puntos;
+        const oldTier = getTierFromPoints(currentPoints);
+        const newTier = getTierFromPoints(newPoints);
         // Actualizar perfil
         await updateUserPointsAndMetadata(userId, newPoints, city, registeredAt);
         // Insertar en historial
         await pool.query("INSERT INTO tbl_goldneez_points_history (id, user_id, puntos, tipo, concepto, created_at) VALUES ($1, $2, $3, $4, $5, NOW())", [crypto_1.default.randomUUID(), userId, puntos, "earned", concepto]);
+        // Trigger notification if upgraded
+        if (oldTier !== newTier && newTier !== "Silver") {
+            await dispatchLoyaltyNotification(userId, `🎉 ¡Felicidades! Subiste a nivel ${newTier}`, `Has alcanzado el nivel ${newTier} en el Club Goldneez. ¡Disfruta de tus nuevos beneficios!`);
+        }
         res.json({ success: true, points: newPoints });
     }
     catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/points/redeem", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/points/redeem", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -237,18 +289,56 @@ app.post("/api/goldneez-rewards/points/redeem", async (req, res) => {
             return res.status(400).json({ error: "Puntos insuficientes." });
         }
         const newPoints = currentPoints - puntosRequeridos;
+        const oldTier = getTierFromPoints(currentPoints);
+        const newTier = getTierFromPoints(newPoints);
         // Actualizar perfil
         await updateUserPointsAndMetadata(userId, newPoints, city, registeredAt);
         // Insertar en historial
         await pool.query("INSERT INTO tbl_goldneez_points_history (id, user_id, puntos, tipo, concepto, created_at) VALUES ($1, $2, $3, $4, $5, NOW())", [crypto_1.default.randomUUID(), userId, -puntosRequeridos, "redeemed", concepto]);
+        // Trigger notification if downgraded
+        if (oldTier !== newTier) {
+            await dispatchLoyaltyNotification(userId, `⚠️ Tu nivel de socio cambió a ${newTier}`, `Tu nivel en el Club Goldneez ahora es ${newTier} debido al canje de puntos.`);
+        }
         res.json({ success: true, points: newPoints });
     }
     catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
+app.post("/api/v1/goldneez-rewards/coupons/generate", async (req, res) => {
+    try {
+        const schema = zod_1.z.object({
+            userId: zod_1.z.string().uuid(),
+            latitude: zod_1.z.number().optional(),
+            longitude: zod_1.z.number().optional(),
+            lowActivity: zod_1.z.boolean().optional()
+        });
+        const { userId, latitude, longitude, lowActivity } = schema.parse(req.body);
+        const code = `GOLD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        let discount = 10;
+        let description = "Descuento de lealtad Goldneez.";
+        if (latitude && longitude) {
+            discount = 20;
+            description = "Descuento especial por estar cerca de nuestra sucursal boutique.";
+        }
+        else if (lowActivity) {
+            discount = 25;
+            description = "¡Te extrañamos! Usa este cupón para tu próximo café de especialidad.";
+        }
+        await pool.query("INSERT INTO tbl_goldneez_referrals (id, referrer_id, codigo, estado, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW())", [crypto_1.default.randomUUID(), userId, code, "coupon"]);
+        res.json({
+            success: true,
+            couponCode: code,
+            discountPercent: discount,
+            description
+        });
+    }
+    catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
 // ── 3. Referidos Endpoints ───────────────────────────────────────────────────
-app.get("/api/goldneez-rewards/referrals/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/referrals/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         // Obtener código de referido
@@ -275,7 +365,7 @@ app.get("/api/goldneez-rewards/referrals/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/referrals/apply", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/referrals/apply", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -313,7 +403,7 @@ app.post("/api/goldneez-rewards/referrals/apply", async (req, res) => {
     }
 });
 // ── 4. Catas & Eventos Endpoints ─────────────────────────────────────────────
-app.get("/api/goldneez-rewards/events", async (_req, res) => {
+app.get("/api/v1/goldneez-rewards/events", async (_req, res) => {
     try {
         // Consultar eventos reales de la BD
         const eventsResult = await pool.query("SELECT id, title, description, date, time, capacity FROM tbl_goldneez_events ORDER BY created_at ASC");
@@ -341,7 +431,7 @@ app.get("/api/goldneez-rewards/events", async (_req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.get("/api/goldneez-rewards/events/bookings/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/events/bookings/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         const result = await pool.query("SELECT * FROM tbl_goldneez_event_bookings WHERE user_id = $1 AND estado = 'booked' ORDER BY created_at DESC", [userId]);
@@ -351,7 +441,7 @@ app.get("/api/goldneez-rewards/events/bookings/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/events/book", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/events/book", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -372,7 +462,7 @@ app.post("/api/goldneez-rewards/events/book", async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/events/cancel", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/events/cancel", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             bookingId: zod_1.z.string().uuid(),
@@ -386,7 +476,7 @@ app.post("/api/goldneez-rewards/events/cancel", async (req, res) => {
     }
 });
 // ── 5. Seguimiento de Envíos (Persistente y Real en BD, dinámico por tiempo) ──
-app.get("/api/goldneez-rewards/shipping-tracking/:orderId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/shipping-tracking/:orderId", async (req, res) => {
     try {
         const { orderId } = req.params;
         // Obtener la fecha de creación real del negocio (Deal) en tbl_deals
@@ -443,7 +533,7 @@ app.get("/api/goldneez-rewards/shipping-tracking/:orderId", async (req, res) => 
     }
 });
 // ── 6. Reseñas de Producto Endpoints ─────────────────────────────────────────
-app.get("/api/goldneez-rewards/reviews/:coffeeId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/reviews/:coffeeId", async (req, res) => {
     try {
         const { coffeeId } = req.params;
         const result = await pool.query("SELECT * FROM tbl_goldneez_product_reviews WHERE coffee_id = $1 ORDER BY created_at DESC", [coffeeId]);
@@ -453,7 +543,7 @@ app.get("/api/goldneez-rewards/reviews/:coffeeId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/reviews", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/reviews", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -473,7 +563,7 @@ app.post("/api/goldneez-rewards/reviews", async (req, res) => {
     }
 });
 // ── 7. Preferencias de Notificaciones Endpoints ──────────────────────────────
-app.get("/api/goldneez-rewards/notifications/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/notifications/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         const result = await pool.query("SELECT * FROM tbl_goldneez_notification_preferences WHERE user_id = $1 LIMIT 1", [userId]);
@@ -492,7 +582,7 @@ app.get("/api/goldneez-rewards/notifications/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/notifications", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/notifications", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -514,7 +604,7 @@ app.post("/api/goldneez-rewards/notifications", async (req, res) => {
     }
 });
 // ── 8. Métodos de Pago Endpoints ─────────────────────────────────────────────
-app.get("/api/goldneez-rewards/payment-methods/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/payment-methods/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         const result = await pool.query("SELECT * FROM tbl_goldneez_payment_methods WHERE user_id = $1 ORDER BY es_predeterminada DESC, created_at DESC", [userId]);
@@ -524,7 +614,7 @@ app.get("/api/goldneez-rewards/payment-methods/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/payment-methods", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/payment-methods", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -543,7 +633,7 @@ app.post("/api/goldneez-rewards/payment-methods", async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-app.delete("/api/goldneez-rewards/payment-methods/:userId/:methodId", async (req, res) => {
+app.delete("/api/v1/goldneez-rewards/payment-methods/:userId/:methodId", async (req, res) => {
     try {
         const { userId, methodId } = req.params;
         await pool.query("DELETE FROM tbl_goldneez_payment_methods WHERE id = $1 AND user_id = $2", [methodId, userId]);
@@ -554,7 +644,7 @@ app.delete("/api/goldneez-rewards/payment-methods/:userId/:methodId", async (req
     }
 });
 // ── 9. Consumo Mensual REAL (Calculado de compras reales en la base de datos) ──
-app.get("/api/goldneez-rewards/consumption/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/consumption/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         // Consultar logs de compras reales del usuario
@@ -595,7 +685,7 @@ app.get("/api/goldneez-rewards/consumption/:userId", async (req, res) => {
     }
 });
 // ── 10. Suscripciones Reales en Perfil ─────────────────────────────────────────
-app.get("/api/goldneez-rewards/subscription/:userId", async (req, res) => {
+app.get("/api/v1/goldneez-rewards/subscription/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
         const result = await pool.query("SELECT preferences FROM tbl_user_profiles WHERE user_id = $1", [userId]);
@@ -621,7 +711,7 @@ app.get("/api/goldneez-rewards/subscription/:userId", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-app.post("/api/goldneez-rewards/subscription", async (req, res) => {
+app.post("/api/v1/goldneez-rewards/subscription", async (req, res) => {
     try {
         const schema = zod_1.z.object({
             userId: zod_1.z.string().uuid(),
@@ -657,7 +747,7 @@ app.post("/api/goldneez-rewards/subscription", async (req, res) => {
     }
 });
 // ── Start Server ─────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`☕ Goldneez Rewards & Business Logic Service running on port ${PORT}`);
     console.log(`   Health: http://localhost:${PORT}/health`);
     console.log(`   Ready:  http://localhost:${PORT}/ready`);
@@ -665,10 +755,8 @@ app.listen(PORT, "0.0.0.0", () => {
     seedDatabase();
 });
 // Graceful shutdown
-process.on("SIGTERM", async () => {
-    console.log("[goldneez-rewards-service] SIGTERM received. Shutting down...");
+(0, service_auth_1.setupGracefulShutdown)(server, async () => {
     await pool.end();
-    process.exit(0);
 });
 exports.default = app;
 //# sourceMappingURL=index.js.map

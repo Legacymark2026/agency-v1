@@ -8,6 +8,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.authGrpcClient = void 0;
+try {
+    require("@agency/observability/register");
+}
+catch { /* optional */ }
+const observability_1 = require("@agency/observability");
+const service_auth_1 = require("@agency/service-auth");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -15,6 +22,8 @@ const database_1 = require("@agency/database");
 const events_1 = require("@agency/events");
 const ioredis_1 = __importDefault(require("ioredis"));
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("project-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4018", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 app.use((0, helmet_1.default)());
@@ -33,12 +42,14 @@ app.get("/ready", async (_req, res) => {
         res.status(503).json({ status: "not_ready", error: String(err) });
     }
 });
+const project_routes_1 = require("./routes/project.routes");
+const project_middleware_1 = require("./middlewares/project.middleware");
+app.use("/api/v1", project_routes_1.projectRouter);
+app.use(project_middleware_1.errorHandler);
 // ── Kanban Projects ──────────────────────────────────────────────────────────
 app.get("/api/projects", async (req, res) => {
     try {
         const { companyId, status, page = "1", limit = "20" } = req.query;
-        if (!companyId)
-            return res.status(400).json({ error: "companyId required" });
         const where = { companyId: String(companyId) };
         if (status)
             where.status = String(status);
@@ -628,12 +639,21 @@ app.get('/api/cms/posts', async (req, res) => {
         const posts = await database_1.prisma.post.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
-                author: { select: { name: true, email: true } },
                 categories: true,
                 tags: true
             }
         });
-        res.json(posts);
+        const authorIds = Array.from(new Set(posts.map((p) => p.authorId).filter(Boolean)));
+        const users = authorIds.length ? await database_1.prisma.user.findMany({
+            where: { id: { in: authorIds } },
+            select: { id: true, name: true, email: true }
+        }) : [];
+        const userMap = new Map(users.map((u) => [u.id, u]));
+        const postsWithAuthors = posts.map((post) => ({
+            ...post,
+            author: userMap.get(post.authorId) || { name: 'LegacyMark User', email: '' }
+        }));
+        res.json(postsWithAuthors);
     }
     catch (error) {
         res.status(500).json({ error: error.message });
@@ -818,13 +838,55 @@ app.get('/api/cms/media-stats', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// ── High-Speed Synchronous gRPC Server & Client Setup ─────────────────────────
+const grpc_1 = require("@agency/grpc");
+const PROJECT_GRPC_PORT = parseInt(process.env.GRPC_PORT || "50054", 10);
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+const projectGrpcServer = new grpc_1.GrpcServerHelper();
+projectGrpcServer.addService(grpc_1.PROTO_PATHS.project, "project", "ProjectService", {
+    GetProjectStatus: async (call, callback) => {
+        try {
+            const { projectId, companyId } = call.request;
+            const project = await database_1.prisma.kanbanProject.findFirst({
+                where: { id: projectId, companyId },
+            });
+            if (!project) {
+                return callback(null, { found: false, error: "Project not found" });
+            }
+            callback(null, {
+                found: true,
+                projectId: project.id,
+                name: project.name,
+                status: project.status || "ACTIVE",
+                completionPercentage: 75,
+                error: "",
+            });
+        }
+        catch (err) {
+            callback(null, { found: false, error: err.message || "Error" });
+        }
+    },
+    CheckHealth: async (_call, callback) => {
+        callback(null, {
+            status: "healthy",
+            service: "project-service",
+            timestamp: Date.now(),
+        });
+    },
+});
+projectGrpcServer.start(PROJECT_GRPC_PORT).catch((err) => {
+    console.error("[project-service] Failed to start gRPC server:", err.message);
+});
+exports.authGrpcClient = grpc_1.GrpcClientHelper.getClient("auth-service", grpc_1.PROTO_PATHS.auth, "auth", "AuthService", AUTH_GRPC_URL, { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 });
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`📋 Project Service running on port ${PORT}`);
+const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`📋 Project Service running on port ${PORT} (HTTP) and port ${PROJECT_GRPC_PORT} (gRPC Sync)`);
     console.log(`   Models: KanbanProject, KanbanTask, KanbanSwimlane, KanbanComment, KanbanAuditLog`);
     console.log(`   Templates: ${Object.keys(BOARD_TEMPLATES).join(", ")}`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 process.on("SIGTERM", async () => {
+    await projectGrpcServer.forceShutdown();
     await eventBus.disconnect();
     await redisClient.quit();
     await database_1.prisma.$disconnect();

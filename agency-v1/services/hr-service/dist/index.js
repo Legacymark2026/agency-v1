@@ -8,13 +8,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
+const service_auth_1 = require("@agency/service-auth");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
 const events_1 = require("@agency/events");
 const ioredis_1 = __importDefault(require("ioredis"));
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("hr-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4017", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 app.use((0, helmet_1.default)());
@@ -33,6 +42,10 @@ app.get("/ready", async (_req, res) => {
         res.status(503).json({ status: "not_ready", error: String(err) });
     }
 });
+const hr_routes_1 = require("./routes/hr.routes");
+const hr_middleware_1 = require("./middlewares/hr.middleware");
+app.use("/api/v1", hr_routes_1.hrRouter);
+app.use(hr_middleware_1.errorHandler);
 // ── Employees ────────────────────────────────────────────────────────────────
 app.get("/api/employees", async (req, res) => {
     try {
@@ -537,10 +550,11 @@ eventBus.subscribe("invoice.paid", async (payload) => {
     }
 });
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`👥 HR Service running on port ${PORT}`);
     console.log(`   Modules: Employees, Payroll, Timesheets, PILA`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 process.on("SIGTERM", async () => {
     await eventBus.disconnect();
     await redisClient.quit();

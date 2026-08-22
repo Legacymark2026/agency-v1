@@ -3,7 +3,7 @@ syntax = "proto3";
 package crm;
 
 service CrmService {
-  rpc GetLead (GetLeadRequest) returns (LeadResponse);
+  rpc GetLeadDetails (GetLeadRequest) returns (LeadResponse);
   rpc CreateLead (CreateLeadRequest) returns (LeadResponse);
   rpc GetPipeline (GetPipelineRequest) returns (PipelineResponse);
   rpc CheckHealth (HealthCheckRequest) returns (HealthCheckResponse);

@@ -272,7 +272,7 @@ export class OutboxWorker {
       id: event.id,
       topic: event.topic,
       payload: event.payload,
-      serviceId: event.service_id,
+      serviceId: event.serviceId,
       publishedAt: new Date().toISOString(),
     });
     await this.redis.publish(event.topic, message);

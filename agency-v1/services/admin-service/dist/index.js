@@ -3,11 +3,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
+const service_auth_1 = require("@agency/service-auth");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("admin-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const port = process.env.PORT || 4014;
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
@@ -15,6 +24,10 @@ app.use(express_1.default.json());
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', service: 'admin-service' });
 });
+const admin_routes_1 = require("./routes/admin.routes");
+const admin_middleware_1 = require("./middlewares/admin.middleware");
+app.use("/api/v1", admin_routes_1.adminRouter);
+app.use(admin_middleware_1.errorHandler);
 // Kanban Routes migrated from Next.js
 app.get('/api/admin/kanban', async (req, res) => {
     try {
@@ -92,9 +105,10 @@ app.post('/api/admin/kanban', async (req, res) => {
 app.use('/api/diagnostics', (req, res) => { res.status(200).json({ message: '/api/diagnostics handled by admin-service' }); });
 app.use('/api/debug', (req, res) => { res.status(200).json({ message: '/api/debug handled by admin-service' }); });
 app.use('/api/admin', (req, res) => { res.status(200).json({ message: '/api/admin fallback handled by admin-service' }); });
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Admin Service listening at http://localhost:${port}`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 exports.default = app;
 //# sourceMappingURL=index.js.map

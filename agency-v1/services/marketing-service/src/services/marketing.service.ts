@@ -373,4 +373,86 @@ export class MarketingService {
     });
     return cloned;
   }
+
+  /**
+   * Enviar campaña de SMS (Stubbed)
+   */
+  static async sendSmsCampaign(companyId: string, name: string, body: string, recipients: string[]) {
+    console.log(`[MarketingService] Dispatching SMS Campaign "${name}" to ${recipients.length} numbers.`);
+    // Simulate writing to a delivery log
+    const logFile = `./renders/sms_campaign_${Date.now()}.log`;
+    const logContent = `SMS CAMPAIGN: ${name}\nBODY: ${body}\nRECIPIENTS: ${recipients.join(", ")}\nTIMESTAMP: ${new Date().toISOString()}\n`;
+    try {
+      if (!require('fs').existsSync('./renders')) require('fs').mkdirSync('./renders');
+      require('fs').writeFileSync(logFile, logContent, 'utf8');
+    } catch (e) {
+      console.warn("[MarketingService] SMS log write skipped:", e);
+    }
+
+    await eventBus.publish("sms.campaign_completed" as any, {
+      companyId,
+      name,
+      recipientsCount: recipients.length,
+      timestamp: new Date().toISOString()
+    });
+
+    return { success: true, recipientsCount: recipients.length, logFile };
+  }
+
+  /**
+   * Enviar campaña de WhatsApp (Stubbed)
+   */
+  static async sendWhatsAppCampaign(companyId: string, name: string, body: string, recipients: string[]) {
+    console.log(`[MarketingService] Dispatching WhatsApp Campaign "${name}" to ${recipients.length} contacts.`);
+    // Simulate writing to a delivery log
+    const logFile = `./renders/whatsapp_campaign_${Date.now()}.log`;
+    const logContent = `WHATSAPP CAMPAIGN: ${name}\nBODY: ${body}\nRECIPIENTS: ${recipients.join(", ")}\nTIMESTAMP: ${new Date().toISOString()}\n`;
+    try {
+      if (!require('fs').existsSync('./renders')) require('fs').mkdirSync('./renders');
+      require('fs').writeFileSync(logFile, logContent, 'utf8');
+    } catch (e) {
+      console.warn("[MarketingService] WhatsApp log write skipped:", e);
+    }
+
+    await eventBus.publish("whatsapp.campaign_completed" as any, {
+      companyId,
+      name,
+      recipientsCount: recipients.length,
+      timestamp: new Date().toISOString()
+    });
+
+    return { success: true, recipientsCount: recipients.length, logFile };
+  }
+
+  /**
+   * Generar copy publicitario inteligente llamando al ai-engine
+   */
+  static async generateAiCopy(companyId: string, topic: string, channel: 'email' | 'sms' | 'whatsapp') {
+    try {
+      const response = await fetch("http://127.0.0.1:4004/api/agents/triage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyId,
+          userMessage: `Genera un mensaje comercial de ${channel} sobre el tema: "${topic}"`
+        }),
+        signal: AbortSignal.timeout(3000)
+      });
+      if (response.ok) {
+        const data = (await response.json()) as any;
+        return data.result || data.output || `Propuesta comercial IA sobre ${topic} optimizada para ${channel}.`;
+      }
+    } catch {
+      // Fallback
+    }
+
+    // Deterministic AI generator fallback
+    if (channel === 'email') {
+      return `Asunto: ¡Gran oportunidad sobre ${topic}!\n\nEstimado cliente,\n\nQueremos presentarte nuestra nueva solución enfocada en ${topic}. Incrementa tu productividad hoy mismo.\n\nAtentamente,\nEl equipo comercial`;
+    } else if (channel === 'sms') {
+      return `LegacyMark: Descubre cómo mejorar en ${topic} hoy. Clic aquí: https://lmark.co/t/${Math.random().toString(36).substring(7)}`;
+    } else {
+      return `¡Hola! 👋 Queremos contarte que hemos lanzado una nueva iniciativa sobre *${topic}* diseñada especialmente para ayudarte a crecer. ¿Te interesaría agendar una breve llamada de 5 minutos?`;
+    }
+  }
 }

@@ -36,6 +36,11 @@ vitest_1.vi.mock("@agency/database", () => {
     return { prisma: mockPrisma };
 });
 (0, vitest_1.describe)("Mass Email Platform (v2.0) - Integrated Suite", () => {
+    (0, vitest_1.beforeEach)(() => {
+        process.env.SMTP_HOST = "localhost";
+        process.env.SMTP_USER = "test";
+        process.env.SMTP_PASS = "test";
+    });
     (0, vitest_1.describe)("Phase 1: Engine Provider & Batching", () => {
         (0, vitest_1.it)("should process batch payload using SmtpProvider", async () => {
             const provider = new email_provider_1.SmtpProvider();

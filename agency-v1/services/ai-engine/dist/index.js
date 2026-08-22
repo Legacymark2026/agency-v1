@@ -11,14 +11,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
+const service_auth_1 = require("@agency/service-auth");
 const events_1 = require("@agency/events");
 const agent_runner_1 = require("./agent-runner");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("ai-engine"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4004", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 app.use((0, helmet_1.default)());
@@ -37,6 +46,10 @@ app.get("/ready", async (_req, res) => {
         res.status(503).json({ status: "not_ready", error: String(err) });
     }
 });
+const ai_routes_1 = require("./routes/ai.routes");
+const ai_middleware_1 = require("./middlewares/ai.middleware");
+app.use("/api/v1", ai_routes_1.aiRouter);
+app.use(ai_middleware_1.errorHandler);
 // ── Agent Invocation ─────────────────────────────────────────────────────────
 app.post("/api/agents/:agentId/run", async (req, res) => {
     try {
@@ -48,6 +61,20 @@ app.post("/api/agents/:agentId/run", async (req, res) => {
     catch (err) {
         console.error("[ai-engine] Agent run error:", err);
         res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+});
+// POST /api/agents/voice/speak — Synthesize Agent Voice output via Voicebox
+const voicebox_tool_1 = require("./mcp/voicebox-tool");
+app.post("/api/agents/voice/speak", async (req, res) => {
+    try {
+        const { text, profileId, profileName, engine, language, effectsPreset } = req.body;
+        if (!text)
+            return res.status(400).json({ error: "text is required" });
+        const result = await voicebox_tool_1.voiceboxSpeakTool.execute({ text, profileId, profileName, engine, language, effectsPreset });
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
     }
 });
 // POST /api/agents/triage — Auto-route to best agent (Swarm)
@@ -126,14 +153,13 @@ eventBus.subscribe("workflow.ai_step", async (payload) => {
     console.log(`[ai-engine] Workflow AI step requested: ${payload.data.stepId}`);
 });
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`🧠 AI Engine running on port ${PORT}`);
 });
-process.on("SIGTERM", async () => {
+(0, service_auth_1.setupGracefulShutdown)(server, async () => {
     await eventBus.disconnect();
     await (0, agent_runner_1.disconnectRedis)();
     await database_1.prisma.$disconnect();
-    process.exit(0);
 });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 exports.default = app;

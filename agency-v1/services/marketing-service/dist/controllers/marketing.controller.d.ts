@@ -95,4 +95,16 @@ export declare class MarketingController {
      * POST /api/v1/email-blast/images/upload
      */
     static uploadImage(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
+     * POST /api/v1/marketing/generate-copy
+     */
+    static generateCopy(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
+     * POST /api/v1/marketing/campaigns/visual-builder
+     */
+    static saveVisualCampaign(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
+    /**
+     * POST /api/v1/marketing/send-omnichannel
+     */
+    static sendOmnichannel(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 }

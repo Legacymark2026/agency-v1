@@ -7,7 +7,8 @@ exports.SecurityService = void 0;
 const qrcode_1 = __importDefault(require("qrcode"));
 const crypto_1 = __importDefault(require("crypto"));
 const database_1 = require("@agency/database");
-const crypto_2 = require("../utils/crypto");
+const crypto_2 = require("@utilities/crypto");
+const user_repository_1 = require("@repositories/user.repository");
 // ── 🔒 Native TOTP Helper (RFC 6238 / RFC 4226) ──────────────────────────────
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 function generateBase32Secret(length = 20) {
@@ -103,13 +104,10 @@ class SecurityService {
         try {
             const encryptedSecret = (0, crypto_2.encrypt)(secret);
             const encryptedBackupCodes = backupCodes.map(code => (0, crypto_2.encrypt)(code));
-            await database_1.prisma.user.update({
-                where: { id: userId },
-                data: {
-                    twoFactorEnabled: true,
-                    twoFactorSecret: encryptedSecret,
-                    twoFactorBackupCodes: encryptedBackupCodes
-                }
+            await user_repository_1.userRepository.update(userId, {
+                twoFactorEnabled: true,
+                twoFactorSecret: encryptedSecret,
+                twoFactorBackupCodes: encryptedBackupCodes
             });
         }
         catch (e) {
@@ -124,10 +122,7 @@ class SecurityService {
     static async verify2FA(userId, tokenOrBackupCode, ipAddress, userAgent) {
         let user = null;
         try {
-            user = await database_1.prisma.user.findUnique({
-                where: { id: userId },
-                select: { twoFactorEnabled: true, twoFactorSecret: true, twoFactorBackupCodes: true }
-            });
+            user = await user_repository_1.userRepository.findById(userId);
         }
         catch (e) { }
         const encryptedSecret = user?.twoFactorSecret || '';
@@ -148,10 +143,7 @@ class SecurityService {
         if (matchedIdx !== -1) {
             const updatedCodes = backupCodes.filter((_, idx) => idx !== matchedIdx).map(code => (0, crypto_2.encrypt)(code));
             try {
-                await database_1.prisma.user.update({
-                    where: { id: userId },
-                    data: { twoFactorBackupCodes: updatedCodes }
-                });
+                await user_repository_1.userRepository.update(userId, { twoFactorBackupCodes: updatedCodes });
             }
             catch (e) { }
             await this.recordAuditLog(userId, '2FA_BACKUP_CODE_USED', ipAddress, userAgent, { remainingCodes: updatedCodes.length });
@@ -165,13 +157,10 @@ class SecurityService {
      */
     static async disable2FA(userId, ipAddress, userAgent) {
         try {
-            await database_1.prisma.user.update({
-                where: { id: userId },
-                data: {
-                    twoFactorEnabled: false,
-                    twoFactorSecret: null,
-                    twoFactorBackupCodes: []
-                }
+            await user_repository_1.userRepository.update(userId, {
+                twoFactorEnabled: false,
+                twoFactorSecret: null,
+                twoFactorBackupCodes: []
             });
         }
         catch (e) { }

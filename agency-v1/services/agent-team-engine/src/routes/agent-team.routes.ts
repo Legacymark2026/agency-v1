@@ -5,6 +5,7 @@ import { PresetGalleryService } from "../services/preset-gallery.service";
 export const agentTeamRouter = Router();
 
 agentTeamRouter.get("/agent/teams", AgentTeamController.getTeams);
+agentTeamRouter.post("/agent/teams/:teamId/run", AgentTeamController.runTeam);
 
 agentTeamRouter.get("/agent/presets", (_req, res) => {
   res.json({

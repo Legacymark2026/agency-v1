@@ -3,6 +3,7 @@ import { AiController } from "../controllers/ai.controller";
 import { ToolExecutorService } from "../services/tool-executor.service";
 import { PresetGalleryService } from "../services/preset-gallery.service";
 import { AgentMemoryService } from "../services/agent-memory.service";
+import { MemoryVectorService } from "../services/memory-vector.service";
 import { validateRequest } from "../middlewares/ai.middleware";
 import { guardrailsMiddleware } from "../middlewares/guardrails.middleware";
 import { z } from "zod";
@@ -87,5 +88,25 @@ aiRouter.delete("/agents/memory/:conversationId", async (req, res, next) => {
   try {
     await AgentMemoryService.clearMemory(req.params.conversationId);
     res.json({ success: true, message: `Memoria de conversación ${req.params.conversationId} limpiada.` });
+  } catch (err) { next(err); }
+});
+
+// ── 🧠 Vector Memory Search & Storage (PgVector Integration) ─────────────────
+aiRouter.post("/agents/:agentId/vector-memory", async (req, res, next) => {
+  try {
+    const { content, metadata } = req.body;
+    if (!content) return res.status(400).json({ error: "content is required" });
+    await MemoryVectorService.saveMemoryWithVector(req.params.agentId, content, metadata || {});
+    res.json({ success: true, message: "Memory saved to vector store." });
+  } catch (err) { next(err); }
+});
+
+aiRouter.get("/agents/:agentId/vector-memory/search", async (req, res, next) => {
+  try {
+    const query = String(req.query.q || "");
+    const limit = parseInt(String(req.query.limit || "5"), 10);
+    if (!query) return res.status(400).json({ error: "search query 'q' parameter is required" });
+    const matches = await MemoryVectorService.searchMemory(req.params.agentId, query, limit);
+    res.json({ success: true, query, matches });
   } catch (err) { next(err); }
 });

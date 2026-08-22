@@ -5,11 +5,49 @@
  * Handles: Leads, Deals, Pipeline, Scoring, Sequences, Commissions
  * Port: 4002
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require("@agency/observability/register");
+exports.authGrpcClient = void 0;
+try {
+    require("@agency/observability/register");
+}
+catch { /* optional */ }
+const service_auth_1 = require("@agency/service-auth");
 const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
@@ -20,13 +58,24 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const pg_1 = require("pg");
 const date_fns_1 = require("date-fns");
 const assignment_engine_1 = require("./assignment-engine");
+const lead_repository_1 = require("@repositories/lead.repository");
+const lead_routes_1 = require("./routes/lead.routes");
+const crm_middleware_1 = require("./middlewares/crm.middleware");
+const crm_grpc_server_1 = require("./grpc/crm-grpc.server");
+const scant_1 = require("@agency/scant");
+const path = __importStar(require("path"));
 const app = (0, express_1.default)();
 app.use((0, observability_1.metricsMiddleware)("crm-service"));
 const PORT = parseInt(process.env.PORT || "4002", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+// Start High-Speed Synchronous gRPC Server (Port 50052)
+const crmGrpcServer = (0, crm_grpc_server_1.startCrmGrpcServer)();
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: "5mb" }));
+app.use("/api/v1", lead_routes_1.leadRouter);
+// ── Interactive API Documentation (Swagger via Scant) ───────────────────────────
+app.use("/api/docs", (0, scant_1.serveServiceDocs)(path.resolve(__dirname, "..")));
 // ── Health Checks ────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "crm-service", timestamp: new Date().toISOString() });
@@ -79,13 +128,13 @@ app.get("/api/leads", async (req, res) => {
         const limit = parseInt(String(pageSize), 10);
         const skip = (p - 1) * limit;
         const [leads, total] = await Promise.all([
-            database_1.prisma.lead.findMany({
+            lead_repository_1.leadRepository.findMany({
                 where,
                 orderBy: { [String(sortBy)]: String(sortOrder) },
                 skip,
                 take: limit,
             }),
-            database_1.prisma.lead.count({ where }),
+            lead_repository_1.leadRepository.count(where),
         ]);
         res.json({
             leads,
@@ -103,12 +152,7 @@ app.get("/api/leads/analytics/source", async (req, res) => {
         const { companyId } = req.query;
         if (!companyId)
             return res.status(400).json({ error: "companyId required" });
-        const analytics = await database_1.prisma.lead.groupBy({
-            by: ["source"],
-            where: { companyId: String(companyId) },
-            _count: { id: true },
-            _avg: { score: true },
-        });
+        const analytics = await lead_repository_1.leadRepository.groupBySource(String(companyId));
         const result = analytics.map((a) => ({
             source: a.source,
             count: a._count.id,
@@ -2512,11 +2556,21 @@ app.get('/api/crm/closing/funnel-conversion-report', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// ── High-Speed Synchronous gRPC Server & Client Setup ─────────────────────────
+const grpc_1 = require("@agency/grpc");
+const CRM_GRPC_PORT = parseInt(process.env.GRPC_PORT || "50052", 10);
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+// 1. gRPC Server for CRM Service (Handled by startCrmGrpcServer() at startup)
+// 2. gRPC Client to Auth Service (with Circuit Breaker)
+exports.authGrpcClient = grpc_1.GrpcClientHelper.getClient("auth-service", grpc_1.PROTO_PATHS.auth, "auth", "AuthService", AUTH_GRPC_URL, { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 });
+app.use(crm_middleware_1.errorHandler);
 // ── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`📊 CRM Service running on port ${PORT}`);
+const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`📊 CRM Service running on port ${PORT} (HTTP) and port ${CRM_GRPC_PORT} (gRPC Sync)`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 process.on("SIGTERM", async () => {
+    await crmGrpcServer.forceShutdown();
     await eventBus.disconnect();
     await database_1.prisma.$disconnect();
     process.exit(0);

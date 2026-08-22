@@ -4,18 +4,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
-const database_1 = require("@agency/database");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const user_repository_1 = require("@repositories/user.repository");
+const session_repository_1 = require("@repositories/session.repository");
+const database_1 = require("@agency/database"); // keep for cross-db company memberships if needed
 class AuthService {
     /**
      * Autenticar usuario y generar JWT + Sesión Prisma
      */
     static async login(input, privateKey) {
         const { email, password, ipAddress, userAgent } = input;
-        const user = await database_1.prisma.user.findUnique({
-            where: { email },
-        });
+        const user = await user_repository_1.userRepository.findByEmail(email);
         if (!user || !user.passwordHash) {
             throw new Error("INVALID_CREDENTIALS");
         }
@@ -54,14 +54,12 @@ class AuthService {
                 companyName: c.company?.name ?? "",
             })),
         }, signKey, signOptions);
-        const session = await database_1.prisma.session.create({
-            data: {
-                userId: user.id,
-                sessionToken: token,
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                ipAddress: ipAddress ?? null,
-                userAgent: userAgent ?? null,
-            },
+        const session = await session_repository_1.sessionRepository.create({
+            userId: user.id,
+            sessionToken: token,
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            ipAddress: ipAddress ?? null,
+            userAgent: userAgent ?? null,
         });
         return {
             token,
@@ -80,22 +78,19 @@ class AuthService {
      * Obtener perfil de usuario autenticado
      */
     static async getUserProfile(userId) {
-        const user = await database_1.prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                globalRole: true,
-                image: true,
-                createdAt: true,
-            },
-        });
+        const user = await user_repository_1.userRepository.findById(userId);
         if (!user) {
             throw new Error("USER_NOT_FOUND");
         }
-        return user;
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            globalRole: user.globalRole,
+            image: user.image,
+            createdAt: user.createdAt,
+        };
     }
 }
 exports.AuthService = AuthService;

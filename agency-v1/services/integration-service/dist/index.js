@@ -3,11 +3,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
+try {
+    require("@agency/observability/register");
+}
+catch { /* optional */ }
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
+const service_auth_1 = require("@agency/service-auth");
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("integration-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const port = process.env.PORT || 4010;
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
@@ -16,6 +24,10 @@ app.use(express_1.default.json());
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', service: 'integration-service' });
 });
+const integration_routes_1 = require("./routes/integration.routes");
+const integration_middleware_1 = require("./middlewares/integration.middleware");
+app.use("/api/v1", integration_routes_1.integrationRouter);
+app.use(integration_middleware_1.errorHandler);
 // ============================================================================
 // PROVIDER MIGRATION & HELPERS
 // ============================================================================
@@ -417,7 +429,8 @@ app.post('/api/integrations/domains', async (req, res) => {
         res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Integration Service listening at http://localhost:${port}`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 //# sourceMappingURL=index.js.map

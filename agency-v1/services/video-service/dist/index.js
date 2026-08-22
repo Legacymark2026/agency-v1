@@ -36,9 +36,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const database_1 = require("@agency/database");
+const service_auth_1 = require("@agency/service-auth");
 const helmet_1 = __importDefault(require("helmet"));
 const http_1 = require("http");
 const path_1 = require("path");
@@ -56,6 +63,8 @@ const transitions_1 = require("./transitions");
 const color_match_1 = require("./color-match");
 const thumbnails_1 = require("./thumbnails");
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("video-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const server = (0, http_1.createServer)(app);
 const port = process.env.PORT || 4007;
 // ─── Redis connection ────────────────────────────────────────────────────────
@@ -81,6 +90,10 @@ redis.on('ready', () => {
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: '50mb' }));
+const video_routes_1 = require("./routes/video.routes");
+const video_middleware_1 = require("./middlewares/video.middleware");
+app.use("/api/v1", video_routes_1.videoRouter);
+app.use(video_middleware_1.errorHandler);
 // ─── Auth middleware ─────────────────────────────────────────────────────────
 function requireInternalSecret(req, res, next) {
     const secret = req.headers['x-internal-secret'];
@@ -1053,10 +1066,8 @@ server.listen(port, () => {
     console.log(`   WS   /ws/video                           — WebSocket for real-time updates`);
 });
 // ─── Graceful shutdown ──────────────────────────────────────────────────────
-process.on('SIGTERM', async () => {
-    console.log('[shutdown] SIGTERM received, closing queue...');
+(0, service_auth_1.setupGracefulShutdown)(server, async () => {
+    console.log('[shutdown] Closing queue...');
     await (0, render_queue_1.closeQueue)();
-    server.close();
-    process.exit(0);
 });
 //# sourceMappingURL=index.js.map

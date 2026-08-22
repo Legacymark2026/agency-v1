@@ -91,7 +91,7 @@ catch (err) {
     console.warn("[auth-service] Key load warning:", err.message);
 }
 // ── HashiCorp Vault Secrets Ingestion ───────────────────────────────────────
-const vault_1 = require("./services/vault");
+const vault_1 = require("@services/vault");
 async function loadSecretsFromVault() {
     try {
         const secrets = await vault_1.VaultService.getSecret("secret/data/auth");
@@ -858,8 +858,8 @@ const eventBus = new events_1.EventBus(REDIS_URL, "auth-service");
 // ── High-Speed Synchronous gRPC Server Setup ──────────────────────────────────
 const grpc_1 = require("@agency/grpc");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const blacklist_1 = require("./utils/blacklist");
-const dpop_1 = require("./utils/dpop");
+const blacklist_1 = require("@utilities/blacklist");
+const dpop_1 = require("@utilities/dpop");
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
 const grpcServer = new grpc_1.GrpcServerHelper();
 grpcServer.addService(grpc_1.PROTO_PATHS.auth, "auth", "AuthService", {
@@ -891,10 +891,8 @@ grpcServer.addService(grpc_1.PROTO_PATHS.auth, "auth", "AuthService", {
                     return callback(null, { valid: false, error: verification.error || "DPoP proof signature mismatch" });
                 }
             }
-            const user = await database_1.prisma.user.findUnique({
-                where: { id: decoded.sub },
-                select: { id: true, email: true, role: true }
-            });
+            const { userRepository } = await Promise.resolve().then(() => __importStar(require("@repositories/user.repository")));
+            const user = await userRepository.findById(decoded.sub);
             if (!user) {
                 return callback(null, { valid: false, error: "User not found" });
             }
@@ -940,10 +938,22 @@ grpcServer.start(GRPC_PORT).catch((err) => {
     console.error("[auth-service] Failed to start gRPC server:", err.message);
 });
 // ── Start Server ─────────────────────────────────────────────────────────────
+const reconciliation_service_1 = require("@services/reconciliation.service");
 const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);
     console.log(`   Health: http://localhost:${PORT}/health`);
     console.log(`   Ready:  http://localhost:${PORT}/ready`);
+    // Run DB reconciliation on startup after a 10s delay, and schedule it daily
+    setTimeout(() => {
+        reconciliation_service_1.ReconciliationService.runUserReconciliation()
+            .then((stats) => console.log(`[Reconciliation] Startup run complete:`, stats))
+            .catch((err) => console.error(`[Reconciliation] Startup run failed:`, err));
+    }, 10000);
+    setInterval(() => {
+        reconciliation_service_1.ReconciliationService.runUserReconciliation()
+            .then((stats) => console.log(`[Reconciliation] Scheduled run complete:`, stats))
+            .catch((err) => console.error(`[Reconciliation] Scheduled run failed:`, err));
+    }, 24 * 60 * 60 * 1000);
 });
 (0, service_auth_1.setupGracefulShutdown)(server);
 // Graceful shutdown

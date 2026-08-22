@@ -59,4 +59,24 @@ export declare class MarketingService {
      * Clonar un blast por ID
      */
     static cloneEmailBlast(blastId: string, companyId: string, createdById: string): Promise<any>;
+    /**
+     * Enviar campaña de SMS (Stubbed)
+     */
+    static sendSmsCampaign(companyId: string, name: string, body: string, recipients: string[]): Promise<{
+        success: boolean;
+        recipientsCount: number;
+        logFile: string;
+    }>;
+    /**
+     * Enviar campaña de WhatsApp (Stubbed)
+     */
+    static sendWhatsAppCampaign(companyId: string, name: string, body: string, recipients: string[]): Promise<{
+        success: boolean;
+        recipientsCount: number;
+        logFile: string;
+    }>;
+    /**
+     * Generar copy publicitario inteligente llamando al ai-engine
+     */
+    static generateAiCopy(companyId: string, topic: string, channel: 'email' | 'sms' | 'whatsapp'): Promise<any>;
 }

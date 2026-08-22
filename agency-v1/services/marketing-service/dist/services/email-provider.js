@@ -1,11 +1,12 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailProviderManager = exports.SmtpProvider = exports.ResendBatchProvider = void 0;
 const database_1 = require("@agency/database");
-const nodemailer_1 = __importDefault(require("nodemailer"));
+let nodemailer;
+try {
+    nodemailer = require("nodemailer");
+}
+catch { }
 /**
  * Resend Batch Email Provider
  * Uses Resend API endpoint https://api.resend.com/emails/batch (up to 100 emails per batch)
@@ -102,7 +103,7 @@ class SmtpProvider {
         if (!host || !user || !pass) {
             throw new Error("No hay servidor SMTP ni credenciales de correo configuradas en la plataforma.");
         }
-        const transporter = nodemailer_1.default.createTransport({
+        const transporter = nodemailer.createTransport({
             host,
             port,
             secure: port === 465,

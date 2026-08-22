@@ -18,11 +18,11 @@ import { prisma } from "@agency/database";
 import { EventBus, EventPayload } from "@agency/events";
 import { executeWorkflow, triggerWorkflow } from "./workflow-executor";
 import { setupGracefulShutdown } from "@agency/service-auth";
+import { WebhookIntegrationService } from "./services/webhook-integration.service";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const app = express();
 app.use(metricsMiddleware("automation-service"));
-app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4003", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
@@ -438,13 +438,32 @@ const eventBus = new EventBus(REDIS_URL, "automation-service");
 
 // React to CRM events
 eventBus.subscribe("lead.created", async (payload: EventPayload) => {
-  console.log(`[automation-service] New lead created: ${payload.data.leadId}`);
+  console.log(`[automation-service] New lead created: ${(payload.data as any).leadId}`);
+  try {
+    await WebhookIntegrationService.triggerIntegrationsForEvent(
+      String((payload.data as any).companyId || "system-fallback"),
+      "lead.created",
+      payload.data
+    );
+  } catch (err: any) {
+    console.error("[automation-service] Webhook dispatch fail on lead.created:", err.message);
+  }
 });
 
 eventBus.subscribe("deal.stage_changed", async (payload: EventPayload) => {
   const data = payload.data as { dealId: string; stage: string; companyId: string };
   console.log(`[automation-service] Deal stage changed: ${data.dealId} to stage: ${data.stage}`);
   
+  try {
+    await WebhookIntegrationService.triggerIntegrationsForEvent(
+      data.companyId || "system-fallback",
+      "deal.stage_changed",
+      data
+    );
+  } catch (err: any) {
+    console.error("[automation-service] Webhook dispatch fail on deal.stage_changed:", err.message);
+  }
+
   try {
     const result = await triggerWorkflow("DEAL_STAGE_CHANGED", {
       id: data.dealId,

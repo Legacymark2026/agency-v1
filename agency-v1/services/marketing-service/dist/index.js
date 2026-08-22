@@ -8,6 +8,7 @@ try {
     require("@agency/observability/register");
 }
 catch { /* optional */ }
+const observability_1 = require("@agency/observability");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
@@ -28,6 +29,8 @@ function setupGracefulShutdown(server) {
     process.on('SIGINT', () => shutdown('SIGINT'));
 }
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("marketing-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4009", 10);
 app.use((0, helmet_1.default)({ contentSecurityPolicy: false }));
 app.use((0, cors_1.default)());

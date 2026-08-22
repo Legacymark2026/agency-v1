@@ -48,4 +48,8 @@ exports.marketingRouter.get("/email-blast/:id", marketing_controller_1.Marketing
 exports.marketingRouter.delete("/email-blast/:id", marketing_controller_1.MarketingController.deleteEmailBlast);
 exports.marketingRouter.post("/email-blast/:id/send", marketing_controller_1.MarketingController.sendEmailBlast);
 exports.marketingRouter.post("/email-blast/:id/clone", marketing_controller_1.MarketingController.cloneEmailBlast);
+// Omnichannel Marketing & AI Assistant
+exports.marketingRouter.post("/marketing/generate-copy", marketing_controller_1.MarketingController.generateCopy);
+exports.marketingRouter.post("/marketing/campaigns/visual-builder", marketing_controller_1.MarketingController.saveVisualCampaign);
+exports.marketingRouter.post("/marketing/send-omnichannel", marketing_controller_1.MarketingController.sendOmnichannel);
 //# sourceMappingURL=marketing.routes.js.map

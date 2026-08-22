@@ -16,3 +16,6 @@ financeRouter.get("/invoices", FinanceController.getInvoices);
 financeRouter.post("/invoices", validateRequest(createInvoiceSchema), FinanceController.createInvoice);
 financeRouter.get("/billing/wallet", FinanceController.getWallet);
 financeRouter.post("/billing/wallet/recharge", FinanceController.rechargeWallet);
+financeRouter.post("/billing/stripe/webhook", FinanceController.handleStripeWebhook);
+financeRouter.get("/billing/cashflow/forecast", FinanceController.getCashFlowForecast);
+financeRouter.post("/billing/reconcile", FinanceController.reconcileTransactions);

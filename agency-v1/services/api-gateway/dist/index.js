@@ -10,9 +10,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Handles: JWT validation, rate limiting, CORS, request logging.
  * Port: 8080 (public-facing)
  */
-require("@agency/observability/register");
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
 const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
+const service_auth_1 = require("@agency/service-auth");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const http_proxy_middleware_1 = require("http-proxy-middleware");
@@ -20,6 +25,11 @@ const ioredis_1 = __importDefault(require("ioredis"));
 const server_1 = require("@apollo/server");
 const express4_1 = require("@apollo/server/express4");
 const crypto_1 = __importDefault(require("crypto"));
+const grpc_1 = require("@agency/grpc");
+const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
+const authGrpcClient = grpc_1.GrpcClientHelper.getClient("auth-service", grpc_1.PROTO_PATHS.auth, "auth", "AuthService", AUTH_GRPC_URL, { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 });
+const CRM_GRPC_URL = process.env.CRM_GRPC_URL || "crm-service:50052";
+const crmGrpcClient = grpc_1.GrpcClientHelper.getClient("crm-service", grpc_1.PROTO_PATHS.crm, "crm", "CrmService", CRM_GRPC_URL, { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 });
 const app = (0, express_1.default)();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 app.use((0, observability_1.metricsMiddleware)("api-gateway"));
@@ -42,6 +52,38 @@ app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "api-gateway", timestamp: new Date().toISOString() });
 });
 app.get("/metrics", observability_1.metricsEndpoint);
+// ── Layered Router (Controller -> Service -> Middleware) ──────────────────────
+const gateway_routes_1 = require("./routes/gateway.routes");
+const gateway_middleware_1 = require("./middlewares/gateway.middleware");
+app.use("/api/v1", gateway_routes_1.gatewayRouter);
+app.use(gateway_middleware_1.errorHandler);
+app.post("/api/gateway/verify-token", express_1.default.json(), async (req, res) => {
+    const { token } = req.body;
+    if (!token)
+        return res.status(400).json({ valid: false, error: "Token required" });
+    try {
+        const result = await authGrpcClient.call("ValidateToken", { token }, async () => {
+            // Fallback: HTTP call if gRPC fails or circuit is open
+            const authUrl = await resolveServiceUrl("auth");
+            const resp = await fetch(`${authUrl}/api/auth/me`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await resp.json();
+            return {
+                valid: resp.ok,
+                userId: data.user?.id || "",
+                email: data.user?.email || "",
+                role: data.user?.role || "",
+                companyId: "",
+                error: resp.ok ? "" : (data.error || "HTTP verification failed")
+            };
+        });
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({ valid: false, error: err.message });
+    }
+});
 // ── Edge Cache & Service Registry (Redis) ───────────────────────────────────
 const redis = new ioredis_1.default(process.env.REDIS_URL || "redis://localhost:6379");
 redis.on("error", (err) => console.error("[api-gateway] Redis global error:", err.message));
@@ -73,11 +115,125 @@ const rateLimitMiddleware = async (req, res, next) => {
         next();
     }
     catch (err) {
-        console.error(`[RateLimiter] Redis error for IP ${clientIp}:`, err.message);
-        next(); // Fail-open to avoid service outage if Redis fails
+        // H-5 FIX: Fail-closed with in-memory fallback when Redis is down
+        console.error(`[RateLimiter] Redis error for IP ${clientIp}: ${err.message}. Applying in-memory fallback.`);
+        // Emergency in-memory counter (basic DoS protection when Redis fails)
+        const memKey = `${clientIp}:${req.path}`;
+        const memCount = (inMemoryRateLimits.get(memKey) || 0) + 1;
+        inMemoryRateLimits.set(memKey, memCount);
+        if (memCount > 200) { // Higher threshold since in-memory is per-instance
+            return res.status(429).json({ error: "Too many requests (fallback)" });
+        }
+        next();
     }
 };
+// In-memory fallback rate limit counters (reset every 60s)
+const inMemoryRateLimits = new Map();
+setInterval(() => inMemoryRateLimits.clear(), 60_000);
 app.use(rateLimitMiddleware);
+// ── Metered Usage & Monetization Middleware ─────────────────────────────────
+const DEFAULT_API_COST_TABLE = {
+    "/api/v1/agents": { unitType: "TOKENS", costPerUnitUsd: 0.0000025 }, // $0.0025 per 1k tokens
+    "/api/v1/video": { unitType: "SECONDS", costPerUnitUsd: 0.05 }, // $0.05 per sec
+    "/api/v1/invoices": { unitType: "DOCUMENTS", costPerUnitUsd: 0.08 }, // $0.08 per invoice
+    "default": { unitType: "REQUESTS", costPerUnitUsd: 0.0005 }, // $0.0005 per request
+};
+let activeApiCostTable = { ...DEFAULT_API_COST_TABLE };
+// Carga inicial de Redis si existe
+redis.get("config:api_pricing").then((cached) => {
+    if (cached) {
+        try {
+            activeApiCostTable = { ...DEFAULT_API_COST_TABLE, ...JSON.parse(cached) };
+        }
+        catch { }
+    }
+}).catch(() => { });
+// H-6 FIX: Protect admin pricing endpoints with internal auth check
+const requireAdminGateway = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Authentication required" });
+    }
+    try {
+        const result = await authGrpcClient.call("ValidateToken", { token: authHeader.slice(7) }, async () => {
+            return { valid: false, role: "", error: "gRPC unavailable" };
+        });
+        if (!result.valid || (result.role !== "super_admin" && result.role !== "admin")) {
+            return res.status(403).json({ error: "Admin access required" });
+        }
+        next();
+    }
+    catch {
+        return res.status(401).json({ error: "Authentication failed" });
+    }
+};
+app.get("/api/v1/admin/pricing", requireAdminGateway, async (req, res) => {
+    try {
+        const cached = await redis.get("config:api_pricing");
+        const pricing = cached ? JSON.parse(cached) : activeApiCostTable;
+        res.json({ success: true, pricing });
+    }
+    catch (err) {
+        res.json({ success: true, pricing: activeApiCostTable });
+    }
+});
+app.post("/api/v1/admin/pricing", requireAdminGateway, async (req, res) => {
+    try {
+        const { pricing } = req.body;
+        if (!pricing || typeof pricing !== "object") {
+            return res.status(400).json({ success: false, error: "Objeto de tarifario inválido" });
+        }
+        activeApiCostTable = { ...DEFAULT_API_COST_TABLE, ...pricing };
+        await redis.set("config:api_pricing", JSON.stringify(activeApiCostTable));
+        res.json({ success: true, message: "Tarifario actualizado en tiempo real en todo el clúster", pricing: activeApiCostTable });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+const apiUsageMeteringMiddleware = async (req, res, next) => {
+    if (!req.path.startsWith("/api/v1") && !req.path.startsWith("/api/agents"))
+        return next();
+    const startTime = Date.now();
+    res.on("finish", async () => {
+        try {
+            const companyId = (req.headers["x-company-id"] || "company-default");
+            const apiKeyId = (req.headers["x-api-key-id"] || "public-api");
+            const durationMs = Date.now() - startTime;
+            let matchedConfig = activeApiCostTable["default"];
+            for (const prefix of Object.keys(activeApiCostTable)) {
+                if (prefix !== "default" && req.path.startsWith(prefix)) {
+                    matchedConfig = activeApiCostTable[prefix];
+                    break;
+                }
+            }
+            const unitsHeader = res.getHeader("x-units-consumed");
+            const unitsConsumed = unitsHeader ? parseFloat(String(unitsHeader)) : 1.0;
+            const totalCostUsd = unitsConsumed * matchedConfig.costPerUnitUsd;
+            const eventPayload = {
+                companyId,
+                apiKeyId,
+                serviceName: req.path.split("/")[2] || "core",
+                endpoint: req.path,
+                method: req.method,
+                statusCode: String(res.statusCode),
+                durationMs: String(durationMs),
+                requestBytes: String(req.headers["content-length"] || 0),
+                responseBytes: String(res.getHeader("content-length") || 0),
+                unitsConsumed: String(unitsConsumed),
+                unitType: matchedConfig.unitType,
+                totalCostUsd: String(totalCostUsd),
+                timestamp: new Date().toISOString(),
+            };
+            await redis.xadd("api_usage_stream", "*", ...Object.entries(eventPayload).flat());
+        }
+        catch (err) {
+            console.warn("[Metering] Redis Stream push error:", err.message);
+        }
+    });
+    next();
+};
+app.use(apiUsageMeteringMiddleware);
 // ── Service Discovery Config ─────────────────────────────────────────────────
 const SERVICES = {
     auth: process.env.AUTH_SERVICE_URL || "http://auth-service:4001",
@@ -99,6 +255,7 @@ const SERVICES = {
     hr: process.env.HR_SERVICE_URL || "http://hr-service:4017",
     project: process.env.PROJECT_SERVICE_URL || "http://project-service:4018",
     affiliate: process.env.AFFILIATE_SERVICE_URL || "http://affiliate-service:4019",
+    pos: process.env.POS_SERVICE_URL || "http://pos-service:4020",
 };
 // Dynamic Service Discovery Helper
 const resolveServiceUrl = async (serviceName) => {
@@ -153,13 +310,22 @@ const resolvers = {
             if (!context.token)
                 return [];
             try {
-                // Native JWT Payload Decode (Lightweight base64 url decode)
+                // M-7 FIX: Verify JWT via gRPC instead of decoding without signature check
                 const tokenStr = context.token.replace("Bearer ", "");
-                const payloadBase64 = tokenStr.split(".")[1];
-                if (!payloadBase64)
+                if (!tokenStr)
                     return [];
-                const decodedPayload = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf8"));
-                const companyId = decodedPayload?.companies?.[0]?.companyId;
+                let companyId = null;
+                try {
+                    const tokenResult = await authGrpcClient.call("ValidateToken", { token: tokenStr }, async () => {
+                        return { valid: false, companyId: "" };
+                    });
+                    if (!tokenResult.valid)
+                        return [];
+                    companyId = tokenResult.companyId;
+                }
+                catch {
+                    return [];
+                }
                 if (!companyId)
                     return [];
                 const serviceUrl = await resolveServiceUrl("crm");
@@ -236,7 +402,9 @@ const edgeCacheMiddleware = async (req, res, next) => {
     if (req.path.startsWith("/api/auth") || req.path.startsWith("/api/admin")) {
         return next();
     }
-    const cacheKey = `edge_cache:${req.path}`;
+    // M-6 FIX: Include auth state in cache key to prevent cross-user cache leaks
+    const authId = (req.headers.authorization || "anon").slice(0, 20);
+    const cacheKey = `edge_cache:${authId}:${req.path}`;
     try {
         const cachedData = await redis.get(cacheKey);
         if (cachedData) {
@@ -277,22 +445,25 @@ class CircuitBreaker {
     serviceName;
     state = "CLOSED";
     failureCount = 0;
+    halfOpenFailures = 0;
     lastStateChange = Date.now();
-    failureThreshold = 5;
-    cooldownPeriod = 10000; // 10 seconds
+    failureThreshold = 25;
+    cooldownPeriod = 3000; // 3 seconds
     constructor(serviceName) {
         this.serviceName = serviceName;
     }
     checkState() {
         if (this.state === "OPEN" && Date.now() - this.lastStateChange > this.cooldownPeriod) {
             this.state = "HALF-OPEN";
+            this.halfOpenFailures = 0;
             this.lastStateChange = Date.now();
             console.log(`[CircuitBreaker] Circuit transitioned to HALF-OPEN for ${this.serviceName}`);
         }
     }
     recordSuccess() {
         this.failureCount = 0;
-        if (this.state === "HALF-OPEN") {
+        this.halfOpenFailures = 0;
+        if (this.state === "HALF-OPEN" || this.state === "OPEN") {
             this.state = "CLOSED";
             this.lastStateChange = Date.now();
             console.log(`[CircuitBreaker] Circuit transitioned to CLOSED for ${this.serviceName}`);
@@ -301,7 +472,14 @@ class CircuitBreaker {
     recordFailure() {
         this.failureCount++;
         this.lastStateChange = Date.now();
-        if (this.state === "HALF-OPEN" || this.failureCount >= this.failureThreshold) {
+        if (this.state === "HALF-OPEN") {
+            this.halfOpenFailures++;
+            if (this.halfOpenFailures >= 3) {
+                this.state = "OPEN";
+                console.warn(`[CircuitBreaker] Circuit transitioned back to OPEN for ${this.serviceName}`);
+            }
+        }
+        else if (this.failureCount >= this.failureThreshold) {
             this.state = "OPEN";
             console.warn(`[CircuitBreaker] Circuit transitioned to OPEN for ${this.serviceName} due to failures (${this.failureCount})`);
         }
@@ -317,7 +495,8 @@ const getBreaker = (serviceName) => {
 const handleFallback = async (req, res, serviceName, reason) => {
     if (req.method === "GET") {
         // Try to get from Redis cache
-        const cacheKey = `edge_cache:${req.path}`;
+        const authId = (req.headers.authorization || "anon").slice(0, 20);
+        const cacheKey = `edge_cache:${authId}:${req.path}`;
         try {
             const cachedData = await redis.get(cacheKey);
             if (cachedData) {
@@ -351,9 +530,42 @@ const resilientProxy = (serviceName, target) => {
                 if (req.headers["x-correlation-id"]) {
                     proxyReq.setHeader("x-correlation-id", req.headers["x-correlation-id"]);
                 }
+                // Remove client-supplied identity headers to prevent header spoofing
+                proxyReq.removeHeader("x-user-id");
+                proxyReq.removeHeader("x-company-id");
+                // C-5 FIX: Verify JWT signature via gRPC before injecting identity headers
+                const token = req.headers.authorization || req.headers.Authorization;
+                if (token && token.startsWith("Bearer ")) {
+                    const rawToken = token.slice(7);
+                    (async () => {
+                        try {
+                            // Fast path: verify token via gRPC with circuit breaker + fallback
+                            const result = await authGrpcClient.call("ValidateToken", { token: rawToken }, async () => {
+                                // Fallback: HTTP call to auth-service /api/auth/me
+                                const authUrl = await resolveServiceUrl("auth");
+                                const resp = await fetch(`${authUrl}/api/auth/me`, {
+                                    headers: { Authorization: token }
+                                });
+                                if (!resp.ok)
+                                    return { valid: false, userId: "", companyId: "" };
+                                const data = await resp.json();
+                                return { valid: true, userId: data.user?.id || "", companyId: "" };
+                            });
+                            if (result.valid && result.userId) {
+                                proxyReq.setHeader("x-user-id", String(result.userId));
+                                if (result.companyId) {
+                                    proxyReq.setHeader("x-company-id", String(result.companyId));
+                                }
+                            }
+                        }
+                        catch (err) {
+                            // If both gRPC and HTTP verification fail, do NOT inject headers
+                        }
+                    })();
+                }
             },
             proxyRes: (proxyRes, req, res) => {
-                if (proxyRes.statusCode && proxyRes.statusCode >= 500) {
+                if (proxyRes.statusCode && [502, 503, 504].includes(proxyRes.statusCode)) {
                     breaker.recordFailure();
                 }
                 else {
@@ -363,7 +575,13 @@ const resilientProxy = (serviceName, target) => {
             error: async (err, req, res) => {
                 const resolvedTarget = await resolveServiceUrl(serviceName);
                 console.error(`[CircuitBreaker] Proxy error for ${serviceName} to ${resolvedTarget}:`, err.message);
-                breaker.recordFailure();
+                // Do not record permanent circuit breaker failure for transient Docker DNS lookup errors (EAI_AGAIN)
+                if (err.code === 'EAI_AGAIN' || err.message?.includes('EAI_AGAIN')) {
+                    console.warn(`[CircuitBreaker] Temporary Docker DNS lookup failure (EAI_AGAIN) for ${serviceName}. Waiting for container startup...`);
+                }
+                else {
+                    breaker.recordFailure();
+                }
                 await handleFallback(req, res, serviceName, `Proxy error: ${err.message}`);
             }
         }
@@ -386,6 +604,7 @@ const resilientProxy = (serviceName, target) => {
 // ── Route Definitions ────────────────────────────────────────────────────────
 // Auth Service
 app.use("/api/auth", resilientProxy("auth", SERVICES.auth));
+app.use("/api/v1/auth", resilientProxy("auth", SERVICES.auth));
 // CRM Service
 app.use("/api/leads", resilientProxy("crm", SERVICES.crm));
 app.use("/api/deals", resilientProxy("crm", SERVICES.crm));
@@ -398,6 +617,7 @@ app.use("/api/cron/social-publisher", resilientProxy("automation", SERVICES.auto
 app.use("/api/cron/process-sequences", resilientProxy("automation", SERVICES.automation));
 // AI Engine
 app.use("/api/agents", resilientProxy("ai", SERVICES.ai));
+app.use("/api/v1/agents", resilientProxy("ai", SERVICES.ai));
 app.use("/api/ai", resilientProxy("ai", SERVICES.ai));
 app.use("/api/knowledge-bases", resilientProxy("ai", SERVICES.ai));
 // Inbox Service
@@ -427,6 +647,15 @@ app.use("/api/creative", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/email-templates", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/mailing-lists", resilientProxy("marketing", SERVICES.marketing));
 app.use("/api/suppression-lists", resilientProxy("marketing", SERVICES.marketing));
+// Marketing Enterprise Features
+app.use("/api/email-validation", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/queue", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/sequences", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/domain-reputation", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/reports", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/segments", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/templates", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/compliance", resilientProxy("marketing", SERVICES.marketing));
 // Integration Service
 app.use("/api/integrations", resilientProxy("integration", SERVICES.integration));
 app.use("/api/webhooks/shopify", resilientProxy("integration", SERVICES.integration));
@@ -436,7 +665,8 @@ app.use("/api/proposals", resilientProxy("document", SERVICES.document));
 app.use("/api/propuesta", resilientProxy("document", SERVICES.document));
 app.use("/api/kb", resilientProxy("document", SERVICES.document));
 // Agent Team Engine
-app.use("/api/agent", resilientProxy("agentTeam", SERVICES.agentTeam));
+app.use("/api/agent/teams", resilientProxy("agentTeam", SERVICES.agentTeam));
+app.use("/api/agent/presets", resilientProxy("agentTeam", SERVICES.agentTeam));
 app.use("/api/test-flow", resilientProxy("agentTeam", SERVICES.agentTeam));
 // Analytics Service
 app.use("/api/analytics", resilientProxy("analytics", SERVICES.analytics));
@@ -445,7 +675,28 @@ app.use("/api/track", resilientProxy("analytics", SERVICES.analytics));
 app.use("/api/admin", resilientProxy("admin", SERVICES.admin));
 app.use("/api/diagnostics", resilientProxy("admin", SERVICES.admin));
 app.use("/api/debug", resilientProxy("admin", SERVICES.admin));
-// Public API Service
+// Specific /api/v1/* routes for versioned microservices (MUST come before catch-all below)
+app.use("/api/v1/crm", resilientProxy("crm", SERVICES.crm));
+app.use("/api/v1/leads", resilientProxy("crm", SERVICES.crm));
+app.use("/api/v1/deals", resilientProxy("crm", SERVICES.crm));
+app.use("/api/v1/inbox", resilientProxy("inbox", SERVICES.inbox));
+app.use("/api/v1/invoices", resilientProxy("finance", SERVICES.finance));
+app.use("/api/v1/payroll", resilientProxy("finance", SERVICES.finance));
+app.use("/api/v1/marketing", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/v1/campaigns", resilientProxy("marketing", SERVICES.marketing));
+app.use("/api/v1/automation", resilientProxy("automation", SERVICES.automation));
+app.use("/api/v1/workflows", resilientProxy("automation", SERVICES.automation));
+app.use("/api/v1/notifications", resilientProxy("notification", SERVICES.notification));
+app.use("/api/v1/employees", resilientProxy("hr", SERVICES.hr));
+app.use("/api/v1/hr", resilientProxy("hr", SERVICES.hr));
+app.use("/api/v1/projects", resilientProxy("project", SERVICES.project));
+app.use("/api/v1/kanban", resilientProxy("project", SERVICES.project));
+app.use("/api/v1/tasks", resilientProxy("project", SERVICES.project));
+app.use("/api/v1/analytics", resilientProxy("analytics", SERVICES.analytics));
+app.use("/api/v1/calendar", resilientProxy("calendar", SERVICES.calendar));
+app.use("/api/v1/video", resilientProxy("video", SERVICES.video));
+app.use("/api/v1/integrations", resilientProxy("integration", SERVICES.integration));
+// Public API Service — catch-all for /api/v1/* (MUST be LAST to avoid shadowing specific routes above)
 app.use("/api/v1", resilientProxy("publicApi", SERVICES.publicApi));
 app.use("/api/public", resilientProxy("publicApi", SERVICES.publicApi));
 app.use("/api/serve", resilientProxy("publicApi", SERVICES.publicApi));
@@ -463,6 +714,9 @@ app.use("/api/kanban", resilientProxy("project", SERVICES.project));
 app.use("/api/tasks", resilientProxy("project", SERVICES.project));
 app.use("/api/portfolio", resilientProxy("project", SERVICES.project));
 app.use("/api/cms", resilientProxy("project", SERVICES.project));
+// POS Service
+app.use("/api/v1/pos", resilientProxy("pos", SERVICES.pos));
+app.use("/api/pos", resilientProxy("pos", SERVICES.pos));
 // Affiliate Service
 app.use("/r", resilientProxy("affiliate", SERVICES.affiliate));
 app.use("/api/affiliates", resilientProxy("affiliate", SERVICES.affiliate));
@@ -470,7 +724,7 @@ app.use("/api/affiliates", resilientProxy("affiliate", SERVICES.affiliate));
 app.use((_req, res) => {
     res.status(404).json({ error: "Route not found", hint: "Check the API Gateway route table" });
 });
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`🌐 API Gateway running on port ${PORT}`);
     console.log(`   Routes: auth→${SERVICES.auth}, crm→${SERVICES.crm}, automation→${SERVICES.automation}`);
     console.log(`   Routes: ai→${SERVICES.ai}, inbox→${SERVICES.inbox}, finance→${SERVICES.finance}`);
@@ -480,6 +734,7 @@ app.listen(PORT, "0.0.0.0", () => {
     console.log(`   Routes: analytics→${SERVICES.analytics}, admin→${SERVICES.admin}, publicApi→${SERVICES.publicApi}`);
     console.log(`   Routes: notification→${SERVICES.notification}, hr→${SERVICES.hr}, project→${SERVICES.project}`);
 });
+(0, service_auth_1.setupGracefulShutdown)(server);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 exports.default = app;
 //# sourceMappingURL=index.js.map

@@ -3,15 +3,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// Observability registration — must be first
+try {
+    require("@agency/observability/register");
+}
+catch { /* observability optional */ }
+const observability_1 = require("@agency/observability");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const database_1 = require("@agency/database");
+const service_auth_1 = require("@agency/service-auth");
 const click_controller_1 = require("./controllers/click.controller");
 const payout_controller_1 = require("./controllers/payout.controller");
 const consumer_1 = require("./events/consumer");
 const release_referrals_1 = require("./cron/release-referrals");
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("affiliate-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4019", 10);
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
@@ -35,6 +44,10 @@ app.get("/ready", async (_req, res) => {
         res.status(503).json({ status: "not_ready", error: String(err) });
     }
 });
+const affiliate_routes_1 = require("./routes/affiliate.routes");
+const affiliate_middleware_1 = require("./middlewares/affiliate.middleware");
+app.use("/api/v1", affiliate_routes_1.affiliateRouter);
+app.use(affiliate_middleware_1.errorHandler);
 // ── Redirección & Analíticas de Enlaces ─────────────────────────────────────────
 app.get("/r/:code", click_controller_1.trackClick);
 // ── Liquidación de Comisiones (Payouts) ─────────────────────────────────────────
@@ -271,12 +284,7 @@ app.get("/api/affiliates", async (_req, res) => {
 const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Affiliate Service listening at http://localhost:${PORT}`);
 });
-process.on("SIGTERM", async () => {
-    console.log("SIGTERM received. Shutting down...");
-    server.close(async () => {
-        await database_1.prisma.$disconnect();
-        console.log("Database disconnected. Server closed.");
-        process.exit(0);
-    });
+(0, service_auth_1.setupGracefulShutdown)(server, async () => {
+    await database_1.prisma.$disconnect();
 });
 //# sourceMappingURL=index.js.map

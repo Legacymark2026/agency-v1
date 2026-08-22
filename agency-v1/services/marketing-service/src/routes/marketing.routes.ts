@@ -53,3 +53,8 @@ marketingRouter.get("/email-blast/:id", MarketingController.getEmailBlast);
 marketingRouter.delete("/email-blast/:id", MarketingController.deleteEmailBlast);
 marketingRouter.post("/email-blast/:id/send", MarketingController.sendEmailBlast);
 marketingRouter.post("/email-blast/:id/clone", MarketingController.cloneEmailBlast);
+
+// Omnichannel Marketing & AI Assistant
+marketingRouter.post("/marketing/generate-copy", MarketingController.generateCopy);
+marketingRouter.post("/marketing/campaigns/visual-builder", MarketingController.saveVisualCampaign);
+marketingRouter.post("/marketing/send-omnichannel", MarketingController.sendOmnichannel);

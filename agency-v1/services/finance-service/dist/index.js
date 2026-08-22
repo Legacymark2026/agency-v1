@@ -7,14 +7,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * Finance Service — Billing, Payroll & Accounting Microservice
  * Port: 4006 | Low frequency, high data criticality
  */
+try {
+    require("@agency/observability/register");
+}
+catch { /* optional */ }
+const observability_1 = require("@agency/observability");
+const service_auth_1 = require("@agency/service-auth");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
+const crypto_1 = __importDefault(require("crypto"));
+const stripe_1 = __importDefault(require("stripe"));
 const database_1 = require("@agency/database");
 const events_1 = require("@agency/events");
 const app = (0, express_1.default)();
+app.use((0, observability_1.metricsMiddleware)("finance-service"));
+app.get("/metrics", observability_1.metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4006", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const WOMPI_INTEGRITY_SECRET = process.env.WOMPI_INTEGRITY_SECRET || "wompi_dev_integrity_secret";
+const stripe = STRIPE_SECRET_KEY
+    ? new stripe_1.default(STRIPE_SECRET_KEY, { apiVersion: "2025-02-24.acacia" })
+    : null;
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: "5mb" }));
@@ -28,6 +44,10 @@ app.get("/ready", async (_req, res) => {
         res.status(503).json({ status: "not_ready", error: String(err) });
     }
 });
+const finance_routes_1 = require("./routes/finance.routes");
+const finance_middleware_1 = require("./middlewares/finance.middleware");
+app.use("/api/v1", finance_routes_1.financeRouter);
+app.use(finance_middleware_1.errorHandler);
 // ── Invoices ─────────────────────────────────────────────────────────────────
 app.get("/api/invoices", async (req, res) => {
     try {
@@ -406,23 +426,349 @@ app.get("/api/expenses/stats", async (req, res) => {
         res.status(500).json({ error: String(err) });
     }
 });
-// ── Webhook: Stripe ──────────────────────────────────────────────────────────
+// ── Payment Gateways & Processing ───────────────────────────────────────────
+app.get("/api/payments/gateways", async (_req, res) => {
+    res.json({
+        success: true,
+        gateways: {
+            stripe: { enabled: Boolean(stripe), mode: STRIPE_SECRET_KEY.startsWith("sk_live") ? "live" : "test" },
+            wompi: { enabled: true, currency: "COP" },
+            paypal: { enabled: true, currency: "USD" },
+            mercadopago: { enabled: true, currency: "COP" },
+        }
+    });
+});
+app.post("/api/payments/checkout-session", async (req, res) => {
+    try {
+        const { invoiceId, amount, currency = "USD", customerEmail, title = "Invoice Payment", successUrl, cancelUrl, mode = "payment" } = req.body;
+        let targetInvoice = null;
+        if (invoiceId) {
+            targetInvoice = await database_1.prisma.invoice.findUnique({ where: { id: invoiceId } });
+            if (!targetInvoice)
+                return res.status(404).json({ error: "Invoice not found" });
+        }
+        const payAmount = targetInvoice ? targetInvoice.totalAmount : amount;
+        if (!payAmount || payAmount <= 0) {
+            return res.status(400).json({ error: "Invalid amount for payment session" });
+        }
+        if (stripe) {
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ["card"],
+                mode: mode === "subscription" ? "subscription" : "payment",
+                customer_email: customerEmail || targetInvoice?.clientPhone || undefined,
+                line_items: [
+                    {
+                        price_data: {
+                            currency: currency.toLowerCase(),
+                            product_data: {
+                                name: title,
+                                description: targetInvoice ? `Invoice #${targetInvoice.id}` : "LegacyMark Service Payment",
+                            },
+                            unit_amount: Math.round(payAmount * 100),
+                        },
+                        quantity: 1,
+                    },
+                ],
+                success_url: successUrl || `https://legacymarksas.com/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: cancelUrl || `https://legacymarksas.com/checkout/cancel`,
+                metadata: {
+                    invoiceId: invoiceId || "",
+                    companyId: targetInvoice?.companyId || "",
+                },
+            });
+            if (targetInvoice) {
+                await database_1.prisma.invoice.update({
+                    where: { id: targetInvoice.id },
+                    data: {
+                        paymentUrl: session.url,
+                        stripeInvoiceId: session.id,
+                    },
+                });
+            }
+            return res.json({ success: true, url: session.url, sessionId: session.id });
+        }
+        // Mock payment URL fallback for dev/staging environments without active Stripe key
+        const mockPaymentUrl = `https://legacymarksas.com/pay/${invoiceId || "direct"}?amount=${payAmount}&cur=${currency}`;
+        if (targetInvoice) {
+            await database_1.prisma.invoice.update({
+                where: { id: targetInvoice.id },
+                data: { paymentUrl: mockPaymentUrl },
+            });
+        }
+        res.json({
+            success: true,
+            url: mockPaymentUrl,
+            mock: true,
+            message: "Generated fallback payment session (Stripe API key not configured)"
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+app.post("/api/payments/create-intent", async (req, res) => {
+    try {
+        const { amount, currency = "usd", invoiceId } = req.body;
+        if (!amount || amount <= 0)
+            return res.status(400).json({ error: "Amount required" });
+        if (stripe) {
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: Math.round(amount * 100),
+                currency: currency.toLowerCase(),
+                metadata: { invoiceId: invoiceId || "" },
+            });
+            return res.json({
+                success: true,
+                clientSecret: paymentIntent.client_secret,
+                paymentIntentId: paymentIntent.id,
+            });
+        }
+        res.json({
+            success: true,
+            clientSecret: `mock_secret_${Date.now()}`,
+            mock: true,
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// Wompi Integrity Signature Generator (Colombia COP Payments)
+app.post("/api/payments/wompi/signature", async (req, res) => {
+    try {
+        const { reference, amountInCents, currency = "COP", expirationTime } = req.body;
+        if (!reference || !amountInCents) {
+            return res.status(400).json({ error: "reference and amountInCents required" });
+        }
+        const rawString = `${reference}${amountInCents}${currency}${expirationTime || ""}${WOMPI_INTEGRITY_SECRET}`;
+        const signature = crypto_1.default.createHash("sha256").update(rawString).digest("hex");
+        res.json({
+            success: true,
+            reference,
+            amountInCents,
+            currency,
+            signature,
+            publicKey: process.env.WOMPI_PUBLIC_KEY || "pub_prod_wompi_key_stub",
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ── Subscriptions ─────────────────────────────────────────────────────────────
+app.get("/api/subscriptions", async (req, res) => {
+    try {
+        const { companyId } = req.query;
+        if (!companyId)
+            return res.status(400).json({ error: "companyId required" });
+        const invoices = await database_1.prisma.invoice.findMany({
+            where: {
+                companyId: String(companyId),
+                notes: { contains: "[SUBSCRIPTION]" }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+        res.json({ success: true, subscriptions: invoices });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+app.post("/api/subscriptions", async (req, res) => {
+    try {
+        const { planName, amount, currency = "USD", companyId, clientName, clientNit, interval = "MONTHLY" } = req.body;
+        if (!companyId || !amount)
+            return res.status(400).json({ error: "companyId and amount required" });
+        const nextDueDate = new Date();
+        if (interval === "YEARLY")
+            nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+        else
+            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+        const invoice = await database_1.prisma.invoice.create({
+            data: {
+                companyId,
+                clientName: clientName || "Subscriber Client",
+                clientNit: clientNit || null,
+                subtotalAmount: amount,
+                taxAmount: 0,
+                discountAmount: 0,
+                totalAmount: amount,
+                advanceAmount: 0,
+                finalAmount: amount,
+                currency,
+                dueDate: nextDueDate,
+                notes: `[SUBSCRIPTION] Plan: ${planName || "Standard"} | Interval: ${interval}`,
+                status: "DRAFT_AWAITING_PAYMENT",
+                items: {
+                    create: [{
+                            title: `Plan ${planName || "Suscripción"} (${interval})`,
+                            description: `Renovación periódica ${interval}`,
+                            quantity: 1,
+                            unitPrice: amount,
+                            taxRate: 0,
+                            totalAmount: amount
+                        }]
+                }
+            },
+            include: { items: true }
+        });
+        res.status(201).json({ success: true, subscription: invoice });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+app.post("/api/subscriptions/:id/cancel", async (req, res) => {
+    try {
+        const invoice = await database_1.prisma.invoice.update({
+            where: { id: req.params.id },
+            data: { status: "CANCELLED" }
+        });
+        res.json({ success: true, subscription: invoice });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+// ── Webhooks: Stripe, Wompi & PayPal ─────────────────────────────────────────
 app.post("/api/webhooks/stripe", async (req, res) => {
-    console.log("[finance-service] Stripe webhook received");
-    // TODO: Verify stripe signature and process payment events
-    res.json({ received: true });
+    try {
+        const sig = req.headers["stripe-signature"];
+        let event = req.body;
+        if (stripe && STRIPE_WEBHOOK_SECRET && sig) {
+            try {
+                event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+            }
+            catch (err) {
+                console.warn(`[finance-service] Webhook signature verification failed: ${String(err)}`);
+                return res.status(400).send(`Webhook Error: ${String(err)}`);
+            }
+        }
+        const eventType = event.type || "checkout.session.completed";
+        console.log(`[finance-service] Processing Stripe event: ${eventType}`);
+        if (eventType === "checkout.session.completed" || eventType === "payment_intent.succeeded") {
+            const session = event.data?.object || {};
+            const invoiceId = session.metadata?.invoiceId || session.client_reference_id;
+            if (invoiceId) {
+                const invoice = await database_1.prisma.invoice.update({
+                    where: { id: invoiceId },
+                    data: { status: "PAID" }
+                });
+                await eventBus.publish("invoice.paid", {
+                    invoiceId: invoice.id,
+                    companyId: invoice.companyId,
+                    amount: invoice.totalAmount,
+                    gateway: "STRIPE"
+                });
+            }
+        }
+        res.json({ received: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
+app.post("/api/webhooks/wompi", async (req, res) => {
+    try {
+        const { event, data } = req.body;
+        console.log(`[finance-service] Wompi webhook event: ${event}`);
+        if (event === "transaction.updated" && data?.transaction) {
+            const transaction = data.transaction;
+            const invoiceId = transaction.reference;
+            const status = transaction.status;
+            if (status === "APPROVED" && invoiceId) {
+                try {
+                    const invoice = await database_1.prisma.invoice.update({
+                        where: { id: invoiceId },
+                        data: { status: "PAID" }
+                    });
+                    await eventBus.publish("invoice.paid", {
+                        invoiceId: invoice.id,
+                        companyId: invoice.companyId,
+                        amount: invoice.totalAmount,
+                        gateway: "WOMPI"
+                    });
+                }
+                catch (e) {
+                    console.error(`[finance-service] Could not find or update invoice for Wompi transaction ${invoiceId}`);
+                }
+            }
+        }
+        res.json({ received: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
 });
 app.post("/api/webhooks/paypal", async (req, res) => {
-    console.log("[finance-service] PayPal webhook received");
-    res.json({ received: true });
+    try {
+        const { event_type, resource } = req.body;
+        console.log(`[finance-service] PayPal webhook: ${event_type}`);
+        if (event_type === "PAYMENT.CAPTURE.COMPLETED" || event_type === "CHECKOUT.ORDER.APPROVED") {
+            const invoiceId = resource?.custom_id || resource?.invoice_id;
+            if (invoiceId) {
+                const invoice = await database_1.prisma.invoice.update({
+                    where: { id: invoiceId },
+                    data: { status: "PAID" }
+                });
+                await eventBus.publish("invoice.paid", {
+                    invoiceId: invoice.id,
+                    companyId: invoice.companyId,
+                    amount: invoice.totalAmount,
+                    gateway: "PAYPAL"
+                });
+            }
+        }
+        res.json({ received: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
 });
 // ── Cron: Subscriptions ──────────────────────────────────────────────────────
 app.post("/api/cron/subscriptions", async (_req, res) => {
-    console.log("[finance-service] Processing subscription renewals");
-    res.json({ processed: 0 });
+    try {
+        console.log("[finance-service] Processing subscription renewals cron");
+        const now = new Date();
+        const dueSubscriptions = await database_1.prisma.invoice.findMany({
+            where: {
+                notes: { contains: "[SUBSCRIPTION]" },
+                dueDate: { lte: now },
+                status: "PAID"
+            }
+        });
+        let renewedCount = 0;
+        for (const sub of dueSubscriptions) {
+            const nextDueDate = new Date();
+            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+            await database_1.prisma.invoice.create({
+                data: {
+                    companyId: sub.companyId,
+                    clientName: sub.clientName,
+                    clientNit: sub.clientNit,
+                    subtotalAmount: sub.subtotalAmount,
+                    taxAmount: sub.taxAmount,
+                    discountAmount: sub.discountAmount,
+                    totalAmount: sub.totalAmount,
+                    advanceAmount: 0,
+                    finalAmount: sub.totalAmount,
+                    currency: sub.currency,
+                    dueDate: nextDueDate,
+                    notes: sub.notes,
+                    status: "DRAFT_AWAITING_PAYMENT"
+                }
+            });
+            renewedCount++;
+        }
+        res.json({ success: true, processed: renewedCount });
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
 });
 const eventBus = new events_1.EventBus(REDIS_URL, "finance-service");
-app.listen(PORT, "0.0.0.0", () => { console.log(`💰 Finance Service running on port ${PORT}`); });
+const server = app.listen(PORT, "0.0.0.0", () => { console.log(`💰 Finance Service running on port ${PORT}`); });
+(0, service_auth_1.setupGracefulShutdown)(server);
 process.on("SIGTERM", async () => { await eventBus.disconnect(); await database_1.prisma.$disconnect(); process.exit(0); });
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 exports.default = app;
