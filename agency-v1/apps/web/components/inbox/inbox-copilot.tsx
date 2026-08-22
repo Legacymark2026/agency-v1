@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface InboxCopilotProps {
     conversationContext: {
+        conversationId?: string;
         customerName?: string;
         lastMessage?: string;
         channel?: string;
@@ -60,10 +61,20 @@ export function InboxCopilot({ conversationContext, onInsertSuggestion }: InboxC
     const handleQuickAction = useCallback(async (action: { label: string; prompt: string }) => {
         setIsGenerating(true);
         setActiveAction(action.label);
-        setSuggestions([]);
-
         try {
-            // Try real AI endpoint first
+            if (conversationContext.conversationId) {
+                const resBackend = await fetch(`/api/conversations/${encodeURIComponent(conversationContext.conversationId)}/suggested-reply`);
+                if (resBackend.ok) {
+                    const json = await resBackend.json();
+                    if (json.success && json.suggestion) {
+                        setSuggestions([json.suggestion]);
+                        setIsGenerating(false);
+                        return;
+                    }
+                }
+            }
+
+            // Try real AI endpoint
             const res = await fetch("/api/v1/ai/copilot-suggest", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
