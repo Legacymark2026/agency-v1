@@ -4,7 +4,10 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const servicesDir = path.resolve(ROOT, 'services');
-const auditReportPath = path.resolve(ROOT, '../../brain/cc81cadc-3e41-49bc-b355-4225cbbe56ff/decoupling_audit_results.md');
+const brainDir = path.resolve(ROOT, '../../brain/cc81cadc-3e41-49bc-b355-4225cbbe56ff');
+const auditReportPath = fs.existsSync(brainDir) 
+  ? path.resolve(brainDir, 'decoupling_audit_results.md') 
+  : path.resolve(ROOT, 'decoupling_audit_results.md');
 
 const expectedServices = [
   "admin-service", "affiliate-service", "agent-team-engine", "ai-engine", "analytics-service",
