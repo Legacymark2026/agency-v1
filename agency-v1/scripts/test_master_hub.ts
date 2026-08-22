@@ -13,8 +13,8 @@ async function runMasterHubAudit() {
     const exists = fs.existsSync("apps/web/app/(dashboard)/dashboard/tools/master-hub/page.tsx");
     const content = fs.readFileSync("apps/web/app/(dashboard)/dashboard/tools/master-hub/page.tsx", "utf-8");
 
-    if (exists && content.includes("MasterToolsHubPage") && content.includes("vectorSearchService")) {
-      console.log("   ✅ PASÓ: Consola Maestra verificada con integración a los 6 microservicios backend.");
+    if (exists && content.includes("MasterToolsHubPage") && content.includes("dispatchMicroserviceRequest")) {
+      console.log("   ✅ PASÓ: Consola Maestra verificada con cliente HTTP de microservicios.");
       passed++;
     } else {
       console.error("   ❌ FALLÓ: Consola Maestra incompleta.");
