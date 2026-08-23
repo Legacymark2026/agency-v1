@@ -1,6 +1,15 @@
 /**
- * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN / Bank Recon / Payroll Provisions / Fixed Assets / Fiscal Closing)
+ * Siigo-Grade Colombian Accounting ERP Module Types
+ * (PUC NIIF, Centros de Costos, Documentos Contables CC/FV/FC/RC/CE, DSE DIAN, Auxiliares, Modulo 11 DV)
  */
+
+export type SiigoDocumentType = "CC" | "FV" | "FC" | "RC" | "CE" | "NC" | "ND" | "DSE";
+
+export interface CostCenter {
+  code: string;
+  name: string;
+  isActive: boolean;
+}
 
 export interface PUCAccount {
   code: string;
@@ -15,6 +24,7 @@ export interface JournalEntryLineInput {
   accountName: string;
   thirdPartyNit: string;
   thirdPartyName?: string;
+  costCenterCode?: string;
   description?: string;
   debit: number;
   credit: number;
@@ -22,8 +32,10 @@ export interface JournalEntryLineInput {
 
 export interface JournalVoucherRecord {
   voucherNumber: string;
+  documentType: SiigoDocumentType;
   date: string;
   concept: string;
+  costCenterCode?: string;
   lines: JournalEntryLineInput[];
   totalDebit: number;
   totalCredit: number;
@@ -31,6 +43,37 @@ export interface JournalVoucherRecord {
   companyId: string;
   hashSeal?: string;
   status?: "ACTIVO" | "ANULADO";
+}
+
+export interface DocumentoSoporteDSE {
+  dseNumber: string;
+  cuds: string;
+  issueDate: string;
+  vendorNit: string;
+  vendorName: string;
+  vendorCity: string;
+  serviceDescription: string;
+  subtotal: number;
+  reteFuenteAmount: number;
+  reteIcaAmount: number;
+  totalNetToPay: number;
+  qrCodeData: string;
+  dianStatus: "EMITIDO_Y_VALIDADO" | "PENDIENTE_TRANSMISION";
+}
+
+export interface AuxiliaryLedgerItem {
+  id: string;
+  voucherNumber: string;
+  documentType: string;
+  date: string;
+  accountCode: string;
+  accountName: string;
+  thirdPartyNit: string;
+  thirdPartyName: string;
+  concept: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
 }
 
 export interface WithholdingCalculationInput {
