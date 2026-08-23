@@ -4,10 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 // ─── Canonical Deal type — single source of truth ────────────────────────────
-// Re-export from the CRM module's canonical types so all consumers get the same
-// shape regardless of whether they import from actions/crm or types/index.
 import type { Deal } from "@/modules/crm/types";
-export type { Deal };
 
 
 export async function getDeals(companyId: string) {

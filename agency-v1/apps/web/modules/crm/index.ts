@@ -7,11 +7,12 @@ export * from './actions';
 // Components  
 export * from './components';
 
-// Hooks (to be implemented)
+// Hooks
 export * from './hooks';
 
 // Types - use explicit import/export to avoid conflicts
 export type {
+    Deal,
     Deal as CRMDeal,
     DealStage,
     LeadSource,
