@@ -99,8 +99,8 @@ export default async function DashboardLayout({
         const matched = customRoles.find((r: any) => r.id === role);
         if (matched) customRoleName = matched.name;
         
-        // Determinar si debemos mostrar el wizard
-        if (companyUser.company && companyUser.company.onboardingCompleted === false) {
+        // Determinar si debemos mostrar el wizard (solo para nuevas cuentas no-superadmin)
+        if (companyUser.company && companyUser.company.onboardingCompleted === false && role !== UserRole.SUPER_ADMIN && (role as string) !== 'super_admin') {
             showOnboarding = true;
         }
     }

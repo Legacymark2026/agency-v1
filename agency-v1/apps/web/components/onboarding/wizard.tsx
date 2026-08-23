@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, MessageSquare, Mail, Bot, ArrowRight, Zap } from "lucide-react";
+import { Loader2, CheckCircle2, MessageSquare, Mail, Bot, ArrowRight, Zap, X } from "lucide-react";
 import { completeOnboardingAndCloneTemplates } from "@/actions/onboarding";
 import { toast } from "sonner";
 import { EmailDomainCard } from "@/components/settings/email-domain-card";
-// Re-utilizamos el diálogo de WhatsApp que ya existe en IntegrationConfigDialog
 import { IntegrationConfigDialog } from "@/components/settings/integration-config-dialog";
 
 interface OnboardingWizardProps {
@@ -20,12 +19,20 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
     const [cloning, setCloning] = useState(false);
 
     useEffect(() => {
-        // Un pequeño retraso para que no sea brusco al cargar el dashboard
         if (initialShow) {
-            const t = setTimeout(() => setOpen(true), 1500);
-            return () => clearTimeout(t);
+            // Check if dismissed in this browser session
+            const dismissed = sessionStorage.getItem("onboarding_dismissed");
+            if (!dismissed) {
+                const t = setTimeout(() => setOpen(true), 1500);
+                return () => clearTimeout(t);
+            }
         }
     }, [initialShow]);
+
+    const handleDismiss = () => {
+        sessionStorage.setItem("onboarding_dismissed", "true");
+        setOpen(false);
+    };
 
     const handleComplete = async () => {
         setCloning(true);
@@ -33,6 +40,7 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
             const res = await completeOnboardingAndCloneTemplates();
             if (res.success) {
                 toast.success("¡Onboarding completado! Tus agentes IA están listos.");
+                sessionStorage.setItem("onboarding_dismissed", "true");
                 setOpen(false);
             } else {
                 toast.error(res.error || "Error al completar el onboarding");
@@ -44,11 +52,20 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
         }
     };
 
-    if (!initialShow && !open) return null;
+    if (!open) return null;
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl [&>button]:hidden">
+        <Dialog open={open} onOpenChange={(val) => { if (!val) handleDismiss(); }}>
+            <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl relative">
+                {/* Explicit Close Button */}
+                <button 
+                    onClick={handleDismiss}
+                    className="absolute top-4 right-4 z-50 text-slate-400 hover:text-white p-1 rounded-md bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 transition-all"
+                    title="Cerrar guía"
+                >
+                    <X size={16} />
+                </button>
+
                 <div className="sr-only">
                     <DialogHeader>
                         <DialogTitle>Onboarding Wizard</DialogTitle>
@@ -95,7 +112,7 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
                                     <IntegrationConfigDialog provider="whatsapp" title="WhatsApp Business" />
                                 </div>
                                 <div className="flex justify-between items-center pt-4">
-                                    <Button variant="ghost" onClick={() => setStep(2)} className="text-slate-400">
+                                    <Button variant="ghost" onClick={handleDismiss} className="text-slate-400">
                                         Saltar por ahora
                                     </Button>
                                     <Button onClick={() => setStep(2)} className="bg-teal-600 hover:bg-teal-500 text-white gap-2">
