@@ -82,10 +82,11 @@ app.post("/api/gateway/verify-token", express.json(), async (req, res) => {
 
   try {
     const result = await authGrpcClient.call("ValidateToken", { token }, async () => {
-      // Fallback: HTTP call if gRPC fails or circuit is open
+      // Fallback: HTTP call if gRPC fails or circuit is open with 3s timeout
       const authUrl = await resolveServiceUrl("auth");
       const resp = await fetch(`${authUrl}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(3000),
       });
       const data: any = await resp.json();
       return {
@@ -323,7 +324,8 @@ const resolvers = {
           headers: {
             "Authorization": context.token,
             "x-correlation-id": String(context.correlationId || "")
-          }
+          },
+          signal: AbortSignal.timeout(3000),
         });
         const body: any = await response.json();
         if (!response.ok) throw new Error(body.error || "Failed to fetch current user");
@@ -361,7 +363,8 @@ const resolvers = {
           headers: {
             "Authorization": context.token,
             "x-correlation-id": String(context.correlationId || "")
-          }
+          },
+          signal: AbortSignal.timeout(3000),
         });
         const body: any = await response.json();
         if (!response.ok) return [];
@@ -585,7 +588,8 @@ const resilientProxy = (serviceName: keyof typeof SERVICES, target: string) => {
                 // Fallback: HTTP call to auth-service /api/auth/me
                 const authUrl = await resolveServiceUrl("auth");
                 const resp = await fetch(`${authUrl}/api/auth/me`, {
-                  headers: { Authorization: token }
+                  headers: { Authorization: token },
+                  signal: AbortSignal.timeout(2500),
                 });
                 if (!resp.ok) return { valid: false, userId: "", companyId: "" };
                 const data: any = await resp.json();
