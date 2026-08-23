@@ -8,7 +8,7 @@ import {
     LogOut, PanelLeftClose, PanelLeft, Palette, Check
 } from "lucide-react";
 import Image from "next/image";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useMemo, useTransition } from "react";
 import { NotificationBell } from "./notification-bell";
 import { PLATFORM_VERSION } from "@/lib/version";
 
@@ -46,27 +46,37 @@ export function SidebarClientContent(props: SidebarContentProps) {
     const [isPending, startTransition] = useTransition();
     const [showColorPicker, setShowColorPicker] = useState(false);
     const pathname = usePathname();
-    const accessibleSet = new Set(accessibleRoutes);
 
-    // Filter groups to only include accessible ones
-    const accessibleGroups = navGroups.map(group => ({
-        ...group,
-        items: group.items.filter(item => accessibleSet.has(item.href))
-    })).filter(group => group.items.length > 0);
+    // Memoize accessible groups to prevent referential churn
+    const accessibleGroups = useMemo(() => {
+        const accessibleSet = new Set(accessibleRoutes);
+        return navGroups.map(group => ({
+            ...group,
+            items: group.items.filter(item => accessibleSet.has(item.href))
+        })).filter(group => group.items.length > 0);
+    }, [navGroups, accessibleRoutes]);
 
+    // Initial group resolution
     const [activeGroupId, setActiveGroupId] = useState<string>(() => {
-        // Find group containing current pathname
-        const currentGroup = accessibleGroups.find(g => g.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/')));
-        return currentGroup?.code || accessibleGroups[0]?.code;
+        const currentGroup = accessibleGroups.find(g => 
+            g.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))
+        );
+        return currentGroup?.code || accessibleGroups[0]?.code || "DB_MAIN";
     });
 
-    // Auto-sync on route change
+    // Track pathname changes ONLY when the URL actually changes (do NOT override user clicks)
+    const prevPathnameRef = useRef(pathname);
     useEffect(() => {
-        const currentGroup = accessibleGroups.find(g => g.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/')));
-        if (currentGroup && currentGroup.code !== activeGroupId) {
-            setActiveGroupId(currentGroup.code);
+        if (prevPathnameRef.current !== pathname) {
+            prevPathnameRef.current = pathname;
+            const currentGroup = accessibleGroups.find(g => 
+                g.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))
+            );
+            if (currentGroup) {
+                setActiveGroupId(currentGroup.code);
+            }
         }
-    }, [pathname, accessibleGroups, activeGroupId]);
+    }, [pathname, accessibleGroups]);
 
     const activeGroup = accessibleGroups.find(g => g.code === activeGroupId) || accessibleGroups[0];
 
@@ -105,7 +115,13 @@ export function SidebarClientContent(props: SidebarContentProps) {
                         return (
                             <button
                                 key={group.code}
-                                onClick={() => setActiveGroupId(group.code)}
+                                type="button"
+                                onClick={() => {
+                                    setActiveGroupId(group.code);
+                                    if (sidebarCollapsed) {
+                                        toggleSidebar();
+                                    }
+                                }}
                                 className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 relative group cursor-pointer ${
                                     isActive
                                         ? 'bg-teal-500/15 text-teal-400 border border-teal-500/40 shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]'
@@ -132,6 +148,7 @@ export function SidebarClientContent(props: SidebarContentProps) {
                     {/* Theme Picker Trigger */}
                     <div className="relative">
                         <button
+                            type="button"
                             onClick={() => setShowColorPicker(!showColorPicker)}
                             className={`w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800 transition-all ${
                                 showColorPicker ? 'bg-slate-800 text-teal-400 border-teal-500/40' : ''
@@ -158,6 +175,7 @@ export function SidebarClientContent(props: SidebarContentProps) {
                                         return (
                                             <button
                                                 key={c.key}
+                                                type="button"
                                                 onClick={() => {
                                                     startTransition(() => {
                                                         setAccent(c.key as any);
@@ -218,6 +236,7 @@ export function SidebarClientContent(props: SidebarContentProps) {
                                 </span>
                             </div>
                             <button
+                                type="button"
                                 onClick={toggleSidebar}
                                 className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded hover:bg-slate-800/60"
                                 title="Ocultar Menú Lateral"
