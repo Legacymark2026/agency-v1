@@ -8,7 +8,7 @@ import {
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
     PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag, Package,
-    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award
+    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award, Layers
 } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
