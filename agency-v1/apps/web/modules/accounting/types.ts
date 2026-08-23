@@ -1,9 +1,9 @@
 /**
- * Tier-1 Enterprise Accounting ERP Module Types (Siigo / SAP / Oracle NetSuite Grade)
- * (PUC NIIF, Financial Ratios, Budget Variance, Cash Flow Forecast, Cost Centers, DSE DIAN, Auxiliaries, Modulo 11 DV)
+ * Ultra-Professional Siigo / Tier-1 Enterprise Accounting ERP Module Types
+ * (PUC NIIF, Kardex Inventarios, Nómina Electrónica CUNE, Resoluciones DIAN, Importador Masivo, Conciliador Extractos)
  */
 
-export type SiigoDocumentType = "CC" | "FV" | "FC" | "RC" | "CE" | "NC" | "ND" | "DSE";
+export type SiigoDocumentType = "CC" | "FV" | "FC" | "RC" | "CE" | "NC" | "ND" | "DSE" | "NE";
 
 export interface CostCenter {
   code: string;
@@ -45,6 +45,95 @@ export interface JournalVoucherRecord {
   status?: "ACTIVO" | "ANULADO";
 }
 
+// Inventarios & Kardex Permanente NIIF (NIC 2)
+export interface InventoryItem {
+  id: string;
+  sku: string;
+  name: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  averageCost: number; // Costo Promedio Ponderado
+  salePrice: number;
+  vatRate: number;
+  totalValuation: number; // stock * averageCost
+  category: string;
+}
+
+export interface KardexMovement {
+  id: string;
+  itemId: string;
+  itemSku: string;
+  itemName: string;
+  date: string;
+  documentType: string;
+  documentNumber: string;
+  movementType: "ENTRADA" | "SALIDA" | "AJUSTE";
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  resultingStock: number;
+  resultingAverageCost: number;
+}
+
+// Nómina Electrónica DIAN con CUNE
+export interface NominaElectronicaRecord {
+  id: string;
+  documentNumber: string; // NIE-0001
+  cune: string; // Código Único de Nómina Electrónica
+  employeeNit: string;
+  employeeName: string;
+  position: string;
+  period: string;
+  paymentDate: string;
+  baseSalary: number;
+  transportAllowance: number;
+  overtimeAndBonuses: number;
+  totalDevengado: number;
+  healthDeduction: number;
+  pensionDeduction: number;
+  totalDeducciones: number;
+  netoPagar: number;
+  dianStatus: "VALIDADO_PREVIO_DIAN" | "PENDIENTE_TRANSMISION";
+  qrCodeData: string;
+}
+
+// Resoluciones DIAN & Numeración Consecutiva
+export interface DianResolutionConfig {
+  id: string;
+  documentType: "FACTURA_ELECTRONICA" | "DOCUMENTO_SOPORTE" | "NOMINA_ELECTRONICA" | "NOTA_CREDITO";
+  prefix: string;
+  resolutionNumber: string;
+  resolutionDate: string;
+  validUntilDate: string;
+  fromNumber: number;
+  toNumber: number;
+  currentNumber: number;
+  technicalKey: string;
+  isActive: boolean;
+}
+
+// Conciliación Automática de Extractos Bancarios
+export interface BankStatementTransaction {
+  id: string;
+  date: string;
+  reference: string;
+  description: string;
+  amount: number;
+  type: "CREDITO" | "DEBITO"; // Crédito = Ingreso, Débito = Egreso
+  suggestedDocumentType: "RC" | "CE";
+  matchStatus: "CONCILIADO_AUTOMATICO" | "SUGERENCIA_PENDIENTE";
+  suggestedAccount: string;
+}
+
+// Importador Masivo de Datos (Excel / CSV)
+export interface BulkImportResult {
+  success: boolean;
+  importedCount: number;
+  errorsCount: number;
+  details: string[];
+}
+
 export interface DocumentoSoporteDSE {
   dseNumber: string;
   cuds: string;
@@ -77,14 +166,14 @@ export interface AuxiliaryLedgerItem {
 }
 
 export interface FinancialRatiosReport {
-  razonCorriente: number; // Activo Corriente / Pasivo Corriente (Optimo > 1.5)
-  pruebaAcida: number; // (Activo Corriente - Inventarios) / Pasivo Corriente
-  nivelEndeudamiento: number; // Pasivo Total / Activo Total (%)
-  margenOperativo: number; // Utilidad Operacional / Ingresos (%)
-  margenNeto: number; // Utilidad Neta / Ingresos (%)
-  roe: number; // Utilidad Neta / Patrimonio (%)
-  roa: number; // Utilidad Neta / Activos (%)
-  ktno: number; // Capital de Trabajo Neto Operativo (Cuentas por Cobrar + Inventarios - Cuentas por Pagar)
+  razonCorriente: number;
+  pruebaAcida: number;
+  nivelEndeudamiento: number;
+  margenOperativo: number;
+  margenNeto: number;
+  roe: number;
+  roa: number;
+  ktno: number;
   liquidityHealth: "EXCELENTE" | "ADECUADA" | "ALERTA";
 }
 
@@ -100,8 +189,8 @@ export interface BudgetVarianceItem {
 
 export interface CashFlowForecastItem {
   periodLabel: string;
-  expectedInflows: number; // Cobro facturas
-  committedOutflows: number; // Nómina, servidores, proveedores, impuestos
+  expectedInflows: number;
+  committedOutflows: number;
   netCashFlow: number;
   projectedEndingBalance: number;
 }
