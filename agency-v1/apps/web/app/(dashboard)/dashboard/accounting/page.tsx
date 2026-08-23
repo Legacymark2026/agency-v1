@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Calculator, 
   BookOpen, 
@@ -13,13 +13,53 @@ import {
   ArrowRight,
   Percent,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Download,
+  Printer,
+  Search,
+  Building2,
+  FileSpreadsheet,
+  PieChart,
+  Trash2
 } from 'lucide-react';
-import { calculateWithholdingsAction, recordJournalVoucherAction } from '@/modules/accounting/actions/accounting';
+import { 
+  calculateWithholdingsAction, 
+  recordJournalVoucherAction,
+  getTrialBalanceAction,
+  getIncomeStatementAction,
+  generateTaxCertificateAction
+} from '@/modules/accounting/actions/accounting';
 import { toast } from 'sonner';
 
+const PUC_CATALOG = [
+  { code: '110505', name: 'Caja General', category: 'ACTIVO', nature: 'DEBITO' },
+  { code: '111005', name: 'Bancos Nacionales (Moneda Local)', category: 'ACTIVO', nature: 'DEBITO' },
+  { code: '130505', name: 'Clientes Nacionales (Cuentas por Cobrar)', category: 'ACTIVO', nature: 'DEBITO' },
+  { code: '135515', name: 'Anticipo de Impuestos - Retención en la Fuente', category: 'ACTIVO', nature: 'DEBITO' },
+  { code: '135517', name: 'Anticipo de Impuestos - ReteIVA', category: 'ACTIVO', nature: 'DEBITO' },
+  { code: '135518', name: 'Anticipo de Impuestos - ReteICA', category: 'ACTIVO', nature: 'DEBITO' },
+  { code: '220505', name: 'Proveedores Nacionales', category: 'PASIVO', nature: 'CREDITO' },
+  { code: '233525', name: 'Honorarios y Servicios Profesionales por Pagar', category: 'PASIVO', nature: 'CREDITO' },
+  { code: '236540', name: 'Retención en la Fuente por Pagar (Compras)', category: 'PASIVO', nature: 'CREDITO' },
+  { code: '236525', name: 'Retención en la Fuente por Pagar (Servicios)', category: 'PASIVO', nature: 'CREDITO' },
+  { code: '236801', name: 'Retención de ICA por Pagar', category: 'PASIVO', nature: 'CREDITO' },
+  { code: '240801', name: 'Impuesto sobre las Ventas por Pagar (IVA 19%)', category: 'PASIVO', nature: 'CREDITO' },
+  { code: '310505', name: 'Capital Suscrito y Pagado', category: 'PATRIMONIO', nature: 'CREDITO' },
+  { code: '413501', name: 'Ingresos por Servicios de Software y Consultoría', category: 'INGRESOS', nature: 'CREDITO' },
+  { code: '413502', name: 'Ingresos por Marketing y Publicidad Digital', category: 'INGRESOS', nature: 'CREDITO' },
+  { code: '510506', name: 'Sueldos y Salarios de Personal', category: 'GASTOS', nature: 'DEBITO' },
+  { code: '513535', name: 'Servicios de Computación y Nube (AWS/Hetzner)', category: 'GASTOS', nature: 'DEBITO' },
+  { code: '520506', name: 'Publicidad y Propaganda (Meta / Google Ads)', category: 'GASTOS', nature: 'DEBITO' },
+  { code: '613501', name: 'Costo de Ventas - Prestación de Servicios', category: 'COSTOS', nature: 'DEBITO' },
+];
+
 export default function AccountingDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'puc' | 'withholdings' | 'vouchers' | 'balance'>('withholdings');
+  const [activeTab, setActiveTab] = useState<'financials' | 'withholdings' | 'vouchers' | 'certificates' | 'exogena' | 'puc'>('financials');
+
+  // Trial Balance & P&L state
+  const [trialBalance, setTrialBalance] = useState<any>(null);
+  const [pnlReport, setPnlReport] = useState<any>(null);
+  const [isLoadingFinancials, setIsLoadingFinancials] = useState(false);
 
   // Withholding Calculator state
   const [subtotal, setSubtotal] = useState<number>(5000000);
@@ -33,8 +73,39 @@ export default function AccountingDashboardPage() {
   const [voucherNum, setVoucherNum] = useState(`CD-${Date.now().toString().slice(-6)}`);
   const [lines, setLines] = useState([
     { accountCode: '110505', accountName: 'Caja General', debit: 5000000, credit: 0, thirdPartyNit: '902028722-3' },
-    { accountCode: '413501', accountName: 'Ingresos por Servicios de Software', debit: 0, credit: 5000000, thirdPartyNit: '902028722-3' },
+    { accountCode: '413501', accountName: 'Ingresos por Servicios de Software y Consultoría', debit: 0, credit: 5000000, thirdPartyNit: '902028722-3' },
   ]);
+
+  // Certificate Generator State
+  const [certBeneficiaryNit, setCertBeneficiaryNit] = useState('900.876.543-1');
+  const [certBeneficiaryName, setCertBeneficiaryName] = useState('Tech Solutions & Consulting S.A.S.');
+  const [certType, setCertType] = useState<'RETEFUENTE' | 'RETEIVA' | 'RETEICA'>('RETEFUENTE');
+  const [generatedCert, setGeneratedCert] = useState<any>(null);
+
+  // PUC Search
+  const [pucFilter, setPucFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('TODOS');
+
+  // Load financials on mount
+  useEffect(() => {
+    loadFinancials();
+  }, []);
+
+  const loadFinancials = async () => {
+    setIsLoadingFinancials(true);
+    try {
+      const [tbRes, pnlRes] = await Promise.all([
+        getTrialBalanceAction(),
+        getIncomeStatementAction(),
+      ]);
+      if (tbRes.success) setTrialBalance(tbRes);
+      if (pnlRes.success) setPnlReport(pnlRes.report);
+    } catch (e) {
+      console.error("Error loading financials:", e);
+    } finally {
+      setIsLoadingFinancials(false);
+    }
+  };
 
   const handleCalculateWithholdings = async () => {
     setIsCalculating(true);
@@ -58,12 +129,28 @@ export default function AccountingDashboardPage() {
     setLines([...lines, { accountCode: '', accountName: '', debit: 0, credit: 0, thirdPartyNit: '' }]);
   };
 
-  const handleSaveVoucher = async () => {
-    const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
-    const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
+  const handleRemoveLine = (idx: number) => {
+    if (lines.length <= 2) {
+      toast.error('Un comprobante debe tener al menos 2 asientos.');
+      return;
+    }
+    setLines(lines.filter((_, i) => i !== idx));
+  };
 
-    if (totalDebit !== totalCredit) {
-      toast.error(`Partida Doble desbalanceada: Débito ($${totalDebit}) ≠ Crédito ($${totalCredit})`);
+  const handleAccountSelect = (idx: number, code: string) => {
+    const found = PUC_CATALOG.find(p => p.code === code);
+    const updated = [...lines];
+    updated[idx].accountCode = code;
+    if (found) updated[idx].accountName = found.name;
+    setLines(updated);
+  };
+
+  const handleSaveVoucher = async () => {
+    const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
+    const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
+
+    if (totalDebit !== totalCredit || totalDebit === 0) {
+      toast.error(`Partida Doble desbalanceada: Débito ($${totalDebit.toLocaleString()}) ≠ Crédito ($${totalCredit.toLocaleString()})`);
       return;
     }
 
@@ -75,8 +162,9 @@ export default function AccountingDashboardPage() {
       });
 
       if (res.success) {
-        toast.success(`Comprobante de Diario ${voucherNum} registrado en el Libro Mayor.`);
+        toast.success(`Comprobante de Diario ${voucherNum} asentado en el Libro Mayor.`);
         setVoucherNum(`CD-${Date.now().toString().slice(-6)}`);
+        loadFinancials();
       } else {
         toast.error(res.error || 'Error al asentar comprobante');
       }
@@ -85,351 +173,697 @@ export default function AccountingDashboardPage() {
     }
   };
 
-  const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
-  const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
+  const handleGenerateCertificate = async () => {
+    try {
+      const res = await generateTaxCertificateAction({
+        beneficiaryNit: certBeneficiaryNit,
+        beneficiaryName: certBeneficiaryName,
+        type: certType,
+      });
+      if (res.success) {
+        setGeneratedCert(res.certificate);
+        toast.success(`Certificado ${res.certificate.certificateId} generado exitosamente`);
+      }
+    } catch (e) {
+      toast.error('Error generando certificado tributario');
+    }
+  };
+
+  const totalDebit = lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
+  const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
+
+  const filteredPUC = PUC_CATALOG.filter(item => {
+    const matchesSearch = item.code.includes(pucFilter) || item.name.toLowerCase().includes(pucFilter.toLowerCase());
+    const matchesCat = categoryFilter === 'TODOS' || item.category === categoryFilter;
+    return matchesSearch && matchesCat;
+  });
 
   return (
     <div className="ds-page space-y-8 w-full">
       {/* Header */}
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-slate-800/80">
         <div>
-          <div className="mb-4">
+          <div className="mb-3">
             <span className="ds-badge ds-badge-teal">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
               </span>
-              FIN_SYS · CONTABILIDAD & PUC
+              NIIF & DIAN Colombia · Sistema Contable Pro
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="ds-icon-box w-12 h-12">
-              <BookOpen className="w-6 h-6 text-teal-400" />
-            </div>
-            <div>
-              <h1 className="ds-heading-page">Módulo Contable & Libro Mayor</h1>
-              <p className="ds-subtext mt-1">Plan Único de Cuentas (PUC) · Comprobantes de Diario · Retenciones DIAN · Balances</p>
-            </div>
-          </div>
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            Contabilidad General & Libro Mayor
+          </h1>
+          <p className="ds-subtext mt-1">
+            Gestión de PUC comercial, estados financieros en tiempo real, liquidación de retenciones y medios magnéticos.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setActiveTab('vouchers')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-sm font-mono text-xs uppercase tracking-widest text-white bg-teal-900/40 border border-teal-600/50 hover:bg-teal-800/40 transition-all shadow-[0_0_20px_-8px_rgba(13,148,136,0.5)]">
-            <Plus className="w-4 h-4" /> Nuevo Asiento
-          </button>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
+            <Building2 className="w-4 h-4 text-teal-400" />
+            NIT: 902.028.722-3 (LEGACYMARK S.A.S.)
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
+      {/* Main Tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
+        <button
+          onClick={() => setActiveTab('financials')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === 'financials'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <PieChart className="w-4 h-4" /> Estados Financieros (P&L / Balance)
+        </button>
         <button
           onClick={() => setActiveTab('withholdings')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-widest rounded-sm transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
             activeTab === 'withholdings'
-              ? 'bg-teal-950/60 text-teal-300 border border-teal-800/60 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Percent className="w-4 h-4" /> Retenciones Tributarias
+          <Calculator className="w-4 h-4" /> Calculadora Retenciones DIAN
         </button>
-
         <button
           onClick={() => setActiveTab('vouchers')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-widest rounded-sm transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
             activeTab === 'vouchers'
-              ? 'bg-teal-950/60 text-teal-300 border border-teal-800/60 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <FileText className="w-4 h-4" /> Asientos & Comprobantes
+          <FileText className="w-4 h-4" /> Comprobantes de Diario (Partida Doble)
         </button>
-
+        <button
+          onClick={() => setActiveTab('certificates')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === 'certificates'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4" /> Certificados de Retención (Formato 220)
+        </button>
+        <button
+          onClick={() => setActiveTab('exogena')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === 'exogena'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <FileSpreadsheet className="w-4 h-4" /> Medios Magnéticos Exógena
+        </button>
         <button
           onClick={() => setActiveTab('puc')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-widest rounded-sm transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
             activeTab === 'puc'
-              ? 'bg-teal-950/60 text-teal-300 border border-teal-800/60 shadow-sm'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Layers className="w-4 h-4" /> Catálogo PUC
+          <BookOpen className="w-4 h-4" /> Catálogo PUC NIIF
         </button>
       </div>
 
-      {/* Content 1: Withholdings Calculator */}
-      {activeTab === 'withholdings' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="ds-card space-y-6">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-teal-400" /> Calculadora de Retenciones (ReteFuente, ReteIVA, ReteICA)
-            </h2>
+      {/* ── TAB 1: FINANCIALS (P&L and TRIAL BALANCE) ── */}
+      {activeTab === 'financials' && (
+        <div className="space-y-6">
+          {pnlReport && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="ds-card p-5">
+                <span className="text-xs font-mono text-slate-400 uppercase">Ingresos Operacionales</span>
+                <p className="text-2xl font-black text-white mt-2 font-mono">${pnlReport.grossRevenue.toLocaleString()}</p>
+                <span className="text-xs text-emerald-400 font-semibold mt-1 inline-block">100% Facturación Bruta</span>
+              </div>
+              <div className="ds-card p-5">
+                <span className="text-xs font-mono text-slate-400 uppercase">Gastos Operacionales</span>
+                <p className="text-2xl font-black text-rose-400 mt-2 font-mono">${pnlReport.operatingExpenses.toLocaleString()}</p>
+                <span className="text-xs text-slate-400 font-semibold mt-1 inline-block">Nómina, Cloud y Marketing</span>
+              </div>
+              <div className="ds-card p-5">
+                <span className="text-xs font-mono text-slate-400 uppercase">Utilidad Operacional (EBITDA)</span>
+                <p className="text-2xl font-black text-teal-400 mt-2 font-mono">${pnlReport.operatingIncome.toLocaleString()}</p>
+                <span className="text-xs text-teal-400 font-semibold mt-1 inline-block">Margen Operativo</span>
+              </div>
+              <div className="ds-card p-5 border-teal-500/30 bg-teal-950/10">
+                <span className="text-xs font-mono text-teal-300 uppercase font-bold">Utilidad Neta del Ejercicio</span>
+                <p className="text-2xl font-black text-emerald-400 mt-2 font-mono">${pnlReport.netIncome.toLocaleString()}</p>
+                <span className="text-xs text-emerald-400 font-bold mt-1 inline-block">{pnlReport.profitMarginPercent}% Margen Neto</span>
+              </div>
+            </div>
+          )}
 
-            <div className="space-y-4">
+          {/* Trial Balance Table */}
+          <div className="ds-card p-6">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <label className="ds-mono-label text-xs">Monto Subtotal Base (COP)</label>
+                <h3 className="text-lg font-bold text-white">Balance de Comprobación y Prueba</h3>
+                <p className="text-xs text-slate-400">Consolidado por clases de cuentas del Libro Mayor.</p>
+              </div>
+              <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" /> Partida Doble Cuadrada
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 font-mono">
+                    <th className="pb-3">Código PUC</th>
+                    <th className="pb-3">Nombre de la Cuenta</th>
+                    <th className="pb-3">Clase</th>
+                    <th className="pb-3 text-right">Saldo Débito</th>
+                    <th className="pb-3 text-right">Saldo Crédito</th>
+                    <th className="pb-3 text-right">Saldo Final</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-mono">
+                  {trialBalance?.items.map((item: any) => (
+                    <tr key={item.code} className="hover:bg-slate-900/40 transition-colors">
+                      <td className="py-3 font-bold text-teal-400">{item.code}</td>
+                      <td className="py-3 text-slate-200 font-sans">{item.name}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          item.category === 'ACTIVO' ? 'bg-blue-500/10 text-blue-400' :
+                          item.category === 'PASIVO' ? 'bg-amber-500/10 text-amber-400' :
+                          item.category === 'PATRIMONIO' ? 'bg-purple-500/10 text-purple-400' :
+                          item.category === 'INGRESOS' ? 'bg-emerald-500/10 text-emerald-400' :
+                          'bg-rose-500/10 text-rose-400'
+                        }`}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right text-slate-300">${item.debits.toLocaleString()}</td>
+                      <td className="py-3 text-right text-slate-300">${item.credits.toLocaleString()}</td>
+                      <td className="py-3 text-right font-bold text-white">${item.finalBalance.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-slate-700 font-mono text-sm font-black text-white">
+                    <td colSpan={3} className="pt-4">SUMAS TOTALES</td>
+                    <td className="pt-4 text-right text-teal-400">${trialBalance?.totalDebits.toLocaleString()}</td>
+                    <td className="pt-4 text-right text-teal-400">${trialBalance?.totalCredits.toLocaleString()}</td>
+                    <td className="pt-4 text-right text-emerald-400">$0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: WITHHOLDINGS CALCULATOR ── */}
+      {activeTab === 'withholdings' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="ds-card p-6 space-y-5 lg:col-span-1">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-teal-400" />
+              Parámetros de Liquidación
+            </h3>
+
+            <div>
+              <label className="text-xs font-mono text-slate-400 uppercase">Subtotal de la Transacción (COP)</label>
+              <div className="relative mt-2">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-mono">$</span>
                 <input
                   type="number"
                   value={subtotal}
-                  onChange={(e) => setSubtotal(parseFloat(e.target.value) || 0)}
-                  className="w-full mt-1 px-4 py-2.5 font-mono text-sm bg-slate-900/80 border border-slate-800 text-white rounded-sm focus:border-teal-600 focus:outline-none"
+                  onChange={(e) => setSubtotal(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-white font-mono text-lg focus:border-teal-500 outline-none"
                 />
               </div>
+            </div>
 
+            <div>
+              <label className="text-xs font-mono text-slate-400 uppercase">Concepto / Tipo de Transacción</label>
+              <select
+                value={txType}
+                onChange={(e: any) => setTxType(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white mt-2 focus:border-teal-500 outline-none"
+              >
+                <option value="SERVICIOS">Servicios Generales / Software (4.0%)</option>
+                <option value="HONORARIOS">Honorarios Profesionales (10.0%)</option>
+                <option value="COMPRAS">Compras Generales (2.5%)</option>
+              </select>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between">
+              <label className="text-xs text-slate-300">Aplicar ReteIVA (15% del IVA)</label>
+              <input
+                type="checkbox"
+                checked={applyReteIVA}
+                onChange={(e) => setApplyReteIVA(e.target.checked)}
+                className="w-4 h-4 accent-teal-500 rounded cursor-pointer"
+              />
+            </div>
+
+            <button
+              onClick={handleCalculateWithholdings}
+              disabled={isCalculating}
+              className="w-full py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-teal-500/20"
+            >
+              {isCalculating ? 'Calculando...' : 'Liquidar Retenciones'}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="ds-card p-6 lg:col-span-2 flex flex-col justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-4">Desglose de Liquidación Tributaria DIAN</h3>
+
+              {calcResult ? (
+                <div className="space-y-3 font-mono text-sm">
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400">Base Gravable / Subtotal:</span>
+                    <span className="text-white font-bold">${calcResult.subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-slate-800/80">
+                    <span className="text-slate-400">IVA (19%):</span>
+                    <span className="text-white font-bold">+ ${calcResult.vatAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-slate-800/80 text-rose-400">
+                    <span>(-) Retención en la Fuente ({calcResult.reteFuenteRate * 100}%):</span>
+                    <span>- ${calcResult.reteFuenteAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-slate-800/80 text-rose-400">
+                    <span>(-) ReteIVA (15% del IVA):</span>
+                    <span>- ${calcResult.reteIvaAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-slate-800/80 text-rose-400">
+                    <span>(-) ReteICA (9.66 ‰ Tarifa Municipal):</span>
+                    <span>- ${calcResult.reteIcaAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between py-3 border-b-2 border-slate-700 text-rose-400 font-bold">
+                    <span>Total Retenciones Practicadas:</span>
+                    <span>- ${calcResult.totalWithholdings.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between pt-4 text-xl font-bold text-teal-400">
+                    <span>Neto a Pagar al Proveedor:</span>
+                    <span>${calcResult.netPayable.toLocaleString()}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+                  <Calculator className="w-12 h-12 mb-3 text-slate-600" />
+                  <p>Configura los parámetros a la izquierda y presiona Liquidar.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: JOURNAL VOUCHERS (PARTIDA DOBLE) ── */}
+      {activeTab === 'vouchers' && (
+        <div className="space-y-6">
+          <div className="ds-card p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
               <div>
-                <label className="ds-mono-label text-xs">Tipo de Transacción</label>
-                <select
-                  value={txType}
-                  onChange={(e: any) => setTxType(e.target.value)}
-                  className="w-full mt-1 px-4 py-2.5 font-mono text-sm bg-slate-900/80 border border-slate-800 text-white rounded-sm focus:border-teal-600 focus:outline-none"
-                >
-                  <option value="SERVICIOS">Servicios Generales (4.0%)</option>
-                  <option value="HONORARIOS">Honorarios Profesionales (10.0%)</option>
-                  <option value="COMPRAS">Compras Generales (2.5%)</option>
-                </select>
+                <h3 className="text-lg font-bold text-white">Comprobante de Diario (Asiento Contable)</h3>
+                <p className="text-xs text-slate-400">Registro de transacciones con validación automática de partida doble.</p>
               </div>
-
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3">
                 <input
-                  type="checkbox"
-                  id="reteIva"
-                  checked={applyReteIVA}
-                  onChange={(e) => setApplyReteIVA(e.target.checked)}
-                  className="rounded border-slate-700 text-teal-600 focus:ring-teal-500"
+                  type="text"
+                  value={voucherNum}
+                  onChange={(e) => setVoucherNum(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-teal-400 font-bold"
                 />
-                <label htmlFor="reteIva" className="text-xs text-slate-300">
-                  Aplicar Retención de IVA (15% del IVA facturado)
-                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-mono text-slate-400 uppercase">Concepto de la Transacción</label>
+              <input
+                type="text"
+                value={concept}
+                onChange={(e) => setConcept(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1 focus:border-teal-500 outline-none"
+              />
+            </div>
+
+            {/* Lines editor */}
+            <div className="space-y-3">
+              <span className="text-xs font-mono text-slate-400 uppercase">Líneas de Asiento (Cuentas PUC)</span>
+              {lines.map((line, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 items-center">
+                  <div className="md:col-span-3">
+                    <select
+                      value={line.accountCode}
+                      onChange={(e) => handleAccountSelect(idx, e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-teal-400 font-mono outline-none"
+                    >
+                      <option value="">Seleccionar Cuenta PUC...</option>
+                      {PUC_CATALOG.map((p) => (
+                        <option key={p.code} value={p.code}>
+                          {p.code} - {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="md:col-span-3">
+                    <input
+                      type="text"
+                      placeholder="NIT Tercero"
+                      value={line.thirdPartyNit}
+                      onChange={(e) => {
+                        const updated = [...lines];
+                        updated[idx].thirdPartyNit = e.target.value;
+                        setLines(updated);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono outline-none"
+                    />
+                  </div>
+                  <div className="md:col-span-3">
+                    <input
+                      type="number"
+                      placeholder="Débito"
+                      value={line.debit || ''}
+                      onChange={(e) => {
+                        const updated = [...lines];
+                        updated[idx].debit = Number(e.target.value);
+                        setLines(updated);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-right font-mono text-emerald-400 outline-none"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <input
+                      type="number"
+                      placeholder="Crédito"
+                      value={line.credit || ''}
+                      onChange={(e) => {
+                        const updated = [...lines];
+                        updated[idx].credit = Number(e.target.value);
+                        setLines(updated);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-right font-mono text-rose-400 outline-none"
+                    />
+                  </div>
+                  <div className="md:col-span-1 flex justify-center">
+                    <button
+                      onClick={() => handleRemoveLine(idx)}
+                      className="text-slate-500 hover:text-rose-400 transition-colors p-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={handleAddLine}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-teal-400 text-xs font-bold border border-slate-800 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Agregar Línea de Asiento
+              </button>
+            </div>
+
+            {/* Validation & Save Footer */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-800">
+              <div className="flex items-center gap-6 font-mono text-sm">
+                <div>
+                  <span className="text-slate-500 text-xs uppercase block">Total Débitos</span>
+                  <span className="font-bold text-emerald-400">${totalDebit.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-xs uppercase block">Total Créditos</span>
+                  <span className="font-bold text-rose-400">${totalCredit.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 text-xs uppercase block">Estado</span>
+                  <span className={`font-bold ${isBalanced ? 'text-teal-400' : 'text-rose-500'}`}>
+                    {isBalanced ? '✓ Partida Balanceada' : '⚠ Descuadre'}
+                  </span>
+                </div>
               </div>
 
               <button
-                onClick={handleCalculateWithholdings}
-                disabled={isCalculating}
-                className="w-full py-3 mt-4 font-mono text-xs font-bold uppercase tracking-widest text-white bg-teal-700/60 hover:bg-teal-600 border border-teal-500 rounded-sm transition-all"
+                onClick={handleSaveVoucher}
+                disabled={!isBalanced}
+                className="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 disabled:opacity-50 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
-                {isCalculating ? 'Calculando...' : 'Calcular Retenciones Tributarias'}
+                Guardar en Libro Mayor
               </button>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="ds-card space-y-6">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-teal-400" /> Liquidación NIIF / DIAN
-            </h2>
+      {/* ── TAB 4: TAX CERTIFICATES (FORMATO 220) ── */}
+      {activeTab === 'certificates' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="ds-card p-6 space-y-4 lg:col-span-1">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-teal-400" />
+              Generar Certificado Tributario
+            </h3>
 
-            {calcResult ? (
-              <div className="space-y-4 font-mono text-sm">
-                <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Subtotal:</span>
-                  <span className="text-white font-bold">${calcResult.subtotal.toLocaleString()} COP</span>
+            <div>
+              <label className="text-xs font-mono text-slate-400 uppercase">Tipo de Certificado</label>
+              <select
+                value={certType}
+                onChange={(e: any) => setCertType(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1 focus:border-teal-500 outline-none"
+              >
+                <option value="RETEFUENTE">Certificado de Retención en la Fuente</option>
+                <option value="RETEIVA">Certificado de Retención de IVA (ReteIVA)</option>
+                <option value="RETEICA">Certificado de Retención de ICA (ReteICA)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-mono text-slate-400 uppercase">NIT del Proveedor / Beneficiario</label>
+              <input
+                type="text"
+                value={certBeneficiaryNit}
+                onChange={(e) => setCertBeneficiaryNit(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1 font-mono focus:border-teal-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-mono text-slate-400 uppercase">Razón Social / Nombre</label>
+              <input
+                type="text"
+                value={certBeneficiaryName}
+                onChange={(e) => setCertBeneficiaryName(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1 focus:border-teal-500 outline-none"
+              />
+            </div>
+
+            <button
+              onClick={handleGenerateCertificate}
+              className="w-full py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-teal-500/20"
+            >
+              Generar Certificado Oficial
+            </button>
+          </div>
+
+          <div className="ds-card p-6 lg:col-span-2">
+            {generatedCert ? (
+              <div className="bg-white text-slate-900 p-8 rounded-2xl shadow-xl space-y-6">
+                <div className="flex justify-between items-start border-b border-slate-300 pb-4">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900">{generatedCert.retainingAgentName}</h2>
+                    <p className="text-xs text-slate-600 font-mono">NIT: {generatedCert.retainingAgentNit}</p>
+                    <p className="text-xs text-slate-600">{generatedCert.city}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded border border-teal-200">
+                      {generatedCert.certificateId}
+                    </span>
+                    <p className="text-xs text-slate-500 mt-1">Año Gravable: {generatedCert.year}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">IVA (19%):</span>
-                  <span className="text-teal-400">+${calcResult.vatAmount.toLocaleString()} COP</span>
+
+                <div className="text-center py-2">
+                  <h3 className="text-base font-black uppercase tracking-wider text-slate-900">
+                    Certificado de Retención en la Fuente
+                  </h3>
+                  <p className="text-xs text-slate-500">Expedido en cumplimiento del Art. 381 del Estatuto Tributario</p>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">ReteFuente ({(calcResult.reteFuenteRate * 100).toFixed(1)}%):</span>
-                  <span className="text-red-400">-${calcResult.reteFuenteAmount.toLocaleString()} COP</span>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-1 font-mono">
+                  <p><strong className="text-slate-900">Beneficiario del Pago:</strong> {generatedCert.beneficiaryName}</p>
+                  <p><strong className="text-slate-900">NIT / C.C.:</strong> {generatedCert.beneficiaryNit}</p>
                 </div>
-                <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">ReteIVA (15%):</span>
-                  <span className="text-red-400">-${calcResult.reteIvaAmount.toLocaleString()} COP</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">ReteICA (9.66 ‰):</span>
-                  <span className="text-red-400">-${calcResult.reteIcaAmount.toLocaleString()} COP</span>
-                </div>
-                <div className="flex justify-between py-3 bg-teal-950/40 p-3 rounded border border-teal-800/50">
-                  <span className="text-teal-300 font-bold">Total a Pagar Neto:</span>
-                  <span className="text-teal-200 text-lg font-black">${calcResult.netPayable.toLocaleString()} COP</span>
+
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="border-b border-slate-300 font-bold">
+                      <th className="pb-2">Concepto de Retención</th>
+                      <th className="pb-2 text-right">Monto Sujeto a Retención</th>
+                      <th className="pb-2 text-right">Valor Retenido</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 font-mono">
+                    <tr>
+                      <td className="py-2.5">Servicios de Consultoría y Software</td>
+                      <td className="py-2.5 text-right">${generatedCert.totalSubjectAmount.toLocaleString()}</td>
+                      <td className="py-2.5 text-right font-bold text-teal-800">${generatedCert.reteFuenteTotal.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5">Retención de IVA (ReteIVA 15%)</td>
+                      <td className="py-2.5 text-right">${Math.round(generatedCert.totalSubjectAmount * 0.19).toLocaleString()}</td>
+                      <td className="py-2.5 text-right font-bold text-teal-800">${generatedCert.reteIvaTotal.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5">Retención de ICA (9.66 ‰)</td>
+                      <td className="py-2.5 text-right">${generatedCert.totalSubjectAmount.toLocaleString()}</td>
+                      <td className="py-2.5 text-right font-bold text-teal-800">${generatedCert.reteIcaTotal.toLocaleString()}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="pt-6 border-t border-slate-300 flex justify-between items-center text-xs text-slate-500">
+                  <p>Fecha de Expedición: {generatedCert.generatedDate}</p>
+                  <button 
+                    onClick={() => window.print()}
+                    className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" /> Imprimir / Guardar PDF
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-slate-500 text-center">
-                <Calculator className="w-12 h-12 mb-2 text-slate-600" />
-                <p className="text-xs font-mono uppercase">&gt; Ingresa los valores y pulsa calcular_</p>
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+                <FileText className="w-12 h-12 mb-3 text-slate-600" />
+                <p>Ingresa los datos a la izquierda para generar la vista previa del certificado.</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Content 2: Journal Voucher Entry */}
-      {activeTab === 'vouchers' && (
-        <div className="ds-card space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── TAB 5: EXOGENA DIAN ── */}
+      {activeTab === 'exogena' && (
+        <div className="ds-card p-6 space-y-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-teal-400" /> Asiento de Comprobante de Diario
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">Registro de partida doble con imputación a cuentas NIIF</p>
+              <h3 className="text-lg font-bold text-white">Información Exógena DIAN (Medios Magnéticos)</h3>
+              <p className="text-xs text-slate-400">Formatos estandarizados para reporte anual a la DIAN (Resolución de Exógena).</p>
             </div>
-
-            <div className="flex items-center gap-3">
-              <span className={`px-3 py-1 text-xs font-mono rounded ${isBalanced ? 'bg-teal-950 text-teal-300 border border-teal-600' : 'bg-red-950 text-red-300 border border-red-600'}`}>
-                {isBalanced ? '✅ Partida Doble Cuadrada' : '⚠️ Desbalance Débito/Crédito'}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="ds-mono-label text-xs">Número de Comprobante</label>
-              <input
-                type="text"
-                value={voucherNum}
-                onChange={(e) => setVoucherNum(e.target.value)}
-                className="w-full mt-1 px-3 py-2 font-mono text-xs bg-slate-900/80 border border-slate-800 text-white rounded-sm"
-              />
-            </div>
-            <div>
-              <label className="ds-mono-label text-xs">Concepto / Glosa</label>
-              <input
-                type="text"
-                value={concept}
-                onChange={(e) => setConcept(e.target.value)}
-                className="w-full mt-1 px-3 py-2 font-mono text-xs bg-slate-900/80 border border-slate-800 text-white rounded-sm"
-              />
-            </div>
-          </div>
-
-          {/* Lines Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs font-mono text-left border border-slate-800">
-              <thead className="bg-slate-900 text-slate-400 uppercase border-b border-slate-800">
-                <tr>
-                  <th className="p-3">Código Cuenta</th>
-                  <th className="p-3">Nombre de Cuenta</th>
-                  <th className="p-3">Tercero (NIT)</th>
-                  <th className="p-3 text-right">Débito (COP)</th>
-                  <th className="p-3 text-right">Crédito (COP)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {lines.map((line, idx) => (
-                  <tr key={idx} className="hover:bg-slate-900/40">
-                    <td className="p-2">
-                      <input
-                        type="text"
-                        value={line.accountCode}
-                        onChange={(e) => {
-                          const n = [...lines];
-                          n[idx].accountCode = e.target.value;
-                          setLines(n);
-                        }}
-                        className="w-full p-1.5 bg-slate-950 border border-slate-800 text-teal-300 rounded"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <input
-                        type="text"
-                        value={line.accountName}
-                        onChange={(e) => {
-                          const n = [...lines];
-                          n[idx].accountName = e.target.value;
-                          setLines(n);
-                        }}
-                        className="w-full p-1.5 bg-slate-950 border border-slate-800 text-slate-200 rounded"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <input
-                        type="text"
-                        value={line.thirdPartyNit}
-                        onChange={(e) => {
-                          const n = [...lines];
-                          n[idx].thirdPartyNit = e.target.value;
-                          setLines(n);
-                        }}
-                        className="w-full p-1.5 bg-slate-950 border border-slate-800 text-slate-300 rounded"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <input
-                        type="number"
-                        value={line.debit}
-                        onChange={(e) => {
-                          const n = [...lines];
-                          n[idx].debit = parseFloat(e.target.value) || 0;
-                          setLines(n);
-                        }}
-                        className="w-full p-1.5 bg-slate-950 border border-slate-800 text-right text-teal-400 rounded font-bold"
-                      />
-                    </td>
-                    <td className="p-2">
-                      <input
-                        type="number"
-                        value={line.credit}
-                        onChange={(e) => {
-                          const n = [...lines];
-                          n[idx].credit = parseFloat(e.target.value) || 0;
-                          setLines(n);
-                        }}
-                        className="w-full p-1.5 bg-slate-950 border border-slate-800 text-right text-teal-400 rounded font-bold"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-slate-900/80 font-bold border-t border-slate-700">
-                <tr>
-                  <td colSpan={3} className="p-3 text-right uppercase">Totales:</td>
-                  <td className="p-3 text-right text-teal-400">${totalDebit.toLocaleString()}</td>
-                  <td className="p-3 text-right text-teal-400">${totalCredit.toLocaleString()}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <div className="flex justify-between items-center pt-4">
-            <button
-              onClick={handleAddLine}
-              className="px-4 py-2 font-mono text-xs text-slate-300 border border-slate-700 hover:bg-slate-800 rounded"
-            >
-              + Agregar Línea
+            <button className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 cursor-pointer transition-all">
+              <Download className="w-4 h-4" /> Exportar Paquete XML / CSV
             </button>
+          </div>
 
-            <button
-              onClick={handleSaveVoucher}
-              disabled={!isBalanced}
-              className="px-6 py-2.5 font-mono text-xs font-bold uppercase tracking-widest text-white bg-teal-600 hover:bg-teal-500 disabled:opacity-50 rounded transition-all"
-            >
-              Asentar Comprobante
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+              <span className="text-xs font-mono text-teal-400 font-bold">Formato 1001 v.10</span>
+              <h4 className="text-sm font-bold text-white mt-1">Pagos o Abonos en Cuenta y Retenciones Practicadas</h4>
+              <p className="text-xs text-slate-400 mt-2">Pagos a terceros con desglose de retención en la fuente a título de renta, IVA e ICA.</p>
+              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                <span>124 Registros</span>
+                <span className="text-teal-400 font-bold">Listo</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+              <span className="text-xs font-mono text-teal-400 font-bold">Formato 1007 v.9</span>
+              <h4 className="text-sm font-bold text-white mt-1">Ingresos Recibidos en el Año Fiscal</h4>
+              <p className="text-xs text-slate-400 mt-2">Detalle de facturación electrónica emitida clasificada por concepto y tercero adquirente.</p>
+              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                <span>86 Facturas</span>
+                <span className="text-teal-400 font-bold">Listo</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+              <span className="text-xs font-mono text-teal-400 font-bold">Formato 1003 v.7</span>
+              <h4 className="text-sm font-bold text-white mt-1">Retenciones que le Practicaron a la Empresa</h4>
+              <p className="text-xs text-slate-400 mt-2">Anticipos de impuestos practicados por clientes para deducir en declaración de renta.</p>
+              <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                <span>$11,600,000 COP</span>
+                <span className="text-teal-400 font-bold">Listo</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Content 3: PUC Catalog */}
+      {/* ── TAB 6: PUC CATALOG ── */}
       {activeTab === 'puc' && (
-        <div className="ds-card space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Layers className="w-5 h-5 text-teal-400" /> Plan Único de Cuentas (PUC) Comercial Colombia
-          </h2>
+        <div className="ds-card p-6 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white">Plan Único de Cuentas (PUC Comercial NIIF)</h3>
+              <p className="text-xs text-slate-400">Catálogo estructurado bajo normatividad contable colombiana.</p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-slate-900/50 border border-slate-800 rounded">
-              <span className="text-xs text-teal-400 font-mono">CLASE 1</span>
-              <h3 className="text-sm font-bold text-white mt-1">Activo</h3>
-              <p className="text-[11px] text-slate-400 mt-1">Caja, Bancos, Cuentas por Cobrar, Inventarios</p>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Buscar cuenta o código..."
+                  value={pucFilter}
+                  onChange={(e) => setPucFilter(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-teal-500 w-56"
+                />
+              </div>
+
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-teal-500"
+              >
+                <option value="TODOS">Todas las Clases</option>
+                <option value="ACTIVO">1. Activo</option>
+                <option value="PASIVO">2. Pasivo</option>
+                <option value="PATRIMONIO">3. Patrimonio</option>
+                <option value="INGRESOS">4. Ingresos</option>
+                <option value="GASTOS">5. Gastos</option>
+                <option value="COSTOS">6. Costos</option>
+              </select>
             </div>
-            <div className="p-4 bg-slate-900/50 border border-slate-800 rounded">
-              <span className="text-xs text-teal-400 font-mono">CLASE 2</span>
-              <h3 className="text-sm font-bold text-white mt-1">Pasivo</h3>
-              <p className="text-[11px] text-slate-400 mt-1">Proveedores, Obligaciones Financieras, Impuestos</p>
-            </div>
-            <div className="p-4 bg-slate-900/50 border border-slate-800 rounded">
-              <span className="text-xs text-teal-400 font-mono">CLASE 3</span>
-              <h3 className="text-sm font-bold text-white mt-1">Patrimonio</h3>
-              <p className="text-[11px] text-slate-400 mt-1">Capital Social, Reservas, Utilidades del Ejercicio</p>
-            </div>
-            <div className="p-4 bg-slate-900/50 border border-slate-800 rounded">
-              <span className="text-xs text-teal-400 font-mono">CLASE 4</span>
-              <h3 className="text-sm font-bold text-white mt-1">Ingresos</h3>
-              <p className="text-[11px] text-slate-400 mt-1">Ventas de Servicios de Marketing, Software y POS</p>
-            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 font-mono">
+                  <th className="pb-3">Código PUC</th>
+                  <th className="pb-3">Nombre de la Cuenta</th>
+                  <th className="pb-3">Clase / Grupo</th>
+                  <th className="pb-3">Naturaleza</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 font-mono">
+                {filteredPUC.map((account) => (
+                  <tr key={account.code} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="py-3 font-bold text-teal-400">{account.code}</td>
+                    <td className="py-3 text-slate-200 font-sans">{account.name}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        account.category === 'ACTIVO' ? 'bg-blue-500/10 text-blue-400' :
+                        account.category === 'PASIVO' ? 'bg-amber-500/10 text-amber-400' :
+                        account.category === 'PATRIMONIO' ? 'bg-purple-500/10 text-purple-400' :
+                        account.category === 'INGRESOS' ? 'bg-emerald-500/10 text-emerald-400' :
+                        'bg-rose-500/10 text-rose-400'
+                      }`}>
+                        {account.category}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <span className={`text-[10px] font-bold ${account.nature === 'DEBITO' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {account.nature}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

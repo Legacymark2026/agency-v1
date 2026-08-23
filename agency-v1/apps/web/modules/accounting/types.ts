@@ -1,5 +1,5 @@
 /**
- * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings)
+ * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN)
  */
 
 export interface PUCAccount {
@@ -13,8 +13,8 @@ export interface JournalEntryLineInput {
   accountCode: string;
   accountName: string;
   thirdPartyNit: string;
-  thirdPartyName: string;
-  description: string;
+  thirdPartyName?: string;
+  description?: string;
   debit: number;
   credit: number;
 }
@@ -49,4 +49,41 @@ export interface WithholdingCalculationResult {
   reteIcaAmount: number;
   totalWithholdings: number;
   netPayable: number;
+}
+
+export interface TrialBalanceItem {
+  code: string;
+  name: string;
+  initialBalance: number;
+  debits: number;
+  credits: number;
+  finalBalance: number;
+  category: string;
+}
+
+export interface IncomeStatementReport {
+  grossRevenue: number;
+  operatingCosts: number;
+  grossProfit: number;
+  operatingExpenses: number;
+  operatingIncome: number;
+  taxEstimated: number;
+  netIncome: number;
+  profitMarginPercent: number;
+  period: string;
+}
+
+export interface TaxCertificate {
+  certificateId: string;
+  year: number;
+  beneficiaryNit: string;
+  beneficiaryName: string;
+  retainingAgentNit: string;
+  retainingAgentName: string;
+  city: string;
+  totalSubjectAmount: number;
+  reteFuenteTotal: number;
+  reteIvaTotal: number;
+  reteIcaTotal: number;
+  generatedDate: string;
 }
