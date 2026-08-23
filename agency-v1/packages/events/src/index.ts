@@ -484,4 +484,5 @@ export class EventBus {
 export default EventBus;
 
 export * from "./resilient-cache-client";
+export * from "./redis-pubsub-hub";
 

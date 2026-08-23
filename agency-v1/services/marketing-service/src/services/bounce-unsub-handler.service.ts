@@ -3,15 +3,16 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Processes webhooks for Hard/Soft Bounces, Spam Complaints, and generates
  * compliant RFC 8058 List-Unsubscribe headers mandatory for Gmail & Yahoo inboxing.
+ * Includes High-Throughput Batch Ingestion for processing >10,000 events.
  */
 
-export type BounceType = "HARD_BOUNCE" | "SOFT_BOUNCE" | "SPAM_COMPLAINT" | "UNSUBSCRIBE_CLICK";
+export type BounceType = "HARD_BOUNCE" | "SOFT_BOUNCE" | "SPAM_COMPLAINT" | "UNSUBSCRIBE_CLICK" | "DELIVERY_SUCCESS";
 
 export interface ProviderWebhookEvent {
   eventId: string;
   email: string;
   eventType: BounceType;
-  provider: "RESEND" | "AWS_SES" | "SENDGRID";
+  provider: "RESEND" | "AWS_SES" | "SENDGRID" | "GENERIC";
   timestamp: string;
   reason?: string;
 }
@@ -21,6 +22,13 @@ export interface SuppressionEntry {
   reason: BounceType;
   addedAt: string;
   isActive: boolean;
+}
+
+export interface BatchIngestionResult {
+  totalProcessed: number;
+  suppressedCount: number;
+  deliveredCount: number;
+  durationMs: number;
 }
 
 export class BounceUnsubHandlerService {
@@ -40,7 +48,7 @@ export class BounceUnsubHandlerService {
   }
 
   /**
-   * Processes an incoming bounce or complaint webhook.
+   * Processes a single incoming bounce or complaint webhook.
    */
   public processWebhookEvent(event: ProviderWebhookEvent): { suppressed: boolean; message: string } {
     if (event.eventType === "HARD_BOUNCE" || event.eventType === "SPAM_COMPLAINT" || event.eventType === "UNSUBSCRIBE_CLICK") {
@@ -60,6 +68,37 @@ export class BounceUnsubHandlerService {
     return {
       suppressed: false,
       message: `Evento ${event.eventType} registrado sin supresión inmediata.`,
+    };
+  }
+
+  /**
+   * High-Throughput Batch Ingestion for marketing webhooks
+   * Processes bulk arrays of events in memory with deduplication.
+   */
+  public processBatchEvents(events: ProviderWebhookEvent[]): BatchIngestionResult {
+    const startTime = Date.now();
+    let suppressedCount = 0;
+    let deliveredCount = 0;
+
+    for (const event of events) {
+      if (event.eventType === "HARD_BOUNCE" || event.eventType === "SPAM_COMPLAINT" || event.eventType === "UNSUBSCRIBE_CLICK") {
+        this.suppressionList.set(event.email.toLowerCase(), {
+          email: event.email.toLowerCase(),
+          reason: event.eventType,
+          addedAt: event.timestamp || new Date().toISOString(),
+          isActive: true,
+        });
+        suppressedCount++;
+      } else if (event.eventType === "DELIVERY_SUCCESS") {
+        deliveredCount++;
+      }
+    }
+
+    return {
+      totalProcessed: events.length,
+      suppressedCount,
+      deliveredCount,
+      durationMs: Date.now() - startTime,
     };
   }
 
