@@ -242,25 +242,25 @@ async function _fetchTenantBI(companyId: string): Promise<TenantKpiSnapshot> {
 
   // Forecast en memoria
   const forecastData = forecastMonths.map(month => {
-    const deals = allForecastDeals.filter(d => d.expectedClose && d.expectedClose >= month.start && d.expectedClose <= month.end);
+    const deals = allForecastDeals.filter((d: any) => d.expectedClose && d.expectedClose >= month.start && d.expectedClose <= month.end);
     return {
       name: month.name,
-      weighted: Math.round(deals.reduce((acc, d) => acc + d.value * (d.probability / 100), 0)),
-      total:    Math.round(deals.reduce((acc, d) => acc + d.value, 0)),
+      weighted: Math.round(deals.reduce((acc: number, d: any) => acc + d.value * (d.probability / 100), 0)),
+      total:    Math.round(deals.reduce((acc: number, d: any) => acc + d.value, 0)),
     };
   });
-  const forecastTotal = forecastData.reduce((a, d) => a + d.weighted, 0);
+  const forecastTotal = forecastData.reduce((a: number, d: any) => a + d.weighted, 0);
 
   // Leaderboard
-  const leaderboard = leaderboardRaw.map(r => ({
+  const leaderboard = leaderboardRaw.map((r: any) => ({
     name: nameMap.get(r.assignedTo!) || r.assignedTo || 'Sin asignar',
     wonValue: r._sum.value ?? 0,
     dealCount: r._count?.id ?? 0,
   }));
 
   // Lead sources con %
-  const totalLeadsBySource = leadSourcesRaw.reduce((s, r) => s + (r._count?.id ?? 0), 0);
-  const leadSources = leadSourcesRaw.map(r => ({
+  const totalLeadsBySource = leadSourcesRaw.reduce((s: number, r: any) => s + (r._count?.id ?? 0), 0);
+  const leadSources = leadSourcesRaw.map((r: any) => ({
     name: r.source || 'Directo',
     value: r._count?.id ?? 0,
     pct: totalLeadsBySource > 0 ? Math.round(((r._count?.id ?? 0) / totalLeadsBySource) * 100) : 0,

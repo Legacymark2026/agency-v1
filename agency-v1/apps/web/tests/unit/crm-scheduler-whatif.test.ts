@@ -90,7 +90,7 @@ describe('CRM Smart Scheduler & What-If Simulator Tests', () => {
             };
 
             const result = simulateWhatIfRevenue(baseline, params);
-            expect(result.projectedMonthlyRevenue).toBeGreaterThan(baseline.monthlyRevenue ? baseline.monthlyRevenue : 20000);
+            expect(result.projectedMonthlyRevenue).toBeGreaterThan(result.baselineMonthlyRevenue);
             expect(result.growthPercentage).toBeGreaterThan(50);
             expect(result.insightSummary).toMatch(/ALTO CRECIMIENTO/i);
         });

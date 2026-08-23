@@ -169,7 +169,7 @@ export function AttributionDashboard() {
                                     <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '12px' }}
-                                        formatter={(val: number) => [`$${val.toLocaleString()}`, 'Revenue Atribuido']}
+                                        formatter={(val: any) => [`$${Number(val || 0).toLocaleString()}`, 'Revenue Atribuido']}
                                     />
                                     <Bar dataKey="attributedRevenue" radius={[6, 6, 0, 0]}>
                                         {attributionShares.map((entry, index) => (
@@ -185,7 +185,7 @@ export function AttributionDashboard() {
                                         nameKey="channel"
                                         cx="50%" cy="50%"
                                         outerRadius={100}
-                                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                        label={({ name, percent }: any) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
                                     >
                                         {attributionShares.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={CHANNEL_COLORS[entry.channel] || '#0d9488'} />
@@ -193,7 +193,7 @@ export function AttributionDashboard() {
                                     </Pie>
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#020617', borderColor: '#1e293b', borderRadius: '12px' }}
-                                        formatter={(val: number) => [`$${val.toLocaleString()}`, 'Revenue Atribuido']}
+                                        formatter={(val: any) => [`$${Number(val || 0).toLocaleString()}`, 'Revenue Atribuido']}
                                     />
                                 </PieChart>
                             )}

@@ -5,13 +5,17 @@ export interface Deal {
     id: string;
     title: string;
     value: number;
-    stage: DealStage;
+    stage: DealStage | string;
     probability: number;
     closeDate: Date | string;
-    contactId: string;
+    contactId?: string;
+    contactName?: string;
+    contactEmail?: string;
+    priority?: string;
+    lastActivity?: Date | string;
     companyId?: string;
-    ownerId: string;
-    source?: LeadSource;
+    ownerId?: string;
+    source?: LeadSource | string;
     tags?: string[];
     customFields?: Record<string, any>;
     createdAt: Date | string;
@@ -24,7 +28,11 @@ export enum DealStage {
     PROPOSAL = 'proposal',
     NEGOTIATION = 'negotiation',
     CLOSED_WON = 'closed_won',
-    CLOSED_LOST = 'closed_lost'
+    CLOSED_LOST = 'closed_lost',
+    WON = 'WON',
+    LOST = 'LOST',
+    NEW = 'NEW',
+    CONTACTED = 'CONTACTED'
 }
 
 export enum LeadSource {
@@ -59,18 +67,17 @@ export enum ActivityType {
     NOTE = 'note'
 }
 
-export interface CRMMetrics {
-    totalDeals: number;
-    totalValue: number;
-    wonDeals: number;
-    lostDeals: number;
-    conversionRate: number;
-    averageDealSize: number;
-    averageSalesCycle: number;
-}
-
-export interface KanbanColumn {
-    id: DealStage;
-    title: string;
-    deals: Deal[];
+export interface Contact {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    company?: string;
+    title?: string;
+    source?: LeadSource;
+    deals?: Deal[];
+    activities?: Activity[];
+    createdAt: Date | string;
+    updatedAt: Date | string;
 }

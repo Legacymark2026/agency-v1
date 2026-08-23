@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { createHash } from "crypto";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 // Helper to hash IP for privacy
 function hashIP(ip: string): string {

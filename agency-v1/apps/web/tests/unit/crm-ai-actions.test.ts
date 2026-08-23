@@ -82,7 +82,7 @@ describe('CRM Real Server Actions Tests', () => {
             const res = await getRealAttributionData('comp-1', 'LINEAR');
             expect(res.success).toBe(true);
             expect(res.totalRevenue).toBe(30000);
-            expect(res.attributionShares.length).toBeGreaterThan(0);
+            expect(res.attributionShares?.length).toBeGreaterThan(0);
         });
     });
 
