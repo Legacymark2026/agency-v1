@@ -1,5 +1,5 @@
 /**
- * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN)
+ * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN / Bank Recon)
  */
 
 export interface PUCAccount {
@@ -28,6 +28,7 @@ export interface JournalVoucherRecord {
   totalCredit: number;
   isBalanced: boolean;
   companyId: string;
+  hashSeal?: string;
 }
 
 export interface WithholdingCalculationInput {
@@ -86,4 +87,27 @@ export interface TaxCertificate {
   reteIvaTotal: number;
   reteIcaTotal: number;
   generatedDate: string;
+  verificationHash: string;
+}
+
+export interface BankReconciliationRecord {
+  bankAccount: string;
+  accountNumber: string;
+  bankStatementBalance: number;
+  ledgerBalance: number;
+  unreconciledDifference: number;
+  pendingDeposits: number;
+  outstandingChecks: number;
+  status: "CONCILIADO" | "DIFERENCIA_PENDIENTE";
+  lastReconciliationDate: string;
+}
+
+export interface TaxCalendarObligation {
+  code: string;
+  name: string;
+  formNumber: string;
+  frequency: "MENSUAL" | "BIMESTRAL" | "ANUAL";
+  estimatedAmount: number;
+  dueDate: string;
+  status: "AL_DIA" | "PROXIMO_A_VENCER" | "PENDIENTE";
 }
