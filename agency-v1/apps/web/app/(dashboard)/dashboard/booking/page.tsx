@@ -7,7 +7,8 @@ import {
   Plus, CheckCircle2, XCircle, ExternalLink, Sparkles, Copy,
   ChevronRight, Settings, Users, ShieldCheck, Filter, Sliders,
   Save, Edit2, Trash2, X, MessageSquare, AlertCircle, ToggleLeft, ToggleRight,
-  TrendingUp, RefreshCw, Smartphone, Play, Check, AlertTriangle, Globe
+  TrendingUp, RefreshCw, Smartphone, Play, Check, AlertTriangle, Globe,
+  GitBranch, Code2, Download, Lock, MapPin, Layers, Award
 } from 'lucide-react';
 import {
   getAppointmentsAction,
@@ -18,6 +19,10 @@ import {
   getBookingRulesAction,
   getBookingMetricsAction,
   generateWhatsAppReminderAction,
+  generateICalendarAction,
+  getSmartRoutingRulesAction,
+  getEmbedSnippetsAction,
+  getBlockedDatesAction,
 } from '@/modules/booking/actions/booking';
 import type {
   AppointmentRecord,
@@ -25,17 +30,36 @@ import type {
   WeeklyScheduleDay,
   BookingRulesConfig,
   BookingMetricsReport,
+  SmartRoutingRule,
+  BlockedDateOverride,
 } from '@/modules/booking/types';
 import { toast } from 'sonner';
 
+const TIMEZONES = [
+  { code: 'America/Bogota', label: 'Bogotá / Lima / Quito (UTC-5)' },
+  { code: 'America/Mexico_City', label: 'Ciudad de México (UTC-6)' },
+  { code: 'America/New_York', label: 'Nueva York / Miami (UTC-4 / EST)' },
+  { code: 'America/Santiago', label: 'Santiago de Chile (UTC-4)' },
+  { code: 'America/Buenos_Aires', label: 'Buenos Aires (UTC-3)' },
+  { code: 'Europe/Madrid', label: 'Madrid / Barcelona (UTC+2 / CET)' },
+  { code: 'UTC', label: 'Tiempo Universal Coordinado (UTC)' },
+];
+
 export default function BookingDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'appointments' | 'types' | 'schedule' | 'rules' | 'preview'>('appointments');
+  const [activeTab, setActiveTab] = useState<
+    'appointments' | 'types' | 'routing' | 'schedule' | 'embed' | 'rules' | 'preview'
+  >('appointments');
+
   const [appointments, setAppointments] = useState<AppointmentRecord[]>([]);
   const [bookingTypes, setBookingTypes] = useState<BookingTypeConfig[]>([]);
   const [schedule, setSchedule] = useState<WeeklyScheduleDay[]>([]);
   const [rules, setRules] = useState<BookingRulesConfig | null>(null);
   const [metrics, setMetrics] = useState<BookingMetricsReport | null>(null);
+  const [routingRules, setRoutingRules] = useState<SmartRoutingRule[]>([]);
+  const [embedSnippets, setEmbedSnippets] = useState<any>(null);
+  const [blockedDates, setBlockedDates] = useState<BlockedDateOverride[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [selectedTz, setSelectedTz] = useState<string>('America/Bogota');
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -46,18 +70,11 @@ export default function BookingDashboardPage() {
   const [newCustPhone, setNewCustPhone] = useState('+57 ');
   const [newTypeName, setNewTypeName] = useState('Demostración de Plataforma SaaS ERP');
   const [newDuration, setNewDuration] = useState(45);
+  const [newBookingMode, setNewBookingMode] = useState<'ONE_ON_ONE' | 'COLLECTIVE' | 'GROUP'>('ONE_ON_ONE');
   const [newStartDate, setNewStartDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
   const [newMeetingType, setNewMeetingType] = useState<'GOOGLE_MEET' | 'ZOOM' | 'PHONE'>('GOOGLE_MEET');
   const [newNotes, setNewNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // New Booking Type Modal State
-  const [showTypeModal, setShowTypeModal] = useState(false);
-  const [newTypeTitle, setNewTypeTitle] = useState('');
-  const [newTypeDuration, setNewTypeDuration] = useState(30);
-  const [newTypeBuffer, setNewTypeBuffer] = useState(10);
-  const [newTypePrice, setNewTypePrice] = useState(0);
-  const [newTypeDesc, setNewTypeDesc] = useState('');
 
   const publicUrl = "https://legacymarksas.com/book/legacymark";
 
@@ -68,12 +85,15 @@ export default function BookingDashboardPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [aptRes, typeRes, schRes, rulRes, metRes] = await Promise.all([
+      const [aptRes, typeRes, schRes, rulRes, metRes, routRes, embRes, blkRes] = await Promise.all([
         getAppointmentsAction(),
         getBookingTypesAction(),
         getWeeklyScheduleAction(),
         getBookingRulesAction(),
         getBookingMetricsAction(),
+        getSmartRoutingRulesAction(),
+        getEmbedSnippetsAction(),
+        getBlockedDatesAction(),
       ]);
 
       if (aptRes.success) setAppointments(aptRes.appointments);
@@ -81,6 +101,9 @@ export default function BookingDashboardPage() {
       setSchedule(schRes);
       setRules(rulRes);
       setMetrics(metRes);
+      setRoutingRules(routRes);
+      setEmbedSnippets(embRes);
+      setBlockedDates(blkRes);
     } catch (e) {
       console.error("Error loading booking data:", e);
     } finally {
@@ -111,7 +134,9 @@ export default function BookingDashboardPage() {
         typeName: newTypeName,
         durationMinutes: newDuration,
         startDate: new Date(newStartDate).toISOString(),
+        timeZone: selectedTz,
         meetingType: newMeetingType,
+        bookingMode: newBookingMode,
         notes: newNotes,
       });
 
@@ -130,6 +155,23 @@ export default function BookingDashboardPage() {
       toast.error("Ocurrió un error al agendar la cita.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDownloadICS = async (appointment: AppointmentRecord) => {
+    try {
+      const res = await generateICalendarAction(appointment);
+      const blob = new Blob([res.icsContent], { type: "text/calendar;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", res.filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`Invitación .ICS generada para Google Calendar / Outlook.`);
+    } catch (e) {
+      toast.error("Error al generar archivo de calendario");
     }
   };
 
@@ -168,30 +210,44 @@ export default function BookingDashboardPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
               </span>
-              <Sparkles size={10} className="text-teal-400" /> Enterprise Booking System · Cal.com / Calendly Grade
+              <Sparkles size={10} className="text-teal-400" /> Tier-1 Enterprise Scheduling Suite · Cal.com / Calendly Grade
             </span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
             Gestor de Citas, Agendamiento & Salas Virtuales
           </h1>
           <p className="ds-subtext mt-1">
-            Sistema de reservas automatizado con generación instantánea de Google Meet/Zoom, recordatorios de WhatsApp y sincronización PostgreSQL.
+            Enrutamiento Inteligente de Leads, Citas Colectivas/Grupales, Zonas Horarias Internacionales, Invitaciones .ICS y Sincronización PostgreSQL.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
+            <Globe className="w-3.5 h-3.5 text-teal-400" />
+            <select
+              value={selectedTz}
+              onChange={(e) => setSelectedTz(e.target.value)}
+              className="bg-transparent text-teal-400 font-bold outline-none cursor-pointer"
+            >
+              {TIMEZONES.map(tz => (
+                <option key={tz.code} value={tz.code} className="bg-slate-950 text-white">{tz.label}</option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={handleCopyLink}
             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-mono text-teal-400 font-bold rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-md"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            <span>{copied ? "¡Enlace Copiado!" : "Copiar Enlace de Reserva"}</span>
+            <span>{copied ? "¡Enlace Copiado!" : "Copiar Enlace"}</span>
           </button>
+
           <button
             onClick={() => setShowNewAptModal(true)}
             className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-teal-500/20"
           >
-            <Plus className="w-4 h-4" /> Agendar Cita Manual
+            <Plus className="w-4 h-4" /> Agendar Cita
           </button>
         </div>
       </div>
@@ -204,14 +260,14 @@ export default function BookingDashboardPage() {
             <p className="text-3xl font-black text-white mt-2 font-mono">{metrics.totalAppointments}</p>
             <div className="flex items-center gap-1.5 mt-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-xs text-slate-400 font-semibold">{metrics.confirmedCount} confirmadas activas</span>
+              <span className="text-xs text-slate-400 font-semibold">{metrics.confirmedCount} activas confirmadas</span>
             </div>
           </div>
 
           <div className="ds-card p-5">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Citas Completadas con Éxito</span>
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Citas Completadas</span>
             <p className="text-3xl font-black text-emerald-400 mt-2 font-mono">{metrics.completedCount}</p>
-            <p className="text-xs text-slate-400 mt-1">Reuniones llevadas a cabo satisfactoriamente.</p>
+            <p className="text-xs text-slate-400 mt-1">Reuniones realizadas con éxito.</p>
           </div>
 
           <div className="ds-card p-5">
@@ -223,9 +279,9 @@ export default function BookingDashboardPage() {
           </div>
 
           <div className="ds-card p-5">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Citas Programadas para Hoy</span>
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Citas Programadas Hoy</span>
             <p className="text-3xl font-black text-amber-400 mt-2 font-mono">{metrics.upcomingTodayCount}</p>
-            <p className="text-xs text-slate-400 mt-1">Recordatorios automáticos de WhatsApp activos.</p>
+            <p className="text-xs text-slate-400 mt-1">Recordatorios automáticos activos.</p>
           </div>
         </div>
       )}
@@ -250,7 +306,17 @@ export default function BookingDashboardPage() {
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Clock className="w-4 h-4 text-teal-400" /> Tipos de Cita & Servicios
+          <Clock className="w-4 h-4 text-teal-400" /> Tipos de Cita & Modalidades
+        </button>
+        <button
+          onClick={() => setActiveTab('routing')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'routing'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <GitBranch className="w-4 h-4 text-teal-400" /> Enrutamiento Inteligente (Smart Routing)
         </button>
         <button
           onClick={() => setActiveTab('schedule')}
@@ -260,7 +326,17 @@ export default function BookingDashboardPage() {
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Sliders className="w-4 h-4 text-teal-400" /> Horarios & Disponibilidad
+          <Sliders className="w-4 h-4 text-teal-400" /> Horarios & Festivos
+        </button>
+        <button
+          onClick={() => setActiveTab('embed')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'embed'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Code2 className="w-4 h-4 text-teal-400" /> Widget Embebible
         </button>
         <button
           onClick={() => setActiveTab('rules')}
@@ -270,7 +346,7 @@ export default function BookingDashboardPage() {
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <ShieldCheck className="w-4 h-4 text-teal-400" /> Políticas & Recordatorios WhatsApp
+          <ShieldCheck className="w-4 h-4 text-teal-400" /> Recordatorios WhatsApp
         </button>
         <button
           onClick={() => setActiveTab('preview')}
@@ -280,7 +356,7 @@ export default function BookingDashboardPage() {
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Globe className="w-4 h-4 text-teal-400" /> Simulador Público de Reserva
+          <Globe className="w-4 h-4 text-teal-400" /> Simulador de Reserva
         </button>
       </div>
 
@@ -335,6 +411,9 @@ export default function BookingDashboardPage() {
                       }`}>
                         {apt.status}
                       </span>
+                      <span className="px-2 py-0.5 rounded bg-teal-950 text-teal-400 text-[10px] font-mono font-bold border border-teal-800/40">
+                        {apt.bookingMode}
+                      </span>
                       <h4 className="text-sm font-bold text-white">{apt.title}</h4>
                     </div>
 
@@ -353,7 +432,7 @@ export default function BookingDashboardPage() {
                       </span>
                       <span className="flex items-center gap-1.5 text-teal-300">
                         <Clock className="w-3.5 h-3.5 text-teal-400" />
-                        {new Date(apt.startDate).toLocaleDateString("es-CO", { weekday: 'short', month: 'short', day: 'numeric' })} a las {new Date(apt.startDate).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })} ({apt.durationMinutes} min)
+                        {new Date(apt.startDate).toLocaleDateString("es-CO", { weekday: 'short', month: 'short', day: 'numeric' })} a las {new Date(apt.startDate).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })} ({apt.timeZone})
                       </span>
                     </div>
 
@@ -373,6 +452,14 @@ export default function BookingDashboardPage() {
                     >
                       <Video className="w-3.5 h-3.5" /> Unirse a Google Meet
                     </a>
+
+                    <button
+                      onClick={() => handleDownloadICS(apt)}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+                      title="Descargar invitación de calendario .ICS"
+                    >
+                      <Download className="w-3.5 h-3.5 text-teal-400" /> .ICS
+                    </button>
 
                     <button
                       onClick={() => handleSendWhatsAppReminder(apt)}
@@ -413,23 +500,17 @@ export default function BookingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 2: BOOKING TYPES ── */}
+      {/* ── TAB 2: BOOKING TYPES & MODALITIES ── */}
       {activeTab === 'types' && (
         <div className="ds-card p-6 space-y-6">
           <div className="flex justify-between items-center pb-4 border-b border-slate-800">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Clock className="w-5 h-5 text-teal-400" />
-                Catálogo de Tipos de Cita & Servicios
+                Catálogo de Tipos de Cita (1 a 1, Colectivo & Grupal)
               </h3>
-              <p className="text-xs text-slate-400">Configura duraciones, precios, salas virtuales y estrategias de asignación.</p>
+              <p className="text-xs text-slate-400">Modalidades individuales, paneles con múltiples anfitriones simultáneos y talleres grupales con límite de cupos.</p>
             </div>
-            <button
-              onClick={() => setShowTypeModal(true)}
-              className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Crear Tipo de Cita
-            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -440,9 +521,11 @@ export default function BookingDashboardPage() {
               >
                 <div>
                   <div className="flex justify-between items-start">
-                    <span className="px-2.5 py-1 rounded bg-teal-950 text-teal-400 font-bold text-xs border border-teal-800/40 font-mono">
-                      {t.durationMinutes} minutos · {t.meetingType.replace('_', ' ')}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded bg-teal-950 text-teal-400 font-bold text-xs border border-teal-800/40 font-mono">
+                        {t.durationMinutes} min · {t.bookingMode}
+                      </span>
+                    </div>
                     <span className="text-sm font-black text-emerald-400 font-mono">
                       {t.price > 0 ? `$${t.price} ${t.currency}` : 'Gratuito'}
                     </span>
@@ -452,9 +535,15 @@ export default function BookingDashboardPage() {
                   <p className="text-xs text-slate-400 mt-1">{t.description}</p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 flex justify-between items-center text-xs font-mono text-slate-500">
-                  <span>Buffer: {t.bufferMinutes} min</span>
-                  <span className="text-teal-400 font-bold">Asignación: {t.assignmentStrategy}</span>
+                <div className="space-y-2 pt-3 border-t border-slate-800 text-xs font-mono">
+                  <div className="flex justify-between text-slate-400">
+                    <span>Anfitriones Asignados:</span>
+                    <span className="text-white font-bold">{t.hosts?.join(", ") || "Equipo General"}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500 text-[11px]">
+                    <span>Buffer: {t.bufferMinutes} min</span>
+                    <span className="text-teal-400 font-bold">Estrategia: {t.assignmentStrategy}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -462,89 +551,166 @@ export default function BookingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 3: WEEKLY SCHEDULE ── */}
+      {/* ── TAB 3: SMART ROUTING ── */}
+      {activeTab === 'routing' && (
+        <div className="ds-card p-6 space-y-6">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <GitBranch className="w-5 h-5 text-teal-400" />
+                Motor de Enrutamiento Inteligente de Leads (Smart Routing)
+              </h3>
+              <p className="text-xs text-slate-400">Califica al prospecto antes de mostrar el calendario y asígnalo al especialista o director correspondiente.</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {routingRules.map(rule => (
+              <div key={rule.id} className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-teal-400" /> {rule.name}
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                    ACTIVO
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-300 font-mono bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                  ❓ <strong>Pregunta al Lead:</strong> "{rule.question}"
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {rule.options.map((opt, i) => (
+                    <div key={i} className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1.5 text-xs font-mono">
+                      <span className="text-teal-400 font-bold block">Si selecciona: "{opt.label}"</span>
+                      <div className="text-[11px] text-slate-400">
+                        <p>→ Asignar a: <strong className="text-white">{opt.targetHostName}</strong></p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: SCHEDULE & BLOCKED DATES ── */}
       {activeTab === 'schedule' && (
-        <div className="ds-card p-6 space-y-6 max-w-3xl">
-          <div className="pb-4 border-b border-slate-800">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="ds-card p-6 space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Sliders className="w-5 h-5 text-teal-400" />
               Disponibilidad Horaria Semanal
             </h3>
-            <p className="text-xs text-slate-400">Define los días y franjas horarias en que los clientes pueden agendar reuniones.</p>
+
+            <div className="space-y-3 font-mono text-xs">
+              {schedule.map((day, idx) => (
+                <div
+                  key={day.day}
+                  className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3 w-28">
+                    <button onClick={() => handleToggleDay(idx)} className="cursor-pointer text-slate-400 hover:text-teal-400">
+                      {day.enabled ? <ToggleRight className="w-6 h-6 text-teal-400" /> : <ToggleLeft className="w-6 h-6 text-slate-600" />}
+                    </button>
+                    <span className={`font-bold ${day.enabled ? 'text-white' : 'text-slate-500'}`}>{day.day}</span>
+                  </div>
+
+                  {day.enabled ? (
+                    <div className="flex items-center gap-2 text-slate-300 text-[11px]">
+                      <span className="px-2 py-0.5 rounded bg-slate-950 text-teal-400 font-bold">{day.startTime}</span>
+                      <span>a</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-950 text-teal-400 font-bold">{day.endTime}</span>
+                    </div>
+                  ) : (
+                    <span className="text-slate-600 text-[11px]">No disponible</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-3 font-mono text-xs">
-            {schedule.map((day, idx) => (
-              <div
-                key={day.day}
-                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-3 w-32">
-                  <button
-                    onClick={() => handleToggleDay(idx)}
-                    className="cursor-pointer text-slate-400 hover:text-teal-400 transition-colors"
-                  >
-                    {day.enabled ? (
-                      <ToggleRight className="w-6 h-6 text-teal-400" />
-                    ) : (
-                      <ToggleLeft className="w-6 h-6 text-slate-600" />
-                    )}
-                  </button>
-                  <span className={`font-bold ${day.enabled ? 'text-white' : 'text-slate-500'}`}>
-                    {day.day}
+          <div className="ds-card p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-400" />
+              Bloqueo de Días Festivos & Fechas Especiales
+            </h3>
+
+            <div className="space-y-3 font-mono text-xs">
+              {blockedDates.map(blk => (
+                <div key={blk.id} className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-amber-400">{blk.date}</span>
+                    <p className="text-slate-300 font-sans text-xs mt-0.5">{blk.reason}</p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 text-[10px] font-bold border border-amber-800/40">
+                    BLOQUEADO
                   </span>
                 </div>
-
-                {day.enabled ? (
-                  <div className="flex items-center gap-3 text-slate-300">
-                    <span className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-teal-400 font-bold">
-                      {day.startTime}
-                    </span>
-                    <span>a</span>
-                    <span className="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-teal-400 font-bold">
-                      {day.endTime}
-                    </span>
-                    {day.lunchBreakStart && (
-                      <span className="text-slate-500 text-[11px] ml-2">
-                        (Pausa almuerzo: {day.lunchBreakStart} - {day.lunchBreakEnd})
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-slate-600 font-bold">No disponible</span>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── TAB 4: RULES & WHATSAPP REMINDERS ── */}
+      {/* ── TAB 5: EMBED CODE ── */}
+      {activeTab === 'embed' && embedSnippets && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="ds-card p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Code2 className="w-5 h-5 text-teal-400" />
+              Incrustación vía Iframe (HTML Estándar)
+            </h3>
+            <p className="text-xs text-slate-400">Pega este código en cualquier landing page de WordPress, Webflow o HTML puro.</p>
+
+            <textarea
+              readOnly
+              rows={7}
+              value={embedSnippets.iframeCode}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-teal-300 outline-none select-all"
+            />
+          </div>
+
+          <div className="ds-card p-6 space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Code2 className="w-5 h-5 text-purple-400" />
+              Componente React / Next.js
+            </h3>
+            <p className="text-xs text-slate-400">Importa este componente directamente en aplicaciones React / Next.js.</p>
+
+            <textarea
+              readOnly
+              rows={7}
+              value={embedSnippets.reactSnippet}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-purple-300 outline-none select-all"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 6: RULES & WHATSAPP ── */}
       {activeTab === 'rules' && rules && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="ds-card p-6 space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-teal-400" />
-              Políticas de Agendamiento & Cancelación
+              Políticas de Agendamiento
             </h3>
 
             <div className="space-y-4 font-mono text-xs">
               <div>
-                <label className="text-slate-400 uppercase block">Preaviso Mínimo de Reserva</label>
+                <label className="text-slate-400 uppercase block">Preaviso Mínimo</label>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-white mt-1">
-                  {rules.minNoticeHours} horas de anticipación mínima
+                  {rules.minNoticeHours} horas de anticipación
                 </div>
               </div>
-
               <div>
-                <label className="text-slate-400 uppercase block">Límite Máximo de Reserva a Futuro</label>
+                <label className="text-slate-400 uppercase block">Límite Futuro</label>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-white mt-1">
-                  Hasta {rules.maxAdvanceDays} días calendario
+                  Hasta {rules.maxAdvanceDays} días de antelación
                 </div>
-              </div>
-
-              <div className="p-4 bg-teal-950/20 border border-teal-500/30 rounded-xl text-teal-300 text-xs">
-                ✓ Reagendamiento y cancelación permitidos con 1-clic por el cliente.
               </div>
             </div>
           </div>
@@ -552,7 +718,7 @@ export default function BookingDashboardPage() {
           <div className="ds-card p-6 space-y-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-emerald-400" />
-              Plantilla de Recordatorio Automático por WhatsApp
+              Plantilla de Recordatorio por WhatsApp
             </h3>
 
             <textarea
@@ -561,32 +727,29 @@ export default function BookingDashboardPage() {
               onChange={(e) => setRules({ ...rules, whatsappReminderTemplate: e.target.value })}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-200 outline-none focus:border-teal-500"
             />
-
-            <div className="text-[11px] text-slate-500 font-mono space-y-1">
-              <p>Etiquetas dinámicas admitidas: <code className="text-teal-400">{`{{nombre}}`}</code>, <code className="text-teal-400">{`{{tipo_cita}}`}</code>, <code className="text-teal-400">{`{{fecha}}`}</code>, <code className="text-teal-400">{`{{hora}}`}</code>, <code className="text-teal-400">{`{{link_reunion}}`}</code></p>
-            </div>
           </div>
         </div>
       )}
 
-      {/* ── TAB 5: PUBLIC BOOKING PREVIEW WIDGET ── */}
+      {/* ── TAB 7: PUBLIC SIMULATOR PREVIEW ── */}
       {activeTab === 'preview' && (
         <div className="ds-card p-8 max-w-4xl mx-auto space-y-6">
           <div className="text-center space-y-2 pb-6 border-b border-slate-800">
-            <span className="ds-badge ds-badge-teal">Vista Previa de Reserva</span>
-            <h2 className="text-2xl font-black text-white">Reserva tu Sesión con el Equipo LegacyMark</h2>
-            <p className="text-xs text-slate-400">Selecciona el tipo de servicio y horario que mejor se adapte a tu agenda.</p>
+            <span className="ds-badge ds-badge-teal">Simulador Interactivo en Vivo</span>
+            <h2 className="text-2xl font-black text-white">Reserva tu Sesión con LegacyMark</h2>
+            <p className="text-xs text-slate-400">Selecciona el tipo de reunión, tu zona horaria y confirma directamente en PostgreSQL.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <span className="text-xs font-mono text-slate-400 uppercase">1. Selecciona el Servicio</span>
+              <span className="text-xs font-mono text-slate-400 uppercase">1. Selecciona el Servicio / Modalidad</span>
               {bookingTypes.map((t) => (
                 <div
                   key={t.id}
                   onClick={() => {
                     setNewTypeName(t.title);
                     setNewDuration(t.durationMinutes);
+                    setNewBookingMode(t.bookingMode);
                   }}
                   className={`p-4 rounded-xl border transition-all cursor-pointer ${
                     newTypeName === t.title
@@ -628,7 +791,7 @@ export default function BookingDashboardPage() {
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white font-mono outline-none focus:border-teal-500"
                 />
                 <div>
-                  <label className="text-[11px] font-mono text-slate-500 uppercase">Fecha y Hora Deseada</label>
+                  <label className="text-[11px] font-mono text-slate-500 uppercase">Fecha y Hora ({selectedTz})</label>
                   <input
                     type="datetime-local"
                     value={newStartDate}
@@ -659,10 +822,7 @@ export default function BookingDashboardPage() {
                 <CalendarIcon className="w-4 h-4 text-teal-400" />
                 Agendar Nueva Cita en Vivo
               </h3>
-              <button
-                onClick={() => setShowNewAptModal(false)}
-                className="text-slate-500 hover:text-white cursor-pointer"
-              >
+              <button onClick={() => setShowNewAptModal(false)} className="text-slate-500 hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -723,16 +883,6 @@ export default function BookingDashboardPage() {
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono mt-1 outline-none"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-mono text-slate-400 uppercase">Notas Adicionales</label>
-                <textarea
-                  rows={2}
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white mt-1 outline-none"
-                />
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
