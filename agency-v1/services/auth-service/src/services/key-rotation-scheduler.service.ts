@@ -5,7 +5,17 @@
  * archiving previous key versions for backward-compatible decryption.
  */
 
-import { cmekVaultService, TenantKeyConfig } from "../../../admin-service/src/services/cmek-vault.service";
+import crypto from "crypto";
+
+export interface TenantKeyConfig {
+  tenantId: string;
+  keyAlias: string;
+  masterKeyHash: string;
+  keyStatus: "ACTIVE" | "ROTATED" | "REVOKED";
+  algorithm: "AES-256-GCM";
+  createdAt: string;
+  lastRotatedAt: string;
+}
 
 export interface KeyAuditReport {
   scannedCount: number;
@@ -21,6 +31,42 @@ export interface KeyAuditReport {
 
 export class KeyRotationSchedulerService {
   private maxKeyAgeDays = 90;
+  private tenantKeys = new Map<string, { key: Buffer; config: TenantKeyConfig; version: number }>();
+
+  public provisionTenantKey(tenantId: string, keyAlias: string): TenantKeyConfig {
+    const rawKey = crypto.randomBytes(32);
+    const masterKeyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+
+    const config: TenantKeyConfig = {
+      tenantId,
+      keyAlias,
+      masterKeyHash,
+      keyStatus: "ACTIVE",
+      algorithm: "AES-256-GCM",
+      createdAt: new Date().toISOString(),
+      lastRotatedAt: new Date().toISOString(),
+    };
+
+    this.tenantKeys.set(tenantId, { key: rawKey, config, version: 1 });
+    return config;
+  }
+
+  public rotateTenantKey(tenantId: string): TenantKeyConfig {
+    const existing = this.tenantKeys.get(tenantId);
+    if (!existing) {
+      return this.provisionTenantKey(tenantId, `cmek_${tenantId}`);
+    }
+
+    const newRawKey = crypto.randomBytes(32);
+    const newHash = crypto.createHash("sha256").update(newRawKey).digest("hex");
+
+    existing.key = newRawKey;
+    existing.version += 1;
+    existing.config.masterKeyHash = newHash;
+    existing.config.lastRotatedAt = new Date().toISOString();
+
+    return existing.config;
+  }
 
   /**
    * Scans and executes automatic rotation for keys exceeding the maximum policy age.
@@ -38,13 +84,16 @@ export class KeyRotationSchedulerService {
 
     for (const tenantId of tenantIds) {
       try {
-        // Ensure tenant has an active key
-        const keyConfig: TenantKeyConfig = cmekVaultService.provisionTenantKey(tenantId, `cmek_policy_${tenantId}`);
+        let keyConfig = this.tenantKeys.get(tenantId)?.config;
+        if (!keyConfig) {
+          keyConfig = this.provisionTenantKey(tenantId, `cmek_policy_${tenantId}`);
+        }
+
         const lastRotatedTime = new Date(keyConfig.lastRotatedAt).getTime();
         const isExpired = now - lastRotatedTime > maxAgeMs;
 
         if (isExpired) {
-          const rotated = cmekVaultService.rotateTenantKey(tenantId);
+          const rotated = this.rotateTenantKey(tenantId);
           report.rotatedCount++;
           report.rotationResults.push({
             tenantId,
