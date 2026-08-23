@@ -1,11 +1,13 @@
 /**
  * Real Production Audit Trail Logger (PostgreSQL + Prisma)
  * ─────────────────────────────────────────────────────────────────────────────
- * Writes real, persistent user and AI activity logs directly to PostgreSQL.
+ * Writes real, persistent user and AI activity logs directly to PostgreSQL
+ * with automated secret sanitization and log redaction.
  */
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { secretSanitizer } from "../../../packages/observability/src/secret-sanitizer";
 
 export type AuditAction =
   | "auth.login"
@@ -37,6 +39,8 @@ export async function audit(ctx: AuditContext): Promise<string> {
     // Graceful fallback outside HTTP request context
   }
 
+  const cleanDetails = secretSanitizer.sanitizePayload(ctx.details || {});
+
   try {
     const entry = await prisma.userActivityLog.create({
       data: {
@@ -45,7 +49,7 @@ export async function audit(ctx: AuditContext): Promise<string> {
         details: JSON.stringify({
           outcome: ctx.outcome,
           timestamp: new Date().toISOString(),
-          details: ctx.details || {},
+          details: cleanDetails,
         }),
       },
     });
