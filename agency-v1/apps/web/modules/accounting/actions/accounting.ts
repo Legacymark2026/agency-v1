@@ -17,6 +17,7 @@ import type {
   PayrollProvisionsBreakdown,
   AgingPortfolioRecord,
   AccountingAuditAnomaly,
+  FixedAssetRecord,
 } from "../types";
 
 export async function calculateWithholdingsAction(
@@ -96,6 +97,7 @@ export async function recordJournalVoucherAction(params: {
     isBalanced: true,
     companyId: "legacymark_sas",
     hashSeal,
+    status: "ACTIVO",
   };
 
   // Real, persistent audit log write to PostgreSQL
@@ -109,7 +111,7 @@ export async function recordJournalVoucherAction(params: {
           concept: params.concept,
           totalAmount: totalDebit,
           hashSeal,
-          linesCount: params.lines.length,
+          lines: params.lines,
           timestamp: new Date().toISOString(),
         }),
       },
@@ -121,6 +123,149 @@ export async function recordJournalVoucherAction(params: {
   return {
     success: true,
     voucher,
+  };
+}
+
+export async function getJournalVouchersHistoryAction(): Promise<{
+  success: boolean;
+  vouchers: JournalVoucherRecord[];
+}> {
+  const vouchers: JournalVoucherRecord[] = [];
+
+  try {
+    const logs = await prisma.userActivityLog.findMany({
+      where: { action: "ACCOUNTING_VOUCHER_SEALED" },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    for (const log of logs) {
+      try {
+        const parsed = JSON.parse(log.details as string);
+        if (parsed?.voucherNumber) {
+          vouchers.push({
+            voucherNumber: parsed.voucherNumber,
+            date: parsed.timestamp || log.createdAt.toISOString(),
+            concept: parsed.concept || "Comprobante Contable",
+            lines: parsed.lines || [],
+            totalDebit: parsed.totalAmount || 0,
+            totalCredit: parsed.totalAmount || 0,
+            isBalanced: true,
+            companyId: "legacymark_sas",
+            hashSeal: parsed.hashSeal,
+            status: "ACTIVO",
+          });
+        }
+      } catch (_) {
+        //
+      }
+    }
+  } catch (e) {
+    console.error("[getJournalVouchersHistoryAction] DB Error:", e);
+  }
+
+  return {
+    success: true,
+    vouchers,
+  };
+}
+
+export async function createFinancialAccountAction(params: {
+  name: string;
+  type: string;
+  balance: number;
+  currency?: string;
+}): Promise<{ success: boolean; account?: any; error?: string }> {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return { success: false, error: "No se encontró empresa registrada en el sistema." };
+    }
+
+    const created = await prisma.financialAccount.create({
+      data: {
+        companyId: company.id,
+        name: params.name,
+        type: params.type || "BANK_ACCOUNT",
+        balance: Number(params.balance) || 0,
+        currency: params.currency || "COP",
+        isActive: true,
+      },
+    });
+
+    return { success: true, account: created };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al crear cuenta financiera" };
+  }
+}
+
+export async function executePeriodClosingAction(period: string): Promise<{
+  success: boolean;
+  closingVoucher?: JournalVoucherRecord;
+  error?: string;
+}> {
+  try {
+    const invoices = await prisma.invoice.findMany({ select: { total: true } });
+    const expenses = await prisma.expense.findMany({ select: { amount: true } });
+    const payrolls = await prisma.payroll.findMany({ select: { totalEarnings: true } });
+
+    const totalIncome = invoices.reduce((acc, inv) => acc + (Number(inv.total) || 0), 0);
+    const totalExpenses = expenses.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
+    const totalPayroll = payrolls.reduce((acc, pay) => acc + (Number(pay.totalEarnings) || 0), 0);
+    const totalCostsAndExpenses = totalExpenses + totalPayroll;
+
+    const netResult = totalIncome - totalCostsAndExpenses;
+    const voucherNum = `CC-${period.replace(/\s+/g, "_")}`;
+
+    const lines: JournalEntryLineInput[] = [
+      { accountCode: "413501", accountName: "Cancelación de Ingresos Operacionales", debit: totalIncome, credit: 0, thirdPartyNit: "902.028.722-3" },
+      { accountCode: "510506", accountName: "Cancelación de Gastos de Personal", debit: 0, credit: totalPayroll, thirdPartyNit: "902.028.722-3" },
+      { accountCode: "513535", accountName: "Cancelación de Gastos Generales", debit: 0, credit: totalExpenses, thirdPartyNit: "902.028.722-3" },
+      { accountCode: "590505", accountName: "Ganancias y Pérdidas (Utilidad del Ejercicio)", debit: 0, credit: Math.max(0, netResult), thirdPartyNit: "902.028.722-3" },
+    ];
+
+    const result = await recordJournalVoucherAction({
+      voucherNumber: voucherNum,
+      concept: `Asiento de Cierre Contable y Cancelación de Cuentas de Resultado - ${period}`,
+      lines,
+    });
+
+    return {
+      success: result.success,
+      closingVoucher: result.voucher,
+      error: result.error,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al ejecutar cierre contable" };
+  }
+}
+
+export async function calculateFixedAssetDepreciationAction(data: {
+  assetName: string;
+  cost: number;
+  salvageValue: number;
+  usefulLifeMonths: number;
+}): Promise<FixedAssetRecord> {
+  const cost = Number(data.cost) || 12000000;
+  const salvage = Number(data.salvageValue) || 0;
+  const lifeMonths = Number(data.usefulLifeMonths) || 60; // 5 years default for IT equipment
+
+  const depreciableAmount = cost - salvage;
+  const monthlyDepreciation = Math.round(depreciableAmount / lifeMonths);
+  const accumulatedDepreciation = monthlyDepreciation * 6; // 6 months example
+  const netBookValue = cost - accumulatedDepreciation;
+
+  return {
+    id: `ACT-${Date.now().toString().slice(-4)}`,
+    name: data.assetName || "Servidores y Equipos de Cómputo NIIF",
+    code: "152805",
+    purchaseDate: new Date().toISOString().split("T")[0],
+    purchaseCost: cost,
+    salvageValue: salvage,
+    usefulLifeMonths: lifeMonths,
+    monthlyDepreciation,
+    accumulatedDepreciation,
+    netBookValue,
   };
 }
 
@@ -230,7 +375,7 @@ export async function getIncomeStatementAction(): Promise<{
 
   const grossProfit = grossRevenue - operatingCosts;
   const operatingIncome = grossProfit - operatingExpenses;
-  const taxEstimated = Math.round(Math.max(0, operatingIncome) * 0.35); // 35% Impuesto Renta
+  const taxEstimated = Math.round(Math.max(0, operatingIncome) * 0.35);
   const netIncome = operatingIncome - taxEstimated;
   const profitMarginPercent = grossRevenue > 0 ? Math.round((netIncome / grossRevenue) * 1000) / 10 : 0;
 
@@ -319,6 +464,7 @@ export async function getBankReconciliationAction(): Promise<{
 
     if (dbAccounts && dbAccounts.length > 0) {
       accountsList = dbAccounts.map((acc) => ({
+        id: acc.id,
         bankAccount: acc.name,
         accountNumber: acc.id.slice(0, 8).toUpperCase(),
         bankStatementBalance: acc.balance,
@@ -407,13 +553,11 @@ export async function calculatePayrollProvisionsAction(
   const transportAllowance = salary <= 2600000 ? 162000 : 0;
   const totalAccrued = salary + transportAllowance;
 
-  // Prestaciones Sociales NIIF Colombia
   const cesantias = Math.round(totalAccrued * 0.0833);
   const interesesCesantias = Math.round(cesantias * 0.12 / 12);
   const primaServicios = Math.round(totalAccrued * 0.0833);
   const vacaciones = Math.round(salary * 0.0417);
 
-  // Aportes Patronales
   const pensionEmployer = Math.round(salary * 0.12);
   const healthEmployer = 0; // Exonerado Art 114-1 ET (<10 SMMLV)
   const arlRisk1 = Math.round(salary * 0.00522);
@@ -612,7 +756,6 @@ export async function exportRealExogenaCSVAction(
 export async function parseNaturalLanguageJournalEntryAction(
   prompt: string
 ): Promise<{ success: boolean; concept: string; lines: JournalEntryLineInput[] }> {
-  // Dynamic parsing based on numbers and keywords
   const numbersMatch = prompt.match(/\$?\s*([\d.,]+)/);
   let amount = 3500000;
   if (numbersMatch) {

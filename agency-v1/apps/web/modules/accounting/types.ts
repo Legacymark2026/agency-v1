@@ -1,5 +1,5 @@
 /**
- * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN / Bank Recon / Payroll Provisions / AI Copilot)
+ * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN / Bank Recon / Payroll Provisions / Fixed Assets / Fiscal Closing)
  */
 
 export interface PUCAccount {
@@ -7,6 +7,7 @@ export interface PUCAccount {
   name: string;
   category: "ACTIVO" | "PASIVO" | "PATRIMONIO" | "INGRESOS" | "GASTOS" | "COSTOS";
   nature: "DEBITO" | "CREDITO";
+  isCustom?: boolean;
 }
 
 export interface JournalEntryLineInput {
@@ -29,6 +30,7 @@ export interface JournalVoucherRecord {
   isBalanced: boolean;
   companyId: string;
   hashSeal?: string;
+  status?: "ACTIVO" | "ANULADO";
 }
 
 export interface WithholdingCalculationInput {
@@ -91,6 +93,7 @@ export interface TaxCertificate {
 }
 
 export interface BankReconciliationRecord {
+  id?: string;
   bankAccount: string;
   accountNumber: string;
   bankStatementBalance: number;
@@ -116,16 +119,16 @@ export interface PayrollProvisionsBreakdown {
   baseSalary: number;
   transportAllowance: number;
   totalAccrued: number;
-  cesantias: number; // 8.33%
-  interesesCesantias: number; // 1%
-  primaServicios: number; // 8.33%
-  vacaciones: number; // 4.17%
-  pensionEmployer: number; // 12%
-  healthEmployer: number; // 8.5% (exonerated if <10 SMMLV under Art 114-1)
-  arlRisk1: number; // 0.522%
-  cajaCompensacion: number; // 4%
-  sena: number; // 2%
-  icbf: number; // 3%
+  cesantias: number;
+  interesesCesantias: number;
+  primaServicios: number;
+  vacaciones: number;
+  pensionEmployer: number;
+  healthEmployer: number;
+  arlRisk1: number;
+  cajaCompensacion: number;
+  sena: number;
+  icbf: number;
   totalProvisions: number;
   totalCompanyCost: number;
 }
@@ -148,4 +151,17 @@ export interface AccountingAuditAnomaly {
   description: string;
   recommendation: string;
   accountAffected?: string;
+}
+
+export interface FixedAssetRecord {
+  id: string;
+  name: string;
+  code: string;
+  purchaseDate: string;
+  purchaseCost: number;
+  salvageValue: number;
+  usefulLifeMonths: number;
+  monthlyDepreciation: number;
+  accumulatedDepreciation: number;
+  netBookValue: number;
 }
