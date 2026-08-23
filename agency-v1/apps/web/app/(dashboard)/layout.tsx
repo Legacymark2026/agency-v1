@@ -221,7 +221,7 @@ export default async function DashboardLayout({
 
                 <main className="flex-1 overflow-auto relative z-10 w-full h-full"
                     style={{ background: 'transparent' }}>
-                    <div className="max-w-[1440px] mx-auto">
+                    <div className="w-full min-h-full">
                         {children}
                     </div>
                 </main>

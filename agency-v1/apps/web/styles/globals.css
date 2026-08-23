@@ -363,9 +363,10 @@ body {
   /* Page root */
   .ds-page {
     min-height: 100%;
+    width: 100%;
     background-color: var(--ds-bg);
     color: var(--ds-text-primary);
-    padding: 2rem 2.5rem 4rem;
+    padding: 1.5rem 2rem 4rem;
     position: relative;
   }
 
