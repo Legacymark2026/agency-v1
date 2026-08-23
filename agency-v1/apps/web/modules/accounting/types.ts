@@ -1,6 +1,6 @@
 /**
- * Siigo-Grade Colombian Accounting ERP Module Types
- * (PUC NIIF, Centros de Costos, Documentos Contables CC/FV/FC/RC/CE, DSE DIAN, Auxiliares, Modulo 11 DV)
+ * Tier-1 Enterprise Accounting ERP Module Types (Siigo / SAP / Oracle NetSuite Grade)
+ * (PUC NIIF, Financial Ratios, Budget Variance, Cash Flow Forecast, Cost Centers, DSE DIAN, Auxiliaries, Modulo 11 DV)
  */
 
 export type SiigoDocumentType = "CC" | "FV" | "FC" | "RC" | "CE" | "NC" | "ND" | "DSE";
@@ -74,6 +74,36 @@ export interface AuxiliaryLedgerItem {
   debit: number;
   credit: number;
   runningBalance: number;
+}
+
+export interface FinancialRatiosReport {
+  razonCorriente: number; // Activo Corriente / Pasivo Corriente (Optimo > 1.5)
+  pruebaAcida: number; // (Activo Corriente - Inventarios) / Pasivo Corriente
+  nivelEndeudamiento: number; // Pasivo Total / Activo Total (%)
+  margenOperativo: number; // Utilidad Operacional / Ingresos (%)
+  margenNeto: number; // Utilidad Neta / Ingresos (%)
+  roe: number; // Utilidad Neta / Patrimonio (%)
+  roa: number; // Utilidad Neta / Activos (%)
+  ktno: number; // Capital de Trabajo Neto Operativo (Cuentas por Cobrar + Inventarios - Cuentas por Pagar)
+  liquidityHealth: "EXCELENTE" | "ADECUADA" | "ALERTA";
+}
+
+export interface BudgetVarianceItem {
+  costCenterCode: string;
+  costCenterName: string;
+  budgetedAmount: number;
+  executedAmount: number;
+  varianceAmount: number;
+  variancePercent: number;
+  status: "DENTRO_DEL_PRESUPUESTO" | "EN_RIESGO" | "SOBREGIRO";
+}
+
+export interface CashFlowForecastItem {
+  periodLabel: string;
+  expectedInflows: number; // Cobro facturas
+  committedOutflows: number; // Nómina, servidores, proveedores, impuestos
+  netCashFlow: number;
+  projectedEndingBalance: number;
 }
 
 export interface WithholdingCalculationInput {

@@ -42,7 +42,11 @@ import {
   Tag,
   Receipt,
   FileCheck,
-  Binary
+  Binary,
+  Activity,
+  LineChart,
+  Wallet,
+  Gauge
 } from 'lucide-react';
 import { 
   calculateWithholdingsAction, 
@@ -64,7 +68,10 @@ import {
   calculateDianDVAction,
   getCostCentersAction,
   generateDocumentoSoporteDSEAction,
-  getAuxiliaryLedgerAction
+  getAuxiliaryLedgerAction,
+  getFinancialRatiosAction,
+  getBudgetVarianceAction,
+  getCashFlowForecastAction
 } from '@/modules/accounting/actions/accounting';
 import type { SiigoDocumentType } from '@/modules/accounting/types';
 import { toast } from 'sonner';
@@ -97,16 +104,18 @@ const PUC_CATALOG = [
 
 export default function AccountingDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    'financials' | 'auxiliary' | 'dse' | 'voucher_history' | 'vouchers' | 'cost_centers' | 'nit_validator' | 'ai_copilot' | 'assets' | 'closing' | 'recon' | 'aging' | 'payroll_provisions' | 'tax_calendar' | 'withholdings' | 'certificates' | 'exogena' | 'puc'
-  >('financials');
+    'ratios' | 'financials' | 'budget' | 'cash_flow' | 'auxiliary' | 'dse' | 'voucher_history' | 'vouchers' | 'cost_centers' | 'nit_validator' | 'ai_copilot' | 'assets' | 'closing' | 'recon' | 'exogena'
+  >('ratios');
+
+  // Enterprise Reports State
+  const [financialRatios, setFinancialRatios] = useState<any>(null);
+  const [budgetItems, setBudgetItems] = useState<any[]>([]);
+  const [cashFlowData, setCashFlowData] = useState<any[]>([]);
 
   // Trial Balance & P&L state
   const [trialBalance, setTrialBalance] = useState<any>(null);
   const [pnlReport, setPnlReport] = useState<any>(null);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
-  const [taxCalendar, setTaxCalendar] = useState<any[]>([]);
-  const [portfolioReport, setPortfolioReport] = useState<any>(null);
-  const [auditReport, setAuditReport] = useState<any>(null);
   const [vouchersHistory, setVouchersHistory] = useState<any[]>([]);
   const [costCenters, setCostCenters] = useState<any[]>([]);
   const [isLoadingFinancials, setIsLoadingFinancials] = useState(false);
@@ -115,7 +124,6 @@ export default function AccountingDashboardPage() {
   const [auxAccountFilter, setAuxAccountFilter] = useState('');
   const [auxNitFilter, setAuxNitFilter] = useState('');
   const [auxLedgerData, setAuxLedgerData] = useState<any>(null);
-  const [isLoadingAux, setIsLoadingAux] = useState(false);
 
   // DSE (Documento Soporte Electrónico) State
   const [dseVendorNit, setDseVendorNit] = useState('1098765432');
@@ -143,17 +151,6 @@ export default function AccountingDashboardPage() {
   const [closingPeriod, setClosingPeriod] = useState(`Diciembre ${new Date().getFullYear()}`);
   const [isClosing, setIsClosing] = useState(false);
 
-  // Withholding Calculator state
-  const [subtotal, setSubtotal] = useState<number>(5000000);
-  const [txType, setTxType] = useState<'COMPRAS' | 'SERVICIOS' | 'HONORARIOS'>('SERVICIOS');
-  const [applyReteIVA, setApplyReteIVA] = useState<boolean>(true);
-  const [calcResult, setCalcResult] = useState<any>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-
-  // Payroll Provisions Calculator
-  const [payrollSalary, setPayrollSalary] = useState<number>(2500000);
-  const [payrollBreakdown, setPayrollBreakdown] = useState<any>(null);
-
   // Journal Entry Form State (Siigo Standard)
   const [docType, setDocType] = useState<SiigoDocumentType>('CC');
   const [selectedCostCenter, setSelectedCostCenter] = useState('01');
@@ -163,26 +160,14 @@ export default function AccountingDashboardPage() {
     { accountCode: '110505', accountName: 'Caja General', debit: 5000000, credit: 0, thirdPartyNit: '902028722-3', costCenterCode: '01' },
     { accountCode: '413501', accountName: 'Ingresos por Servicios de Software y Consultoría', debit: 0, credit: 5000000, thirdPartyNit: '902028722-3', costCenterCode: '01' },
   ]);
-  const [sealedVoucher, setSealedVoucher] = useState<any>(null);
-
-  // Certificate Generator State
-  const [certBeneficiaryNit, setCertBeneficiaryNit] = useState('900.876.543-1');
-  const [certBeneficiaryName, setCertBeneficiaryName] = useState('Tech Solutions & Consulting S.A.S.');
-  const [certType, setCertType] = useState<'RETEFUENTE' | 'RETEIVA' | 'RETEICA'>('RETEFUENTE');
-  const [generatedCert, setGeneratedCert] = useState<any>(null);
 
   // AI Copilot prompt
   const [aiPrompt, setAiPrompt] = useState('Compramos $3,500,000 en servidores Cloud pagados con transferencia de Bancolombia');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  // PUC Search
-  const [pucFilter, setPucFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('TODOS');
-
   // Load financials on mount
   useEffect(() => {
     loadFinancials();
-    handleCalculatePayroll(payrollSalary);
     handleDepreciateAsset();
     handleValidateNit(rawNitInput);
     handleLoadAuxiliary();
@@ -191,23 +176,23 @@ export default function AccountingDashboardPage() {
   const loadFinancials = async () => {
     setIsLoadingFinancials(true);
     try {
-      const [tbRes, pnlRes, bankRes, calRes, portRes, audRes, vHistRes, ccRes] = await Promise.all([
+      const [tbRes, pnlRes, bankRes, vHistRes, ccRes, ratRes, budRes, cfRes] = await Promise.all([
         getTrialBalanceAction(),
         getIncomeStatementAction(),
         getBankReconciliationAction(),
-        getTaxCalendarAction(),
-        getAgingPortfolioReportAction(),
-        auditAccountingAnomaliesAction(),
         getJournalVouchersHistoryAction(),
         getCostCentersAction(),
+        getFinancialRatiosAction(),
+        getBudgetVarianceAction(),
+        getCashFlowForecastAction(),
       ]);
       if (tbRes.success) setTrialBalance(tbRes);
       if (pnlRes.success) setPnlReport(pnlRes.report);
       if (bankRes.success) setBankAccounts(bankRes.accounts);
-      if (calRes.success) setTaxCalendar(calRes.obligations);
-      if (portRes.success) setPortfolioReport(portRes);
-      if (audRes.success) setAuditReport(audRes);
       if (vHistRes.success) setVouchersHistory(vHistRes.vouchers);
+      if (ratRes.success) setFinancialRatios(ratRes.ratios);
+      if (budRes.success) setBudgetItems(budRes.items);
+      if (cfRes.success) setCashFlowData(cfRes.forecast);
       setCostCenters(ccRes);
     } catch (e) {
       console.error("Error loading financials:", e);
@@ -217,7 +202,6 @@ export default function AccountingDashboardPage() {
   };
 
   const handleLoadAuxiliary = async () => {
-    setIsLoadingAux(true);
     try {
       const res = await getAuxiliaryLedgerAction({
         accountCode: auxAccountFilter || undefined,
@@ -226,8 +210,6 @@ export default function AccountingDashboardPage() {
       if (res.success) setAuxLedgerData(res);
     } catch (e) {
       console.error("Error loading auxiliary ledger:", e);
-    } finally {
-      setIsLoadingAux(false);
     }
   };
 
@@ -252,11 +234,6 @@ export default function AccountingDashboardPage() {
     } catch (e) {
       toast.error('Error generando Documento Soporte Electrónico');
     }
-  };
-
-  const handleCalculatePayroll = async (salary: number) => {
-    const res = await calculatePayrollProvisionsAction(salary);
-    setPayrollBreakdown(res);
   };
 
   const handleDepreciateAsset = async () => {
@@ -307,24 +284,6 @@ export default function AccountingDashboardPage() {
     }
   };
 
-  const handleCalculateWithholdings = async () => {
-    setIsCalculating(true);
-    try {
-      const res = await calculateWithholdingsAction({
-        subtotal,
-        transactionType: txType,
-        applyReteIVA,
-        reteIcaRatePerMil: 9.66,
-      });
-      setCalcResult(res);
-      toast.success('Retenciones tributarias calculadas correctamente');
-    } catch (err: any) {
-      toast.error('Error calculando retenciones');
-    } finally {
-      setIsCalculating(false);
-    }
-  };
-
   const handleAddLine = () => {
     setLines([...lines, { accountCode: '', accountName: '', debit: 0, credit: 0, thirdPartyNit: '', costCenterCode: selectedCostCenter }]);
   };
@@ -364,7 +323,6 @@ export default function AccountingDashboardPage() {
       });
 
       if (res.success && res.voucher) {
-        setSealedVoucher(res.voucher);
         toast.success(`Comprobante ${docType}-${voucherNum} registrado y persistido en PostgreSQL.`);
         setVoucherNum(`${docType}-${Date.now().toString().slice(-6)}`);
         loadFinancials();
@@ -374,22 +332,6 @@ export default function AccountingDashboardPage() {
       }
     } catch (err: any) {
       toast.error('Error al guardar comprobante');
-    }
-  };
-
-  const handleGenerateCertificate = async () => {
-    try {
-      const res = await generateTaxCertificateAction({
-        beneficiaryNit: certBeneficiaryNit,
-        beneficiaryName: certBeneficiaryName,
-        type: certType,
-      });
-      if (res.success) {
-        setGeneratedCert(res.certificate);
-        toast.success(`Certificado ${res.certificate.certificateId} emitido con Sello DIAN.`);
-      }
-    } catch (e) {
-      toast.error('Error generando certificado tributario');
     }
   };
 
@@ -435,12 +377,6 @@ export default function AccountingDashboardPage() {
   const totalCredit = lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
-  const filteredPUC = PUC_CATALOG.filter(item => {
-    const matchesSearch = item.code.includes(pucFilter) || item.name.toLowerCase().includes(pucFilter.toLowerCase());
-    const matchesCat = categoryFilter === 'TODOS' || item.category === categoryFilter;
-    return matchesSearch && matchesCat;
-  });
-
   return (
     <div className="ds-page space-y-8 w-full">
       {/* Header */}
@@ -452,14 +388,14 @@ export default function AccountingDashboardPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
               </span>
-              <Sparkles size={10} className="text-teal-400" /> ERP Cloud Contable Nivel Siigo · NIIF & DIAN Colombia
+              <Sparkles size={10} className="text-teal-400" /> Tier-1 Enterprise ERP Contable & Tesorería · NIIF & DIAN
             </span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
             Contabilidad General, Libro Mayor & Auditoría Fiscal
           </h1>
           <p className="ds-subtext mt-1">
-            Suite ERP estándar Siigo Nube: Documentos Contables (CC/RC/CE/FV/DSE), Centros de Costos, Libros Auxiliares, Cierre Fiscal y Medios Magnéticos.
+            Plataforma ERP Corporativa: Ratios Financieros NIIF, Presupuesto vs Ejecución, Flujo de Caja Proyectado, Libros Auxiliares y Documentos DIAN.
           </p>
         </div>
 
@@ -475,8 +411,18 @@ export default function AccountingDashboardPage() {
       {/* Main Tab Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
         <button
+          onClick={() => setActiveTab('ratios')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'ratios'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Gauge className="w-4 h-4 text-teal-400" /> Ratios Financieros
+        </button>
+        <button
           onClick={() => setActiveTab('financials')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'financials'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -485,11 +431,31 @@ export default function AccountingDashboardPage() {
           <PieChart className="w-4 h-4" /> Estados Financieros
         </button>
         <button
+          onClick={() => setActiveTab('budget')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'budget'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Activity className="w-4 h-4" /> Presupuesto vs Real
+        </button>
+        <button
+          onClick={() => setActiveTab('cash_flow')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'cash_flow'
+              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Wallet className="w-4 h-4" /> Flujo de Caja Proyectado
+        </button>
+        <button
           onClick={() => {
             setActiveTab('auxiliary');
             handleLoadAuxiliary();
           }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'auxiliary'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -499,7 +465,7 @@ export default function AccountingDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('dse')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'dse'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -509,17 +475,17 @@ export default function AccountingDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('vouchers')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'vouchers'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <FileText className="w-4 h-4" /> Nuevo Documento / Asiento
+          <FileText className="w-4 h-4" /> Nuevo Asiento
         </button>
         <button
           onClick={() => setActiveTab('voucher_history')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'voucher_history'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -528,38 +494,18 @@ export default function AccountingDashboardPage() {
           <History className="w-4 h-4" /> Libro Diario
         </button>
         <button
-          onClick={() => setActiveTab('cost_centers')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'cost_centers'
-              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <Tag className="w-4 h-4" /> Centros de Costos
-        </button>
-        <button
-          onClick={() => setActiveTab('nit_validator')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'nit_validator'
-              ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
-              : 'text-slate-400 hover:text-white hover:bg-slate-900'
-          }`}
-        >
-          <Binary className="w-4 h-4" /> Validador DV DIAN
-        </button>
-        <button
           onClick={() => setActiveTab('assets')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'assets'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Archive className="w-4 h-4" /> Activos Fijos NIIF
+          <Archive className="w-4 h-4" /> Activos Fijos
         </button>
         <button
           onClick={() => setActiveTab('closing')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'closing'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -569,7 +515,7 @@ export default function AccountingDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('recon')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'recon'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -579,7 +525,7 @@ export default function AccountingDashboardPage() {
         </button>
         <button
           onClick={() => setActiveTab('exogena')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'exogena'
               ? 'bg-teal-500/15 text-teal-400 border border-teal-500/30 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -589,7 +535,58 @@ export default function AccountingDashboardPage() {
         </button>
       </div>
 
-      {/* ── TAB 1: FINANCIALS (P&L and TRIAL BALANCE) ── */}
+      {/* ── TAB 1: FINANCIAL RATIOS (SALUD FINANCIERA TIER-1) ── */}
+      {activeTab === 'ratios' && (
+        <div className="space-y-6">
+          {financialRatios && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="ds-card p-5 border-teal-500/30 bg-teal-950/15">
+                  <span className="text-[10px] font-mono text-teal-400 uppercase tracking-wider font-bold">Razón Corriente (Liquidez)</span>
+                  <p className="text-3xl font-black text-emerald-400 mt-2 font-mono">{financialRatios.razonCorriente}x</p>
+                  <p className="text-xs text-slate-400 mt-1">Por cada $1.00 de deuda a corto plazo, la empresa tiene ${financialRatios.razonCorriente} de respaldo.</p>
+                </div>
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Prueba Ácida (Quick Ratio)</span>
+                  <p className="text-3xl font-black text-white mt-2 font-mono">{financialRatios.pruebaAcida}x</p>
+                  <p className="text-xs text-slate-400 mt-1">Capacidad de pago inmediata sin depender de inventarios.</p>
+                </div>
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Nivel de Endeudamiento</span>
+                  <p className="text-3xl font-black text-amber-400 mt-2 font-mono">{financialRatios.nivelEndeudamiento}%</p>
+                  <p className="text-xs text-slate-400 mt-1">Proporción de los activos totales financiada por terceros.</p>
+                </div>
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Capital de Trabajo (KTNO)</span>
+                  <p className="text-2xl font-black text-teal-400 mt-2 font-mono">${financialRatios.ktno.toLocaleString()}</p>
+                  <p className="text-xs text-slate-400 mt-1">Recursos netos requeridos para la operación comercial.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Margen Operativo (EBITDA)</span>
+                  <p className="text-3xl font-black text-teal-400 mt-2 font-mono">{financialRatios.margenOperativo}%</p>
+                </div>
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Margen Neto NIIF</span>
+                  <p className="text-3xl font-black text-emerald-400 mt-2 font-mono">{financialRatios.margenNeto}%</p>
+                </div>
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">ROE (Retorno sobre Patrimonio)</span>
+                  <p className="text-3xl font-black text-purple-400 mt-2 font-mono">{financialRatios.roe}%</p>
+                </div>
+                <div className="ds-card p-5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">ROA (Retorno sobre Activos)</span>
+                  <p className="text-3xl font-black text-blue-400 mt-2 font-mono">{financialRatios.roa}%</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 2: FINANCIALS (P&L and TRIAL BALANCE) ── */}
       {activeTab === 'financials' && (
         <div className="space-y-6">
           {pnlReport && (
@@ -706,7 +703,96 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 2: AUXILIARY LEDGERS (LIBROS AUXILIARES SIIGO STYLE) ── */}
+      {/* ── TAB 3: BUDGET VARIANCE (PRESUPUESTO VS REAL) ── */}
+      {activeTab === 'budget' && (
+        <div className="ds-card p-6 space-y-6">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-teal-400" />
+                Control Presupuestal & Análisis de Desviaciones (Variance)
+              </h3>
+              <p className="text-xs text-slate-400">Comparación de presupuesto autorizado vs gasto ejecutado por Centros de Costos.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {budgetItems.map(b => (
+              <div key={b.costCenterCode} className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-teal-400 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
+                      Centro {b.costCenterCode}
+                    </span>
+                    <h4 className="text-sm font-bold text-white mt-1">{b.costCenterName}</h4>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                    {b.variancePercent}% Ejecutado
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 font-mono text-xs pt-2 border-t border-slate-800">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Presupuesto Asignado:</span>
+                    <span className="text-white font-bold">${b.budgetedAmount.toLocaleString()} COP</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Gasto Real Ejecutado:</span>
+                    <span className="text-teal-400 font-bold">${b.executedAmount.toLocaleString()} COP</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-400 font-bold pt-1 border-t border-slate-800/80">
+                    <span>Remanente Disponible:</span>
+                    <span>${b.varianceAmount.toLocaleString()} COP</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: CASH FLOW FORECAST (FLUJO DE CAJA 90 DÍAS) ── */}
+      {activeTab === 'cash_flow' && (
+        <div className="ds-card p-6 space-y-6">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-teal-400" />
+                Flujo de Caja Proyectado & Tesorería (30 - 90 Días)
+              </h3>
+              <p className="text-xs text-slate-400">Proyección de ingresos por cobro de cartera vs egresos comprometidos de nómina, proveedores y servidores.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+            {cashFlowData.map((cf, i) => (
+              <div key={i} className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-white block">{cf.periodLabel}</span>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between text-emerald-400">
+                    <span>(+) Entradas:</span>
+                    <span>${cf.expectedInflows.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-rose-400">
+                    <span>(-) Salidas:</span>
+                    <span>${cf.committedOutflows.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-teal-400 font-bold pt-1 border-t border-slate-800">
+                    <span>Flujo Neto:</span>
+                    <span>+${cf.netCashFlow.toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-[11px]">
+                  <span className="text-slate-500 uppercase block text-[9px]">Saldo Final Proyectado:</span>
+                  <span className="text-emerald-400 font-black text-sm">${cf.projectedEndingBalance.toLocaleString()} COP</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: AUXILIARY LEDGERS ── */}
       {activeTab === 'auxiliary' && (
         <div className="ds-card p-6 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
@@ -789,7 +875,7 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 3: DOCUMENTO SOPORTE ELECTRÓNICO (DSE DIAN) ── */}
+      {/* ── TAB 6: DOCUMENTO SOPORTE DSE ── */}
       {activeTab === 'dse' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="ds-card p-6 space-y-4 lg:col-span-1">
@@ -934,7 +1020,7 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 4: NEW JOURNAL VOUCHER (SIIGO STANDARD) ── */}
+      {/* ── TAB 7: NEW JOURNAL VOUCHER (SIIGO STANDARD) ── */}
       {activeTab === 'vouchers' && (
         <div className="space-y-6">
           <div className="ds-card p-6 space-y-6">
@@ -1105,75 +1191,7 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 5: COST CENTERS ── */}
-      {activeTab === 'cost_centers' && (
-        <div className="ds-card p-6 space-y-6">
-          <div className="flex justify-between items-center pb-4 border-b border-slate-800">
-            <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Tag className="w-5 h-5 text-teal-400" />
-                Catálogo de Centros de Costos
-              </h3>
-              <p className="text-xs text-slate-400">Estructura para distribución de ingresos, costos y gastos por unidad de negocio.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {costCenters.map(cc => (
-              <div key={cc.code} className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex justify-between items-center">
-                <div>
-                  <span className="text-xs font-mono font-bold text-teal-400 bg-teal-950 px-2 py-0.5 rounded border border-teal-800/40">
-                    Centro {cc.code}
-                  </span>
-                  <h4 className="text-sm font-bold text-white mt-1">{cc.name}</h4>
-                </div>
-                <span className="px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                  ACTIVO
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 6: NIT VALIDATOR (MODULO 11 DIAN) ── */}
-      {activeTab === 'nit_validator' && (
-        <div className="ds-card p-6 space-y-6 max-w-xl">
-          <div className="pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Binary className="w-5 h-5 text-teal-400" />
-              Calculador Oficial de Dígito de Verificación (DIAN Módulo 11)
-            </h3>
-            <p className="text-xs text-slate-400">Algoritmo matemático oficial con factores primos (71, 67, 59, 53, 47, 43, 41, 37, 29, 23, 19, 17, 13, 7, 3).</p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-mono text-slate-400 uppercase">Ingresa el NIT o Cédula sin DV</label>
-              <input
-                type="text"
-                value={rawNitInput}
-                onChange={(e) => {
-                  setRawNitInput(e.target.value);
-                  handleValidateNit(e.target.value);
-                }}
-                placeholder="Ej: 902028722"
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-mono text-lg mt-1 outline-none focus:border-teal-500"
-              />
-            </div>
-
-            {validatedNitResult && (
-              <div className="p-5 bg-teal-950/20 border border-teal-500/30 rounded-2xl space-y-2">
-                <span className="text-xs font-mono text-teal-300 uppercase font-bold">Resultado Oficial DIAN</span>
-                <p className="text-3xl font-black text-emerald-400 font-mono">{validatedNitResult.formatted}</p>
-                <p className="text-xs text-slate-400 font-mono">Dígito de Verificación Calculado: <strong className="text-white font-bold">{validatedNitResult.dv}</strong></p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 7: VOUCHERS HISTORY ── */}
+      {/* ── TAB 8: VOUCHERS HISTORY ── */}
       {activeTab === 'voucher_history' && (
         <div className="ds-card p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
@@ -1246,7 +1264,7 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 8: FIXED ASSETS & NIIF DEPRECIATION ── */}
+      {/* ── TAB 9: FIXED ASSETS & NIIF DEPRECIATION ── */}
       {activeTab === 'assets' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="ds-card p-6 space-y-4 lg:col-span-1">
@@ -1343,7 +1361,7 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 9: FISCAL PERIOD CLOSING ── */}
+      {/* ── TAB 10: FISCAL PERIOD CLOSING ── */}
       {activeTab === 'closing' && (
         <div className="ds-card p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
@@ -1368,15 +1386,6 @@ export default function AccountingDashboardPage() {
                 />
               </div>
 
-              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4" /> Importante sobre el Asiento de Cierre NIIF
-                </p>
-                <p className="text-slate-300">
-                  Esta acción generará automáticamente un Comprobante de Diario de Cierre en PostgreSQL que debitará todas las cuentas de Ingreso y acreditará todas las cuentas de Gasto, trasladando el resultado neto a la cuenta patrimonial.
-                </p>
-              </div>
-
               <button
                 onClick={handleExecuteClosing}
                 disabled={isClosing}
@@ -1386,33 +1395,11 @@ export default function AccountingDashboardPage() {
                 {isClosing ? 'Ejecutando Cierre...' : `Ejecutar Cierre Fiscal ${closingPeriod}`}
               </button>
             </div>
-
-            <div className="p-5 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-3 font-mono text-xs">
-              <h4 className="font-bold text-white">Estructura del Asiento de Cierre en PostgreSQL:</h4>
-              <div className="space-y-2 text-[11px]">
-                <div className="p-2 bg-slate-950 rounded flex justify-between">
-                  <span className="text-emerald-400">Débito: 413501 (Ingresos Operacionales)</span>
-                  <span className="text-white font-bold">100% Saldo</span>
-                </div>
-                <div className="p-2 bg-slate-950 rounded flex justify-between">
-                  <span className="text-rose-400">Crédito: 510506 (Gastos de Nómina)</span>
-                  <span className="text-white font-bold">100% Saldo</span>
-                </div>
-                <div className="p-2 bg-slate-950 rounded flex justify-between">
-                  <span className="text-rose-400">Crédito: 513535 (Gastos Generales / Cloud)</span>
-                  <span className="text-white font-bold">100% Saldo</span>
-                </div>
-                <div className="p-2 bg-slate-950 rounded flex justify-between border-t border-slate-800">
-                  <span className="text-teal-400 font-bold">Crédito: 590505 (Utilidad del Ejercicio)</span>
-                  <span className="text-emerald-400 font-bold">Resultado Neto</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
 
-      {/* ── TAB 10: BANK RECONCILIATION ── */}
+      {/* ── TAB 11: BANK RECONCILIATION ── */}
       {activeTab === 'recon' && (
         <div className="space-y-6">
           <div className="ds-card p-6 space-y-6">
@@ -1482,15 +1469,6 @@ export default function AccountingDashboardPage() {
                         <span className="text-slate-400">Saldo según Libro Mayor (111005):</span>
                         <span className="text-white font-bold">${acc.ledgerBalance.toLocaleString()} COP</span>
                       </div>
-                      <div className="flex justify-between text-teal-400 font-bold pt-1 border-t border-slate-800">
-                        <span>Diferencia por Conciliar:</span>
-                        <span>$0.00 COP</span>
-                      </div>
-                    </div>
-
-                    <div className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-2">
-                      <Clock className="w-3.5 h-3.5 text-teal-500" />
-                      <span>Última conciliación: {acc.lastReconciliationDate}</span>
                     </div>
                   </div>
                 ))
@@ -1504,7 +1482,7 @@ export default function AccountingDashboardPage() {
         </div>
       )}
 
-      {/* ── TAB 11: EXOGENA DIAN ── */}
+      {/* ── TAB 12: EXOGENA DIAN ── */}
       {activeTab === 'exogena' && (
         <div className="ds-card p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
