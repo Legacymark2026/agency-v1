@@ -55,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/admin/crm/sequences", label: "Secuencias Automatizadas CRM", icon: <Workflow size={14} />, code: "SEQ" },
             { href: "/dashboard/admin/crm/templates", label: "Plantillas de Correo CRM", icon: <FileText size={14} />, code: "TMP" },
             { href: "/dashboard/admin/proposals", label: "Cotizaciones (e-Sign)", icon: <FileText size={14} />, code: "QOT" },
+            { href: "/dashboard/admin/sales", label: "Hub Comercial & CPQ Enterprise", icon: <Layers size={14} />, code: "CPQ" },
             { href: "/dashboard/admin/sales/goals", label: "Metas de Ventas", icon: <Target size={14} />, code: "GLS" },
             { href: "/dashboard/admin/crm/commissions", label: "Comisiones", icon: <DollarSign size={14} />, code: "COM" },
             { href: "/dashboard/admin/crm/tasks", label: "Tareas del Equipo", icon: <CheckSquare size={14} />, code: "TSK" },
