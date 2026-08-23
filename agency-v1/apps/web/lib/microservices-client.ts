@@ -30,6 +30,8 @@ export const MICROSERVICE_PORT_MAP: Record<string, number> = {
   "goldneez-rewards-service": 4021,
 };
 
+export const MICROSERVICES_PORTS = MICROSERVICE_PORT_MAP;
+
 export interface MicroserviceRequestOptions {
   service: keyof typeof MICROSERVICE_PORT_MAP;
   path: string;
