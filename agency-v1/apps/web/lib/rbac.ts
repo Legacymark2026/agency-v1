@@ -172,7 +172,9 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/admin/marketing/creative-studio": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
 
     // ── Portal del Cliente ────────────────────────────────
-    "/dashboard/client": [UserRole.EXTERNAL_CLIENT],
+    "/dashboard/client": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EXTERNAL_CLIENT],
+    "/dashboard/client/proposals": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EXTERNAL_CLIENT],
+    "/dashboard/client/projects": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EXTERNAL_CLIENT],
 };
 
 // ── Helpers ───────────────────────────────────────────────

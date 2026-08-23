@@ -115,9 +115,12 @@ export default async function DashboardLayout({
     // Pre-compute accessible routes (can't pass function to client component)
     const allRoutes = [
         "/dashboard/client", "/dashboard/client/proposals", "/dashboard/client/projects",
-        "/dashboard", "/dashboard/pos", "/dashboard/invoicing", "/dashboard/invoicing/ocr-scanner", "/dashboard/invoicing/fraud-guard", "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
+        "/dashboard", "/dashboard/pos", "/dashboard/invoicing", "/dashboard/invoicing/ocr-scanner", "/dashboard/invoicing/fraud-guard",
+        "/dashboard/accounting", "/dashboard/calendar",
+        "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
         "/dashboard/seo", "/dashboard/security/sla",
         "/dashboard/marketing", "/dashboard/marketing/campaigns", "/dashboard/marketing/automation",
+        "/dashboard/marketing/listening", "/dashboard/admin/marketing/approvals",
         "/dashboard/admin/marketing", "/dashboard/admin/marketing/campaigns", "/dashboard/marketing/calendar",
         "/dashboard/marketing/email-blast", "/dashboard/admin/marketing/creative-studio", "/dashboard/marketing/pricing",
         "/dashboard/admin/automation", "/dashboard/admin/architecture", "/dashboard/admin/marketing/spend", "/dashboard/admin/marketing/links",
@@ -128,21 +131,25 @@ export default async function DashboardLayout({
         "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment", "/dashboard/posts",
         "/dashboard/posts/comments", "/dashboard/posts/categories", "/dashboard/projects", "/dashboard/media",
         "/dashboard/users", "/dashboard/roles", "/dashboard/admin/team", "/dashboard/security", "/dashboard/admin/payroll",
-        "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses",
-        "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/inbox/macros",
-        "/dashboard/settings/audit-logs", "/dashboard/settings/privacy", "/dashboard/settings/system-parameters", "/dashboard/booking",
+        "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/time-off", "/dashboard/admin/payroll/reports", "/dashboard/admin/payroll/expenses",
+        "/dashboard/admin/treasury", "/dashboard/admin/audit-logs", "/dashboard/privacy-portal",
+        "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/agents/teams", "/dashboard/settings/agents/skillchains", "/dashboard/settings/agents/knowledge",
+        "/dashboard/settings/inbox/macros", "/dashboard/settings/audit-logs", "/dashboard/settings/privacy", "/dashboard/settings/system-parameters", "/dashboard/booking",
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/master-hub", "/dashboard/tools/webhooks", "/dashboard/tools/api-docs", "/dashboard/tools/video-editor",
         "/dashboard/video", "/dashboard/voice", "/dashboard/admin/hr",
         "/dashboard/affiliate", "/dashboard/affiliate/referrals",
         "/dashboard/affiliate/payouts", "/dashboard/affiliate/plans"
     ];
 
+    const isSuperAdmin = role === UserRole.SUPER_ADMIN || role === 'super_admin' || dbUser?.email?.toLowerCase() === 'administrador@legacymarksas.com';
     const accessibleRoutesSet = new Set<string>();
     
     for (const href of allRoutes) {
         let hasAccess = false;
         
-        if (isCustomRole) {
+        if (isSuperAdmin) {
+            hasAccess = true;
+        } else if (isCustomRole) {
             if (roleAllowedRoutes.length > 0) {
                 if (href === "/dashboard") {
                     hasAccess = true;
