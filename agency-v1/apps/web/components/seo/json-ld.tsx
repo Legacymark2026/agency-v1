@@ -5,14 +5,16 @@ export function JsonLd({ locale }: { locale: string }) {
     const areaServed = locale === 'en' ? ["US", "CO", "ES"] : ["CO", "ES", "MX", "AR", "PE"];
     const addressCountry = locale === 'en' ? "US" : "CO";
 
-    const jsonLd = {
+    const organizationSchema = {
         "@context": "https://schema.org",
-        "@type": ["Organization", "MarketingAgency", "WebDevelopment"],
+        "@type": ["Organization", "MarketingAgency", "ProfessionalService"],
         "name": siteConfig.name,
         "url": siteConfig.url,
         "logo": `${siteConfig.url}/favicon.ico`,
+        "image": siteConfig.ogImage,
         "description": siteConfig.description,
         "foundingDate": "2023",
+        "taxID": siteConfig.nit,
         "sameAs": [
             siteConfig.links.linkedin,
             siteConfig.links.facebook,
@@ -33,10 +35,6 @@ export function JsonLd({ locale }: { locale: string }) {
             "addressRegion": siteConfig.address.department,
             "postalCode": siteConfig.address.postalCode,
             "addressCountry": addressCountry,
-        },
-        "areaServed": {
-            "@type": "Country",
-            "name": "Colombia"
         },
         "priceRange": "$$",
         "serviceType": [
@@ -64,10 +62,53 @@ export function JsonLd({ locale }: { locale: string }) {
         "inLanguage": locale,
     };
 
+    const breadcrumbsSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Inicio",
+                "item": siteConfig.url
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Servicios",
+                "item": `${siteConfig.url}/servicios`
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Portafolio",
+                "item": `${siteConfig.url}/portfolio`
+            },
+            {
+                "@type": "ListItem",
+                "position": 4,
+                "name": "Blog",
+                "item": `${siteConfig.url}/blog`
+            },
+            {
+                "@type": "ListItem",
+                "position": 5,
+                "name": "Contacto",
+                "item": `${siteConfig.url}/contacto`
+            }
+        ]
+    };
+
     return (
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsSchema) }}
+            />
+        </>
     );
 }
