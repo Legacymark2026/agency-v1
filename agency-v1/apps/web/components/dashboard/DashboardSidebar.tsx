@@ -8,7 +8,7 @@ import {
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
     PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag, Package,
-    Cpu, Scan, AlertTriangle, Key, Terminal, Network
+    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award
 } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
@@ -49,8 +49,11 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/promotions", label: "Promociones & Cupones", icon: <Percent size={14} />, code: "PRM" },
             { href: "/dashboard/admin/crm", label: "Command Center CRM", icon: <TrendingUp size={14} />, code: "OVW" },
             { href: "/dashboard/admin/crm/leads", label: "Leads", icon: <Users size={14} />, code: "LDS" },
+            { href: "/dashboard/admin/crm/scoring", label: "Scoring Predictivo Leads", icon: <Zap size={14} />, code: "SCR" },
             { href: "/dashboard/admin/crm/assignment", label: "Asignación de Leads", icon: <Workflow size={14} />, code: "RUT" },
             { href: "/dashboard/admin/crm/pipeline", label: "Pipeline & Deals", icon: <Briefcase size={14} />, code: "PIP" },
+            { href: "/dashboard/admin/crm/sequences", label: "Secuencias Automatizadas CRM", icon: <Workflow size={14} />, code: "SEQ" },
+            { href: "/dashboard/admin/crm/templates", label: "Plantillas de Correo CRM", icon: <FileText size={14} />, code: "TMP" },
             { href: "/dashboard/admin/proposals", label: "Cotizaciones (e-Sign)", icon: <FileText size={14} />, code: "QOT" },
             { href: "/dashboard/admin/sales/goals", label: "Metas de Ventas", icon: <Target size={14} />, code: "GLS" },
             { href: "/dashboard/admin/crm/commissions", label: "Comisiones", icon: <DollarSign size={14} />, code: "COM" },
@@ -63,9 +66,11 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/marketing", label: "CMO Dashboard", icon: <BarChart2 size={14} />, code: "CMO" },
             { href: "/dashboard/marketing/campaigns", label: "Campañas (Live)", icon: <Target size={14} />, code: "LIV" },
+            { href: "/dashboard/admin/marketing/approvals", label: "Aprobaciones de Campaña", icon: <CheckSquare size={14} />, code: "APP" },
             { href: "/dashboard/marketing/automation", label: "Automatización Marketing", icon: <Zap size={14} />, code: "AUT" },
             { href: "/dashboard/marketing/calendar", label: "Planificador & Calendario", icon: <Calendar size={14} />, code: "PUB" },
             { href: "/dashboard/marketing/email-blast", label: "Email Masivo & Broadcast", icon: <Mail size={14} />, code: "EML" },
+            { href: "/dashboard/marketing/listening", label: "Social Listening & Radar", icon: <Wifi size={14} />, code: "LST" },
             { href: "/dashboard/posts", label: "Blog & Contenidos", icon: <BookOpen size={14} />, code: "BLG" },
             { href: "/dashboard/posts/comments", label: "Comentarios", icon: <MessageSquare size={14} />, code: "CMT" },
             { href: "/dashboard/posts/categories", label: "Categorías", icon: <FileText size={14} />, code: "CAT" },
@@ -84,6 +89,9 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/admin/marketing/creative-studio", label: "Creative Studio IA", icon: <Wand2 size={14} />, code: "CRE" },
             { href: "/dashboard/voice", label: "Voice Studio (Voicebox)", icon: <Wand2 size={14} />, code: "VOX" },
             { href: "/dashboard/settings/agents", label: "Agentes Autónomos IA", icon: <Bot size={14} />, code: "AGT" },
+            { href: "/dashboard/settings/agents/teams", label: "Equipos de Agentes (Swarm)", icon: <Users size={14} />, code: "SWM" },
+            { href: "/dashboard/settings/agents/skillchains", label: "Cadenas de Habilidades", icon: <Workflow size={14} />, code: "SKL" },
+            { href: "/dashboard/settings/agents/knowledge", label: "Bases de Conocimiento RAG", icon: <BookOpen size={14} />, code: "RAG" },
             { href: "/dashboard/tools/webhooks", label: "Constructor de Webhooks", icon: <Workflow size={14} />, code: "WBH" },
             { href: "/dashboard/tools/api-docs", label: "Explorador API Pública", icon: <Key size={14} />, code: "API" },
         ],
@@ -114,7 +122,9 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/admin/payroll", label: "Nómina Electrónica & PILA", icon: <DollarSign size={14} />, code: "PAY" },
             { href: "/dashboard/admin/payroll/employees", label: "Personal y Contratistas", icon: <Users size={14} />, code: "EMP" },
+            { href: "/dashboard/admin/payroll/time-off", label: "Permisos y Vacaciones", icon: <Calendar size={14} />, code: "OFF" },
             { href: "/dashboard/admin/payroll/expenses", label: "Gestión de Egresos", icon: <CreditCard size={14} />, code: "EXP" },
+            { href: "/dashboard/admin/payroll/reports", label: "Reportes & Certificados", icon: <BarChart2 size={14} />, code: "REP" },
             { href: "/dashboard/admin/team", label: "Gestión de Equipo", icon: <UserCog size={14} />, code: "TEAM" },
             { href: "/dashboard/admin/hr", label: "Time Tracking / RRHH", icon: <Activity size={14} />, code: "HR" },
         ],
@@ -136,6 +146,8 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/settings", label: "Configuración DIAN & Sistema", icon: <Settings size={14} />, code: "CFG" },
             { href: "/dashboard/admin/invoices", label: "Facturación B2B", icon: <CreditCard size={14} />, code: "INV" },
             { href: "/dashboard/admin/treasury", label: "Tesorería", icon: <Landmark size={14} />, code: "TRS" },
+            { href: "/dashboard/admin/audit-logs", label: "Logs de Auditoría Forense", icon: <FileText size={14} />, code: "LOG" },
+            { href: "/dashboard/privacy-portal", label: "Portal Privacidad & GDPR", icon: <Shield size={14} />, code: "PRV" },
             { href: "/dashboard/users", label: "Gestión de Usuarios", icon: <Users size={14} />, code: "USR" },
             { href: "/dashboard/roles", label: "Control de Roles & Permisos", icon: <Shield size={14} />, code: "ROL" },
             { href: "/dashboard/security", label: "Bóveda de Seguridad & Logs", icon: <Lock size={14} />, code: "SEC" },
@@ -178,10 +190,11 @@ export function DashboardSidebar({ role, name, email, image, companyLogoUrl, acc
                 navGroups={NAV_GROUPS}
                 accessibleRoutes={accessibleRoutes}
                 companyLogoUrl={companyLogoUrl}
-                userInfo={{ name, email, image, badge }}
+                name={name}
+                email={email}
+                role={role}
+                badge={badge}
             />
-
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent" />
         </aside>
     );
 }

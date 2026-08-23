@@ -86,6 +86,8 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/marketing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/marketing/pricing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/marketing/campaigns": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/marketing/listening": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/admin/marketing/approvals": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/marketing/spend": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/marketing/links": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/marketing/automation": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
@@ -93,10 +95,13 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Admin / Arquitectura ──────────────────────────────
     "/dashboard/admin/architecture": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/automation": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/admin/audit-logs": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/privacy-portal": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
 
     // ── CRM / Ventas ──────────────────────────────────────
     "/dashboard/admin/crm": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/leads": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/admin/crm/scoring": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/pipeline": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/campaigns": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/admin/crm/deals": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
@@ -104,6 +109,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/admin/crm/commissions": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/automation": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/admin/crm/sequences": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/admin/crm/templates": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/admin/crm/assignment": [UserRole.SUPER_ADMIN, UserRole.CLIENT_ADMIN],
 
     // ── Finanzas y Operaciones ────────────────────────────
@@ -118,6 +124,8 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/admin/payroll": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/payroll/employees": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/payroll/employees/new": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/admin/payroll/time-off": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/admin/payroll/reports": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/payroll/expenses": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/admin/operations": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EXTERNAL_CLIENT],
     "/dashboard/admin/proposals": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
@@ -127,6 +135,9 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
 
     // ── Agentes de IA ─────────────────────────────────────
     "/dashboard/settings/agents": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/settings/agents/teams": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/settings/agents/skillchains": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/settings/agents/knowledge": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 
     // ── Video & Tools Master Hub ──────────────────────────
     "/dashboard/tools/master-hub": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
