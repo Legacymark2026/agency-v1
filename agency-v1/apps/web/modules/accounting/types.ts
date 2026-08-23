@@ -1,5 +1,5 @@
 /**
- * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN / Bank Recon)
+ * Colombian Accounting Module Types (PUC / NIIF / Tax Withholdings / Exógena DIAN / Bank Recon / Payroll Provisions / AI Copilot)
  */
 
 export interface PUCAccount {
@@ -110,4 +110,42 @@ export interface TaxCalendarObligation {
   estimatedAmount: number;
   dueDate: string;
   status: "AL_DIA" | "PROXIMO_A_VENCER" | "PENDIENTE";
+}
+
+export interface PayrollProvisionsBreakdown {
+  baseSalary: number;
+  transportAllowance: number;
+  totalAccrued: number;
+  cesantias: number; // 8.33%
+  interesesCesantias: number; // 1%
+  primaServicios: number; // 8.33%
+  vacaciones: number; // 4.17%
+  pensionEmployer: number; // 12%
+  healthEmployer: number; // 8.5% (exonerated if <10 SMMLV under Art 114-1)
+  arlRisk1: number; // 0.522%
+  cajaCompensacion: number; // 4%
+  sena: number; // 2%
+  icbf: number; // 3%
+  totalProvisions: number;
+  totalCompanyCost: number;
+}
+
+export interface AgingPortfolioRecord {
+  thirdPartyNit: string;
+  thirdPartyName: string;
+  totalDue: number;
+  current0To30Days: number;
+  days31To60: number;
+  days61To90: number;
+  over90Days: number;
+  type: "CARTERA_CLIENTES" | "PROVEEDORES_POR_PAGAR";
+}
+
+export interface AccountingAuditAnomaly {
+  id: string;
+  severity: "CRITICAL" | "WARNING" | "INFO";
+  title: string;
+  description: string;
+  recommendation: string;
+  accountAffected?: string;
 }

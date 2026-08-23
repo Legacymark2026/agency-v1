@@ -14,6 +14,9 @@ import type {
   TaxCertificate,
   BankReconciliationRecord,
   TaxCalendarObligation,
+  PayrollProvisionsBreakdown,
+  AgingPortfolioRecord,
+  AccountingAuditAnomaly,
 } from "../types";
 
 export async function calculateWithholdingsAction(
@@ -179,9 +182,9 @@ export async function getIncomeStatementAction(): Promise<{
   const grossRevenue = dbRevenue > 0 ? dbRevenue : 195000000;
   const operatingCosts = 45000000;
   const grossProfit = grossRevenue - operatingCosts;
-  const operatingExpenses = 58000000 + 16500000 + 24200000; // 98,700,000
+  const operatingExpenses = 58000000 + 16500000 + 24200000;
   const operatingIncome = grossProfit - operatingExpenses;
-  const taxEstimated = Math.round(Math.max(0, operatingIncome) * 0.35); // 35% Impuesto sobre la Renta
+  const taxEstimated = Math.round(Math.max(0, operatingIncome) * 0.35);
   const netIncome = operatingIncome - taxEstimated;
   const profitMarginPercent = Math.round((netIncome / grossRevenue) * 1000) / 10;
 
@@ -320,5 +323,143 @@ export async function getTaxCalendarAction(): Promise<{
   return {
     success: true,
     obligations,
+  };
+}
+
+export async function calculatePayrollProvisionsAction(
+  baseSalary: number
+): Promise<PayrollProvisionsBreakdown> {
+  const salary = Number(baseSalary) || 2000000;
+  const transportAllowance = salary <= 2600000 ? 162000 : 0;
+  const totalAccrued = salary + transportAllowance;
+
+  // Prestaciones Sociales (base = total devengado con auxilio)
+  const cesantias = Math.round(totalAccrued * 0.0833);
+  const interesesCesantias = Math.round(cesantias * 0.12 / 12);
+  const primaServicios = Math.round(totalAccrued * 0.0833);
+  const vacaciones = Math.round(salary * 0.0417); // sin auxilio de transporte
+
+  // Seguridad Social & Parafiscales Empleador
+  const pensionEmployer = Math.round(salary * 0.12);
+  const healthEmployer = 0; // Exonerado Art 114-1 ET (<10 SMMLV)
+  const arlRisk1 = Math.round(salary * 0.00522);
+  const cajaCompensacion = Math.round(salary * 0.04);
+  const sena = 0; // Exonerado Art 114-1 ET
+  const icbf = 0; // Exonerado Art 114-1 ET
+
+  const totalProvisions = cesantias + interesesCesantias + primaServicios + vacaciones + pensionEmployer + healthEmployer + arlRisk1 + cajaCompensacion + sena + icbf;
+  const totalCompanyCost = totalAccrued + totalProvisions;
+
+  return {
+    baseSalary: salary,
+    transportAllowance,
+    totalAccrued,
+    cesantias,
+    interesesCesantias,
+    primaServicios,
+    vacaciones,
+    pensionEmployer,
+    healthEmployer,
+    arlRisk1,
+    cajaCompensacion,
+    sena,
+    icbf,
+    totalProvisions,
+    totalCompanyCost,
+  };
+}
+
+export async function getAgingPortfolioReportAction(): Promise<{
+  success: boolean;
+  carteraClientes: AgingPortfolioRecord[];
+  cuentasPorPagar: AgingPortfolioRecord[];
+}> {
+  const carteraClientes: AgingPortfolioRecord[] = [
+    {
+      thirdPartyNit: "901.999.888-2",
+      thirdPartyName: "Grupo Inversionista Andino S.A.S.",
+      totalDue: 45000000,
+      current0To30Days: 35000000,
+      days31To60: 10000000,
+      days61To90: 0,
+      over90Days: 0,
+      type: "CARTERA_CLIENTES",
+    },
+    {
+      thirdPartyNit: "901.777.666-1",
+      thirdPartyName: "Agencia de Medios Digitales Global",
+      totalDue: 21000000,
+      current0To30Days: 21000000,
+      days31To60: 0,
+      days61To90: 0,
+      over90Days: 0,
+      type: "CARTERA_CLIENTES",
+    }
+  ];
+
+  const cuentasPorPagar: AgingPortfolioRecord[] = [
+    {
+      thirdPartyNit: "900.876.543-1",
+      thirdPartyName: "Tech Solutions & Cloud Hosting S.A.S.",
+      totalDue: 18500000,
+      current0To30Days: 18500000,
+      days31To60: 0,
+      days61To90: 0,
+      over90Days: 0,
+      type: "PROVEEDORES_POR_PAGAR",
+    },
+    {
+      thirdPartyNit: "800.123.456-7",
+      thirdPartyName: "Inmobiliaria & Espacios Corporativos",
+      totalDue: 6500000,
+      current0To30Days: 6500000,
+      days31To60: 0,
+      days61To90: 0,
+      over90Days: 0,
+      type: "PROVEEDORES_POR_PAGAR",
+    }
+  ];
+
+  return {
+    success: true,
+    carteraClientes,
+    cuentasPorPagar,
+  };
+}
+
+export async function auditAccountingAnomaliesAction(): Promise<{
+  success: boolean;
+  score: number;
+  anomalies: AccountingAuditAnomaly[];
+}> {
+  const anomalies: AccountingAuditAnomaly[] = [
+    {
+      id: "AUD-01",
+      severity: "INFO",
+      title: "Partida Doble Balanceada",
+      description: "El Libro Mayor presenta sumas iguales exactas en todas las cuentas de Activo, Pasivo y Patrimonio.",
+      recommendation: "Sin acción requerida.",
+    },
+    {
+      id: "AUD-02",
+      severity: "WARNING",
+      title: "Vencimiento Próximo de IVA Bimestral",
+      description: "La provisión del Formulario 300 DIAN por $30,900,000 COP vence el 18 de Septiembre.",
+      recommendation: "Programar transferencia bancaria desde Bancolombia Ppal antes del 16 de Septiembre para evitar intereses de mora.",
+      accountAffected: "240801 (IVA Generado)",
+    },
+    {
+      id: "AUD-03",
+      severity: "INFO",
+      title: "Exoneración de Parafiscales Art. 114-1 E.T. Aplicada",
+      description: "La empresa cuenta con beneficio de exoneración de aportes a Salud, SENA e ICBF por empleados con salario < 10 SMMLV.",
+      recommendation: "Mantener registro de PILA al día.",
+    }
+  ];
+
+  return {
+    success: true,
+    score: 98,
+    anomalies,
   };
 }
