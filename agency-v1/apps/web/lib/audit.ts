@@ -7,7 +7,6 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { secretSanitizer } from "../../../packages/observability/src/secret-sanitizer";
 
 export type AuditAction =
   | "auth.login"
@@ -30,6 +29,41 @@ export interface AuditContext {
   details?: Record<string, unknown>;
 }
 
+const SENSITIVE_KEYS = new Set([
+  "password",
+  "token",
+  "secret",
+  "apikey",
+  "api_key",
+  "accesstoken",
+  "access_token",
+  "refreshtoken",
+  "refresh_token",
+  "authorization",
+  "creditcard",
+  "cardnumber",
+  "cvv",
+  "pin",
+]);
+
+function sanitizePayload(payload: any): any {
+  if (!payload || typeof payload !== "object") return payload;
+  if (Array.isArray(payload)) return payload.map(sanitizePayload);
+
+  const clean: Record<string, any> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    const lowerKey = key.toLowerCase();
+    if (SENSITIVE_KEYS.has(lowerKey) || lowerKey.includes("password") || lowerKey.includes("secret")) {
+      clean[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null) {
+      clean[key] = sanitizePayload(value);
+    } else {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
+
 export async function audit(ctx: AuditContext): Promise<string> {
   let userId = "system";
   try {
@@ -39,7 +73,7 @@ export async function audit(ctx: AuditContext): Promise<string> {
     // Graceful fallback outside HTTP request context
   }
 
-  const cleanDetails = secretSanitizer.sanitizePayload(ctx.details || {});
+  const cleanDetails = sanitizePayload(ctx.details || {});
 
   try {
     const entry = await prisma.userActivityLog.create({
