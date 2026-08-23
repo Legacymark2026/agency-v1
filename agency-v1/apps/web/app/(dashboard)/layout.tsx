@@ -115,11 +115,12 @@ export default async function DashboardLayout({
     // Pre-compute accessible routes (can't pass function to client component)
     const allRoutes = [
         "/dashboard/client", "/dashboard/client/proposals", "/dashboard/client/projects",
-        "/dashboard", "/dashboard/pos", "/dashboard/invoicing", "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
-        "/dashboard/seo",
+        "/dashboard", "/dashboard/pos", "/dashboard/invoicing", "/dashboard/invoicing/ocr-scanner", "/dashboard/invoicing/fraud-guard", "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
+        "/dashboard/seo", "/dashboard/security/sla",
+        "/dashboard/marketing", "/dashboard/marketing/campaigns", "/dashboard/marketing/automation",
         "/dashboard/admin/marketing", "/dashboard/admin/marketing/campaigns", "/dashboard/marketing/calendar",
         "/dashboard/marketing/email-blast", "/dashboard/admin/marketing/creative-studio", "/dashboard/marketing/pricing",
-        "/dashboard/admin/automation", "/dashboard/admin/marketing/spend", "/dashboard/admin/marketing/links",
+        "/dashboard/admin/automation", "/dashboard/admin/architecture", "/dashboard/admin/marketing/spend", "/dashboard/admin/marketing/links",
         "/dashboard/admin/marketing/settings", "/dashboard/admin/crm", "/dashboard/admin/crm/leads",
         "/dashboard/admin/crm/pipeline", "/dashboard/admin/proposals", "/dashboard/admin/invoices",
         "/dashboard/admin/crm/tasks", "/dashboard/admin/crm/reports", "/dashboard/admin/crm/templates",
@@ -130,7 +131,7 @@ export default async function DashboardLayout({
         "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses",
         "/dashboard/admin/treasury", "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/inbox/macros",
         "/dashboard/settings/audit-logs", "/dashboard/settings/privacy", "/dashboard/settings/system-parameters", "/dashboard/booking",
-        "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/video-editor",
+        "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/master-hub", "/dashboard/tools/webhooks", "/dashboard/tools/api-docs", "/dashboard/tools/video-editor",
         "/dashboard/video", "/dashboard/voice", "/dashboard/admin/hr",
         "/dashboard/affiliate", "/dashboard/affiliate/referrals",
         "/dashboard/affiliate/payouts", "/dashboard/affiliate/plans"

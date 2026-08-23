@@ -126,13 +126,19 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Agentes de IA ─────────────────────────────────────
     "/dashboard/settings/agents": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 
-    // ── Video Editor ──────────────────────────────────────
+    // ── Video & Tools Master Hub ──────────────────────────
+    "/dashboard/tools/master-hub": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/tools/webhooks": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/tools/api-docs": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
     "/dashboard/tools/video-editor": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/video": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/voice": [
         UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER,
         UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER,
     ],
+    "/dashboard/invoicing/ocr-scanner": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/invoicing/fraud-guard": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/security/sla": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
 
     // ── Preferencias de Notificaciones ────────────────────
     "/dashboard/settings/notifications": [
