@@ -29,10 +29,15 @@ export interface AuditContext {
 }
 
 export async function audit(ctx: AuditContext): Promise<string> {
+  let userId = "system";
   try {
     const session = await auth();
-    const userId = session?.user?.id || "anonymous";
+    if (session?.user?.id) userId = session.user.id;
+  } catch (_) {
+    // Graceful fallback outside HTTP request context
+  }
 
+  try {
     const entry = await prisma.userActivityLog.create({
       data: {
         userId,
