@@ -4,18 +4,25 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function getDripCampaigns(companyId: string) {
-    return await db.campaign.findMany({
-        where: {
-            companyId,
-            platform: 'EMAIL'
-        },
-        orderBy: { createdAt: 'desc' },
-        include: {
+    try {
+        const campaigns = await db.campaign.findMany({
+            where: {
+                companyId,
+                platform: 'EMAIL'
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return campaigns.map(c => ({
+            ...c,
             _count: {
-                select: { leads: true }
+                leads: c.conversions || 0
             }
-        }
-    });
+        }));
+    } catch (err) {
+        console.error("Error fetching drip campaigns:", err);
+        return [];
+    }
 }
 
 export async function createDripCampaign(data: {
@@ -58,19 +65,5 @@ export async function createDripCampaign(data: {
     } catch (error) {
         console.error("Error creating drip campaign:", error);
         return { success: false, error: "Failed to create campaign" };
-    }
-}
-
-export async function toggleCampaignStatus(campaignId: string, status: string) {
-    try {
-        await db.campaign.update({
-            where: { id: campaignId },
-            data: { status }
-        });
-        revalidatePath("/dashboard/marketing/campaigns");
-        return { success: true };
-    } catch (error) {
-        console.error("Failed to update status:", error);
-        return { success: false, error: "Failed to update status" };
     }
 }
