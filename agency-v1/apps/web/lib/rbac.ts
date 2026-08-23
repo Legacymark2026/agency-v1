@@ -109,6 +109,8 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Finanzas y Operaciones ────────────────────────────
     "/dashboard/pos": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/invoicing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/accounting": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/calendar": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_USER],
     "/dashboard/catalog": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/promotions": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/admin/treasury": [UserRole.SUPER_ADMIN, UserRole.ADMIN],

@@ -25,6 +25,7 @@ export const DASHBOARD_DOMAINS_NAVIGATION: NavigationCategory[] = [
     items: [
       { title: "Gestión de Leads & Clientes", href: "/dashboard/client", icon: "👥", serviceKey: "crm-service" },
       { title: "Tablero Kanban de Tratos", href: "/dashboard/kanban", icon: "📊", serviceKey: "crm-service" },
+      { title: "Agendación de Citas & Calendario", href: "/dashboard/calendar", icon: "📅", badge: "Nuevo", serviceKey: "calendar-service" },
       { title: "Inbox Multicanal", href: "/dashboard/inbox", icon: "💬", badge: "Live", serviceKey: "inbox-service" },
       { title: "Llamadas & Voz AI", href: "/dashboard/voice", icon: "🎙️", serviceKey: "ai-engine" },
     ],
@@ -34,6 +35,7 @@ export const DASHBOARD_DOMAINS_NAVIGATION: NavigationCategory[] = [
     categoryKey: "finance_pos",
     items: [
       { title: "Facturación Electrónica DIAN", href: "/dashboard/invoicing", icon: "📄", serviceKey: "finance-service" },
+      { title: "Contabilidad & PUC / Libro Mayor", href: "/dashboard/accounting", icon: "📖", badge: "Nuevo", serviceKey: "finance-service" },
       { title: "Escáner OCR de Recibos", href: "/dashboard/invoicing/ocr-scanner", icon: "🧾", badge: "Nuevo", serviceKey: "finance-service" },
       { title: "Guardián Anti-Fraude AI", href: "/dashboard/invoicing/fraud-guard", icon: "🛡️", badge: "AI", serviceKey: "finance-service" },
       { title: "Punto de Venta POS", href: "/dashboard/pos", icon: "🛒", serviceKey: "pos-service" },
