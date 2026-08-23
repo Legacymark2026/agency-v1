@@ -18,7 +18,13 @@ interface NavGroup { title: string; code: string; accent?: string; icon?: React.
 interface SidebarContentProps {
     navGroups: NavGroup[];
     accessibleRoutes: string[];
-    userInfo: {
+    companyLogoUrl?: string | null;
+    name?: string | null | undefined;
+    email?: string | null | undefined;
+    image?: string | null | undefined;
+    role?: string;
+    badge?: { label: string; color: string };
+    userInfo?: {
         name: string | null | undefined;
         email: string | null | undefined;
         image?: string | null | undefined;
@@ -26,7 +32,16 @@ interface SidebarContentProps {
     };
 }
 
-export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: SidebarContentProps) {
+export function SidebarClientContent(props: SidebarContentProps) {
+    const { navGroups, accessibleRoutes, companyLogoUrl, name, email, image, role, badge, userInfo } = props;
+
+    const currentUser = {
+        name: userInfo?.name ?? name ?? "Usuario",
+        email: userInfo?.email ?? email ?? "usuario@legacymarksas.com",
+        image: userInfo?.image ?? image ?? null,
+        badge: userInfo?.badge ?? badge ?? { label: role || "SUPER_ADMIN", color: "text-teal-400 border-teal-800/60 bg-teal-950/40" },
+    };
+
     const { sidebarCollapsed, toggleSidebar, accent, setAccent } = useUIStore();
     const [isPending, startTransition] = useTransition();
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -48,84 +63,97 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
     // Auto-sync on route change
     useEffect(() => {
         const currentGroup = accessibleGroups.find(g => g.items.some(i => pathname === i.href || pathname.startsWith(i.href + '/')));
-        if (currentGroup) setActiveGroupId(currentGroup.code);
-    }, [pathname]);
+        if (currentGroup && currentGroup.code !== activeGroupId) {
+            setActiveGroupId(currentGroup.code);
+        }
+    }, [pathname, accessibleGroups, activeGroupId]);
 
-    const activeGroup = accessibleGroups.find(g => g.code === activeGroupId);
+    const activeGroup = accessibleGroups.find(g => g.code === activeGroupId) || accessibleGroups[0];
+
+    const ACCENT_COLORS = [
+        { key: 'teal', bg: 'bg-teal-500', label: 'Verde Cuántico' },
+        { key: 'cyan', bg: 'bg-cyan-500', label: 'Cian Neón' },
+        { key: 'indigo', bg: 'bg-indigo-500', label: 'Índigo Profundo' },
+        { key: 'violet', bg: 'bg-violet-500', label: 'Violeta Eléctrico' },
+        { key: 'amber', bg: 'bg-amber-500', label: 'Ámbar Cálido' },
+        { key: 'rose', bg: 'bg-rose-500', label: 'Rosa Futurista' },
+        { key: 'emerald', bg: 'bg-emerald-500', label: 'Esmeralda Puro' },
+    ];
 
     return (
-        <div className="flex h-full">
-            {/* Left Pane: Primary Icons (Always Visible) */}
-            <div className="w-[64px] flex flex-col shrink-0 items-center justify-between py-4 z-10 bg-slate-950" 
-                 style={{ borderRight: '1px solid rgba(30,41,59,0.8)' }}>
-                
-                <div className="flex flex-col items-center w-full gap-6">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center justify-center w-full group relative mb-2" title="Ir al Inicio">
-                        <div className="relative h-8 w-8 transition-opacity group-hover:opacity-80">
-                            <Image src="/favicon.ico" alt="LegacyMark" fill className="object-contain" priority style={{ filter: 'brightness(0) invert(1)' }} />
-                        </div>
-                    </Link>
+        <div className="flex flex-row h-full">
+            {/* Leftmost Slim Rail (Icons for Domains) */}
+            <div 
+                className="w-16 flex flex-col items-center py-4 border-r border-slate-800/60 bg-slate-950/80 shrink-0 select-none z-10"
+                style={{ backdropFilter: 'blur(12px)' }}
+            >
+                {/* Logo top */}
+                <Link href="/dashboard" className="mb-6 group">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-900/40 border border-teal-500/30 flex items-center justify-center p-1.5 transition-all group-hover:scale-105 group-hover:border-teal-400">
+                        {companyLogoUrl ? (
+                            <Image src={companyLogoUrl} alt="Logo" width={28} height={28} className="object-contain" />
+                        ) : (
+                            <span className="font-black text-teal-400 font-mono text-base tracking-tighter">LM</span>
+                        )}
+                    </div>
+                </Link>
 
-                    {/* Nav Icons */}
-                    <nav className="flex flex-col items-center gap-3 w-full">
-                        {accessibleGroups.map((group) => {
-                            const isActive = activeGroupId === group.code;
-                            return (
-                                <button
-                                    key={group.code}
-                                    onClick={() => {
-                                        setActiveGroupId(group.code);
-                                        if (sidebarCollapsed) toggleSidebar();
-                                    }}
-                                    className={`relative group flex items-center justify-center p-2.5 rounded-xl transition-all duration-200 ${
-                                        isActive ? 'bg-teal-500/20 text-teal-400' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                                    }`}
-                                    title={group.title}
-                                >
-                                    {isActive && (
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-teal-500 rounded-r-full" />
-                                    )}
-                                    {group.icon}
-                                </button>
-                            );
-                        })}
-                    </nav>
+                {/* Main Domain Navigation Icons */}
+                <div className="flex-1 flex flex-col items-center gap-2 overflow-y-auto overflow-x-hidden no-scrollbar w-full px-2">
+                    {accessibleGroups.map((group) => {
+                        const isActive = activeGroupId === group.code;
+                        return (
+                            <button
+                                key={group.code}
+                                onClick={() => setActiveGroupId(group.code)}
+                                className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 relative group cursor-pointer ${
+                                    isActive
+                                        ? 'bg-teal-500/15 text-teal-400 border border-teal-500/40 shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'
+                                }`}
+                                title={group.title}
+                            >
+                                {group.icon}
+                                {isActive && (
+                                    <div className="absolute left-0 w-1 h-5 bg-teal-400 rounded-r-full" />
+                                )}
+                                
+                                {/* Tooltip */}
+                                <div className="absolute left-full ml-3 px-2.5 py-1 bg-slate-900 border border-slate-800 text-xs text-white rounded-md shadow-xl whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-50">
+                                    {group.title}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* Footer Left Pane: User Avatar */}
-                <div className="flex flex-col items-center gap-4 w-full">
-                    {/* Quick Color Picker */}
+                {/* Bottom Actions (Palette, Bell, User Profile) */}
+                <div className="flex flex-col items-center gap-3 mt-auto pt-4 border-t border-slate-800/60 w-full">
+                    {/* Theme Picker Trigger */}
                     <div className="relative">
                         <button
                             onClick={() => setShowColorPicker(!showColorPicker)}
-                            className={`p-2 rounded-xl text-slate-500 hover:text-teal-400 hover:bg-slate-800 transition-all ${
-                                showColorPicker ? 'bg-slate-800 text-teal-400' : ''
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800 transition-all ${
+                                showColorPicker ? 'bg-slate-800 text-teal-400 border-teal-500/40' : ''
                             }`}
-                            title="Color de Acento"
+                            title="Cambiar Color de Acento"
                         >
-                            <Palette size={18} />
+                            <Palette size={16} />
                         </button>
-                        
+
+                        {/* Floating Color Palette Modal */}
                         {showColorPicker && (
                             <div 
-                                onMouseLeave={() => setShowColorPicker(false)}
-                                className="absolute bottom-0 left-[56px] bg-slate-950/95 backdrop-blur-md border border-slate-800/80 rounded-2xl p-3 flex flex-col gap-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.7),0_0_30px_var(--ds-teal-dim)] z-50 transition-all duration-300 ease-out"
-                                style={{ minWidth: '140px' }}
+                                className="absolute left-full ml-3 bottom-0 p-3 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl z-50 flex flex-col gap-2 min-w-[170px]"
+                                style={{
+                                    boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(13,148,136,0.15)'
+                                }}
                             >
-                                <div className="flex items-center justify-between border-b border-slate-800/50 pb-1.5 mb-0.5">
-                                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Tema Acento</span>
-                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                                </div>
-                                <div className="grid grid-cols-3 gap-2.5">
-                                    {[
-                                        { key: "teal", bg: "bg-teal-500", label: "Teal" },
-                                        { key: "violet", bg: "bg-violet-500", label: "Violeta" },
-                                        { key: "blue", bg: "bg-blue-500", label: "Azul" },
-                                        { key: "amber", bg: "bg-amber-500", label: "Ámbar" },
-                                        { key: "rose", bg: "bg-rose-500", label: "Rosa" },
-                                        { key: "emerald", bg: "bg-emerald-500", label: "Esmeralda" },
-                                    ].map((c) => {
+                                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest px-1">
+                                    Acento de Interfaz
+                                </span>
+                                <div className="grid grid-cols-4 gap-2 pt-1">
+                                    {ACCENT_COLORS.map((c) => {
                                         const isSelected = accent === c.key;
                                         return (
                                             <button
@@ -154,18 +182,18 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
 
                     <NotificationBell />
                     <div className="group relative">
-                        {userInfo.image ? (
+                        {currentUser.image ? (
                             <div className="relative h-8 w-8 rounded-full overflow-hidden border border-slate-700 cursor-pointer group-hover:border-teal-500 transition-colors">
-                                <Image src={userInfo.image} alt={userInfo.name ?? "Avatar"} fill className="object-cover" />
+                                <Image src={currentUser.image} alt={currentUser.name ?? "Avatar"} fill className="object-cover" />
                             </div>
                         ) : (
                             <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-black bg-slate-800 text-teal-400 border border-slate-700 cursor-pointer group-hover:border-teal-500 transition-colors">
-                                {userInfo.name?.[0]?.toUpperCase() ?? "U"}
+                                {currentUser.name?.[0]?.toUpperCase() ?? "U"}
                             </div>
                         )}
                         {/* Tooltip */}
                         <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-800 text-xs text-white rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl pointer-events-none">
-                            {userInfo.name}
+                            {currentUser.name}
                         </div>
                     </div>
                 </div>
@@ -179,44 +207,58 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
             >
                 {activeGroup && (
                     <div className="flex flex-col h-full w-[224px]">
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-5 shrink-0" style={{ borderBottom: '1px solid rgba(30,41,59,0.4)' }}>
-                            <h2 className="text-sm font-semibold text-slate-200 truncate pr-2">
-                                {activeGroup.title}
-                            </h2>
-                            <button 
-                                onClick={toggleSidebar} 
-                                className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors shrink-0"
-                                title="Ocultar menú"
+                        {/* Group Header */}
+                        <div className="px-4 py-5 flex items-center justify-between border-b border-slate-800/60">
+                            <div>
+                                <h2 className="text-xs font-black text-slate-200 tracking-wider uppercase">
+                                    {activeGroup.title}
+                                </h2>
+                                <span className="font-mono text-[9px] text-slate-500 tracking-widest">
+                                    [{activeGroup.code}]
+                                </span>
+                            </div>
+                            <button
+                                onClick={toggleSidebar}
+                                className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded hover:bg-slate-800/60"
+                                title="Ocultar Menú Lateral"
                             >
-                                <PanelLeftClose size={16} />
+                                <PanelLeftClose size={14} />
                             </button>
                         </div>
 
-                        {/* Navigation Items */}
-                        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5 scrollbar-hide">
+                        {/* Navigation Items List */}
+                        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1 no-scrollbar">
                             {activeGroup.items.map((item) => {
-                                const isActive = pathname === item.href;
+                                const isCurrent = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
                                 return (
                                     <Link
                                         key={item.href}
                                         href={item.href}
-                                        className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                            isActive 
-                                                ? 'bg-teal-500/10 text-teal-400' 
-                                                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 group ${
+                                            isCurrent
+                                                ? 'bg-teal-500/15 text-teal-300 font-bold border border-teal-500/30 shadow-sm'
+                                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                                         }`}
                                     >
-                                        <span className={`shrink-0 ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
-                                            {item.icon}
-                                        </span>
-                                        <span className="truncate">{item.label}</span>
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <span className={`shrink-0 ${isCurrent ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                                                {item.icon}
+                                            </span>
+                                            <span className="truncate">{item.label}</span>
+                                        </div>
+                                        {item.code && (
+                                            <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded tracking-tighter shrink-0 ${
+                                                isCurrent ? 'bg-teal-950 text-teal-400 border border-teal-800/50' : 'text-slate-600 bg-slate-900/60'
+                                            }`}>
+                                                {item.code}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             })}
-                        </nav>
+                        </div>
 
-                        {/* Footer Right Pane: Logout, User info & Version Badge */}
+                        {/* Footer Info & Logout */}
                         <div className="p-4 shrink-0" style={{ borderTop: '1px solid rgba(30,41,59,0.4)' }}>
                             <div className="flex flex-col mb-3">
                                 <div className="flex items-center justify-between mb-1">
@@ -226,10 +268,10 @@ export function SidebarClientContent({ navGroups, accessibleRoutes, userInfo }: 
                                         {PLATFORM_VERSION.version}
                                     </span>
                                 </div>
-                                <span className="text-xs text-slate-300 truncate">{userInfo.email}</span>
+                                <span className="text-xs text-slate-300 truncate">{currentUser.email}</span>
                                 <div className="mt-1 flex items-center justify-between">
-                                    <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono rounded-sm border ${userInfo.badge.color}`}>
-                                        {userInfo.badge.label}
+                                    <span className={`inline-block px-1.5 py-0.5 text-[9px] font-mono rounded-sm border ${currentUser.badge.color}`}>
+                                        {currentUser.badge.label}
                                     </span>
                                     <span className="text-[9px] text-slate-500 font-mono" title={PLATFORM_VERSION.releaseName}>
                                         {PLATFORM_VERSION.buildNumber.slice(0, 10)}
