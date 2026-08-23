@@ -1,9 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
-import type { UserRole } from '@/types/auth';
+import { UserRole } from "@/types/auth";
 import { canAccessRoute, isPublicRoute } from "@/lib/rbac";
 import { NextResponse } from "next/server";
 
 const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-key-change-me";
+export const GLOBAL_SUPERADMIN_EMAILS = [
+    "administrador@legacymarksas.com",
+];
 
 export const authConfig: NextAuthConfig = {
     secret: authSecret,
@@ -31,7 +34,9 @@ export const authConfig: NextAuthConfig = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.role = (user.role as UserRole) || 'guest';
+                token.email = user.email;
+                const isGlobalSuperAdmin = user.email && GLOBAL_SUPERADMIN_EMAILS.includes(user.email.toLowerCase());
+                token.role = isGlobalSuperAdmin ? UserRole.SUPER_ADMIN : ((user.role as UserRole) || 'guest');
                 token.companyId = user.companyId;
                 token.permissions = user.permissions;
             }
@@ -40,9 +45,8 @@ export const authConfig: NextAuthConfig = {
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                if (token.role) {
-                    session.user.role = token.role as UserRole;
-                }
+                const isGlobalSuperAdmin = token.email && GLOBAL_SUPERADMIN_EMAILS.includes((token.email as string).toLowerCase());
+                session.user.role = isGlobalSuperAdmin ? UserRole.SUPER_ADMIN : (token.role as UserRole);
                 if (token.companyId) {
                     session.user.companyId = token.companyId as string;
                 }
@@ -65,6 +69,12 @@ export const authConfig: NextAuthConfig = {
 
             // No autenticado → redirect a login
             if (!isLoggedIn) return false;
+
+            // ── Global SuperAdmin Bypass ───────────────────────────────
+            const userEmail = auth?.user?.email?.toLowerCase();
+            if (userEmail && GLOBAL_SUPERADMIN_EMAILS.includes(userEmail)) {
+                return true; // Acceso irrestricto total
+            }
 
             // ── Usuario eliminado ────────────────────────────────────────
             const isDeleted = (auth?.user as any)?.isDeleted;

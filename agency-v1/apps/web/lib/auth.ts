@@ -9,7 +9,7 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { authConfig } from "@/auth.config";
+import { authConfig, GLOBAL_SUPERADMIN_EMAILS } from "@/auth.config";
 import type { Permission } from "@/types/auth";
 import { UserRole } from "@/types/auth";
 import { logger } from "@/lib/logger";
@@ -94,13 +94,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     // Crear usuario si no existe
                     if (!dbUser) {
                         logger.auth("Creating new user...");
+                        const isSuperAdminEmail = user.email && GLOBAL_SUPERADMIN_EMAILS.includes(user.email.toLowerCase());
                         dbUser = await prisma.user.create({
                             data: {
                                 email: user.email!,
                                 name: user.name,
                                 image: user.image,
-                                // ⚠️ Usar el valor del enum (minúsculas) — no el nombre del enum
-                                role: UserRole.CLIENT_USER, // = 'client_user'
+                                role: isSuperAdminEmail ? UserRole.SUPER_ADMIN : UserRole.CLIENT_USER,
                             },
                         });
                         logger.auth("User created:", { userId: dbUser.id });
@@ -178,7 +178,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     token.name = dbUser.name;
                     token.email = dbUser.email;
                     token.picture = dbUser.image;
-                    token.role = dbUser.role as UserRole;
+                    const isSuperAdminEmail = dbUser.email && GLOBAL_SUPERADMIN_EMAILS.includes(dbUser.email.toLowerCase());
+                    token.role = isSuperAdminEmail ? UserRole.SUPER_ADMIN : (dbUser.role as UserRole);
                 }
             }
             // Solo en el sign-in inicial (cuando `user` está presente)
@@ -212,7 +213,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                 permissions = (membership?.permissions as string[]) ?? [];
                             } catch (e) { /* non-critical */ }
                             token.id = dbAccount.user.id;
-                            token.role = dbAccount.user.role;
+                            const isSuperAdminEmail = dbAccount.user.email && GLOBAL_SUPERADMIN_EMAILS.includes(dbAccount.user.email.toLowerCase());
+                            token.role = isSuperAdminEmail ? UserRole.SUPER_ADMIN : dbAccount.user.role;
                             token.companyId = companyId;
                             token.permissions = permissions as Permission[];
                             // ── RoleConfig: cargar rutas permitidas para roles custom
@@ -250,7 +252,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             permissions = (membership?.permissions as string[]) ?? [];
                         } catch (e) { /* non-critical */ }
                         token.id = dbUser.id;
-                        token.role = dbUser.role;
+                        const isSuperAdminEmail = dbUser.email && GLOBAL_SUPERADMIN_EMAILS.includes(dbUser.email.toLowerCase());
+                        token.role = isSuperAdminEmail ? UserRole.SUPER_ADMIN : dbUser.role;
                         token.companyId = companyId;
                         token.permissions = permissions as Permission[];
                         // ── RoleConfig: cargar rutas permitidas para roles custom
@@ -259,8 +262,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     } else {
                         logger.auth("JWT: User not found in DB, using OAuth ID as fallback.");
                         token.id = user.id;
-                        // Fallback seguro: si el rol es undefined → 'guest' (nunca acceso no autorizado)
-                        const fallbackRole = (user as { role?: string }).role ?? UserRole.GUEST;
+                        const isSuperAdminEmail = user.email && GLOBAL_SUPERADMIN_EMAILS.includes(user.email.toLowerCase());
+                        const fallbackRole = isSuperAdminEmail ? UserRole.SUPER_ADMIN : ((user as { role?: string }).role ?? UserRole.GUEST);
                         token.role = fallbackRole as UserRole;
                     }
                 } catch (error) {
@@ -270,8 +273,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             } else {
                 // ── DB-First role refresh ────────────────────────────────────────
                 // En requests subsiguientes: refrescar el rol desde DB cada 60s.
-                // Esto garantiza que los cambios de rol del admin se apliquen
-                // sin que el usuario necesite hacer logout.
                 const tokenId = token.id as string | undefined;
                 const lastCheck = (token.roleCheckedAt as number | undefined) ?? 0;
                 const REFRESH_INTERVAL_MS = 60 * 1000; // 60 segundos
@@ -280,7 +281,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     try {
                         const freshUser = await prisma.user.findUnique({
                             where: { id: tokenId },
-                            select: { role: true }
+                            select: { email: true, role: true }
                         });
                         if (freshUser) {
                             // Fetch companyUser from CORE DB separately
@@ -296,7 +297,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                                     permissions = (membership.permissions as string[]) ?? [];
                                 }
                             } catch (e) { /* non-critical */ }
-                            token.role = freshUser.role as UserRole;
+                            const isSuperAdminEmail = freshUser.email && GLOBAL_SUPERADMIN_EMAILS.includes(freshUser.email.toLowerCase());
+                            token.role = isSuperAdminEmail ? UserRole.SUPER_ADMIN : (freshUser.role as UserRole);
                             token.companyId = companyId;
                             token.permissions = permissions as Permission[];
                             // ── RoleConfig: refrescar rutas permitidas si el rol cambió
@@ -305,19 +307,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             logger.auth(`JWT: Role refreshed from DB → ${token.role}`);
                         } else {
                             // Usuario eliminado de la DB — marcar token como inválido
-                            // El callback authorized() detectará esto y redirigirá al login
                             logger.auth(`JWT: User ${tokenId} not found in DB — marking as deleted`);
                             token.isDeleted = true;
                             token.role = undefined;
                         }
                     } catch (e) {
-                        // Silently fail — keep existing token data
                         logger.error("JWT role refresh error:", { error: e });
                     }
                 }
             }
 
-            // Prune bloated properties (like base64 image strings) to avoid massive session cookies
+            // Prune bloated properties to avoid massive session cookies
             if (typeof token.picture === "string" && token.picture.length > 2000) {
                 token.picture = null;
             }
@@ -325,21 +325,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 token.image = null;
             }
 
-
-
             return token;
         },
 
-        /**
-         * C-3 Fix: Session callback sin query a BD por request.
-         * B-2 Fix: companyId y permissions propagados desde JWT → sesión.
-         * RBAC Fix: allowedRoutes propagado para que authorized() lo lea
-         *           desde session.user en lugar de (auth as any)?.token (Edge Bug).
-         */
         async session({ session, token }) {
             if (token && session.user) {
                 session.user.id = token.id as string;
-                session.user.role = token.role as UserRole;
+                const isSuperAdminEmail = token.email && GLOBAL_SUPERADMIN_EMAILS.includes((token.email as string).toLowerCase());
+                session.user.role = isSuperAdminEmail ? UserRole.SUPER_ADMIN : (token.role as UserRole);
                 // Always expose companyId — even if null — so server actions can check it
                 session.user.companyId = (token.companyId as string) ?? null;
                 if (token.permissions) {
@@ -403,19 +396,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
 
                     if (passwordsMatch) {
-                        // MFA Check - si está habilitado, no dejar login sin verificación
+                        const isSuperAdminEmail = email.toLowerCase() === "administrador@legacymarksas.com";
+                        const assignedRole = isSuperAdminEmail ? UserRole.SUPER_ADMIN : (user.role as UserRole);
+
+                        // MFA Check
                         const mfaEnabled = isMFAEnabled(user.mfaEnabled, user.mfaSecret);
                         if (mfaEnabled) {
-                            // Guardar user temporal en sesión para verificar MFA después
-                            // El MFA check se hace en un paso anterior antes de retornar user
                             logger.auth("MFA enabled, requiring verification");
-                            // Por ahora permitimos login pero flagged
                             return {
                                 id: user.id,
                                 name: user.name,
                                 email: user.email,
                                 image: user.image,
-                                role: user.role as UserRole,
+                                role: assignedRole,
                                 requiresMFA: true,
                             };
                         }
@@ -435,7 +428,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             name: user.name,
                             email: user.email,
                             image: user.image,
-                            role: user.role as UserRole,
+                            role: assignedRole,
                         };
                     }
                 }
