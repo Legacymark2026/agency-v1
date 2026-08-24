@@ -83,15 +83,15 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/inbox": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
 
     // ── Marketing Hub ─────────────────────────────────────
-    "/dashboard/marketing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/marketing/enterprise": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/marketing/pricing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/marketing/campaigns": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/marketing/listening": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/admin/marketing/approvals": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-    "/dashboard/marketing/spend": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-    "/dashboard/marketing/links": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/marketing/automation": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/marketing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/marketing/enterprise": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/marketing/pricing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/marketing/campaigns": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/marketing/listening": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/admin/marketing/approvals": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN],
+    "/dashboard/marketing/spend": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN],
+    "/dashboard/marketing/links": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/marketing/automation": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN],
 
     // ── Admin / Arquitectura ──────────────────────────────
     "/dashboard/admin/architecture": [UserRole.SUPER_ADMIN, UserRole.ADMIN],

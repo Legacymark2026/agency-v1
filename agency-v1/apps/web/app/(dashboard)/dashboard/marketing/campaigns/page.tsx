@@ -30,24 +30,17 @@ export default async function CampaignsPage() {
         console.warn("[CampaignsPage] Error resolving company:", e);
     }
 
-    if (!companyId) {
-        return (
-            <div className="ds-page flex items-center justify-center min-h-[400px]">
-                <p className="font-mono text-xs text-slate-500 uppercase tracking-widest">&gt; Configurando espacio de trabajo de la empresa..._</p>
-            </div>
-        );
-    }
-
     // 2. Fetch both Paid & Drip campaigns safely with full error shielding
     let dripCampaigns: any[] = [];
     let paidCampaigns: any[] = [];
     let safeMetrics = { totalSpend: 0, totalImpressions: 0, totalClicks: 0, totalConversions: 0, cpa: 0 };
 
     try {
+        const whereClause = companyId ? { companyId } : {};
         const [dripList, allCampaigns] = await Promise.all([
-            getDripCampaigns(companyId).catch(() => []),
+            companyId ? getDripCampaigns(companyId).catch(() => []) : [],
             prisma.campaign.findMany({
-                where: { companyId },
+                where: whereClause,
                 orderBy: { updatedAt: 'desc' },
                 take: 50,
             }).catch(() => [])
