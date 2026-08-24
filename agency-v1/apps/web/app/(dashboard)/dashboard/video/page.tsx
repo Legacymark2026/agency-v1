@@ -109,11 +109,11 @@ export default function VideoStudioProPage() {
   const handleRunAudioDucking = async () => {
     setIsLoading(true);
     try {
-      const voiceEvents = [
+      const speechSegments = [
         { startSec: 2, endSec: 14 },
         { startSec: 18, endSec: 42 },
       ];
-      const res = await runAudioDuckingAction({ voiceEvents, totalDurationSec: 60, duckingDepthDb: -18 });
+      const res = await runAudioDuckingAction({ speechSegments, totalDurationSec: 60, duckedLevel: 0.15, normalLevel: 0.8 });
       if (res.success) {
         setDuckingResult(res.result);
         toast.success("Curva de atenuación espectral aplicada.");
@@ -129,12 +129,7 @@ export default function VideoStudioProPage() {
   const handleRunSmartReframe = async () => {
     setIsLoading(true);
     try {
-      const points = [
-        { timestampSec: 0, normalizedX: 0.35, normalizedY: 0.4, confidence: 0.95 },
-        { timestampSec: 5, normalizedX: 0.52, normalizedY: 0.42, confidence: 0.98 },
-        { timestampSec: 10, normalizedX: 0.65, normalizedY: 0.39, confidence: 0.92 },
-      ];
-      const res = await runSmartReframeAction({ faceTrackingPoints: points, sourceWidth: 1920, sourceHeight: 1080 });
+      const res = await runSmartReframeAction({ targetRatio: "9:16", fitMode: "SMART_CENTER_CROP", sourceWidth: 1920, sourceHeight: 1080 });
       if (res.success) {
         setReframeResult(res.result);
         toast.success("Rastreo facial 9:16 calculado.");
@@ -150,12 +145,12 @@ export default function VideoStudioProPage() {
   const handleRunBrollMatching = async () => {
     setIsLoading(true);
     try {
-      const transcript = [
-        { keyword: "contabilidad", timestampSec: 4 },
-        { keyword: "inteligencia artificial", timestampSec: 12 },
-        { keyword: "dinero", timestampSec: 25 },
+      const transcriptSegments = [
+        { text: "software contable automatizado", startSec: 4, endSec: 8 },
+        { text: "inteligencia artificial para empresas", startSec: 12, endSec: 16 },
+        { text: "estrategia de crecimiento y ventas", startSec: 25, endSec: 30 },
       ];
-      const res = await runBrollMatchingAction({ transcript });
+      const res = await runBrollMatchingAction({ transcriptSegments });
       if (res.success) {
         setBrollResult(res.matched || []);
         toast.success("Tomas de apoyo B-Roll emparejadas.");

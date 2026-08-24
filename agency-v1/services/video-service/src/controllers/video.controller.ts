@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { VideoService } from "../services/video.service";
-import { ViralClipperService } from "../services/viral-clipper.service";
-import { KineticSubtitlesService } from "../services/kinetic-subtitles.service";
-import { SilenceRemoverService } from "../services/silence-remover.service";
-import { AudioDuckingService } from "../services/audio-ducking.service";
-import { SmartReframeService } from "../services/smart-reframe.service";
-import { BrollMatcherService } from "../services/broll-matcher.service";
-import { ThumbnailGeneratorService } from "../services/thumbnail-generator.service";
+import { VideoService } from "../services/video.service.js";
+import { ViralClipperService } from "../services/viral-clipper.service.js";
+import { KineticSubtitlesService } from "../services/kinetic-subtitles.service.js";
+import { SilenceRemoverService } from "../services/silence-remover.service.js";
+import { AudioDuckingService } from "../services/audio-ducking.service.js";
+import { SmartReframeService } from "../services/smart-reframe.service.js";
+import { BrollMatcherService } from "../services/broll-matcher.service.js";
+import { ThumbnailGeneratorService } from "../services/thumbnail-generator.service.js";
 
 export class VideoController {
   /**
@@ -111,7 +111,7 @@ export class VideoController {
       const { words, wordsPerBlock } = req.body;
       const service = new KineticSubtitlesService();
       const blocks = service.generateSubtitleBlocks(words || [], wordsPerBlock || 4);
-      const assScript = service.exportToAssScript(blocks);
+      const assScript = service.generateASSFormat(blocks);
       res.json({ success: true, blocks, assScript });
     } catch (err) {
       next(err);
@@ -137,9 +137,14 @@ export class VideoController {
    */
   static async autoDuck(req: Request, res: Response, next: NextFunction) {
     try {
-      const { voiceEvents, totalDurationSec, duckingDepthDb } = req.body;
+      const { speechSegments, totalDurationSec, duckedLevel, normalLevel } = req.body;
       const service = new AudioDuckingService();
-      const result = service.calculateDuckingCurve(voiceEvents || [], totalDurationSec || 60, duckingDepthDb || -18);
+      const result = service.generateDuckingCurve(
+        speechSegments || [{ startSec: 2, endSec: 15 }],
+        totalDurationSec || 60,
+        duckedLevel || 0.15,
+        normalLevel || 0.8
+      );
       res.json({ success: true, result });
     } catch (err) {
       next(err);
@@ -147,17 +152,18 @@ export class VideoController {
   }
 
   /**
-   * 5. POST /api/video/smart-reframe (AI 16:9 to 9:16 Face Tracker)
+   * 5. POST /api/video/smart-reframe (AI 16:9 to 9:16 Reframe)
    */
   static async smartReframe(req: Request, res: Response, next: NextFunction) {
     try {
-      const { faceTrackingPoints, sourceWidth, sourceHeight } = req.body;
+      const { targetRatio, fitMode, sourceWidth, sourceHeight } = req.body;
       const service = new SmartReframeService();
-      const result = service.calculateCropPath(
-        faceTrackingPoints || [{ timestampSec: 0, normalizedX: 0.5, normalizedY: 0.4, confidence: 0.95 }],
-        sourceWidth || 1920,
-        sourceHeight || 1080
-      );
+      const result = service.computeReframeFilter({
+        targetRatio: targetRatio || "9:16",
+        fitMode: fitMode || "SMART_CENTER_CROP",
+        sourceWidth: sourceWidth || 1920,
+        sourceHeight: sourceHeight || 1080,
+      });
       res.json({ success: true, result });
     } catch (err) {
       next(err);
@@ -169,9 +175,14 @@ export class VideoController {
    */
   static async matchBroll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { transcript, availableAssets } = req.body;
+      const { transcriptSegments, minGapBetweenBrollsSec } = req.body;
       const service = new BrollMatcherService();
-      const matched = service.matchBrolls(transcript || [], availableAssets || []);
+      const matched = service.matchBrollToTranscript(
+        transcriptSegments || [
+          { text: "nuestro software contable con inteligencia artificial", startSec: 2, endSec: 8 },
+        ],
+        minGapBetweenBrollsSec || 4
+      );
       res.json({ success: true, matched });
     } catch (err) {
       next(err);
@@ -183,9 +194,13 @@ export class VideoController {
    */
   static async generateThumbnail(req: Request, res: Response, next: NextFunction) {
     try {
-      const { videoTitle, candidateFrames, targetFormat } = req.body;
+      const { videoTitle, candidates, targetFormat } = req.body;
       const service = new ThumbnailGeneratorService();
-      const design = service.generateThumbnailDesign(videoTitle || "Video Corporativo", candidateFrames || [], targetFormat || "1280x720");
+      const design = service.generateThumbnailDesign(
+        videoTitle || "Video Corporativo",
+        candidates || [],
+        targetFormat || "1280x720"
+      );
       res.json({ success: true, design });
     } catch (err) {
       next(err);

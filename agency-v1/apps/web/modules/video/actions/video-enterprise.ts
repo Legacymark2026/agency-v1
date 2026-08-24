@@ -23,7 +23,6 @@ export async function runAutoClipAction(params: {
     }
   } catch (_) {}
 
-  // Local fallback execution if container is warming up
   const { ViralClipperService } = await import("../../../../../services/video-service/src/services/viral-clipper.service");
   const clipper = new ViralClipperService();
   const clips = clipper.extractViralClips(params.sentences, params.targetDuration || 30);
@@ -51,7 +50,7 @@ export async function runKineticSubtitlesAction(params: {
   const { KineticSubtitlesService } = await import("../../../../../services/video-service/src/services/kinetic-subtitles.service");
   const service = new KineticSubtitlesService();
   const blocks = service.generateSubtitleBlocks(params.words, params.wordsPerBlock || 4);
-  const assScript = service.exportToAssScript(blocks);
+  const assScript = service.generateASSFormat(blocks);
   return { success: true, blocks, assScript };
 }
 
@@ -82,9 +81,10 @@ export async function runSilenceRemovalAction(params: {
 
 // 4. Auto-Ducking
 export async function runAudioDuckingAction(params: {
-  voiceEvents: { startSec: number; endSec: number }[];
+  speechSegments: { startSec: number; endSec: number }[];
   totalDurationSec: number;
-  duckingDepthDb?: number;
+  duckedLevel?: number;
+  normalLevel?: number;
 }) {
   try {
     const res = await fetch(`${VIDEO_SERVICE_URL}/api/v1/video/auto-duck`, {
@@ -101,13 +101,19 @@ export async function runAudioDuckingAction(params: {
 
   const { AudioDuckingService } = await import("../../../../../services/video-service/src/services/audio-ducking.service");
   const service = new AudioDuckingService();
-  const result = service.calculateDuckingCurve(params.voiceEvents, params.totalDurationSec, params.duckingDepthDb || -18);
+  const result = service.generateDuckingCurve(
+    params.speechSegments,
+    params.totalDurationSec,
+    params.duckedLevel || 0.15,
+    params.normalLevel || 0.8
+  );
   return { success: true, result };
 }
 
 // 5. Smart Reframe
 export async function runSmartReframeAction(params: {
-  faceTrackingPoints: { timestampSec: number; normalizedX: number; normalizedY: number; confidence: number }[];
+  targetRatio?: "9:16" | "1:1" | "4:5" | "16:9";
+  fitMode?: "SMART_CENTER_CROP" | "BLURRED_BACKDROP_LETTERBOX";
   sourceWidth?: number;
   sourceHeight?: number;
 }) {
@@ -126,51 +132,67 @@ export async function runSmartReframeAction(params: {
 
   const { SmartReframeService } = await import("../../../../../services/video-service/src/services/smart-reframe.service");
   const service = new SmartReframeService();
-  const result = service.calculateCropPath(params.faceTrackingPoints, params.sourceWidth || 1920, params.sourceHeight || 1080);
+  const result = service.computeReframeFilter({
+    targetRatio: params.targetRatio || "9:16",
+    fitMode: params.fitMode || "SMART_CENTER_CROP",
+    sourceWidth: params.sourceWidth || 1920,
+    sourceHeight: params.sourceHeight || 1080,
+  });
   return { success: true, result };
 }
 
 // 6. Match B-Roll
 export async function runBrollMatchingAction(params: {
-  transcript: { keyword: string; timestampSec: number }[];
+  transcriptSegments: { text: string; startSec: number; endSec: number }[];
+  minGapBetweenBrollsSec?: number;
 }) {
   try {
-    const mediaAssets = await prisma.mediaAsset.findMany({ take: 20 });
-    const availableAssets = mediaAssets.map(a => ({
-      assetId: a.id,
-      title: a.title || "Clip de Archivo",
-      tags: [(a.category || "").toLowerCase(), (a.type || "").toLowerCase()],
-      durationSec: 5,
-    }));
+    const res = await fetch(`${VIDEO_SERVICE_URL}/api/v1/video/match-broll`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, matched: data.matched };
+    }
+  } catch (_) {}
 
-    const { BrollMatcherService } = await import("../../../../../services/video-service/src/services/broll-matcher.service");
-    const service = new BrollMatcherService();
-    const matched = service.matchBrolls(params.transcript, availableAssets);
-    return { success: true, matched };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
+  const { BrollMatcherService } = await import("../../../../../services/video-service/src/services/broll-matcher.service");
+  const service = new BrollMatcherService();
+  const matched = service.matchBrollToTranscript(params.transcriptSegments, params.minGapBetweenBrollsSec || 4);
+  return { success: true, matched };
 }
 
 // 7. Generate Thumbnail
 export async function runGenerateThumbnailAction(params: {
   videoTitle: string;
-  candidateFrames?: { timestampSec: number; faceClarityScore: number; sharpnessScore: number; expressionType: "SMILING" | "EXCITED" | "SERIOUS" | "THINKING" }[];
+  candidates?: { timestampSec: number; faceClarityScore: number; sharpnessScore: number; expressionType: "SMILING" | "EXCITED" | "SERIOUS" | "THINKING" }[];
   targetFormat?: "1280x720" | "1080x1920";
 }) {
   try {
-    const { ThumbnailGeneratorService } = await import("../../../../../services/video-service/src/services/thumbnail-generator.service");
-    const service = new ThumbnailGeneratorService();
-    const design = service.generateThumbnailDesign(
-      params.videoTitle,
-      params.candidateFrames || [
-        { timestampSec: 4.2, faceClarityScore: 0.95, sharpnessScore: 0.92, expressionType: "EXCITED" },
-        { timestampSec: 12.8, faceClarityScore: 0.88, sharpnessScore: 0.85, expressionType: "SMILING" },
-      ],
-      params.targetFormat || "1280x720"
-    );
-    return { success: true, design };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
+    const res = await fetch(`${VIDEO_SERVICE_URL}/api/v1/video/generate-thumbnail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, design: data.design };
+    }
+  } catch (_) {}
+
+  const { ThumbnailGeneratorService } = await import("../../../../../services/video-service/src/services/thumbnail-generator.service");
+  const service = new ThumbnailGeneratorService();
+  const design = service.generateThumbnailDesign(
+    params.videoTitle,
+    params.candidates || [
+      { timestampSec: 4.2, faceClarityScore: 0.95, sharpnessScore: 0.92, expressionType: "EXCITED" },
+      { timestampSec: 12.8, faceClarityScore: 0.88, sharpnessScore: 0.85, expressionType: "SMILING" },
+    ],
+    params.targetFormat || "1280x720"
+  );
+  return { success: true, design };
 }
