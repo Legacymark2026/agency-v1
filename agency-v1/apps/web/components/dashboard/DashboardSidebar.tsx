@@ -8,7 +8,7 @@ import {
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
     PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag, Package,
-    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award, Layers
+    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award, Layers, Sparkles
 } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
@@ -66,6 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
         accent: "teal", icon: <Target size={20} />,
         items: [
             { href: "/dashboard/marketing", label: "CMO Dashboard", icon: <BarChart2 size={14} />, code: "CMO" },
+            { href: "/dashboard/marketing/enterprise", label: "Suite Marketing Enterprise", icon: <Sparkles size={14} />, code: "ENT" },
             { href: "/dashboard/marketing/campaigns", label: "Campañas (Live)", icon: <Target size={14} />, code: "LIV" },
             { href: "/dashboard/admin/marketing/approvals", label: "Aprobaciones de Campaña", icon: <CheckSquare size={14} />, code: "APP" },
             { href: "/dashboard/marketing/automation", label: "Automatización Marketing", icon: <Zap size={14} />, code: "AUT" },

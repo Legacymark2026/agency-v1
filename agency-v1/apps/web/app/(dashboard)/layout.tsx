@@ -119,7 +119,7 @@ export default async function DashboardLayout({
         "/dashboard/accounting", "/dashboard/calendar",
         "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
         "/dashboard/seo", "/dashboard/security/sla",
-        "/dashboard/marketing", "/dashboard/marketing/campaigns", "/dashboard/marketing/automation",
+        "/dashboard/marketing", "/dashboard/marketing/enterprise", "/dashboard/marketing/campaigns", "/dashboard/marketing/automation",
         "/dashboard/marketing/listening", "/dashboard/admin/marketing/approvals",
         "/dashboard/admin/marketing", "/dashboard/admin/marketing/campaigns", "/dashboard/marketing/calendar",
         "/dashboard/marketing/email-blast", "/dashboard/admin/marketing/creative-studio", "/dashboard/marketing/pricing",

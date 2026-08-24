@@ -84,6 +84,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
 
     // ── Marketing Hub ─────────────────────────────────────
     "/dashboard/marketing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/marketing/enterprise": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/marketing/pricing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/marketing/campaigns": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/marketing/listening": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
@@ -300,11 +301,11 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "crm.templates", routes: ["/dashboard/admin/crm/templates"] },
     { perm: "crm.scoring", routes: ["/dashboard/admin/crm/scoring"] },
     // Marketing
-    { perm: "mkt.view", routes: ["/dashboard/admin/marketing"] },
-    { perm: "mkt.campaigns", routes: ["/dashboard/admin/marketing/campaigns"] },
-    { perm: "mkt.spend", routes: ["/dashboard/admin/marketing/spend"] },
-    { perm: "mkt.links", routes: ["/dashboard/admin/marketing/links"] },
-    { perm: "mkt.edit", routes: ["/dashboard/admin/marketing"] },
+    { perm: "mkt.view", routes: ["/dashboard/marketing", "/dashboard/marketing/enterprise", "/dashboard/admin/marketing"] },
+    { perm: "mkt.campaigns", routes: ["/dashboard/marketing/campaigns", "/dashboard/admin/marketing/campaigns"] },
+    { perm: "mkt.spend", routes: ["/dashboard/marketing/spend", "/dashboard/admin/marketing/spend"] },
+    { perm: "mkt.links", routes: ["/dashboard/marketing/links", "/dashboard/admin/marketing/links"] },
+    { perm: "mkt.edit", routes: ["/dashboard/marketing", "/dashboard/marketing/enterprise", "/dashboard/admin/marketing"] },
     { perm: "mkt.send", routes: ["/dashboard/admin/marketing/campaigns"] },
     { perm: "mkt.integrations", routes: ["/dashboard/admin/marketing/settings"] },
     { perm: "mkt.creative", routes: ["/dashboard/admin/marketing/creative-studio"] },
