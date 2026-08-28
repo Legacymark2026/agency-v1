@@ -31,7 +31,9 @@ export class InboxService {
 
     const skip = (page - 1) * limit;
 
-    let [conversations, total] = await Promise.all([
+    // FIX #5: Never drop the companyId filter — multi-tenant isolation must hold.
+    // If a tenant has no conversations, return [] rather than leaking other tenants' data.
+    const [conversations, total] = await Promise.all([
       prisma.conversation.findMany({
         where,
         orderBy: { updatedAt: "desc" },
@@ -41,21 +43,6 @@ export class InboxService {
       }),
       prisma.conversation.count({ where })
     ]);
-
-    // Resilient fallback if companyId filter yielded 0 results
-    if (conversations.length === 0 && companyId) {
-      delete where.companyId;
-      [conversations, total] = await Promise.all([
-        prisma.conversation.findMany({
-          where,
-          orderBy: { updatedAt: "desc" },
-          take: limit,
-          skip,
-          include: { lead: true, messages: { take: 1, orderBy: { createdAt: "desc" } } }
-        }),
-        prisma.conversation.count({ where })
-      ]);
-    }
 
     return { conversations, total, page, limit };
   }
