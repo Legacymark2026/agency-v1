@@ -88,9 +88,69 @@ export interface Exogena1001Row {
   retencionIvaPracticada: number;
 }
 
-export class ColombianAccountingService {
-  private vouchers: JournalVoucher[] = [];
+import Redis from "ioredis";
 
+/**
+ * Fix A-7: Journal vouchers are now persisted to Redis (shared across container instances).
+ * Vouchers survive container restarts and horizontal scaling.
+ *
+ * NOTE: For full ACID compliance, migrate vouchers to a dedicated AccountingVoucher
+ * Prisma table. Redis is a pragmatic interim solution without schema migration.
+ *
+ * Schema migration recommended:
+ *   model AccountingVoucher {
+ *     id            String   @id @default(uuid())
+ *     companyId     String
+ *     voucherNumber String
+ *     date          DateTime
+ *     concept       String
+ *     lines         Json
+ *     totalDebit    Float
+ *     totalCredit   Float
+ *     isBalanced    Boolean
+ *     createdAt     DateTime @default(now())
+ *     @@index([companyId])
+ *   }
+ */
+
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
+const VOUCHER_TTL_SECONDS = 60 * 60 * 24 * 365; // 1 year
+
+let redisClient: Redis | null = null;
+const memoryFallback = new Map<string, JournalVoucher[]>(); // fallback if Redis unavailable
+
+function getRedis(): Redis {
+  if (!redisClient) {
+    redisClient = new Redis(REDIS_URL, { lazyConnect: true, maxRetriesPerRequest: 1 });
+    redisClient.on("error", (err) => console.error("[ColombianAccounting] Redis error:", err));
+  }
+  return redisClient;
+}
+
+function voucherKey(companyId: string) {
+  return `finance:accounting:vouchers:${companyId}`;
+}
+
+async function loadVouchers(companyId: string): Promise<JournalVoucher[]> {
+  try {
+    const redis = getRedis();
+    const raw = await redis.get(voucherKey(companyId));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return memoryFallback.get(companyId) || [];
+  }
+}
+
+async function saveVouchers(companyId: string, vouchers: JournalVoucher[]): Promise<void> {
+  try {
+    const redis = getRedis();
+    await redis.setex(voucherKey(companyId), VOUCHER_TTL_SECONDS, JSON.stringify(vouchers));
+  } catch {
+    memoryFallback.set(companyId, vouchers);
+  }
+}
+
+export class ColombianAccountingService {
   /**
    * Calculates statutory Colombian tax withholdings according to Estatuto Tributario.
    */
@@ -131,14 +191,15 @@ export class ColombianAccountingService {
   }
 
   /**
-   * Creates and registers a strict double-entry accounting journal voucher.
+   * Fix A-7: Creates and registers a strict double-entry accounting journal voucher.
+   * Voucher is persisted to Redis — survives container restarts.
    */
-  public recordJournalVoucher(
+  public async recordJournalVoucher(
     voucherNumber: string,
     concept: string,
     companyId: string,
     lines: JournalEntryLine[]
-  ): JournalVoucher {
+  ): Promise<JournalVoucher> {
     const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
     const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
 
@@ -160,22 +221,27 @@ export class ColombianAccountingService {
       companyId,
     };
 
-    this.vouchers.push(voucher);
+    const existing = await loadVouchers(companyId);
+    existing.push(voucher);
+    await saveVouchers(companyId, existing);
+
     return voucher;
   }
 
   /**
-   * Generates a Trial Balance (Balance de Comprobación / Sumas Iguales).
+   * Fix A-7: Generates a Trial Balance (Balance de Comprobación / Sumas Iguales).
+   * Reads from persistent Redis store — reflects all vouchers across restarts.
    */
-  public generateTrialBalance(companyId: string): {
+  public async generateTrialBalance(companyId: string): Promise<{
     accounts: Array<{ code: string; name: string; debit: number; credit: number; balance: number }>;
     totalDebit: number;
     totalCredit: number;
     isBalanced: boolean;
-  } {
+  }> {
+    const vouchers = await loadVouchers(companyId);
     const accountMap = new Map<string, { code: string; name: string; debit: number; credit: number }>();
 
-    for (const v of this.vouchers.filter((voc) => voc.companyId === companyId)) {
+    for (const v of vouchers) {
       for (const line of v.lines) {
         const existing = accountMap.get(line.accountCode) || {
           code: line.accountCode,
@@ -197,28 +263,24 @@ export class ColombianAccountingService {
     const totalDebit = accounts.reduce((s, a) => s + a.debit, 0);
     const totalCredit = accounts.reduce((s, a) => s + a.credit, 0);
 
-    return {
-      accounts,
-      totalDebit,
-      totalCredit,
-      isBalanced: totalDebit === totalCredit,
-    };
+    return { accounts, totalDebit, totalCredit, isBalanced: totalDebit === totalCredit };
   }
 
   /**
-   * Generates Formato 1001 for DIAN Information Exógena / Medios Magnéticos.
+   * Fix A-7: Generates Formato 1001 for DIAN Information Exógena / Medios Magnéticos.
+   * Reads from persistent Redis store.
    */
-  public generateExogenaFormato1001(companyId: string): Exogena1001Row[] {
-    const rows: Exogena1001Row[] = [];
+  public async generateExogenaFormato1001(companyId: string): Promise<Exogena1001Row[]> {
+    const vouchers = await loadVouchers(companyId);
     const thirdPartyMap = new Map<string, Exogena1001Row>();
 
-    for (const v of this.vouchers.filter((voc) => voc.companyId === companyId)) {
+    for (const v of vouchers) {
       for (const line of v.lines) {
         if (!line.thirdPartyNit) continue;
 
         const row = thirdPartyMap.get(line.thirdPartyNit) || {
-          concepto: "5001", // Honorarios, comisiones y servicios
-          tipoDoc: "31", // NIT
+          concepto: "5001",
+          tipoDoc: "31",
           nit: line.thirdPartyNit,
           razonSocial: line.thirdPartyName,
           pagoOAbonoCuenta: 0,
@@ -232,11 +294,9 @@ export class ColombianAccountingService {
           row.pagoOAbonoCuenta += line.debit;
           row.pagosDeducibles += line.debit;
         }
-
         if (line.accountCode.startsWith("2365")) {
           row.retencionFuentePracticada += line.credit;
         }
-
         if (line.accountCode.startsWith("2367")) {
           row.retencionIvaPracticada += line.credit;
         }

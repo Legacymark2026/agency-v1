@@ -1,8 +1,5 @@
 import { prisma } from "@agency/database";
-import { EventBus } from "@agency/events";
-
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const eventBus = new EventBus(REDIS_URL, "finance-service");
+import { eventBus } from "../lib/event-bus.singleton";
 
 export interface CreateInvoiceInput {
   companyId: string;
@@ -20,13 +17,9 @@ export interface CreateInvoiceInput {
 }
 
 export class FinanceService {
-  /**
-   * Obtener lista de facturas
-   */
   static async getInvoices(companyId: string, status?: string) {
     const where: Record<string, unknown> = { companyId };
     if (status) where.status = status;
-
     return prisma.invoice.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -34,12 +27,9 @@ export class FinanceService {
     });
   }
 
-  /**
-   * Crear nueva factura con transacción atómica
-   */
   static async createInvoice(input: CreateInvoiceInput) {
     return prisma.$transaction(async (tx) => {
-      const invoiceNumber = `FAC-${Date.now().toString().slice(-6)}`;
+      const invoiceNumber = `FAC-${Date.now().toString().slice(-8)}`;
       const invoice = await tx.invoice.create({
         data: {
           invoiceNumber,
@@ -54,19 +44,20 @@ export class FinanceService {
           discountAmount: input.discountAmount || 0,
           totalAmount: input.totalAmount,
           notes: input.notes,
-          items: input.items ? {
-            create: input.items.map(item => ({
-              description: item.description,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice,
-            }))
-          } : undefined
+          items: input.items
+            ? {
+                create: input.items.map((item) => ({
+                  description: item.description,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  totalPrice: item.totalPrice,
+                })),
+              }
+            : undefined,
         },
-        include: { items: true }
+        include: { items: true },
       });
 
-      // Publicar evento invoice.created
       await eventBus.publish("invoice.created", {
         id: invoice.id,
         invoiceId: invoice.id,
@@ -74,47 +65,34 @@ export class FinanceService {
         companyId: invoice.companyId,
         totalAmount: Number(invoice.totalAmount),
         status: invoice.status,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return invoice;
     });
   }
 
-  /**
-   * Manejar webhooks de Stripe (Suscripciones y Facturas pagadas)
-   */
   static async handleStripeWebhookEvent(companyId: string, event: { type: string; data: any }) {
-    console.log(`[FinanceService] Processing Stripe event type: ${event.type}`);
     const data = event.data.object;
 
     if (event.type === "invoice.payment_succeeded") {
-      const stripeInvoiceId = data.id;
-      const amountPaid = data.amount_paid / 100;
-      const customerEmail = data.customer_email;
-
       await eventBus.publish("payment.succeeded" as any, {
         companyId,
-        stripeInvoiceId,
-        amount: amountPaid,
-        email: customerEmail,
-        timestamp: new Date().toISOString()
+        stripeInvoiceId: data.id,
+        amount: data.amount_paid / 100,
+        email: data.customer_email,
+        timestamp: new Date().toISOString(),
       });
-
       return { processed: true, event: "invoice.payment_succeeded" };
     }
 
     if (event.type === "customer.subscription.updated") {
-      const subscriptionId = data.id;
-      const status = data.status; // active, past_due, canceled
-
       await eventBus.publish("subscription.status_changed" as any, {
         companyId,
-        subscriptionId,
-        status,
-        timestamp: new Date().toISOString()
+        subscriptionId: data.id,
+        status: data.status,
+        timestamp: new Date().toISOString(),
       });
-
       return { processed: true, event: "customer.subscription.updated" };
     }
 
@@ -122,41 +100,81 @@ export class FinanceService {
   }
 
   /**
-   * Generar proyección predictiva del flujo de caja (Cash Flow Forecast)
+   * Fix C-5: Real cash flow forecast from actual DB data.
+   * Calculates rolling 6-month average of incoming (paid invoices) and
+   * outgoing (paid expenses), then projects forward with trend.
    */
   static async getCashFlowForecast(companyId: string) {
-    console.log(`[FinanceService] Generating cash flow projection for company: ${companyId}`);
+    const now = new Date();
+    const months: Array<{ label: string; start: Date; end: Date }> = [];
 
-    let currentBalance = 15000.00;
-    try {
-      const invoices = await prisma.invoice.findMany({
-        where: { companyId, status: "PAID" },
-        select: { totalAmount: true }
-      });
-      const totalPaid = invoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
-      if (totalPaid > 0) currentBalance = totalPaid;
-    } catch {
-      // Ignore fallback
+    // Build last 6 months date ranges for historical context
+    for (let i = 5; i >= 0; i--) {
+      const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+      const label = start.toLocaleString("es-CO", { month: "short", year: "2-digit" });
+      months.push({ label, start, end });
     }
 
-    const months = ["Jun", "Jul", "Ago", "Sep", "Oct", "Nov"];
-    const projections = months.map((month, idx) => {
-      const growthFactor = 1 + idx * 0.15;
-      const seasonality = Math.sin(idx) * 2000;
-      const incoming = currentBalance * growthFactor + seasonality;
-      const outgoing = (currentBalance * 0.6) * (1 + idx * 0.08);
+    // Fetch real paid invoices and expenses per month in parallel
+    const [invoicesByMonth, expensesByMonth] = await Promise.all([
+      Promise.all(
+        months.map((m) =>
+          prisma.invoice.aggregate({
+            where: { companyId, status: "PAID", paidAt: { gte: m.start, lte: m.end } },
+            _sum: { totalAmount: true },
+          })
+        )
+      ),
+      Promise.all(
+        months.map((m) =>
+          prisma.expense.aggregate({
+            where: { companyId, status: "PAID", paidAt: { gte: m.start, lte: m.end } },
+            _sum: { amount: true },
+          })
+        )
+      ),
+    ]);
 
-      return {
-        month,
-        incoming: Math.round(incoming),
-        outgoing: Math.round(outgoing),
-        netFlow: Math.round(incoming - outgoing)
-      };
+    const historical = months.map((m, i) => ({
+      month: m.label,
+      incoming: Number(invoicesByMonth[i]._sum.totalAmount) || 0,
+      outgoing: Number(expensesByMonth[i]._sum.amount) || 0,
+      netFlow: (Number(invoicesByMonth[i]._sum.totalAmount) || 0) - (Number(expensesByMonth[i]._sum.amount) || 0),
+    }));
+
+    // Calculate weighted moving average (more recent months weighted higher)
+    const weights = [1, 1.5, 2, 2.5, 3, 3.5]; // ascending weight for recency
+    const totalWeight = weights.reduce((s, w) => s + w, 0);
+    const avgIncoming = historical.reduce((s, h, i) => s + h.incoming * weights[i], 0) / totalWeight;
+    const avgOutgoing = historical.reduce((s, h, i) => s + h.outgoing * weights[i], 0) / totalWeight;
+
+    // Simple linear trend: slope from first to last month
+    const incomingTrend = historical.length >= 2
+      ? (historical[historical.length - 1].incoming - historical[0].incoming) / historical.length
+      : 0;
+    const outgoingTrend = historical.length >= 2
+      ? (historical[historical.length - 1].outgoing - historical[0].outgoing) / historical.length
+      : 0;
+
+    // Project next 6 months
+    const projections = Array.from({ length: 6 }, (_, idx) => {
+      const projDate = new Date(now.getFullYear(), now.getMonth() + idx + 1, 1);
+      const label = projDate.toLocaleString("es-CO", { month: "short", year: "2-digit" });
+      const incoming = Math.max(0, Math.round(avgIncoming + incomingTrend * (idx + 1)));
+      const outgoing = Math.max(0, Math.round(avgOutgoing + outgoingTrend * (idx + 1)));
+
+      return { month: label, incoming, outgoing, netFlow: incoming - outgoing, projected: true };
     });
 
+    const currentBalance = historical[historical.length - 1]?.netFlow ?? 0;
+
     return {
-      currentBalance: Math.round(currentBalance),
-      projections
+      currentBalance,
+      currency: "COP",
+      historical,
+      projections,
+      dataSource: "real",
     };
   }
 }
