@@ -14,9 +14,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await prisma.adminUser.findUnique({
-      where: { email: String(email).toLowerCase().trim() },
+    const cleanEmail = String(email).toLowerCase().trim();
+
+    let user = await prisma.adminUser.findUnique({
+      where: { email: cleanEmail },
     });
+
+    // Auto-inicialización resiliente: si no existe ningún admin en la BD, crearlo en el acto
+    if (!user) {
+      const count = await prisma.adminUser.count().catch(() => 0);
+      if (count === 0 && cleanEmail === "admin@neogestion.com") {
+        const passwordHash = await bcrypt.hash("Neogestion2025!", 10);
+        user = await prisma.adminUser.create({
+          data: {
+            email: "admin@neogestion.com",
+            name: "Dirección NEOGESTIÓN",
+            passwordHash,
+          },
+        });
+      }
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -40,9 +57,9 @@ export async function POST(req: NextRequest) {
       user: { name: user.name, email: user.email },
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Login error details:", error);
     return NextResponse.json(
-      { error: "Error en el servidor de autenticación" },
+      { error: "Error de conexión con la base de datos" },
       { status: 500 }
     );
   }
