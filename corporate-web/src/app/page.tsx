@@ -12,6 +12,7 @@ import {
   ArrowUpRight
 } from "lucide-react";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
+import ClientsSection from "@/components/ClientsSection";
 import { servicesData } from "@/data/servicesData";
 
 export default function Home() {
@@ -220,6 +221,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* CLIENTES CORPORATIVOS & INSTITUCIONALES */}
+      <ClientsSection />
 
       {/* 3. TESTIMONIOS: Carrusel 3D / Coverflow */}
       <section className="py-24 bg-white">

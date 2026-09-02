@@ -8,6 +8,7 @@ import {
   Sparkles
 } from "lucide-react";
 import TeamModalGrid from "./TeamModalGrid";
+import ClientsSection from "@/components/ClientsSection";
 import { corporateValues, corporateHistory } from "@/data/teamData";
 
 export const metadata: Metadata = {
@@ -198,6 +199,9 @@ export default function QuienesSomosPage() {
           </div>
         </div>
       </section>
+
+      {/* CLIENTES CORPORATIVOS & INSTITUCIONALES */}
+      <ClientsSection />
 
       {/* Equipo Directivo con Efecto Hover y Modal de Biografía */}
       <section id="equipo" className="py-24 bg-[#0B192C] text-white">
