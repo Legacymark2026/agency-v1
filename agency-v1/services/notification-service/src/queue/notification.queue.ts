@@ -9,13 +9,9 @@
  */
 
 import { Queue, QueueEvents } from "bullmq";
-import Redis from "ioredis";
+import { redisBullConnection as redisConnection } from "../lib/redis.singleton";
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-
-export const redisConnection = new Redis(REDIS_URL, {
-  maxRetriesPerRequest: null, // Required by BullMQ
-});
+export { redisConnection };
 
 export interface NotificationJobData {
   id?: string;

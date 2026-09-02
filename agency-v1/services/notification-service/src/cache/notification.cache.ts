@@ -9,15 +9,10 @@
  *   - Real-time cache invalidation on new notification, mark-as-read, or delete.
  */
 
-import Redis from "ioredis";
 import { prisma, hybridCache } from "@agency/database";
+import { redisClient as redisCache } from "../lib/redis.singleton";
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-export const redisCache = new Redis(REDIS_URL);
-
-redisCache.on("error", (err) => {
-  console.error("[notification-cache] Redis connection error:", err.message);
-});
+export { redisCache };
 
 // ── Unread Count Cache Management ────────────────────────────────────────────
 
