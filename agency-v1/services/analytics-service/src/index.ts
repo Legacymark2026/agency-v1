@@ -88,24 +88,47 @@ async function runPartitionMaintenance(): Promise<void> {
         FOR VALUES FROM ('${fromStr}') TO ('${toStr}');
       `).catch((err: any) => console.warn(`[AutoPartition] Notice for ${partUsage}:`, err.message));
     }
+
+    // Ensure tbl_api_usage_logs table exists
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS tbl_api_usage_logs (
+        id TEXT PRIMARY KEY,
+        company_id TEXT NOT NULL,
+        api_key_id TEXT NOT NULL,
+        service_name TEXT NOT NULL,
+        endpoint TEXT NOT NULL,
+        method TEXT NOT NULL,
+        status_code INTEGER NOT NULL,
+        duration_ms INTEGER NOT NULL,
+        request_bytes INTEGER DEFAULT 0,
+        response_bytes INTEGER DEFAULT 0,
+        units_consumed DOUBLE PRECISION DEFAULT 1.0,
+        unit_type TEXT DEFAULT 'REQUESTS',
+        total_cost_usd DOUBLE PRECISION DEFAULT 0.0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        col_schema_version INTEGER DEFAULT 0,
+        col_deleted_at TIMESTAMP WITH TIME ZONE
+      );
+      CREATE INDEX IF NOT EXISTS idx_api_usage_logs_company ON tbl_api_usage_logs(company_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_api_usage_logs_apikey ON tbl_api_usage_logs(api_key_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_api_usage_logs_service ON tbl_api_usage_logs(service_name, created_at);
+    `).catch((err: any) => console.warn("[AutoDDL] Notice for tbl_api_usage_logs:", err.message));
   } catch (err: any) {
     console.warn("[AutoPartition] Maintenance check skipped or unavailable:", err.message);
   }
 }
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
-const server = app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", async () => {
   console.log(`📈 Analytics Service running on port ${PORT}`);
+
+  // Run initial schema & partition check before starting stream worker
+  await runPartitionMaintenance().catch(() => {});
 
   // Start Metered Usage Stream Worker asynchronously
   import("./services/metering-aggregator.service").then(({ MeteringAggregatorService }) => {
     MeteringAggregatorService.startStreamWorker();
   }).catch((err) => console.error("[StreamWorker] Error starting metering worker:", err.message));
-
-  // Run initial partition check after 5 seconds delay
-  setTimeout(() => {
-    runPartitionMaintenance().catch(() => {});
-  }, 5000);
 
   // Daily partition maintenance
   setInterval(() => {

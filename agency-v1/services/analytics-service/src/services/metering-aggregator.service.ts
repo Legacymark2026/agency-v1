@@ -1,15 +1,6 @@
-import Redis from "ioredis";
+import { randomUUID } from "crypto";
 import { getPrismaAnalytics } from "@agency/database";
-
-const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";
-let redis: Redis | null = null;
-
-try {
-  redis = new Redis(REDIS_URL, { maxRetriesPerRequest: 3 });
-  redis.on("error", (err) => console.warn("[MeteringAggregator] Redis warning:", err.message));
-} catch (err) {
-  console.warn("[MeteringAggregator] Redis init warning:", err);
-}
+import { redisClient as redis } from "../lib/redis.singleton";
 
 export class MeteringAggregatorService {
   /**
@@ -90,6 +81,7 @@ export class MeteringAggregatorService {
           }
 
           recordsToInsert.push({
+            id: randomUUID(),
             companyId: kv.companyId || "company-default",
             apiKeyId: kv.apiKeyId || "public-api",
             serviceName: kv.serviceName || "core",
