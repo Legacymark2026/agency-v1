@@ -58,8 +58,28 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "2mb" }));
 
-// ── JWKS Endpoint (RFC 7517) ──────────────────────────────────────────────────
-app.use("/.well-known", authRouter);
+// ── JWKS Endpoint (JSON Web Key Set - RFC 7517) ──────────────────────────────
+app.get("/.well-known/jwks.json", (_req, res) => {
+  try {
+    const { publicKey: currentPubKey } = getCryptoKeys();
+    if (!currentPubKey) return res.status(500).json({ error: "Public key unavailable" });
+    const cryptoMod = require("crypto");
+    const pubKeyObj = cryptoMod.createPublicKey(currentPubKey);
+    const jwk = pubKeyObj.export({ format: "jwk" });
+    res.json({
+      keys: [
+        {
+          ...jwk,
+          use: "sig",
+          alg: "RS256",
+          kid: "auth-service-rs256-key-1",
+        },
+      ],
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── Health & Readiness Checks ────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
