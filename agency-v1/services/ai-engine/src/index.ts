@@ -2,40 +2,49 @@
  * AI Engine — Agent Intelligence Microservice
  * ─────────────────────────────────────────────────────────────────────────────
  * Handles: AI Agents, ReFRAG, Knowledge Bases, Agent Teams, Memory, Embeddings
- * Port: 4004
- * 
- * GPU-INTENSIVE SERVICE — Different scaling profile than other services
+ * Port: 4004 (HTTP)
+ *
+ * Fixes applied in this refactor:
+ *   C-1: All endpoints secured with requireUserOrServiceAuth
+ *   C-2: Unification of agent invocation into modular domain routers
+ *   C-3: Multi-tenant boundary isolation enforced on all agents & knowledge bases
+ *   C-4: Shared EventBus & Redis singleton in lib/event-bus.singleton.ts
+ *   C-5: Static model provider registry avoiding dynamic require() in hot loop
+ *   A-1 & A-2: Monolith refactored into modular domain routers
  */
 
-// Observability registration — must be first
-try {
-  require("@agency/observability/register");
-} catch { /* observability optional */ }
-
+try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
+import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
-import { setupGracefulShutdown } from "@agency/service-auth";
-import { EventBus, EventPayload } from "@agency/events";
-import { runAIAgent, triageAndRouteMessage, disconnectRedis } from "./agent-runner";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// EventBus & Redis Singleton (Fix C-4)
+import { eventBus, disconnectAiEventBusAndRedis } from "./lib/event-bus.singleton";
+
+// Domain Routers (All protected by requireUserOrServiceAuth)
+import { agentsRouter } from "./routes/agents.routes";
+import { knowledgeRouter } from "./routes/knowledge.routes";
+import { governanceRouter } from "./routes/governance.routes";
+import { errorHandler } from "./middlewares/ai.middleware";
+
 const app = express();
-app.use(metricsMiddleware("ai-engine"));
-app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4004", 10);
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
+// ── Observability & Base Middlewares ──────────────────────────────────────────
+app.use(metricsMiddleware("ai-engine"));
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-// ── Health Checks ────────────────────────────────────────────────────────────
+// ── Health & Readiness Checks ────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "ai-engine", timestamp: new Date().toISOString() });
 });
+
+app.get("/metrics", metricsEndpoint);
 
 app.get("/ready", async (_req, res) => {
   try {
@@ -46,134 +55,41 @@ app.get("/ready", async (_req, res) => {
   }
 });
 
-import { aiRouter } from "./routes/ai.routes";
-import { errorHandler } from "./middlewares/ai.middleware";
+// ── Domain Routers ────────────────────────────────────────────────────────────
+// Mount to /api and /api/v1 for complete backward compatibility
+app.use("/api", agentsRouter);
+app.use("/api", knowledgeRouter);
+app.use("/api", governanceRouter);
 
-app.use("/api/v1", aiRouter);
+app.use("/api/v1", agentsRouter);
+app.use("/api/v1", knowledgeRouter);
+app.use("/api/v1", governanceRouter);
+
+// ── Centralized Error Handler ────────────────────────────────────────────────
 app.use(errorHandler);
 
-// ── Agent Invocation ─────────────────────────────────────────────────────────
-
-app.post("/api/agents/:agentId/run", async (req, res) => {
-  try {
-    const { companyId, userMessage, conversationId, contactData, inlineHistory, senderUserId, userContext } = req.body;
-    const { agentId } = req.params;
-    const result = await runAIAgent({ agentId, companyId, userMessage, conversationId, senderUserId, contactData, inlineHistory, userContext });
-    res.json(result);
-  } catch (err) {
-    console.error("[ai-engine] Agent run error:", err);
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+// ── Event Bus Subscriptions ──────────────────────────────────────────────────
+eventBus.subscribe("message.received", async (payload: any) => {
+  if (payload?.data?.messageId) {
+    console.log(`[ai-engine] Message received event acknowledged: ${payload.data.messageId}`);
   }
 });
 
-// POST /api/agents/voice/speak — Synthesize Agent Voice output via Voicebox
-import { voiceboxSpeakTool } from "./mcp/voicebox-tool";
-
-app.post("/api/agents/voice/speak", async (req, res) => {
-  try {
-    const { text, profileId, profileName, engine, language, effectsPreset } = req.body;
-    if (!text) return res.status(400).json({ error: "text is required" });
-
-    const result = await voiceboxSpeakTool.execute({ text, profileId, profileName, engine, language, effectsPreset });
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+eventBus.subscribe("workflow.ai_step", async (payload: any) => {
+  if (payload?.data?.stepId) {
+    console.log(`[ai-engine] Workflow AI step triggered: ${payload.data.stepId}`);
   }
 });
 
-// POST /api/agents/triage — Auto-route to best agent (Swarm)
-app.post("/api/agents/triage", async (req, res) => {
-  try {
-    const { companyId, userMessage, conversationId, contactData, inlineHistory, userContext } = req.body;
-    const result = await triageAndRouteMessage(companyId, userMessage, conversationId, contactData, inlineHistory, userContext);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
-});
-
-// ── Agent Configuration ──────────────────────────────────────────────────────
-
-app.get("/api/agents", async (req, res) => {
-  try {
-    const { companyId } = req.query;
-    if (!companyId) return res.status(400).json({ error: "companyId required" });
-
-    const agents = await prisma.aIAgent.findMany({
-      where: { companyId: String(companyId) },
-      include: { _count: { select: { conversations: true } } },
-    });
-    res.json({ agents });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
-});
-
-// ── Agent Teams ──────────────────────────────────────────────────────────────
-
-app.post("/api/agents/teams/:teamId/run", async (req, res) => {
-  try {
-    const { companyId, userMessage } = req.body;
-    const team = await prisma.agentTeam.findUnique({
-      where: { id: req.params.teamId },
-      include: { members: { include: { agent: true } } },
-    });
-
-    if (!team || team.companyId !== companyId) {
-      return res.status(404).json({ error: "Team not found" });
-    }
-
-    // TODO: Implement full agent-team-engine.ts orchestration
-    res.json({
-      teamName: team.name,
-      strategy: team.strategy,
-      membersInvoked: team.members.length,
-      result: `[AI Engine] Team "${team.name}" received task with ${team.members.length} members`,
-    });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
-});
-
-// ── Knowledge Base Management ────────────────────────────────────────────────
-
-app.get("/api/knowledge-bases", async (req, res) => {
-  try {
-    const { companyId } = req.query;
-    if (!companyId) return res.status(400).json({ error: "companyId required" });
-
-    const kbs = await prisma.knowledgeBase.findMany({
-      where: { companyId: String(companyId), isActive: true },
-      select: { id: true, name: true, sourceType: true, isActive: true, createdAt: true },
-    });
-    res.json({ knowledgeBases: kbs });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
-});
-
-// ── Event Bus ────────────────────────────────────────────────────────────────
-const eventBus = new EventBus(REDIS_URL, "ai-engine");
-
-// Listen for messages that need AI processing
-eventBus.subscribe("message.received", async (payload: EventPayload) => {
-  console.log(`[ai-engine] Processing incoming message: ${payload.data.messageId}`);
-});
-
-eventBus.subscribe("workflow.ai_step", async (payload: EventPayload) => {
-  console.log(`[ai-engine] Workflow AI step requested: ${payload.data.stepId}`);
-});
-
-// ── Start ────────────────────────────────────────────────────────────────────
+// ── Start HTTP Server ────────────────────────────────────────────────────────
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🧠 AI Engine running on port ${PORT}`);
 });
 
 setupGracefulShutdown(server, async () => {
-  await eventBus.disconnect();
-  await disconnectRedis();
+  console.log("[ai-engine] Shutting down gracefully...");
+  await disconnectAiEventBusAndRedis();
   await prisma.$disconnect();
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;

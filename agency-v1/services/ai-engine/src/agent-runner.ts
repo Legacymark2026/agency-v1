@@ -12,39 +12,8 @@
 
 import { prisma } from "@agency/database";
 import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
-import Redis from "ioredis";
-
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const redis = new Redis(REDIS_URL, { maxRetriesPerRequest: 3, lazyConnect: true });
-redis.on("error", (err) => console.error("[ai-engine] Redis client error:", err.message));
-redis.connect().catch(() => console.warn("[ai-engine] Redis not available for circuit breaker"));
-
-// ─── Universal Model Registry (inline for isolation) ─────────────────────────
-
-function buildModel(modelId: string) {
-    // Map model IDs to providers
-    if (modelId.startsWith("gpt-") || modelId.startsWith("o1") || modelId.startsWith("o3") || modelId.startsWith("o4")) {
-        const { openai } = require("@ai-sdk/openai");
-        return openai(modelId);
-    }
-    if (modelId.startsWith("claude-") || modelId.startsWith("claude3")) {
-        const { anthropic } = require("@ai-sdk/anthropic");
-        return anthropic(modelId);
-    }
-    if (modelId.startsWith("deepseek-")) {
-        const { createOpenAI } = require("@ai-sdk/openai");
-        const deepseek = createOpenAI({ baseURL: "https://api.deepseek.com/v1", apiKey: process.env.DEEPSEEK_API_KEY });
-        return deepseek(modelId);
-    }
-    if (modelId.startsWith("mistral-")) {
-        const { createOpenAI } = require("@ai-sdk/openai");
-        const mistral = createOpenAI({ baseURL: "https://api.mistral.ai/v1", apiKey: process.env.MISTRAL_API_KEY });
-        return mistral(modelId);
-    }
-    // Default: Google Gemini
-    return google(modelId);
-}
+import { buildModel } from "./lib/model-registry";
+import { redisClient, disconnectAiEventBusAndRedis } from "./lib/event-bus.singleton";
 
 // ─── AI Config ───────────────────────────────────────────────────────────────
 
@@ -64,8 +33,8 @@ export async function getAIModelConfig(companyId: string) {
 // ─── Frustration Keywords ────────────────────────────────────────────────────
 
 const FRUSTRATION_KEYWORDS = [
-    "hablar con humano", "hablar con una persona", "quiero un asesor", "gerente",
-    "esto es inaceptable", "muy mal servicio", "no funciona", "no me ayudas",
+    "hablar con humano", "hablar con una persona", "hablar con un asesor", "quiero un asesor", "asesor",
+    "gerente", "esto es inaceptable", "muy mal servicio", "no funciona", "no me ayudas",
     "voy a cancelar", "cancelar suscripción", "quiero un reembolso", "terrible",
     "escalar", "supervisor", "human agent", "speak to human", "real person"
 ];
@@ -144,7 +113,7 @@ const CB_OPEN_DURATION_SEC = 120;
 async function isCircuitOpen(companyId: string): Promise<boolean> {
     try {
         const key = `cb:gemini:${companyId}`;
-        const val = await redis.get(key);
+        const val = await redisClient.get(key);
         if (val === "OPEN") return true;
         return parseInt(val || "0", 10) >= CB_ERROR_THRESHOLD;
     } catch { return false; }
@@ -153,17 +122,17 @@ async function isCircuitOpen(companyId: string): Promise<boolean> {
 async function recordGeminiError(companyId: string): Promise<void> {
     try {
         const key = `cb:gemini:${companyId}`;
-        const count = await redis.incr(key);
-        await redis.expire(key, CB_WINDOW_SEC);
+        const count = await redisClient.incr(key);
+        await redisClient.expire(key, CB_WINDOW_SEC);
         if (count >= CB_ERROR_THRESHOLD) {
-            await redis.set(key, "OPEN", "EX", CB_OPEN_DURATION_SEC);
+            await redisClient.set(key, "OPEN", "EX", CB_OPEN_DURATION_SEC);
             console.warn(`[CIRCUIT BREAKER] Gemini circuit OPEN for ${companyId}`);
         }
     } catch { /* non-fatal */ }
 }
 
 async function resetCircuitBreaker(companyId: string): Promise<void> {
-    try { await redis.del(`cb:gemini:${companyId}`); } catch { /* non-fatal */ }
+    try { await redisClient.del(`cb:gemini:${companyId}`); } catch { /* non-fatal */ }
 }
 
 // ─── Human Transfer ─────────────────────────────────────────────────────────
@@ -323,4 +292,4 @@ export async function triageAndRouteMessage(companyId: string, userMessage: stri
     }
 }
 
-export async function disconnectRedis() { await redis.quit(); }
+export async function disconnectRedis() { await disconnectAiEventBusAndRedis(); }
