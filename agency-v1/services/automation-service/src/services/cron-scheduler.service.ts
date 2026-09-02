@@ -65,7 +65,7 @@ export class CronSchedulerService {
     const pendingPosts = await prisma.socialPost.findMany({
       where: {
         status: "SCHEDULED",
-        scheduledFor: { lte: now },
+        scheduledAt: { lte: now },
       },
       take: 20,
     });
