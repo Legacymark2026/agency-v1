@@ -73,7 +73,7 @@ export default function QuienesSomosPage() {
               </div>
               <h2 className="text-2xl font-black text-slate-900 mb-3">Nuestra Misión</h2>
               <p className="text-slate-600 text-base leading-relaxed">
-                Acompañar a empresas líderes a transformar estructuras complejas en operaciones ágiles, rentables y protegidas contra la incertidumbre, mediante consultoría estratégica de alta dirección y tecnología aplicable.
+                Fortalecer el crecimiento de las organizaciones mediante un ecosistema de tecnología, consultoría y formación, que transforme su gestión, optimice procesos e impulse su productividad, competitividad y generación de valor, a través del conocimiento especializado, la experiencia y NeoGestión como solución tecnológica.
               </p>
             </div>
 
@@ -83,7 +83,7 @@ export default function QuienesSomosPage() {
               </div>
               <h2 className="text-2xl font-black text-slate-900 mb-3">Nuestra Visión</h2>
               <p className="text-slate-600 text-base leading-relaxed">
-                Consolidarnos como el estándar de referencia en América Latina y mercados internacionales en consultoría ejecutiva, reconocidos por el rigor ético, la velocidad de ejecución y el impacto económico verificable.
+                Para el 2031, ser aliados estratégicos de las organizaciones en Colombia, impulsando su crecimiento y transformación tecnológica por medio de NeoGestión, adaptándonos a los cambios del entorno y contribuyendo al desarrollo empresarial del país.
               </p>
             </div>
           </div>

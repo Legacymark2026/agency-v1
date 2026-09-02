@@ -44,7 +44,7 @@ export default function Home() {
 
           {/* Subtítulo de alto valor */}
           <p className="mt-8 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto font-normal">
-            Asesoramos a comités de dirección y organizaciones líderes en la optimización integral de procesos, modernización tecnológica y maximización de la rentabilidad.
+            Fortalecemos el crecimiento y productividad de las organizaciones en Colombia mediante un ecosistema integrado de tecnología, consultoría y formación con <strong className="text-white font-bold">NeoGestión</strong>.
           </p>
 
           {/* CTAs con Glassmorphism y Glow Dorado */}

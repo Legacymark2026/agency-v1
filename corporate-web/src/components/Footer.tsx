@@ -28,7 +28,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-              Firma boutique líder en consultoría de alta dirección y transformación operativa. Transformamos la complejidad corporativa en eficiencia medible.
+              Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. Transformamos la gestión, optimizamos procesos e impulsamos el crecimiento y productividad de las organizaciones con NeoGestión.
             </p>
             <div className="space-y-2 text-xs text-slate-400 pt-2">
               <div className="flex items-center gap-2">
