@@ -8,9 +8,10 @@ export async function setAdminSession(email: string) {
     JSON.stringify({ email, timestamp: Date.now() })
   ).toString("base64");
 
+  // secure: false permite que la cookie funcione tanto en HTTP directo por IP como en HTTPS
   cookieStore.set(ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 días

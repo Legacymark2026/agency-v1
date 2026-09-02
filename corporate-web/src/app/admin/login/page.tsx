@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("admin@neogestion.com");
   const [password, setPassword] = useState("Neogestion2025!");
   const [loading, setLoading] = useState(false);
@@ -31,8 +29,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push("/admin");
-      router.refresh();
+      window.location.href = "/admin";
     } catch {
       setError("Error de conexión con el servidor");
       setLoading(false);
