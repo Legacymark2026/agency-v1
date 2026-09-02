@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Mail, Phone, MapPin, ArrowUpRight } from "lucide-react";
+import { ShieldCheck, Mail, Phone, MapPin, ArrowUpRight, Lock } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -165,6 +165,10 @@ export default function Footer() {
             <Link href="/privacidad" className="hover:text-slate-300">Privacidad</Link>
             <Link href="/terminos" className="hover:text-slate-300">Términos</Link>
             <Link href="/cookies" className="hover:text-slate-300">Cookies</Link>
+            <Link href="/admin/login" className="hover:text-[#D4AF37] text-slate-400 flex items-center gap-1">
+              <Lock className="w-3 h-3 text-[#B08A1A]" />
+              <span>Panel Directivo</span>
+            </Link>
           </div>
         </div>
       </div>

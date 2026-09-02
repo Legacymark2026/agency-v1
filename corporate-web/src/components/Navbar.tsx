@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, MessageCircle } from "lucide-react";
+import { Menu, X, ArrowRight, MessageCircle, Lock } from "lucide-react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -73,6 +73,14 @@ export default function Navbar() {
 
           {/* CTAs */}
           <div className="hidden lg:flex items-center gap-3">
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#D4AF37] hover:text-white border border-[#B08A1A]/40 hover:bg-slate-800/80 transition-colors"
+              title="Acceso al Panel de Administración"
+            >
+              <Lock className="w-3.5 h-3.5 text-[#B08A1A]" />
+              <span>Panel Directivo</span>
+            </Link>
             <a
               href="https://wa.me/18004508920?text=Hola%2C%20quisiera%20solicitar%20informaci%C3%B3n%20sobre%20sus%20servicios%20de%20NEOGESTI%C3%93N."
               target="_blank"
@@ -126,6 +134,14 @@ export default function Navbar() {
             );
           })}
           <div className="pt-4 space-y-2">
+            <Link
+              href="/admin/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 text-[#D4AF37] font-semibold text-sm border border-[#B08A1A]/40"
+            >
+              <Lock className="w-4 h-4 text-[#B08A1A]" />
+              <span>Acceso Panel Directivo</span>
+            </Link>
             <a
               href="https://wa.me/18004508920"
               target="_blank"
