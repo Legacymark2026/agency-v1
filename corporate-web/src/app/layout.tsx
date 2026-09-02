@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import WhatsAppButton from "@/components/WhatsAppButton";
+import PublicSiteWrapper from "@/components/PublicSiteWrapper";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import "./globals.css";
 
@@ -50,10 +48,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-slate-900 selection:bg-[#B08A1A] selection:text-slate-950">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <WhatsAppButton />
+        <PublicSiteWrapper>{children}</PublicSiteWrapper>
         <AnalyticsTracker />
       </body>
     </html>
