@@ -15,9 +15,9 @@ import TestimonialCarousel from "@/components/TestimonialCarousel";
 import { servicesData } from "@/data/servicesData";
 
 export default function Home() {
-  const mainService = servicesData[0]; // Consultoría Estratégica (Destacada)
-  const secondaryService1 = servicesData[1]; // Transformación Digital
-  const secondaryService2 = servicesData[2]; // Inteligencia de Negocio
+  const mainService = servicesData[0]; // Sistemas Integrados de Gestión (ISO, SG-SST, HSEQ)
+  const secondaryService1 = servicesData[2]; // Gestión Documental & Cero Papel
+  const secondaryService2 = servicesData[3]; // Software Sin Costo de Licencia • Usuarios Ilimitados
 
   return (
     <div className="flex flex-col">
@@ -31,7 +31,7 @@ export default function Home() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-8">
             <Sparkles className="w-3.5 h-3.5 text-[#B08A1A]" />
-            <span>NEOGESTIÓN • Consultoría de Alta Dirección</span>
+            <span>NEOGESTIÓN • Software de Gestión • Usuarios Ilimitados</span>
           </div>
 
           {/* Titular con Reveal Animado */}
@@ -44,7 +44,7 @@ export default function Home() {
 
           {/* Subtítulo de alto valor */}
           <p className="mt-8 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto font-normal">
-            Fortalecemos el crecimiento y productividad de las organizaciones en Colombia mediante un ecosistema integrado de tecnología, consultoría y formación con <strong className="text-white font-bold">NeoGestión</strong>.
+            Planee, gestione, controle y evalúe procesos, operaciones y personas. Implemente Sistemas Integrados de Gestión (<strong className="text-white">ISO, SG-SST, HSEQ, SARLAFT, BASC, RUC, CRM, SCM</strong>) con filosofía <strong className="text-[#D4AF37]">Cero Papel</strong> y sin costo de licenciamiento.
           </p>
 
           {/* CTAs con Glassmorphism y Glow Dorado */}
@@ -53,7 +53,7 @@ export default function Home() {
               href="/contacto"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-base hover:brightness-110 transition-all shadow-xl gold-glow hover:scale-[1.02]"
             >
-              <span>Agendar Sesión Estratégica</span>
+              <span>Solicitar Demostración</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
 
@@ -61,28 +61,28 @@ export default function Home() {
               href="/servicios"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl glassmorphism text-slate-200 hover:text-white hover:border-[#B08A1A] text-base font-semibold transition-all hover:bg-slate-900/80"
             >
-              <span>Explorar Soluciones</span>
+              <span>Explorar Módulos &amp; Normas</span>
             </Link>
           </div>
 
           {/* Sellos de Confianza y Rigor */}
-          <div className="mt-16 pt-10 border-t border-slate-800/80 max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
+          <div className="mt-16 pt-10 border-t border-slate-800/80 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0" />
               <span className="text-xs sm:text-sm font-medium text-slate-300">
-                Retorno de inversión medible
+                Usuarios ilimitados sin costo de licencia
               </span>
             </div>
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-5 h-5 text-[#D4AF37] shrink-0" />
               <span className="text-xs sm:text-sm font-medium text-slate-300">
-                Gobernanza &amp; ISO 27001
+                Hosting seguro + Servidor de backup
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Award className="w-5 h-5 text-[#D4AF37] shrink-0" />
               <span className="text-xs sm:text-sm font-medium text-slate-300">
-                +480 Proyectos corporativos
+                ISO, SG-SST, HSEQ, SARLAFT, BASC
               </span>
             </div>
           </div>

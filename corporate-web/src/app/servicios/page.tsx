@@ -5,17 +5,17 @@ import ServicesTabs from "./ServicesTabs";
 import { corporateProcess } from "@/data/servicesData";
 
 export const metadata: Metadata = {
-  title: "Servicios de Consultoría & Soluciones | NEOGESTIÓN",
+  title: "Soluciones & Sistemas de Gestión | NEOGESTIÓN",
   description:
-    "Especialidades de consultoría corporativa: Estrategia, Transformación Cloud, Inteligencia de Negocio, Ciberseguridad y Automatización de Procesos.",
+    "Ecosistema para planear, gestionar, controlar y evaluar procesos, operaciones y personas. Sistemas ISO, SG-SST, HSEQ, SARLAFT, BASC, Cero Papel y usuarios ilimitados.",
 };
 
 export default function ServiciosPage() {
   const comparisonMetrics = [
-    { label: "Reducción de Costes Operativos", before: "Línea Base", after: "-35%", color: "bg-[#B08A1A]" },
-    { label: "Velocidad de Toma de Decisiones", before: "Semanas", after: "Horas", color: "bg-blue-600" },
-    { label: "Disponibilidad de Sistemas Críticos", before: "98.2%", after: "99.99%", color: "bg-emerald-600" },
-    { label: "Cumplimiento Regulatorio y Compliance", before: "Vulnerable", after: "100% Blindado", color: "bg-amber-600" },
+    { label: "Costos de Papelería y Archivo Físico", before: "Gasto recurrente", after: "-80% Cero Papel", color: "bg-[#B08A1A]" },
+    { label: "Costo de Licenciamiento por Usuario", before: "Cobro por usuario", after: "$0 (Ilimitados)", color: "bg-emerald-600" },
+    { label: "Cumplimiento en Auditorías ISO/HSEQ", before: "Disperso", after: "100% Trazable", color: "bg-blue-600" },
+    { label: "Disponibilidad y Respaldo de Datos", before: "Vulnerable", after: "Hosting + Backup", color: "bg-purple-600" },
   ];
 
   return (
@@ -25,13 +25,13 @@ export default function ServiciosPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
-            Especialidades de Consultoría
+            Ecosistema de Soluciones NeoGestión
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-tight font-sans">
-            Soluciones Estratégicas Explicadas con Claridad y Rigor
+            Gestión Dinámica de Procesos, Operaciones y Personas
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Eliminamos la fricción entre la visión directiva y la ejecución operativa. Seleccione un área para descubrir metodología, entregables y retornos.
+          <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            Implemente Sistemas Integrados de Gestión (<strong className="text-white">ISO, SG-SST, HSEQ, SARLAFT, BASC, RUC, CRM, SCM</strong>), virtualice sus documentos con <strong className="text-[#D4AF37]">Cero Papel</strong> y disfrute de usuarios ilimitados sin costo de licencia.
           </p>
         </div>
       </section>
