@@ -47,3 +47,28 @@ model AnalyticsEvent {
   @@index([createdAt])
   @@index([path])
 }
+
+model ChatConversation {
+  id             String        @id @default(uuid())
+  visitorName    String        @default("Visitante Web")
+  visitorContact String?
+  status         String        @default("nuevo") // nuevo, en_atencion, respondido, cerrado
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  lastMessageAt  DateTime      @default(now())
+  messages       ChatMessage[]
+
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         String           @default("visitor") // visitor, admin
+  text           String
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId])
+}
