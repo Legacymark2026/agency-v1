@@ -19,6 +19,12 @@ export default function ContactForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    if (typeof window !== "undefined" && window.trackConversion) {
+      window.trackConversion("form_submission", {
+        service: formData.service,
+        company: formData.company,
+      });
+    }
     setTimeout(() => {
       setLoading(false);
       setSubmitted(true);

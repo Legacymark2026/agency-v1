@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import BlogFeed from "./BlogFeed";
+import BlogFeed, { BlogPostItem } from "./BlogFeed";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Magazine Corporativo & Análisis | NEOGESTIÓN",
@@ -7,7 +10,26 @@ export const metadata: Metadata = {
     "Análisis directivos, tendencias de mercado, gobernanza y mejores prácticas en estrategia empresarial por los socios directores de NEOGESTIÓN.",
 };
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const postsFromDb = await prisma.post.findMany({
+    where: { published: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const posts: BlogPostItem[] = postsFromDb.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    title: p.title,
+    excerpt: p.excerpt,
+    category: p.category,
+    authorName: p.authorName,
+    authorRole: p.authorRole,
+    createdAt: p.createdAt.toISOString(),
+    readTime: p.readTime,
+    imageUrl: p.imageUrl,
+    viewsCount: p.viewsCount,
+  }));
+
   return (
     <div className="flex flex-col bg-slate-50 min-h-screen">
       {/* Banner */}
@@ -29,7 +51,7 @@ export default function BlogPage() {
       {/* Contenido con buscador y filtros */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <BlogFeed />
+          <BlogFeed initialPosts={posts} />
         </div>
       </section>
     </div>

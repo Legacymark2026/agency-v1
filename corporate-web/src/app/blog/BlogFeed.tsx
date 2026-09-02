@@ -3,13 +3,35 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Calendar, Clock, ArrowRight, User, Tag } from "lucide-react";
-import { blogPosts, blogCategories, BlogPost } from "@/data/blogData";
 
-export default function BlogFeed() {
+export interface BlogPostItem {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  authorName: string;
+  authorRole: string;
+  date?: string;
+  createdAt: string | Date;
+  readTime: string;
+  imageUrl: string;
+  viewsCount?: number;
+}
+
+const blogCategories = [
+  "Todas",
+  "Estrategia",
+  "Tecnología",
+  "Ciberseguridad",
+  "Gestión",
+] as const;
+
+export default function BlogFeed({ initialPosts }: { initialPosts: BlogPostItem[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todas");
 
-  const filteredPosts = blogPosts.filter((post) => {
+  const filteredPosts = initialPosts.filter((post) => {
     const matchesSearch =
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
@@ -44,7 +66,7 @@ export default function BlogFeed() {
             )}
           </div>
 
-          {/* Menú de Píldoras de Categoría (Pill activa con fondo Dorado #B08A1A) */}
+          {/* Menú de Píldoras de Categoría */}
           <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
             {blogCategories.map((category) => {
               const active = selectedCategory === category;
@@ -67,7 +89,7 @@ export default function BlogFeed() {
         </div>
       </div>
 
-      {/* Grid de Artículos Tipo Masonry con Overlays Azules y Zoom Hover */}
+      {/* Grid de Artículos Tipo Masonry */}
       {filteredPosts.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8">
           <p className="text-slate-500 text-base mb-4">
@@ -86,11 +108,17 @@ export default function BlogFeed() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {filteredPosts.map((post: BlogPost, index) => {
+          {filteredPosts.map((post: BlogPostItem, index) => {
             const isTall = index % 2 === 0;
+            const dateFormatted = new Date(post.createdAt).toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
+
             return (
               <article
-                key={post.slug}
+                key={post.id || post.slug}
                 className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-2xl hover:border-[#B08A1A] transition-all duration-300 flex flex-col group"
               >
                 {/* Imagen Destacada con Overlay Azul y Zoom en Hover */}
@@ -101,14 +129,12 @@ export default function BlogFeed() {
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                   />
-                  {/* Overlay Azul con oscurecimiento en hover */}
                   <div className="absolute inset-0 bg-[#0B192C]/40 group-hover:bg-[#0B192C]/75 transition-colors duration-300 flex items-center justify-center">
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 text-xs font-black shadow-lg">
                       Leer artículo completo
                     </span>
                   </div>
 
-                  {/* Badge de Categoría */}
                   <div className="absolute top-4 left-4">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B192C]/85 backdrop-blur-md text-[#D4AF37] border border-[#B08A1A]/40 text-xs font-bold">
                       <Tag className="w-3 h-3 text-[#B08A1A]" />
@@ -122,7 +148,7 @@ export default function BlogFeed() {
                     <div className="flex items-center gap-3 text-xs text-slate-400 mb-3">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5 text-[#B08A1A]" />
-                        <span>{post.date}</span>
+                        <span>{dateFormatted}</span>
                       </span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
@@ -146,8 +172,8 @@ export default function BlogFeed() {
                         <User className="w-4 h-4" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">{post.author.name}</h4>
-                        <p className="text-[11px] text-slate-400">{post.author.role}</p>
+                        <h4 className="text-xs font-bold text-slate-900">{post.authorName}</h4>
+                        <p className="text-[11px] text-slate-400">{post.authorRole}</p>
                       </div>
                     </div>
 

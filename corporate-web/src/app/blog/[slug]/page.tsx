@@ -2,21 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Clock, User, Tag, Share2, ArrowRight, ListTree } from "lucide-react";
-import { blogPosts } from "@/data/blogData";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return blogPosts.map((post) => ({
-    slug: post.slug,
-  }));
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = await prisma.post.findUnique({ where: { slug } });
   if (!post) return { title: "Artículo no encontrado" };
 
   return {
@@ -27,13 +23,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
 
-  if (!post) {
+  // Buscar artículo y sumar 1 a viewsCount
+  const post = await prisma.post.findUnique({
+    where: { slug },
+  });
+
+  if (!post || !post.published) {
     notFound();
   }
 
-  const relatedPosts = blogPosts.filter((p) => p.slug !== slug).slice(0, 2);
+  // Incrementar contador de lecturas de forma atómica
+  await prisma.post.update({
+    where: { id: post.id },
+    data: { viewsCount: { increment: 1 } },
+  }).catch(() => {});
+
+  // Artículos relacionados
+  const relatedPosts = await prisma.post.findMany({
+    where: {
+      published: true,
+      id: { not: post.id },
+    },
+    take: 2,
+    orderBy: { viewsCount: "desc" },
+  });
+
+  const dateFormatted = new Date(post.createdAt).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  const paragraphs = post.content.split("\n\n").filter((p) => p.trim());
 
   return (
     <article className="min-h-screen bg-slate-50 py-16">
@@ -57,12 +79,16 @@ export default async function BlogPostPage({ params }: PageProps) {
             <span className="text-slate-300">•</span>
             <span className="flex items-center gap-1 text-xs text-slate-500">
               <Calendar className="w-3.5 h-3.5 text-[#B08A1A]" />
-              <span>{post.date}</span>
+              <span>{dateFormatted}</span>
             </span>
             <span className="text-slate-300">•</span>
             <span className="flex items-center gap-1 text-xs text-slate-500">
               <Clock className="w-3.5 h-3.5" />
               <span>{post.readTime}</span>
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-xs text-slate-400 font-semibold">
+              {post.viewsCount + 1} lecturas
             </span>
           </div>
 
@@ -81,8 +107,8 @@ export default async function BlogPostPage({ params }: PageProps) {
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">{post.author.name}</h3>
-                <p className="text-xs text-[#B08A1A] font-semibold">{post.author.role}</p>
+                <h3 className="text-sm font-bold text-slate-900">{post.authorName}</h3>
+                <p className="text-xs text-[#B08A1A] font-semibold">{post.authorRole}</p>
               </div>
             </div>
             <div className="text-xs text-slate-400 flex items-center gap-1.5">
@@ -104,7 +130,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
         {/* Layout de Contenido: Índice Lateral Sticky + Columna de Lectura 700px */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Índice Pegajoso (Table of Contents) */}
+          {/* Índice Pegajoso */}
           <aside className="lg:col-span-4 sticky top-28 hidden lg:block">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
@@ -140,9 +166,9 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
           </aside>
 
-          {/* Cuerpo del Artículo (Columna de 700px aprox) */}
+          {/* Cuerpo del Artículo */}
           <div className="lg:col-span-8 max-w-[700px] space-y-6 text-slate-700 text-base sm:text-lg leading-[1.8]">
-            {post.content.map((paragraph, idx) => (
+            {paragraphs.map((paragraph, idx) => (
               <p key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 {paragraph}
               </p>
@@ -169,27 +195,29 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
 
             {/* Artículos Relacionados */}
-            <div className="mt-16 pt-8 border-t border-slate-200">
-              <h3 className="text-xl font-bold text-slate-900 mb-6">
-                Artículos Relacionados del Magazine
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {relatedPosts.map((rel) => (
-                  <Link
-                    key={rel.slug}
-                    href={`/blog/${rel.slug}`}
-                    className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#B08A1A] transition-colors block group"
-                  >
-                    <span className="text-[10px] font-bold uppercase text-[#B08A1A] block mb-1">
-                      {rel.category}
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900 group-hover:text-[#B08A1A] transition-colors line-clamp-2">
-                      {rel.title}
-                    </h4>
-                  </Link>
-                ))}
+            {relatedPosts.length > 0 && (
+              <div className="mt-16 pt-8 border-t border-slate-200">
+                <h3 className="text-xl font-bold text-slate-900 mb-6">
+                  Artículos Relacionados del Magazine
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {relatedPosts.map((rel) => (
+                    <Link
+                      key={rel.slug}
+                      href={`/blog/${rel.slug}`}
+                      className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#B08A1A] transition-colors block group"
+                    >
+                      <span className="text-[10px] font-bold uppercase text-[#B08A1A] block mb-1">
+                        {rel.category}
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 group-hover:text-[#B08A1A] transition-colors line-clamp-2">
+                        {rel.title}
+                      </h4>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Post {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  content     String
+  category    String   @default("Estrategia")
+  authorName  String
+  authorRole  String
+  imageUrl    String
+  readTime    String   @default("5 min de lectura")
+  published   Boolean  @default(true)
+  viewsCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  path       String
+  referrer   String?
+  userAgent  String?
+  deviceType String   @default("desktop")
+  eventType  String   @default("pageview")
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([path])
+}

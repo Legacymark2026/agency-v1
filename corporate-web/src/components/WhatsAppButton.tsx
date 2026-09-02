@@ -13,6 +13,9 @@ export default function WhatsAppButton() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
+    if (typeof window !== "undefined" && window.trackConversion) {
+      window.trackConversion("whatsapp_click", { message });
+    }
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${phoneNumber}?text=${encoded}`, "_blank");
     setChatOpen(false);
