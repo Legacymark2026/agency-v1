@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b192c;
+  --color-deep-blue: #0b192c;
+  --color-deep-blue-light: #1e3e62;
+  --color-gold: #b08a1a;
+  --color-gold-light: #d4af37;
+  --color-gold-dark: #8c6b12;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-deep-blue: var(--color-deep-blue);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Glassmorphism utility */
+.glassmorphism {
+  background: rgba(11, 25, 44, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(176, 138, 26, 0.25);
+}
+
+.glassmorphism-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(176, 138, 26, 0.2);
+}
+
+/* Gold glow effect */
+.gold-glow {
+  box-shadow: 0 0 25px -5px rgba(176, 138, 26, 0.45);
+}
+
+.gold-glow:hover {
+  box-shadow: 0 0 35px 0px rgba(176, 138, 26, 0.65);
+}
+
+/* Sliding gold bottom border on hover */
+.gold-border-slide {
+  position: relative;
+  overflow: hidden;
+}
+
+.gold-border-slide::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #b08a1a, #d4af37, #b08a1a);
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gold-border-slide:hover::after {
+  transform: translateX(0);
+}
+
+/* Animated pulse for scroll indicator */
+@keyframes softPulse {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+
+.scroll-indicator-pulse {
+  animation: softPulse 2s infinite ease-in-out;
+}
