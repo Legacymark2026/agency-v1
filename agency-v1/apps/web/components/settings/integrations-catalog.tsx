@@ -34,6 +34,7 @@ interface IntegrationsCatalogClientProps {
         payu?: any;
         aiModels?: any;
         videoAssets?: any;
+        manychat?: any;
     };
 }
 
@@ -80,6 +81,9 @@ export function IntegrationsCatalogClient({
 
     // Video assets config
     const isVideoConfigured = !!configs.videoAssets?.provider || !!configs.videoAssets?.apiKey;
+
+    // ManyChat config
+    const isManychatConfigured = !!configs.manychat?.apiToken;
 
     // 2. Full Integrations List (Internal Data Catalog)
     const activeIntegrations = useMemo(() => [
@@ -301,6 +305,19 @@ export function IntegrationsCatalogClient({
             customConfigureButton: <IntegrationConfigDialog provider="video-assets" title="Cloudinary Video" />,
             metrics: isVideoConfigured ? [{ label: "Provider", value: String(configs.videoAssets?.provider || 'Cloudinary') }] : undefined,
             providerId: isVideoConfigured ? "video-assets" : undefined
+        },
+        {
+            id: "manychat",
+            name: "ManyChat Automation & DM",
+            description: "Automatización de DM en Instagram, Facebook y WhatsApp, captura de leads, traspaso a asesor humano e IA con Gemini.",
+            category: "AI_AUTOMATION" as CategoryType,
+            icon: <MessageSquare className="w-6 h-6 text-[#0084FF]" />,
+            brandColor: "bg-gradient-to-r from-[#0084FF] to-cyan-400",
+            status: isManychatConfigured ? "connected" : "disconnected",
+            providerLink: "https://manychat.com",
+            customConfigureButton: <IntegrationConfigDialog provider="manychat" title="ManyChat" />,
+            metrics: isManychatConfigured ? [{ label: "Estado", value: "Activo" }] : undefined,
+            providerId: isManychatConfigured ? "manychat" : undefined
         }
     ], [
         isFacebookConnected, isFacebookConfigured, activeAppId, computedRedirectUri,
@@ -308,7 +325,7 @@ export function IntegrationsCatalogClient({
         isTiktokWebhookConfigured, isLinkedinInsightConfigured, isLinkedinWebhookConfigured,
         isGoogleAdsConfigured, isGaConfigured, isGtmConfigured, isGscConfigured,
         isHotjarConfigured, isAhrefsConfigured, isPayuConfigured, isAiConfigured,
-        aiMetrics, isVideoConfigured
+        aiMetrics, isVideoConfigured, isManychatConfigured
     ]);
 
     // 3. New / Coming Soon Integrations catalog mapping

@@ -32,7 +32,8 @@ export type IntegrationProvider =
   | 'hotjar'
   | 'ahrefs'
   | 'gemini'
-  | 'ai-models';
+  | 'ai-models'
+  | 'manychat';
 
 // ============================================================================
 // FAMILY CONFIG INTERFACES
@@ -151,6 +152,13 @@ export interface AiModelsConfig {
   xaiApiKey?: string;
 }
 
+// ManyChat
+export interface ManyChatConfig {
+  apiToken?: string;
+  pageId?: string;
+  webhookSecret?: string;
+}
+
 // Unified Config Type
 export type IntegrationConfigData = Partial<
   MetaAppConfig &
@@ -168,7 +176,8 @@ export type IntegrationConfigData = Partial<
   GoogleAdsConfig &
   HotjarConfig &
   AhrefsConfig &
-  AiModelsConfig
+  AiModelsConfig &
+  ManyChatConfig
 >;
 
 // ============================================================================
@@ -353,20 +362,39 @@ export async function getWhatsAppConfig(companyId: string): Promise<WhatsAppConf
 export async function getIntegrationConfig(provider: IntegrationProvider): Promise<IntegrationConfigData | null> {
   try {
     const session = await auth();
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.user?.id) {
       console.log(`[IntegrationConfig] No session for getIntegrationConfig(${provider})`);
       return null;
     }
 
-    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?userId=${session.user.id}&provider=${provider}`, {
-      cache: 'no-store'
-    });
-    if (!response.ok) {
-      return null;
+    try {
+      const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config?userId=${session.user.id}&provider=${provider}`, {
+        cache: 'no-store'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data as unknown as IntegrationConfigData;
+      }
+    } catch {
+      // API Gateway not available, fallback to Prisma directly
     }
 
-    const data = await response.json();
-    return data as unknown as IntegrationConfigData;
+    const companyUser = await prisma.companyUser.findFirst({
+      where: { userId: session.user.id },
+      select: { companyId: true }
+    });
+    const companyId = companyUser?.companyId || (session.user as any).companyId;
+
+    if (companyId) {
+      const conf = await prisma.integrationConfig.findUnique({
+        where: { companyId_provider: { companyId, provider } }
+      });
+      if (conf?.config) {
+        return conf.config as unknown as IntegrationConfigData;
+      }
+    }
+
+    return null;
   } catch (error: any) {
     console.error(`[IntegrationConfig] Error in getIntegrationConfig(${provider}):`, error);
     return null;
@@ -382,27 +410,37 @@ export async function updateIntegrationConfig(provider: IntegrationProvider, dat
       return { success: false, error: "Unauthorized" };
     }
 
-    console.log(`[IntegrationConfig] User ID: ${session.user.id}, provider: ${provider}`);
-
-    const response = await fetch(`${API_GATEWAY_URL}/api/integrations/config`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId: session.user.id,
-        companyId: session.user.companyId,
-        provider,
-        config: data
-      })
+    const companyUser = await prisma.companyUser.findFirst({
+      where: { userId: session.user.id },
+      select: { companyId: true }
     });
+    const targetCompanyId = companyUser?.companyId || (session.user as any).companyId;
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return { success: false, error: err.error || "Failed to save configuration" };
+    if (targetCompanyId) {
+      await prisma.integrationConfig.upsert({
+        where: { companyId_provider: { companyId: targetCompanyId, provider } },
+        update: { config: data, isEnabled: true },
+        create: { companyId: targetCompanyId, provider, config: data, isEnabled: true }
+      });
+    }
+
+    try {
+      await fetch(`${API_GATEWAY_URL}/api/integrations/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: session.user.id,
+          companyId: targetCompanyId,
+          provider,
+          config: data
+        })
+      });
+    } catch {
+      // Gateway error is ok because DB is already updated
     }
 
     revalidatePath('/dashboard/settings/integrations');
+    revalidatePath('/dashboard/admin/marketing/settings');
     return { success: true };
   } catch (error) {
     console.error("[IntegrationConfig] Error updating config:", error);
@@ -493,6 +531,30 @@ export async function verifyIntegrationConnection(provider: string): Promise<Ver
     detail,
     checkedAt: new Date().toISOString(),
   });
+
+  // ── ManyChat ─────────────────────────────────────────────────────────────
+  if (provider === 'manychat') {
+    const { apiToken } = config;
+    if (!apiToken) {
+      return makeResult(false, 'Falta configurar el ManyChat API Token (Bearer)');
+    }
+    try {
+      const r = await fetch('https://api.manychat.com/fb/page/getInfo', {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Accept': 'application/json'
+        },
+        signal: AbortSignal.timeout(8000)
+      });
+      const data = await r.json();
+      if (r.ok && data.status === 'success') {
+        return makeResult(true, `ManyChat verificado: ${data.data?.name || 'Página conectada'}`, undefined, r.status);
+      }
+      return makeResult(false, 'Error de autenticación con ManyChat API', data?.message || `HTTP ${r.status}`, r.status);
+    } catch (e: any) {
+      return makeResult(false, 'No se pudo conectar con ManyChat API', e.message);
+    }
+  }
 
   // ── Meta Pixel (facebook-pixel / meta-pixel) ─────────────────────────────
   if (provider === 'meta-pixel' || provider === 'facebook-pixel') {

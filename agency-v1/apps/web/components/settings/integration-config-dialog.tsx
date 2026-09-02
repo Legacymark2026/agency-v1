@@ -29,7 +29,8 @@ import {
     Shield,
     Activity,
     Terminal,
-    Bot
+    Bot,
+    MessageSquare
 } from "lucide-react";
 import { getIntegrationConfig, updateIntegrationConfig, IntegrationConfigData } from "@/actions/integration-config";
 import { connectWhatsApp } from "@/actions/integrations";
@@ -40,7 +41,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface IntegrationConfigDialogProps {
     // FIX #8: Keep old provider strings for backward compat with existing callers
-    provider: 'facebook' | 'whatsapp' | 'instagram' | 'google-analytics' | 'google-tag-manager' | 'facebook-pixel' | 'hotjar' | 'tiktok-pixel' | 'linkedin-insight' | 'google-ads' | 'gemini' | 'ai-models' | string;
+    provider: 'facebook' | 'whatsapp' | 'instagram' | 'google-analytics' | 'google-tag-manager' | 'facebook-pixel' | 'hotjar' | 'tiktok-pixel' | 'linkedin-insight' | 'google-ads' | 'gemini' | 'ai-models' | 'manychat' | string;
     title: string;
 }
 
@@ -70,6 +71,7 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
     const isMeta = provider === 'facebook' || provider === 'instagram' || provider === 'facebook-pixel';
     const isHotjar = provider === 'hotjar';
     const isAiModels = provider === 'ai-models' || provider === 'gemini';
+    const isManyChat = provider === 'manychat';
 
     let brandColor = 'text-gray-600';
     let brandBg = 'bg-gray-50';
@@ -77,7 +79,13 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
     let brandRing = 'focus-visible:ring-gray-500';
     let brandGradient = 'bg-gradient-to-r from-gray-50 via-gray-100 to-white';
 
-    if (isWhatsapp) {
+    if (isManyChat) {
+        brandColor = 'text-cyan-600';
+        brandBg = 'bg-cyan-50';
+        brandBorder = 'border-cyan-100';
+        brandRing = 'focus-visible:ring-cyan-500';
+        brandGradient = 'bg-gradient-to-r from-cyan-50 via-sky-50 to-white';
+    } else if (isWhatsapp) {
         brandColor = 'text-emerald-600';
         brandBg = 'bg-emerald-50';
         brandBorder = 'border-emerald-100';
@@ -227,7 +235,8 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3 text-xl font-bold tracking-tight text-gray-900">
                             <div className={cn("p-2 rounded-xl bg-white shadow-sm ring-1 ring-inset", brandBorder)}>
-                                {isWhatsapp ? <Smartphone className={cn("h-6 w-6", brandColor)} /> :
+                                {isManyChat ? <MessageSquare className={cn("h-6 w-6", brandColor)} /> :
+                                    isWhatsapp ? <Smartphone className={cn("h-6 w-6", brandColor)} /> :
                                     isGoogle ? <Globe className={cn("h-6 w-6", brandColor)} /> :
                                         isHotjar ? <Activity className={cn("h-6 w-6", brandColor)} /> :
                                             isAiModels ? <Bot className={cn("h-6 w-6", brandColor)} /> :
@@ -261,7 +270,118 @@ export function IntegrationConfigDialog({ provider, title }: IntegrationConfigDi
                                     </Badge>
                                 </div>
 
-                                {provider === 'ai-models' || provider === 'gemini' ? (
+                                {provider === 'manychat' ? (
+                                    <>
+                                        {/* ManyChat API Token */}
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="apiToken" className="text-xs font-semibold text-gray-700">
+                                                ManyChat API Token (Bearer Token)
+                                            </Label>
+                                            <div className="relative group">
+                                                <Key className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                                                <Input
+                                                    id="apiToken"
+                                                    type={showToken ? "text" : "password"}
+                                                    value={formData.apiToken || ''}
+                                                    onChange={e => handleChange('apiToken', e.target.value)}
+                                                    className={cn("pl-9 pr-10 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white font-mono text-xs focus:bg-white", brandRing)}
+                                                    placeholder="Bearer API Token de ManyChat..."
+                                                />
+                                                <div className="absolute right-2 top-2 flex gap-1">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-gray-400 hover:text-gray-600 rounded-md"
+                                                        onClick={() => setShowToken(!showToken)}
+                                                    >
+                                                        {showToken ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                                <Info className="h-3 w-3" />
+                                                Obtenlo en ManyChat: Settings → API → Generate API Key.
+                                            </p>
+                                        </div>
+
+                                        {/* ManyChat Page ID */}
+                                        <div className="grid gap-2 mt-4">
+                                            <Label htmlFor="pageId" className="text-xs font-semibold text-gray-700">
+                                                ManyChat Page / Account ID (Opcional)
+                                            </Label>
+                                            <div className="relative">
+                                                <Hash className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                                                <Input
+                                                    id="pageId"
+                                                    value={formData.pageId || ''}
+                                                    onChange={e => handleChange('pageId', e.target.value)}
+                                                    className={cn("pl-9 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white focus:bg-white", brandRing)}
+                                                    placeholder="Ej. 102938475"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Webhook Secret */}
+                                        <div className="grid gap-2 mt-4">
+                                            <Label htmlFor="webhookSecret" className="text-xs font-semibold text-gray-700">
+                                                Webhook Secret (x-manychat-secret)
+                                            </Label>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 group-hover:text-gray-500 transition-colors" />
+                                                <Input
+                                                    id="webhookSecret"
+                                                    type={showSecret ? "text" : "password"}
+                                                    value={formData.webhookSecret || ''}
+                                                    onChange={e => handleChange('webhookSecret', e.target.value)}
+                                                    className={cn("pl-9 pr-10 h-10 transition-all bg-gray-50/50 border-gray-200 hover:border-gray-300 hover:bg-white font-mono text-xs focus:bg-white", brandRing)}
+                                                    placeholder="Secreto opcional para validar peticiones..."
+                                                />
+                                                <div className="absolute right-2 top-2 flex gap-1">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-gray-400 hover:text-gray-600 rounded-md"
+                                                        onClick={() => setShowSecret(!showSecret)}
+                                                    >
+                                                        {showSecret ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Separator className="my-4 bg-gray-100" />
+
+                                        {/* Webhook URL Visual Box */}
+                                        <div className="p-3.5 rounded-xl bg-cyan-50/70 border border-cyan-100 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-semibold text-cyan-900 flex items-center gap-1.5">
+                                                    <Globe className="h-3.5 w-3.5 text-cyan-600" />
+                                                    URL para External Request en ManyChat
+                                                </span>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-6 px-2 text-xs text-cyan-700 hover:text-cyan-900 hover:bg-cyan-100"
+                                                    onClick={() => {
+                                                        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                                                        copyToClipboard(`${origin}/api/webhooks/manychat`);
+                                                    }}
+                                                >
+                                                    <Copy className="h-3 w-3 mr-1" /> Copiar URL
+                                                </Button>
+                                            </div>
+                                            <code className="text-[11px] block font-mono bg-white/90 p-2 rounded border border-cyan-200/50 text-cyan-950 break-all select-all">
+                                                {typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/manychat` : 'https://tu-dominio.com/api/webhooks/manychat'}
+                                            </code>
+                                            <p className="text-[11px] text-cyan-700 leading-relaxed">
+                                                Utiliza esta URL en el bloque <strong>External Request</strong> (POST) de tus flujos de ManyChat para capturar leads, transferir a chat humano o consultar a la IA.
+                                            </p>
+                                        </div>
+                                    </>
+                                ) : provider === 'ai-models' || provider === 'gemini' ? (
                                     <>
                                         {/* OpenAI */}
                                         <div className="grid gap-2">

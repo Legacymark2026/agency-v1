@@ -61,6 +61,7 @@ export default async function IntegrationsPage() {
     let payuConfig = null;
     let aiModelsConfig = null;
     let rawVideoConfig = null;
+    let manychatConfig = null;
 
     try {
         const results = await Promise.allSettled([
@@ -79,7 +80,8 @@ export default async function IntegrationsPage() {
             getIntegrationConfig('ahrefs'),
             getIntegrationConfig('payu' as any),
             getIntegrationConfig('ai-models'),
-            getVideoAssetConfig()
+            getVideoAssetConfig(),
+            getIntegrationConfig('manychat')
         ]);
 
         if (results[0].status === 'fulfilled') facebookConfig = results[0].value;
@@ -98,6 +100,7 @@ export default async function IntegrationsPage() {
         if (results[13].status === 'fulfilled') payuConfig = results[13].value;
         if (results[14].status === 'fulfilled') aiModelsConfig = results[14].value;
         if (results[15].status === 'fulfilled') rawVideoConfig = results[15].value;
+        if (results[16].status === 'fulfilled') manychatConfig = results[16].value;
     } catch (e) {
         console.error("Error loading integration configurations in parallel:", e);
     }
@@ -136,7 +139,8 @@ export default async function IntegrationsPage() {
         ahrefs: ahrefsConfig,
         payu: payuConfig,
         aiModels: aiModelsConfig,
-        videoAssets: videoConfigAdapter
+        videoAssets: videoConfigAdapter,
+        manychat: manychatConfig
     };
 
     const connectedProviders = Array.from(connectedProvidersSet);
