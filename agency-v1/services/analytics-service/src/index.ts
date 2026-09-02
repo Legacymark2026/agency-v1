@@ -108,11 +108,12 @@ async function runPartitionMaintenance(): Promise<void> {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         col_schema_version INTEGER DEFAULT 0,
         col_deleted_at TIMESTAMP WITH TIME ZONE
-      );
-      CREATE INDEX IF NOT EXISTS idx_api_usage_logs_company ON tbl_api_usage_logs(company_id, created_at);
-      CREATE INDEX IF NOT EXISTS idx_api_usage_logs_apikey ON tbl_api_usage_logs(api_key_id, created_at);
-      CREATE INDEX IF NOT EXISTS idx_api_usage_logs_service ON tbl_api_usage_logs(service_name, created_at);
+      )
     `).catch((err: any) => console.warn("[AutoDDL] Notice for tbl_api_usage_logs:", err.message));
+
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_api_usage_logs_company ON tbl_api_usage_logs(company_id, created_at)`).catch(() => {});
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_api_usage_logs_apikey ON tbl_api_usage_logs(api_key_id, created_at)`).catch(() => {});
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS idx_api_usage_logs_service ON tbl_api_usage_logs(service_name, created_at)`).catch(() => {});
   } catch (err: any) {
     console.warn("[AutoPartition] Maintenance check skipped or unavailable:", err.message);
   }
