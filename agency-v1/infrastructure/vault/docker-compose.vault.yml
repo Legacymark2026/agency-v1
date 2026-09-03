@@ -3,6 +3,7 @@ services:
     image: hashicorp/vault:1.16
     container_name: legacymark-vault
     restart: always
+    user: "0:0"
     environment:
       VAULT_ADDR: 'http://127.0.0.1:8200'
       VAULT_API_ADDR: 'http://127.0.0.1:8200'
@@ -15,7 +16,7 @@ services:
       - "127.0.0.1:8200:8200"
     cap_add:
       - IPC_LOCK
-    command: server
+    command: server -config=/vault/config/vault.hcl
     networks:
       - legacymark_vault_net
 
