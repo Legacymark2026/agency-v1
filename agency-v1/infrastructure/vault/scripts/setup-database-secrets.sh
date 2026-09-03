@@ -1,8 +1,8 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ══════════════════════════════════════════════════════════════════════════════
 # Configuración del Motor de Base de Datos Dinámica en Vault (PostgreSQL)
 # ══════════════════════════════════════════════════════════════════════════════
-set -euo pipefail
+set -e
 
 export VAULT_ADDR="http://127.0.0.1:8200"
 
