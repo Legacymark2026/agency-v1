@@ -83,6 +83,7 @@ model User {
   aiauditLogs             AIAuditLog[]
   agentMemories           AgentMemory[]
   mediaUploads            MediaAsset[]              @relation("MediaUploader")
+  accountingVouchers      AccountingVoucher[]       @relation("VoucherCreator")
 
   @@index([role])
   @@index([email])
@@ -348,6 +349,9 @@ model Company {
   videoRenderJobs           VideoRenderJob[]
   brandStyles               BrandStyle[]
   assetCatalogs             AssetCatalog[]
+  accountingPeriods         AccountingPeriod[]
+  accountingVouchers        AccountingVoucher[]
+  chartOfAccounts           ChartOfAccounts[]
 
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -4130,6 +4134,118 @@ model Appointment {
   @@index([status])
   @@index([leadId])
   @@map("tbl_appointments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCOUNTING MODULE — NIIF / PUC / DIAN Compliance
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AccountingPeriod {
+  id          String              @id @default(uuid())
+  companyId   String              @map("company_id")
+  name        String              // "Agosto 2026", "Año Gravable 2026"
+  startDate   DateTime            @map("start_date") @db.Date
+  endDate     DateTime            @map("end_date") @db.Date
+  status      String              @default("OPEN") // OPEN, CLOSING, CLOSED
+  closedById  String?             @map("closed_by_id")
+  closedAt    DateTime?           @map("closed_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vouchers    AccountingVoucher[]
+
+  @@unique([companyId, startDate, endDate])
+  @@index([companyId])
+  @@index([status])
+  @@map("tbl_accounting_periods")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AccountingVoucher {
+  id              String                  @id @default(uuid())
+  companyId       String                  @map("company_id")
+  periodId        String?                 @map("period_id")
+  voucherNumber   String                  @map("voucher_number")
+  documentType    String                  @default("CC") @map("document_type") // CC, CE, FC, FV, ND, NC, NE, DSE, RC
+  date            DateTime                @default(now())
+  concept         String
+  costCenterCode  String?                 @map("cost_center_code")
+  totalDebit      Float                   @map("total_debit")
+  totalCredit     Float                   @map("total_credit")
+  isBalanced      Boolean                 @map("is_balanced")
+  hashSeal        String?                 @map("hash_seal")
+  previousHash    String?                 @map("previous_hash") // Append-only chain integrity
+  status          String                  @default("ACTIVE") // ACTIVE, REVERSED, VOID
+  reversedById    String?                 @map("reversed_by_id") // References the reversing voucher
+  sourceInvoiceId String?                 @map("source_invoice_id")
+  sourceExpenseId String?                 @map("source_expense_id")
+  sourcePayrollId String?                 @map("source_payroll_id")
+  createdById     String                  @map("created_by_id")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  company         Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  period          AccountingPeriod?       @relation(fields: [periodId], references: [id])
+  createdBy       User                    @relation("VoucherCreator", fields: [createdById], references: [id])
+  lines           AccountingVoucherLine[]
+
+  @@unique([companyId, voucherNumber])
+  @@index([companyId, date])
+  @@index([periodId])
+  @@index([documentType])
+  @@index([status])
+  @@index([sourceInvoiceId])
+  @@index([sourceExpenseId])
+  @@map("tbl_accounting_vouchers")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AccountingVoucherLine {
+  id              String            @id @default(uuid())
+  voucherId       String            @map("voucher_id")
+  lineNumber      Int               @default(1) @map("line_number")
+  accountCode     String            @map("account_code")
+  accountName     String            @map("account_name")
+  thirdPartyNit   String?           @map("third_party_nit")
+  thirdPartyName  String?           @map("third_party_name")
+  costCenterCode  String?           @map("cost_center_code")
+  description     String?
+  debit           Float             @default(0)
+  credit          Float             @default(0)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  voucher         AccountingVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  @@index([voucherId])
+  @@index([accountCode])
+  @@index([thirdPartyNit])
+  @@map("tbl_accounting_voucher_lines")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ChartOfAccounts {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  code        String   // "110505" — PUC code
+  name        String   // "Caja General"
+  category    String   // ACTIVO, PASIVO, PATRIMONIO, INGRESOS, GASTOS, COSTOS, CUENTAS_DE_ORDEN
+  nature      String   // DEBITO, CREDITO
+  parentCode  String?  @map("parent_code")
+  level       Int      @default(6) // 1=clase, 2=grupo, 3=cuenta, 4=subcuenta, 5-6=auxiliar
+  isActive    Boolean  @default(true) @map("is_active")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([companyId, category])
+  @@index([companyId, isActive])
+  @@index([parentCode])
+  @@map("tbl_chart_of_accounts")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }
