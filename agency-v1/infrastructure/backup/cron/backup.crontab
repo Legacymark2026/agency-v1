@@ -1,0 +1,16 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# LegacyMark Automated Immutable Backup & Disaster Recovery Schedule
+# ══════════════════════════════════════════════════════════════════════════════
+# Format: Minute Hour Day Month DayOfWeek Command
+# Timezone: UTC
+# ══════════════════════════════════════════════════════════════════════════════
+
+# 1. Respaldo Diario Automatizado e Inmutable (Todos los días a las 02:00 UTC)
+0 2 * * * /root/agency-v1/agency-v1/infrastructure/backup/scripts/backup-immutable.sh >> /var/log/legacymark_backup.log 2>&1
+
+# 2. Simulacro Semanal de Prueba de Restauración en Sandbox (Domingos a las 04:00 UTC)
+# Utiliza la llave privada del simulacro para probar integridad y emitir certificado RTO
+0 4 * * 0 /root/agency-v1/agency-v1/infrastructure/backup/scripts/verify-restore.sh >> /var/log/legacymark_restore_drill.log 2>&1
+
+# 3. Verificación Semanal de Integridad de Hashes SHA-256 (Miércoles a las 03:00 UTC)
+30 3 * * 3 /root/agency-v1/agency-v1/infrastructure/backup/scripts/verify-integrity.sh >> /var/log/legacymark_integrity.log 2>&1
