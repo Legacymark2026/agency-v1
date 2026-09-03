@@ -11,23 +11,8 @@ import { getLinkedInCampaigns, getLinkedInInsights } from './marketing/linkedin-
 const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
 
 /**
- * Returns aggregated campaigns directly from the local DB, 
- * enriched with live API sync if required.
- */
-export async function getCampaignsList(): Promise<Campaign[]> {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
-
-    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
-    const cuData = await cuRes.json();
-    if (!cuRes.ok || !cuData.data) throw new Error("Company not found");
-    const companyId = cuData.data.companyId;
-
-    const res = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${companyId}`);
-    const resData = await res.json();
-    if (!res.ok) throw new Error(resData.error || "Failed to fetch campaigns");
-    return (resData.data || []) as Campaign[];
-}
+// ─── CAMPAIGNS LIST (Modularized & Resilient) ────────────────────────────────
+export { getCampaignsList, getCampaignAnalytics } from '@/modules/marketing/actions/campaigns.actions';
 
 /**
  * Sync campaigns from connected APIs (Meta, Google) into the DB.
@@ -213,71 +198,3 @@ export async function getCampaignChartData() {
     }));
 }
 
-/**
- * Gets real analytics for a specific campaign or aggregated for all campaigns.
- * Reads from DB (synced via syncLiveCampaigns). Falls back to platform API data if available.
- */
-export async function getCampaignAnalytics(campaignId?: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
-
-    const cuRes = await fetch(`${GATEWAY_URL}/api/crm/users/${session.user.id}/company`);
-    const cuData = await cuRes.json();
-    if (!cuRes.ok || !cuData.data) throw new Error("Company not found");
-    const companyId = cuData.data.companyId;
-
-    let campaigns: any[] = [];
-    if (campaignId) {
-        const res = await fetch(`${GATEWAY_URL}/api/campaigns/${campaignId}/metrics`);
-        const resData = await res.json();
-        if (res.ok && resData.data) {
-            campaigns = [resData.data];
-        }
-    } else {
-        const res = await fetch(`${GATEWAY_URL}/api/campaigns?companyId=${companyId}`);
-        const resData = await res.json();
-        if (res.ok && resData.data) {
-            campaigns = resData.data;
-        }
-    }
-
-    // Aggregate totals
-    const totals = campaigns.reduce((acc, c) => ({
-        impressions: acc.impressions + (c.impressions || 0),
-        clicks: acc.clicks + (c.clicks || 0),
-        conversions: acc.conversions + (c.conversions || 0),
-        spend: acc.spend + (c.spend || 0),
-    }), { impressions: 0, clicks: 0, conversions: 0, spend: 0 });
-
-    // Break down by platform
-    const platformData: Record<string, { impressions: number; clicks: number; conversions: number; spend: number }> = {};
-    for (const c of campaigns) {
-        if (!c.platform) continue;
-        const platforms = c.platform.split(',');
-        for (const p of platforms) {
-            const key = p.trim();
-            if (!platformData[key]) {
-                platformData[key] = { impressions: 0, clicks: 0, conversions: 0, spend: 0 };
-            }
-            // Distribute evenly across platforms if multi-platform
-            const factor = 1 / platforms.length;
-            platformData[key].impressions += Math.round((c.impressions || 0) * factor);
-            platformData[key].clicks += Math.round((c.clicks || 0) * factor);
-            platformData[key].conversions += Math.round((c.conversions || 0) * factor);
-            platformData[key].spend += (c.spend || 0) * factor;
-        }
-    }
-
-    return {
-        impressions: totals.impressions,
-        clicks: totals.clicks,
-        conversions: totals.conversions,
-        spend: totals.spend,
-        cpc: totals.clicks > 0 ? totals.spend / totals.clicks : 0,
-        cpm: totals.impressions > 0 ? (totals.spend / totals.impressions) * 1000 : 0,
-        roas: totals.spend > 0 ? (totals.conversions * 50) / totals.spend : 0, // Assume $50 avg conversion value
-        conversionRate: totals.clicks > 0 ? (totals.conversions / totals.clicks) * 100 : 0,
-        platformData,
-        campaignCount: campaigns.length,
-    };
-}

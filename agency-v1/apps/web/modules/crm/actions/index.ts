@@ -1,2 +1,3 @@
-// Barrel export for CRM actions
+// Canonical Barrel export for CRM domain actions
 export * from './crm';
+export * from './crm-stats.actions';

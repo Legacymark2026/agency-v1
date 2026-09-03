@@ -37,99 +37,14 @@ export interface TeamNode {
     _count?: { members: number };
 }
 
-// ─── CRM DASHBOARD STATS ─────────────────────────────────────────────────────
-
-export async function getCRMStats() {
-    const authCheck = await checkAuth();
-    if (authCheck) return authCheck;
-
-    try {
-        const session = await auth();
-        const companyId = session?.user?.companyId;
-        if (!companyId) return { error: "No company associated" };
-
-        const response = await fetch(`${GATEWAY_URL}/api/crm/stats?companyId=${companyId}`);
-        const resData = await response.json();
-        if (!response.ok) return { error: resData.error || "Failed to fetch stats" };
-        return resData;
-    } catch (error) {
-        console.error("Failed to fetch CRM stats:", error);
-        return { error: "Failed to load stats" };
-    }
-}
-
-export async function getSalesFunnel() {
-    const session = await auth();
-    const companyId = session?.user?.companyId;
-    if (!companyId) return [];
-    const stages = ["NEW", "QUALIFIED", "PROPOSAL", "NEGOTIATION", "WON"] as const;
-    try {
-        const response = await fetch(`${GATEWAY_URL}/api/crm/funnel/${companyId}`);
-        if (!response.ok) return [];
-        const data = await response.json();
-        const funnel = data.funnel || [];
-        return stages.map((s) => {
-            const found = funnel.find((g: any) => g.stage === s);
-            let val = 0;
-            if (found) {
-                if (typeof found._count === 'number') {
-                    val = found._count;
-                } else if (found._count && typeof found._count === 'object') {
-                    val = found._count._all || found._count.id || found._count.stage || 0;
-                }
-            }
-            return { name: s, value: val };
-        });
-    } catch (error) {
-        console.error(error);
-        return [];
-    }
-}
-
-export async function getRecentActivity() {
-    const session = await auth();
-    const companyId = session?.user?.companyId;
-    if (!companyId) return [];
-    try {
-        const response = await fetch(`${GATEWAY_URL}/api/crm/recent-activity?companyId=${companyId}`);
-        if (!response.ok) return [];
-        return await response.json();
-    } catch (error) {
-        console.error(error);
-        return [];
-    }
-}
-
-export async function getTopDeals() {
-    const session = await auth();
-    const companyId = session?.user?.companyId;
-    if (!companyId) return [];
-    try {
-        const response = await fetch(`${GATEWAY_URL}/api/crm/top-deals?companyId=${companyId}`);
-        if (!response.ok) return [];
-        return await response.json();
-    } catch (error) {
-        console.error(error);
-        return [];
-    }
-}
-
-export async function getHighPerformanceStats() {
-    const session = await auth();
-    if (!session?.user) return { error: "Unauthorized" };
-    const companyId = session.user.companyId;
-    if (!companyId) return { error: "No company associated" };
-
-    try {
-        const response = await fetch(`${GATEWAY_URL}/api/crm/high-performance-stats?companyId=${companyId}`);
-        const data = await response.json();
-        if (!response.ok) return { error: data.error || "Failed to fetch performance stats" };
-        return data;
-    } catch (error) {
-        console.error("Failed to fetch high performance stats:", error);
-        return { error: "Failed to load high performance stats" };
-    }
-}
+// ─── CRM DASHBOARD STATS (Modularized & Resilient) ───────────────────────────
+export {
+    getCRMStats,
+    getSalesFunnel,
+    getRecentActivity,
+    getTopDeals,
+    getHighPerformanceStats,
+} from "@/modules/crm/actions/crm-stats.actions";
 
 // ─── DEAL ACTIONS ─────────────────────────────────────────────────────────────
 

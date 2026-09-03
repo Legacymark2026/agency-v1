@@ -27,43 +27,8 @@ async function resolveCompanyId(session: any): Promise<string | null> {
     return null;
 }
 
-// ─── Get Employees ────────────────────────────────────────────────────────────
-export async function getEmployees(includeInactive = false) {
-    try {
-        const session = await auth();
-        if (!session?.user) return { success: false, data: [] };
-
-        const companyId = await resolveCompanyId(session);
-        if (!companyId) return { success: false, data: [] };
-
-        // Attempt API Gateway first
-        try {
-            const response = await fetch(
-                `${GATEWAY_URL}/api/employees?companyId=${companyId}${includeInactive ? "" : "&isActive=true"}&limit=1000`
-            );
-            if (response.ok) {
-                const resData = await response.json();
-                return { success: true, data: resData.employees || [] };
-            }
-        } catch {
-            // Gateway fallback
-        }
-
-        // Direct Prisma DB Fallback
-        const employees = await prisma.employee.findMany({
-            where: {
-                companyId,
-                ...(includeInactive ? {} : { isActive: true })
-            },
-            orderBy: { createdAt: "desc" }
-        });
-
-        return { success: true, data: employees || [] };
-    } catch (error) {
-        console.error("[GET_EMPLOYEES]", error);
-        return { success: false, data: [] };
-    }
-}
+// ─── Get Employees (Modularized & Resilient) ──────────────────────────────────
+export { getEmployees } from "@/modules/hr/actions/employees.actions";
 
 // ─── Create Employee (enhanced) ───────────────────────────────────────────────
 export async function createEmployee(data: {
