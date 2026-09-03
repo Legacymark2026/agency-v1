@@ -41,7 +41,16 @@ function resolveAdminAlias(email: string | null | undefined): string | null {
     return null;
 }
 
-const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-key-change-me";
+const authSecret = (() => {
+    const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+        if (process.env.NODE_ENV === "production") {
+            throw new Error("[FATAL SECURITY ERROR] AUTH_SECRET / NEXTAUTH_SECRET is not configured in production environment.");
+        }
+        return "legacymark-dev-ephemeral-auth-secret-32-chars-min!";
+    }
+    return secret;
+})();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // @ts-ignore — next-auth v5 beta: 'auth' combined declaration conflict (known issue)

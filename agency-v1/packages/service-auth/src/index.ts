@@ -28,9 +28,19 @@ import { Request, Response, NextFunction } from "express";
 import { ServiceTokenPayload, ServiceAuthContext } from "./types";
 
 // ── Configuration ─────────────────────────────────────────────────────────────
-const SERVICE_JWT_SECRET =
-  process.env.SERVICE_JWT_SECRET ||
-  "legacymark-service-internal-secret-CHANGE-IN-PROD-min-32-chars";
+function resolveServiceJwtSecret(): string {
+  const secret = process.env.SERVICE_JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[FATAL SECURITY ERROR] SERVICE_JWT_SECRET environment variable is missing in production. Refusing to start with insecure fallback."
+      );
+    }
+    return "legacymark-dev-ephemeral-service-secret-32-chars-minimum";
+  }
+  return secret;
+}
+
 const SERVICE_TOKEN_EXPIRY = "5m"; // Short-lived for security
 
 // ── Token Operations ──────────────────────────────────────────────────────────
@@ -50,7 +60,7 @@ export const signServiceToken = (
 ): string => {
   return jwt.sign(
     { serviceId, serviceName, permissions } satisfies Omit<ServiceTokenPayload, "iat" | "exp">,
-    SERVICE_JWT_SECRET,
+    resolveServiceJwtSecret(),
     { expiresIn: SERVICE_TOKEN_EXPIRY, issuer: "legacymark-services" }
   );
 };
@@ -60,7 +70,7 @@ export const signServiceToken = (
  * Throws if the token is invalid or expired.
  */
 export const verifyServiceToken = (token: string): ServiceTokenPayload => {
-  return jwt.verify(token, SERVICE_JWT_SECRET, {
+  return jwt.verify(token, resolveServiceJwtSecret(), {
     issuer: "legacymark-services",
   }) as ServiceTokenPayload;
 };

@@ -7,7 +7,16 @@
 import crypto from "crypto";
 import { CreatePOSPaymentDTO, UnifiedPaymentTransaction } from "../types/payment.types";
 
-const HMAC_SECRET = process.env.PAYMENT_HMAC_SECRET || "legacymark_pci_dss_secure_pos_key_2026";
+const HMAC_SECRET = (() => {
+  const secret = process.env.PAYMENT_HMAC_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("[FATAL SECURITY ERROR] PAYMENT_HMAC_SECRET must be configured in production.");
+    }
+    return "legacymark-dev-ephemeral-pos-secret-32-chars!";
+  }
+  return secret;
+})();
 
 export class BoldPosAdapter {
   public static computeHmacSignature(reference: string, amount: number, provider: string, approvalCode: string, timestamp: string): string {

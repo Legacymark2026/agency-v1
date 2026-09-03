@@ -32,7 +32,16 @@ export interface PaymentTransactionEntity {
     updatedAt: string;
 }
 
-const PAYMENT_SECRET_KEY = process.env.PAYMENT_HMAC_SECRET || "legacymark_pci_dss_secure_pos_key_2026";
+const PAYMENT_SECRET_KEY = (() => {
+    const key = process.env.PAYMENT_HMAC_SECRET;
+    if (!key) {
+        if (process.env.NODE_ENV === "production") {
+            throw new Error("[FATAL SECURITY ERROR] PAYMENT_HMAC_SECRET must be explicitly set in production.");
+        }
+        return "legacymark-dev-ephemeral-pos-secret-32-chars!";
+    }
+    return key;
+})();
 
 /**
  * Computes cryptographic HMAC-SHA256 signature for verifiable transaction integrity.

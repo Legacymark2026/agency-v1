@@ -74,5 +74,10 @@ local-dev-screenshot.png
 
 # certificates
 certs/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
 .unlighthouse/
 
