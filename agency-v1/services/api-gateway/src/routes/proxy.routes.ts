@@ -218,3 +218,7 @@ proxyRouter.use("/api/pos", createResilientProxy("pos", SERVICES.pos));
 // Affiliate Service
 proxyRouter.use("/r", createResilientProxy("affiliate", SERVICES.affiliate));
 proxyRouter.use("/api/affiliates", createResilientProxy("affiliate", SERVICES.affiliate));
+
+// Payment Service (Decoupled Microservice)
+proxyRouter.use("/api/v1/payments", createResilientProxy("payment", SERVICES.payment));
+proxyRouter.use("/api/payments", createResilientProxy("payment", SERVICES.payment));

@@ -27,6 +27,7 @@ export const SERVICES = {
   project:     process.env.PROJECT_SERVICE_URL     || "http://project-service:4018",
   affiliate:   process.env.AFFILIATE_SERVICE_URL   || "http://affiliate-service:4019",
   pos:         process.env.POS_SERVICE_URL         || "http://pos-service:4020",
+  payment:     process.env.PAYMENT_SERVICE_URL     || "http://payment-service:4022",
 } as const;
 
 export type ServiceName = keyof typeof SERVICES;

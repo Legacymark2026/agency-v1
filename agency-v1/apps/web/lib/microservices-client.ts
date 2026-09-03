@@ -34,12 +34,13 @@ export const MICROSERVICE_PORT_MAP: Record<string, number> = {
   "affiliate-service": 4019,
   "public-api-service": 4020,
   "goldneez-rewards-service": 4021,
+  "payment-service": 4022,
 };
 
 export const MICROSERVICES_PORTS = MICROSERVICE_PORT_MAP;
 
 export interface MicroserviceRequestOptions<T = any> {
-  service: keyof typeof MICROSERVICE_PORT_MAP | "crm" | "finance" | "inbox" | "marketing" | "hr" | "auth" | "video" | "ai" | "project" | "automation";
+  service: keyof typeof MICROSERVICE_PORT_MAP | "crm" | "finance" | "inbox" | "marketing" | "hr" | "auth" | "video" | "ai" | "project" | "automation" | "payment";
   /** Path to append, e.g. "/api/crm/stats" or "/stats" */
   path: string;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
