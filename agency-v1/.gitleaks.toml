@@ -1,0 +1,45 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Gitleaks Configuration — LegacyMark Enterprise Security
+# ══════════════════════════════════════════════════════════════════════════════
+title = "LegacyMark Gitleaks Secret Detection Profile"
+
+[extend]
+useDefault = true
+
+# Custom rule: Detect insecure hardcoded secret fallbacks in source code
+[[rules]]
+id = "insecure-fallback-secret"
+description = "Detected insecure hardcoded fallback secret in process.env declaration"
+regex = '''(?i)process\.env\.[A-Z0-9_]+\s*\|\|\s*["'][^"']{8,}["']'''
+tags = ["security", "secrets", "cwe-798"]
+
+# Custom rule: Detect Stripe Live Secret Keys
+[[rules]]
+id = "stripe-live-key"
+description = "Detected Stripe Live Secret Key"
+regex = '''sk_live_[0-9a-zA-Z]{24,}'''
+tags = ["stripe", "payment", "pci-dss"]
+
+# Custom rule: Detect Wompi Integrity Secrets
+[[rules]]
+id = "wompi-integrity-secret"
+description = "Detected Wompi Integrity Secret"
+regex = '''prod_integrity_[0-9a-zA-Z]{24,}'''
+tags = ["wompi", "payment", "pci-dss"]
+
+# Custom rule: Detect Google Service Account Private Keys
+[[rules]]
+id = "google-service-account"
+description = "Detected Google Service Account JSON Private Key"
+regex = '''"private_key":\s*"-----BEGIN PRIVATE KEY-----'''
+tags = ["google", "cloud", "iam"]
+
+[allowlist]
+description = "Allowlisted test files and mock data"
+paths = [
+  '''tests/''',
+  '''\.test\.ts$''',
+  '''\.spec\.ts$''',
+  '''package-lock\.json''',
+  '''\.env\.docker$''',
+]

@@ -1,0 +1,31 @@
+name: Security & Secret Leak Scanning (CI/CD)
+
+on:
+  push:
+    branches: [main, master, staging]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  secret-scan:
+    name: Gitleaks & TruffleHog Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+      - name: Run TruffleHog Open Source Scanner
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
