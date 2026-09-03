@@ -19,8 +19,11 @@ services:
     command: server
     networks:
       - legacymark_vault_net
+      - agency-database-net
 
 networks:
   legacymark_vault_net:
     name: legacymark_vault_net
     driver: bridge
+  agency-database-net:
+    external: true

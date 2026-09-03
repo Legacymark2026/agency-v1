@@ -9,10 +9,10 @@ export VAULT_ADDR="http://127.0.0.1:8200"
 echo "🐘 [1/3] Habilitando motor de base de datos en Vault..."
 vault secrets enable database || echo "Motor de base de datos ya habilitado."
 
-POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
-POSTGRES_USER="${POSTGRES_USER:-vault_admin}"
-POSTGRES_PASS="${POSTGRES_PASS:-VaultAdminPasswordChangeMe2026!}"
-POSTGRES_DB="${POSTGRES_DB:-legacymark_core}"
+POSTGRES_HOST="${POSTGRES_HOST:-agency-v1-postgres-1}"
+POSTGRES_USER="${POSTGRES_USER:-legacymark}"
+POSTGRES_PASS="${POSTGRES_PASS:-legacymark_dev}"
+POSTGRES_DB="${POSTGRES_DB:-legacymark}"
 
 echo "🔗 [2/3] Configurando conexión con cluster PostgreSQL..."
 vault write database/config/postgresql-legacymark \
