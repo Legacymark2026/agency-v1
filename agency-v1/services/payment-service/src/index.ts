@@ -14,6 +14,8 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { paymentRouter } from "./routes/payment.routes";
+import { pciDssSanitizerMiddleware } from "./middlewares/sanitizer.middleware";
+import { idempotencyMiddleware } from "./middlewares/idempotency.middleware";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4022", 10);
@@ -22,6 +24,8 @@ app.use(metricsMiddleware("payment-service"));
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
+app.use(pciDssSanitizerMiddleware);
+app.use(idempotencyMiddleware);
 
 // ── Observability & Health ───────────────────────────────────────────────────
 app.get("/metrics", metricsEndpoint);

@@ -352,6 +352,7 @@ model Company {
   accountingPeriods         AccountingPeriod[]
   accountingVouchers        AccountingVoucher[]
   chartOfAccounts           ChartOfAccounts[]
+  paymentTransactions       PaymentTransaction[]
 
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -4249,3 +4250,92 @@ model ChartOfAccounts {
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }
+
+// ══════════════════════════════════════════════════════════════
+// DECOUPLED PAYMENT SERVICE & PCI DSS AUDIT MODELS
+// ══════════════════════════════════════════════════════════════
+
+model PaymentTransaction {
+  id                    String    @id @default(uuid())
+  companyId             String    @map("company_id")
+  reference             String    @unique
+  amount                Decimal   @db.Decimal(15, 2)
+  currency              String    @default("COP")
+  provider              String    // STRIPE, WOMPI, PAYPAL, MERCADOPAGO, BOLD, PSE, REDEBAN, CREDIBANCO, TRANSFER, CASH
+  status                String    @default("PENDING") // PENDING, APPROVED, DECLINED, REJECTED, REFUNDED
+  category              String    @default("INVOICE") // INVOICE, SUBSCRIPTION, POS_SALE, PREPAID_WALLET, CUSTOM
+  orderId               String?   @map("order_id")
+  invoiceId             String?   @map("invoice_id")
+  customerEmail         String?   @map("customer_email")
+  customerName          String?   @map("customer_name")
+  customerNit           String?   @map("customer_nit")
+  // ISO 8583 & POS EMV Standard Compliance Fields
+  isoResponseCode       String?   @default("00") @map("iso_response_code") // Field 39
+  approvalCode          String?   @map("approval_code") // Field 38 (6 digits)
+  rrn                   String?   // Field 37 (12 digits Retrieval Reference Number)
+  stan                  String?   // Field 11 (6 digits System Trace Audit Number)
+  terminalId            String?   @map("terminal_id") // Field 41
+  merchantId            String?   @map("merchant_id") // Field 42
+  // PCI DSS Tokenized Card Fields (NO PAN, NO CVV)
+  cardBrand             String?   @map("card_brand")
+  cardLast4             String?   @map("card_last_4")
+  cardBin               String?   @map("card_bin")
+  // Cryptographic Audit & Blockchain Trail
+  hmacSignature         String?   @map("hmac_signature")
+  previousHash          String?   @map("previous_hash")
+  hashSeal              String?   @map("hash_seal")
+  // Financial Reconciliation
+  gatewayFee            Decimal?  @map("gateway_fee") @db.Decimal(15, 2)
+  netAmount             Decimal?  @map("net_amount") @db.Decimal(15, 2)
+  gatewayTransactionId  String?   @map("gateway_transaction_id")
+  metadata              Json?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  company               Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([invoiceId])
+  @@index([orderId])
+  @@index([reference])
+  @@index([provider])
+  @@map("tbl_payment_transactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PaymentOutbox {
+  id            String    @id @default(uuid())
+  companyId     String?   @map("company_id")
+  aggregateType String    @default("PAYMENT") @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  eventType     String    @map("event_type") // payment.authorized, payment.succeeded, payment.failed, refund.completed
+  payload       Json
+  status        String    @default("PENDING") // PENDING, PUBLISHED, FAILED
+  retryCount    Int       @default(0) @map("retry_count")
+  error         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  publishedAt   DateTime? @map("published_at")
+
+  @@index([status, createdAt])
+  @@map("tbl_payment_outbox")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PaymentIdempotencyRecord {
+  id              String    @id @default(uuid())
+  idempotencyKey  String    @unique @map("idempotency_key")
+  companyId       String    @map("company_id")
+  requestHash     String    @map("request_hash")
+  responseBody    Json      @map("response_body")
+  statusCode      Int       @default(200) @map("status_code")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  expiresAt       DateTime  @map("expires_at")
+
+  @@index([idempotencyKey, companyId])
+  @@index([expiresAt])
+  @@map("tbl_payment_idempotency_records")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+

@@ -68,3 +68,33 @@ describe("Decoupled Payment Microservice Core", () => {
     expect(session.provider).toBeDefined();
   });
 });
+
+describe("PCI DSS v4.0 Zero-PAN Sanitization & ISO 27001 Security", () => {
+  it("masks 16-digit credit card number keeping only BIN (first 6) and last 4", async () => {
+    const { maskPAN } = await import("./middlewares/sanitizer.middleware");
+    const masked = maskPAN("4532 0150 1234 5678");
+    expect(masked).toBe("453201******5678");
+    expect(masked).not.toContain("1234");
+  });
+
+  it("redacts sensitive authentication data (CVV, PIN) from nested payloads", async () => {
+    const { sanitizePayloadRecursively } = await import("./middlewares/sanitizer.middleware");
+    const payload = {
+      amount: 150000,
+      customer: {
+        name: "Carlos Mendoza",
+        card: {
+          pan: "4111111111111111",
+          cvv: "123",
+          pin: "9988",
+        },
+      },
+    };
+
+    const sanitized = sanitizePayloadRecursively(payload);
+    expect(sanitized.customer.card.pan).toBe("411111******1111");
+    expect(sanitized.customer.card.cvv).toBe("[REDACTED_SAD]");
+    expect(sanitized.customer.card.pin).toBe("[REDACTED_SAD]");
+  });
+});
+
