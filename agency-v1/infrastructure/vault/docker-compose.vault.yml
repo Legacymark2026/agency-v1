@@ -8,7 +8,7 @@ services:
       VAULT_ADDR: 'http://127.0.0.1:8200'
       VAULT_API_ADDR: 'http://127.0.0.1:8200'
     volumes:
-      - ./config/vault.hcl:/vault/config/vault.hcl:ro
+      - ./config:/vault/config:ro
       - ./data:/vault/data:rw
       - ./policies:/vault/policies:ro
       - ./scripts:/vault/scripts:ro
@@ -16,7 +16,7 @@ services:
       - "127.0.0.1:8200:8200"
     cap_add:
       - IPC_LOCK
-    command: server -config=/vault/config/vault.hcl
+    command: server
     networks:
       - legacymark_vault_net
 
