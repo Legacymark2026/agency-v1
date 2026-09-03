@@ -32,6 +32,7 @@ import { cronRouter } from "./routes/cron.routes";
 import { webhooksRouter } from "./routes/webhooks.routes";
 // Legacy v1 router (kept for backward compatibility during migration)
 import { financeRouter } from "./routes/finance.routes";
+import { accountingRouter } from "./routes/accounting.routes";
 import { errorHandler } from "./middlewares/finance.middleware";
 
 const app = express();
@@ -72,6 +73,8 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/payroll", payrollRouter);
 app.use("/api/subscriptions", subscriptionsRouter);
 app.use("/api/cron", cronRouter);
+app.use("/api/accounting", accountingRouter);
+app.use("/api/v1/accounting", accountingRouter);
 
 // ── Legacy /api/v1 router (v1 clients — keep during deprecation window) ────────
 app.use("/api/v1", requireUserOrServiceAuth, financeRouter);
@@ -89,9 +92,24 @@ setupGracefulShutdown(server, async () => {
   await prisma.$disconnect();
 });
 
-// Fix M-4: subscribe to relevant events (demonstrates eventBus is operational)
+// EventBus subscriptions for decoupled domain coordination
 eventBus.subscribe("invoice.paid", async (data) => {
   console.log(`[finance-service] invoice.paid event received`, { invoiceId: (data as any).invoiceId });
 }).catch((err) => console.warn("[finance-service] EventBus subscribe warning:", err));
+
+eventBus.subscribe("payment.succeeded", async (data: any) => {
+  console.log(`[finance-service] payment.succeeded event received:`, data);
+  try {
+    if (data.invoiceId) {
+      await prisma.invoice.update({
+        where: { id: data.invoiceId },
+        data: { status: "PAID" },
+      });
+      console.log(`[finance-service] Auto-marked invoice ${data.invoiceId} as PAID from payment event`);
+    }
+  } catch (err: any) {
+    console.warn("[finance-service] Error handling payment.succeeded:", err.message);
+  }
+}).catch((err) => console.warn("[finance-service] EventBus payment.succeeded subscribe warning:", err));
 
 export default app as any;
