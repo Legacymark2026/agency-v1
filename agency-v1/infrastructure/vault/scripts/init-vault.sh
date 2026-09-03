@@ -25,9 +25,14 @@ INIT_OUTPUT_FILE="/vault/data/vault_init_keys.txt"
 IS_INIT=$(vault status -format=table 2>&1 | grep "Initialized" | awk '{print $2}' || true)
 
 if [ "$IS_INIT" != "true" ]; then
-  vault operator init -key-shares=5 -key-threshold=3 > "$INIT_OUTPUT_FILE"
-  chmod 600 "$INIT_OUTPUT_FILE"
-  echo "✅ Llaves de Shamir generadas en $INIT_OUTPUT_FILE"
+  if vault operator init -key-shares=5 -key-threshold=3 > "$INIT_OUTPUT_FILE"; then
+    chmod 600 "$INIT_OUTPUT_FILE" 2>/dev/null || true
+    echo "✅ Llaves de Shamir generadas en $INIT_OUTPUT_FILE"
+  else
+    echo "❌ Error: Falló la inicialización de Vault. Revisa los permisos de /vault/data."
+    rm -f "$INIT_OUTPUT_FILE"
+    exit 1
+  fi
 else
   echo "ℹ️ Vault ya se encuentra inicializado."
 fi
