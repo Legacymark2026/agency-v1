@@ -28,7 +28,12 @@ async function resolveCompanyId(session: any): Promise<string | null> {
 }
 
 // ─── Get Employees (Modularized & Resilient) ──────────────────────────────────
-export { getEmployees } from "@/modules/hr/actions/employees.actions";
+import * as employeesModuleActions from "@/modules/hr/actions/employees.actions";
+
+export async function getEmployees(...args: any[]) {
+    return (employeesModuleActions.getEmployees as any)(...args);
+}
+
 
 // ─── Create Employee (enhanced) ───────────────────────────────────────────────
 export async function createEmployee(data: {

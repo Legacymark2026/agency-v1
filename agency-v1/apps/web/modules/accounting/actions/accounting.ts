@@ -1,5 +1,4 @@
-"use server";
-// Re-export all actions for backward compatibility
+// Re-export all actions for backward compatibility (individual actions already have "use server")
 export * from './journal-voucher.actions';
 export * from './withholdings.actions';
 export * from './trial-balance.actions';

@@ -38,13 +38,24 @@ export interface TeamNode {
 }
 
 // ─── CRM DASHBOARD STATS (Modularized & Resilient) ───────────────────────────
-export {
-    getCRMStats,
-    getSalesFunnel,
-    getRecentActivity,
-    getTopDeals,
-    getHighPerformanceStats,
-} from "@/modules/crm/actions/crm-stats.actions";
+import * as crmStatsActions from "@/modules/crm/actions/crm-stats.actions";
+
+export async function getCRMStats(...args: any[]) {
+    return (crmStatsActions.getCRMStats as any)(...args);
+}
+export async function getSalesFunnel(...args: any[]) {
+    return (crmStatsActions.getSalesFunnel as any)(...args);
+}
+export async function getRecentActivity(...args: any[]) {
+    return (crmStatsActions.getRecentActivity as any)(...args);
+}
+export async function getTopDeals(...args: any[]) {
+    return (crmStatsActions.getTopDeals as any)(...args);
+}
+export async function getHighPerformanceStats(...args: any[]) {
+    return (crmStatsActions.getHighPerformanceStats as any)(...args);
+}
+
 
 // ─── DEAL ACTIONS ─────────────────────────────────────────────────────────────
 

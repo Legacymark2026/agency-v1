@@ -30,8 +30,10 @@ COPY packages/video-editor/ ./packages/video-editor/
 COPY packages/video-learning/ ./packages/video-learning/
 COPY packages/voicebox/ ./packages/voicebox/
 
-# Copy web files
+# Copy web and scripts files
 COPY apps/web/ ./apps/web/
+COPY scripts/ ./scripts/
+
 
 # Generate Prisma client using schema in web app
 WORKDIR /app/apps/web

@@ -256,3 +256,6 @@ export async function dispatchMicroserviceRequest<T = any>(
 
   return tryFallback("Máximo de reintentos alcanzado (504 Gateway Timeout)");
 }
+
+export const executeMicroserviceRequest = dispatchMicroserviceRequest;
+
