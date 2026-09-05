@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { InteractiveSpotlight } from "@/components/dashboard/InteractiveSpotlight";
 import Link from "next/link";
+import { getCompanyFeedAction } from "@/actions/feed.actions";
+import { DashboardFeedWidget } from "@/components/feed/dashboard-feed-widget";
 
 export default async function DashboardPage() {
     let session = null;
@@ -32,6 +34,7 @@ export default async function DashboardPage() {
     const user = session?.user;
     let currentRole = user?.role || 'Super Admin';
     let activityLogs: any[] = [];
+    let feedPosts: any[] = [];
     let stats = {
         leadsCount: 0,
         dealsValue: 0,
@@ -42,7 +45,7 @@ export default async function DashboardPage() {
     // Load statistics safely with error shield
     try {
         if (user?.id) {
-            const [dbUser, logs, leads, deals, campaigns, invoices] = await Promise.all([
+            const [dbUser, logs, leads, deals, campaigns, invoices, feedRes] = await Promise.all([
                 prisma.user.findUnique({
                     where: { id: user.id },
                     select: { role: true }
@@ -60,11 +63,15 @@ export default async function DashboardPage() {
                 prisma.campaign.count({
                     where: { status: 'ACTIVE' }
                 }).catch(() => 0),
-                prisma.invoice.count().catch(() => 0)
+                prisma.invoice.count().catch(() => 0),
+                getCompanyFeedAction(5).catch(() => ({ success: false, data: [] }))
             ]);
 
             if (dbUser?.role) currentRole = dbUser.role;
             activityLogs = logs || [];
+            if ((feedRes as any)?.data) {
+                feedPosts = (feedRes as any).data;
+            }
             
             const totalDealsVal = (deals || []).reduce((acc: number, d: any) => acc + (d.value || 0), 0);
             stats = {
@@ -156,6 +163,12 @@ export default async function DashboardPage() {
                     );
                 })}
             </div>
+
+            {/* ── Muro Corporativo & Comunicados (Visible Siempre) ── */}
+            <DashboardFeedWidget 
+                posts={feedPosts}
+                currentUserId={user?.id}
+            />
 
             {/* ── Recent Activity ── */}
             <InteractiveSpotlight className="relative z-10 ds-section">

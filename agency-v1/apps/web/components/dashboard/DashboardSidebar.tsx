@@ -33,6 +33,8 @@ const NAV_GROUPS: NavGroup[] = [
         accent: "teal", icon: <LayoutDashboard size={20} />,
         items: [
             { href: "/dashboard", label: "Vista General", icon: <LayoutDashboard size={14} />, code: "OVW" },
+            { href: "/dashboard/feed", label: "Muro de Publicaciones", icon: <Share2 size={14} />, code: "FED" },
+            { href: "/dashboard/chat", label: "Chat Empresarial (Realtime)", icon: <MessageSquare size={14} />, code: "CHT" },
         ],
     },
     {
