@@ -113,7 +113,9 @@ const NAV_GROUPS: NavGroup[] = [
         title: "Soporte & Comunicación", code: "SUPPORT_SYS",
         accent: "rose", icon: <MessageSquare size={20} />,
         items: [
-            { href: "/dashboard/inbox", label: "Inbox Omnicanal", icon: <MessageSquare size={14} />, code: "BCX" },
+            { href: "/dashboard/chat", label: "Chat Empresarial (Realtime)", icon: <MessageSquare size={14} />, code: "CHT" },
+            { href: "/dashboard/feed", label: "Muro de Publicaciones", icon: <Share2 size={14} />, code: "FED" },
+            { href: "/dashboard/inbox", label: "Inbox Omnicanal", icon: <Mail size={14} />, code: "BCX" },
             { href: "/dashboard/kanban", label: "Gestión Operativa", icon: <Trello size={14} />, code: "KBN" },
             { href: "/dashboard/events", label: "Calendario de Eventos", icon: <Calendar size={14} />, code: "CAL" },
         ],

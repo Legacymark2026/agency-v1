@@ -79,8 +79,10 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Proyectos / Portafolio ────────────────────────────
     "/dashboard/projects": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_USER],
 
-    // ── Inbox Omnicanal ───────────────────────────────────
+    // ── Inbox Omnicanal, Chat y Feed Empresarial ─────────
     "/dashboard/inbox": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/chat": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
+    "/dashboard/feed": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
 
     // ── Marketing Hub ─────────────────────────────────────
     "/dashboard/marketing": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
@@ -312,10 +314,12 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     // Automatización
     { perm: "automation.view", routes: ["/dashboard/admin/automation", "/dashboard/admin/architecture"] },
     { perm: "automation.manage", routes: ["/dashboard/admin/automation"] },
-    // Inbox
-    { perm: "inbox.view", routes: ["/dashboard/inbox"] },
-    { perm: "inbox.send", routes: ["/dashboard/inbox"] },
-    { perm: "inbox.manage", routes: ["/dashboard/inbox"] },
+    // Inbox & Chat & Feed
+    { perm: "inbox.view", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
+    { perm: "inbox.send", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
+    { perm: "inbox.manage", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
+    { perm: "chat.view", routes: ["/dashboard/chat"] },
+    { perm: "feed.view", routes: ["/dashboard/feed"] },
     // Contenido
     { perm: "content.view", routes: ["/dashboard/posts", "/dashboard/posts/categories"] },
     { perm: "content.create", routes: ["/dashboard/posts", "/dashboard/posts/create"] },
