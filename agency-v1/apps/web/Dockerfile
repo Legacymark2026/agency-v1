@@ -48,6 +48,10 @@ RUN npx tsc -p tsconfig.json --noEmit false
 
 # Build Next.js app using turbo from the root
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV AUTH_SECRET="build-dummy-auth-secret-for-nextjs-compilation-only"
+ENV NEXTAUTH_SECRET="build-dummy-auth-secret-for-nextjs-compilation-only"
+ENV DATABASE_URL="postgresql://legacymark:legacymark_dev@127.0.0.1:5432/legacymark"
 RUN NODE_OPTIONS="--max-old-space-size=4096" npx turbo build --filter=web
 
 # Runner stage
