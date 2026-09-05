@@ -196,20 +196,22 @@ export function SidebarClientContent(props: SidebarContentProps) {
                                 </div>
                             </div>
                         )}
-                        {/* Direct link to Muro Corporativo */}
-                        <Link
-                            href="/dashboard/feed"
-                            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                                pathname === "/dashboard/feed"
-                                    ? "bg-teal-500/20 text-teal-400 border border-teal-500/40 shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]"
-                                    : "text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800"
-                            }`}
-                            title="Muro de Publicaciones Corporativo"
-                        >
-                            <Share2 size={16} />
-                        </Link>
+                    </div>
 
-                        <NotificationBell />
+                    {/* Direct link to Muro Corporativo */}
+                    <Link
+                        href="/dashboard/feed"
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                            pathname === "/dashboard/feed"
+                                ? "bg-teal-500/20 text-teal-400 border border-teal-500/40 shadow-[0_0_15px_-3px_rgba(20,184,166,0.3)]"
+                                : "text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800"
+                        }`}
+                        title="Muro de Publicaciones Corporativo"
+                    >
+                        <Share2 size={16} />
+                    </Link>
+
+                    <NotificationBell />
                     <div className="group relative">
                         {currentUser.image ? (
                             <div className="relative h-8 w-8 rounded-full overflow-hidden border border-slate-700 cursor-pointer group-hover:border-teal-500 transition-colors">
