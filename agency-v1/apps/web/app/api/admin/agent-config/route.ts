@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { AGENCY_SYSTEM_PROMPT } from "@/lib/ai/system-prompt"; // Fallback if no DB record
 
+export const dynamic = "force-dynamic";
+
 // GET current agent config
 export async function GET() {
     try {
