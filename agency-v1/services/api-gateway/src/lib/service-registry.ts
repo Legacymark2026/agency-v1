@@ -28,6 +28,8 @@ export const SERVICES = {
   affiliate:   process.env.AFFILIATE_SERVICE_URL   || "http://affiliate-service:4019",
   pos:         process.env.POS_SERVICE_URL         || "http://pos-service:4020",
   payment:     process.env.PAYMENT_SERVICE_URL     || "http://payment-service:4022",
+  chat:        process.env.CHAT_SERVICE_URL        || "http://chat-service:4023",
+  feed:        process.env.FEED_SERVICE_URL        || "http://feed-service:4024",
 } as const;
 
 export type ServiceName = keyof typeof SERVICES;

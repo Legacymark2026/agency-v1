@@ -4339,3 +4339,141 @@ model PaymentIdempotencyRecord {
   deletedAt DateTime? @map("col_deleted_at")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MULTITENANT ENTERPRISE CHAT & REALTIME COMMUNICATION (chat-service)
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ChatChannel {
+  id          String              @id @default(uuid())
+  companyId   String              @map("company_id")
+  name        String
+  description String?
+  type        String              @default("PUBLIC") // PUBLIC, PRIVATE, DIRECT_MESSAGE
+  isArchived  Boolean             @default(false) @map("is_archived")
+  createdById String              @map("created_by_id")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  members     ChatChannelMember[]
+  messages    ChatMessage[]
+
+  @@index([companyId])
+  @@index([type])
+  @@map("tbl_chat_channels")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ChatChannelMember {
+  id          String       @id @default(uuid())
+  channelId   String       @map("channel_id")
+  companyId   String       @map("company_id")
+  userId      String       @map("user_id")
+  role        String       @default("MEMBER") // OWNER, ADMIN, MEMBER
+  joinedAt    DateTime     @default(now()) @map("joined_at")
+  lastReadAt  DateTime?    @map("last_read_at")
+
+  channel     ChatChannel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId, companyId])
+  @@map("tbl_chat_channel_members")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ChatMessage {
+  id          String       @id @default(uuid())
+  channelId   String       @map("channel_id")
+  companyId   String       @map("company_id")
+  senderId    String       @map("sender_id")
+  senderName  String       @map("sender_name")
+  content     String
+  type        String       @default("TEXT") // TEXT, IMAGE, FILE, RICHTEXT_CARD
+  metadata    Json?        @default("{}")
+  isEdited    Boolean      @default(false) @map("is_edited")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  channel     ChatChannel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([companyId])
+  @@map("tbl_chat_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MULTITENANT ENTERPRISE FEED & CORPORATE PUBLICATIONS (feed-service)
+// ══════════════════════════════════════════════════════════════════════════════
+
+model EnterprisePost {
+  id              String                    @id @default(uuid())
+  companyId       String                    @map("company_id")
+  authorId        String                    @map("author_id")
+  authorName      String                    @map("author_name")
+  authorAvatar    String?                   @map("author_avatar")
+  title           String?
+  content         String
+  mediaUrls       Json                      @default("[]") @map("media_urls")
+  audienceScope   String                    @default("COMPANY_WIDE") @map("audience_scope") // COMPANY_WIDE, DEPARTMENT, CONFIDENTIAL_MANAGEMENT
+  departmentId    String?                   @map("department_id")
+  tags            Json                      @default("[]")
+  isPinned        Boolean                   @default(false) @map("is_pinned")
+  isLocked        Boolean                   @default(false) @map("is_locked")
+  viewCount       Int                       @default(0) @map("view_count")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+
+  reactions       EnterprisePostReaction[]
+  comments        EnterprisePostComment[]
+
+  @@index([companyId, audienceScope])
+  @@index([companyId, isPinned, createdAt])
+  @@map("tbl_enterprise_posts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EnterprisePostReaction {
+  id          String         @id @default(uuid())
+  postId      String         @map("post_id")
+  companyId   String         @map("company_id")
+  userId      String         @map("user_id")
+  type        String         // LIKE, LOVE, CELEBRATE, INSIGHTFUL, CURIOUS
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  post        EnterprisePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, type])
+  @@index([postId, companyId])
+  @@map("tbl_enterprise_post_reactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EnterprisePostComment {
+  id          String                  @id @default(uuid())
+  postId      String                  @map("post_id")
+  companyId   String                  @map("company_id")
+  authorId    String                  @map("author_id")
+  authorName  String                  @map("author_name")
+  authorAvatar String?                @map("author_avatar")
+  parentId    String?                 @map("parent_id")
+  content     String
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+
+  post        EnterprisePost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent      EnterprisePostComment?  @relation("NestedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     EnterprisePostComment[] @relation("NestedComments")
+
+  @@index([postId, companyId])
+  @@index([parentId])
+  @@map("tbl_enterprise_post_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+

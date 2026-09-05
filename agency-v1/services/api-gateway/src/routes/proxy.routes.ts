@@ -222,3 +222,12 @@ proxyRouter.use("/api/affiliates", createResilientProxy("affiliate", SERVICES.af
 // Payment Service (Decoupled Microservice)
 proxyRouter.use("/api/v1/payments", createResilientProxy("payment", SERVICES.payment));
 proxyRouter.use("/api/payments", createResilientProxy("payment", SERVICES.payment));
+
+// Real-time Chat Microservice
+proxyRouter.use("/api/v1/chat", createResilientProxy("chat", SERVICES.chat));
+proxyRouter.use("/api/chat", createResilientProxy("chat", SERVICES.chat));
+
+// Enterprise Feed Microservice
+proxyRouter.use("/api/v1/feed", createResilientProxy("feed", SERVICES.feed));
+proxyRouter.use("/api/feed", createResilientProxy("feed", SERVICES.feed));
+
