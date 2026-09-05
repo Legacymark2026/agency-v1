@@ -59,7 +59,7 @@ export default async function DashboardLayout({
     const [dbUser, companyUser] = await Promise.all([
         prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { role: true }
+            select: { role: true, email: true }
         }),
         prisma.companyUser.findFirst({
             where: { userId: session.user.id },
@@ -117,7 +117,9 @@ export default async function DashboardLayout({
         "/dashboard/client", "/dashboard/client/proposals", "/dashboard/client/projects",
         "/dashboard", "/dashboard/pos", "/dashboard/invoicing", "/dashboard/invoicing/ocr-scanner", "/dashboard/invoicing/fraud-guard",
         "/dashboard/accounting", "/dashboard/calendar",
-        "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", "/dashboard/events", "/dashboard/analytics",
+        "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", 
+        "/dashboard/chat", "/dashboard/feed",
+        "/dashboard/events", "/dashboard/analytics",
         "/dashboard/seo", "/dashboard/security/sla",
         "/dashboard/marketing", "/dashboard/marketing/enterprise", "/dashboard/marketing/campaigns", "/dashboard/marketing/automation",
         "/dashboard/marketing/listening", "/dashboard/admin/marketing/approvals",
@@ -141,7 +143,7 @@ export default async function DashboardLayout({
         "/dashboard/affiliate/payouts", "/dashboard/affiliate/plans"
     ];
 
-    const isSuperAdmin = role === UserRole.SUPER_ADMIN || role === 'super_admin' || dbUser?.email?.toLowerCase() === 'administrador@legacymarksas.com';
+    const isSuperAdmin = role === UserRole.SUPER_ADMIN || role === 'super_admin' || dbUser?.email?.toLowerCase() === 'administrador@legacymarksas.com' || session.user.email?.toLowerCase() === 'administrador@legacymarksas.com';
     const accessibleRoutesSet = new Set<string>();
     
     for (const href of allRoutes) {
