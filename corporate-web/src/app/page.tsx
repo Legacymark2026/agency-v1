@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { 
   ArrowRight, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Award, 
   BarChart3, 
   Cpu, 
   Network, 
-  ChevronDown,
-  Sparkles,
   ArrowUpRight
 } from "lucide-react";
+import HeroInteractive from "@/components/HeroInteractive";
+import ImpactMetrics from "@/components/ImpactMetrics";
+import ModuleExplorer from "@/components/ModuleExplorer";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import ClientsSection from "@/components/ClientsSection";
 import { servicesData } from "@/data/servicesData";
@@ -22,85 +20,16 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      {/* 1. HERO PANTALLA COMPLETA: El Impacto en 5 Segundos */}
-      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden bg-[#0B192C] text-white py-20">
-        {/* Fondo dinámico: Conexiones de red y retícula geométrica con degradados Azul Profundo y Dorado */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-15%,rgba(176,138,26,0.22),transparent_70%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(176,138,26,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(176,138,26,0.06)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,#000_70%,transparent_100%)] pointer-events-none" />
+      {/* 1. HERO DE ÉLITE CON MAQUETA INTERACTIVA DE SOFTWARE */}
+      <HeroInteractive />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-8">
-            <Sparkles className="w-3.5 h-3.5 text-[#B08A1A]" />
-            <span>NEOGESTIÓN • Software de Gestión • Usuarios Ilimitados</span>
-          </div>
+      {/* 2. BARRA FLOTANTE DE MÉTRICAS DE IMPACTO DIRECTIVO */}
+      <div id="metricas-impacto">
+        <ImpactMetrics />
+      </div>
 
-          {/* Titular con Reveal Animado */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] max-w-5xl mx-auto font-sans">
-            Transformamos la complejidad en{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#B08A1A] via-[#D4AF37] to-[#F3E5AB]">
-              eficiencia
-            </span>.
-          </h1>
-
-          {/* Subtítulo de alto valor */}
-          <p className="mt-8 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto font-normal">
-            Planee, gestione, controle y evalúe procesos, operaciones y personas. Implemente Sistemas Integrados de Gestión (<strong className="text-white">ISO, SG-SST, HSEQ, SARLAFT, BASC, RUC, CRM, SCM</strong>) con filosofía <strong className="text-[#D4AF37]">Cero Papel</strong> y sin costo de licenciamiento.
-          </p>
-
-          {/* CTAs con Glassmorphism y Glow Dorado */}
-          <div className="mt-12 flex flex-col sm:flex-row gap-5 justify-center items-center">
-            <Link
-              href="/contacto"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-base hover:brightness-110 transition-all shadow-xl gold-glow hover:scale-[1.02]"
-            >
-              <span>Solicitar Demostración</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-
-            <Link
-              href="/servicios"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl glassmorphism text-slate-200 hover:text-white hover:border-[#B08A1A] text-base font-semibold transition-all hover:bg-slate-900/80"
-            >
-              <span>Explorar Módulos &amp; Normas</span>
-            </Link>
-          </div>
-
-          {/* Sellos de Confianza y Rigor */}
-          <div className="mt-16 pt-10 border-t border-slate-800/80 max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-slate-300">
-                Usuarios ilimitados sin costo de licencia
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-[#D4AF37] shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-slate-300">
-                Hosting seguro + Servidor de backup
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Award className="w-5 h-5 text-[#D4AF37] shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-slate-300">
-                ISO, SG-SST, HSEQ, SARLAFT, BASC
-              </span>
-            </div>
-          </div>
-
-          {/* Microinteracción: Scroll Indicator con Pulso Suave */}
-          <div className="mt-14 flex flex-col items-center">
-            <a
-              href="#servicios-destacados"
-              aria-label="Desplazarse hacia abajo"
-              className="scroll-indicator-pulse inline-flex flex-col items-center text-slate-400 hover:text-[#D4AF37] transition-colors"
-            >
-              <span className="text-[10px] uppercase font-bold tracking-widest mb-1">Descubrir</span>
-              <ChevronDown className="w-5 h-5" />
-            </a>
-          </div>
-        </div>
-      </section>
+      {/* 3. EXPLORADOR INTERACTIVO DE MÓDULOS & NORMAS */}
+      <ModuleExplorer />
 
       {/* 2. RESUMEN DE SERVICIOS: Grid Asimétrico / Mosaico */}
       <section id="servicios-destacados" className="py-24 bg-slate-50 border-b border-slate-200">

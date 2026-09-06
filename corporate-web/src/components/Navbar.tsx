@@ -45,8 +45,8 @@ export default function Navbar() {
               <span className="text-xl font-black tracking-wider text-white block leading-none font-sans">
                 NEO<span className="text-[#B08A1A]">GESTIÓN</span>
               </span>
-              <span className="text-[10px] font-semibold text-slate-400 tracking-[0.2em] uppercase">
-                Consultoría de Élite
+              <span className="text-[9px] font-semibold text-[#D4AF37] tracking-[0.18em] uppercase">
+                Consultoría de Colombia S.A.S.
               </span>
             </div>
           </Link>

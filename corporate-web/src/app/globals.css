@@ -86,3 +86,52 @@ body {
 .scroll-indicator-pulse {
   animation: softPulse 2s infinite ease-in-out;
 }
+
+/* Luxury Ambient Gradient & Mesh */
+.hero-ambient-mesh {
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(176, 138, 26, 0.18) 0px, transparent 50%),
+    radial-gradient(at 85% 20%, rgba(30, 62, 98, 0.45) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(212, 175, 55, 0.12) 0px, transparent 60%);
+}
+
+/* Polished Dark Glass Cards */
+.enterprise-card {
+  background: rgba(11, 25, 44, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(176, 138, 26, 0.22);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.enterprise-card:hover {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 25px -5px rgba(176, 138, 26, 0.2);
+  transform: translateY(-3px);
+}
+
+/* Subtle Gold Text Shimmer */
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.text-gold-gradient {
+  background: linear-gradient(
+    115deg,
+    #f3e5ab 0%,
+    #d4af37 35%,
+    #ffffff 50%,
+    #d4af37 65%,
+    #b08a1a 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: goldShimmer 8s linear infinite;
+}
