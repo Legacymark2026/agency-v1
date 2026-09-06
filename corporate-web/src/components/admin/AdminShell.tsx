@@ -45,7 +45,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row text-slate-800">
       {/* Sidebar */}
-      <aside className="w-full lg:w-72 bg-[#0B192C] text-white p-6 flex flex-col justify-between border-r border-amber-900/30 shrink-0">
+      <aside className="w-full lg:w-72 bg-[#01426F] text-white p-6 flex flex-col justify-between border-r border-amber-900/30 shrink-0">
         <div>
           {/* Logo */}
           <div className="flex items-center gap-3 pb-6 border-b border-slate-800 mb-6">

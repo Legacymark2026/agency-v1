@@ -21,7 +21,7 @@ export default function ServiciosPage() {
   return (
     <div className="flex flex-col bg-slate-50 min-h-screen">
       {/* Header Banner */}
-      <section className="bg-[#0B192C] text-white py-20 lg:py-28 relative overflow-hidden">
+      <section className="bg-[#01426F] text-white py-20 lg:py-28 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
@@ -60,7 +60,7 @@ export default function ServiciosPage() {
                   key={item.step}
                   className={`p-6 rounded-3xl border transition-all relative flex flex-col justify-between ${
                     isHighlighted
-                      ? "bg-[#0B192C] text-white border-[#B08A1A] shadow-xl scale-105 z-10 gold-glow"
+                      ? "bg-[#01426F] text-white border-[#B08A1A] shadow-xl scale-105 z-10 gold-glow"
                       : "bg-slate-50 text-slate-900 border-slate-200"
                   }`}
                 >
@@ -172,7 +172,7 @@ export default function ServiciosPage() {
       </section>
 
       {/* CTA Final */}
-      <section className="py-20 bg-[#0B192C] text-white text-center">
+      <section className="py-20 bg-[#01426F] text-white text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
             ¿Requiere un diagnóstico preliminar para su organización?

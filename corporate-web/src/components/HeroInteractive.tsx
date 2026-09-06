@@ -25,7 +25,7 @@ export default function HeroInteractive() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "ceropapel" | "sgsst" | "compliance">("dashboard");
 
   return (
-    <section className="relative overflow-hidden bg-[#0B192C] text-white pt-24 pb-20 lg:pt-32 lg:pb-32 hero-ambient-mesh">
+    <section className="relative overflow-hidden bg-[#01426F] text-white pt-24 pb-20 lg:pt-32 lg:pb-32 hero-ambient-mesh">
       {/* Dynamic background network lines */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-15%,rgba(176,138,26,0.22),transparent_70%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(176,138,26,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(176,138,26,0.06)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,#000_70%,transparent_100%)] pointer-events-none" />

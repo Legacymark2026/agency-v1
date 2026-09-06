@@ -53,7 +53,7 @@ const metrics: MetricItem[] = [
 export default function ImpactMetrics() {
   return (
     <section className="relative z-20 -mt-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="enterprise-card rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl bg-gradient-to-b from-[#0B192C]/95 to-[#060D17]/95 border border-[#B08A1A]/30">
+      <div className="enterprise-card rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl bg-gradient-to-b from-[#01426F]/95 to-[#060D17]/95 border border-[#B08A1A]/30">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800/80 mb-8">
           <div className="flex items-center gap-3">
             <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] animate-pulse" />

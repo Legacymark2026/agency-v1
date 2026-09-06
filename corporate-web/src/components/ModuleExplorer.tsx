@@ -149,7 +149,7 @@ export default function ModuleExplorer() {
                 onClick={() => setSelectedId(m.id)}
                 className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2.5 ${
                   isSelected
-                    ? "bg-[#0B192C] text-[#D4AF37] shadow-lg border border-[#B08A1A]/50 scale-[1.02]"
+                    ? "bg-[#01426F] text-[#D4AF37] shadow-lg border border-[#B08A1A]/50 scale-[1.02]"
                     : "bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
@@ -208,7 +208,7 @@ export default function ModuleExplorer() {
             </div>
 
             {/* Right Column: Key Stats & Enterprise Card */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-[#0B192C] to-[#07111E] text-white p-8 rounded-3xl border border-[#B08A1A]/30 shadow-xl flex flex-col justify-between space-y-8">
+            <div className="lg:col-span-5 bg-gradient-to-br from-[#01426F] to-[#07111E] text-white p-8 rounded-3xl border border-[#B08A1A]/30 shadow-xl flex flex-col justify-between space-y-8">
               <div>
                 <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                   <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37]">

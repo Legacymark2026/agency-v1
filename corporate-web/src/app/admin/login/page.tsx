@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B192C] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#01426F] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Gradients */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_40%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
 
@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
         <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-2xl border border-slate-200">
           {/* Brand Header */}
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#0B192C] border border-[#B08A1A] flex items-center justify-center text-[#D4AF37] mx-auto mb-4 shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-[#01426F] border border-[#B08A1A] flex items-center justify-center text-[#D4AF37] mx-auto mb-4 shadow-md">
               <svg
                 viewBox="0 0 24 24"
                 className="w-6 h-6 fill-none stroke-current stroke-[2]"
@@ -111,7 +111,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#0B192C] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-md border border-[#B08A1A]/40 disabled:opacity-50"
+              className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-md border border-[#B08A1A]/40 disabled:opacity-50"
             >
               {loading ? (
                 <>

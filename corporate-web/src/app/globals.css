@@ -2,8 +2,8 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0b192c;
-  --color-deep-blue: #0b192c;
+  --foreground: #01426F;
+  --color-deep-blue: #01426F;
   --color-deep-blue-light: #1e3e62;
   --color-gold: #b08a1a;
   --color-gold-light: #d4af37;
@@ -27,17 +27,17 @@ body {
 
 /* Glassmorphism utility */
 .glassmorphism {
-  background: rgba(11, 25, 44, 0.75);
+  background: rgba(1, 66, 111, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(176, 138, 26, 0.25);
+  border: 1px solid rgba(176, 138, 26, 0.35);
 }
 
 .glassmorphism-light {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(176, 138, 26, 0.2);
+  border: 1px solid rgba(176, 138, 26, 0.25);
 }
 
 /* Gold glow effect */
@@ -87,26 +87,26 @@ body {
   animation: softPulse 2s infinite ease-in-out;
 }
 
-/* Luxury Ambient Gradient & Mesh */
+/* Luxury Ambient Gradient & Mesh con Azul Institucional #01426F y Dorado #B08A1A */
 .hero-ambient-mesh {
   background-image: 
-    radial-gradient(at 15% 15%, rgba(176, 138, 26, 0.18) 0px, transparent 50%),
-    radial-gradient(at 85% 20%, rgba(30, 62, 98, 0.45) 0px, transparent 50%),
-    radial-gradient(at 50% 80%, rgba(212, 175, 55, 0.12) 0px, transparent 60%);
+    radial-gradient(at 15% 15%, rgba(176, 138, 26, 0.22) 0px, transparent 50%),
+    radial-gradient(at 85% 20%, rgba(1, 66, 111, 0.7) 0px, transparent 55%),
+    radial-gradient(at 50% 80%, rgba(176, 138, 26, 0.15) 0px, transparent 60%);
 }
 
 /* Polished Dark Glass Cards */
 .enterprise-card {
-  background: rgba(11, 25, 44, 0.82);
+  background: rgba(1, 66, 111, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(176, 138, 26, 0.22);
+  border: 1px solid rgba(176, 138, 26, 0.3);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .enterprise-card:hover {
-  border-color: rgba(212, 175, 55, 0.55);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 25px -5px rgba(176, 138, 26, 0.2);
+  border-color: rgba(212, 175, 55, 0.65);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.45), 0 0 25px -5px rgba(176, 138, 26, 0.3);
   transform: translateY(-3px);
 }
 

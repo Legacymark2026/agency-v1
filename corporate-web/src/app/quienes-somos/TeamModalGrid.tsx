@@ -15,7 +15,7 @@ export default function TeamModalGrid() {
           <div
             key={member.id}
             onClick={() => setSelectedMember(member)}
-            className="cursor-pointer group bg-[#0B192C] rounded-3xl border border-slate-800 overflow-hidden shadow-lg hover:border-[#B08A1A] transition-all duration-300 flex flex-col hover:-translate-y-1.5"
+            className="cursor-pointer group bg-[#01426F] rounded-3xl border border-slate-800 overflow-hidden shadow-lg hover:border-[#B08A1A] transition-all duration-300 flex flex-col hover:-translate-y-1.5"
           >
             {/* Foto con efecto Reveal (borde dorado en hover) */}
             <div className="h-72 overflow-hidden relative">
@@ -25,9 +25,9 @@ export default function TeamModalGrid() {
                 alt={member.name}
                 className="w-full h-full object-cover object-top filter grayscale contrast-110 group-hover:filter-none group-hover:scale-105 transition-all duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#01426F] via-transparent to-transparent opacity-80" />
               <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wider bg-[#0B192C]/80 px-2.5 py-1 rounded-md border border-[#B08A1A]/30">
+                <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wider bg-[#01426F]/80 px-2.5 py-1 rounded-md border border-[#B08A1A]/30">
                   Ver perfil completo
                 </span>
               </div>
@@ -57,7 +57,7 @@ export default function TeamModalGrid() {
       {/* Modal de Biografía Completa */}
       {selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#0B192C] text-white border border-[#B08A1A] rounded-3xl max-w-2xl w-full p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+          <div className="bg-[#01426F] text-white border border-[#B08A1A] rounded-3xl max-w-2xl w-full p-6 sm:p-10 shadow-2xl relative overflow-hidden">
             {/* Botón cerrar */}
             <button
               type="button"

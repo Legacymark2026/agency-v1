@@ -56,7 +56,7 @@ export default function ServicesTabs() {
                     onClick={() => setActiveServiceId(svc.id)}
                     className={`w-full text-left p-4 rounded-2xl transition-all duration-200 flex items-center justify-between group ${
                       isSelected
-                        ? "bg-[#0B192C] text-white shadow-lg border border-[#B08A1A]/40"
+                        ? "bg-[#01426F] text-white shadow-lg border border-[#B08A1A]/40"
                         : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/80"
                     }`}
                   >
@@ -104,7 +104,7 @@ export default function ServicesTabs() {
             </div>
 
             <div className="flex items-start gap-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-[#0B192C] text-[#D4AF37] border border-[#B08A1A]/40 flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-[#01426F] text-[#D4AF37] border border-[#B08A1A]/40 flex items-center justify-center shrink-0">
                 <IconComponent className="w-7 h-7" />
               </div>
               <div>
@@ -143,7 +143,7 @@ export default function ServicesTabs() {
               </div>
 
               {/* Columna Derecha: Mockup Interactivo de la Plataforma */}
-              <div className="bg-[#0B192C] text-white p-6 rounded-2xl border border-amber-900/40 shadow-inner flex flex-col justify-between">
+              <div className="bg-[#01426F] text-white p-6 rounded-2xl border border-amber-900/40 shadow-inner flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-[11px] text-slate-400">
                     <span className="font-mono text-[#D4AF37]">DASHBOARD EJECUTIVO</span>

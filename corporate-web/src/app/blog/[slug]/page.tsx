@@ -105,7 +105,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           {/* Autor */}
           <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-[#0B192C] text-[#D4AF37] border border-[#B08A1A]/50 flex items-center justify-center font-bold text-sm">
+              <div className="w-11 h-11 rounded-full bg-[#01426F] text-[#D4AF37] border border-[#B08A1A]/50 flex items-center justify-center font-bold text-sm">
                 <User className="w-5 h-5" />
               </div>
               <div>
@@ -160,7 +160,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 </span>
                 <Link
                   href="/contacto"
-                  className="w-full block text-center px-4 py-2.5 rounded-xl bg-[#0B192C] text-[#D4AF37] text-xs font-bold hover:bg-slate-900 transition-colors"
+                  className="w-full block text-center px-4 py-2.5 rounded-xl bg-[#01426F] text-[#D4AF37] text-xs font-bold hover:bg-slate-900 transition-colors"
                 >
                   Contactar al Autor
                 </Link>
@@ -177,7 +177,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             ))}
 
             {/* Banner de Consulta Especializada */}
-            <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-[#0B192C] text-white border border-[#B08A1A]">
+            <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-[#01426F] text-white border border-[#B08A1A]">
               <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] block mb-2">
                 Asesoría a la Medida
               </span>

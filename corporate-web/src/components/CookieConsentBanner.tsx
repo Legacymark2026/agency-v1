@@ -81,7 +81,7 @@ export default function CookieConsentBanner() {
       aria-label="Gestión de consentimiento de cookies"
       className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
-      <div className="bg-[#0B192C]/95 backdrop-blur-md border border-[#B08A1A]/40 text-white p-5 sm:p-6 rounded-3xl shadow-2xl space-y-4">
+      <div className="bg-[#01426F]/95 backdrop-blur-md border border-[#B08A1A]/40 text-white p-5 sm:p-6 rounded-3xl shadow-2xl space-y-4">
         <div className="flex items-start gap-3.5">
           <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-[#B08A1A]/50 flex items-center justify-center text-[#D4AF37] shrink-0 mt-0.5">
             <Cookie className="w-5 h-5" />

@@ -42,7 +42,7 @@ const clients: ClientItem[] = [
 
 export default function ClientsSection() {
   return (
-    <section className="py-20 bg-[#0B192C] text-white border-y border-amber-900/30 relative overflow-hidden">
+    <section className="py-20 bg-[#01426F] text-white border-y border-amber-900/30 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(176,138,26,0.12),transparent)] pointer-events-none" />
 

@@ -62,7 +62,7 @@ export default function LegalAccordion({
               href="/privacidad"
               className={`block p-3 rounded-xl transition-colors ${
                 activeDoc === "privacidad"
-                  ? "bg-[#0B192C] text-[#D4AF37] border border-[#B08A1A]/40"
+                  ? "bg-[#01426F] text-[#D4AF37] border border-[#B08A1A]/40"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -72,7 +72,7 @@ export default function LegalAccordion({
               href="/terminos"
               className={`block p-3 rounded-xl transition-colors ${
                 activeDoc === "terminos"
-                  ? "bg-[#0B192C] text-[#D4AF37] border border-[#B08A1A]/40"
+                  ? "bg-[#01426F] text-[#D4AF37] border border-[#B08A1A]/40"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -82,7 +82,7 @@ export default function LegalAccordion({
               href="/cookies"
               className={`block p-3 rounded-xl transition-colors ${
                 activeDoc === "cookies"
-                  ? "bg-[#0B192C] text-[#D4AF37] border border-[#B08A1A]/40"
+                  ? "bg-[#01426F] text-[#D4AF37] border border-[#B08A1A]/40"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >

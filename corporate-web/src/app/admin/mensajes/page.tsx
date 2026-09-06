@@ -207,7 +207,7 @@ export default function AdminMessagesPage() {
                   onClick={() => setFilter(st)}
                   className={`px-3 py-1.5 rounded-lg font-bold capitalize transition-all whitespace-nowrap text-[11px] ${
                     filter === st
-                      ? "bg-[#0B192C] text-[#D4AF37] shadow-sm"
+                      ? "bg-[#01426F] text-[#D4AF37] shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
@@ -289,7 +289,7 @@ export default function AdminMessagesPage() {
               {/* Header del Chat Activo */}
               <div className="p-4 sm:p-6 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-[#0B192C] text-[#D4AF37] flex items-center justify-center font-bold">
+                  <div className="w-11 h-11 rounded-2xl bg-[#01426F] text-[#D4AF37] flex items-center justify-center font-bold">
                     <User className="w-5 h-5" />
                   </div>
                   <div>
@@ -357,7 +357,7 @@ export default function AdminMessagesPage() {
                       <div
                         className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl shadow-sm text-xs leading-relaxed ${
                           isAdmin
-                            ? "bg-[#0B192C] text-white rounded-tr-none border border-[#B08A1A]/40"
+                            ? "bg-[#01426F] text-white rounded-tr-none border border-[#B08A1A]/40"
                             : "bg-white text-slate-800 rounded-tl-none border border-slate-200"
                         }`}
                       >

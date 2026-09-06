@@ -27,7 +27,7 @@ export default function TestimonialCarousel() {
               onClick={() => setActiveIndex(idx)}
               className={`cursor-pointer transition-all duration-500 rounded-3xl p-8 border ${
                 isCenter
-                  ? "bg-[#0B192C] text-white border-[#B08A1A] shadow-2xl scale-105 z-10 gold-glow ring-1 ring-[#B08A1A]/40"
+                  ? "bg-[#01426F] text-white border-[#B08A1A] shadow-2xl scale-105 z-10 gold-glow ring-1 ring-[#B08A1A]/40"
                   : "bg-slate-50 text-slate-700 border-slate-200 opacity-65 hover:opacity-90 scale-95 hidden lg:block"
               }`}
             >
@@ -64,7 +64,7 @@ export default function TestimonialCarousel() {
                 <div className="mb-4">
                   <span
                     className={`text-2xl font-black block leading-none ${
-                      isCenter ? "text-[#D4AF37]" : "text-[#0B192C]"
+                      isCenter ? "text-[#D4AF37]" : "text-[#01426F]"
                     }`}
                   >
                     {item.metric}

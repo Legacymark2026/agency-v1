@@ -101,7 +101,7 @@ export default function BlogFeed({ initialPosts }: { initialPosts: BlogPostItem[
               setSearchQuery("");
               setSelectedCategory("Todas");
             }}
-            className="px-5 py-2.5 bg-[#0B192C] text-[#D4AF37] text-xs font-bold rounded-xl hover:bg-slate-900"
+            className="px-5 py-2.5 bg-[#01426F] text-[#D4AF37] text-xs font-bold rounded-xl hover:bg-slate-900"
           >
             Restablecer Filtros
           </button>
@@ -129,14 +129,14 @@ export default function BlogFeed({ initialPosts }: { initialPosts: BlogPostItem[
                     alt={post.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                   />
-                  <div className="absolute inset-0 bg-[#0B192C]/40 group-hover:bg-[#0B192C]/75 transition-colors duration-300 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-[#01426F]/40 group-hover:bg-[#01426F]/75 transition-colors duration-300 flex items-center justify-center">
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 text-xs font-black shadow-lg">
                       Leer artículo completo
                     </span>
                   </div>
 
                   <div className="absolute top-4 left-4">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B192C]/85 backdrop-blur-md text-[#D4AF37] border border-[#B08A1A]/40 text-xs font-bold">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#01426F]/85 backdrop-blur-md text-[#D4AF37] border border-[#B08A1A]/40 text-xs font-bold">
                       <Tag className="w-3 h-3 text-[#B08A1A]" />
                       <span>{post.category}</span>
                     </span>
@@ -168,7 +168,7 @@ export default function BlogFeed({ initialPosts }: { initialPosts: BlogPostItem[
 
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#0B192C] text-[#D4AF37] flex items-center justify-center font-bold text-xs">
+                      <div className="w-8 h-8 rounded-full bg-[#01426F] text-[#D4AF37] flex items-center justify-center font-bold text-xs">
                         <User className="w-4 h-4" />
                       </div>
                       <div>

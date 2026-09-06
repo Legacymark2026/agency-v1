@@ -12,7 +12,7 @@ export default function ContactoPage() {
   return (
     <div className="flex flex-col bg-slate-50 min-h-screen">
       {/* Banner */}
-      <section className="bg-[#0B192C] text-white py-20 lg:py-28 relative overflow-hidden">
+      <section className="bg-[#01426F] text-white py-20 lg:py-28 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
@@ -34,7 +34,7 @@ export default function ContactoPage() {
             {/* Canales y Datos de Contacto con Borde Inferior Dorado */}
             <div className="lg:col-span-5 space-y-8">
               {/* WhatsApp Box */}
-              <div className="bg-[#0B192C] text-white p-8 rounded-3xl border border-[#B08A1A]/40 shadow-xl gold-border-slide">
+              <div className="bg-[#01426F] text-white p-8 rounded-3xl border border-[#B08A1A]/40 shadow-xl gold-border-slide">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-11 h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-md">
                     <MessageCircle className="w-6 h-6" />
@@ -125,7 +125,7 @@ export default function ContactoPage() {
           </div>
 
           {/* Cobertura Nacional 100% Digital */}
-          <div className="mt-16 bg-[#0B192C] text-white rounded-3xl border border-[#B08A1A]/40 p-8 sm:p-12 shadow-xl relative overflow-hidden">
+          <div className="mt-16 bg-[#01426F] text-white rounded-3xl border border-[#B08A1A]/40 p-8 sm:p-12 shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.18),transparent)] pointer-events-none" />
             
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">

@@ -23,12 +23,12 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0B192C]/95 backdrop-blur-md border-b border-amber-900/30 text-white shadow-lg">
+    <header className="sticky top-0 z-50 bg-[#01426F]/95 backdrop-blur-md border-b border-amber-900/30 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo NEOGESTIÓN */}
           <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#0B192C] to-[#1E3E62] border border-[#B08A1A]/50 flex items-center justify-center text-[#B08A1A] shadow-md group-hover:border-[#B08A1A] transition-all duration-300">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#01426F] to-[#1E3E62] border border-[#B08A1A]/50 flex items-center justify-center text-[#B08A1A] shadow-md group-hover:border-[#B08A1A] transition-all duration-300">
               {/* Isotipo geométrico en Dorado */}
               <svg
                 viewBox="0 0 24 24"
@@ -115,7 +115,7 @@ export default function Navbar() {
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-amber-900/30 bg-[#0B192C] px-4 pt-2 pb-6 space-y-2">
+        <div className="md:hidden border-b border-amber-900/30 bg-[#01426F] px-4 pt-2 pb-6 space-y-2">
           {navLinks.map((link) => {
             const active = isActive(link.href);
             return (

@@ -121,7 +121,7 @@ export default function WhatsAppButton() {
       {chatOpen && (
         <div className="mb-4 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header Directivo */}
-          <div className="bg-[#0B192C] p-4 text-white flex items-center justify-between border-b border-[#B08A1A]/40">
+          <div className="bg-[#01426F] p-4 text-white flex items-center justify-between border-b border-[#B08A1A]/40">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#1E3E62] border border-[#B08A1A] flex items-center justify-center text-[#D4AF37] shadow-md">
                 <MessageSquare className="w-5 h-5" />
@@ -201,7 +201,7 @@ export default function WhatsAppButton() {
                       <div
                         className={`p-3 rounded-2xl shadow-xs max-w-[85%] text-xs ${
                           isAdmin
-                            ? "bg-[#0B192C] text-white rounded-tl-none border border-[#B08A1A]/40"
+                            ? "bg-[#01426F] text-white rounded-tl-none border border-[#B08A1A]/40"
                             : "bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-medium rounded-tr-none"
                         }`}
                       >
@@ -255,7 +255,7 @@ export default function WhatsAppButton() {
                   <button
                     type="submit"
                     disabled={sending || !webMessage.trim()}
-                    className="px-4 py-2 bg-[#0B192C] hover:bg-slate-900 text-[#D4AF37] rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-sm disabled:opacity-50"
+                    className="px-4 py-2 bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] rounded-xl text-xs font-bold flex items-center justify-center gap-1 shadow-sm disabled:opacity-50"
                     aria-label="Enviar mensaje al panel"
                   >
                     {sending ? (
@@ -312,7 +312,7 @@ export default function WhatsAppButton() {
       {/* Floating Button with Pulse */}
       <div className="flex items-center group">
         {!chatOpen && (
-          <span className="mr-3 hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[#0B192C] text-[#D4AF37] text-xs font-semibold shadow-xl border border-[#B08A1A]/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <span className="mr-3 hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[#01426F] text-[#D4AF37] text-xs font-semibold shadow-xl border border-[#B08A1A]/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
             ¿Desea asesoría directiva en vivo?
           </span>
         )}

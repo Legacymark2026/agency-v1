@@ -44,7 +44,7 @@ export default function About() {
           </div>
 
           <div className="relative">
-            <div className="p-8 sm:p-10 rounded-3xl bg-[#0B192C] text-white shadow-2xl relative overflow-hidden border border-amber-900/30">
+            <div className="p-8 sm:p-10 rounded-3xl bg-[#01426F] text-white shadow-2xl relative overflow-hidden border border-amber-900/30">
               <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 rounded-full bg-amber-500/10 blur-2xl" />
               <h3 className="text-xl font-bold mb-6 text-white flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-[#D4AF37]" />

@@ -35,7 +35,7 @@ export default async function BlogPage() {
   return (
     <div className="flex flex-col bg-slate-50 min-h-screen">
       {/* Banner */}
-      <section className="bg-[#0B192C] text-white py-20 lg:py-28 relative overflow-hidden">
+      <section className="bg-[#01426F] text-white py-20 lg:py-28 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">

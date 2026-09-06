@@ -58,7 +58,7 @@ export default function Home() {
           {/* Grid Asimétrico: Tarjeta grande destacada + 2 secundarias */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             {/* Tarjeta Principal Destacada (Col 7) */}
-            <div className="lg:col-span-7 bg-[#0B192C] text-white p-8 sm:p-12 rounded-3xl border border-amber-900/40 shadow-xl gold-border-slide flex flex-col justify-between group">
+            <div className="lg:col-span-7 bg-[#01426F] text-white p-8 sm:p-12 rounded-3xl border border-amber-900/40 shadow-xl gold-border-slide flex flex-col justify-between group">
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-[#B08A1A]/40 text-[#D4AF37] flex items-center justify-center group-hover:bg-[#B08A1A] group-hover:text-slate-950 transition-colors duration-300">
@@ -106,7 +106,7 @@ export default function Home() {
               {/* Tarjeta Secundaria 1 */}
               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl gold-border-slide flex flex-col justify-between group flex-1">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#0B192C] flex items-center justify-center mb-5 group-hover:bg-[#0B192C] group-hover:text-[#D4AF37] transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#01426F] flex items-center justify-center mb-5 group-hover:bg-[#01426F] group-hover:text-[#D4AF37] transition-colors">
                     <Cpu className="w-6 h-6" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#B08A1A] transition-colors">
@@ -128,7 +128,7 @@ export default function Home() {
               {/* Tarjeta Secundaria 2 */}
               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl gold-border-slide flex flex-col justify-between group flex-1">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#0B192C] flex items-center justify-center mb-5 group-hover:bg-[#0B192C] group-hover:text-[#D4AF37] transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-[#01426F] flex items-center justify-center mb-5 group-hover:bg-[#01426F] group-hover:text-[#D4AF37] transition-colors">
                     <Network className="w-6 h-6" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#B08A1A] transition-colors">
@@ -174,7 +174,7 @@ export default function Home() {
       </section>
 
       {/* 4. BANNER CINÉTICO FINAL: Llamado a la Acción con Subrayado Animado */}
-      <section className="py-24 bg-[#0B192C] text-white relative overflow-hidden">
+      <section className="py-24 bg-[#01426F] text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(176,138,26,0.2),transparent)] pointer-events-none" />
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
