@@ -13,6 +13,7 @@ import {
   Building2,
   Share2
 } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -47,19 +48,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       {/* Sidebar */}
       <aside className="w-full lg:w-72 bg-[#01426F] text-white p-6 flex flex-col justify-between border-r border-amber-900/30 shrink-0">
         <div>
-          {/* Logo */}
-          <div className="flex items-center gap-3 pb-6 border-b border-slate-800 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-[#1E3E62] border border-[#B08A1A] flex items-center justify-center text-[#D4AF37]">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-lg font-black tracking-wider text-white block">
-                NEO<span className="text-[#B08A1A]">GESTIÓN</span>
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                Panel de Control
-              </span>
-            </div>
+          {/* Logo Oficial */}
+          <div className="pb-6 border-b border-slate-800 mb-6">
+            <BrandLogo variant="dark" size="sm" showSoftwareTag={true} showCompany={true} clickable={false} />
           </div>
 
           {/* Navigation */}

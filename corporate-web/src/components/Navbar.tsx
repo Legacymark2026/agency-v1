@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, MessageCircle, Lock } from "lucide-react";
+import BrandLogo from "./BrandLogo";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,30 +27,8 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-[#01426F]/95 backdrop-blur-md border-b border-amber-900/30 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Logo NEOGESTIÓN */}
-          <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#01426F] to-[#1E3E62] border border-[#B08A1A]/50 flex items-center justify-center text-[#B08A1A] shadow-md group-hover:border-[#B08A1A] transition-all duration-300">
-              {/* Isotipo geométrico en Dorado */}
-              <svg
-                viewBox="0 0 24 24"
-                className="w-6 h-6 fill-none stroke-current stroke-[2]"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-xl font-black tracking-wider text-white block leading-none font-sans">
-                NEO<span className="text-[#B08A1A]">GESTIÓN</span>
-              </span>
-              <span className="text-[9px] font-semibold text-[#D4AF37] tracking-[0.18em] uppercase">
-                Consultoría de Colombia S.A.S.
-              </span>
-            </div>
-          </Link>
+          {/* Logo NEOGESTIÓN Oficial */}
+          <BrandLogo variant="dark" size="md" showSoftwareTag={true} showCompany={true} />
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2">

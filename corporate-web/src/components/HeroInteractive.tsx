@@ -33,10 +33,13 @@ export default function HeroInteractive() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         {/* Header content */}
         <div className="text-center max-w-4xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6 shadow-sm">
+          {/* Badge Oficial */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-wider mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-[#B08A1A] animate-pulse" />
-            <span>Consultoría de Colombia S.A.S. • Plataforma NeoGestión</span>
+            <span className="font-helvetica-thin tracking-[0.14em] text-slate-300">Consultoría de Colombia SAS</span>
+            <span className="text-slate-500">•</span>
+            <span className="font-magneto text-sm text-white tracking-normal normal-case">Neo<span className="text-[#B08A1A]">GESTIÓN</span></span>
+            <span className="font-software text-[9px] text-[#D4AF37]">software</span>
           </div>
 
           {/* Main Headline */}
@@ -94,8 +97,11 @@ export default function HeroInteractive() {
                 <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="ml-3 text-xs font-bold text-slate-400 font-mono hidden sm:inline-block">
-                  NEOGESTIÓN Enterprise Suite • Licencia Corporativa Ilimitada
+                <span className="ml-3 text-xs font-bold text-slate-400 hidden sm:inline-flex items-center gap-1.5">
+                  <span className="font-magneto text-white text-sm">Neo<span className="text-[#B08A1A]">GESTIÓN</span></span>
+                  <span className="font-software text-[8px] text-[#D4AF37]">software</span>
+                  <span className="text-slate-600 font-mono">•</span>
+                  <span className="font-mono text-slate-400 text-[11px]">Licencia Corporativa Ilimitada</span>
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-emerald-400 font-mono">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck, Mail, Phone, Globe, ArrowUpRight, Lock } from "lucide-react";
+import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -10,23 +11,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-[#1E3E62] border border-[#B08A1A]/60 flex items-center justify-center text-[#B08A1A]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-5 h-5 fill-none stroke-current stroke-[2]"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                  <polyline points="2 17 12 22 22 17" />
-                  <polyline points="2 12 12 17 22 12" />
-                </svg>
-              </div>
-              <span className="text-xl font-black text-white tracking-wider">
-                NEO<span className="text-[#B08A1A]">GESTIÓN</span>
-              </span>
-            </Link>
+            <BrandLogo variant="dark" size="md" showSoftwareTag={true} showCompany={true} />
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
               Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. <strong className="text-slate-200">NeoGestión es un producto de Consultoría de Colombia S.A.S.</strong>, diseñado para transformar la gestión, optimizar procesos y potenciar la rentabilidad organizacional.
             </p>

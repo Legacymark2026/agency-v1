@@ -20,6 +20,59 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ==========================================================================
+   TIPOGRAFÍAS INSTITUCIONALES OFICIALES
+   - Marca Principal Software: "NeoGESTIÓN" en Magneto Bold
+   - Submarca Software: "s o f t w a r e" en sans-serif con amplio espaciado
+   - Marca Matriz: "conscolombia" en Sony Sketch E.
+   - Descripción Corporativa: "Consultoría de Colombia SAS" en helvetica35-thin
+   ========================================================================== */
+
+@font-face {
+  font-family: "Magneto";
+  src: local("Magneto Bold"), local("Magneto-Bold"), local("Magneto");
+  font-weight: 700 900;
+  font-style: italic, normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Helvetica35Thin";
+  src: local("Helvetica Neue Thin"), local("HelveticaNeue-Thin"), local("Helvetica 35 Thin"), local("Helvetica-Light"), local("Helvetica");
+  font-weight: 100 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "SonySketchE";
+  src: local("Sony Sketch EF"), local("Sony Sketch E"), local("SonySketchEF");
+  font-display: swap;
+}
+
+.font-magneto {
+  font-family: "Magneto", "Magneto Bold", "Arial Black", cursive, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.font-helvetica-thin {
+  font-family: "Helvetica35Thin", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 200;
+  letter-spacing: 0.12em;
+}
+
+.font-sony-sketch {
+  font-family: "SonySketchE", "Trebuchet MS", "Century Gothic", sans-serif;
+  font-weight: 700;
+}
+
+.font-software {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.42em;
+  text-transform: lowercase;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
