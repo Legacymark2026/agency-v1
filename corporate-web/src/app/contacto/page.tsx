@@ -124,35 +124,36 @@ export default function ContactoPage() {
             </div>
           </div>
 
-          {/* Mapa Interactivo con Integración Visual */}
-          <div className="mt-16 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-[#B08A1A] block mb-1">
-                  Localización Física
+          {/* Cobertura Nacional 100% Digital */}
+          <div className="mt-16 bg-[#0B192C] text-white rounded-3xl border border-[#B08A1A]/40 p-8 sm:p-12 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.18),transparent)] pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="max-w-2xl">
+                <span className="inline-block px-3.5 py-1 rounded-full bg-amber-500/15 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-widest mb-3">
+                  Operación 100% Digital • Consultoría de Colombia S.A.S.
                 </span>
-                <h3 className="text-xl font-bold text-slate-900">
-                  Sede Central NEOGESTIÓN
+                <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+                  Cobertura Empresarial en Toda Colombia
                 </h3>
+                <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                  NeoGestión es una plataforma tecnológica desarrollada por <strong>Consultoría de Colombia S.A.S.</strong> Operamos de forma completamente digital y en la nube, brindando soporte técnico, consultorías estratégicas y sesiones directivas remotas a organizaciones de todo el país.
+                </p>
               </div>
-              <span className="text-xs text-slate-500">
-                Acceso ejecutivo privado con estacionamiento reservado
-              </span>
-            </div>
 
-            <div className="w-full h-80 sm:h-96 rounded-2xl overflow-hidden border border-slate-200">
-              <iframe
-                title="Sede Corporativa NEOGESTIÓN"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.790906915234!2d-74.058319!3d4.666708!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f9a5f33333333%3A0x123456789abcdef!2sCentro%20Financiero!5e0!3m2!1ses!2ses!4v1680000000000!5m2!1ses!2ses"
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 shrink-0">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <span className="text-[#D4AF37] font-bold text-lg block">100% Virtual</span>
+                  <span className="text-xs text-slate-300">Sesiones directivas por videoconferencia</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <span className="text-[#D4AF37] font-bold text-lg block">Nube Segura</span>
+                  <span className="text-xs text-slate-300">Acceso ininterrumpido 24/7 sin sedes físicas</span>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
       </section>
     </div>
