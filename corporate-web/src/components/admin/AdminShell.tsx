@@ -10,7 +10,8 @@ import {
   Globe, 
   LogOut, 
   ShieldCheck,
-  Building2
+  Building2,
+  Share2
 } from "lucide-react";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -34,10 +35,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const navItems = [
     { name: "Analítica en Vivo", href: "/admin", icon: BarChart3 },
+    { name: "Integraciones & Píxeles", href: "/admin/integraciones", icon: Share2 },
     { name: "Mensajes & Chat", href: "/admin/mensajes", icon: MessageSquare },
     { name: "Artículos del Blog", href: "/admin/blog", icon: FileText },
     { name: "Nuevo Artículo", href: "/admin/blog/nuevo", icon: PlusCircle },
   ];
+
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row text-slate-800">
