@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_1" data-name="Capa 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 400 400">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#Degradado_AZUL);
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        fill-rule: evenodd;
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#Degradado_AZUL-4);
+      }
+
+      .cls-3 {
+        fill: url(#Degradado_AZUL-3);
+      }
+
+      .cls-4 {
+        fill: url(#Degradado_AZUL-2);
+      }
+    </style>
+    <linearGradient id="Degradado_AZUL" data-name="Degradado AZUL" x1="99.62" y1="-336.04" x2="34.76" y2="-132.98" gradientTransform="translate(131.45 344.34)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1d3663"/>
+      <stop offset=".63" stop-color="#1d4d84"/>
+      <stop offset="1" stop-color="#1e5792"/>
+    </linearGradient>
+    <linearGradient id="Degradado_AZUL-2" data-name="Degradado AZUL" x1="142.46" y1="208.05" x2="164.49" y2="208.05" gradientTransform="matrix(1,0,0,1,0,0)" xlink:href="#Degradado_AZUL"/>
+    <linearGradient id="Degradado_AZUL-3" data-name="Degradado AZUL" x1="79.76" y1="233.15" x2="300.32" y2="233.15" gradientTransform="matrix(1,0,0,1,0,0)" xlink:href="#Degradado_AZUL"/>
+    <linearGradient id="Degradado_AZUL-4" data-name="Degradado AZUL" x1="183.09" y1="-309.38" x2="118.22" y2="-106.32" xlink:href="#Degradado_AZUL"/>
+  </defs>
+  <path class="cls-1" d="m237.56,213.35l-27.36.03c-7.98.03-11.99-2.62-11.99-7.87,0-1.75.39-3.81,1.24-6.15l6.66-18.81-30.12,25.5c-4.06,3.44-8.01,5.42-11.51,6.43-6.29-3.13-12.38-6.4-18.28-9.76l17.18-48.85h31.62s-9.93,27.98-9.93,27.98l26.71-21.86c7.22-5.92,15.09-8.77,23.55-8.49,5.75.2,8.57,3.27,8.57,9.08,0,2.17-.39,4.63-1.41,7.3l-11.93,31.48c53.64,0,29.44-82.44-41.57-82.44-38.44,0-69.41,26.88-78.52,62.95-8.91-6.35-17.04-12.64-24.31-18.59,15.12-42.19,55.45-72.4,102.83-72.34,107.57.11,101.08,121.53,48.57,124.41Z"/>
+  <path class="cls-4" d="m158.56,213.38h-16.1s3.75-10.66,3.75-10.66c5.89,3.36,11.99,6.63,18.28,9.76-2.17.65-4.17.9-5.92.9Z"/>
+  <path class="cls-3" d="m300.32,246.15l-.03,58.86h-23.94s0-30.71,0-30.71c-69.78,60.89-196.58,25.04-196.58-76.12,0-12.95,2.26-25.38,6.4-36.89,7.28,5.95,15.4,12.24,24.31,18.59-1.52,5.87-2.43,12.01-2.71,18.3-3.19,74.26,99.87,106.75,152.81,49.5h-59.57s0-19.43,0-19.43c30.12,10.97,63.54,18.11,99.31,17.91Z"/>
+  <path class="cls-2" d="m300.34,223.76l-.03,22.39c-35.76.2-69.18-6.94-99.31-17.91v-4.54s99.33.06,99.33.06Z"/>
+</svg>
