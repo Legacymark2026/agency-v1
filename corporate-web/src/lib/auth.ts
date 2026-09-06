@@ -113,15 +113,21 @@ export async function setAdminSession(email: string) {
   const cookieStore = await cookies();
   const token = await createSignedToken({ email });
 
+  // Permitir funcionamiento tanto en HTTP (IP directa) como en HTTPS (dominio con SSL)
+  const isHttps =
+    process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
+    process.env.COOKIE_SECURE === "true";
+
   // Flags estrictos de seguridad de cookies
   cookieStore.set(ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_MAX_AGE,
   });
 }
+
 
 export async function clearAdminSession() {
   const cookieStore = await cookies();
