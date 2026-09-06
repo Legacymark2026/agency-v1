@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { setAdminSession, clearAdminSession, getAdminSession } from "@/lib/auth";
+import { 
+  setAdminSession, 
+  clearAdminSession, 
+  getAdminSession, 
+  ADMIN_COOKIE_NAME, 
+  createSignedToken 
+} from "@/lib/auth";
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,13 +65,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const token = await createSignedToken({ email: user.email });
     await setAdminSession(user.email);
 
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: { name: user.name, email: user.email },
     });
+
+    // Inyectar cookie directamente en la cabecera Set-Cookie de la respuesta HTTP
+    response.cookies.set(ADMIN_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: false, // compatible con HTTP por IP y con HTTPS
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error) {
     console.error("Login error details:", error);
     return NextResponse.json(
@@ -76,8 +94,11 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE() {
   await clearAdminSession();
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true });
+  response.cookies.delete(ADMIN_COOKIE_NAME);
+  return response;
 }
+
 
 export async function GET() {
   const session = await getAdminSession();
