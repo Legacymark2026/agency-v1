@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Mail, Phone, MapPin, ArrowUpRight, Lock } from "lucide-react";
+import { ShieldCheck, Mail, Phone, Globe, ArrowUpRight, Lock } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -28,12 +28,12 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-              Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. Transformamos la gestión, optimizamos procesos e impulsamos el crecimiento y productividad de las organizaciones con NeoGestión.
+              Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. <strong className="text-slate-200">NeoGestión es un producto de Consultoría de Colombia S.A.S.</strong>, diseñado para transformar la gestión, optimizar procesos y potenciar la rentabilidad organizacional.
             </p>
             <div className="space-y-2 text-xs text-slate-400 pt-2">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#B08A1A] shrink-0" />
-                <span>Torre Empresarial NEOGESTIÓN, Nivel 28</span>
+                <Globe className="w-4 h-4 text-[#B08A1A] shrink-0" />
+                <span>Operación 100% Digital • Cobertura Nacional en Colombia</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#B08A1A] shrink-0" />
@@ -160,7 +160,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {currentYear} NEOGESTIÓN International S.A. Todos los derechos reservados.</p>
+          <p>© {currentYear} CONSULTORÍA DE COLOMBIA S.A.S. • NeoGestión es un producto de Consultoría de Colombia S.A.S. Todos los derechos reservados.</p>
           <div className="flex items-center gap-6">
             <Link href="/privacidad" className="hover:text-slate-300">Privacidad</Link>
             <Link href="/terminos" className="hover:text-slate-300">Términos</Link>

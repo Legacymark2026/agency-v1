@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+
 
 export async function GET(req: NextRequest) {
   const session = await getAdminSession();
@@ -92,7 +94,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Revalidación instantánea del caché bajo demanda
+    try {
+      revalidatePath("/blog");
+      revalidatePath(`/blog/${post.slug}`);
+      revalidatePath("/");
+    } catch (err) {
+      console.warn("Revalidation warning:", err);
+    }
+
     return NextResponse.json({ success: true, post });
+
   } catch (error) {
     console.error("Error creating post:", error);
     return NextResponse.json({ error: "Error al crear artículo" }, { status: 500 });

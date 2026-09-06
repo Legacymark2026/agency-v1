@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import BlogFeed, { BlogPostItem } from "./BlogFeed";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+// Caché ISR: revalidación en segundo plano cada 120 segundos
+export const revalidate = 120;
+
 
 export const metadata: Metadata = {
   title: "Magazine Corporativo & Análisis | NEOGESTIÓN",

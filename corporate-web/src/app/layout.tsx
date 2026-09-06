@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import PublicSiteWrapper from "@/components/PublicSiteWrapper";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 import "./globals.css";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,21 +19,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NEOGESTIÓN | Transformamos la complejidad en eficiencia",
   description:
-    "Firma de consultoría de élite para alta dirección y comités ejecutivos. Especialistas en estrategia corporativa, modernización cloud, inteligencia de negocio y ciberseguridad.",
+    "Ecosistema de tecnología, consultoría y formación empresarial. NeoGestión es un producto de Consultoría de Colombia S.A.S. especializado en estrategia corporativa, optimización de procesos y sistemas integrados de gestión.",
   keywords: [
     "NEOGESTIÓN",
+    "Consultoría de Colombia S.A.S.",
     "consultoría estratégica",
+    "software de gestión",
     "eficiencia corporativa",
     "transformación digital",
     "inteligencia de datos",
     "ciberseguridad corporativa",
     "optimización de procesos",
   ],
-  authors: [{ name: "NEOGESTIÓN" }],
+  authors: [{ name: "Consultoría de Colombia S.A.S." }, { name: "NEOGESTIÓN" }],
   openGraph: {
     title: "NEOGESTIÓN | Transformamos la complejidad en eficiencia",
     description:
-      "Soluciones estratégicas de alto nivel para comités directivos y empresas líderes. Rigor analítico y cercanía ejecutiva.",
+      "Soluciones estratégicas y software de gestión para comités directivos y empresas líderes. Un producto de Consultoría de Colombia S.A.S.",
+
     type: "website",
     locale: "es_ES",
   },
@@ -50,7 +55,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white text-slate-900 selection:bg-[#B08A1A] selection:text-slate-950">
         <PublicSiteWrapper>{children}</PublicSiteWrapper>
         <AnalyticsTracker />
+        <CookieConsentBanner />
       </body>
     </html>
   );
 }
+

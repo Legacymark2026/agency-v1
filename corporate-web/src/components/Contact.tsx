@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, Globe, Clock, Send, CheckCircle2 } from "lucide-react";
+
+
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
@@ -39,12 +41,12 @@ export default function Contact() {
             <div className="mt-10 space-y-6">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5" />
+                  <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Sede Central</h4>
-                  <p className="text-sm text-slate-400">Torre Empresarial Vanguardia, Nivel 28</p>
-                  <p className="text-xs text-slate-500">Distrito Financiero Internacional</p>
+                  <h4 className="text-sm font-semibold text-white">Atención 100% Digital</h4>
+                  <p className="text-sm text-slate-400">Cobertura Nacional en Colombia</p>
+                  <p className="text-xs text-slate-500">Consultoría de Colombia S.A.S. • Operación Remota</p>
                 </div>
               </div>
 
@@ -54,10 +56,11 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-white">Atención Institucional</h4>
-                  <p className="text-sm text-slate-400">contacto@vanguardiacorp.com</p>
-                  <p className="text-xs text-slate-500">investors@vanguardiacorp.com</p>
+                  <p className="text-sm text-slate-400">contacto@neogestion.com</p>
+                  <p className="text-xs text-slate-500">directorio@neogestion.com</p>
                 </div>
               </div>
+
 
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
@@ -91,8 +94,9 @@ export default function Contact() {
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">Mensaje Recibido</h3>
                 <p className="text-slate-300 text-sm max-w-sm mx-auto">
-                  Gracias por contactar con VanguardiaCorp. Uno de nuestros socios directores se comunicará a la brevedad.
+                  Gracias por contactar con NEOGESTIÓN. El equipo directivo de Consultoría de Colombia S.A.S. se comunicará a la brevedad.
                 </p>
+
                 <button
                   type="button"
                   onClick={() => {

@@ -16,8 +16,9 @@ export default function PrivacidadPage() {
       title: "1. Responsable del Tratamiento y Datos de Identidad",
       content: (
         <p>
-          <strong>NEOGESTIÓN International S.A.</strong> (en adelante, “La Firma”), con sede central en Torre Empresarial NEOGESTIÓN, Nivel 28, es el responsable del tratamiento de los datos personales recopilados a través de este portal corporativo y sus canales de interacción directiva.
+          <strong>CONSULTORÍA DE COLOMBIA S.A.S.</strong>, sociedad legalmente constituida en la República de Colombia, titular y desarrolladora de la plataforma y solución tecnológica <strong>NEOGESTIÓN</strong> (en adelante, “La Empresa”), con operación 100% digital y cobertura nacional a través de sus canales electrónicos, es el responsable del tratamiento de los datos personales recopilados a través de este portal corporativo y sus canales de interacción directiva.
         </p>
+
       ),
     },
     {

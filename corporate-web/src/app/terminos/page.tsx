@@ -25,8 +25,9 @@ export default function TerminosPage() {
       title: "2. Propiedad Intelectual e Industrial",
       content: (
         <p>
-          Todos los elementos gráficos, esquemas metodológicos, textos, logotipos y código fuente son propiedad exclusiva de NEOGESTIÓN International S.A., amparados por tratados internacionales de propiedad intelectual. Queda estrictamente prohibida su copia o distribución no autorizada.
+          Todos los elementos gráficos, esquemas metodológicos, textos, logotipos y código fuente son propiedad exclusiva de <strong>CONSULTORÍA DE COLOMBIA S.A.S.</strong>, siendo <strong>NEOGESTIÓN</strong> una marca y producto de software de su propiedad exclusiva, amparados por las leyes de la República de Colombia y tratados internacionales de propiedad intelectual. Queda estrictamente prohibida su copia, ingeniería inversa o distribución no autorizada.
         </p>
+
       ),
     },
     {

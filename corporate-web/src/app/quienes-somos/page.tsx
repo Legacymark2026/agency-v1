@@ -32,13 +32,13 @@ export default function QuienesSomosPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_0%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
-            Confianza, Ética y Humanización
+            Consultoría de Colombia S.A.S. • NeoGestión
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-tight font-sans">
             La firma consultora donde el rigor analítico se une a la cercanía directiva.
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            No somos asesores distantes; nos integramos con los comités directivos para codiseñar el futuro operativo y comercial de su organización.
+          <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            <strong className="text-white">NeoGestión</strong> es la solución y plataforma tecnológica de gestión desarrollada por <strong className="text-[#D4AF37]">Consultoría de Colombia S.A.S.</strong> Brindamos atención y cobertura 100% digital a nivel nacional para transformar procesos, optimizar operaciones y acelerar la rentabilidad corporativa.
           </p>
         </div>
       </section>
@@ -58,9 +58,10 @@ export default function QuienesSomosPage() {
             </div>
             <div className="text-left">
               <h4 className="text-sm font-bold text-slate-900">Consejo Directivo</h4>
-              <p className="text-xs text-[#B08A1A] font-semibold">NEOGESTIÓN International</p>
+              <p className="text-xs text-[#B08A1A] font-semibold">Consultoría de Colombia S.A.S.</p>
             </div>
           </div>
+
         </div>
       </section>
 

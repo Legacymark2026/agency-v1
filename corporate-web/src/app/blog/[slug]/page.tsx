@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Clock, User, Tag, Share2, ArrowRight, ListTree } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+// Caché ISR: revalidación de artículo en segundo plano cada 60 segundos
+export const revalidate = 60;
+
 
 interface PageProps {
   params: Promise<{ slug: string }>;

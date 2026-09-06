@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Mail, Phone, MapPin, Clock, ShieldCheck, MessageCircle } from "lucide-react";
+import { Mail, Phone, Globe, MessageCircle, Clock, ShieldCheck, ArrowRight } from "lucide-react";
 import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = {
-  title: "Contacto Directivo & Ubicación | NEOGESTIÓN",
+  title: "Contacto Directivo | NEOGESTIÓN",
   description:
-    "Comuníquese confidencialmente con los socios directores de NEOGESTIÓN por formulario, WhatsApp directo o en nuestras oficinas corporativas.",
+    "Canales directos de comunicación para comités ejecutivos y alta dirección con los especialistas de NEOGESTIÓN, un producto de Consultoría de Colombia S.A.S.",
 };
 
 export default function ContactoPage() {
@@ -63,19 +63,20 @@ export default function ContactoPage() {
               {/* Tarjetas de Canales con Borde Dorado Deslizante */}
               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                 <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
-                  Sedes &amp; Atención Institucional
+                  Canales &amp; Atención Institucional
                 </h3>
 
                 <div className="flex items-start gap-4 p-3 rounded-xl bg-slate-50 border border-slate-100 gold-border-slide">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-[#B08A1A] flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5" />
+                    <Globe className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">Sede Corporativa</h4>
-                    <p className="text-xs text-slate-600">Torre Empresarial NEOGESTIÓN, Nivel 28</p>
-                    <p className="text-[11px] text-slate-400">Distrito Financiero Central</p>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">Operación 100% Digital</h4>
+                    <p className="text-xs text-slate-600">Cobertura Nacional en Colombia</p>
+                    <p className="text-[11px] text-slate-400">Consultoría de Colombia S.A.S. • Soporte Remoto</p>
                   </div>
                 </div>
+
 
                 <div className="flex items-start gap-4 p-3 rounded-xl bg-slate-50 border border-slate-100 gold-border-slide">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-[#B08A1A] flex items-center justify-center shrink-0">

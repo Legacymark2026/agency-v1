@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+
 
 interface RouteProps {
   params: Promise<{ id: string }>;
@@ -64,6 +66,15 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
       },
     });
 
+    // Revalidar caché instantáneamente
+    try {
+      revalidatePath("/blog");
+      revalidatePath(`/blog/${updated.slug}`);
+      revalidatePath("/");
+    } catch (err) {
+      console.warn("Revalidation warning:", err);
+    }
+
     return NextResponse.json({ success: true, post: updated });
   } catch (error) {
     console.error("Error updating post:", error);
@@ -79,10 +90,28 @@ export async function DELETE(req: NextRequest, { params }: RouteProps) {
 
   const { id } = await params;
   try {
+    const postToDelete = await prisma.post.findUnique({
+      where: { id },
+      select: { slug: true },
+    });
+
     await prisma.post.delete({
       where: { id },
     });
+
+    // Revalidar caché instantáneamente
+    try {
+      revalidatePath("/blog");
+      if (postToDelete?.slug) {
+        revalidatePath(`/blog/${postToDelete.slug}`);
+      }
+      revalidatePath("/");
+    } catch (err) {
+      console.warn("Revalidation warning:", err);
+    }
+
     return NextResponse.json({ success: true });
+
   } catch (error) {
     console.error("Error deleting post:", error);
     return NextResponse.json({ error: "Error al eliminar artículo" }, { status: 500 });
