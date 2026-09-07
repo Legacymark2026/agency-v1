@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export interface BrandLogoProps {
-  variant?: "dark" | "light" | "gold" | "white";
+  variant?: "dark" | "light" | "gold" | "white" | "blue-bg" | "white-bg";
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   showSoftwareTag?: boolean;
   showCompany?: boolean;
@@ -18,7 +18,7 @@ export default function BrandLogo({
   clickable = true,
   className = "",
 }: BrandLogoProps) {
-  const isDark = variant === "dark";
+  const isBlueBg = variant === "dark" || variant === "blue-bg";
 
   // Dimensiones proporcionales basadas en la relación de aspecto 820x312 (ratio 2.628)
   // '2xl' duplica el tamaño visual original para cumplir con la presencia directiva solicitada
@@ -32,13 +32,18 @@ export default function BrandLogo({
   }[size] || { width: 310, height: 118, company: "text-[12.5px] tracking-[0.24em]" };
 
   // Selección del SVG oficial según la variante de fondo:
-  // Para 'dark', se utiliza el logo oficial de isotipo dorado con tipografía blanca y "software" en dorado
-  const logoSrc = {
-    dark: "/brand/logo-neogestion-white-gold.svg",
-    light: "/brand/logo-neogestion-blue-gold.svg",
-    gold: "/brand/logo-neogestion-gold.svg",
-    white: "/brand/logo-neogestion-white.svg",
-  }[variant] || "/brand/logo-neogestion-white-gold.svg";
+  // - Para fondos AZULES (variant === "dark" | "blue-bg"):
+  //   Se utiliza estrictamente Mesa de trabajo 9 copia 6.svg (/brand/logo-neogestion-white-gold.svg)
+  //   con tipografía blanca y acentos dorados para que contraste perfecto y no se pierda en el fondo azul.
+  // - Para fondos BLANCOS / CLAROS (variant === "light" | "white-bg"):
+  //   Se utiliza Mesa de trabajo 9 copia 4.svg (/brand/logo-neogestion-blue-gold.svg) con tipografía azul.
+  const logoSrc = isBlueBg
+    ? "/brand/logo-neogestion-white-gold.svg" // Mesa de trabajo 9 copia 6.svg
+    : variant === "gold"
+    ? "/brand/logo-neogestion-gold.svg"
+    : variant === "white"
+    ? "/brand/logo-neogestion-white.svg"
+    : "/brand/logo-neogestion-blue-gold.svg"; // Mesa de trabajo 9 copia 4.svg
 
   const content = (
     <div className={`inline-flex flex-col justify-center group ${className}`}>
@@ -56,7 +61,7 @@ export default function BrandLogo({
       {showCompany && (
         <span
           className={`font-helvetica-thin ${dimensions.company} uppercase font-medium mt-1 pl-1 select-none ${
-            isDark ? "text-white/95 group-hover:text-[#D4AF37]" : "text-[#01426F] group-hover:text-[#B08A1A]"
+            isBlueBg ? "text-white/95 group-hover:text-[#D4AF37]" : "text-[#01426F] group-hover:text-[#B08A1A]"
           } transition-colors leading-tight`}
         >
           Consultoría de Colombia SAS
