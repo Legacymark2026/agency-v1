@@ -14,7 +14,7 @@ import {
   calculateDianDV,
   calculatePayrollProvisions,
   generateChainHash,
-} from "@/modules/accounting/services/accounting-engine.service";
+} from "../../modules/accounting/services/accounting-engine.service";
 
 // ── Withholding Calculations ─────────────────────────────────────────────────
 
