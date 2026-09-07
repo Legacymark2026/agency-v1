@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Clock, User, Tag, Share2, ArrowRight, ListTree } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, Tag, Share2, ArrowRight, ListTree, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { ArticleContentRenderer, extractHeadings } from "@/components/blog/ArticleContentRenderer";
 
 // Caché ISR: revalidación de artículo en segundo plano cada 60 segundos
 export const revalidate = 60;
-
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
 
-  // Buscar artículo y sumar 1 a viewsCount
+  // Buscar artículo
   const post = await prisma.post.findUnique({
     where: { slug },
   });
@@ -57,7 +57,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     year: "numeric",
   });
 
-  const paragraphs = post.content.split("\n\n").filter((p) => p.trim());
+  const headings = extractHeadings(post.content);
 
   return (
     <article className="min-h-screen bg-slate-50 py-16">
@@ -130,7 +130,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           />
         </div>
 
-        {/* Layout de Contenido: Índice Lateral Sticky + Columna de Lectura 700px */}
+        {/* Layout de Contenido: Índice Lateral Sticky + Columna de Lectura */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Índice Pegajoso */}
           <aside className="lg:col-span-4 sticky top-28 hidden lg:block">
@@ -139,20 +139,24 @@ export default async function BlogPostPage({ params }: PageProps) {
                 <ListTree className="w-4 h-4 text-[#B08A1A]" />
                 <span>Estructura del Artículo</span>
               </h3>
-              <ul className="space-y-2 text-xs text-slate-600">
-                <li className="font-semibold text-[#B08A1A] hover:underline cursor-pointer">
-                  1. Contexto &amp; Diagnóstico Inicial
-                </li>
-                <li className="hover:text-slate-900 cursor-pointer">
-                  2. Principios y Pilares de Aplicación
-                </li>
-                <li className="hover:text-slate-900 cursor-pointer">
-                  3. Recomendaciones para el C-Level
-                </li>
-                <li className="hover:text-slate-900 cursor-pointer">
-                  4. Conclusiones y Próximos Pasos
-                </li>
-              </ul>
+
+              {headings.length > 0 ? (
+                <ul className="space-y-2 text-xs text-slate-600">
+                  {headings.map((h, i) => (
+                    <li key={i} className={h.level === 3 ? "pl-3 text-slate-500" : "font-semibold text-slate-800"}>
+                      <a
+                        href={`#${h.id}`}
+                        className="hover:text-[#B08A1A] transition-colors flex items-center gap-1.5 py-0.5"
+                      >
+                        <ChevronRight className="w-3 h-3 text-[#B08A1A] shrink-0" />
+                        <span className="line-clamp-1">{h.text}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-400 italic">Lectura lineal continua</p>
+              )}
 
               <div className="pt-4 border-t border-slate-100">
                 <span className="text-[11px] text-slate-400 block mb-2">
@@ -168,16 +172,12 @@ export default async function BlogPostPage({ params }: PageProps) {
             </div>
           </aside>
 
-          {/* Cuerpo del Artículo */}
-          <div className="lg:col-span-8 max-w-[700px] space-y-6 text-slate-700 text-base sm:text-lg leading-[1.8]">
-            {paragraphs.map((paragraph, idx) => (
-              <p key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                {paragraph}
-              </p>
-            ))}
+          {/* Cuerpo del Artículo con Renderizado Markdown */}
+          <div className="lg:col-span-8 max-w-[700px] space-y-6">
+            <ArticleContentRenderer content={post.content} />
 
             {/* Banner de Consulta Especializada */}
-            <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-[#01426F] text-white border border-[#B08A1A]">
+            <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-[#01426F] text-white border border-[#B08A1A] shadow-md">
               <span className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] block mb-2">
                 Asesoría a la Medida
               </span>
@@ -207,7 +207,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                     <Link
                       key={rel.slug}
                       href={`/blog/${rel.slug}`}
-                      className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#B08A1A] transition-colors block group"
+                      className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-[#B08A1A] transition-colors block group shadow-xs"
                     >
                       <span className="text-[10px] font-bold uppercase text-[#B08A1A] block mb-1">
                         {rel.category}
