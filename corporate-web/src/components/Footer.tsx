@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShieldCheck, Mail, Phone, Globe, ArrowUpRight, Lock } from "lucide-react";
 import BrandLogo from "./BrandLogo";
+import { WhatsAppIcon, LinkedInIcon, InstagramIcon } from "./SocialIcons";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -34,6 +35,50 @@ export default function Footer() {
                 <span>+1 (800) 450-8920</span>
               </div>
             </div>
+
+            {/* Redes Sociales Oficiales */}
+            <div className="pt-2">
+              <span className="text-[11px] font-bold text-[#D4AF37] uppercase tracking-wider block mb-2.5">
+                Redes Directivas &amp; Canales Oficiales:
+              </span>
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="https://www.linkedin.com/company/consultoria-de-colombia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Perfil Oficial en LinkedIn"
+                  className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-[#0A66C2] text-slate-300 hover:text-white border border-slate-700/60 flex items-center justify-center transition-all shadow-sm group"
+                >
+                  <LinkedInIcon className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://www.instagram.com/neogestion"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Canal Oficial en Instagram"
+                  className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] text-slate-300 hover:text-white border border-slate-700/60 flex items-center justify-center transition-all shadow-sm group"
+                >
+                  <InstagramIcon className="w-4 h-4" />
+                </a>
+                <a
+                  href="mailto:contacto@neogestion.com"
+                  title="Escribir por Correo Electrónico"
+                  className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-[#01426F] hover:text-[#D4AF37] text-slate-300 border border-slate-700/60 flex items-center justify-center transition-all shadow-sm group"
+                >
+                  <Mail className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://wa.me/18004508920"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Chat Oficial por WhatsApp"
+                  className="w-9 h-9 rounded-xl bg-emerald-950/70 hover:bg-[#25D366] text-emerald-400 hover:text-white border border-emerald-500/30 flex items-center justify-center transition-all shadow-sm group"
+                >
+                  <WhatsAppIcon className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+
             <div className="pt-2 flex items-center gap-2 text-xs text-amber-200/80">
               <ShieldCheck className="w-4 h-4 text-[#B08A1A]" />
               <span>Gobernanza corporativa, confidencialidad ISO 27001 &amp; SOC 2</span>

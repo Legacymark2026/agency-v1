@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Mail, Phone, Globe, MessageCircle, Clock, ShieldCheck, ArrowRight } from "lucide-react";
+import { Mail, Phone, Globe, Clock, ShieldCheck, ArrowRight } from "lucide-react";
 import ContactForm from "./ContactForm";
+import { WhatsAppIcon, LinkedInIcon, InstagramIcon } from "@/components/SocialIcons";
 
 export const metadata: Metadata = {
   title: "Contacto Directivo | NEOGESTIÓN",
@@ -36,27 +37,27 @@ export default function ContactoPage() {
               {/* WhatsApp Box */}
               <div className="bg-[#01426F] text-white p-8 rounded-3xl border border-[#B08A1A]/40 shadow-xl gold-border-slide">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-md">
-                    <MessageCircle className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-[#25D366] text-white flex items-center justify-center shadow-lg shadow-emerald-950/40">
+                    <WhatsAppIcon className="w-7 h-7" />
                   </div>
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-[#D4AF37]">
-                      Respuesta Inmediata
+                      Respuesta Inmediata &lt;10 min
                     </span>
-                    <h3 className="text-lg font-bold text-white">Canal WhatsApp Directivo</h3>
+                    <h3 className="text-lg font-bold text-white">Línea Oficial WhatsApp</h3>
                   </div>
                 </div>
                 <p className="text-slate-300 text-xs sm:text-sm mb-6 leading-relaxed">
-                  Conéctese directamente con el equipo de coordinación para coordinar reuniones urgentes o requerimientos inmediatos.
+                  Conéctese directamente con el equipo directivo de <strong>Consultoría de Colombia S.A.S. / NeoGestión</strong> para coordinar demostraciones en vivo o requerimientos urgentes.
                 </p>
                 <a
                   href="https://wa.me/18004508920?text=Hola%2C%20quisiera%20agendar%20una%20sesi%C3%B3n%20con%20los%20directores%20de%20NEOGESTI%C3%93N."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-xs hover:brightness-110 transition-all shadow-md"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs hover:brightness-110 transition-all shadow-md"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Abrir Chat de WhatsApp</span>
+                  <WhatsAppIcon className="w-4 h-4" />
+                  <span>Abrir Chat Directo de WhatsApp</span>
                 </a>
               </div>
 
@@ -114,6 +115,38 @@ export default function ContactoPage() {
                 <div className="pt-2 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
                   <ShieldCheck className="w-4 h-4 text-[#B08A1A]" />
                   <span>Tratamiento de información confidencial ISO 27001</span>
+                </div>
+              </div>
+
+              {/* Redes Sociales Oficiales */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">
+                  Redes Sociales &amp; Comunidad Directiva
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <a
+                    href="https://www.linkedin.com/company/consultoria-de-colombia"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-50 hover:bg-[#0A66C2] text-slate-700 hover:text-white border border-slate-200 hover:border-[#0A66C2] transition-all text-xs font-bold group shadow-2xs"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#0A66C2] text-white flex items-center justify-center shrink-0">
+                      <LinkedInIcon className="w-4 h-4" />
+                    </div>
+                    <span>LinkedIn</span>
+                  </a>
+
+                  <a
+                    href="https://www.instagram.com/neogestion"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-300 transition-all text-xs font-bold group shadow-2xs"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center justify-center shrink-0">
+                      <InstagramIcon className="w-4 h-4" />
+                    </div>
+                    <span>Instagram</span>
+                  </a>
                 </div>
               </div>
             </div>

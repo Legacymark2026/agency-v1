@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, MessageCircle, Lock } from "lucide-react";
+import { Menu, X, ArrowRight, Lock, Mail } from "lucide-react";
 import BrandLogo from "./BrandLogo";
+import { WhatsAppIcon, LinkedInIcon, InstagramIcon } from "./SocialIcons";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -63,31 +64,62 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* CTAs */}
-          <div className="hidden lg:flex items-center gap-3">
+          {/* Social Links & CTAs */}
+          <div className="hidden lg:flex items-center gap-2.5">
+            {/* Direct Social Media & Email Icons */}
+            <div className="flex items-center gap-1 border-r border-amber-500/20 pr-2.5">
+              <a
+                href="https://www.linkedin.com/company/consultoria-de-colombia"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Perfil Oficial en LinkedIn"
+                className="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-[#0A66C2] flex items-center justify-center transition-all"
+              >
+                <LinkedInIcon className="w-4 h-4" />
+              </a>
+              <a
+                href="https://www.instagram.com/neogestion"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Canal Oficial de Instagram"
+                className="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] flex items-center justify-center transition-all"
+              >
+                <InstagramIcon className="w-4 h-4" />
+              </a>
+              <a
+                href="mailto:contacto@neogestion.com"
+                title="Enviar Correo: contacto@neogestion.com"
+                className="w-8 h-8 rounded-lg text-slate-300 hover:text-[#D4AF37] hover:bg-slate-800 flex items-center justify-center transition-all"
+              >
+                <Mail className="w-4 h-4" />
+              </a>
+            </div>
+
             <Link
               href="/admin/login"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#D4AF37] hover:text-white border border-[#B08A1A]/40 hover:bg-slate-800/80 transition-colors"
               title="Acceso al Panel de Administración"
             >
               <Lock className="w-3.5 h-3.5 text-[#B08A1A]" />
-              <span>Panel Directivo</span>
+              <span>Panel</span>
             </Link>
+
             <a
               href="https://wa.me/18004508920?text=Hola%2C%20quisiera%20solicitar%20informaci%C3%B3n%20sobre%20sus%20servicios%20de%20NEOGESTI%C3%93N."
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-emerald-300 bg-emerald-950/50 hover:bg-emerald-900/60 text-xs font-bold border border-emerald-500/40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-white bg-[#25D366] hover:bg-[#20bd5a] text-xs font-bold shadow-md transition-all"
             >
-              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <WhatsAppIcon className="w-4 h-4 text-white" />
               <span>WhatsApp</span>
             </a>
+
             <Link
               href="/contacto"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 text-sm font-bold hover:brightness-110 transition-all gold-glow"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 text-xs sm:text-sm font-bold hover:brightness-110 transition-all gold-glow"
             >
               <span>Solicitar Consulta</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -138,9 +170,9 @@ export default function Navbar() {
               href="https://wa.me/18004508920"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950/60 text-emerald-300 font-semibold text-sm border border-emerald-500/40"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white font-bold text-sm shadow-sm"
             >
-              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <WhatsAppIcon className="w-4 h-4 text-white" />
               <span>Contactar por WhatsApp</span>
             </a>
             <Link
@@ -151,6 +183,35 @@ export default function Navbar() {
               <span>Solicitar Consulta Estratégica</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+
+            {/* Redes Sociales en Menú Móvil */}
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <a
+                href="https://www.linkedin.com/company/consultoria-de-colombia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center"
+                aria-label="LinkedIn"
+              >
+                <LinkedInIcon className="w-4 h-4" />
+              </a>
+              <a
+                href="https://www.instagram.com/neogestion"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center"
+                aria-label="Instagram"
+              >
+                <InstagramIcon className="w-4 h-4" />
+              </a>
+              <a
+                href="mailto:contacto@neogestion.com"
+                className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:text-[#D4AF37] flex items-center justify-center"
+                aria-label="Correo Electrónico"
+              >
+                <Mail className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         </div>
       )}
