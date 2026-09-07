@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ShieldCheck, Mail, Phone, Globe, ArrowUpRight, Lock } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import { WhatsAppIcon, LinkedInIcon, InstagramIcon } from "./SocialIcons";
@@ -13,11 +14,22 @@ export default function Footer() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <BrandLogo variant="dark" size="3xl" showSoftwareTag={true} showCompany={false} className="w-[260px] sm:w-[380px] md:w-[480px]" />
-            <div className="inline-flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-[#B08A1A]/30 text-xs">
-              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-              <span className="text-slate-300">NeoGestión Software es un producto de</span>
-              <strong className="text-white">Consultoría de Colombia S.A.S.</strong>
+            
+            {/* Logo Oficial Empresa Matriz: Consultoría de Colombia Ltda. (Mesa de trabajo 9 copia 3.svg) */}
+            <div className="p-3.5 rounded-2xl bg-white/95 border border-[#B08A1A]/40 shadow-md inline-block max-w-[320px] sm:max-w-[360px]">
+              <div className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#B08A1A]" />
+                <span>Empresa Matriz &amp; Respaldo Institucional:</span>
+              </div>
+              <Image 
+                src="/brand/Mesa%20de%20trabajo%209%20copia%203.svg" 
+                alt="Consultoría de Colombia Ltda."
+                width={820}
+                height={312}
+                className="w-full h-auto max-h-[56px] sm:max-h-[64px] object-contain"
+              />
             </div>
+
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
               Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. Diseñado para transformar la gestión, optimizar procesos y potenciar la rentabilidad organizacional con filosofía Cero Papel y usuarios ilimitados.
             </p>
