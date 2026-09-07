@@ -27,15 +27,15 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-[#01426F]/95 backdrop-blur-md border-b border-amber-900/30 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between min-h-[5.5rem] py-2">
-          {/* Logo NEOGESTIÓN Oficial - 2x más grande */}
+        <div className="flex items-center justify-between min-h-[5.5rem] lg:min-h-[6.5rem] py-2.5 md:py-3">
+          {/* Logo NEOGESTIÓN Oficial en Gran Formato */}
           <div className="flex items-center gap-3 shrink-0">
             <BrandLogo 
               variant="dark" 
               size="2xl" 
               showSoftwareTag={true} 
-              showCompany={true} 
-              className="w-[185px] sm:w-[235px] md:w-[275px] lg:w-[310px]" 
+              showCompany={false} 
+              className="w-[210px] sm:w-[260px] md:w-[310px] lg:w-[350px] xl:w-[380px]" 
             />
             {/* Strategic Product Badge Chip */}
             <div className="hidden 2xl:flex flex-col border-l border-amber-500/25 pl-3 py-0.5 select-none">
