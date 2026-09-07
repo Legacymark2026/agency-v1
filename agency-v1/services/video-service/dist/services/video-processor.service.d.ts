@@ -1,6 +1,6 @@
 export declare class VideoProcessorService {
     /**
-     * Optimiza un video transcodificándolo para web en formato WebM
+     * Optimiza un video transcodificándolo para web en formato WebM (VP9 + Opus)
      */
     static optimizeVideoForWeb(videoPath: string): Promise<{
         success: boolean;
@@ -10,7 +10,7 @@ export declare class VideoProcessorService {
         targetBitrateKbs: number;
     }>;
     /**
-     * Aplica una marca de agua (logo) sobre un video
+     * Aplica una marca de agua (logo) sobre un video con FFmpeg overlay
      */
     static applyWatermark(videoPath: string, logoPath: string, position?: "TOP_LEFT" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_RIGHT"): Promise<{
         success: boolean;

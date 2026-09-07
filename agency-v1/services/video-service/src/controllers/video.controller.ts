@@ -7,6 +7,9 @@ import { AudioDuckingService } from "../services/audio-ducking.service.js";
 import { SmartReframeService } from "../services/smart-reframe.service.js";
 import { BrollMatcherService } from "../services/broll-matcher.service.js";
 import { ThumbnailGeneratorService } from "../services/thumbnail-generator.service.js";
+import { VoiceIsolationService } from "../services/voice-isolation.service.js";
+import { VoiceoverNarratorService } from "../services/voiceover-narrator.service.js";
+import { ScriptGeneratorService } from "../services/script-generator.service.js";
 
 export class VideoController {
   /**
@@ -202,6 +205,67 @@ export class VideoController {
         targetFormat || "1280x720"
       );
       res.json({ success: true, design });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * 8. POST /api/video/enhance-audio (AI Noise Isolation & Speech Enhance)
+   */
+  static async enhanceAudio(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { inputAudioPath, aggressiveness, targetLufs, deEsser, deReverb } = req.body;
+      const service = new VoiceIsolationService();
+      const result = service.enhanceVoice({
+        inputAudioPath,
+        aggressiveness,
+        targetLufs,
+        deEsser,
+        deReverb,
+      });
+      res.json({ success: true, result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * 9. POST /api/video/voiceover (AI Voiceover & Emotion TTS Narrator)
+   */
+  static async voiceover(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { scriptText, voiceId, language, emotion, speedRate, pitchModulation } = req.body;
+      const service = new VoiceoverNarratorService();
+      const track = service.synthesizeVoiceover({
+        scriptText: scriptText || "Transforma tu negocio con inteligencia artificial.",
+        voiceId: voiceId || "cloned_voice_co_1",
+        language: language || "es-CO",
+        emotion: emotion || "CORPORATE_PROFESSIONAL",
+        speedRate: speedRate || 1.0,
+        pitchModulation: pitchModulation || 0,
+      });
+      res.json({ success: true, track });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * 10. POST /api/video/script-to-video (AI Script & Storyboard Generator)
+   */
+  static async generateScript(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { topic, niche, targetDurationSec, tone, language } = req.body;
+      const service = new ScriptGeneratorService();
+      const project = service.generateScript({
+        topic: topic || "Automatización con IA para Empresas",
+        niche: niche || "B2B SaaS",
+        targetDurationSec: targetDurationSec || 30,
+        tone: tone || "HIGH_CONVERSION",
+        language: language || "es",
+      });
+      res.json({ success: true, project });
     } catch (err) {
       next(err);
     }

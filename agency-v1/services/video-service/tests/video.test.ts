@@ -7,6 +7,9 @@ import { AudioDuckingService } from "../src/services/audio-ducking.service";
 import { SmartReframeService } from "../src/services/smart-reframe.service";
 import { BrollMatcherService } from "../src/services/broll-matcher.service";
 import { ThumbnailGeneratorService } from "../src/services/thumbnail-generator.service";
+import { VoiceIsolationService } from "../src/services/voice-isolation.service";
+import { VoiceoverNarratorService } from "../src/services/voiceover-narrator.service";
+import { ScriptGeneratorService } from "../src/services/script-generator.service";
 
 describe("VideoService Unit & AI Engines Contract Tests", () => {
   it("1. Viral Highlight Clipper debe extraer clips con viralityScore y hookHeadline", () => {
@@ -100,4 +103,48 @@ describe("VideoService Unit & AI Engines Contract Tests", () => {
     expect(design.recommendedResolution).toBe("1280x720");
     expect(design.overallFrameQuality).toBeGreaterThan(50);
   });
+
+  it("8. Voice Isolation debe aplicar cadena FFmpeg de reducción de ruido y normalización LUFS", () => {
+    const service = new VoiceIsolationService();
+    const result = service.enhanceVoice({ aggressiveness: "MODERATE", targetLufs: -14 });
+
+    expect(result.ffmpegAudioFilterComplex).toContain("afftdn");
+    expect(result.ffmpegAudioFilterComplex).toContain("loudnorm=I=-14");
+    expect(result.noiseFloorReductionDb).toBeGreaterThan(10);
+    expect(result.speechClarityBoostPercent).toBeGreaterThan(20);
+  });
+
+  it("9. Voiceover Narrator debe sintetizar pista de voz con WPM y emoción adecuados", () => {
+    const service = new VoiceoverNarratorService();
+    const track = service.synthesizeVoiceover({
+      scriptText: "Automatiza tu empresa hoy mismo con agentes inteligentes.",
+      voiceId: "voice_es_co_pro",
+      language: "es-CO",
+      emotion: "HIGH_ENERGY_ENTHUSIASTIC",
+      speedRate: 1.0,
+    });
+
+    expect(track.wordCount).toBe(8);
+    expect(track.totalDurationSec).toBeGreaterThan(0);
+    expect(track.emotionApplied).toBe("HIGH_ENERGY_ENTHUSIASTIC");
+    expect(track.sampleRateHz).toBe(48000);
+  });
+
+  it("10. Script Generator debe estructurar storyboard viral de 4 fases (Hook, Problem, Solution, CTA)", () => {
+    const service = new ScriptGeneratorService();
+    const project = service.generateScript({
+      topic: "Contabilidad DIAN con IA",
+      niche: "Fintech",
+      targetDurationSec: 30,
+      tone: "HIGH_CONVERSION",
+    });
+
+    expect(project.beats.length).toBe(4);
+    expect(project.beats[0].phase).toBe("HOOK");
+    expect(project.beats[1].phase).toBe("PROBLEM");
+    expect(project.beats[2].phase).toBe("SOLUTION");
+    expect(project.beats[3].phase).toBe("CTA");
+    expect(project.targetDurationSec).toBe(30);
+  });
 });
+

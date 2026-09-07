@@ -25,3 +25,9 @@ videoRouter.post("/video/auto-duck", VideoController.autoDuck);
 videoRouter.post("/video/smart-reframe", VideoController.smartReframe);
 videoRouter.post("/video/match-broll", VideoController.matchBroll);
 videoRouter.post("/video/generate-thumbnail", VideoController.generateThumbnail);
+
+// ── Ultra-Professional Suite Endpoints (Speech & Storyboard) ────────────────
+videoRouter.post("/video/enhance-audio", VideoController.enhanceAudio);
+videoRouter.post("/video/voiceover", VideoController.voiceover);
+videoRouter.post("/video/script-to-video", VideoController.generateScript);
+

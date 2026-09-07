@@ -29,6 +29,12 @@ import { TimelineEditor } from './timeline-editor';
 import { AutoCaptionPanel } from './auto-caption';
 import { ColorMatchPanel } from './color-match';
 import { AIViralToolsPanel } from './ai-viral-tools-panel';
+import { ScreenCamRecorderModal } from './recorder/screen-cam-recorder-modal';
+import { StockMediaPanel } from './stock-library/stock-media-panel';
+import { AIVoiceoverPanel } from './voiceover/ai-voiceover-panel';
+import { ScriptToVideoModal } from './script-generator/script-to-video-modal';
+import { ClientReviewModal } from './review/client-review-modal';
+import { Radio, MessageSquare, Share2 } from 'lucide-react';
 import type {
   ProjectConfig, Clip, AudioTrack, TextOverlay,
   ColorGrade, SpeedRamp, Timeline, ClipAnalysis, RenderOutput
@@ -87,6 +93,77 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
   const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
   const [colorMatchSuggestions, setColorMatchSuggestions] = useState<any[]>([]);
   const [isAnalyzingColor, setIsAnalyzingColor] = useState(false);
+
+  // Modals for Ultra-Professional Video Suite
+  const [recorderOpen, setRecorderOpen] = useState(false);
+  const [scriptModalOpen, setScriptModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  const handleClipRecorded = (newClip: any) => {
+    setClips(prev => [...prev, newClip]);
+  };
+
+  const handleApplyStoryboard = (genProject: any) => {
+    if (!genProject?.beats) return;
+
+    const newClips: Clip[] = genProject.beats.map((b: any, idx: number) => ({
+      id: `clip_gen_${idx}_${Date.now()}`,
+      name: `${b.phase}: ${b.suggestedBrollKeyword}`,
+      startTime: b.startSec,
+      duration: b.durationSec,
+      order: idx + 1,
+      format: '9:16',
+      resolution: '1080x1920',
+      fps: 30,
+      hasAudio: false,
+    }));
+
+    const newOverlays: TextOverlay[] = genProject.beats.map((b: any, idx: number) => ({
+      id: `text_gen_${idx}_${Date.now()}`,
+      text: b.overlayHeadline,
+      position: 'center' as const,
+      animation: 'pop' as const,
+      font: 'Inter',
+      color: '#FACC15',
+      safeZone: true,
+      startTime: b.startSec,
+      duration: b.durationSec,
+    }));
+
+    const newAudio: AudioTrack[] = [
+      {
+        id: `vox_master_${Date.now()}`,
+        name: 'Locución Narrativa IA',
+        type: 'voiceover' as const,
+        volume: 1.0,
+        muted: false,
+        startTime: 0,
+        duration: genProject.targetDurationSec,
+      },
+      {
+        id: `bgm_master_${Date.now()}`,
+        name: 'Música de Fondo (Cyber Pulse)',
+        type: 'music' as const,
+        volume: 0.25,
+        muted: false,
+        startTime: 0,
+        duration: genProject.targetDurationSec,
+      },
+    ];
+
+    setClips(newClips);
+    setTextOverlays(newOverlays);
+    setAudioTracks(newAudio);
+    setConfig(prev => ({
+      ...prev,
+      name: genProject.title,
+      format: '9:16',
+      platform: 'tiktok',
+      duration: genProject.targetDurationSec,
+    }));
+
+    toast.success('¡Proyecto auto-montado con 4 fases virales en el timeline!');
+  };
 
   const handleGenerateCaptions = async (lang: string) => {
     setIsGeneratingCaptions(true);
@@ -501,10 +578,41 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
   const renderPanel = () => {
     switch (activePanel) {
       case 1: return <ProjectConfigPanel config={config} onChange={setConfig} />;
-      case 2: return <FootageAnalyzer clips={clips} analysis={analysis} onClipsChange={setClips} onAnalysisComplete={setAnalysis} />;
+      case 2: return (
+        <Tabs defaultValue="footage" className="w-full">
+          <TabsList className="grid grid-cols-2 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
+            <TabsTrigger value="footage" className="text-xs">Tus Clips & Análisis</TabsTrigger>
+            <TabsTrigger value="stock" className="text-xs">Bóveda Stock & SFX</TabsTrigger>
+          </TabsList>
+          <TabsContent value="footage" className="mt-0">
+            <FootageAnalyzer clips={clips} analysis={analysis} onClipsChange={setClips} onAnalysisComplete={setAnalysis} />
+          </TabsContent>
+          <TabsContent value="stock" className="mt-0">
+            <StockMediaPanel
+              onAddVideoClip={(newClip) => setClips(prev => [...prev, newClip as any])}
+              onAddAudioTrack={(newTrack) => setAudioTracks(prev => [...prev, newTrack as any])}
+            />
+          </TabsContent>
+        </Tabs>
+      );
       case 3: return <TimelineGenerator clips={clips} config={config as ProjectConfig} timeline={timeline} projectId={projectId} onTimelineGenerated={setTimeline} />;
       case 4: return <SpeedRampingPanel clips={clips} speedRamps={speedRamps} onSpeedRampsChange={setSpeedRamps} />;
-      case 5: return <AudioMixer audioTracks={audioTracks} onAudioTracksChange={setAudioTracks} />;
+      case 5: return (
+        <Tabs defaultValue="mixer" className="w-full">
+          <TabsList className="grid grid-cols-2 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
+            <TabsTrigger value="mixer" className="text-xs">Mezclador de Pistas</TabsTrigger>
+            <TabsTrigger value="voiceover" className="text-xs">Locución IA & Enhance</TabsTrigger>
+          </TabsList>
+          <TabsContent value="mixer" className="mt-0">
+            <AudioMixer audioTracks={audioTracks} onAudioTracksChange={setAudioTracks} />
+          </TabsContent>
+          <TabsContent value="voiceover" className="mt-0">
+            <AIVoiceoverPanel
+              onAddAudioTrack={(newTrack) => setAudioTracks(prev => [...prev, newTrack as any])}
+            />
+          </TabsContent>
+        </Tabs>
+      );
       case 6: return (
         <Tabs defaultValue="manual" className="w-full">
           <TabsList className="grid grid-cols-2 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
@@ -622,6 +730,36 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Recorder Trigger */}
+          <Button
+            onClick={() => setRecorderOpen(true)}
+            size="sm"
+            className="bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs h-8 px-2.5 transition-colors cursor-pointer"
+          >
+            <Radio className="w-3.5 h-3.5 mr-1.5 animate-pulse text-red-400" />
+            Grabar
+          </Button>
+
+          {/* Script to Video Trigger */}
+          <Button
+            onClick={() => setScriptModalOpen(true)}
+            size="sm"
+            className="bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs h-8 px-2.5 transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
+            Idea a Video
+          </Button>
+
+          {/* Client Review Trigger */}
+          <Button
+            onClick={() => setReviewModalOpen(true)}
+            size="sm"
+            className="bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs h-8 px-2.5 transition-colors cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-indigo-400" />
+            Revisión
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
@@ -843,6 +981,24 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
           </Tabs>
         </div>
       </div>
+
+      {/* ===== SUITE MODALS ===== */}
+      <ScreenCamRecorderModal
+        open={recorderOpen}
+        onOpenChange={setRecorderOpen}
+        onClipRecorded={handleClipRecorded}
+      />
+      <ScriptToVideoModal
+        open={scriptModalOpen}
+        onOpenChange={setScriptModalOpen}
+        onApplyStoryboard={handleApplyStoryboard}
+      />
+      <ClientReviewModal
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        projectId={projectId}
+        projectName={config.name}
+      />
     </div>
   );
 }
