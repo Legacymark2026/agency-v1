@@ -40,6 +40,16 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.png",
+  },
 };
 
 export default async function RootLayout({
