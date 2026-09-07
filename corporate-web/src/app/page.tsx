@@ -1,10 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { 
   ArrowRight, 
   BarChart3, 
   Cpu, 
   Network, 
-  ArrowUpRight
+  ArrowUpRight,
+  CheckCircle2,
+  Sparkles,
+  ShieldCheck
 } from "lucide-react";
 import HeroInteractive from "@/components/HeroInteractive";
 import ImpactMetrics from "@/components/ImpactMetrics";
@@ -181,38 +185,104 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. BANNER CINÉTICO FINAL: Llamado a la Acción con Subrayado Animado */}
-      <section className="py-24 bg-[#01426F] text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(176,138,26,0.2),transparent)] pointer-events-none" />
+      {/* 4. BANNER DIRECTIVO FINAL: Llamado a la Acción con Asesora Corporativa */}
+      <section className="py-20 lg:py-24 bg-[#01426F] text-white relative overflow-hidden border-t border-amber-900/40">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_75%_50%,rgba(176,138,26,0.18),transparent)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/15 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
-            Paso Siguiente
-          </span>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            
+            {/* Left Column: Value Proposition & CTAs */}
+            <div className="lg:col-span-7 text-left">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-[#B08A1A]/40 text-[#D4AF37] text-xs font-bold uppercase tracking-[0.2em] mb-6">
+                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>Asesoría Directiva &amp; Transformación Digital</span>
+              </span>
 
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight relative inline-block">
-            <span>¿Listo para transformar tu gestión?</span>
-            <span className="block h-1.5 w-full bg-gradient-to-r from-transparent via-[#B08A1A] to-transparent mt-3 rounded-full" />
-          </h2>
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15]">
+                <span>¿Listo para transformar la gestión de su organización?</span>
+                <span className="block h-1.5 w-48 bg-gradient-to-r from-[#B08A1A] to-transparent mt-4 rounded-full" />
+              </h2>
 
-          <p className="mt-8 text-base sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Coordinemos una sesión de trabajo directivo confidencial y evaluemos el potencial de rentabilidad de su modelo operativo.
-          </p>
+              <p className="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
+                Coordinemos una sesión de trabajo directivo confidencial y evaluemos el potencial de rentabilidad, digitalización Cero Papel y cumplimiento normativo de su empresa.
+              </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-5 justify-center items-center">
-            <Link
-              href="/contacto"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-9 py-4 rounded-2xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-base hover:brightness-110 transition-all shadow-xl gold-glow"
-            >
-              <span>Solicitar Diagnóstico Sin Costo</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link
-              href="/quienes-somos"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl glassmorphism text-slate-200 hover:text-white text-base font-semibold transition-all hover:border-[#B08A1A]"
-            >
-              <span>Conoce a Nuestro Equipo</span>
-            </Link>
+              {/* Trust Checkmarks */}
+              <div className="mt-8 space-y-3 max-w-xl">
+                <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0" />
+                  <span>Diagnóstico inicial de madurez en normas ISO, SG-SST y HSEQ <strong>sin costo</strong>.</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0" />
+                  <span>Ecosistema en la nube con <strong>usuarios ilimitados</strong> y sin cobro por colaborador.</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-slate-200">
+                  <CheckCircle2 className="w-5 h-5 text-[#D4AF37] shrink-0" />
+                  <span>Respaldo y metodología de <strong>Consultoría de Colombia S.A.S.</strong> (+15 años de trayectoria).</span>
+                </div>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="mt-10 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+                <Link
+                  href="/contacto"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-base hover:brightness-110 transition-all shadow-xl gold-glow hover:scale-[1.02]"
+                >
+                  <span>Solicitar Diagnóstico Sin Costo</span>
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/quienes-somos"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl glassmorphism text-slate-200 hover:text-white text-base font-semibold transition-all hover:border-[#B08A1A]"
+                >
+                  <span>Conoce a Nuestro Equipo</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Column: Executive Businesswoman Image */}
+            <div className="lg:col-span-5 relative flex justify-center items-end">
+              {/* Subtle gold glow halo behind the executive */}
+              <div className="absolute bottom-0 w-72 sm:w-96 h-72 sm:h-96 bg-gradient-to-t from-amber-500/25 via-amber-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="relative z-10 w-full max-w-[340px] sm:max-w-[420px] lg:max-w-[440px]">
+                <Image
+                  src="/images/asesora-corporativa.webp"
+                  alt="Asesora de Consultoría y Gestión Directiva NeoGestión"
+                  width={768}
+                  height={1458}
+                  priority
+                  className="w-full h-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.6)] select-none pointer-events-none"
+                />
+
+                {/* Floating Executive Trust Badge */}
+                <div className="absolute -bottom-2 -left-2 sm:bottom-6 sm:-left-6 bg-slate-900/90 backdrop-blur-xl border border-[#B08A1A]/50 rounded-2xl p-3.5 sm:p-4 shadow-2xl flex items-center gap-3 text-left animate-fadeIn">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-[#D4AF37] flex items-center justify-center shrink-0 border border-[#B08A1A]/40">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-white">
+                      99.4% Aprobación
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-slate-300 font-medium">
+                      Auditorías de Certificación ISO &amp; HSEQ
+                    </div>
+                  </div>
+                </div>
+
+                {/* Second Floating Pill */}
+                <div className="absolute top-12 -right-2 sm:top-16 sm:-right-4 bg-[#01426F]/90 backdrop-blur-xl border border-amber-500/30 rounded-2xl px-3.5 py-2 shadow-xl flex items-center gap-2 text-left hidden sm:flex">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-100">
+                    Consultoría Senior
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
