@@ -24,7 +24,8 @@ export declare class ViralClipperService {
     private hookKeywords;
     /**
      * Extracts viral highlight clips from a full video transcript and energy profile.
+     * Supports transcripts up to 60+ minutes (3600s).
      */
-    extractViralClips(sentences: TranscriptSentence[], targetDuration?: 15 | 30 | 60): ViralClipResult[];
+    extractViralClips(sentences: TranscriptSentence[], targetDuration?: number, maxClips?: number): ViralClipResult[];
 }
 export declare const viralClipperService: ViralClipperService;

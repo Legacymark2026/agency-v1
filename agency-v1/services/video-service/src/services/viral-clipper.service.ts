@@ -28,10 +28,12 @@ export class ViralClipperService {
 
   /**
    * Extracts viral highlight clips from a full video transcript and energy profile.
+   * Supports transcripts up to 60+ minutes (3600s).
    */
   public extractViralClips(
     sentences: TranscriptSentence[],
-    targetDuration: 15 | 30 | 60 = 30
+    targetDuration: number = 30,
+    maxClips: number = 50
   ): ViralClipResult[] {
     const clips: ViralClipResult[] = [];
 
@@ -53,7 +55,7 @@ export class ViralClipperService {
       }
 
       if (currentDuration >= targetDuration * 0.7) {
-        const avgEnergy = totalEnergy / sentenceCount;
+        const avgEnergy = totalEnergy / Math.max(1, sentenceCount);
         const hasHookKeyword = this.hookKeywords.some((kw) => textAccum.toLowerCase().includes(kw));
 
         let score = Math.round(avgEnergy * 60 + (hasHookKeyword ? 35 : 15));
@@ -69,14 +71,14 @@ export class ViralClipperService {
           durationSec: Math.round((endSec - startSentence.startSec) * 100) / 100,
           viralityScore: score,
           hookHeadline: hasHookKeyword ? "🔥 Gancho de Alta Retención Detectado" : "💡 Momento Clave",
-          recommendedPlatform: targetDuration <= 30 ? "TIKTOK" : "YOUTUBE_SHORTS",
+          recommendedPlatform: targetDuration <= 30 ? "TIKTOK" : targetDuration <= 60 ? "INSTAGRAM_REELS" : "YOUTUBE_SHORTS",
         });
 
-        i = j - 1; // Advance window
+        i = Math.max(i, j - 1); // Advance window safely
       }
     }
 
-    return clips.sort((a, b) => b.viralityScore - a.viralityScore);
+    return clips.sort((a, b) => b.viralityScore - a.viralityScore).slice(0, maxClips);
   }
 }
 

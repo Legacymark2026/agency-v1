@@ -176,7 +176,7 @@ async function getAudioDuration(audioPath) {
 function extractAudioFromVideo(videoPath, outputPath) {
     return new Promise((resolve, reject) => {
         try {
-            (0, child_process_1.execSync)(`ffmpeg -i "${videoPath}" -vn -acodec pcm_s16le -ar 16000 -ac 1 "${outputPath}" -y`, { timeout: 120000 });
+            (0, child_process_1.execSync)(`ffmpeg -i "${videoPath}" -vn -acodec pcm_s16le -ar 16000 -ac 1 "${outputPath}" -y`, { timeout: 600000, maxBuffer: 50 * 1024 * 1024 });
             resolve();
         }
         catch (error) {

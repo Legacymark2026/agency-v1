@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   GripVertical, Trash2, Plus, Film, Music, Type, Palette,
-  Scissors, Magnet, Layers, ZoomIn, ZoomOut, Sparkles
+  Scissors, Magnet, Layers, ZoomIn, ZoomOut, Sparkles, Maximize2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -19,6 +19,39 @@ export interface TimelineClip {
   duration: number;
   color: string;
   muted?: boolean;
+}
+
+function formatDurationBadge(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) {
+    return `${h}h ${m}m ${s > 0 ? s + 's' : ''}`.trim();
+  }
+  if (m > 0) {
+    return `${m}m ${s > 0 ? s + 's' : ''}`.trim();
+  }
+  return `${s}s`;
+}
+
+function formatRulerTick(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+function getTickStep(duration: number, pps: number): number {
+  const minSpacingPx = 70;
+  const minSecPerTick = minSpacingPx / pps;
+  const candidates = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800];
+  for (const c of candidates) {
+    if (c >= minSecPerTick) return c;
+  }
+  return 1800;
 }
 
 interface TimelineEditorProps {
@@ -59,14 +92,28 @@ export function TimelineEditor({
   const [internalSelectedId, setInternalSelectedId] = useState<string | null>(null);
   const [draggingClip, setDraggingClip] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
-  const [pixelsPerSecond, setPixelsPerSecond] = useState(50);
+  const [pixelsPerSecond, setPixelsPerSecond] = useState(() => {
+    if (totalDuration > 1800) return 2;
+    if (totalDuration > 300) return 8;
+    return 40;
+  });
   const [rippleMode, setRippleMode] = useState(true);
   const [magnetSnap, setMagnetSnap] = useState(true);
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const activeClipId = selectedClipId || internalSelectedId;
 
-  const timelineWidth = Math.max(800, totalDuration * pixelsPerSecond);
+  const timelineWidth = Math.max(800, Math.round(totalDuration * pixelsPerSecond));
+
+  // Fit timeline to screen width
+  const handleFitTimeline = useCallback(() => {
+    if (timelineRef.current && totalDuration > 0) {
+      const containerWidth = Math.max(600, timelineRef.current.clientWidth - 40);
+      const optimalPps = Math.max(0.5, Math.min(100, Math.round((containerWidth / totalDuration) * 10) / 10));
+      setPixelsPerSecond(optimalPps);
+      toast.info(`Línea de tiempo ajustada a pantalla (${optimalPps}px/s)`);
+    }
+  }, [totalDuration]);
 
   // 1. SPLIT BLADE TOOL (Cuchilla con tecla S o Boton)
   const handleSplitAtPlayhead = useCallback(() => {
@@ -248,8 +295,8 @@ export function TimelineEditor({
               <Scissors className="w-4 h-4 text-teal-400" />
               Línea de Tiempo Profesional
             </CardTitle>
-            <Badge className="text-[10px] bg-slate-800 text-slate-300 border-slate-700">
-              {clips.length} clips • {totalDuration}s
+            <Badge className="text-[10px] bg-slate-800 text-teal-300 border-slate-700 font-mono">
+              {clips.length} clips • {formatDurationBadge(totalDuration)} ({totalDuration}s)
             </Badge>
           </div>
 
@@ -308,18 +355,32 @@ export function TimelineEditor({
               </Button>
             )}
 
+            {/* Fit to screen */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleFitTimeline}
+              className="h-7 px-2 text-[11px] text-teal-300 border-teal-500/30 hover:bg-teal-950/40 cursor-pointer"
+              title="Ajustar toda la duración a la pantalla"
+            >
+              <Maximize2 className="w-3 h-3 mr-1" />
+              Ajustar
+            </Button>
+
             {/* Zoom Slider / Controls */}
-            <div className="flex items-center gap-1 ml-2 pl-2 border-l border-slate-800">
+            <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-800">
               <button
-                onClick={() => setPixelsPerSecond(p => Math.max(20, p - 10))}
+                onClick={() => setPixelsPerSecond(p => Math.max(1, p <= 4 ? p - 0.5 : p <= 15 ? p - 3 : p - 10))}
                 className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
                 title="Reducir zoom"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-[10px] font-mono text-slate-400 w-8 text-center">{pixelsPerSecond}px</span>
+              <span className="text-[10px] font-mono text-slate-400 w-9 text-center">
+                {pixelsPerSecond < 10 ? pixelsPerSecond.toFixed(1) : Math.round(pixelsPerSecond)}px
+              </span>
               <button
-                onClick={() => setPixelsPerSecond(p => Math.min(120, p + 15))}
+                onClick={() => setPixelsPerSecond(p => Math.min(100, p < 4 ? p + 0.5 : p < 15 ? p + 3 : p + 10))}
                 className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
                 title="Aumentar zoom"
               >
@@ -333,23 +394,32 @@ export function TimelineEditor({
       <CardContent className="px-4 py-3">
         <div
           ref={timelineRef}
-          className="relative overflow-x-auto overflow-y-hidden cursor-pointer pb-2"
+          className="relative overflow-x-auto overflow-y-hidden cursor-pointer pb-2 select-none"
           onMouseMove={handleDragMove}
           onMouseUp={handleDragEnd}
           onMouseLeave={handleDragEnd}
           onClick={handleTimelineClick}
         >
-          {/* Time ruler */}
+          {/* High-Performance Dynamic Time ruler (optimized for up to 60-min content) */}
           <div className="flex items-center mb-2 border-b border-slate-700/80 pb-1 h-6 relative" style={{ width: timelineWidth }}>
-            {Array.from({ length: Math.ceil(totalDuration) + 1 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute text-[10px] font-mono text-slate-500 select-none"
-                style={{ left: i * pixelsPerSecond }}
-              >
-                {i}s
-              </div>
-            ))}
+            {(() => {
+              const tickStep = getTickStep(totalDuration, pixelsPerSecond);
+              const tickCount = Math.floor(totalDuration / tickStep);
+              const ticks = Array.from({ length: tickCount + 1 }, (_, i) => i * tickStep);
+
+              return ticks.map((t) => (
+                <div
+                  key={t}
+                  className="absolute flex flex-col items-start"
+                  style={{ left: Math.round(t * pixelsPerSecond) }}
+                >
+                  <div className="h-1.5 w-px bg-slate-600 mb-0.5" />
+                  <span className="text-[10px] font-mono text-slate-400 select-none -translate-x-1">
+                    {formatRulerTick(t)}
+                  </span>
+                </div>
+              ));
+            })()}
           </div>
 
           {/* Tracks */}

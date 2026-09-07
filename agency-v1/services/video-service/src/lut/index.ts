@@ -104,7 +104,7 @@ export async function applyLUT(
       `"${outputPath}"`,
     ].join(' ');
 
-    await execAsync(cmd, { timeout: 300000 });
+    await execAsync(cmd, { timeout: 3600000, maxBuffer: 50 * 1024 * 1024 });
     return true;
   } catch (error) {
     console.error('[LUT] Error applying LUT:', error);

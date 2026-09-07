@@ -14,7 +14,7 @@ export class VideoProcessorService {
     
     try {
       const ffmpegCmd = `ffmpeg -y -i "${videoPath}" -c:v libvpx-vp9 -b:v 1500k -crf 30 -c:a libopus "${optimizedPath}"`;
-      await execAsync(ffmpegCmd, { timeout: 120000 });
+      await execAsync(ffmpegCmd, { timeout: 3600000, maxBuffer: 50 * 1024 * 1024 });
       console.log(`[VideoProcessorService] FFmpeg optimization complete: ${optimizedPath}`);
     } catch (err: any) {
       console.warn(`[VideoProcessorService] FFmpeg not available or timed out, returning path mapping:`, err.message);
@@ -52,7 +52,7 @@ export class VideoProcessorService {
 
     try {
       const ffmpegCmd = `ffmpeg -y -i "${videoPath}" -i "${logoPath}" -filter_complex "${overlayFilter}" -c:v libx264 -preset fast -crf 22 -c:a copy "${outputVideoPath}"`;
-      await execAsync(ffmpegCmd, { timeout: 180000 });
+      await execAsync(ffmpegCmd, { timeout: 3600000, maxBuffer: 50 * 1024 * 1024 });
       console.log(`[VideoProcessorService] FFmpeg watermark complete: ${outputVideoPath}`);
     } catch (err: any) {
       console.warn(`[VideoProcessorService] FFmpeg watermark error or fallback:`, err.message);

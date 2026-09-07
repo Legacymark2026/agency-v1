@@ -377,35 +377,75 @@ export function ProjectConfigPanel({ config, onChange }: ProjectConfigPanelProps
         </CardContent>
       </Card>
 
-      {/* Duration Settings */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-gray-300">Duración Total (segundos)</Label>
-          <Input
-            type="number"
-            value={duration}
-            onChange={(e) => {
-              setDuration(Number(e.target.value));
-              handleChange({ duration: Number(e.target.value) });
-            }}
-            min={5}
-            max={180}
-            className="h-11 bg-slate-800 border-slate-700 text-white"
-          />
+      {/* Duration Settings (Supports up to 60 minutes) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-semibold text-gray-300">Duración del Video (hasta 60 Minutos)</Label>
+          <span className="text-xs font-mono text-teal-400">
+            {duration >= 60 ? `${Math.floor(duration / 60)} min ${duration % 60 > 0 ? `${duration % 60}s` : ''}` : `${duration} seg`}
+          </span>
         </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-gray-300">Duración del Hook (segundos)</Label>
-          <Input
-            type="number"
-            value={hookDuration}
-            onChange={(e) => {
-              setHookDuration(Number(e.target.value));
-              handleChange({ hookDuration: Number(e.target.value) });
-            }}
-            min={1}
-            max={10}
-            className="h-11 bg-slate-800 border-slate-700 text-white"
-          />
+
+        {/* Quick duration presets */}
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            { label: '30s (Short)', sec: 30 },
+            { label: '60s (Reel)', sec: 60 },
+            { label: '5 min (Clip)', sec: 300 },
+            { label: '15 min (Tutorial)', sec: 900 },
+            { label: '30 min (Clase)', sec: 1800 },
+            { label: '60 min (Podcast)', sec: 3600 },
+          ].map((preset) => (
+            <button
+              key={preset.sec}
+              type="button"
+              onClick={() => {
+                setDuration(preset.sec);
+                handleChange({ duration: preset.sec });
+              }}
+              className={cn(
+                "px-2.5 py-1 text-[11px] rounded-md font-medium transition-colors border",
+                duration === preset.sec
+                  ? "bg-teal-600/30 text-teal-300 border-teal-500/50"
+                  : "bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200"
+              )}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 pt-1">
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-slate-400">Segundos exactos</Label>
+            <Input
+              type="number"
+              value={duration}
+              onChange={(e) => {
+                const val = Math.max(5, Math.min(3600, Number(e.target.value)));
+                setDuration(val);
+                handleChange({ duration: val });
+              }}
+              min={5}
+              max={3600}
+              className="h-10 bg-slate-800 border-slate-700 text-white font-mono"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-slate-400">Gancho Inicial / Hook (seg)</Label>
+            <Input
+              type="number"
+              value={hookDuration}
+              onChange={(e) => {
+                const val = Math.max(1, Math.min(30, Number(e.target.value)));
+                setHookDuration(val);
+                handleChange({ hookDuration: val });
+              }}
+              min={1}
+              max={30}
+              className="h-10 bg-slate-800 border-slate-700 text-white font-mono"
+            />
+          </div>
         </div>
       </div>
     </div>

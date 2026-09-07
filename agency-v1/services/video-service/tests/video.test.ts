@@ -146,5 +146,24 @@ describe("VideoService Unit & AI Engines Contract Tests", () => {
     expect(project.beats[3].phase).toBe("CTA");
     expect(project.targetDurationSec).toBe(30);
   });
+
+  it("11. Long-Form Video Engine debe procesar transcripciones y contenido de 60 minutos (3600s)", () => {
+    const clipper = new ViralClipperService();
+    // Simular un podcast o webinar de 60 minutos (120 bloques de 30s = 3600s)
+    const longSentences = Array.from({ length: 120 }, (_, i) => ({
+      text: i % 10 === 0 
+        ? `El secreto número ${i} para automatizar la facturación y retener clientes`
+        : `En el minuto ${Math.floor((i * 30) / 60)} analizamos las métricas clave de crecimiento empresarial`,
+      startSec: i * 30,
+      endSec: (i + 1) * 30,
+      energyLevel: i % 10 === 0 ? 0.95 : 0.65,
+    }));
+
+    const clips = clipper.extractViralClips(longSentences, 60, 20);
+    expect(clips.length).toBeGreaterThan(0);
+    expect(clips.length).toBeLessThanOrEqual(20);
+    expect(clips[0].viralityScore).toBeGreaterThanOrEqual(80);
+    expect(clips[0].hookHeadline).toContain("Gancho de Alta Retención");
+  });
 });
 

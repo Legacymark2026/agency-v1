@@ -124,7 +124,7 @@ export function createWorker(outputDir: string): Worker {
         await job.updateProgress(50);
         broadcastProgress(jobId, 50, 'PROCESSING');
 
-        await execAsync(ffmpegCmd, { timeout: 300000 });
+        await execAsync(ffmpegCmd, { timeout: 3600000, maxBuffer: 50 * 1024 * 1024 });
 
         await job.updateProgress(90);
         broadcastProgress(jobId, 90, 'PROCESSING');
@@ -171,6 +171,7 @@ export function createWorker(outputDir: string): Worker {
     {
       connection,
       concurrency: parseInt(process.env.RENDER_CONCURRENCY || '2'),
+      lockDuration: 3600000,
     },
   );
 

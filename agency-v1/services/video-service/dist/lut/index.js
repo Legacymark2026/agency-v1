@@ -86,7 +86,7 @@ async function applyLUT(inputPath, outputPath, lutConfig) {
             `-c:a copy`,
             `"${outputPath}"`,
         ].join(' ');
-        await execAsync(cmd, { timeout: 300000 });
+        await execAsync(cmd, { timeout: 3600000, maxBuffer: 50 * 1024 * 1024 });
         return true;
     }
     catch (error) {

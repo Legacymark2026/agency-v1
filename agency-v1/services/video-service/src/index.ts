@@ -54,7 +54,12 @@ redis.on('ready', () => {
 // ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
+
+// Server timeouts for 60-minute long-form video rendering & uploads
+server.timeout = 3600000; // 60 minutes
+server.keepAliveTimeout = 65000;
 
 import { videoRouter } from "./routes/video.routes";
 import { errorHandler } from "./middlewares/video.middleware";

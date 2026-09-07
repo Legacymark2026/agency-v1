@@ -234,7 +234,7 @@ export function extractAudioFromVideo(videoPath: string, outputPath: string): Pr
     try {
       execSync(
         `ffmpeg -i "${videoPath}" -vn -acodec pcm_s16le -ar 16000 -ac 1 "${outputPath}" -y`,
-        { timeout: 120000 },
+        { timeout: 600000, maxBuffer: 50 * 1024 * 1024 },
       );
       resolve();
     } catch (error) {

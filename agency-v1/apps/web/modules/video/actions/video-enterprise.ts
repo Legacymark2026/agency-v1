@@ -8,14 +8,14 @@ const VIDEO_SERVICE_URL = process.env.VIDEO_SERVICE_URL || "http://video-service
 // 1. Auto-Clip Viral
 export async function runAutoClipAction(params: {
   sentences: { text: string; startSec: number; endSec: number; energyLevel: number }[];
-  targetDuration?: 15 | 30 | 60;
+  targetDuration?: number;
 }) {
   try {
     const res = await fetch(`${VIDEO_SERVICE_URL}/api/v1/video/auto-clip`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -61,7 +61,7 @@ export async function runKineticSubtitlesAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -98,7 +98,7 @@ export async function runSilenceRemovalAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -133,7 +133,7 @@ export async function runAudioDuckingAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -168,7 +168,7 @@ export async function runSmartReframeAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -200,7 +200,7 @@ export async function runBrollMatchingAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -238,7 +238,7 @@ export async function runGenerateThumbnailAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -273,7 +273,7 @@ export async function runVoiceIsolationAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -310,7 +310,7 @@ export async function runVoiceoverSynthesisAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
@@ -350,7 +350,7 @@ export async function runScriptToVideoAction(params: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(120000),
     });
     if (res.ok) {
       const data = await res.json();
