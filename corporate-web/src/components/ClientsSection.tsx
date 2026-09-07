@@ -110,10 +110,22 @@ export default function ClientsSection() {
     : clients.filter((c) => c.sectorKey === activeFilter);
 
   return (
-    <section id="nuestros-clientes" className="py-24 bg-gradient-to-b from-[#01355a] via-[#01426F] to-[#012f50] text-white border-y border-amber-900/40 relative overflow-hidden">
-      {/* Background ambient lighting */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_30%,rgba(176,138,26,0.16),transparent)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] pointer-events-none" />
+    <section id="nuestros-clientes" className="py-24 relative overflow-hidden text-white border-y border-amber-900/40">
+      {/* 1. Fondo de Infraestructura & Respaldo Institucional en Alta Definición */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/clients-bg.webp"
+          alt="Respaldo e Infraestructura NeoGestión"
+          fill
+          className="object-cover object-center"
+          sizes="100vw"
+          quality={90}
+        />
+        {/* Capas de Contraste Cinematográfico & Atmósfera Directiva */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#00172e]/92 via-[#012b4d]/88 to-[#001426]/95 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_20%,rgba(176,138,26,0.18),transparent)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
