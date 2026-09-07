@@ -20,15 +20,15 @@ export default function BrandLogo({
 }: BrandLogoProps) {
   const isBlueBg = variant === "dark" || variant === "blue-bg";
 
-  // Dimensiones ampliadas y generosas basadas en la relación de aspecto 820x312 (ratio: 2.628)
+  // Dimensiones duplicadas (2 veces más grande) basadas en el ratio 820x312 (ratio: 2.628)
   const dimensions = {
-    sm: { width: 160, height: 61 },
-    md: { width: 220, height: 84 },
-    lg: { width: 280, height: 106 },
-    xl: { width: 340, height: 129 },
-    "2xl": { width: 390, height: 148 },
-    "3xl": { width: 460, height: 175 },
-  }[size] || { width: 390, height: 148 };
+    sm: { width: 320, height: 122 },
+    md: { width: 440, height: 168 },
+    lg: { width: 560, height: 212 },
+    xl: { width: 680, height: 258 },
+    "2xl": { width: 780, height: 296 },
+    "3xl": { width: 820, height: 312 },
+  }[size] || { width: 780, height: 296 };
 
   // Selección del SVG oficial según la variante de fondo:
   // - Para fondos AZULES (variant === "dark" | "blue-bg"):
@@ -46,13 +46,13 @@ export default function BrandLogo({
 
   const content = (
     <div className={`inline-flex items-center justify-center group ${className}`}>
-      <div className="relative flex items-center drop-shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+      <div className="relative flex items-center">
         <Image
           src={logoSrc}
           alt="NeoGESTIÓN software"
           width={dimensions.width}
           height={dimensions.height}
-          className="w-auto h-auto max-h-[66px] sm:max-h-[80px] md:max-h-[92px] lg:max-h-[105px] object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+          className="w-full h-auto max-h-[120px] sm:max-h-[150px] md:max-h-[180px] lg:max-h-[210px] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
           priority
         />
       </div>
