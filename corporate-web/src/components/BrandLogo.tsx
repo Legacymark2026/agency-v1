@@ -37,12 +37,12 @@ export default function BrandLogo({
   // - Para fondos BLANCOS / CLAROS (variant === "light" | "white-bg"):
   //   Se utiliza Mesa de trabajo 9 copia 4.svg (/brand/logo-neogestion-blue-gold.svg) con tipografía azul.
   const logoSrc = isBlueBg
-    ? "/brand/logo-neogestion-white-gold.svg" // Mesa de trabajo 9 copia 6.svg
+    ? "/brand/Mesa%20de%20trabajo%209%20copia%206.svg?v=2" // Mesa de trabajo 9 copia 6.svg
     : variant === "gold"
-    ? "/brand/logo-neogestion-gold.svg"
+    ? "/brand/logo-neogestion-gold.svg?v=2"
     : variant === "white"
-    ? "/brand/logo-neogestion-white.svg"
-    : "/brand/logo-neogestion-blue-gold.svg"; // Mesa de trabajo 9 copia 4.svg
+    ? "/brand/logo-neogestion-white.svg?v=2"
+    : "/brand/logo-neogestion-blue-gold.svg?v=2"; // Mesa de trabajo 9 copia 4.svg
 
   const content = (
     <div className={`inline-flex items-center justify-center group ${className}`}>

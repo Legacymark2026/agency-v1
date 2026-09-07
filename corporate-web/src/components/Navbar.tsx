@@ -29,19 +29,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between min-h-[7rem] lg:min-h-[8.5rem] py-3 md:py-4">
           {/* Logo NEOGESTIÓN Oficial en Gran Formato (2x tamaño) */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center shrink-0">
             <BrandLogo 
               variant="dark" 
               size="3xl" 
               showSoftwareTag={true} 
               showCompany={false} 
-              className="w-[280px] sm:w-[380px] md:w-[460px] lg:w-[540px] xl:w-[600px]" 
+              className="w-[300px] sm:w-[400px] md:w-[480px] lg:w-[560px] xl:w-[620px]" 
             />
-            {/* Strategic Product Badge Chip */}
-            <div className="hidden 2xl:flex flex-col border-l border-amber-500/25 pl-3 py-0.5 select-none">
-              <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-[#D4AF37]">Producto Insignia</span>
-              <span className="text-[11px] text-slate-300 font-medium whitespace-nowrap">Suite Cloud Oficial</span>
-            </div>
           </div>
 
           {/* Desktop Navigation */}
