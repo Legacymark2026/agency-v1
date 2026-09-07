@@ -14,7 +14,6 @@ import HeroInteractive from "@/components/HeroInteractive";
 import ImpactMetrics from "@/components/ImpactMetrics";
 import ProductEndorsementSection from "@/components/ProductEndorsementSection";
 import ModuleExplorer from "@/components/ModuleExplorer";
-import RoiCalculator from "@/components/RoiCalculator";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import ClientsSection from "@/components/ClientsSection";
 import { servicesData } from "@/data/servicesData";
@@ -40,10 +39,7 @@ export default function Home() {
       {/* 4. EXPLORADOR INTERACTIVO DE MÓDULOS & NORMAS */}
       <ModuleExplorer />
 
-      {/* 5. CALCULADORA INTERACTIVA DE RETORNO DE INVERSIÓN (ROI) & CERO PAPEL */}
-      <RoiCalculator />
-
-      {/* 2. RESUMEN DE SERVICIOS: Grid Asimétrico / Mosaico */}
+      {/* 5. RESUMEN DE SERVICIOS: Grid Asimétrico / Mosaico */}
       <section id="servicios-destacados" className="py-24 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">

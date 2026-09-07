@@ -14,7 +14,6 @@ import {
   FileText, 
   Users, 
   ArrowRight,
-  Calculator,
   Sparkles
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
@@ -215,11 +214,11 @@ export default function Navbar() {
                               <span>Diagnóstico de madurez normativa sin costo de evaluación inicial.</span>
                             </div>
                             <Link
-                              href="/#calculadora-ahorro"
+                              href="/contacto"
                               className="inline-flex items-center gap-1.5 text-xs font-bold text-[#D4AF37] hover:text-white transition-colors"
                             >
-                              <Calculator className="w-3.5 h-3.5" />
-                              <span>Calculadora de ROI</span>
+                              <span>Solicitar Diagnóstico</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
                         </div>
@@ -347,12 +346,12 @@ export default function Navbar() {
                         </Link>
                       ))}
                       <Link
-                        href="/#calculadora-ahorro"
+                        href="/contacto"
                         onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2 p-2 rounded-lg text-xs font-bold text-white bg-amber-500/10 border border-[#B08A1A]/40"
+                        className="flex items-center justify-between p-2 rounded-lg text-xs font-bold text-white bg-amber-500/10 border border-[#B08A1A]/40"
                       >
-                        <Calculator className="w-3.5 h-3.5 text-[#D4AF37]" />
-                        <span>Calculadora de Retorno de Inversión (ROI)</span>
+                        <span>Solicitar Diagnóstico Sin Costo</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#D4AF37]" />
                       </Link>
                     </div>
                   )}
