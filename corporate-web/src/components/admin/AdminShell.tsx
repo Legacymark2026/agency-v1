@@ -50,7 +50,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <div>
           {/* Logo Oficial */}
           <div className="pb-6 border-b border-slate-800 mb-6">
-            <BrandLogo variant="dark" size="sm" showSoftwareTag={true} showCompany={true} clickable={false} />
+            <BrandLogo variant="dark" size="md" showSoftwareTag={true} showCompany={true} clickable={false} />
           </div>
 
           {/* Navigation */}

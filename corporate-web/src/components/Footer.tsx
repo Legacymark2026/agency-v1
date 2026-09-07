@@ -11,9 +11,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <BrandLogo variant="dark" size="md" showSoftwareTag={true} showCompany={true} />
+            <BrandLogo variant="dark" size="xl" showSoftwareTag={true} showCompany={true} className="w-[240px] sm:w-[280px]" />
+            <div className="inline-flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-[#B08A1A]/30 text-xs">
+              <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+              <span className="text-slate-300">NeoGestión Software es un producto de</span>
+              <strong className="text-white">Consultoría de Colombia S.A.S.</strong>
+            </div>
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
-              Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. <strong className="text-slate-200">NeoGestión es un producto de Consultoría de Colombia S.A.S.</strong>, diseñado para transformar la gestión, optimizar procesos y potenciar la rentabilidad organizacional.
+              Ecosistema líder de tecnología, consultoría y formación empresarial en Colombia. Diseñado para transformar la gestión, optimizar procesos y potenciar la rentabilidad organizacional con filosofía Cero Papel y usuarios ilimitados.
             </p>
             <div className="space-y-2 text-xs text-slate-400 pt-2">
               <div className="flex items-center gap-2">
