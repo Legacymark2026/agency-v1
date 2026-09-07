@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import HeroInteractive from "@/components/HeroInteractive";
 import ImpactMetrics from "@/components/ImpactMetrics";
-import ProductEndorsementSection from "@/components/ProductEndorsementSection";
 import ModuleExplorer from "@/components/ModuleExplorer";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import ClientsSection from "@/components/ClientsSection";
@@ -33,10 +32,7 @@ export default function Home() {
         <ImpactMetrics />
       </div>
 
-      {/* 3. SECCIÓN ESTRATÉGICA: SINERGIA CONSULTORÍA DE COLOMBIA & PRODUCTO NEOGESTIÓN */}
-      <ProductEndorsementSection />
-
-      {/* 4. EXPLORADOR INTERACTIVO DE MÓDULOS & NORMAS */}
+      {/* 3. EXPLORADOR DE MÓDULOS DE LA PLATAFORMA */}
       <ModuleExplorer />
 
       {/* 5. RESUMEN DE SERVICIOS: Grid Asimétrico / Mosaico */}
