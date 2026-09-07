@@ -30,7 +30,7 @@ export const MICROSERVICE_PORT_MAP: Record<string, number> = {
   "integration-service": 4015,
   "hr-service": 4016,
   "calendar-service": 4017,
-  "video-service": 4018,
+  "video-service": 4007,
   "affiliate-service": 4019,
   "public-api-service": 4020,
   "goldneez-rewards-service": 4021,
