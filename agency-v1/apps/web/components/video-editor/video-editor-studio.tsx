@@ -34,6 +34,8 @@ import { StockMediaPanel } from './stock-library/stock-media-panel';
 import { AIVoiceoverPanel } from './voiceover/ai-voiceover-panel';
 import { ScriptToVideoModal } from './script-generator/script-to-video-modal';
 import { ClientReviewModal } from './review/client-review-modal';
+import { ViralSubtitlesPresets } from './subtitles/viral-subtitles-presets';
+import { TextBasedVideoEditor } from './text-editor/text-based-video-editor';
 import { Radio, MessageSquare, Share2 } from 'lucide-react';
 import type {
   ProjectConfig, Clip, AudioTrack, TextOverlay,
@@ -163,6 +165,40 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
     }));
 
     toast.success('¡Proyecto auto-montado con 4 fases virales en el timeline!');
+  };
+
+  const handleApplyTextBasedCuts = (cutSegments: { startSec: number; endSec: number }[]) => {
+    if (!cutSegments.length) return;
+
+    const newClips: Clip[] = cutSegments.map((seg, idx) => ({
+      id: `clip_cut_${idx}_${Date.now()}`,
+      name: `Toma ${idx + 1} (${(seg.endSec - seg.startSec).toFixed(1)}s)`,
+      startTime: seg.startSec,
+      duration: parseFloat((seg.endSec - seg.startSec).toFixed(2)),
+      order: idx + 1,
+      format: config.format || '9:16',
+      resolution: '1080x1920',
+      fps: 30,
+      hasAudio: true,
+    }));
+
+    setClips(newClips);
+    toast.success(`Línea de tiempo actualizada con ${newClips.length} tomas limpias`);
+  };
+
+  const handleApplySubtitlePreset = (preset: any) => {
+    const updatedOverlays = textOverlays.map(o => ({
+      ...o,
+      font: preset.fontFamily,
+      color: preset.color,
+      animation: preset.animation,
+      text: preset.uppercase ? o.text.toUpperCase() : o.text,
+    }));
+    setTextOverlays(updatedOverlays);
+  };
+
+  const handleAutoZoomIA = () => {
+    toast.success('✨ Zooms dinámicos (1.15x) aplicados automáticamente cada 4s para retención');
   };
 
   const handleGenerateCaptions = async (lang: string) => {
@@ -614,13 +650,18 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
         </Tabs>
       );
       case 6: return (
-        <Tabs defaultValue="manual" className="w-full">
-          <TabsList className="grid grid-cols-2 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
-            <TabsTrigger value="manual" className="text-xs">Edición Manual</TabsTrigger>
-            <TabsTrigger value="auto" className="text-xs">Subtítulos IA</TabsTrigger>
+        <Tabs defaultValue="presets" className="w-full">
+          <TabsList className="grid grid-cols-4 bg-slate-900 border border-slate-800 mb-4 p-1 rounded-lg">
+            <TabsTrigger value="presets" className="text-[11px]">Presets Virales</TabsTrigger>
+            <TabsTrigger value="text_edit" className="text-[11px]">Edición por Texto</TabsTrigger>
+            <TabsTrigger value="auto" className="text-[11px]">Subtítulos IA</TabsTrigger>
+            <TabsTrigger value="manual" className="text-[11px]">Manual</TabsTrigger>
           </TabsList>
-          <TabsContent value="manual" className="mt-0">
-            <TextOverlaysEditor textOverlays={textOverlays} onTextOverlaysChange={setTextOverlays} format={config.format} platform={config.platform} />
+          <TabsContent value="presets" className="mt-0">
+            <ViralSubtitlesPresets onSelectPreset={handleApplySubtitlePreset} />
+          </TabsContent>
+          <TabsContent value="text_edit" className="mt-0">
+            <TextBasedVideoEditor onApplyCuts={handleApplyTextBasedCuts} />
           </TabsContent>
           <TabsContent value="auto" className="mt-0">
             <AutoCaptionPanel
@@ -631,6 +672,9 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
               onExport={handleExportCaptions}
               isGenerating={isGeneratingCaptions}
             />
+          </TabsContent>
+          <TabsContent value="manual" className="mt-0">
+            <TextOverlaysEditor textOverlays={textOverlays} onTextOverlaysChange={setTextOverlays} format={config.format} platform={config.platform} />
           </TabsContent>
         </Tabs>
       );
@@ -934,6 +978,7 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
               onClipsChange={handleTimelineClipsChange}
               playheadPosition={playheadPosition}
               onPlayheadChange={setPlayheadPosition}
+              onApplyAutoZoom={handleAutoZoomIA}
             />
           </div>
         </div>

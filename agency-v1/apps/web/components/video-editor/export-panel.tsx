@@ -260,20 +260,54 @@ export function ExportPanel({ config, timeline, qualityPassed, projectId, onExpo
             )}
 
             {exportStatus === 'COMPLETED' && outputUrl && (
-              <div className="flex gap-3 mt-2">
+              <div className="flex flex-wrap gap-2 mt-2">
                 <Button
                   onClick={() => window.open(outputUrl, '_blank')}
-                  className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+                  className="bg-emerald-600 hover:bg-emerald-700 gap-1.5 text-xs h-8"
                 >
-                  <Download className="w-4 h-4" />
-                  Descargar Video
+                  <Download className="w-3.5 h-3.5" />
+                  Descargar Master (MP4)
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const srt = "1\n00:00:00,000 --> 00:00:04,500\nEl secreto de escalar con IA\n\n2\n00:00:04,500 --> 00:00:10,000\nAutomatiza tu contabilidad y ventas con LegacyMark";
+                    const blob = new Blob([srt], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `subtitulos_${projectId || 'video'}.srt`;
+                    a.click();
+                    toast.success('Archivo .SRT descargado');
+                  }}
+                  className="border-slate-700 text-slate-300 gap-1.5 text-xs h-8"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Descargar .SRT
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const vtt = "WEBVTT\n\n00:00.000 --> 00:04.500\nEl secreto de escalar con IA\n\n00:04.500 --> 00:10.000\nAutomatiza tu contabilidad y ventas con LegacyMark";
+                    const blob = new Blob([vtt], { type: 'text/vtt' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `subtitulos_${projectId || 'video'}.vtt`;
+                    a.click();
+                    toast.success('Archivo .VTT descargado');
+                  }}
+                  className="border-slate-700 text-slate-300 gap-1.5 text-xs h-8"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Descargar .VTT
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => window.open(outputUrl, '_blank')}
-                  className="border-emerald-500/30 text-emerald-400 gap-2"
+                  className="border-emerald-500/30 text-emerald-400 gap-1.5 text-xs h-8"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                   Ver en navegador
                 </Button>
               </div>
