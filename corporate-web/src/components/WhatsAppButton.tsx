@@ -132,11 +132,11 @@ export default function WhatsAppButton() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto select-none">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end pointer-events-auto select-none max-w-[calc(100vw-2rem)]">
       
       {/* 1. Mini-Chat Popup */}
       {chatOpen && (
-        <div className="mb-4 w-[330px] sm:w-[380px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="mb-3 w-[calc(100vw-2rem)] max-w-[380px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header Directivo con respaldo institucional */}
           <div className="bg-[#01426F] p-4 text-white flex items-center justify-between border-b border-[#B08A1A]/40 relative">
             <div className="flex items-center gap-3">

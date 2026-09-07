@@ -12,7 +12,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <BrandLogo variant="dark" size="3xl" showSoftwareTag={true} showCompany={false} className="w-[360px] sm:w-[480px]" />
+            <BrandLogo variant="dark" size="3xl" showSoftwareTag={true} showCompany={false} className="w-[260px] sm:w-[380px] md:w-[480px]" />
             <div className="inline-flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-[#B08A1A]/30 text-xs">
               <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
               <span className="text-slate-300">NeoGestión Software es un producto de</span>
