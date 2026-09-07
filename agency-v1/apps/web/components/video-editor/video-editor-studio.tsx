@@ -28,6 +28,7 @@ import { VideoPreviewer } from './video-previewer';
 import { TimelineEditor } from './timeline-editor';
 import { AutoCaptionPanel } from './auto-caption';
 import { ColorMatchPanel } from './color-match';
+import { AIViralToolsPanel } from './ai-viral-tools-panel';
 import type {
   ProjectConfig, Clip, AudioTrack, TextOverlay,
   ColorGrade, SpeedRamp, Timeline, ClipAnalysis, RenderOutput
@@ -800,16 +801,23 @@ export function VideoEditorStudio({ projectId, onSave }: VideoEditorStudioProps)
         </div>
 
         {/* ===== AI & HYBRID PANEL SIDEBAR ===== */}
-        <div className="shrink-0 w-80 p-3 hidden xl:block border-l border-slate-800 bg-slate-900/40">
-          <Tabs defaultValue="suggestions" className="w-full h-full flex flex-col">
-            <TabsList className="grid grid-cols-2 bg-slate-950 border border-slate-800/80 mb-3 p-1 rounded-lg">
-              <TabsTrigger value="suggestions" className="text-xs data-[state=active]:bg-teal-600 data-[state=active]:text-white">
-                Sugerencias IA
+        <div className="shrink-0 w-80 2xl:w-96 p-3 hidden xl:block border-l border-slate-800 bg-slate-900/40">
+          <Tabs defaultValue="viral" className="w-full h-full flex flex-col">
+            <TabsList className="grid grid-cols-3 bg-slate-950 border border-slate-800/80 mb-3 p-1 rounded-lg">
+              <TabsTrigger value="viral" className="text-[11px] data-[state=active]:bg-teal-600 data-[state=active]:text-white">
+                Motores IA
               </TabsTrigger>
-              <TabsTrigger value="hybrid" className="text-xs data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
-                Editor Híbrido
+              <TabsTrigger value="suggestions" className="text-[11px] data-[state=active]:bg-cyan-600 data-[state=active]:text-white">
+                Sugerencias
+              </TabsTrigger>
+              <TabsTrigger value="hybrid" className="text-[11px] data-[state=active]:bg-indigo-600 data-[state=active]:text-white">
+                Híbrido
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="viral" className="flex-1 overflow-y-auto mt-0 outline-hidden">
+              <AIViralToolsPanel />
+            </TabsContent>
 
             <TabsContent value="suggestions" className="flex-1 overflow-y-auto mt-0 outline-hidden">
               <AISuggestionsPanel
