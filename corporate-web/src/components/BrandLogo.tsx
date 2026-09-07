@@ -29,11 +29,11 @@ export default function BrandLogo({
 
   // Selección del SVG oficial según la variante de fondo
   const logoSrc = {
-    dark: "/brand/logo-neogestion-white-gold.svg",
+    dark: "/brand/logo-neogestion-white.svg", // Tipografía y símbolo 100% blanco puro (#FFFFFF) para máxima visibilidad y contraste
     light: "/brand/logo-neogestion-blue-gold.svg",
     gold: "/brand/logo-neogestion-gold.svg",
     white: "/brand/logo-neogestion-white.svg",
-  }[variant] || "/brand/logo-neogestion-white-gold.svg";
+  }[variant] || "/brand/logo-neogestion-white.svg";
 
   const content = (
     <div className={`inline-flex flex-col justify-center group ${className}`}>
@@ -51,7 +51,7 @@ export default function BrandLogo({
       {showCompany && (
         <span
           className={`font-helvetica-thin ${dimensions.company} uppercase font-medium mt-1 pl-1 select-none ${
-            isDark ? "text-amber-100/90 group-hover:text-[#D4AF37]" : "text-[#01426F] group-hover:text-[#B08A1A]"
+            isDark ? "text-white/95 group-hover:text-[#D4AF37]" : "text-[#01426F] group-hover:text-[#B08A1A]"
           } transition-colors leading-tight`}
         >
           Consultoría de Colombia SAS
