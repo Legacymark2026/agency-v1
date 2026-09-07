@@ -32,7 +32,13 @@ export const metadata: Metadata = {
     "ciberseguridad corporativa",
     "optimización de procesos",
   ],
-  authors: [{ name: "Consultoría de Colombia S.A.S." }, { name: "NEOGESTIÓN" }],
+  authors: [
+    { name: "Consultoría de Colombia S.A.S." }, 
+    { name: "NEOGESTIÓN" },
+    { name: "LegacyMark SAS", url: "https://legacymark.co" }
+  ],
+  creator: "LegacyMark SAS",
+  publisher: "LegacyMark SAS",
   openGraph: {
     title: "NEOGESTIÓN | Transformamos la complejidad en eficiencia",
     description:

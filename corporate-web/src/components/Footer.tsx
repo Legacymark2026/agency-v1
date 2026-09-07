@@ -206,13 +206,22 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {currentYear} CONSULTORÍA DE COLOMBIA S.A.S. • NeoGestión es un producto de Consultoría de Colombia S.A.S. Todos los derechos reservados.</p>
-          <div className="flex items-center gap-6">
-            <Link href="/privacidad" className="hover:text-slate-300">Privacidad</Link>
-            <Link href="/terminos" className="hover:text-slate-300">Términos</Link>
-            <Link href="/cookies" className="hover:text-slate-300">Cookies</Link>
-            <Link href="/admin/login" className="hover:text-[#D4AF37] text-slate-400 flex items-center gap-1">
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-center sm:text-left">
+            <p>© {currentYear} CONSULTORÍA DE COLOMBIA S.A.S. • NeoGestión es un producto de Consultoría de Colombia S.A.S. Todos los derechos reservados.</p>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <p className="text-slate-400">
+              Sitio corporativo desarrollado por{" "}
+              <span className="text-slate-200 font-bold hover:text-[#D4AF37] transition-colors">
+                LegacyMark SAS
+              </span>
+            </p>
+          </div>
+          <div className="flex items-center gap-5 shrink-0">
+            <Link href="/privacidad" className="hover:text-slate-300 transition-colors">Privacidad</Link>
+            <Link href="/terminos" className="hover:text-slate-300 transition-colors">Términos</Link>
+            <Link href="/cookies" className="hover:text-slate-300 transition-colors">Cookies</Link>
+            <Link href="/admin/login" className="hover:text-[#D4AF37] text-slate-400 flex items-center gap-1 transition-colors">
               <Lock className="w-3 h-3 text-[#B08A1A]" />
               <span>Panel Directivo</span>
             </Link>
