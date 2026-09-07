@@ -26,10 +26,27 @@ export default function HeroInteractive() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "ceropapel" | "sgsst" | "compliance">("dashboard");
 
   return (
-    <section className="relative overflow-hidden bg-[#01426F] text-white pt-24 pb-20 lg:pt-32 lg:pb-32 hero-ambient-mesh">
-      {/* Dynamic background network lines */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-15%,rgba(176,138,26,0.22),transparent_70%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(176,138,26,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(176,138,26,0.06)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,#000_70%,transparent_100%)] pointer-events-none" />
+    <section className="relative overflow-hidden bg-[#01426F] text-white pt-24 pb-20 lg:pt-32 lg:pb-32">
+      {/* 1. Ultra-high-resolution Corporate Architectural Office Background */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/hero-corporate-office.webp"
+          alt="Oficinas corporativas modernas y entorno ISO NeoGestión"
+          fill
+          priority
+          quality={90}
+          sizes="100vw"
+          className="object-cover object-center scale-105 filter brightness-[0.88] contrast-[1.05]"
+        />
+        {/* Cinematic dark blue enterprise tint & vignette overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#012d4d]/88 via-[#011e33]/90 to-[#030e17]/98 backdrop-blur-[1.5px]" />
+        {/* Radial highlight focusing on the center */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_25%,rgba(1,66,111,0.55),rgba(2,12,22,0.92))] pointer-events-none" />
+        {/* Subtle gold ambient glow at the top */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_-10%,rgba(176,138,26,0.30),transparent_70%)] pointer-events-none" />
+        {/* Fine technical grid lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(176,138,26,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(176,138,26,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,#000_70%,transparent_100%)] pointer-events-none" />
+      </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         {/* Header content */}
