@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { 
   Target, 
   Eye, 
@@ -99,28 +100,94 @@ export default function QuienesSomosPage() {
         </div>
       </section>
 
-      {/* 3. Misión y Visión */}
+      {/* 3. Misión y Visión con Ilustraciones Corporativas */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-[#B08A1A] transition-colors">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-[#B08A1A] flex items-center justify-center mb-6">
-                <Target className="w-6 h-6" />
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#B08A1A] block mb-2">
+              Propósito &amp; Futuro
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Misión &amp; Visión Estratégica
+            </h2>
+            <p className="mt-3 text-base text-slate-600">
+              Pilares fundacionales que guían el desarrollo de NeoGestión y el servicio consultivo de excelencia.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            {/* Tarjeta Misión */}
+            <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-lg relative overflow-hidden group hover:border-[#01426F] transition-all flex flex-col justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+                <div className="sm:col-span-8">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-[#01426F] flex items-center justify-center mb-6 shadow-sm border border-blue-100">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#01426F] block mb-1">
+                    Razón de Ser
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
+                    Nuestra Misión
+                  </h2>
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                    Fortalecer el crecimiento de las organizaciones mediante un ecosistema de tecnología, consultoría y formación, que transforme su gestión, optimice procesos e impulse su productividad, competitividad y generación de valor, a través del conocimiento especializado, la experiencia y NeoGestión como solución tecnológica.
+                  </p>
+                </div>
+
+                <div className="sm:col-span-4 flex justify-center sm:justify-end">
+                  <div className="relative w-36 h-48 sm:w-44 sm:h-56 transition-transform duration-300 group-hover:scale-105">
+                    <Image
+                      src="/images/mision.png"
+                      alt="Misión NeoGestión - Consultoría de Colombia"
+                      fill
+                      className="object-contain drop-shadow-xl"
+                      sizes="(max-width: 640px) 144px, 176px"
+                    />
+                  </div>
+                </div>
               </div>
-              <h2 className="text-2xl font-black text-slate-900 mb-3">Nuestra Misión</h2>
-              <p className="text-slate-600 text-base leading-relaxed">
-                Fortalecer el crecimiento de las organizaciones mediante un ecosistema de tecnología, consultoría y formación, que transforme su gestión, optimice procesos e impulse su productividad, competitividad y generación de valor, a través del conocimiento especializado, la experiencia y NeoGestión como solución tecnológica.
-              </p>
+
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#01426F]">
+                <span className="w-2 h-2 rounded-full bg-[#01426F]" />
+                <span>Transformación &amp; Optimización Continua</span>
+              </div>
             </div>
 
-            <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-[#B08A1A] transition-colors">
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 text-[#D4AF37] flex items-center justify-center mb-6">
-                <Eye className="w-6 h-6" />
+            {/* Tarjeta Visión */}
+            <div className="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-lg relative overflow-hidden group hover:border-[#B08A1A] transition-all flex flex-col justify-between">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+                <div className="sm:col-span-8">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-[#B08A1A] flex items-center justify-center mb-6 shadow-sm border border-amber-100">
+                    <Eye className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#B08A1A] block mb-1">
+                    Horizonte 2031
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
+                    Nuestra Visión
+                  </h2>
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                    Para el 2031, ser aliados estratégicos de las organizaciones en Colombia, impulsando su crecimiento y transformación tecnológica por medio de NeoGestión, adaptándonos a los cambios del entorno y contribuyendo al desarrollo empresarial del país.
+                  </p>
+                </div>
+
+                <div className="sm:col-span-4 flex justify-center sm:justify-end">
+                  <div className="relative w-36 h-48 sm:w-44 sm:h-56 transition-transform duration-300 group-hover:scale-105">
+                    <Image
+                      src="/images/vision.png"
+                      alt="Visión NeoGestión - Consultoría de Colombia"
+                      fill
+                      className="object-contain drop-shadow-xl"
+                      sizes="(max-width: 640px) 144px, 176px"
+                    />
+                  </div>
+                </div>
               </div>
-              <h2 className="text-2xl font-black text-slate-900 mb-3">Nuestra Visión</h2>
-              <p className="text-slate-600 text-base leading-relaxed">
-                Para el 2031, ser aliados estratégicos de las organizaciones en Colombia, impulsando su crecimiento y transformación tecnológica por medio de NeoGestión, adaptándonos a los cambios del entorno y contribuyendo al desarrollo empresarial del país.
-              </p>
+
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#B08A1A]">
+                <span className="w-2 h-2 rounded-full bg-[#B08A1A]" />
+                <span>Liderazgo Tecnológico Empresarial</span>
+              </div>
             </div>
           </div>
         </div>
