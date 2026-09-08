@@ -55,9 +55,9 @@ export default function Contact() {
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Atención Institucional</h4>
-                  <p className="text-sm text-slate-400">contacto@neogestion.com</p>
-                  <p className="text-xs text-slate-500">directorio@neogestion.com</p>
+                  <h4 className="text-sm font-semibold text-white">Atención Institucional &amp; Gerencia</h4>
+                  <a href="mailto:asist.gerencia@neogestion.co" className="text-sm text-slate-300 hover:text-[#D4AF37] transition-colors block">asist.gerencia@neogestion.co</a>
+                  <p className="text-xs text-slate-400">Canal Directivo Oficial</p>
                 </div>
               </div>
 

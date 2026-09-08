@@ -30,7 +30,7 @@ export default function WhatsAppButton() {
 
   // Configuración de Canales
   const phoneNumber = "573173720384";
-  const emailAddress = "contacto@neogestion.com";
+  const emailAddress = "asist.gerencia@neogestion.co";
   const linkedinUrl = "https://www.linkedin.com/company/consultoria-de-colombia";
   const instagramUrl = "https://www.instagram.com/neogestion";
 

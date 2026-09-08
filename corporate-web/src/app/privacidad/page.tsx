@@ -64,7 +64,7 @@ export default function PrivacidadPage() {
       content: (
         <p>
           El titular podrá ejercer en cualquier momento sus derechos de Acceso, Rectificación, Cancelación y Oposición remitiendo un correo a:{" "}
-          <strong className="text-[#B08A1A]">privacidad@neogestion.com</strong>.
+          <strong className="text-[#B08A1A]">asist.gerencia@neogestion.co</strong>.
         </p>
       ),
     },

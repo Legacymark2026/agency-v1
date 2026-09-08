@@ -40,7 +40,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#B08A1A] shrink-0" />
-                <span>contacto@neogestion.com</span>
+                <a href="mailto:asist.gerencia@neogestion.co" className="hover:text-[#D4AF37] transition-colors">asist.gerencia@neogestion.co</a>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#B08A1A] shrink-0" />
@@ -73,7 +73,7 @@ export default function Footer() {
                   <InstagramIcon className="w-4 h-4" />
                 </a>
                 <a
-                  href="mailto:contacto@neogestion.com"
+                  href="mailto:asist.gerencia@neogestion.co"
                   title="Escribir por Correo Electrónico"
                   className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-[#01426F] hover:text-[#D4AF37] text-slate-300 border border-slate-700/60 flex items-center justify-center transition-all shadow-sm group"
                 >

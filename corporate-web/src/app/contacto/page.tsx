@@ -85,8 +85,8 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">Correo Electrónico</h4>
-                    <p className="text-xs text-slate-600">contacto@neogestion.com</p>
-                    <p className="text-[11px] text-slate-400">directorio@neogestion.com</p>
+                    <a href="mailto:asist.gerencia@neogestion.co" className="text-xs text-slate-700 hover:text-[#B08A1A] font-semibold transition-colors block">asist.gerencia@neogestion.co</a>
+                    <p className="text-[11px] text-slate-400">Atención Directiva &amp; Gerencia</p>
                   </div>
                 </div>
 

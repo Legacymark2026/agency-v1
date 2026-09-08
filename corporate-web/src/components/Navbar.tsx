@@ -267,8 +267,8 @@ export default function Navbar() {
                 <InstagramIcon className="w-4 h-4" />
               </a>
               <a
-                href="mailto:contacto@neogestion.com"
-                title="Enviar Correo: contacto@neogestion.com"
+                href="mailto:asist.gerencia@neogestion.co"
+                title="Enviar Correo: asist.gerencia@neogestion.co"
                 className="w-8 h-8 rounded-lg text-slate-300 hover:text-[#D4AF37] hover:bg-slate-800 flex items-center justify-center transition-all"
               >
                 <Mail className="w-4 h-4" />
@@ -406,9 +406,9 @@ export default function Navbar() {
                 <InstagramIcon className="w-4 h-4" />
               </a>
               <a
-                href="mailto:contacto@neogestion.com"
+                href="mailto:asist.gerencia@neogestion.co"
                 className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:text-[#D4AF37] flex items-center justify-center"
-                aria-label="Correo Electrónico"
+                aria-label="Correo Electrónico: asist.gerencia@neogestion.co"
               >
                 <Mail className="w-4 h-4" />
               </a>
