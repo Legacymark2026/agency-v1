@@ -110,28 +110,39 @@ export default function AdminLoginPage() {
           <form 
             onSubmit={handleLogin} 
             className="space-y-4"
-            action="/api/admin/auth"
-            method="POST"
+            autoComplete="off"
+            noValidate
           >
+            {/* CAMPOS SEÑUELO (Honeypot/Dummy): Absorben el autorrelleno forzado del navegador */}
+            <div 
+              style={{ position: "absolute", top: "-9999px", left: "-9999px", opacity: 0, height: 0, width: 0, pointerEvents: "none" }} 
+              aria-hidden="true"
+            >
+              <input type="text" name="prevent_autofill_user" tabIndex={-1} autoComplete="off" defaultValue="" />
+              <input type="password" name="prevent_autofill_pwd" tabIndex={-1} autoComplete="off" defaultValue="" />
+            </div>
+
             <div>
               <label 
-                htmlFor="admin-username" 
+                htmlFor="admin-username-field" 
                 className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
               >
                 Correo Electrónico
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
                 <input
-                  id="admin-username"
-                  name="username"
+                  id="admin-username-field"
+                  name="user_login_auth"
                   type="email"
                   required
-                  autoComplete="username"
+                  autoComplete="new-password"
                   spellCheck={false}
                   value={email}
+                  readOnly
+                  onFocus={(e) => e.target.removeAttribute("readonly")}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] transition-all"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all"
                   placeholder="ejemplo@empresa.com"
                 />
               </div>
@@ -139,22 +150,24 @@ export default function AdminLoginPage() {
 
             <div>
               <label 
-                htmlFor="admin-password" 
+                htmlFor="admin-password-field" 
                 className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
               >
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
                 <input
-                  id="admin-password"
-                  name="password"
+                  id="admin-password-field"
+                  name="pass_login_auth"
                   type={showPassword ? "text" : "password"}
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={password}
+                  readOnly
+                  onFocus={(e) => e.target.removeAttribute("readonly")}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] transition-all"
+                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all"
                   placeholder="Ingrese su contraseña"
                 />
                 <button
