@@ -39,28 +39,44 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#01426F] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#01426F] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Background Gradients */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_40%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
 
-      <div className="max-w-md w-full relative z-10">
+      <div className="max-w-lg w-full relative z-10">
         {/* Card */}
-        <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-2xl border border-slate-200">
-          {/* Brand Header con Logo Oficial NeoGestión */}
+        <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-slate-200/90">
+          {/* Brand Header con Logo Oficial NeoGestión en Gran Formato (2x) con Animación Corporativa */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-block focus:outline-none mb-3 group">
-              <Image
-                src="/brand/logo-neogestion-login.png"
-                alt="NeoGestión Software"
-                width={280}
-                height={107}
-                className="w-auto h-14 sm:h-16 mx-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                priority
-              />
+            <Link href="/" className="relative inline-block focus:outline-none mb-4 group">
+              {/* Halo de Luz y Aura Corporativa en Segundo Plano */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/25 via-[#01426F]/20 to-[#D4AF37]/30 blur-2xl rounded-3xl animate-corporate-aura pointer-events-none" />
+
+              {/* Contenedor Flotante del Logo */}
+              <div className="relative animate-corporate-float overflow-hidden p-2 rounded-2xl">
+                <Image
+                  src="/brand/logo-neogestion-login.png"
+                  alt="NeoGestión Software"
+                  width={560}
+                  height={214}
+                  className="w-auto h-28 sm:h-32 md:h-36 max-w-[340px] sm:max-w-[420px] mx-auto object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04] drop-shadow-sm"
+                  priority
+                />
+
+                {/* Destello / Barrido de Luz Ejecutivo Transversal */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+                  <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-corporate-sweep" />
+                </div>
+              </div>
             </Link>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              Panel de Administración &amp; Analítica
-            </p>
+
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <span className="h-px w-6 bg-[#B08A1A]/40" />
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500 font-sans">
+                Panel de Administración &amp; Analítica
+              </p>
+              <span className="h-px w-6 bg-[#B08A1A]/40" />
+            </div>
           </div>
 
           {error && (

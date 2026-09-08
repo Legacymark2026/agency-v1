@@ -188,3 +188,58 @@ body {
   -webkit-text-fill-color: transparent;
   animation: goldShimmer 8s linear infinite;
 }
+
+/* ==========================================================================
+   ANIMACIONES CORPORATIVAS DE ALTA GERENCIA PARA LOGOTIPOS
+   ========================================================================== */
+
+@keyframes corporateFloat {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.015);
+  }
+}
+
+@keyframes corporateAura {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes corporateLightSweep {
+  0% {
+    transform: translateX(-180%) skewX(-25deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.75;
+  }
+  45% {
+    transform: translateX(230%) skewX(-25deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(230%) skewX(-25deg);
+    opacity: 0;
+  }
+}
+
+.animate-corporate-float {
+  animation: corporateFloat 5s ease-in-out infinite;
+}
+
+.animate-corporate-aura {
+  animation: corporateAura 4s ease-in-out infinite;
+}
+
+.animate-corporate-sweep {
+  animation: corporateLightSweep 6.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
