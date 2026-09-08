@@ -23,8 +23,8 @@ export default auth(function middleware(req: NextRequest) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-pathname', pathname);
 
-    // Si es una ruta de API o Auth, dejamos que NextAuth se encargue
-    const isApiOrAuth = pathname.startsWith("/api") || pathname.startsWith("/auth") || pathname.startsWith("/_next");
+    // Si es una ruta de API, Auth o ACME /.well-known, no aplicar internacionalización
+    const isApiOrAuth = pathname.startsWith("/api") || pathname.startsWith("/auth") || pathname.startsWith("/_next") || pathname.startsWith("/.well-known");
     if (isApiOrAuth) {
         const response = NextResponse.next({
             request: {
@@ -100,6 +100,6 @@ export default auth(function middleware(req: NextRequest) {
 } as any);
 
 export const config = {
-    // Ignorar estáticos
-    matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png|images/|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|txt|xml|json|html)$).*)"],
+    // Ignorar estáticos y retos ACME SSL
+    matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png|images/|icons/|\\.well-known/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest|txt|xml|json|html)$).*)"],
 };
