@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
 
 export default function AdminLoginPage() {
@@ -44,24 +46,19 @@ export default function AdminLoginPage() {
       <div className="max-w-md w-full relative z-10">
         {/* Card */}
         <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-2xl border border-slate-200">
-          {/* Brand Header */}
+          {/* Brand Header con Logo Oficial NeoGestión */}
           <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#01426F] border border-[#B08A1A] flex items-center justify-center text-[#D4AF37] mx-auto mb-4 shadow-md">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-6 h-6 fill-none stroke-current stroke-[2]"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                <polyline points="2 17 12 22 22 17" />
-                <polyline points="2 12 12 17 22 12" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              NEO<span className="text-[#B08A1A]">GESTIÓN</span>
-            </h1>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">
+            <Link href="/" className="inline-block focus:outline-none mb-3 group">
+              <Image
+                src="/brand/logo-neogestion-login.png"
+                alt="NeoGestión Software"
+                width={280}
+                height={107}
+                className="w-auto h-14 sm:h-16 mx-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                priority
+              />
+            </Link>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Panel de Administración &amp; Analítica
             </p>
           </div>
