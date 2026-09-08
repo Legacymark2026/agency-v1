@@ -8,8 +8,8 @@
  *   - Dead Letter Queue (DLQ) for job inspection and replay
  */
 import { Queue } from "bullmq";
-import Redis from "ioredis";
-export declare const redisConnection: Redis;
+import { redisBullConnection as redisConnection } from "../lib/redis.singleton";
+export { redisConnection };
 export interface NotificationJobData {
     id?: string;
     companyId: string;

@@ -8,8 +8,8 @@
  *   - user_profile:${userId} → Cached user email & name (10 min TTL).
  *   - Real-time cache invalidation on new notification, mark-as-read, or delete.
  */
-import Redis from "ioredis";
-export declare const redisCache: Redis;
+import { redisClient as redisCache } from "../lib/redis.singleton";
+export { redisCache };
 export declare function getUnreadCountCached(userId: string, companyId: string): Promise<number>;
 export declare function invalidateUnreadCount(userId: string, companyId?: string): Promise<void>;
 export interface CachedUserProfile {

@@ -157,6 +157,36 @@ export const EVENT_MAPPINGS: Record<string, { type: string; titleFn: (data: any)
   },
 };
 
+function formatHumanMessage(eventName: string, d: any): string {
+  if (!d) return "Notificación de actividad en la plataforma";
+  const data = d.data || d;
+
+  switch (eventName) {
+    case "lead.created":
+      return `Nuevo prospecto "${data.name || "Sin nombre"}" registrado en el pipeline. Canal: ${data.source || "Web"}.`;
+    case "lead.assigned":
+      return `El prospecto "${data.leadName || data.name || "Lead"}" ha sido asignado a tu equipo.`;
+    case "deal.created":
+      return `Oportunidad comercial "${data.title || "Nuevo Deal"}" creada en el pipeline.`;
+    case "deal.won":
+      return `¡Venta cerrada! Deal ganado por valor de $${Number(data.value || data.amount || 0).toLocaleString()} USD.`;
+    case "deal.lost":
+      return `Oportunidad "${data.title || "Deal"}" registrada como perdida (${data.reason || "Sin especificar"}).`;
+    case "invoice.created":
+      return `Factura #${data.number || data.invoiceNumber || "001"} emitida por valor de $${Number(data.amount || 0).toLocaleString()}.`;
+    case "invoice.paid":
+      return `Pago confirmado de factura por valor de $${Number(data.amount || 0).toLocaleString()}.`;
+    case "campaign.launched":
+      return `La campaña de marketing "${data.campaignName || "Campaña"}" se encuentra activa.`;
+    case "auth.lockout":
+      return `Intento de acceso sospechoso bloqueado para la cuenta ${data.email || "Usuario"}.`;
+    default:
+      if (typeof d.message === "string" && !d.message.startsWith("{")) return d.message;
+      if (typeof data.message === "string" && !data.message.startsWith("{")) return data.message;
+      return `Evento registrado en el módulo ${d.type || "sistema"}.`;
+  }
+}
+
 export function subscribePlatformEvents(eventBus: EventBus): void {
   for (const [eventName, mapping] of Object.entries(EVENT_MAPPINGS)) {
     eventBus.subscribe(eventName as any, async (payload) => {
@@ -170,12 +200,14 @@ export function subscribePlatformEvents(eventBus: EventBus): void {
         });
 
         if (admins.length > 0) {
+          const humanMessage = formatHumanMessage(eventName, payload.data);
           await prisma.notification.createMany({
             data: admins.map((a: typeof admins[number]) => ({
               userId: a.userId,
               companyId,
               title: mapping.titleFn(payload.data),
-              message: JSON.stringify(payload.data).substring(0, 200),
+              message: humanMessage,
+              metadata: typeof payload.data === "object" ? payload.data : {},
               type: mapping.type,
               isRead: false,
             })),
@@ -188,3 +220,4 @@ export function subscribePlatformEvents(eventBus: EventBus): void {
     });
   }
 }
+

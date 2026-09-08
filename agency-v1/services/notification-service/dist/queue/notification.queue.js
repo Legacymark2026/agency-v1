@@ -8,9 +8,6 @@
  *   - Exponential Backoff Retries (5 attempts: 5s, 15s, 45s, 135s, 405s)
  *   - Dead Letter Queue (DLQ) for job inspection and replay
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dlqQueue = exports.pushQueue = exports.smsQueue = exports.emailQueue = exports.dispatchQueue = exports.redisConnection = void 0;
 exports.getPriorityValue = getPriorityValue;
@@ -20,14 +17,11 @@ exports.getDLQJobs = getDLQJobs;
 exports.replayDLQJob = replayDLQJob;
 exports.purgeDLQ = purgeDLQ;
 const bullmq_1 = require("bullmq");
-const ioredis_1 = __importDefault(require("ioredis"));
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-exports.redisConnection = new ioredis_1.default(REDIS_URL, {
-    maxRetriesPerRequest: null, // Required by BullMQ
-});
+const redis_singleton_1 = require("../lib/redis.singleton");
+Object.defineProperty(exports, "redisConnection", { enumerable: true, get: function () { return redis_singleton_1.redisBullConnection; } });
 // ── Main Dispatch Queue ──────────────────────────────────────────────────────
 exports.dispatchQueue = new bullmq_1.Queue("notification-dispatch", {
-    connection: exports.redisConnection,
+    connection: redis_singleton_1.redisBullConnection,
     defaultJobOptions: {
         attempts: 5,
         backoff: {
@@ -41,22 +35,22 @@ exports.dispatchQueue = new bullmq_1.Queue("notification-dispatch", {
 // ── Per-Channel Rate-Limited Queues ──────────────────────────────────────────
 // Email Queue: 100 emails / sec (Resend API Rate Compliance)
 exports.emailQueue = new bullmq_1.Queue("notification-email", {
-    connection: exports.redisConnection,
+    connection: redis_singleton_1.redisBullConnection,
     defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
 // SMS Queue: 10 SMS / sec (Twilio API Rate Compliance)
 exports.smsQueue = new bullmq_1.Queue("notification-sms", {
-    connection: exports.redisConnection,
+    connection: redis_singleton_1.redisBullConnection,
     defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
 // Push Queue: 500 push / sec (WebPush/FCM Rate Compliance)
 exports.pushQueue = new bullmq_1.Queue("notification-push", {
-    connection: exports.redisConnection,
+    connection: redis_singleton_1.redisBullConnection,
     defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
 });
 // ── Dead Letter Queue (DLQ) ──────────────────────────────────────────────────
 exports.dlqQueue = new bullmq_1.Queue("notification-dlq", {
-    connection: exports.redisConnection,
+    connection: redis_singleton_1.redisBullConnection,
     defaultJobOptions: {
         removeOnComplete: false,
         removeOnFail: false,

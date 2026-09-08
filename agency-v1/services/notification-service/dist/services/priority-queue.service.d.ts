@@ -8,7 +8,7 @@ export declare class PriorityQueueService {
     static enqueueNotification(payload: any, priority?: "HIGH" | "LOW"): Promise<{
         success: boolean;
         queueName: string;
-        priority: "HIGH" | "LOW";
+        priority: "LOW" | "HIGH";
         messageId: any;
         status: string;
     }>;

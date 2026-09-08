@@ -1,0 +1,1 @@
+{"version":3,"file":"redis.singleton.d.ts","sourceRoot":"","sources":["../../src/lib/redis.singleton.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AACH,OAAO,KAAK,MAAM,SAAS,CAAC;AAK5B,eAAO,MAAM,WAAW,OAItB,CAAC;AAOH,eAAO,MAAM,mBAAmB,OAG9B,CAAC;AAMH,wBAAsB,2BAA2B,IAAI,OAAO,CAAC,IAAI,CAAC,CAWjE"}

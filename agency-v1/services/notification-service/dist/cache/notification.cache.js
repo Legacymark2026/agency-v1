@@ -9,26 +9,19 @@
  *   - user_profile:${userId} → Cached user email & name (10 min TTL).
  *   - Real-time cache invalidation on new notification, mark-as-read, or delete.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.redisCache = void 0;
 exports.getUnreadCountCached = getUnreadCountCached;
 exports.invalidateUnreadCount = invalidateUnreadCount;
 exports.getUserProfileCached = getUserProfileCached;
-const ioredis_1 = __importDefault(require("ioredis"));
 const database_1 = require("@agency/database");
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-exports.redisCache = new ioredis_1.default(REDIS_URL);
-exports.redisCache.on("error", (err) => {
-    console.error("[notification-cache] Redis connection error:", err.message);
-});
+const redis_singleton_1 = require("../lib/redis.singleton");
+Object.defineProperty(exports, "redisCache", { enumerable: true, get: function () { return redis_singleton_1.redisClient; } });
 // ── Unread Count Cache Management ────────────────────────────────────────────
 async function getUnreadCountCached(userId, companyId) {
     const cacheKey = `notif:unread_count:${userId}:${companyId}`;
     try {
-        const cached = await exports.redisCache.get(cacheKey);
+        const cached = await redis_singleton_1.redisClient.get(cacheKey);
         if (cached !== null) {
             return parseInt(cached, 10);
         }
@@ -40,7 +33,7 @@ async function getUnreadCountCached(userId, companyId) {
     });
     // Cache for 5 minutes (300 seconds)
     try {
-        await exports.redisCache.setex(cacheKey, 300, String(count));
+        await redis_singleton_1.redisClient.setex(cacheKey, 300, String(count));
     }
     catch { }
     return count;
@@ -48,12 +41,12 @@ async function getUnreadCountCached(userId, companyId) {
 async function invalidateUnreadCount(userId, companyId) {
     try {
         if (companyId) {
-            await exports.redisCache.del(`notif:unread_count:${userId}:${companyId}`);
+            await redis_singleton_1.redisClient.del(`notif:unread_count:${userId}:${companyId}`);
         }
         else {
-            const keys = await exports.redisCache.keys(`notif:unread_count:${userId}:*`);
+            const keys = await redis_singleton_1.redisClient.keys(`notif:unread_count:${userId}:*`);
             if (keys.length > 0) {
-                await exports.redisCache.del(...keys);
+                await redis_singleton_1.redisClient.del(...keys);
             }
         }
     }
