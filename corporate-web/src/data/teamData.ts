@@ -114,23 +114,23 @@ export const teamData: TeamMember[] = [
 
 export const corporateHistory = [
   {
-    year: "2010",
-    title: "Fundación de NEOGESTIÓN",
-    description: "Nace como firma boutique de consultoría estratégica y financiera, asesorando a las primeras 25 corporaciones líderes en reestructuración y eficiencia.",
+    year: "Génesis",
+    title: "Respaldo Consultivo Multidisciplinario",
+    description: "Consultoría de Colombia S.A.S., con amplia experiencia en consultoría empresarial y un equipo multidisciplinario en sectores industriales, servicios y sector público, identifica la necesidad de integrar múltiples sistemas de gestión eliminando trámites innecesarios y exceso de papel.",
   },
   {
-    year: "2015",
-    title: "Creación de la Unidad Tecnológica",
-    description: "Incorporamos la práctica de arquitectura empresarial y modernización cloud, guiando las primeras migraciones a gran escala.",
+    year: "TIC & Cero Papel",
+    title: "Nacimiento de la Plataforma NeoGestión",
+    description: "Nace la plataforma tecnológica sustentada en el uso intensivo de TIC's, permitiendo a las organizaciones gestionar procesos de forma inmediata, en línea y en tiempo real, facilitando la interacción con empleados, clientes, proveedores y stakeholders vía Internet.",
   },
   {
-    year: "2020",
-    title: "Consolidación Internacional & Ciberdefensa",
-    description: "Extendemos operaciones a 5 países y establecemos la división especializada en gobierno de datos, privacidad y ciberseguridad.",
+    year: "Multinorma",
+    title: "Evolución Modular Documental, Comercial y Operativa",
+    description: "Adaptándose a las necesidades dinámicas del mercado, NeoGestión incorpora módulos integrales dando pleno cumplimiento a ISO 9001:2015, ISO 14001, OHSAS 18001, SG-SST (Decreto 1443/2014 - 1072/2015), NTCGP 1000, MECI, BASC, HACCP, ISO 22000, ISO/IEC 27001 e ISO 28000.",
   },
   {
-    year: "2025",
-    title: "Liderazgo en Eficiencia Estratégica e IA",
-    description: "Superamos los 480 proyectos completados, integrando analítica predictiva y automatización en el 90% de las corporaciones clientes.",
+    year: "Presente",
+    title: "Solución Integral: Licencia Vitalicia (LUV) & Cloud SaaS",
+    description: "NeoGestión se consolida como la solución integral para organizaciones que buscan eficiencia administrativa, cumplimiento normativo y crecimiento competitivo, complementada con consultoría, capacitación, asistencia técnica, Licencia Vitalicia (LUV) y Cloud Computing.",
   },
 ];
