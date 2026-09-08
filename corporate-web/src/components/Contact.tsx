@@ -126,8 +126,10 @@ export default function Contact() {
                   </label>
                   <input
                     id="name"
+                    name="name"
                     required
                     type="text"
+                    autoComplete="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ej. Roberto Martínez"
@@ -142,8 +144,10 @@ export default function Contact() {
                     </label>
                     <input
                       id="email"
+                      name="email"
                       required
                       type="email"
+                      autoComplete="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="nombre@empresa.com"
@@ -156,8 +160,10 @@ export default function Contact() {
                     </label>
                     <input
                       id="company"
+                      name="company"
                       required
                       type="text"
+                      autoComplete="organization"
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                       placeholder="Nombre de la empresa"

@@ -3,11 +3,21 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+import { 
+  Lock, 
+  Mail, 
+  ArrowRight, 
+  ShieldCheck, 
+  AlertCircle, 
+  Loader2, 
+  Eye, 
+  EyeOff 
+} from "lucide-react";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("admin@neogestion.com");
   const [password, setPassword] = useState("Neogestion2025!");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -44,6 +54,17 @@ export default function AdminLoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_50%_40%,rgba(176,138,26,0.22),transparent)] pointer-events-none" />
 
       <div className="max-w-lg w-full relative z-10">
+        {/* Enlace Volver */}
+        <div className="mb-4 text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-[#D4AF37] transition-colors uppercase tracking-wider"
+          >
+            <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+            <span>Volver al Portal Corporativo</span>
+          </Link>
+        </div>
+
         {/* Card */}
         <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-2xl border border-slate-200/90">
           {/* Brand Header con Logo Oficial NeoGestión en Gran Formato (2x) con Animación Corporativa */}
@@ -86,16 +107,28 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form 
+            onSubmit={handleLogin} 
+            className="space-y-4"
+            action="/api/admin/auth"
+            method="POST"
+          >
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label 
+                htmlFor="admin-username" 
+                className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
+              >
                 Correo Electrónico
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
                 <input
+                  id="admin-username"
+                  name="username"
                   type="email"
                   required
+                  autoComplete="username"
+                  spellCheck={false}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] transition-all"
@@ -105,19 +138,34 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <label 
+                htmlFor="admin-password" 
+                className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
+              >
                 Contraseña
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
                 <input
-                  type="password"
+                  id="admin-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] transition-all"
+                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] transition-all"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                  title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -142,7 +190,7 @@ export default function AdminLoginPage() {
 
           <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Acceso Seguro y Cifrado</span>
+            <span>Acceso Seguro y Cifrado SSL / TLS</span>
           </div>
         </div>
       </div>
