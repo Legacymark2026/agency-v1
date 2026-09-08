@@ -61,7 +61,7 @@ export default function ContactForm() {
             Enviar otro requerimiento
           </button>
           <a
-            href="https://wa.me/18004508920?text=Hola%2C%20acabo%20de%20remitir%20mi%20formulario%20y%20deseo%20confirmar%20mi%20sesi%C3%B3n."
+            href="https://wa.me/573173720384?text=Hola%2C%20acabo%20de%20remitir%20mi%20formulario%20y%20deseo%20confirmar%20mi%20sesi%C3%B3n."
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors shadow-md"

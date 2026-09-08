@@ -29,7 +29,7 @@ export default function WhatsAppButton() {
   const [showTooltip, setShowTooltip] = useState(true);
 
   // Configuración de Canales
-  const phoneNumber = "18004508920";
+  const phoneNumber = "573173720384";
   const emailAddress = "contacto@neogestion.com";
   const linkedinUrl = "https://www.linkedin.com/company/consultoria-de-colombia";
   const instagramUrl = "https://www.instagram.com/neogestion";

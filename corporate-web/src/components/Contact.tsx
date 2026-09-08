@@ -67,9 +67,9 @@ export default function Contact() {
                   <Phone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Línea Directa Directiva</h4>
-                  <p className="text-sm text-slate-400">+1 (800) 450-8920</p>
-                  <p className="text-xs text-slate-500">Lunes a Viernes: 8:00 AM - 6:00 PM EST</p>
+                  <h4 className="text-sm font-semibold text-white">Línea Directa Directiva &amp; WhatsApp</h4>
+                  <a href="tel:+573173720384" className="text-sm text-slate-400 hover:text-[#D4AF37] transition-colors block">+57 317 3720384</a>
+                  <p className="text-xs text-slate-500">Lunes a Viernes: 8:00 AM - 6:00 PM COT</p>
                 </div>
               </div>
 

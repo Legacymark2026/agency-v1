@@ -51,7 +51,7 @@ export default function ContactoPage() {
                   Conéctese directamente con el equipo directivo de <strong>Consultoría de Colombia S.A.S. / NeoGestión</strong> para coordinar demostraciones en vivo o requerimientos urgentes.
                 </p>
                 <a
-                  href="https://wa.me/18004508920?text=Hola%2C%20quisiera%20agendar%20una%20sesi%C3%B3n%20con%20los%20directores%20de%20NEOGESTI%C3%93N."
+                  href="https://wa.me/573173720384?text=Hola%2C%20quisiera%20agendar%20una%20sesi%C3%B3n%20con%20los%20directores%20de%20NEOGESTI%C3%93N."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs hover:brightness-110 transition-all shadow-md"
@@ -95,9 +95,9 @@ export default function ContactoPage() {
                     <Phone className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">Conmutador Internacional</h4>
-                    <p className="text-xs text-slate-600">+1 (800) 450-8920 (Directo)</p>
-                    <p className="text-[11px] text-slate-400">Atención de Lunes a Viernes</p>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">Línea Telefónica &amp; WhatsApp</h4>
+                    <a href="tel:+573173720384" className="text-xs text-slate-700 hover:text-[#B08A1A] font-semibold transition-colors block">+57 317 3720384</a>
+                    <p className="text-[11px] text-slate-400">Atención de Lunes a Viernes (COT)</p>
                   </div>
                 </div>
 

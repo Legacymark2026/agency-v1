@@ -44,7 +44,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#B08A1A] shrink-0" />
-                <span>+1 (800) 450-8920</span>
+                <a href="tel:+573173720384" className="hover:text-[#D4AF37] transition-colors">+57 317 3720384</a>
               </div>
             </div>
 
@@ -80,7 +80,7 @@ export default function Footer() {
                   <Mail className="w-4 h-4" />
                 </a>
                 <a
-                  href="https://wa.me/18004508920"
+                  href="https://wa.me/573173720384"
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Chat Oficial por WhatsApp"
