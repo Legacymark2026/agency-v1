@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef, useMemo, useTransition } from "react";
-import { NotificationBell } from "./notification-bell";
 import { PLATFORM_VERSION } from "@/lib/version";
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; code?: string; }
@@ -210,23 +209,6 @@ export function SidebarClientContent(props: SidebarContentProps) {
                     >
                         <Share2 size={16} />
                     </Link>
-
-                    <NotificationBell />
-                    <div className="group relative">
-                        {currentUser.image ? (
-                            <div className="relative h-8 w-8 rounded-full overflow-hidden border border-slate-700 cursor-pointer group-hover:border-teal-500 transition-colors">
-                                <Image src={currentUser.image} alt={currentUser.name ?? "Avatar"} fill className="object-cover" />
-                            </div>
-                        ) : (
-                            <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-black bg-slate-800 text-teal-400 border border-slate-700 cursor-pointer group-hover:border-teal-500 transition-colors">
-                                {currentUser.name?.[0]?.toUpperCase() ?? "U"}
-                            </div>
-                        )}
-                        {/* Tooltip */}
-                        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-800 text-xs text-white rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl pointer-events-none">
-                            {currentUser.name}
-                        </div>
-                    </div>
                 </div>
             </div>
 

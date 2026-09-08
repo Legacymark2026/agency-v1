@@ -13,6 +13,7 @@ import { OnboardingWizard } from "@/components/onboarding/wizard";
 import { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { NotificationListener } from "@/components/dashboard/notification-listener";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 
 export const dynamic = 'force-dynamic';
 
@@ -228,12 +229,24 @@ export default async function DashboardLayout({
                     }
                 />
 
-                <main className="flex-1 overflow-auto relative z-10 w-full h-full"
-                    style={{ background: 'transparent' }}>
-                    <div className="w-full min-h-full">
-                        {children}
-                    </div>
-                </main>
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10 w-full h-full">
+                    <DashboardHeader
+                        user={{
+                            name: session.user.name,
+                            email: session.user.email,
+                            image: session.user.image,
+                            role: role as string,
+                            badge: badge,
+                        }}
+                        companyLogoUrl={companyLogo}
+                    />
+                    <main className="flex-1 overflow-auto relative w-full h-full"
+                        style={{ background: 'transparent' }}>
+                        <div className="w-full min-h-full">
+                            {children}
+                        </div>
+                    </main>
+                </div>
 
                 {/* Agente de IA Flotante Nivel C-Level */}
                 <CognitiveAgentChat />
