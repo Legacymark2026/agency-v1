@@ -17,7 +17,7 @@ export default function PrivacidadPage() {
       content: (
         <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
           <p>
-            En <strong>Consultoría de Colombia S.A.S.</strong>, sociedad identificada con NIT y con domicilio principal en la <strong>Calle 18 # 22C - 40, Girón - Santander, Colombia</strong> (en adelante, &ldquo;la Compañía&rdquo; o &ldquo;Consultoría de Colombia&rdquo;), nos comprometemos a proteger su privacidad y a garantizar la seguridad de sus datos personales.
+            En <strong>Consultoría de Colombia S.A.S.</strong>, sociedad identificada con <strong>NIT 804.017.909</strong> y con domicilio principal en la <strong>Carrera 1A # 55A - 30, Int. Edificio Centaurio, Barrio Ciudadela Real de Minas, Bucaramanga - Santander, Colombia</strong> (en adelante, &ldquo;la Compañía&rdquo; o &ldquo;Consultoría de Colombia&rdquo;), nos comprometemos a proteger su privacidad y a garantizar la seguridad de sus datos personales.
           </p>
           <p>
             Esta Política describe cómo recopilamos, usamos, almacenamos y protegemos su información personal cuando interactúa con nosotros y con nuestra plataforma <strong>NeoGestión</strong>, en estricto cumplimiento de la <strong>Ley Estatutaria 1581 de 2012</strong>, el <strong>Decreto 1377 de 2013</strong> y demás normativa concordante de la República de Colombia.
@@ -58,8 +58,8 @@ export default function PrivacidadPage() {
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-[#B08A1A] flex items-center justify-center">
                 <MapPin className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-slate-900">Dirección Física:</span>
-              <span className="text-xs text-slate-700">Calle 18 # 22C - 40, Girón - Santander, Colombia.</span>
+              <span className="text-xs font-bold text-slate-900">Dirección Física &amp; Domicilio:</span>
+              <span className="text-xs text-slate-700">Carrera 1A # 55A - 30, Int. Edificio Centaurio, Barrio Ciudadela Real de Minas, Bucaramanga - Santander, Colombia.</span>
             </div>
           </div>
         </div>
