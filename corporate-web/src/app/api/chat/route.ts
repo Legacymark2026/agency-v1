@@ -1,16 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    const rateCheck = checkRateLimit(`chat_post_${clientIp}`, {
+      maxRequests: 10,
+      windowSeconds: 5 * 60, // 10 mensajes por cada 5 minutos
+    });
+
+    if (!rateCheck.success) {
+      return NextResponse.json(
+        { error: "Límite de mensajes alcanzado. Por favor espere unos minutos antes de volver a escribir." },
+        { 
+          status: 429,
+          headers: { "Retry-After": String(rateCheck.resetSeconds) }
+        }
+      );
+    }
+
     const body = await req.json();
     const { conversationId, visitorName, visitorContact, text } = body;
 
-    if (!text || !text.trim()) {
+    if (!text || !String(text).trim()) {
       return NextResponse.json({ error: "El mensaje no puede estar vacío" }, { status: 400 });
     }
 
-    let convId = conversationId;
+    // Límites estrictos de longitud contra ataques de denegación de servicio en base de datos
+    const safeText = String(text).trim().slice(0, 2000);
+    const safeName = visitorName ? String(visitorName).trim().slice(0, 100) : "Visitante Directivo";
+    const safeContact = visitorContact ? String(visitorContact).trim().slice(0, 100) : null;
+
+    let convId = conversationId && typeof conversationId === "string" ? conversationId.slice(0, 50) : null;
 
     // Si ya existe la conversación, verificarla
     if (convId) {
@@ -26,8 +48,8 @@ export async function POST(req: NextRequest) {
     if (!convId) {
       const newConv = await prisma.chatConversation.create({
         data: {
-          visitorName: visitorName?.trim() || "Visitante Directivo",
-          visitorContact: visitorContact?.trim() || null,
+          visitorName: safeName,
+          visitorContact: safeContact,
           status: "nuevo",
         },
       });
@@ -39,8 +61,8 @@ export async function POST(req: NextRequest) {
         data: {
           lastMessageAt: new Date(),
           status: "nuevo",
-          ...(visitorName ? { visitorName: visitorName.trim() } : {}),
-          ...(visitorContact ? { visitorContact: visitorContact.trim() } : {}),
+          ...(safeName ? { visitorName: safeName } : {}),
+          ...(safeContact ? { visitorContact: safeContact } : {}),
         },
       });
     }
@@ -50,7 +72,7 @@ export async function POST(req: NextRequest) {
       data: {
         conversationId: convId,
         sender: "visitor",
-        text: text.trim(),
+        text: safeText,
       },
     });
 

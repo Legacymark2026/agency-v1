@@ -27,6 +27,11 @@ declare global {
   }
 }
 
+function safeIdentifier(val: string | null | undefined): string {
+  if (!val) return "";
+  return String(val).replace(/[^a-zA-Z0-9_-]/g, "");
+}
+
 export default function ThirdPartyTrackers({ integrations }: Props) {
   const pathname = usePathname();
   const [hasConsent, setHasConsent] = useState(false);
@@ -59,7 +64,7 @@ export default function ThirdPartyTrackers({ integrations }: Props) {
     try {
       // 1. Google Analytics Pageview
       if (integrations.gaEnabled && window.gtag && integrations.googleAnalyticsId) {
-        window.gtag("config", integrations.googleAnalyticsId, {
+        window.gtag("config", safeIdentifier(integrations.googleAnalyticsId), {
           page_path: pathname,
         });
       }
@@ -87,23 +92,24 @@ export default function ThirdPartyTrackers({ integrations }: Props) {
     return null;
   }
 
+  const cleanGtm = safeIdentifier(integrations.googleTagManagerId);
+  const cleanGa = safeIdentifier(integrations.googleAnalyticsId);
+  const cleanFb = safeIdentifier(integrations.facebookPixelId);
+  const cleanTiktok = safeIdentifier(integrations.tiktokPixelId);
+  const cleanLinkedin = safeIdentifier(integrations.linkedinPartnerId);
+
   const {
-    googleTagManagerId,
     gtmEnabled,
-    googleAnalyticsId,
     gaEnabled,
-    facebookPixelId,
     fbEnabled,
-    tiktokPixelId,
     tiktokEnabled,
-    linkedinPartnerId,
     linkedinEnabled,
   } = integrations;
 
   return (
     <>
       {/* 1. Google Tag Manager (GTM) */}
-      {gtmEnabled && googleTagManagerId && (
+      {gtmEnabled && cleanGtm && (
         <>
           <Script
             id="gtm-script"
@@ -113,12 +119,12 @@ export default function ThirdPartyTrackers({ integrations }: Props) {
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${googleTagManagerId}');`,
+})(window,document,'script','dataLayer','${cleanGtm}');`,
             }}
           />
           <noscript>
             <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${googleTagManagerId}`}
+              src={`https://www.googletagmanager.com/ns.html?id=${cleanGtm}`}
               height="0"
               width="0"
               style={{ display: "none", visibility: "hidden" }}
@@ -128,11 +134,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       )}
 
       {/* 2. Google Analytics 4 (GA4) */}
-      {gaEnabled && googleAnalyticsId && (
+      {gaEnabled && cleanGa && (
         <>
           <Script
             strategy="afterInteractive"
-            src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${cleanGa}`}
           />
           <Script
             id="ga4-init"
@@ -142,7 +148,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', '${googleAnalyticsId}', {
+                gtag('config', '${cleanGa}', {
                   page_path: window.location.pathname,
                 });
               `,
@@ -152,7 +158,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       )}
 
       {/* 3. Facebook Pixel (Meta Pixel) */}
-      {fbEnabled && facebookPixelId && (
+      {fbEnabled && cleanFb && (
         <>
           <Script
             id="facebook-pixel"
@@ -167,7 +173,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 t.src=v;s=b.getElementsByTagName(e)[0];
                 s.parentNode.insertBefore(t,s)}(window, document,'script',
                 'https://connect.facebook.net/en_US/fbevents.js');
-                fbq('init', '${facebookPixelId}');
+                fbq('init', '${cleanFb}');
                 fbq('track', 'PageView');
               `,
             }}
@@ -179,14 +185,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               width="1"
               style={{ display: "none" }}
               alt=""
-              src={`https://www.facebook.com/tr?id=${facebookPixelId}&ev=PageView&noscript=1`}
+              src={`https://www.facebook.com/tr?id=${cleanFb}&ev=PageView&noscript=1`}
             />
           </noscript>
         </>
       )}
 
       {/* 4. TikTok Pixel */}
-      {tiktokEnabled && tiktokPixelId && (
+      {tiktokEnabled && cleanTiktok && (
         <Script
           id="tiktok-pixel"
           strategy="afterInteractive"
@@ -194,7 +200,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             __html: `
               !function (w, d, t) {
                 w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src=r+"?sdkid="+e+"&lib="+t;var c=document.getElementsByTagName("script")[0];c.parentNode.insertBefore(a,c)};
-                ttq.load('${tiktokPixelId}');
+                ttq.load('${cleanTiktok}');
                 ttq.page();
               }(window, document, 'ttq');
             `,
@@ -203,14 +209,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       )}
 
       {/* 5. LinkedIn Insight Tag */}
-      {linkedinEnabled && linkedinPartnerId && (
+      {linkedinEnabled && cleanLinkedin && (
         <>
           <Script
             id="linkedin-insight"
             strategy="afterInteractive"
             dangerouslySetInnerHTML={{
               __html: `
-                _linkedin_partner_id = "${linkedinPartnerId}";
+                _linkedin_partner_id = "${cleanLinkedin}";
                 window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
                 window._linkedin_data_partner_ids.push(_linkedin_partner_id);
                 (function(l) {
@@ -232,7 +238,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               width="1"
               style={{ display: "none" }}
               alt=""
-              src={`https://px.ads.linkedin.com/collect/?pid=${linkedinPartnerId}&fmt=gif`}
+              src={`https://px.ads.linkedin.com/collect/?pid=${cleanLinkedin}&fmt=gif`}
             />
           </noscript>
         </>

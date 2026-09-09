@@ -41,11 +41,16 @@ function parseInlineFormatting(text: string): React.ReactNode {
     }
     const linkMatch = seg.match(/^\[(.*?)\]\((.*?)\)$/);
     if (linkMatch) {
+      const rawUrl = linkMatch[2].trim();
+      // Validar esquema seguro: solo permitir http, https, mailto o rutas relativas
+      const isSafeUrl = /^(https?:\/\/|mailto:|\/)/i.test(rawUrl);
+      const safeHref = isSafeUrl ? rawUrl : "#";
+
       return (
         <a 
           key={idx} 
-          href={linkMatch[2]} 
-          target="_blank" 
+          href={safeHref} 
+          target={safeHref.startsWith("http") ? "_blank" : undefined}
           rel="noopener noreferrer" 
           className="text-[#B08A1A] font-semibold underline underline-offset-2 hover:text-amber-700 transition-colors"
         >

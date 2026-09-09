@@ -72,52 +72,50 @@ export async function createSignedToken(payload: {
 }
 
 /**
- * Verifica con Web Crypto la integridad del token, con fallback resiliente
+ * Verifica criptográficamente con Web Crypto API (HMAC-SHA256) la autenticidad e integridad del token.
+ * Rechaza terminantemente cualquier token alterado, no firmado o expirado.
  */
 export async function verifySignedToken(token: string): Promise<{ email: string } | null> {
   if (!token || typeof token !== "string") return null;
 
-  // 1. Verificación criptográfica HMAC Web Crypto
   try {
     const parts = token.split(".");
-    if (parts.length === 2) {
-      const [payloadStr, signatureStr] = parts;
-      const key = await getHmacKey(SESSION_SECRET);
-      const sigBytes = base64UrlDecode(signatureStr);
-      const payloadBytes = new TextEncoder().encode(payloadStr);
+    if (parts.length !== 2) {
+      return null;
+    }
 
-      const isValid = await crypto.subtle.verify(
-        "HMAC",
-        key,
-        sigBytes as unknown as BufferSource,
-        payloadBytes as unknown as BufferSource
-      );
+    const [payloadStr, signatureStr] = parts;
+    const key = await getHmacKey(SESSION_SECRET);
+    const sigBytes = base64UrlDecode(signatureStr);
+    const payloadBytes = new TextEncoder().encode(payloadStr);
 
-      if (isValid) {
-        const payloadJson = new TextDecoder().decode(base64UrlDecode(payloadStr));
-        const payload = JSON.parse(payloadJson);
-        const nowSec = Math.floor(Date.now() / 1000);
-        if (payload?.email && typeof payload.email === "string") {
-          if (!payload.exp || payload.exp >= nowSec) {
-            return { email: payload.email };
-          }
-        }
-      }
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      sigBytes as unknown as BufferSource,
+      payloadBytes as unknown as BufferSource
+    );
+
+    if (!isValid) {
+      return null;
+    }
+
+    const payloadJson = new TextDecoder().decode(base64UrlDecode(payloadStr));
+    const payload = JSON.parse(payloadJson);
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    // Validar formato del email y expiración estricta
+    if (
+      payload?.email && 
+      typeof payload.email === "string" &&
+      payload.exp && 
+      typeof payload.exp === "number" &&
+      payload.exp >= nowSec
+    ) {
+      return { email: payload.email };
     }
   } catch (err) {
-    console.warn("HMAC verification notice:", err);
-  }
-
-  // 2. Fallback de compatibilidad JSON / Base64 para prevenir bloqueos por proxy o codificación
-  try {
-    const raw = token.includes(".") ? token.split(".")[0] : token;
-    const jsonStr = Buffer.from(raw, "base64").toString("utf8");
-    const data = JSON.parse(jsonStr);
-    if (data?.email && typeof data.email === "string") {
-      return { email: data.email };
-    }
-  } catch {
-    // Silencioso
+    console.warn("Security notice: Token cryptographic verification failed:", err);
   }
 
   return null;

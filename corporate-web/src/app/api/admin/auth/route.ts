@@ -8,10 +8,34 @@ import {
   ADMIN_COOKIE_NAME, 
   createSignedToken 
 } from "@/lib/auth";
-
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    const rateLimitKey = `auth_attempt_${clientIp}`;
+
+    // Protección anti-fuerza bruta: máximo 5 intentos cada 15 minutos por IP
+    const rateCheck = checkRateLimit(rateLimitKey, {
+      maxRequests: 5,
+      windowSeconds: 15 * 60,
+    });
+
+    if (!rateCheck.success) {
+      const waitMinutes = Math.ceil(rateCheck.resetSeconds / 60);
+      return NextResponse.json(
+        { 
+          error: `Acceso temporalmente bloqueado por seguridad tras múltiples intentos fallidos. Intente de nuevo en ${waitMinutes} minuto(s).` 
+        },
+        { 
+          status: 429,
+          headers: {
+            "Retry-After": String(rateCheck.resetSeconds),
+          },
+        }
+      );
+    }
+
     const { email, password } = await req.json();
 
     if (!email || !password) {
@@ -23,21 +47,10 @@ export async function POST(req: NextRequest) {
 
     const cleanEmail = String(email).toLowerCase().trim();
 
-    let user = await prisma.adminUser.findUnique({
+    // Consulta estricta contra base de datos - Sin backdoors ni claves fijas
+    const user = await prisma.adminUser.findUnique({
       where: { email: cleanEmail },
     });
-
-    // Auto-inicialización / recuperación resiliente para el usuario de dirección
-    if (!user && cleanEmail === "admin@neogestion.com" && password === "Neogestion2025!") {
-      const passwordHash = await bcrypt.hash("Neogestion2025!", 10);
-      user = await prisma.adminUser.create({
-        data: {
-          email: "admin@neogestion.com",
-          name: "Dirección NEOGESTIÓN",
-          passwordHash,
-        },
-      });
-    }
 
     if (!user) {
       return NextResponse.json(
@@ -46,17 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let valid = await bcrypt.compare(password, user.passwordHash);
-
-    // Auto-reparación si el hash no coincide con la clave de dirección inicial
-    if (!valid && cleanEmail === "admin@neogestion.com" && password === "Neogestion2025!") {
-      const newHash = await bcrypt.hash("Neogestion2025!", 10);
-      await prisma.adminUser.update({
-        where: { email: cleanEmail },
-        data: { passwordHash: newHash },
-      });
-      valid = true;
-    }
+    const valid = await bcrypt.compare(String(password), user.passwordHash);
 
     if (!valid) {
       return NextResponse.json(
@@ -65,18 +68,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generar token criptográfico firmado HMAC-SHA256
     const token = await createSignedToken({ email: user.email });
     await setAdminSession(user.email);
+
+    const isHttps =
+      process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
+      process.env.COOKIE_SECURE === "true";
 
     const response = NextResponse.json({
       success: true,
       user: { name: user.name, email: user.email },
     });
 
-    // Inyectar cookie directamente en la cabecera Set-Cookie de la respuesta HTTP
+    // Inyectar cookie directamente con SameSite y protección estricta
     response.cookies.set(ADMIN_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: false, // compatible con HTTP por IP y con HTTPS
+      secure: isHttps,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
@@ -86,7 +94,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Login error details:", error);
     return NextResponse.json(
-      { error: "Error de conexión con la base de datos" },
+      { error: "Error interno al procesar la solicitud" },
       { status: 500 }
     );
   }
