@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Shield, Settings2, BarChart3, Megaphone } from "lucide-react";
 import LegalAccordion, { LegalSection } from "@/components/LegalAccordion";
 
 export const metadata: Metadata = {
@@ -10,6 +10,45 @@ export const metadata: Metadata = {
 };
 
 export default function CookiesPage() {
+  const cookieCategories = [
+    {
+      name: "Cookies Técnicas o Estrictamente Necesarias",
+      finalidad: "Navegación y Seguridad",
+      badgeColor: "bg-amber-50 text-[#B08A1A] border-amber-200",
+      icon: Shield,
+      descripcion:
+        "Son esenciales para el correcto funcionamiento del sitio web. Permiten la navegación fluida, el acceso a áreas seguras y el uso de las funcionalidades básicas de la plataforma. Estas cookies no requieren su consentimiento para su instalación.",
+      obligatoria: true,
+    },
+    {
+      name: "Cookies de Preferencias",
+      finalidad: "Personalización",
+      badgeColor: "bg-blue-50 text-[#01426F] border-blue-200",
+      icon: Settings2,
+      descripcion:
+        "Permiten recordar sus elecciones y preferencias (ej. el idioma o la región de consulta) para ofrecerle una experiencia adaptada y más personalizada.",
+      obligatoria: false,
+    },
+    {
+      name: "Cookies de Análisis o Medición",
+      finalidad: "Estadísticas y Mejora",
+      badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
+      icon: BarChart3,
+      descripcion:
+        "Nos permiten cuantificar el número de visitantes y analizar estadísticamente el uso que los usuarios hacen del sitio web. Esto nos ayuda a optimizar los contenidos y la navegación. Utilizamos herramientas como Google Analytics, que procesa la información de forma anonimizada.",
+      obligatoria: false,
+    },
+    {
+      name: "Cookies de Marketing y Publicitarias",
+      finalidad: "Publicidad Relevante",
+      badgeColor: "bg-purple-50 text-purple-800 border-purple-200",
+      icon: Megaphone,
+      descripcion:
+        "Almacenan información del comportamiento de navegación para mostrar comunicaciones y contenidos relevantes en función de sus intereses profesionales. Estas cookies requieren su consentimiento previo para su instalación.",
+      obligatoria: false,
+    },
+  ];
+
   const sections: LegalSection[] = [
     {
       id: "introduccion",
@@ -43,66 +82,81 @@ export default function CookiesPage() {
       id: "tipos-cookies",
       title: "2. Tipos de Cookies que Utilizamos y sus Finalidades",
       content: (
-        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
+        <div className="space-y-5 text-slate-700 text-sm leading-relaxed">
           <p>
             A continuación, detallamos las categorías de cookies implementadas en nuestro portal:
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border border-slate-200 rounded-2xl overflow-hidden">
-              <thead className="bg-[#01426F] text-white">
-                <tr>
-                  <th className="p-3.5 font-bold uppercase tracking-wider">Tipo de Cookie</th>
-                  <th className="p-3.5 font-bold uppercase tracking-wider">Finalidad</th>
-                  <th className="p-3.5 font-bold uppercase tracking-wider">Descripción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">
-                    Cookies Técnicas o Estrictamente Necesarias
-                  </td>
-                  <td className="p-3.5 text-[#B08A1A] font-semibold whitespace-nowrap">
-                    Navegación y Seguridad
-                  </td>
-                  <td className="p-3.5 text-slate-600">
-                    Son esenciales para el correcto funcionamiento del sitio web. Permiten la navegación fluida, el acceso a áreas seguras y el uso de las funcionalidades básicas de la plataforma. Estas cookies no requieren su consentimiento para su instalación.
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">
-                    Cookies de Preferencias
-                  </td>
-                  <td className="p-3.5 text-[#01426F] font-semibold whitespace-nowrap">
-                    Personalización
-                  </td>
-                  <td className="p-3.5 text-slate-600">
-                    Permiten recordar sus elecciones y preferencias (ej. el idioma o la región de consulta) para ofrecerle una experiencia adaptada y más personalizada.
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">
-                    Cookies de Análisis o Medición
-                  </td>
-                  <td className="p-3.5 text-emerald-700 font-semibold whitespace-nowrap">
-                    Estadísticas y Mejora
-                  </td>
-                  <td className="p-3.5 text-slate-600">
-                    Nos permiten cuantificar el número de visitantes y analizar estadísticamente el uso que los usuarios hacen del sitio web. Esto nos ayuda a optimizar los contenidos y la navegación. Utilizamos herramientas como Google Analytics, que procesa la información de forma anonimizada.
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">
-                    Cookies de Marketing y Publicitarias
-                  </td>
-                  <td className="p-3.5 text-purple-700 font-semibold whitespace-nowrap">
-                    Publicidad Relevante
-                  </td>
-                  <td className="p-3.5 text-slate-600">
-                    Almacenan información del comportamiento de navegación para mostrar comunicaciones y contenidos relevantes en función de sus intereses profesionales. Estas cookies requieren su consentimiento previo para su instalación.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+          {/* Tarjetas responsivas para móviles y pantallas pequeñas */}
+          <div className="grid grid-cols-1 gap-4 md:hidden">
+            {cookieCategories.map((c) => {
+              const Icon = c.icon;
+              return (
+                <div
+                  key={c.name}
+                  className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-2.5 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-white border border-slate-200 text-[#01426F]">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className={"px-2.5 py-0.5 rounded-full text-xs font-bold border " + c.badgeColor}>
+                        {c.finalidad}
+                      </span>
+                    </div>
+                    {c.obligatoria && (
+                      <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded">
+                        Requerida
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-sm">{c.name}</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">{c.descripcion}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Tabla estilizada y scrollable con overflow horizontal controlado para desktop */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-[#01426F] text-white">
+                  <tr>
+                    <th className="p-4 font-bold uppercase tracking-wider text-xs w-[30%]">
+                      Tipo de Cookie
+                    </th>
+                    <th className="p-4 font-bold uppercase tracking-wider text-xs w-[25%]">
+                      Finalidad
+                    </th>
+                    <th className="p-4 font-bold uppercase tracking-wider text-xs w-[45%]">
+                      Descripción
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {cookieCategories.map((c) => (
+                    <tr key={c.name} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 align-top font-bold text-slate-900">
+                        <div className="flex items-start gap-2.5">
+                          <span className="mt-0.5 inline-block w-2 h-2 rounded-full bg-[#B08A1A] shrink-0" />
+                          <span>{c.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 align-top">
+                        <span className={"inline-block px-2.5 py-1 rounded-full text-xs font-bold border " + c.badgeColor}>
+                          {c.finalidad}
+                        </span>
+                      </td>
+                      <td className="p-4 align-top text-slate-600 leading-relaxed text-xs sm:text-sm">
+                        {c.descripcion}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       ),
@@ -126,7 +180,7 @@ export default function CookiesPage() {
           <p className="pt-2">
             Usted puede revocar o ajustar su consentimiento en cualquier momento a través del panel de configuración de cookies disponible en el pie de página de nuestro sitio web o mediante las opciones de configuración de su navegador web.
           </p>
-          <div className="p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium">
+          <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 font-medium">
             Le recordamos que rechazar las cookies no esenciales no afecta en modo alguno su capacidad para explorar y utilizar los contenidos del sitio.
           </div>
         </div>
@@ -144,26 +198,66 @@ export default function CookiesPage() {
             {[
               { name: "Google Chrome", url: "https://support.google.com/chrome/answer/95647" },
               { name: "Mozilla Firefox", url: "https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" },
-              { name: "Apple Safari", url: "https://support.apple.com/es-es/guide/safari/sfri11471/mac" },
               { name: "Microsoft Edge", url: "https://support.microsoft.com/es-es/microsoft-edge/eliminar-las-cookies-en-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" },
+              { name: "Apple Safari", url: "https://support.apple.com/es-es/HT201265" },
             ].map((browser) => (
               <a
                 key={browser.name}
                 href={browser.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-between group transition-colors"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-[#B08A1A] hover:bg-amber-50/30 transition-all text-xs font-semibold text-slate-800 group"
               >
-                <span className="text-xs font-bold text-slate-800">{browser.name}</span>
-                <ExternalLink className="w-4 h-4 text-[#B08A1A] group-hover:translate-x-0.5 transition-transform" />
+                <span>{browser.name}</span>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#B08A1A] transition-colors" />
               </a>
             ))}
           </div>
-          <div className="pt-3 border-t border-slate-200 text-xs text-slate-600">
-            Para mayor información sobre el tratamiento de sus datos personales y el ejercicio de sus derechos, le invitamos a consultar nuestra{" "}
-            <Link href="/privacidad" className="font-bold text-[#01426F] underline">
-              Política de Privacidad y Tratamiento de Datos Personales
-            </Link>.
+        </div>
+      ),
+    },
+    {
+      id: "actualizaciones",
+      title: "5. Actualizaciones de la Política de Cookies",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            <strong>Consultoría de Colombia S.A.S.</strong> se reserva el derecho de modificar la presente Política de Cookies en función de nuevas exigencias legislativas, reglamentarias o con el fin de adaptarla a las instrucciones impartidas por la Superintendencia de Industria y Comercio (SIC).
+          </p>
+          <p>
+            Recomendamos a los usuarios consultar periódicamente esta sección para mantenerse informados sobre cómo y para qué utilizamos las cookies.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "contacto",
+      title: "6. Canales de Contacto",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Si tiene alguna duda, inquietud o consulta acerca de nuestra Política de Cookies o el tratamiento de sus datos de navegación, puede ponerse en contacto con nuestro equipo a través de:
+          </p>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm space-y-1">
+            <p>
+              <strong>Responsable:</strong> Consultoría de Colombia S.A.S.
+            </p>
+            <p>
+              <strong>NIT:</strong> 804.017.909-0
+            </p>
+            <p>
+              <strong>Correo Oficial:</strong>{" "}
+              <a href="mailto:asist.gerencia@neogestion.co" className="text-[#01426F] font-bold hover:underline">
+                asist.gerencia@neogestion.co
+              </a>{" "}
+              ·{" "}
+              <a href="mailto:seguridad.informatica@neogestion.co" className="text-[#01426F] font-bold hover:underline">
+                seguridad.informatica@neogestion.co
+              </a>
+            </p>
+            <p>
+              <strong>Dirección:</strong> Calle 18 No. 22C – 40, Girón, Santander, Colombia
+            </p>
           </div>
         </div>
       ),
@@ -183,7 +277,7 @@ export default function CookiesPage() {
 
         <LegalAccordion
           title="Política de Cookies"
-          subtitle="Última actualización: Septiembre 2026 | Transparencia y cumplimiento de directrices SIC"
+          subtitle="Última actualización: Septiembre 2026 | Lineamientos conforme a la Ley 1581 de 2012 y directrices de la SIC"
           sections={sections}
           activeDoc="cookies"
         />

@@ -17,7 +17,7 @@ export const MICROSERVICE_PORT_MAP: Record<string, number> = {
   "crm-service": 4002,
   "inbox-service": 4003,
   "project-service": 4004,
-  "pos-service": 4005,
+  "pos-service": 4020,
   "finance-service": 4006,
   "automation-service": 4007,
   "ai-engine": 4008,

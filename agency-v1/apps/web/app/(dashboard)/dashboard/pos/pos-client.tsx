@@ -5,7 +5,7 @@ import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
     DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap, Settings,
-    Utensils, BookOpen, FileText, Users, ArrowUpRight, Tag, TrendingUp, Landmark
+    Utensils, BookOpen, FileText, Users, ArrowUpRight, Tag, TrendingUp, Landmark, RotateCcw
 } from "lucide-react";
 
 import { EscPosBuilder, formatEscPosTicketText } from "@/lib/escpos";
@@ -72,8 +72,22 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     const [syncingOffline, setSyncingOffline] = useState(false);
 
     // POS Modules Navigation & Modals
-    const [activePosTab, setActivePosTab] = useState<"POS_VENTAS" | "CREDITO_FIADO" | "MESAS_RESTAURANTE" | "DOC_SOPORTE_DIAN">("POS_VENTAS");
+    const [activePosTab, setActivePosTab] = useState<"POS_VENTAS" | "CREDITO_FIADO" | "MESAS_RESTAURANTE" | "DOC_SOPORTE_DIAN" | "DEVOLUCIONES_POS">("POS_VENTAS");
     const [showCashDenominationModal, setShowCashDenominationModal] = useState(false);
+    const [actualCashCounted, setActualCashCounted] = useState<number>(0);
+    const [cierreZSummary, setCierreZSummary] = useState<any>(null);
+    const [isClosingSession, setIsClosingSession] = useState(false);
+    const [closeNotes, setCloseNotes] = useState("");
+    const [openBaseAmount, setOpenBaseAmount] = useState<string>("200000");
+    const [openRegisterName, setOpenRegisterName] = useState<string>("Caja Principal");
+    const [isOpeningSession, setIsOpeningSession] = useState(false);
+
+    // Return Form state
+    const [returnReceiptNo, setReturnReceiptNo] = useState("");
+    const [returnAmount, setReturnAmount] = useState("");
+    const [returnReason, setReturnReason] = useState("Garantía / Producto defectuoso");
+    const [returnMethod, setReturnMethod] = useState<"CASH" | "CREDIT_NOTE">("CASH");
+    const [isProcessingReturn, setIsProcessingReturn] = useState(false);
 
     // Customer Credit Accounts State (Fiado & Abonos)
     const [creditAccounts, setCreditAccounts] = useState([
@@ -357,6 +371,102 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
         if (res.success) {
             setOfflineCount(0);
             alert(`✅ ${res.syncedCount} ventas offline sincronizadas exitosamente con el servidor.`);
+        }
+    };
+
+    const handleExecuteOpenSession = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsOpeningSession(true);
+        try {
+            const res = await fetch("/api/pos/sessions/open", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    companyId,
+                    registerName: openRegisterName,
+                    openingBalance: Number(openBaseAmount) || 0,
+                    openedById: "cajero_main",
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setActiveSession(data.session);
+                setShowOpenModal(false);
+                alert(`✅ Caja "${openRegisterName}" abierta exitosamente con base de ${formatCOP(Number(openBaseAmount) || 0)}.`);
+            } else {
+                alert(data.error || "Error al abrir la caja.");
+            }
+        } catch (err: any) {
+            alert("Error de conexión al abrir sesión: " + err.message);
+        } finally {
+            setIsOpeningSession(false);
+        }
+    };
+
+    const handleExecuteCierreZ = async (cashCountOverride?: number) => {
+        setIsClosingSession(true);
+        try {
+            const expCash = (activeSession?.openingBalance || 0) + (activeSession?.cashSales || 0);
+            const countToUse = typeof cashCountOverride === "number" ? cashCountOverride : actualCashCounted;
+            if (typeof cashCountOverride === "number") setActualCashCounted(cashCountOverride);
+            const res = await fetch("/api/pos/sessions/close", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    companyId,
+                    sessionId: activeSession?.id || "session_live_01",
+                    registerName: activeSession?.registerName || "Caja Principal",
+                    cashierName: "Cajero Principal",
+                    expectedCash: expCash,
+                    closingBalance: countToUse,
+                    notes: closeNotes,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCierreZSummary(data);
+                setActiveSession((prev: any) => ({ ...prev, status: "CLOSED" }));
+            } else {
+                alert(data.error || "Error al registrar el Cierre Z.");
+            }
+        } catch (err: any) {
+            alert("Error de conexión al cerrar turno: " + err.message);
+        } finally {
+            setIsClosingSession(false);
+        }
+    };
+
+    const handleProcessReturn = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!returnReceiptNo || !returnAmount) {
+            return alert("Por favor complete el número de tiquete y el monto a devolver.");
+        }
+        setIsProcessingReturn(true);
+        try {
+            const res = await fetch("/api/pos/returns", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    originalReceiptNo: returnReceiptNo,
+                    refundAmount: Number(returnAmount),
+                    refundMethod: returnMethod,
+                    reason: returnReason,
+                    customerNit,
+                    customerName,
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`✅ ${data.message}\n• Nota Crédito: ${data.creditNoteNumber}\n• Asiento Contable: ${data.accountingVoucher || "Registrado en PUC"}`);
+                setReturnReceiptNo("");
+                setReturnAmount("");
+            } else {
+                alert(data.error || "Error al procesar la devolución.");
+            }
+        } catch (err: any) {
+            alert("Error al procesar devolución: " + err.message);
+        } finally {
+            setIsProcessingReturn(false);
         }
     };
 
@@ -844,6 +954,17 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     }`}
                 >
                     <FileText className="w-4 h-4" /> Documento Soporte DIAN
+                </button>
+
+                <button
+                    onClick={() => setActivePosTab("DEVOLUCIONES_POS")}
+                    className={`px-4 py-2.5 rounded-xl font-bold transition-all border flex items-center gap-2 ${
+                        activePosTab === "DEVOLUCIONES_POS"
+                            ? "bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-600/20"
+                            : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                    }`}
+                >
+                    <RotateCcw className="w-4 h-4" /> Devoluciones & Notas Crédito POS
                 </button>
             </div>
 
@@ -1359,6 +1480,112 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                             <ShieldCheck className="w-4 h-4" /> Generar & Emitir Documento Soporte DIAN
                         </button>
                     </form>
+                </div>
+            )}
+
+            {/* TAB: DEVOLUCIONES & NOTAS CRÉDITO POS */}
+            {activePosTab === "DEVOLUCIONES_POS" && (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                        <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center">
+                            <RotateCcw className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-base text-white">Módulo Oficial de Devoluciones & Notas Crédito POS (NC-POS)</h3>
+                            <p className="text-xs text-slate-400">Procesamiento de garantías, cancelaciones y emisión de notas crédito con reingreso al inventario y reversión contable en el PUC.</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <form onSubmit={handleProcessReturn} className="lg:col-span-7 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1 font-bold">N° Factura / Tiquete POS Original *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={returnReceiptNo}
+                                        onChange={(e) => setReturnReceiptNo(e.target.value)}
+                                        placeholder="Ej: POS-2026-0001"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono focus:border-rose-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1 font-bold">Valor a Devolver ($ COP) *</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        value={returnAmount}
+                                        onChange={(e) => setReturnAmount(e.target.value)}
+                                        placeholder="Ej: 150000"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono font-bold focus:border-rose-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1 font-bold">Método de Reembolso</label>
+                                    <select
+                                        value={returnMethod}
+                                        onChange={(e) => setReturnMethod(e.target.value as any)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:border-rose-500"
+                                    >
+                                        <option value="CASH">Reembolso en Efectivo (Salida de Caja)</option>
+                                        <option value="CREDIT_NOTE">Nota Crédito / Saldo a Favor del Cliente</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-400 block mb-1 font-bold">Motivo de Devolución</label>
+                                    <select
+                                        value={returnReason}
+                                        onChange={(e) => setReturnReason(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:border-rose-500"
+                                    >
+                                        <option value="Garantía / Producto defectuoso">Garantía / Producto defectuoso</option>
+                                        <option value="Devolución voluntaria del cliente">Devolución voluntaria del cliente</option>
+                                        <option value="Cambio de referencia o especificación">Cambio de referencia o especificación</option>
+                                        <option value="Error de facturación en caja">Error de facturación en caja</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 space-y-1">
+                                <span className="font-bold flex items-center gap-1.5">
+                                    <ShieldCheck className="w-4 h-4 text-rose-400" /> Impacto Contable Automático en Partida Doble:
+                                </span>
+                                <p className="text-[11px] text-rose-200/80">
+                                    Al procesar la nota crédito se reversarán los débitos y créditos del comprobante contable en el PUC (Caja 110505 / Ventas 4135 / IVA 2408) y las unidades devueltas se restituirán al Kardex de Inventario (1435).
+                                </p>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isProcessingReturn}
+                                className="px-6 py-3 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2"
+                            >
+                                <RotateCcw className={`w-4 h-4 ${isProcessingReturn ? "animate-spin" : ""}`} />
+                                {isProcessingReturn ? "Procesando Devolución..." : "Procesar Devolución & Contabilizar en PUC"}
+                            </button>
+                        </form>
+
+                        <div className="lg:col-span-5 bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-400" /> Marco Legal DIAN & Auditoría
+                            </h4>
+                            <div className="text-xs text-slate-400 space-y-2.5">
+                                <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Resolución DIAN 000165 / Anexo UBL 2.1</span>
+                                    <p className="text-[11px]">Toda nota crédito que modifique un tiquete POS debe referenciar el CUFE/código de tiquete original y reportarse electrónicamente.</p>
+                                </div>
+                                <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Control de Caja y Arqueo Z</span>
+                                    <p className="text-[11px]">Los reembolsos en efectivo se reflejan automáticamente como deducción del efectivo esperado en el Cierre Z de la sesión actual.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -1957,6 +2184,142 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                 onClose={() => setShowDatafonoConfigModal(false)}
                 onSaveSuccess={() => alert("✅ Configuración estructurada del Datáfono guardada en la base de datos.")}
             />
+
+            {/* MODAL: CASH DENOMINATION & ARQUEO Z */}
+            {showCashDenominationModal && (
+                <CashDenominationModal
+                    expectedCash={(activeSession?.openingBalance || 0) + (activeSession?.cashSales || 0)}
+                    onClose={() => setShowCashDenominationModal(false)}
+                    onConfirmClose={async (totalCounted) => {
+                        setShowCashDenominationModal(false);
+                        await handleExecuteCierreZ(totalCounted);
+                    }}
+                />
+            )}
+
+            {/* MODAL: APERTURA DE CAJA REGISTRADORA */}
+            {showOpenModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center">
+                                    <Sparkles className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Apertura de Caja & Turno</h2>
+                                    <p className="text-xs text-slate-400">Registrar base inicial para iniciar operaciones POS</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowOpenModal(false)} className="text-slate-400 hover:text-white">✕</button>
+                        </div>
+
+                        <form onSubmit={handleExecuteOpenSession} className="p-6 space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Nombre de Caja / Terminal</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={openRegisterName}
+                                    onChange={(e) => setOpenRegisterName(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Fondo Base Inicial de Efectivo ($ COP)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    value={openBaseAmount}
+                                    onChange={(e) => setOpenBaseAmount(e.target.value)}
+                                    placeholder="200000"
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono font-bold focus:border-teal-500"
+                                />
+                            </div>
+
+                            <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl text-[11px] text-teal-300">
+                                ℹ️ La base inicial queda registrada en el acta del turno para contrastarla en el Cierre Z de fin de jornada.
+                            </div>
+
+                            <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
+                                <button type="button" onClick={() => setShowOpenModal(false)} className="px-4 py-2.5 rounded-xl border border-slate-800 text-slate-300 hover:bg-slate-800 font-bold text-xs">Cancelar</button>
+                                <button type="submit" disabled={isOpeningSession} className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-teal-600/20 flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4" /> {isOpeningSession ? "Abriendo..." : "Confirmar Apertura"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: RESUMEN OFICIAL CIERRE Z */}
+            {cierreZSummary && (
+                <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                                    <CheckCircle2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Acta Oficial de Cierre Z POS</h2>
+                                    <p className="text-xs text-slate-400">Jornada finalizada y contabilizada legalmente en el PUC</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setCierreZSummary(null)} className="text-slate-400 hover:text-white">✕</button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 font-mono text-xs">
+                                <div className="flex justify-between text-slate-400">
+                                    <span>Consecutivo Cierre Z:</span>
+                                    <span className="font-bold text-white">{cierreZSummary.cierreZNumber || "Z-2026-0001"}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-400">
+                                    <span>Efectivo Físico Arqueado:</span>
+                                    <span className="font-bold text-white">${(cierreZSummary.closingBalance || actualCashCounted).toLocaleString("es-CO")}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-400">
+                                    <span>Diferencia de Caja:</span>
+                                    <span className={`font-bold ${(cierreZSummary.difference || 0) === 0 ? "text-emerald-400" : (cierreZSummary.difference || 0) > 0 ? "text-emerald-300" : "text-rose-400"}`}>
+                                        {(cierreZSummary.difference || 0) === 0 ? "✓ Cuadre Exacto ($ 0)" : (cierreZSummary.difference || 0) > 0 ? `+ $${(cierreZSummary.difference || 0).toLocaleString("es-CO")} (Sobrante Contabilizado 429553)` : `- $${Math.abs(cierreZSummary.difference || 0).toLocaleString("es-CO")} (Faltante Contabilizado 136530)`}
+                                    </span>
+                                </div>
+                                {cierreZSummary.voucherNumber && (
+                                    <div className="flex justify-between text-slate-400 pt-2 border-t border-slate-800">
+                                        <span>Comprobante Contable PUC:</span>
+                                        <span className="font-bold text-teal-400">{cierreZSummary.voucherNumber}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+                                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                                <span>Caja cerrada con éxito. El libro diario y los libros mayores han sido actualizados en tiempo real.</span>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-2 border-t border-slate-800">
+                                <button
+                                    onClick={() => {
+                                        window.print();
+                                    }}
+                                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5"
+                                >
+                                    <Printer className="w-4 h-4" /> Imprimir Acta Z
+                                </button>
+                                <button
+                                    onClick={() => setCierreZSummary(null)}
+                                    className="px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-teal-600/20"
+                                >
+                                    Aceptar y Finalizar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
