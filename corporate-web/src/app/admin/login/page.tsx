@@ -1,28 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { 
-  Lock, 
-  Mail, 
   ArrowRight, 
   ShieldCheck, 
   AlertCircle, 
   Loader2, 
   Eye, 
-  EyeOff 
+  EyeOff,
+  KeyRound,
+  AtSign
 } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  // Fase 2: los campos solo se montan en el DOM después de la interacción del usuario
+  const [phase, setPhase] = useState<"gate" | "credentials">("gate");
+  const [fieldA, setFieldA] = useState("");
+  const [fieldB, setFieldB] = useState("");
+  const [reveal, setReveal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const refA = useRef<HTMLInputElement>(null);
 
-  const handleLogin = async (e?: React.SyntheticEvent) => {
-    if (e) e.preventDefault();
+  // IDs dinámicos únicos por render (imposibles de cachear por el navegador)
+  const dynIdA = useId();
+  const dynIdB = useId();
+  const fieldNameA = `_ng_${dynIdA.replace(/:/g, "")}`;
+  const fieldNameB = `_ng_${dynIdB.replace(/:/g, "")}`;
+
+  // Cuando se entra en fase "credentials", hacer focus al primer campo
+  useEffect(() => {
+    if (phase === "credentials" && refA.current) {
+      // Retraso mínimo para que el navegador termine su escaneo DOM
+      const t = setTimeout(() => refA.current?.focus(), 120);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
+  const handleLogin = async () => {
+    if (!fieldA.trim() || !fieldB.trim()) {
+      setError("Complete todos los campos para continuar");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -30,7 +51,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: fieldA, password: fieldB }),
       });
 
       const data = await res.json();
@@ -45,6 +66,13 @@ export default function AdminLoginPage() {
     } catch {
       setError("Error de conexión con el servidor");
       setLoading(false);
+    }
+  };
+
+  const onKeySubmit = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleLogin();
     }
   };
 
@@ -107,104 +135,134 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <div 
-            className="space-y-4"
-            data-form-type="other"
-          >
-            <div>
-              <label 
-                htmlFor="neo_portal_uid" 
-                className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
+          {/* ═══════════════════════════════════════════════════════════
+              FASE 1 (GATE): No existen inputs en el DOM.
+              El escáner del navegador no encuentra campos que autollenar.
+              ═══════════════════════════════════════════════════════════ */}
+          {phase === "gate" && (
+            <div className="text-center space-y-5">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Acceso exclusivo para directivos y administradores autorizados de NEOGESTIÓN.
+              </p>
+              <button
+                type="button"
+                onClick={() => setPhase("credentials")}
+                className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-lg border border-[#B08A1A]/40 cursor-pointer"
               >
-                Correo Electrónico
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
-                <input
-                  id="neo_portal_uid"
-                  name="neo_sec_u"
-                  type="text"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  spellCheck={false}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleLogin(e);
-                    }
-                  }}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all"
-                  placeholder="ejemplo@empresa.com"
-                />
-              </div>
+                <KeyRound className="w-4.5 h-4.5" />
+                <span>Iniciar Verificación de Identidad</span>
+              </button>
             </div>
+          )}
 
-            <div>
-              <label 
-                htmlFor="neo_portal_key" 
-                className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
-              >
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
-                <input
-                  id="neo_portal_key"
-                  name="neo_sec_k"
-                  type="text"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleLogin(e);
-                    }
-                  }}
-                  style={{
-                    WebkitTextSecurity: showPassword ? "none" : "disc",
-                  } as React.CSSProperties}
-                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all font-mono"
-                  placeholder="Ingrese su contraseña"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors"
-                  aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
-                  title={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+          {/* ═══════════════════════════════════════════════════════════
+              FASE 2 (CREDENTIALS): Los inputs se montan DESPUÉS del clic.
+              Para cuando aparecen, el escáner del navegador ya terminó.
+              IDs generados dinámicamente, sin etiqueta <form>, sin
+              type="password", sin texto que dispare la heurística.
+              ═══════════════════════════════════════════════════════════ */}
+          {phase === "credentials" && (
+            <div className="space-y-4 animate-in fade-in duration-300" data-form-type="other">
+              <div>
+                <label 
+                  htmlFor={fieldNameA}
+                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                  Identificador
+                </label>
+                <div className="relative">
+                  <AtSign className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+                  <input
+                    ref={refA}
+                    id={fieldNameA}
+                    name={fieldNameA}
+                    type="text"
+                    inputMode="email"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    value={fieldA}
+                    onChange={(e) => setFieldA(e.target.value)}
+                    onKeyDown={onKeySubmit}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all"
+                    placeholder="Ingrese su identificador"
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={handleLogin}
-              disabled={loading}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-md border border-[#B08A1A]/40 disabled:opacity-50 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Verificando...</span>
-                </>
-              ) : (
-                <>
-                  <span>Ingresar al Panel</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </div>
+              <div>
+                <label 
+                  htmlFor={fieldNameB}
+                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
+                >
+                  Clave de Acceso
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+                  <input
+                    id={fieldNameB}
+                    name={fieldNameB}
+                    type="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
+                    value={fieldB}
+                    onChange={(e) => setFieldB(e.target.value)}
+                    onKeyDown={onKeySubmit}
+                    style={{
+                      WebkitTextSecurity: reveal ? "none" : "disc",
+                    } as React.CSSProperties}
+                    className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all font-mono tracking-wider"
+                    placeholder="••••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setReveal(!reveal)}
+                    className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 p-0.5 rounded-lg transition-colors"
+                    aria-label="Alternar visibilidad"
+                    title="Alternar visibilidad"
+                  >
+                    {reveal ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogin}
+                disabled={loading}
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-md border border-[#B08A1A]/40 disabled:opacity-50 cursor-pointer"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verificando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Verificar e Ingresar</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setPhase("gate"); setFieldA(""); setFieldB(""); setError(""); }}
+                className="w-full text-center text-xs text-slate-400 hover:text-slate-600 transition-colors mt-1"
+              >
+                ← Volver
+              </button>
+            </div>
+          )}
 
           <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
