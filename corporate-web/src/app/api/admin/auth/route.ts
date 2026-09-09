@@ -72,8 +72,10 @@ export async function POST(req: NextRequest) {
     const token = await createSignedToken({ email: user.email });
     await setAdminSession(user.email);
 
+    const forwardedProto = req.headers.get("x-forwarded-proto");
     const isHttps =
-      process.env.NODE_ENV === "production" ||
+      forwardedProto === "https" ||
+      req.nextUrl.protocol === "https:" ||
       process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
       process.env.COOKIE_SECURE === "true";
 
