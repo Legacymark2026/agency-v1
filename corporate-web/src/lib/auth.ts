@@ -1,8 +1,22 @@
 import { cookies } from "next/headers";
 
 export const ADMIN_COOKIE_NAME = "neogestion_admin_session";
-const SESSION_SECRET =
-  process.env.ADMIN_SESSION_SECRET || "neogestion_super_secret_corporate_token_2025";
+const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET;
+
+if (!SESSION_SECRET || SESSION_SECRET === "neogestion_super_secret_corporate_token_2025") {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "❌ [FATAL SECURITY ERROR]: ADMIN_SESSION_SECRET no está configurado o usa un valor inseguro por defecto. Configure un secreto aleatorio de 64 caracteres en las variables de entorno."
+    );
+  } else {
+    console.warn(
+      "⚠️ [SECURITY WARNING]: ADMIN_SESSION_SECRET usando valor provisional de desarrollo. Configure una clave segura de 64 caracteres en producción."
+    );
+  }
+}
+
+const EFFECTIVE_SECRET = SESSION_SECRET || "neogestion_dev_fallback_secret_only_for_testing";
+
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 días en segundos
 
 function base64UrlEncode(buffer: ArrayBuffer | Uint8Array): string {
@@ -45,7 +59,7 @@ async function getHmacKey(secret: string): Promise<CryptoKey> {
  * Genera una firma HMAC-SHA256 con Web Crypto API estándar
  */
 export async function signPayload(dataStr: string): Promise<string> {
-  const key = await getHmacKey(SESSION_SECRET);
+  const key = await getHmacKey(EFFECTIVE_SECRET);
   const encoder = new TextEncoder();
   const signature = await crypto.subtle.sign(
     "HMAC",
@@ -85,7 +99,7 @@ export async function verifySignedToken(token: string): Promise<{ email: string 
     }
 
     const [payloadStr, signatureStr] = parts;
-    const key = await getHmacKey(SESSION_SECRET);
+    const key = await getHmacKey(EFFECTIVE_SECRET);
     const sigBytes = base64UrlDecode(signatureStr);
     const payloadBytes = new TextEncoder().encode(payloadStr);
 
@@ -126,8 +140,9 @@ export async function setAdminSession(email: string) {
   const cookieStore = await cookies();
   const token = await createSignedToken({ email });
 
-  // Permitir funcionamiento tanto en HTTP (IP directa) como en HTTPS (dominio con SSL)
+  // En producción siempre forzar Secure. En desarrollo, si es HTTPS o se especifica COOKIE_SECURE
   const isHttps =
+    process.env.NODE_ENV === "production" ||
     process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
     process.env.COOKIE_SECURE === "true";
 

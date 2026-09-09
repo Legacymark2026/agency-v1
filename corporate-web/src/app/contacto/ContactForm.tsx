@@ -15,20 +15,41 @@ export default function ContactForm() {
     urgency: "En las próximas 2 semanas",
     message: "",
   });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (typeof window !== "undefined" && window.trackConversion) {
-      window.trackConversion("form_submission", {
-        service: formData.service,
-        company: formData.company,
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
-    }
-    setTimeout(() => {
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMessage(data.error || "Ocurrió un error al enviar el formulario.");
+        setLoading(false);
+        return;
+      }
+
+      if (typeof window !== "undefined" && window.trackConversion) {
+        window.trackConversion("form_submission", {
+          service: formData.service,
+          company: formData.company,
+        });
+      }
+
       setLoading(false);
       setSubmitted(true);
-    }, 800);
+    } catch {
+      setErrorMessage("Error de conexión. Por favor intente nuevamente o contáctenos por WhatsApp.");
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -87,6 +108,12 @@ export default function ContactForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {errorMessage && (
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold leading-relaxed animate-in fade-in duration-200">
+            {errorMessage}
+          </div>
+        )}
+
         {/* Nombre */}
         <div>
           <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">

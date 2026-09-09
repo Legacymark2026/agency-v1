@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    const rateCheck = checkRateLimit(`analytics_track_${clientIp}`, {
+      maxRequests: 60,
+      windowSeconds: 60, // Máximo 60 eventos de analítica por minuto por IP
+    });
+
+    if (!rateCheck.success) {
+      return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
+    }
     const body = await req.json();
     const { path = "/", referrer = "", eventType = "pageview", metadata = null } = body;
 

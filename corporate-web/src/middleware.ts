@@ -10,12 +10,27 @@ import { ADMIN_COOKIE_NAME, verifySignedToken } from "@/lib/auth";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Permitir acceso libre a la pantalla de login administrativo
-  if (pathname === "/admin/login") {
+  // 1. Permitir acceso libre a la pantalla de login administrativo y autenticación
+  if (pathname === "/admin/login" || pathname === "/api/admin/auth") {
     return NextResponse.next();
   }
 
-  // 2. Proteger todas las rutas bajo /admin
+  // 2. Protección perimetral para endpoints API administrativos
+  if (pathname.startsWith("/api/admin")) {
+    const sessionCookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+    if (!sessionCookie) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+    const session = await verifySignedToken(sessionCookie);
+    if (!session) {
+      const response = NextResponse.json({ error: "Sesión inválida o expirada" }, { status: 401 });
+      response.cookies.delete(ADMIN_COOKIE_NAME);
+      return response;
+    }
+    return NextResponse.next();
+  }
+
+  // 3. Proteger todas las rutas bajo /admin (páginas)
   if (pathname.startsWith("/admin")) {
     const sessionCookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
 
@@ -43,9 +58,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Interceptar rutas de administración excluyendo estáticos y APIs
-     */
     "/admin/:path*",
+    "/api/admin/:path*",
   ],
 };

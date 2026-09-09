@@ -7,8 +7,9 @@ async function main() {
   console.log("Iniciando seed para NEOGESTIÓN...");
 
   // 1. Crear Usuario Administrador
-  const adminEmail = "admin@neogestion.com";
-  const passwordHash = await bcrypt.hash("Neogestion2025!", 10);
+  const adminEmail = process.env.ADMIN_INITIAL_EMAIL || "admin@neogestion.com";
+  const rawPassword = process.env.ADMIN_INITIAL_PASSWORD || "NeoGestion_CorpSec!2026";
+  const passwordHash = await bcrypt.hash(rawPassword, 12);
 
   const admin = await prisma.adminUser.upsert({
     where: { email: adminEmail },

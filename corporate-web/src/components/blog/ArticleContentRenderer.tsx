@@ -25,19 +25,31 @@ export function extractHeadings(content: string): HeadingItem[] {
   return headings;
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function parseInlineFormatting(text: string): React.ReactNode {
   const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?\]\(.*?\))/g;
   const segments = text.split(regex);
 
   return segments.map((seg, idx) => {
     if (seg.startsWith("**") && seg.endsWith("**")) {
-      return <strong key={idx} className="font-black text-slate-900">{seg.slice(2, -2)}</strong>;
+      const inner = seg.slice(2, -2).replace(/[<>]/g, "");
+      return <strong key={idx} className="font-black text-slate-900">{inner}</strong>;
     }
     if (seg.startsWith("*") && seg.endsWith("*")) {
-      return <em key={idx} className="italic text-slate-800">{seg.slice(1, -1)}</em>;
+      const inner = seg.slice(1, -1).replace(/[<>]/g, "");
+      return <em key={idx} className="italic text-slate-800">{inner}</em>;
     }
     if (seg.startsWith("`") && seg.endsWith("`")) {
-      return <code key={idx} className="px-1.5 py-0.5 rounded bg-slate-100 text-[#01426F] font-mono text-xs">{seg.slice(1, -1)}</code>;
+      const inner = seg.slice(1, -1);
+      return <code key={idx} className="px-1.5 py-0.5 rounded bg-slate-100 text-[#01426F] font-mono text-xs">{inner}</code>;
     }
     const linkMatch = seg.match(/^\[(.*?)\]\((.*?)\)$/);
     if (linkMatch) {
@@ -45,6 +57,7 @@ function parseInlineFormatting(text: string): React.ReactNode {
       // Validar esquema seguro: solo permitir http, https, mailto o rutas relativas
       const isSafeUrl = /^(https?:\/\/|mailto:|\/)/i.test(rawUrl);
       const safeHref = isSafeUrl ? rawUrl : "#";
+      const cleanLinkText = linkMatch[1].replace(/[<>]/g, "");
 
       return (
         <a 
@@ -54,10 +67,11 @@ function parseInlineFormatting(text: string): React.ReactNode {
           rel="noopener noreferrer" 
           className="text-[#B08A1A] font-semibold underline underline-offset-2 hover:text-amber-700 transition-colors"
         >
-          {linkMatch[1]}
+          {cleanLinkText}
         </a>
       );
     }
+    // Sanitizar texto plano eliminando inyecciones directas
     return seg;
   });
 }

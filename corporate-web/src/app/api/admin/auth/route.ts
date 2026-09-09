@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
     await setAdminSession(user.email);
 
     const isHttps =
+      process.env.NODE_ENV === "production" ||
       process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
       process.env.COOKIE_SECURE === "true";
 

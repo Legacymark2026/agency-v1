@@ -10,6 +10,7 @@ interface RateLimitRecord {
 }
 
 const rateLimitMap = new Map<string, RateLimitRecord>();
+const MAX_MAP_ENTRIES = 10000; // Prevenir ataques de denegación de servicio por memoria (Memory Exhaustion)
 
 // Limpieza periódica de registros expirados cada 5 minutos
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
@@ -17,12 +18,20 @@ let lastCleanup = Date.now();
 
 function cleanupExpired() {
   const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS && rateLimitMap.size < MAX_MAP_ENTRIES) return;
   lastCleanup = now;
 
   for (const [key, record] of rateLimitMap.entries()) {
     if (record.resetAt <= now) {
       rateLimitMap.delete(key);
+    }
+  }
+
+  // Si aún supera el límite máximo, purgar los registros más antiguos
+  if (rateLimitMap.size >= MAX_MAP_ENTRIES) {
+    const keysToDelete = Array.from(rateLimitMap.keys()).slice(0, Math.floor(MAX_MAP_ENTRIES * 0.2));
+    for (const k of keysToDelete) {
+      rateLimitMap.delete(k);
     }
   }
 }
@@ -100,11 +109,20 @@ export function checkRateLimit(
  * Obtiene la dirección IP del cliente a partir de los encabezados de la solicitud.
  */
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
+  // 1. Cloudflare header
+  const cfConnectingIp = req.headers.get("cf-connecting-ip");
+  if (cfConnectingIp) {
+    return cfConnectingIp.trim();
   }
 
+  // 2. Standard X-Forwarded-For
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0].trim();
+    if (first) return first;
+  }
+
+  // 3. Nginx / reverse proxy header
   const realIp = req.headers.get("x-real-ip");
   if (realIp) {
     return realIp.trim();

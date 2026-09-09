@@ -91,3 +91,22 @@ model IntegrationConfig {
   updatedAt               DateTime @updatedAt
 }
 
+model ContactLead {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  company   String
+  service   String
+  urgency   String   @default("En las próximas 2 semanas")
+  message   String
+  status    String   @default("nuevo") // nuevo, contactado, descartado
+  ipAddress String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
+}
+

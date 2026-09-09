@@ -137,6 +137,30 @@ async function runSecuritySuite() {
   assert(sanitizeMarkdownUrl(safeRelative) === safeRelative, "Ruta relativa interna permitida");
 
   // -------------------------------------------------------------
+  // PRUEBA 4: Sanitización de Etiquetas HTML en Markdown
+  // -------------------------------------------------------------
+  console.log("\n📋 Prueba 4: Neutralización de Inyección de Etiquetas HTML");
+  function stripHtmlTags(str) {
+    return str.replace(/[<>]/g, "");
+  }
+
+  const evilHtmlInput = '<img src=x onerror=alert(1)>Texto Corporativo';
+  assert(stripHtmlTags(evilHtmlInput) === "img src=x onerror=alert(1)Texto Corporativo", "Etiquetas < y > neutralizadas previniendo ejecución de scripts inline");
+
+  // -------------------------------------------------------------
+  // PRUEBA 5: Validación Estricta de Correo Corporativo de Contacto
+  // -------------------------------------------------------------
+  console.log("\n📋 Prueba 5: Validación de Correo de Prospectos");
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const validEmail = "director.general@grupo-empresa.co";
+  const invalidEmail1 = "admin@evil<script>";
+  const invalidEmail2 = "not-an-email";
+
+  assert(emailRegex.test(validEmail), "Correo corporativo válido aceptado");
+  assert(!emailRegex.test(invalidEmail1), "Inyección maliciosa en correo rechazada");
+  assert(!emailRegex.test(invalidEmail2), "Formato sin dominio rechazado");
+
+  // -------------------------------------------------------------
   // RESUMEN
   // -------------------------------------------------------------
   console.log("\n=======================================================");

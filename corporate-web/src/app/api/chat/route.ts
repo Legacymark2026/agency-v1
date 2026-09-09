@@ -97,6 +97,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const clientIp = getClientIp(req);
+  const rateCheck = checkRateLimit(`chat_get_${clientIp}`, {
+    maxRequests: 30,
+    windowSeconds: 60, // 30 consultas por minuto
+  });
+
+  if (!rateCheck.success) {
+    return NextResponse.json({ error: "Límite de consultas excedido" }, { status: 429 });
+  }
+
   const { searchParams } = new URL(req.url);
   const conversationId = searchParams.get("conversationId");
 
