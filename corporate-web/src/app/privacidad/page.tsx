@@ -1,196 +1,257 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, MapPin, ShieldCheck, FileText } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, ShieldCheck, Smartphone, Lock, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import LegalAccordion, { LegalSection } from "@/components/LegalAccordion";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad y Protección de Datos | NEOGESTIÓN",
   description:
-    "Política de Tratamiento de Datos Personales de Consultoría de Colombia y NeoGestión en cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013.",
+    "Política de Privacidad de NeoGestión y Consultoría de Colombia S.A.S. para web y aplicación móvil en cumplimiento de Google Play y la Ley 1581 de 2012.",
 };
 
 export default function PrivacidadPage() {
   const sections: LegalSection[] = [
     {
-      id: "introduccion",
-      title: "Identificación del Responsable y Marco Legal",
+      id: "alcance",
+      title: "1. Alcance y Políticas de Google Play",
       content: (
         <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
           <p>
-            En <strong>Consultoría de Colombia S.A.S.</strong>, sociedad identificada con <strong>NIT 804.017.909</strong> y con domicilio principal en la <strong>Carrera 1A # 55A - 30, Int. Edificio Centaurio, Barrio Ciudadela Real de Minas, Bucaramanga - Santander, Colombia</strong> (en adelante, &ldquo;la Compañía&rdquo; o &ldquo;Consultoría de Colombia&rdquo;), nos comprometemos a proteger su privacidad y a garantizar la seguridad de sus datos personales.
+            Esta Política de Privacidad describe cómo <strong>Consultoría de Colombia S.A.S.</strong>, sociedad identificada con <strong>NIT 804.017.909</strong> y con domicilio principal en la <strong>Carrera 1A # 55A - 30, Int. Edificio Centaurio, Barrio Ciudadela Real de Minas, Bucaramanga, Santander, Colombia</strong> (Sede administrativa y técnica: <strong>Calle 18 No. 22C – 40, Girón, Santander</strong>) (&ldquo;nosotros&rdquo;, &ldquo;NeoGestión&rdquo;), recopila, usa, almacena, comparte y protege la información personal asociada al uso del sitio <a href="https://neogestion.software/" className="text-[#01426F] font-bold underline">neogestion.software</a>, la plataforma web NeoGestión y la aplicación móvil NeoGestión disponible en Google Play.
           </p>
-          <p>
-            Esta Política describe cómo recopilamos, usamos, almacenamos y protegemos su información personal cuando interactúa con nosotros y con nuestra plataforma <strong>NeoGestión</strong>, en estricto cumplimiento de la <strong>Ley Estatutaria 1581 de 2012</strong>, el <strong>Decreto 1377 de 2013</strong> y demás normativa concordante de la República de Colombia.
-          </p>
-        </div>
-      ),
-    },
-    {
-      id: "responsable",
-      title: "1. Responsable del Tratamiento y Canales de Atención",
-      content: (
-        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
-          <p>
-            <strong>Consultoría de Colombia S.A.S.</strong> es el Responsable del Tratamiento de sus datos personales. Para cualquier consulta, solicitud o ejercicio de sus derechos, puede contactar a nuestro Oficial de Protección de Datos a través de los siguientes canales oficiales:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-start gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-[#B08A1A] flex items-center justify-center">
-                <Mail className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-900">Correo Electrónico:</span>
-              <a href="mailto:sistemas@neoinf.com" className="text-xs text-[#01426F] font-semibold hover:underline">
-                sistemas@neoinf.com
-              </a>
-              <span className="text-[11px] text-slate-500">asist.gerencia@neogestion.co</span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-start gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-[#01426F] flex items-center justify-center">
-                <Phone className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-900">Teléfonos de Contacto:</span>
-              <span className="text-xs text-slate-700 font-semibold">+57 (7) 659 4043</span>
-              <span className="text-xs text-slate-700 font-semibold">+57 317 3720384</span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-start gap-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-[#B08A1A] flex items-center justify-center">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-bold text-slate-900">Dirección Física &amp; Domicilio:</span>
-              <span className="text-xs text-slate-700">Carrera 1A # 55A - 30, Int. Edificio Centaurio, Barrio Ciudadela Real de Minas, Bucaramanga - Santander, Colombia.</span>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "recopilacion-finalidad",
-      title: "2. Datos Personales que Recopilamos y su Finalidad",
-      content: (
-        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
-          <p>
-            Recopilamos diferentes categorías de datos personales según su interacción con nosotros y el ecosistema NeoGestión:
-          </p>
-          <div className="space-y-3">
-            <div className="p-4 rounded-2xl bg-white border border-slate-200">
-              <h4 className="font-bold text-slate-900 text-sm mb-1 text-[#01426F]">
-                a) Datos de Contacto y de Identificación:
-              </h4>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Como nombre, apellidos, número de identificación, correo electrónico, número de teléfono y dirección. Los utilizamos para gestionar su registro como usuario de NeoGestión, atender sus consultas, solicitudes de servicio, facturación y enviar comunicaciones relacionadas con su contrato y el soporte técnico.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-slate-200">
-              <h4 className="font-bold text-slate-900 text-sm mb-1 text-[#01426F]">
-                b) Datos de Navegación y Analíticos:
-              </h4>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Como su dirección IP, tipo de navegador, páginas visitadas, tiempo de permanencia y comportamiento general en nuestro sitio web. Los utilizamos con fines de mejora de la experiencia del usuario y análisis estadístico, siempre de forma anonimizada.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white border border-slate-200">
-              <h4 className="font-bold text-slate-900 text-sm mb-1 text-[#01426F]">
-                c) Datos de Marketing y Preferencias:
-              </h4>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Recopilamos esta información cuando usted acepta recibir nuestras comunicaciones comerciales sobre novedades de NeoGestión, eventos, capacitaciones y otros servicios. Bajo ninguna circunstancia cederemos sus datos a terceros para fines de mercadeo sin su consentimiento previo, expreso e informado.
-              </p>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "terceros-encargados",
-      title: "3. Terceros y Encargados del Tratamiento",
-      content: (
-        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
-          <p>
-            Para la prestación de nuestros servicios, podemos compartir sus datos con terceros que actúan como Encargados del Tratamiento bajo nuestra instrucción. Estos incluyen:
-          </p>
-          <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-slate-600">
-            <li>Proveedores de servicios de alojamiento web y almacenamiento en la nube (Cloud Computing / SAAS).</li>
-            <li>Proveedores de herramientas de analítica web (ej. Google Analytics).</li>
-            <li>Proveedores de servicios de mensajería y correo electrónico para comunicaciones institucionales.</li>
-          </ul>
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-[#B08A1A]/30 text-xs text-slate-800 font-medium">
-            Todos nuestros Encargados del Tratamiento se encuentran vinculados mediante acuerdos contractuales que garantizan el cumplimiento de los principios de protección de datos y la normativa colombiana vigente.
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "transferencias-internacionales",
-      title: "4. Transferencias Internacionales de Datos",
-      content: (
-        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
-          <p>
-            Consultoría de Colombia se compromete a realizar transferencias internacionales de datos únicamente a países que la <strong>Superintendencia de Industria y Comercio (SIC)</strong> haya determinado que ofrecen un nivel adecuado de protección de datos personales.
-          </p>
-          <p>
-            En caso contrario, dichas transferencias se realizarán bajo los mecanismos de garantía establecidos en la ley, tales como cláusulas contractuales tipo o autorizaciones expresas del titular.
-          </p>
-        </div>
-      ),
-    },
-    {
-      id: "derechos-arco",
-      title: "5. Derechos del Titular de los Datos (Derechos ARCO)",
-      content: (
-        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
-          <p>
-            Como Titular de sus datos personales, usted tiene los siguientes derechos consagrados en el <strong>artículo 8 de la Ley 1581 de 2012</strong>:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <strong className="text-slate-900 block text-xs font-bold text-[#B08A1A]">1. Acceder:</strong>
-              <span className="text-xs text-slate-600">Conocer los datos personales que tenemos sobre usted.</span>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <strong className="text-slate-900 block text-xs font-bold text-[#B08A1A]">2. Rectificar:</strong>
-              <span className="text-xs text-slate-600">Solicitar la corrección de sus datos si son inexactos o incompletos.</span>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <strong className="text-slate-900 block text-xs font-bold text-[#B08A1A]">3. Actualizar:</strong>
-              <span className="text-xs text-slate-600">Mantener su información debidamente actualizada.</span>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <strong className="text-slate-900 block text-xs font-bold text-[#B08A1A]">4. Suprimir:</strong>
-              <span className="text-xs text-slate-600">Solicitar la eliminación de sus datos cuando el tratamiento no sea legítimo o ya no sea necesario.</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-            <strong className="text-slate-900 block text-xs font-bold text-[#B08A1A]">5. Revocar la autorización:</strong>
-            <span className="text-xs text-slate-600">Retirar su consentimiento para el tratamiento de sus datos en cualquier momento.</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 text-xs sm:text-sm text-slate-800">
-            <p className="font-semibold text-[#01426F] mb-1">Procedimiento de Atención:</p>
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-[#B08A1A]/30 text-xs sm:text-sm text-slate-800">
+            <p className="font-bold text-[#B08A1A] mb-1 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Transparencia y Cumplimiento Google Play:</span>
+            </p>
             <p>
-              Para ejercer estos derechos, envíe su solicitud al correo electrónico{" "}
-              <a href="mailto:sistemas@neoinf.com" className="font-bold text-[#01426F] underline">
-                sistemas@neoinf.com
-              </a>{" "}
-              indicando en el asunto <strong>&ldquo;Derechos ARCO&rdquo;</strong>. Atenderemos su petición en los plazos legales establecidos por la normatividad (15 días hábiles para consultas y 15 días hábiles para reclamos, prorrogables por 8 días en casos especiales debidamente motivados).
+              El texto de esta política está publicado de forma directa en esta URL para cumplimiento estricto de las políticas de Datos de Usuario de Google Play. No se requiere iniciar sesión ni navegar a páginas adicionales para leerla en su totalidad.
             </p>
           </div>
         </div>
       ),
     },
     {
-      id: "vigencia",
-      title: "6. Vigencia y Cambios a la Política",
+      id: "datos-recopilados",
+      title: "2. Datos que podemos recopilar",
+      content: (
+        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Según el módulo y la configuración de cada empresa cliente, la aplicación y los servicios pueden tratar:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <strong className="text-slate-900 block text-xs font-bold text-[#01426F] mb-1">
+                • Datos de cuenta y acceso:
+              </strong>
+              <span className="text-xs text-slate-600">
+                Usuario, contraseña (almacenada de forma controlada y cifrada criptográficamente por el sistema), empresa, cargo y rol operativo.
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <strong className="text-slate-900 block text-xs font-bold text-[#01426F] mb-1">
+                • Datos de identificación laboral:
+              </strong>
+              <span className="text-xs text-slate-600">
+                Nombres, apellidos, documento de identidad, correo electrónico corporativo o registrado, área organizacional y cargo.
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <strong className="text-slate-900 block text-xs font-bold text-[#01426F] mb-1">
+                • Operación de sistemas de gestión:
+              </strong>
+              <span className="text-xs text-slate-600">
+                Tareas, comunicados, correspondencia, listas de inspección, evidencias documentales y registros SG-SST / ISO asociados a su actividad en la empresa.
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <strong className="text-slate-900 block text-xs font-bold text-[#01426F] mb-1">
+                • Archivos y medios multimedia:
+              </strong>
+              <span className="text-xs text-slate-600">
+                Documentos, fotografías u otros archivos que el usuario adjunte voluntariamente (por ejemplo, evidencias de inspección en campo), cuando el módulo lo permita.
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <strong className="text-slate-900 block text-xs font-bold text-[#01426F] mb-1">
+                • Datos técnicos del dispositivo:
+              </strong>
+              <span className="text-xs text-slate-600">
+                Información básica de conectividad, sistema operativo, identificadores técnicos necesarios para el funcionamiento, registros de error y uso de red (Internet).
+              </span>
+            </div>
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200">
+              <strong className="text-slate-900 block text-xs font-bold text-[#01426F] mb-1">
+                • Almacenamiento local offline:
+              </strong>
+              <span className="text-xs text-slate-600">
+                La app puede conservar temporalmente información en el dispositivo (incluido almacenamiento offline / base local) para permitir trabajar sin conexión y sincronizar después.
+              </span>
+            </div>
+          </div>
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>No solicitamos datos de pago dentro de la aplicación móvil NeoGestión. No vendemos datos personales a terceros bajo ninguna circunstancia.</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "finalidades",
+      title: "3. Finalidades del tratamiento",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <ul className="list-disc pl-5 space-y-2 text-xs sm:text-sm text-slate-600">
+            <li>Autenticar usuarios y prestar el servicio SaaS de gestión empresarial / SG-SST / ISO.</li>
+            <li>Permitir el registro, consulta y seguimiento de tareas, documentos y evidencias del cliente.</li>
+            <li>Sincronizar información entre la app, la API y las bases de datos de la empresa contratante.</li>
+            <li>Brindar soporte técnico, seguridad, auditoría y mejora continua del servicio.</li>
+            <li>Cumplir obligaciones legales y contractuales aplicables en la República de Colombia.</li>
+          </ul>
+        </div>
+      ),
+    },
+    {
+      id: "base-legal",
+      title: "4. Base legal y relación con la empresa cliente",
       content: (
         <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
           <p>
-            Esta Política rige a partir de la fecha de su publicación. La Compañía se reserva el derecho de actualizar o modificar esta Política en cualquier momento para reflejar cambios en la legislación, la jurisprudencia o nuestras prácticas institucionales.
+            NeoGestión es una plataforma multiempresa. En la mayoría de los casos, la empresa que contrata NeoGestión actúa como <strong>Responsable del Tratamiento</strong> de los datos de sus trabajadores y usuarios autorizados. <strong>Consultoría de Colombia S.A.S.</strong> trata esos datos en calidad de <strong>Proveedor Tecnológico / Encargado del Tratamiento</strong> para ejecutar el servicio contratado, conforme a la <strong>Ley 1581 de 2012</strong>, normas complementarias y los acuerdos contractuales suscritos con cada cliente.
           </p>
+        </div>
+      ),
+    },
+    {
+      id: "permisos-android",
+      title: "5. Uso de permisos en Android (App Móvil)",
+      content: (
+        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
           <p>
-            La versión vigente será siempre la publicada en nuestro sitio web oficial, indicando la fecha de su última actualización.
+            La aplicación puede solicitar permisos del sistema operativo Android únicamente para funciones esenciales del servicio:
           </p>
+          <ul className="list-disc pl-5 space-y-2 text-xs sm:text-sm text-slate-600">
+            <li><strong>Internet / estado de red:</strong> para iniciar sesión de manera segura, sincronizar registros y consultar información en tiempo real.</li>
+            <li><strong>Almacenamiento / archivos:</strong> para adjuntar o guardar evidencias y documentos cuando el usuario lo indique.</li>
+            <li><strong>Cámara u otros sensores (si están habilitados en la versión instalada):</strong> solo para capturar evidencias fotográficas o archivos requeridos por el flujo de trabajo de inspección, siempre bajo autorización previa y explícita del usuario.</li>
+          </ul>
+          <p className="text-xs text-slate-500 italic">
+            Nota: El rechazo de un permiso puede limitar la función asociada, sin impedir necesariamente el uso general de la app.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "comparticion-datos",
+      title: "6. Con quién compartimos información",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>La información es tratada bajo estricta confidencialidad corporativa y únicamente compartida con:</p>
+          <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm text-slate-600">
+            <li>La empresa cliente a la que pertenece el usuario (administradores y roles autorizados dentro de la parametrización de NeoGestión).</li>
+            <li>Proveedores de infraestructura (centros de datos en la nube, hosting, correo transaccional, respaldos) estrictamente necesarios para operar el servicio, amparados bajo acuerdos de confidencialidad y estándares de seguridad.</li>
+            <li>Autoridades judiciales o administrativas cuando exista obligación legal o requerimiento formal válido.</li>
+          </ul>
+          <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 font-semibold">
+            No compartimos datos personales con redes publicitarias ni los utilizamos para publicidad de terceros basada en el perfil del usuario de la app.
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "transferencias",
+      title: "7. Transferencias y ubicación de los datos",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Los datos se procesan en servidores seguros y servicios en la nube utilizados para la operación de NeoGestión. Cuando intervengan proveedores de infraestructura tecnológica fuera de Colombia, se aplican medidas contractuales y de ciberseguridad adecuadas conforme a la normativa aplicable (Ley 1581 de 2012) y a los contratos con cada cliente.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "conservacion",
+      title: "8. Conservación y Retención de la Información",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Conservamos la información mientras exista la relación contractual con la empresa cliente, mientras la cuenta del usuario permanezca activa, o durante el tiempo adicional exigido por ley, auditorías de entes certificadores (ISO / RUC) o defensa de reclamaciones. Al terminar la relación contractual, se aplican los procedimientos de devolución, bloqueo o eliminación acordados con el cliente y/o la ley.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "seguridad",
+      title: "9. Medidas de Seguridad y Ciberseguridad",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Aplicamos medidas administrativas, técnicas y organizativas rigurosas (control de acceso granular, transmisión cifrada mediante HTTPS/TLS, segregación de bases de datos por empresa cliente, respaldos periódicos y monitoreo continuo perimetral) para proteger la integridad y disponibilidad de la información.
+          </p>
+          <p className="text-xs text-slate-500">
+            Ningún sistema informático es 100% invulnerable; solicitamos a los usuarios custodiar responsablemente sus credenciales de acceso y no compartirlas con terceros.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "derechos-titulares",
+      title: "10. Derechos de los titulares (ARCO)",
+      content: (
+        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
+          <p>
+            De acuerdo con la legislación colombiana de protección de datos personales (Ley 1581 de 2012), usted puede solicitar acceso, actualización, rectificación, supresión, revocatoria de autorización u oposición al tratamiento, cuando proceda, escribiendo a los canales oficiales:
+          </p>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <a href="mailto:seguridad.informatica@neogestion.co" className="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-[#01426F] font-bold hover:bg-slate-200">
+              seguridad.informatica@neogestion.co
+            </a>
+            <a href="mailto:asist.gerencia@neogestion.co" className="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-[#01426F] font-bold hover:bg-slate-200">
+              asist.gerencia@neogestion.co
+            </a>
+          </div>
+          <p className="text-xs text-slate-500">
+            Si sus datos fueron cargados por su empleador u organización cliente, también puede dirigir la solicitud a esa organización, que es quien define el alta y el alcance de su usuario.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "menores",
+      title: "11. Menores de edad",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Los servicios y soluciones de software de NeoGestión están dirigidos exclusivamente al uso empresarial y laboral de personas adultas autorizadas por la empresa cliente. No están dirigidos a menores de 18 años.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "cambios",
+      title: "12. Cambios a esta política",
+      content: (
+        <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
+          <p>
+            Podemos actualizar esta Política de Privacidad de manera periódica. La versión vigente se publicará de manera permanente en este portal y en <a href="https://neogestion.software/politica-de-privacidad.html" className="font-bold text-[#01426F] underline">https://neogestion.software/politica-de-privacidad.html</a> con la fecha de última actualización. El uso continuado de la app o del servicio después de un cambio implica el conocimiento de la versión publicada.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "contacto",
+      title: "13. Canales Oficiales de Contacto",
+      content: (
+        <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs sm:text-sm">
+            <p><strong>Consultoría de Colombia S.A.S. — NeoGestión Software</strong></p>
+            <p><strong>NIT:</strong> 804.017.909</p>
+            <p><strong>Domicilio Principal:</strong> Carrera 1A # 55A - 30, Int. Edificio Centaurio, Barrio Ciudadela Real de Minas, Bucaramanga, Santander, Colombia.</p>
+            <p><strong>Sede de Operaciones:</strong> Calle 18 No. 22C – 40, Girón, Santander, Colombia.</p>
+            <p><strong>Correo Electrónico Oficial:</strong> <a href="mailto:seguridad.informatica@neogestion.co" className="font-bold text-[#01426F]">seguridad.informatica@neogestion.co</a> / <a href="mailto:asist.gerencia@neogestion.co" className="font-bold text-[#01426F]">asist.gerencia@neogestion.co</a></p>
+            <p><strong>Sitio Web Oficial:</strong> <a href="https://neogestion.software/" className="font-bold text-[#01426F]">https://neogestion.software/</a></p>
+            <p><strong>Documentos relacionados:</strong> <Link href="/terminos" className="font-bold text-[#B08A1A] underline">Términos y Condiciones</Link></p>
+          </div>
         </div>
       ),
     },
@@ -209,7 +270,7 @@ export default function PrivacidadPage() {
 
         <LegalAccordion
           title="Política de Privacidad y Tratamiento de Datos Personales"
-          subtitle="Última actualización: Septiembre 2026 | Cumplimiento Ley 1581 de 2012 y Decreto 1377 de 2013"
+          subtitle="Última actualización: Septiembre 2026 | Cumplimiento Ley 1581 de 2012 y Políticas de Google Play"
           sections={sections}
           activeDoc="privacidad"
         />
