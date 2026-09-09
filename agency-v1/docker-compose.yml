@@ -718,6 +718,8 @@ services:
     environment:
       <<: *common-env
       PORT: "4020"
+      GRPC_PORT: "50051"
+      INVOICING_GRPC_PORT: "50052"
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1078,33 +1080,6 @@ services:
       - "traefik.http.routers.affiliate.tls=true"
       - "traefik.http.routers.affiliate.tls.certresolver=le"
       - "traefik.http.services.affiliate.loadbalancer.server.port=4019"
-
-  # ── POS & Retail Register Service ─────────────────────────────────────────
-  pos-service:
-    <<: *microservice-base
-    build:
-      context: .
-      dockerfile: services/pos-service/Dockerfile
-    environment:
-      <<: *common-env
-      PORT: "4020"
-      GRPC_PORT: "50051"
-      INVOICING_GRPC_PORT: "50052"
-    depends_on:
-      pgbouncer: { condition: service_healthy }
-      redis: { condition: service_healthy }
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4020/health"]
-      interval: 15s
-      timeout: 5s
-      start_period: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pos.rule=PathPrefix(`/api/pos`)"
-      - "traefik.http.routers.pos.entrypoints=websecure"
-      - "traefik.http.routers.pos.tls=true"
-      - "traefik.http.routers.pos.tls.certresolver=le"
-      - "traefik.http.services.pos.loadbalancer.server.port=4020"
 
   # ── Observability & Monitoring ─────────────────────────────────────────────
   loki:
