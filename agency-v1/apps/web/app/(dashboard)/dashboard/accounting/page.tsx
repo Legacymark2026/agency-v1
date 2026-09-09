@@ -12,7 +12,13 @@ import {
   RefreshCw,
   Gauge,
   TrendingUp,
-  Boxes
+  Boxes,
+  FolderTree,
+  FileCheck,
+  Lock,
+  ArrowRightLeft,
+  Award,
+  Calendar
 } from 'lucide-react';
 import { 
   getTrialBalanceAction,
@@ -33,6 +39,11 @@ import { JournalVouchersModule } from '@/modules/accounting/components/journal-v
 import { AuxiliaryLedgerModule } from '@/modules/accounting/components/auxiliary-ledger-module';
 import { DianComplianceModule } from '@/modules/accounting/components/dian-compliance-module';
 import { TreasuryKardexModule } from '@/modules/accounting/components/treasury-kardex-module';
+import { PucManagerModule } from '@/modules/accounting/components/puc-manager-module';
+import { TaxCertificatesModule } from '@/modules/accounting/components/tax-certificates-module';
+import { FiscalPeriodsModule } from '@/modules/accounting/components/fiscal-periods-module';
+import { FxRevaluationModule } from '@/modules/accounting/components/fx-revaluation-module';
+import { OfficialStatementsModule } from '@/modules/accounting/components/official-statements-module';
 
 const PUC_CATALOG = [
   { code: '110505', name: 'Caja General', category: 'ACTIVO', nature: 'DEBITO' },
@@ -59,8 +70,20 @@ const PUC_CATALOG = [
   { code: '613501', name: 'Costo de Ventas - Prestación de Servicios Digitales', category: 'COSTOS', nature: 'DEBITO' }
 ];
 
+type MacroTab = 
+  | 'financials' 
+  | 'official_statements'
+  | 'vouchers' 
+  | 'puc' 
+  | 'auxiliary' 
+  | 'dian' 
+  | 'certificates' 
+  | 'treasury' 
+  | 'fx' 
+  | 'periods';
+
 export default function AccountingDashboardPage() {
-  const [activeMacroTab, setActiveMacroTab] = useState<'financials' | 'vouchers' | 'auxiliary' | 'dian' | 'treasury'>('financials');
+  const [activeMacroTab, setActiveMacroTab] = useState<MacroTab>('financials');
 
   // Global Financial Data State
   const [trialBalance, setTrialBalance] = useState<any>(null);
@@ -125,7 +148,7 @@ export default function AccountingDashboardPage() {
 
   return (
     <div className="ds-page space-y-8 w-full">
-      {/* ── HEADER CORPORATIVO SIIGO-GRADE ── */}
+      {/* ── HEADER CORPORATIVO ENTERPRISE ERP ── */}
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800/80">
         <div>
           <div className="mb-2.5">
@@ -134,14 +157,14 @@ export default function AccountingDashboardPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
               </span>
-              <Sparkles size={10} className="text-teal-400" /> Siigo-Grade Full Enterprise ERP Contable & DIAN Direct
+              <Sparkles size={10} className="text-teal-400" /> Suite Contable Integral Siigo & SAP Grade — NIIF para PYMES & DIAN Direct
             </span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
-            Contabilidad General, Libro Mayor & Nómina DIAN
+            Contabilidad General, Estados Financieros & DIAN
           </h1>
           <p className="ds-subtext mt-1">
-            Plataforma ERP Integral: Ratios NIIF, Asentador de Partida Doble con IA, Nómina CUNE, Resoluciones DIAN, Extractos Bancarios y Exógena.
+            Gestión contable certificada: PUC jerárquico dinámico, Libro Mayor con sellado criptográfico, Certificados de Retención Art. 381, Multi-moneda TRM y bloqueo de periodos.
           </p>
         </div>
 
@@ -162,7 +185,7 @@ export default function AccountingDashboardPage() {
         </div>
       </div>
 
-      {/* ── BARRA RESUMEN DE INDICADORES CLAVE ── */}
+      {/* ── RESUMEN DE INDICADORES CLAVE ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
           <div>
@@ -196,79 +219,139 @@ export default function AccountingDashboardPage() {
 
         <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-mono text-slate-400 uppercase">Comprobantes Libro Diario</span>
+            <span className="text-[10px] font-mono text-slate-400 uppercase">Comprobantes Asentados</span>
             <p className="text-xl font-bold font-mono text-purple-400">
-              {vouchersHistory.length || 12} asentados
+              {vouchersHistory.length || 12} registros
             </p>
           </div>
           <FileText className="w-5 h-5 text-purple-400/60" />
         </div>
       </div>
 
-      {/* ── NAVEGACIÓN PRINCIPAL EN 5 PILARES EMPRESARIALES ── */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto no-scrollbar">
+      {/* ── NAVEGACIÓN EN 10 PILARES ENTERPRISE ── */}
+      <div className="flex items-center gap-1.5 border-b border-slate-800 pb-3 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveMacroTab('financials')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeMacroTab === 'financials'
               ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <PieChart className="w-4 h-4 text-teal-400" />
-          <span>1. Resumen & Estados NIIF</span>
+          <PieChart className="w-3.5 h-3.5 text-teal-400" />
+          <span>1. Ratios & Balances</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMacroTab('official_statements')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeMacroTab === 'official_statements'
+              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Award className="w-3.5 h-3.5 text-teal-400" />
+          <span>2. Balances Oficiales (PDF)</span>
         </button>
 
         <button
           onClick={() => setActiveMacroTab('vouchers')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeMacroTab === 'vouchers'
               ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <FileText className="w-4 h-4 text-teal-400" />
-          <span>2. Libro Diario & Comprobantes</span>
+          <FileText className="w-3.5 h-3.5 text-teal-400" />
+          <span>3. Comprobantes Diarios</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMacroTab('puc')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeMacroTab === 'puc'
+              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <FolderTree className="w-3.5 h-3.5 text-teal-400" />
+          <span>4. Plan de Cuentas (PUC)</span>
         </button>
 
         <button
           onClick={() => setActiveMacroTab('auxiliary')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeMacroTab === 'auxiliary'
               ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Receipt className="w-4 h-4 text-teal-400" />
-          <span>3. Libro Auxiliar & Terceros</span>
+          <Receipt className="w-3.5 h-3.5 text-teal-400" />
+          <span>5. Libro Mayor & Auxiliar</span>
         </button>
 
         <button
           onClick={() => setActiveMacroTab('dian')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeMacroTab === 'dian'
               ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <Stamp className="w-4 h-4 text-teal-400" />
-          <span>4. Cumplimiento DIAN & Fiscal</span>
+          <Stamp className="w-3.5 h-3.5 text-teal-400" />
+          <span>6. Nómina & Exógena DIAN</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMacroTab('certificates')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeMacroTab === 'certificates'
+              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <FileCheck className="w-3.5 h-3.5 text-teal-400" />
+          <span>7. Certificados Retención</span>
         </button>
 
         <button
           onClick={() => setActiveMacroTab('treasury')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
             activeMacroTab === 'treasury'
               ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
               : 'text-slate-400 hover:text-white hover:bg-slate-900'
           }`}
         >
-          <CreditCard className="w-4 h-4 text-teal-400" />
-          <span>5. Tesorería, Bancos & Kardex</span>
+          <CreditCard className="w-3.5 h-3.5 text-teal-400" />
+          <span>8. Tesorería & Kardex</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMacroTab('fx')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeMacroTab === 'fx'
+              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <ArrowRightLeft className="w-3.5 h-3.5 text-teal-400" />
+          <span>9. Diferencia en Cambio (TRM)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMacroTab('periods')}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeMacroTab === 'periods'
+              ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-md shadow-teal-500/10'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+        >
+          <Lock className="w-3.5 h-3.5 text-teal-400" />
+          <span>10. Periodos & Cierres</span>
         </button>
       </div>
 
-      {/* ── CONTENIDO DEL MACRO-MÓDULO ACTIVO ── */}
+      {/* ── CONTENIDO DINÁMICO DEL MÓDULO ACTIVO ── */}
       <div>
         {activeMacroTab === 'financials' && (
           <OverviewFinancialsModule
@@ -279,6 +362,10 @@ export default function AccountingDashboardPage() {
           />
         )}
 
+        {activeMacroTab === 'official_statements' && (
+          <OfficialStatementsModule />
+        )}
+
         {activeMacroTab === 'vouchers' && (
           <JournalVouchersModule
             pucCatalog={PUC_CATALOG}
@@ -286,6 +373,10 @@ export default function AccountingDashboardPage() {
             vouchersHistory={vouchersHistory}
             onRefresh={loadFinancials}
           />
+        )}
+
+        {activeMacroTab === 'puc' && (
+          <PucManagerModule />
         )}
 
         {activeMacroTab === 'auxiliary' && (
@@ -302,6 +393,10 @@ export default function AccountingDashboardPage() {
           />
         )}
 
+        {activeMacroTab === 'certificates' && (
+          <TaxCertificatesModule />
+        )}
+
         {activeMacroTab === 'treasury' && (
           <TreasuryKardexModule
             bankStatementData={bankStatementData}
@@ -311,6 +406,14 @@ export default function AccountingDashboardPage() {
             initialAssetResult={initialAssetResult}
             onRefresh={loadFinancials}
           />
+        )}
+
+        {activeMacroTab === 'fx' && (
+          <FxRevaluationModule onRefresh={loadFinancials} />
+        )}
+
+        {activeMacroTab === 'periods' && (
+          <FiscalPeriodsModule />
         )}
       </div>
     </div>

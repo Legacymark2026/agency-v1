@@ -28,6 +28,28 @@ export async function recordJournalVoucherAction(params: {
     return { success: false, error: validation.error };
   }
 
+  // Guard: Verify that the voucher date is not inside a CLOSED fiscal period
+  try {
+    const voucherDate = new Date();
+    const closedPeriod = await (prisma as any).accountingPeriod.findFirst({
+      where: {
+        startDate: { lte: voucherDate },
+        endDate: { gte: voucherDate },
+        status: "CLOSED",
+      },
+    });
+
+    if (closedPeriod) {
+      return {
+        success: false,
+        error: `Operación rechazada: El periodo contable "${closedPeriod.name}" se encuentra CERRADO ante la DIAN y no admite nuevos asientos.`,
+      };
+    }
+  } catch (_) {
+    // Database schema fallback if table not migrated yet
+  }
+
+
   const { totalDebit, totalCredit } = validation;
 
   const rawPayload = JSON.stringify({

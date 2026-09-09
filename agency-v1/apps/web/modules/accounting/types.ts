@@ -327,3 +327,150 @@ export interface FixedAssetRecord {
   accumulatedDepreciation: number;
   netBookValue: number;
 }
+
+// ─── 1. PUC Jerárquico Avanzado ──────────────────────────────────────────────
+export interface PUCTreeAccount {
+  id: string;
+  code: string;
+  name: string;
+  category: "ACTIVO" | "PASIVO" | "PATRIMONIO" | "INGRESOS" | "GASTOS" | "COSTOS" | "CUENTAS_DE_ORDEN";
+  nature: "DEBITO" | "CREDITO";
+  parentCode?: string | null;
+  level: number; // 1=Clase, 2=Grupo, 3=Cuenta, 4=Subcuenta, 5-6=Auxiliar
+  isActive: boolean;
+  description?: string | null;
+  children?: PUCTreeAccount[];
+}
+
+// ─── 2. Certificados de Retención Tributaria (Art. 381 E.T.) ─────────────────
+export interface WithholdingCertificateItem {
+  concept: string;
+  baseAmount: number;
+  rate: number;
+  withheldAmount: number;
+}
+
+export interface WithholdingCertificate {
+  certificateNumber: string;
+  fiscalYear: number;
+  certificateType: "RETEFUENTE" | "RETEICA" | "RETEIVA";
+  issuer: {
+    name: string;
+    nit: string;
+    city: string;
+    address?: string;
+  };
+  recipient: {
+    name: string;
+    nit: string;
+    city?: string;
+    email?: string;
+  };
+  issueDate: string;
+  items: WithholdingCertificateItem[];
+  totalBase: number;
+  totalWithheld: number;
+  legalNote: string;
+  signerName: string;
+  signerRole: string;
+}
+
+// ─── 3. Periodos Fiscales Contables ──────────────────────────────────────────
+export interface FiscalPeriodRecord {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: "OPEN" | "CLOSING" | "CLOSED";
+  closedAt?: string | null;
+  closedByName?: string | null;
+  vouchersCount?: number;
+}
+
+// ─── 4. Diferencia en Cambio Multi-Moneda (NIIF 21) ──────────────────────────
+export interface FxAccountEvaluation {
+  accountId: string;
+  accountName: string;
+  currency: string;
+  foreignBalanceUSD: number;
+  bookBalanceCOP: number;
+  revaluedBalanceCOP: number;
+  differenceCOP: number;
+  type: "GAIN" | "LOSS";
+}
+
+export interface FxRevaluationReport {
+  asOfDate: string;
+  currentTrm: number;
+  baseCurrency: string;
+  accounts: FxAccountEvaluation[];
+  totalDifferenceCOP: number;
+  gainAccountCode: string;
+  lossAccountCode: string;
+  suggestedVoucherType: "CC";
+}
+
+// ─── 5. Estados Financieros Oficiales con Firmas ────────────────────────────
+export interface ClassifiedBalanceItem {
+  code: string;
+  name: string;
+  balance: number;
+}
+
+export interface OfficialFinancialStatements {
+  company: {
+    name: string;
+    nit: string;
+    city: string;
+    address?: string;
+  };
+  period: string;
+  asOfDate: string;
+  balanceSheet: {
+    currentAssets: ClassifiedBalanceItem[];
+    totalCurrentAssets: number;
+    nonCurrentAssets: ClassifiedBalanceItem[];
+    totalNonCurrentAssets: number;
+    totalAssets: number;
+    currentLiabilities: ClassifiedBalanceItem[];
+    totalCurrentLiabilities: number;
+    longTermLiabilities: ClassifiedBalanceItem[];
+    totalLongTermLiabilities: number;
+    totalLiabilities: number;
+    equity: ClassifiedBalanceItem[];
+    totalEquity: number;
+    totalLiabilitiesAndEquity: number;
+    isBalanced: boolean;
+  };
+  incomeStatement: {
+    operatingRevenue: number;
+    costOfSales: number;
+    grossProfit: number;
+    operatingExpenses: number;
+    operatingIncome: number;
+    financialExpenses: number;
+    incomeBeforeTax: number;
+    incomeTax: number;
+    netProfit: number;
+  };
+  signatures: {
+    legalRepresentative: {
+      name: string;
+      idNumber: string;
+      title: string;
+    };
+    accountant: {
+      name: string;
+      idNumber: string;
+      professionalCard: string;
+      title: string;
+    };
+    statutoryAuditor?: {
+      name: string;
+      idNumber: string;
+      professionalCard: string;
+      title: string;
+    };
+  };
+}
+

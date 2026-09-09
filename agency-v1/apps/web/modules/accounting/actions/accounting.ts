@@ -11,3 +11,8 @@ export * from './bulk-import.actions';
 export * from './ai-assistant.actions';
 export * from './audit.actions';
 export * from './utils.actions';
+export * from './puc.actions';
+export * from './certificates.actions';
+export * from './fiscal-period.actions';
+export * from './fx-revaluation.actions';
+export * from './financial-statements.actions';
