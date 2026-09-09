@@ -6,7 +6,7 @@ import LegalAccordion, { LegalSection } from "@/components/LegalAccordion";
 export const metadata: Metadata = {
   title: "Política de Cookies | NEOGESTIÓN",
   description:
-    "Política de Cookies de Consultoría de Colombia Ltda. y NeoGestión conforme a la Ley 1581 de 2012 y directrices de la SIC.",
+    "Política de Cookies de Consultoría de Colombia S.A.S. y NeoGestión conforme a la Ley 1581 de 2012 y directrices de la SIC.",
 };
 
 export default function CookiesPage() {
@@ -17,7 +17,7 @@ export default function CookiesPage() {
       content: (
         <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
           <p>
-            En <strong>Consultoría de Colombia Ltda.</strong>, utilizamos cookies propias y de terceros para mejorar su experiencia de navegación y ofrecerle nuestros servicios y herramientas de gestión de manera más eficiente.
+            En <strong>Consultoría de Colombia S.A.S.</strong>, utilizamos cookies propias y de terceros para mejorar su experiencia de navegación y ofrecerle nuestros servicios y herramientas de gestión de manera más eficiente.
           </p>
           <p>
             Esta Política de Cookies le explica detalladamente qué son las cookies, qué tipos utilizamos, con qué finalidad y cómo puede gestionarlas o deshabilitarlas, en cumplimiento de la <strong>Ley 1581 de 2012</strong> y las directrices emitidas por la <strong>Superintendencia de Industria y Comercio (SIC)</strong>.

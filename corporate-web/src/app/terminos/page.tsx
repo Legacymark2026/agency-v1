@@ -6,7 +6,7 @@ import LegalAccordion, { LegalSection } from "@/components/LegalAccordion";
 export const metadata: Metadata = {
   title: "Términos y Condiciones de Uso | NEOGESTIÓN",
   description:
-    "Términos y condiciones legales para el acceso y uso de los servicios de Consultoría de Colombia Ltda. y la plataforma NeoGestión.",
+    "Términos y condiciones legales para el acceso y uso de los servicios de Consultoría de Colombia S.A.S. y la plataforma NeoGestión.",
 };
 
 export default function TerminosPage() {
@@ -17,7 +17,7 @@ export default function TerminosPage() {
       content: (
         <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
           <p>
-            Por favor, lea detenidamente los siguientes Términos y Condiciones antes de utilizar el sitio web y los servicios de <strong>Consultoría de Colombia Ltda.</strong> y su plataforma <strong>NeoGestión</strong>.
+            Por favor, lea detenidamente los siguientes Términos y Condiciones antes de utilizar el sitio web y los servicios de <strong>Consultoría de Colombia S.A.S.</strong> y su plataforma <strong>NeoGestión</strong>.
           </p>
           <p>
             Al acceder a nuestro sitio, navegar en él o utilizar nuestros servicios, usted (en adelante, &ldquo;el Usuario&rdquo;) acepta plenamente y queda vinculado por estos términos. Si no está de acuerdo con algún punto, le rogamos abstenerse de utilizar nuestros servicios y soluciones tecnológicas.
@@ -31,7 +31,7 @@ export default function TerminosPage() {
       content: (
         <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
           <p>
-            <strong>Consultoría de Colombia Ltda.</strong> es una empresa de consultoría y desarrollo de software que ofrece, a través de <strong>NeoGestión</strong>, un sistema interactivo y colaborativo basado en Tecnologías de la Información y Comunicación (TIC&rsquo;s) para la gestión administrativa, el control de procesos y el cumplimiento de normativas nacionales e internacionales (sistemas ISO, SG-SST, HSEQ, etc.).
+            <strong>Consultoría de Colombia S.A.S.</strong> es una empresa de consultoría y desarrollo de software que ofrece, a través de <strong>NeoGestión</strong>, un sistema interactivo y colaborativo basado en Tecnologías de la Información y Comunicación (TIC&rsquo;s) para la gestión administrativa, el control de procesos y el cumplimiento de normativas nacionales e internacionales (sistemas ISO, SG-SST, HSEQ, etc.).
           </p>
           <p>
             Adicionalmente, ofrecemos servicios profesionales especializados de consultoría empresarial, programas de capacitación y formación tecnológica, así como asistencia técnica y mejoramiento continuo.
@@ -82,7 +82,7 @@ export default function TerminosPage() {
       content: (
         <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
           <p>
-            Todos los derechos de propiedad intelectual e industrial sobre <strong>NeoGestión</strong>, su código fuente, arquitectura técnica, bases de datos, diseños, diagramas metodológicos, interfaces de usuario y contenidos del sitio web (excepto aquellos aportados directamente por los Usuarios en sus respectivas cuentas) pertenecen de manera exclusiva a <strong>Consultoría de Colombia Ltda.</strong> o a sus legítimos licenciantes.
+            Todos los derechos de propiedad intelectual e industrial sobre <strong>NeoGestión</strong>, su código fuente, arquitectura técnica, bases de datos, diseños, diagramas metodológicos, interfaces de usuario y contenidos del sitio web (excepto aquellos aportados directamente por los Usuarios en sus respectivas cuentas) pertenecen de manera exclusiva a <strong>Consultoría de Colombia S.A.S.</strong> o a sus legítimos licenciantes.
           </p>
           <p>
             Ningún contenido del sitio ni elemento del software puede ser copiado, modificado, reproducido, publicado, cedido o distribuido sin la previa y expresa autorización escrita de la Compañía.
@@ -96,7 +96,7 @@ export default function TerminosPage() {
       content: (
         <div className="space-y-3 text-slate-700 text-sm leading-relaxed">
           <p>
-            <strong>Consultoría de Colombia Ltda.</strong> actúa como asesor, facilitador y proveedor tecnológico de herramientas de gestión. No nos hacemos responsables por las decisiones de negocio, financieras o laborales que el Usuario adopte basándose en la información o métricas proporcionadas por NeoGestión.
+            <strong>Consultoría de Colombia S.A.S.</strong> actúa como asesor, facilitador y proveedor tecnológico de herramientas de gestión. No nos hacemos responsables por las decisiones de negocio, financieras o laborales que el Usuario adopte basándose en la información o métricas proporcionadas por NeoGestión.
           </p>
           <p>
             La Compañía tampoco será responsable por daños indirectos, incidentales, especiales o consecuentes derivados del uso o imposibilidad de uso del servicio, incluyendo la pérdida de datos o beneficios esperados, siempre que estos hechos no sean atribuibles de forma directa a una negligencia grave o dolo comprobado de nuestra parte.

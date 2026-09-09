@@ -17,7 +17,7 @@ export default function PrivacidadPage() {
       content: (
         <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
           <p>
-            En <strong>Consultoría de Colombia Ltda.</strong>, sociedad identificada con NIT y con domicilio principal en la <strong>Calle 18 # 22C - 40, Girón - Santander, Colombia</strong> (en adelante, &ldquo;la Compañía&rdquo; o &ldquo;Consultoría de Colombia&rdquo;), nos comprometemos a proteger su privacidad y a garantizar la seguridad de sus datos personales.
+            En <strong>Consultoría de Colombia S.A.S.</strong>, sociedad identificada con NIT y con domicilio principal en la <strong>Calle 18 # 22C - 40, Girón - Santander, Colombia</strong> (en adelante, &ldquo;la Compañía&rdquo; o &ldquo;Consultoría de Colombia&rdquo;), nos comprometemos a proteger su privacidad y a garantizar la seguridad de sus datos personales.
           </p>
           <p>
             Esta Política describe cómo recopilamos, usamos, almacenamos y protegemos su información personal cuando interactúa con nosotros y con nuestra plataforma <strong>NeoGestión</strong>, en estricto cumplimiento de la <strong>Ley Estatutaria 1581 de 2012</strong>, el <strong>Decreto 1377 de 2013</strong> y demás normativa concordante de la República de Colombia.
@@ -31,7 +31,7 @@ export default function PrivacidadPage() {
       content: (
         <div className="space-y-4 text-slate-700 text-sm leading-relaxed">
           <p>
-            <strong>Consultoría de Colombia Ltda.</strong> es el Responsable del Tratamiento de sus datos personales. Para cualquier consulta, solicitud o ejercicio de sus derechos, puede contactar a nuestro Oficial de Protección de Datos a través de los siguientes canales oficiales:
+            <strong>Consultoría de Colombia S.A.S.</strong> es el Responsable del Tratamiento de sus datos personales. Para cualquier consulta, solicitud o ejercicio de sus derechos, puede contactar a nuestro Oficial de Protección de Datos a través de los siguientes canales oficiales:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col items-start gap-2">

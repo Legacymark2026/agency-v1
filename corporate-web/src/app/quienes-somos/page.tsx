@@ -343,7 +343,7 @@ export default function QuienesSomosPage() {
                 Más que Software: Servicios y Modelos de Negocio Flexibles
               </h3>
               <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-                Además del software, <strong>Consultoría de Colombia Ltda.</strong> ofrece servicios de <strong>consultoría, capacitación y asistencia técnica</strong>, con modelos de negocio flexibles diseñados para la realidad de cada organización:
+                Además del software, <strong>Consultoría de Colombia S.A.S.</strong> ofrece servicios de <strong>consultoría, capacitación y asistencia técnica</strong>, con modelos de negocio flexibles diseñados para la realidad de cada organización:
               </p>
             </div>
 
