@@ -24,8 +24,10 @@ export function GranularCookieConsent() {
 
     useEffect(() => {
         const consent = safeStorage.getItem("cookie_consent_v2");
-        if (!consent) {
-            setTimeout(() => setIsVisible(true), 1500);
+        const legacy = safeStorage.getItem("cookie_consent");
+        if (!consent && !legacy) {
+            const timer = setTimeout(() => setIsVisible(true), 1200);
+            return () => clearTimeout(timer);
         }
     }, []);
 
@@ -52,44 +54,69 @@ export function GranularCookieConsent() {
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 100, opacity: 0 }}
-                    transition={{ type: "spring", damping: 22, stiffness: 120 }}
-                    className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[460px] z-[1000] p-6 bg-slate-900 border border-slate-800 shadow-2xl rounded-2xl text-white backdrop-blur-xl"
+                    initial={{ y: 80, opacity: 0, scale: 0.98 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 80, opacity: 0, scale: 0.98 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[480px] z-[9999] p-6 bg-slate-950/95 border border-slate-800 shadow-2xl rounded-2xl text-white backdrop-blur-xl ring-1 ring-white/10"
                 >
                     {!showSettings ? (
                         <div>
                             <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
-                                        <Cookie size={18} />
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shadow-inner">
+                                        <Cookie size={20} />
                                     </div>
-                                    <h3 className="text-base font-bold text-white">Privacidad & Cookies (ISO 27701)</h3>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-white tracking-wide">
+                                            Privacidad y Gestión de Cookies
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 font-medium">
+                                            Cumplimiento Ley 1581 de 2012 & ISO 27701
+                                        </p>
+                                    </div>
                                 </div>
-                                <button onClick={handleRejectNonEssential} className="text-slate-400 hover:text-white p-1">
+                                <button 
+                                    onClick={handleRejectNonEssential} 
+                                    className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800/60 transition-colors"
+                                    aria-label="Rechazar cookies opcionales"
+                                >
                                     <X size={18} />
                                 </button>
                             </div>
 
-                            <p className="text-xs text-slate-300 mb-5 leading-relaxed">
-                                Usamos cookies técnicas y analíticas para optimizar el rendimiento y personalizar tu experiencia conforme a ISO 27701 y GDPR. Puedes gestionar tus preferencias granulares en cualquier momento.
+                            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                                Utilizamos cookies propias y de terceros para garantizar la operatividad de la plataforma, analizar el tráfico y personalizar contenidos. Puedes aceptar todas, rechazarlas o configurar tus preferencias. Conoce más en nuestra{" "}
+                                <Link href="/politica-cookies" className="text-emerald-400 hover:underline font-medium">
+                                    Política de Cookies
+                                </Link>{" "}
+                                y{" "}
+                                <Link href="/politica-privacidad" className="text-emerald-400 hover:underline font-medium">
+                                    Aviso de Privacidad
+                                </Link>.
                             </p>
 
-                            <div className="flex flex-col sm:flex-row items-center gap-2">
+                            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-1">
                                 <Button 
                                     onClick={handleAcceptAll} 
-                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 h-auto rounded-xl"
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 h-10 rounded-xl shadow-lg shadow-emerald-950/40 transition-all active:scale-[0.98]"
                                 >
                                     Aceptar Todas
                                 </Button>
                                 <Button 
+                                    onClick={handleRejectNonEssential}
+                                    variant="outline" 
+                                    className="flex-1 bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300 hover:text-white font-medium text-xs py-2.5 h-10 rounded-xl transition-all active:scale-[0.98]"
+                                >
+                                    Solo Necesarias
+                                </Button>
+                                <Button 
                                     onClick={() => setShowSettings(true)}
                                     variant="outline" 
-                                    className="w-full bg-slate-950 hover:bg-slate-800 border-slate-700 text-slate-300 font-semibold text-xs py-2.5 h-auto rounded-xl flex items-center justify-center gap-1.5"
+                                    className="w-auto px-3 bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-400 hover:text-white font-medium text-xs py-2.5 h-10 rounded-xl transition-all"
+                                    title="Personalizar cookies"
                                 >
-                                    <Settings size={14} />
-                                    <span>Configurar</span>
+                                    <Settings size={15} />
                                 </Button>
                             </div>
                         </div>
@@ -97,28 +124,33 @@ export function GranularCookieConsent() {
                         <div className="space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <ShieldCheck size={16} className="text-emerald-400" />
-                                    Configuración Granular de Cookies
+                                    <ShieldCheck size={18} className="text-emerald-400" />
+                                    Preferencias de Cookies
                                 </h4>
-                                <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-white">
+                                <button 
+                                    onClick={() => setShowSettings(false)} 
+                                    className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                                >
                                     <X size={16} />
                                 </button>
                             </div>
 
                             {/* Preference Items */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80">
-                                    <div>
-                                        <p className="text-xs font-bold text-white">Esenciales (Técnicas)</p>
-                                        <p className="text-[10px] text-slate-400">Requeridas para autenticación y seguridad.</p>
+                            <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                                <div className="flex items-center justify-between p-3 bg-slate-900/90 rounded-xl border border-slate-800/80">
+                                    <div className="pr-3">
+                                        <p className="text-xs font-semibold text-white">Cookies Técnicas / Esenciales</p>
+                                        <p className="text-[11px] text-slate-400 leading-snug">Autenticación segura de sesión, balanceo y protección CSRF.</p>
                                     </div>
-                                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Siempre Activas</span>
+                                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
+                                        Obligatorias
+                                    </span>
                                 </div>
 
-                                <div className="flex items-center justify-between p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80">
-                                    <div>
-                                        <p className="text-xs font-bold text-white">Analíticas & Rendimiento</p>
-                                        <p className="text-[10px] text-slate-400">Medición anónima de uso y métricas ISO 9001.</p>
+                                <div className="flex items-center justify-between p-3 bg-slate-900/90 rounded-xl border border-slate-800/80">
+                                    <div className="pr-3">
+                                        <p className="text-xs font-semibold text-white">Analíticas y Rendimiento</p>
+                                        <p className="text-[11px] text-slate-400 leading-snug">Telemetría anónima para optimización de tiempos de respuesta y Core Web Vitals.</p>
                                     </div>
                                     <input 
                                         type="checkbox" 
@@ -128,10 +160,10 @@ export function GranularCookieConsent() {
                                     />
                                 </div>
 
-                                <div className="flex items-center justify-between p-2.5 bg-slate-950/80 rounded-xl border border-slate-800/80">
-                                    <div>
-                                        <p className="text-xs font-bold text-white">Marketing & Personalización</p>
-                                        <p className="text-[10px] text-slate-400">Publicidad relevante y atribución CRM.</p>
+                                <div className="flex items-center justify-between p-3 bg-slate-900/90 rounded-xl border border-slate-800/80">
+                                    <div className="pr-3">
+                                        <p className="text-xs font-semibold text-white">Marketing y Atribución</p>
+                                        <p className="text-[11px] text-slate-400 leading-snug">Medición de conversiones de campañas en Meta y Google Ads.</p>
                                     </div>
                                     <input 
                                         type="checkbox" 
@@ -142,13 +174,22 @@ export function GranularCookieConsent() {
                                 </div>
                             </div>
 
-                            <Button 
-                                onClick={() => savePreferences(preferences)} 
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 h-auto rounded-xl flex items-center justify-center gap-1.5"
-                            >
-                                <Check size={14} />
-                                Guardar Preferencias
-                            </Button>
+                            <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                                <Button 
+                                    onClick={() => savePreferences(preferences)} 
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 h-10 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-950/40"
+                                >
+                                    <Check size={14} />
+                                    Guardar Configuración
+                                </Button>
+                                <Button 
+                                    onClick={handleAcceptAll}
+                                    variant="outline"
+                                    className="bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300 text-xs py-2.5 h-10 rounded-xl"
+                                >
+                                    Aceptar Todas
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </motion.div>

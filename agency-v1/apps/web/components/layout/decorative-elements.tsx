@@ -7,7 +7,7 @@ import { CommandMenu } from "@/components/ui/command-menu";
 import { SocialShare } from "@/components/ui/social-share";
 import { ChatWidget } from "@/components/chat/chat-widget";
 import { BackToTop } from "@/components/ui/back-to-top";
-import { CookieConsent } from "@/components/ui/cookie-consent";
+import { GranularCookieConsent } from "@/components/ui/granular-cookie-consent";
 import { siteConfig } from "@/lib/site-config";
 
 /**
@@ -24,7 +24,7 @@ export function DecorativeElements({ locale }: { locale: string }) {
             <CommandMenu />
             <SocialShare url={siteConfig.url} title={siteConfig.description} />
             <BackToTop />
-            <CookieConsent />
+            <GranularCookieConsent />
             <ChatWidget />
         </>
     );
