@@ -140,11 +140,8 @@ export async function setAdminSession(email: string) {
   const cookieStore = await cookies();
   const token = await createSignedToken({ email });
 
-  // Si se accede directamente por IP vía HTTP (sin SSL/TLS), los navegadores descartan cookies con secure: true.
-  // Solo activar secure si la URL del sitio es HTTPS, si COOKIE_SECURE=true, o si la cabecera x-forwarded-proto es https.
-  const isHttps =
-    process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
-    process.env.COOKIE_SECURE === "true";
+  // Solo activar secure si COOKIE_SECURE está explícitamente habilitado (en despliegue HTTPS con dominio)
+  const isHttps = process.env.COOKIE_SECURE === "true";
 
   // Flags de seguridad de cookies
   cookieStore.set(ADMIN_COOKIE_NAME, token, {

@@ -73,11 +73,14 @@ export async function POST(req: NextRequest) {
     await setAdminSession(user.email);
 
     const forwardedProto = req.headers.get("x-forwarded-proto");
-    const isHttps =
+    const host = req.headers.get("host") || "";
+    // Si se accede por IP directa (ej: 187.77.195.9) y protocolo HTTP, NUNCA poner secure: true porque el navegador la rechaza
+    const isDirectIp = /^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(host);
+    const isHttps = !isDirectIp && (
       forwardedProto === "https" ||
       req.nextUrl.protocol === "https:" ||
-      process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ||
-      process.env.COOKIE_SECURE === "true";
+      process.env.COOKIE_SECURE === "true"
+    );
 
     const response = NextResponse.json({
       success: true,
