@@ -8,12 +8,12 @@ async function main() {
 
   // 1. Crear Usuario Administrador
   const adminEmail = process.env.ADMIN_INITIAL_EMAIL || "admin@neogestion.com";
-  const rawPassword = process.env.ADMIN_INITIAL_PASSWORD || "NeoGestion_CorpSec!2026";
+  const rawPassword = process.env.ADMIN_INITIAL_PASSWORD || "NeoG#92m$Vz!8xQ@2026*K7p";
   const passwordHash = await bcrypt.hash(rawPassword, 12);
 
   const admin = await prisma.adminUser.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: { passwordHash },
     create: {
       email: adminEmail,
       name: "Dirección NEOGESTIÓN",
