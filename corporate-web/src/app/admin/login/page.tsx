@@ -21,8 +21,8 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (e?: React.SyntheticEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError("");
 
@@ -107,24 +107,13 @@ export default function AdminLoginPage() {
             </div>
           )}
 
-          <form 
-            onSubmit={handleLogin} 
+          <div 
             className="space-y-4"
-            autoComplete="off"
-            noValidate
+            data-form-type="other"
           >
-            {/* CAMPOS SEÑUELO (Honeypot/Dummy): Absorben el autorrelleno forzado del navegador */}
-            <div 
-              style={{ position: "absolute", top: "-9999px", left: "-9999px", opacity: 0, height: 0, width: 0, pointerEvents: "none" }} 
-              aria-hidden="true"
-            >
-              <input type="text" name="prevent_autofill_user" tabIndex={-1} autoComplete="off" defaultValue="" />
-              <input type="password" name="prevent_autofill_pwd" tabIndex={-1} autoComplete="off" defaultValue="" />
-            </div>
-
             <div>
               <label 
-                htmlFor="admin-username-field" 
+                htmlFor="neo_portal_uid" 
                 className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
               >
                 Correo Electrónico
@@ -132,16 +121,22 @@ export default function AdminLoginPage() {
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
                 <input
-                  id="admin-username-field"
-                  name="user_login_auth"
-                  type="email"
-                  required
-                  autoComplete="new-password"
+                  id="neo_portal_uid"
+                  name="neo_sec_u"
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   spellCheck={false}
                   value={email}
-                  readOnly
-                  onFocus={(e) => e.target.removeAttribute("readonly")}
                   onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleLogin(e);
+                    }
+                  }}
                   className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all"
                   placeholder="ejemplo@empresa.com"
                 />
@@ -150,7 +145,7 @@ export default function AdminLoginPage() {
 
             <div>
               <label 
-                htmlFor="admin-password-field" 
+                htmlFor="neo_portal_key" 
                 className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
               >
                 Contraseña
@@ -158,16 +153,25 @@ export default function AdminLoginPage() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
                 <input
-                  id="admin-password-field"
-                  name="pass_login_auth"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  autoComplete="new-password"
+                  id="neo_portal_key"
+                  name="neo_sec_k"
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
                   value={password}
-                  readOnly
-                  onFocus={(e) => e.target.removeAttribute("readonly")}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleLogin(e);
+                    }
+                  }}
+                  style={{
+                    WebkitTextSecurity: showPassword ? "none" : "disc",
+                  } as React.CSSProperties}
+                  className="w-full pl-11 pr-12 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-[#B08A1A] focus:bg-white transition-all font-mono"
                   placeholder="Ingrese su contraseña"
                 />
                 <button
@@ -183,9 +187,10 @@ export default function AdminLoginPage() {
             </div>
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleLogin}
               disabled={loading}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-md border border-[#B08A1A]/40 disabled:opacity-50"
+              className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#01426F] hover:bg-slate-900 text-[#D4AF37] font-bold text-sm transition-all shadow-md border border-[#B08A1A]/40 disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -199,7 +204,7 @@ export default function AdminLoginPage() {
                 </>
               )}
             </button>
-          </form>
+          </div>
 
           <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
