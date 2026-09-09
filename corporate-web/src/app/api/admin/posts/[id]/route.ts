@@ -50,6 +50,11 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
       readTime,
     } = data;
 
+    let cleanImageUrl = imageUrl ? String(imageUrl).trim() : undefined;
+    if (cleanImageUrl && (!/^https?:\/\//i.test(cleanImageUrl) || /^(https?:\/\/)?(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/i.test(cleanImageUrl))) {
+      cleanImageUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80";
+    }
+
     const updated = await prisma.post.update({
       where: { id },
       data: {
@@ -60,7 +65,7 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
         category,
         authorName,
         authorRole,
-        imageUrl,
+        ...(cleanImageUrl ? { imageUrl: cleanImageUrl } : {}),
         published: Boolean(published),
         readTime,
       },

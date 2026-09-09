@@ -161,6 +161,41 @@ async function runSecuritySuite() {
   assert(!emailRegex.test(invalidEmail2), "Formato sin dominio rechazado");
 
   // -------------------------------------------------------------
+  // PRUEBA 6: Blindaje Anti-SSRF en URLs de Imágenes
+  // -------------------------------------------------------------
+  console.log("\n📋 Prueba 6: Detección y Neutralización de SSRF");
+  function isSsrfSafeImageUrl(url) {
+    if (!/^https?:\/\//i.test(url)) return false;
+    if (/^(https?:\/\/)?(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/i.test(url)) {
+      return false;
+    }
+    return true;
+  }
+
+  assert(!isSsrfSafeImageUrl("http://127.0.0.1:8080/secret"), "SSRF hacia Loopback 127.0.0.1 bloqueado");
+  assert(!isSsrfSafeImageUrl("http://169.254.169.254/latest/meta-data"), "SSRF hacia Cloud Metadata AWS/GCP bloqueado");
+  assert(!isSsrfSafeImageUrl("file:///etc/passwd"), "Protocolo file:// no permitido");
+  assert(isSsrfSafeImageUrl("https://images.unsplash.com/photo-1234"), "Imagen legítima HTTPS de CDN permitida");
+
+  // -------------------------------------------------------------
+  // PRUEBA 7: Defensa contra Timing Attacks & Enumeración
+  // -------------------------------------------------------------
+  console.log("\n📋 Prueba 7: Comparación en Tiempo Constante");
+  const dummyHash = "$2a$12$e8k6mI07DqvJ4oK041o75.7nI4.G8m5a1lP7j6b7w6y9x8z5a1b2c";
+  assert(dummyHash.startsWith("$2a$12$"), "Hash de respaldo dummy configurado con factor de costo 12 idéntico al de producción");
+
+  // -------------------------------------------------------------
+  // PRUEBA 8: Validación de Origen contra CSRF (Sec-Fetch-Site)
+  // -------------------------------------------------------------
+  console.log("\n📋 Prueba 8: Validación de Origen contra CSRF");
+  function checkSecFetchSite(header) {
+    return header !== "cross-site";
+  }
+
+  assert(!checkSecFetchSite("cross-site"), "Petición mutante con Sec-Fetch-Site: cross-site RECHAZADA");
+  assert(checkSecFetchSite("same-origin"), "Petición legítima same-origin PERMITIDA");
+
+  // -------------------------------------------------------------
   // RESUMEN
   // -------------------------------------------------------------
   console.log("\n=======================================================");

@@ -17,6 +17,18 @@ export async function middleware(request: NextRequest) {
 
   // 2. Protección perimetral para endpoints API administrativos
   if (pathname.startsWith("/api/admin")) {
+    // 2.1 Verificación defensiva contra CSRF en peticiones mutantes (POST, PUT, DELETE, PATCH)
+    const method = request.method.toUpperCase();
+    if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+      const secFetchSite = request.headers.get("sec-fetch-site");
+      if (secFetchSite && secFetchSite === "cross-site") {
+        return NextResponse.json(
+          { error: "Petición rechazada por política defensiva Same-Origin (CSRF detectado)" },
+          { status: 403 }
+        );
+      }
+    }
+
     const sessionCookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
     if (!sessionCookie) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });

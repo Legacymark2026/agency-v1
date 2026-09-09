@@ -1,0 +1,29 @@
+# Robots.txt Defensivo para NEOGESTIÓN
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /api/admin/
+Disallow: /cookies
+Allow: /
+Allow: /blog
+Allow: /servicios
+Allow: /quienes-somos
+Allow: /contacto
+
+# Bloquear crawlers y raspadores de IA no autorizados
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+Sitemap: https://neogestion.software/sitemap.xml

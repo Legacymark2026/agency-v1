@@ -1,0 +1,8 @@
+# RFC 9116 - The Security.txt File for NEOGESTIÓN
+Contact: mailto:seguridad@neogestion.co
+Contact: https://neogestion.software/contacto
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: es, en
+Canonical: https://neogestion.software/.well-known/security.txt
+Policy: https://neogestion.software/privacidad
+Acknowledgments: https://neogestion.software/quienes-somos

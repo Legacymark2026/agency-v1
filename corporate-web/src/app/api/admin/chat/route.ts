@@ -47,12 +47,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
     }
 
-    // Crear mensaje del administrador
+    // Crear mensaje del administrador sanitizado
+    const safeText = String(text).trim().replace(/[<>]/g, "").slice(0, 4000);
+
     const msg = await prisma.chatMessage.create({
       data: {
         conversationId,
         sender: "admin",
-        text: text.trim(),
+        text: safeText,
       },
     });
 

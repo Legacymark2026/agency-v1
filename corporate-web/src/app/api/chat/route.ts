@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "El mensaje no puede estar vacío" }, { status: 400 });
     }
 
-    // Límites estrictos de longitud contra ataques de denegación de servicio en base de datos
-    const safeText = String(text).trim().slice(0, 2000);
-    const safeName = visitorName ? String(visitorName).trim().slice(0, 100) : "Visitante Directivo";
-    const safeContact = visitorContact ? String(visitorContact).trim().slice(0, 100) : null;
+    // Límites estrictos de longitud y sanitización anti-XSS para proteger el panel directivo
+    const safeText = String(text).trim().replace(/[<>]/g, "").slice(0, 2000);
+    const safeName = visitorName ? String(visitorName).trim().replace(/[<>]/g, "").slice(0, 100) : "Visitante Directivo";
+    const safeContact = visitorContact ? String(visitorContact).trim().replace(/[<>]/g, "").slice(0, 100) : null;
 
     let convId = conversationId && typeof conversationId === "string" ? conversationId.slice(0, 50) : null;
 

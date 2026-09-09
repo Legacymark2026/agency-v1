@@ -62,6 +62,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validación defensiva anti-SSRF en imageUrl
+    let cleanImageUrl = String(imageUrl).trim();
+    if (!/^https?:\/\//i.test(cleanImageUrl) || /^(https?:\/\/)?(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|169\.254\.)/i.test(cleanImageUrl)) {
+      cleanImageUrl = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80";
+    }
+
     // Generar slug
     const baseSlug = (customSlug || title)
       .toLowerCase()
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
         category,
         authorName,
         authorRole,
-        imageUrl,
+        imageUrl: cleanImageUrl,
         published: Boolean(published),
         readTime,
       },

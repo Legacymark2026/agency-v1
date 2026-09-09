@@ -47,21 +47,17 @@ export async function POST(req: NextRequest) {
 
     const cleanEmail = String(email).toLowerCase().trim();
 
-    // Consulta estricta contra base de datos - Sin backdoors ni claves fijas
+    // Hash de respaldo para mantener tiempo constante contra ataques de temporización (Timing Attacks)
+    const DUMMY_HASH = "$2a$12$e8k6mI07DqvJ4oK041o75.7nI4.G8m5a1lP7j6b7w6y9x8z5a1b2c";
+
     const user = await prisma.adminUser.findUnique({
       where: { email: cleanEmail },
     });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Credenciales inválidas" },
-        { status: 401 }
-      );
-    }
+    const targetHash = user ? user.passwordHash : DUMMY_HASH;
+    const valid = await bcrypt.compare(String(password), targetHash);
 
-    const valid = await bcrypt.compare(String(password), user.passwordHash);
-
-    if (!valid) {
+    if (!user || !valid) {
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 }
