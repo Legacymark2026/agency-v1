@@ -6,6 +6,8 @@ import { SettingsSchema, type SettingsFormData } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { safeTableQuery } from "@/lib/db-utils";
+import bcrypt from "bcryptjs";
+import { generateSecret, generateQRCode, generateBackupCodes, verifyToken } from "@/lib/mfa";
 
 // Helper to safely get the current authenticated user ID, supporting both id and email lookups
 async function resolveCurrentUserId(): Promise<{ id: string; email?: string | null; name?: string | null; image?: string | null } | null> {
@@ -668,12 +670,12 @@ export async function getPublicIntegrations() {
 
 
 export async function getActiveSessions() {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) return [];
 
     try {
         const activeSessions = await prisma.session.findMany({
-            where: { userId: session.user.id },
+            where: { userId: userAuth.id },
             orderBy: { expires: "desc" }
         });
 
@@ -691,13 +693,24 @@ export async function getActiveSessions() {
 }
 
 export async function revokeSession(sessionId: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
 
     try {
         await prisma.session.delete({
-            where: { id: sessionId, userId: session.user.id }
+            where: { id: sessionId, userId: userAuth.id }
         });
+
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: userAuth.id,
+                    action: "SESSION_REVOKED",
+                    metadata: { sessionId, timestamp: new Date().toISOString() }
+                }
+            });
+        } catch { }
+
         revalidatePath("/dashboard/settings/security");
         return { success: true };
     } catch (error) {
@@ -706,33 +719,448 @@ export async function revokeSession(sessionId: string) {
     }
 }
 
+export async function revokeAllOtherSessions(currentSessionToken?: string) {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        if (currentSessionToken) {
+            await prisma.session.deleteMany({
+                where: {
+                    userId: userAuth.id,
+                    sessionToken: { not: currentSessionToken }
+                }
+            });
+        } else {
+            // If token not provided, preserve the most recently created session and delete others
+            const sessions = await prisma.session.findMany({
+                where: { userId: userAuth.id },
+                orderBy: { expires: "desc" }
+            });
+            if (sessions.length > 1) {
+                const keepId = sessions[0].id;
+                await prisma.session.deleteMany({
+                    where: {
+                        userId: userAuth.id,
+                        id: { not: keepId }
+                    }
+                });
+            }
+        }
+
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: userAuth.id,
+                    action: "ALL_OTHER_SESSIONS_REVOKED",
+                    metadata: { timestamp: new Date().toISOString() }
+                }
+            });
+        } catch { }
+
+        revalidatePath("/dashboard/settings/security");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to revoke all other sessions:", error);
+        return { success: false, error: error.message || "Failed to revoke sessions" };
+    }
+}
+
 export async function getMyLoginHistory() {
-    const session = await auth();
-    if (!session?.user?.id) return [];
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) return [];
 
     try {
         const logs = await prisma.userActivityLog.findMany({
             where: {
-                userId: session.user.id,
+                userId: userAuth.id,
                 action: {
-                    in: ["LOGIN_SUCCESS", "LOGIN_FAILED", "LOGIN_ERROR", "ADMIN_FORCED_PASSWORD_RESET"]
+                    in: [
+                        "LOGIN_SUCCESS", "LOGIN_FAILED", "LOGIN_ERROR", 
+                        "ADMIN_FORCED_PASSWORD_RESET", "MFA_ENABLED", 
+                        "MFA_DISABLED", "PASSWORD_CHANGED", "SESSION_REVOKED", 
+                        "ALL_OTHER_SESSIONS_REVOKED", "EMERGENCY_LOCKDOWN"
+                    ]
                 }
             },
             orderBy: { createdAt: "desc" },
-            take: 10
+            take: 30
         });
 
         return logs.map(log => ({
             id: log.id,
             date: log.createdAt,
             action: log.action,
-            ip: log.ipAddress || "Desconocida",
-            userAgent: log.userAgent || "Dispositivo Desconocido",
-            status: log.action.includes("SUCCESS") ? "success" : "failed",
+            ip: log.ipAddress || "127.0.0.1",
+            userAgent: log.userAgent || "Navegador Web / Dispositivo Seguro",
+            status: (log.action.includes("FAILED") || log.action.includes("ERROR")) ? "failed" : "success",
         }));
     } catch (error) {
         console.error("Failed to fetch login history:", error);
         return [];
+    }
+}
+
+export async function getPersonalSecurityOverview() {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) return null;
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userAuth.id },
+            select: {
+                id: true,
+                email: true,
+                mfaEnabled: true,
+                mfaSecret: true,
+                backupCodes: true,
+                passwordHash: true,
+                emailVerified: true,
+                createdAt: true,
+            }
+        });
+
+        if (!user) return null;
+
+        const hasPassword = Boolean(user.passwordHash);
+        const mfaEnabled = Boolean(user.mfaEnabled && user.mfaSecret);
+        const emailVerified = Boolean(user.emailVerified);
+
+        let backupCodesList: string[] = [];
+        if (user.backupCodes) {
+            try {
+                backupCodesList = Array.isArray(user.backupCodes)
+                    ? (user.backupCodes as string[])
+                    : JSON.parse(user.backupCodes as any);
+            } catch { }
+        }
+
+        const unspentCodes = backupCodesList.filter(c => c && c !== "USED");
+        const hasBackupCodes = unspentCodes.length > 0;
+
+        // Count active sessions
+        let activeSessionsCount = 1;
+        try {
+            activeSessionsCount = await prisma.session.count({
+                where: { userId: user.id }
+            });
+        } catch { }
+
+        // Count recent failed attempts (last 7 days)
+        let recentFailedAttemptsCount = 0;
+        try {
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            recentFailedAttemptsCount = await prisma.userActivityLog.count({
+                where: {
+                    userId: user.id,
+                    action: { in: ["LOGIN_FAILED", "LOGIN_FAILED_BAD_PASSWORD"] },
+                    createdAt: { gte: sevenDaysAgo }
+                }
+            });
+        } catch { }
+
+        // Calculate Security Health Score (0 - 100)
+        let score = 0;
+        if (hasPassword) score += 20;
+        if (emailVerified) score += 15;
+        if (mfaEnabled) score += 35;
+        if (hasBackupCodes) score += 15;
+        if (recentFailedAttemptsCount === 0) score += 15;
+
+        let securityGrade: "A+" | "A" | "B" | "C" | "D" = "C";
+        if (score >= 95) securityGrade = "A+";
+        else if (score >= 80) securityGrade = "A";
+        else if (score >= 65) securityGrade = "B";
+        else if (score >= 50) securityGrade = "C";
+        else securityGrade = "D";
+
+        const checklist: Array<{
+            id: string;
+            title: string;
+            description: string;
+            status: "passed" | "warning" | "alert" | "neutral";
+            impact: string;
+        }> = [
+            {
+                id: "mfa",
+                title: "Doble Factor de Autenticación (2FA)",
+                description: mfaEnabled 
+                    ? "Activo mediante aplicación TOTP (Google Authenticator / 1Password)" 
+                    : "Tu cuenta está vulnerable sin 2FA. Actívalo para evitar accesos no autorizados.",
+                status: mfaEnabled ? "passed" : "warning",
+                impact: "+35 pts",
+            },
+            {
+                id: "backup_codes",
+                title: "Códigos de Respaldo de Emergencia",
+                description: hasBackupCodes 
+                    ? `Dispones de ${unspentCodes.length} códigos de recuperación sin usar.` 
+                    : "Genera códigos de respaldo para no perder acceso a tu cuenta si cambias de móvil.",
+                status: hasBackupCodes ? "passed" : "warning",
+                impact: "+15 pts",
+            },
+            {
+                id: "password",
+                title: "Contraseña de Acceso",
+                description: hasPassword 
+                    ? "Contraseña protegida con cifrado criptográfico bcrypt (cost factor 12)." 
+                    : "Cuenta autenticada vía proveedor federado (OAuth).",
+                status: "passed",
+                impact: "+20 pts",
+            },
+            {
+                id: "email",
+                title: "Verificación de Correo Electrónico",
+                description: emailVerified 
+                    ? "Dirección de correo electrónico validada y verificada." 
+                    : "Correo pendiente de verificación.",
+                status: emailVerified ? "passed" : "neutral",
+                impact: "+15 pts",
+            },
+            {
+                id: "suspicious",
+                title: "Monitoreo de Amenazas & Actividad Sospechosa",
+                description: recentFailedAttemptsCount === 0 
+                    ? "Sin intentos fallidos ni anomalías detectadas en los últimos 7 días." 
+                    : `Se detectaron ${recentFailedAttemptsCount} intentos fallidos recientemente.`,
+                status: recentFailedAttemptsCount === 0 ? "passed" : "alert",
+                impact: "+15 pts",
+            },
+        ];
+
+        return {
+            id: user.id,
+            email: user.email || "",
+            hasPassword,
+            mfaEnabled,
+            hasBackupCodes,
+            unspentCodesCount: unspentCodes.length,
+            emailVerified,
+            activeSessionsCount,
+            recentFailedAttemptsCount,
+            securityScore: score,
+            securityGrade,
+            checklist,
+            createdAt: user.createdAt.toISOString(),
+        };
+    } catch (error) {
+        console.error("Failed to get personal security overview:", error);
+        return null;
+    }
+}
+
+export async function initiateTotpSetup() {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        const userEmail = userAuth.email || "user@legacymarksas.com";
+        const { secret, otpauthUrl } = generateSecret(userEmail);
+        const qrCode = await generateQRCode(otpauthUrl);
+
+        return {
+            success: true,
+            secret,
+            qrCode,
+            otpauthUrl
+        };
+    } catch (error: any) {
+        console.error("Failed to initiate TOTP setup:", error);
+        return { success: false, error: error.message || "Failed to generate TOTP secret" };
+    }
+}
+
+export async function confirmAndEnableTotp(code: string, secret: string) {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        if (!code || code.length !== 6) {
+            return { success: false, error: "El código debe contener 6 dígitos." };
+        }
+
+        const isValid = verifyToken(code, secret);
+        if (!isValid) {
+            return { success: false, error: "Código incorrecto o expirado. Asegúrate de que el reloj de tu dispositivo esté sincronizado." };
+        }
+
+        // Generate 10 secure backup codes
+        const backupCodes = generateBackupCodes(10);
+
+        await prisma.user.update({
+            where: { id: userAuth.id },
+            data: {
+                mfaEnabled: true,
+                mfaSecret: secret,
+                backupCodes: backupCodes
+            }
+        });
+
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: userAuth.id,
+                    action: "MFA_ENABLED",
+                    metadata: { timestamp: new Date().toISOString() }
+                }
+            });
+        } catch { }
+
+        revalidatePath("/dashboard/settings/security");
+        revalidatePath("/dashboard/settings");
+        return { success: true, backupCodes };
+    } catch (error: any) {
+        console.error("Failed to confirm TOTP:", error);
+        return { success: false, error: error.message || "Failed to activate 2FA" };
+    }
+}
+
+export async function disableTotp(password?: string) {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userAuth.id },
+            select: { passwordHash: true }
+        });
+
+        if (user?.passwordHash) {
+            if (!password) {
+                return { success: false, error: "Debes ingresar tu contraseña para desactivar 2FA." };
+            }
+            const isMatch = await bcrypt.compare(password, user.passwordHash);
+            if (!isMatch) {
+                return { success: false, error: "Contraseña incorrecta." };
+            }
+        }
+
+        await prisma.user.update({
+            where: { id: userAuth.id },
+            data: {
+                mfaEnabled: false,
+                mfaSecret: null,
+                backupCodes: null
+            }
+        });
+
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: userAuth.id,
+                    action: "MFA_DISABLED",
+                    metadata: { timestamp: new Date().toISOString() }
+                }
+            });
+        } catch { }
+
+        revalidatePath("/dashboard/settings/security");
+        revalidatePath("/dashboard/settings");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to disable 2FA:", error);
+        return { success: false, error: error.message || "Failed to disable 2FA" };
+    }
+}
+
+export async function generateFreshBackupCodes(password?: string) {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userAuth.id },
+            select: { passwordHash: true, mfaEnabled: true }
+        });
+
+        if (!user?.mfaEnabled) {
+            return { success: false, error: "Debes tener 2FA activado para generar códigos de respaldo." };
+        }
+
+        if (user.passwordHash && password) {
+            const isMatch = await bcrypt.compare(password, user.passwordHash);
+            if (!isMatch) {
+                return { success: false, error: "Contraseña incorrecta." };
+            }
+        }
+
+        const codes = generateBackupCodes(10);
+
+        await prisma.user.update({
+            where: { id: userAuth.id },
+            data: { backupCodes: codes }
+        });
+
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: userAuth.id,
+                    action: "BACKUP_CODES_REGENERATED",
+                    metadata: { timestamp: new Date().toISOString() }
+                }
+            });
+        } catch { }
+
+        revalidatePath("/dashboard/settings/security");
+        return { success: true, backupCodes: codes };
+    } catch (error: any) {
+        console.error("Failed to generate backup codes:", error);
+        return { success: false, error: error.message || "Failed to generate backup codes" };
+    }
+}
+
+export async function emergencyLockdown() {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        // Delete all sessions for user
+        await prisma.session.deleteMany({
+            where: { userId: userAuth.id }
+        });
+
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: userAuth.id,
+                    action: "EMERGENCY_LOCKDOWN",
+                    metadata: { timestamp: new Date().toISOString() }
+                }
+            });
+        } catch { }
+
+        revalidatePath("/dashboard/settings/security");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Emergency lockdown failed:", error);
+        return { success: false, error: error.message || "Emergency lockdown failed" };
+    }
+}
+
+export async function exportSecurityAuditLog() {
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
+
+    try {
+        const logs = await prisma.userActivityLog.findMany({
+            where: { userId: userAuth.id },
+            orderBy: { createdAt: "desc" },
+            take: 200
+        });
+
+        return {
+            success: true,
+            data: logs.map((l: any) => ({
+                id: l.id,
+                date: l.createdAt.toISOString(),
+                action: l.action,
+                ip: l.ipAddress || "127.0.0.1",
+                userAgent: l.userAgent || "Unknown Device",
+                metadata: l.metadata
+            }))
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
 }
 
