@@ -14,13 +14,29 @@ export async function getSettings() {
     try {
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            include: { profile: true }
+            include: {
+                profile: true,
+                companies: {
+                    include: { company: true }
+                },
+                accounts: {
+                    select: { provider: true }
+                }
+            }
         });
 
         if (!user) return null;
 
         // Parse preferences from JSON, ensuring type safety
-        let preferences: any = { theme: "system", language: "es", notifications: { email: true }, timezone: "America/Bogota", currency: "USD" };
+        let preferences: any = {
+            theme: "system",
+            language: "es",
+            notifications: { email: true },
+            timezone: "America/Bogota",
+            currency: "USD",
+            dateFormat: "DD/MM/YYYY",
+            timeFormat: "12h"
+        };
         if (user.profile?.preferences) {
             try {
                 const prefs = typeof user.profile.preferences === 'string'
@@ -34,7 +50,13 @@ export async function getSettings() {
         }
 
         // Parse social links
-        let socialLinks = { linkedin: "", github: "" };
+        let socialLinks = {
+            linkedin: "",
+            github: "",
+            twitter: "",
+            website: "",
+            calendarUrl: ""
+        };
         if (user.profile?.socialLinks) {
             try {
                 const links = typeof user.profile.socialLinks === 'string'
@@ -46,84 +68,80 @@ export async function getSettings() {
             } catch { }
         }
 
-        // Parse GA config
-        let gaConfig: { propertyId?: string; clientEmail?: string; privateKey?: string } = {};
-        if (user.profile && 'googleAnalytics' in user.profile) {
+        // Parse metadata
+        let metadata: any = {
+            coverImage: null,
+            country: "Colombia",
+            city: "Bogotá",
+            status: "ONLINE",
+            statusMessage: "",
+            pronouns: "",
+            skills: []
+        };
+        if (user.profile?.metadata) {
             try {
-                // @ts-ignore: Prisma JSON types can be tricky if client not regenerated
-                const ga = user.profile.googleAnalytics;
-                const parsedGa = typeof ga === 'string' ? JSON.parse(ga) : ga;
-                if (parsedGa) {
-                    gaConfig = { ...gaConfig, ...parsedGa };
+                const meta = typeof user.profile.metadata === 'string'
+                    ? JSON.parse(user.profile.metadata)
+                    : user.profile.metadata;
+                if (meta) {
+                    metadata = { ...metadata, ...meta };
                 }
             } catch { }
         }
 
+        // Calculate Profile Completeness Percentage
+        let completionScore = 0;
+        if (user.firstName && user.lastName) completionScore += 20;
+        if (user.image) completionScore += 15;
+        if (user.phone) completionScore += 10;
+        if (user.profile?.jobTitle || user.jobTitle) completionScore += 15;
+        if (user.profile?.department) completionScore += 10;
+        if (user.profile?.bio) completionScore += 10;
+        if (socialLinks.linkedin || socialLinks.github || socialLinks.twitter || socialLinks.website) completionScore += 10;
+        if (user.mfaEnabled) completionScore += 10;
+        const profileCompletedPercentage = Math.min(100, completionScore);
+
         return {
+            id: user.id,
+            email: user.email || "",
+            emailVerified: Boolean(user.emailVerified),
+            role: user.role || "member",
+            globalRole: user.globalRole || "client_user",
+            mfaEnabled: Boolean(user.mfaEnabled),
+            createdAt: user.createdAt.toISOString(),
+            companyName: user.companies?.[0]?.company?.name || "Organización Principal",
+            connectedProviders: user.accounts.map(a => a.provider),
+
             firstName: user.firstName || "",
             lastName: user.lastName || "",
             phone: user.phone || "",
             image: user.image || "",
-            jobTitle: user.profile?.jobTitle || "",
+            jobTitle: user.profile?.jobTitle || user.jobTitle || "",
+            department: user.profile?.department || "",
             bio: user.profile?.bio || "",
+            pronouns: metadata.pronouns || "",
+            country: metadata.country || "Colombia",
+            city: metadata.city || "Bogotá",
+            status: (["ONLINE", "AWAY", "BUSY", "OFFLINE"].includes(metadata.status) ? metadata.status : "ONLINE") as "ONLINE" | "AWAY" | "BUSY" | "OFFLINE",
+            statusMessage: metadata.statusMessage || "",
+            skills: Array.isArray(metadata.skills) ? metadata.skills : [],
+            coverImage: metadata.coverImage || null,
+
             linkedin: socialLinks.linkedin || "",
             github: socialLinks.github || "",
+            twitter: socialLinks.twitter || "",
+            website: socialLinks.website || "",
+            calendarUrl: socialLinks.calendarUrl || "",
+
             theme: (["light", "dark", "system"].includes(preferences.theme) ? preferences.theme : "system") as "light" | "dark" | "system",
-            accent: (preferences.accent || "teal") as string,
-            density: (preferences.density || "normal") as string,
-            font: (preferences.font || "inter") as string,
-            bgTheme: (preferences.bgTheme || "slate") as string,
-            sidebarCollapsed: (preferences.sidebarCollapsed ?? false) as boolean,
-            animationsEnabled: (preferences.animationsEnabled ?? true) as boolean,
-            language: (["es", "en", "pt"].includes(preferences.language) ? preferences.language : "es") as "es" | "en" | "pt",
-            emailNotifications: preferences.notifications?.email ?? true,
+            language: (["es", "en", "pt", "fr"].includes(preferences.language) ? preferences.language : "es") as "es" | "en" | "pt" | "fr",
             timezone: preferences.timezone || "America/Bogota",
             currency: preferences.currency || "USD",
-            gaPropertyId: gaConfig.propertyId || "",
-            gaClientEmail: gaConfig.clientEmail || "",
-            gaPrivateKey: gaConfig.privateKey || "",
-            fbPixelId: (() => {
-                if (user.profile && 'facebookPixel' in user.profile) {
-                    try {
-                        // @ts-ignore
-                        const fb = user.profile.facebookPixel;
-                        const p = typeof fb === 'string' ? JSON.parse(fb) : fb;
-                        return p?.pixelId || "";
-                    } catch { }
-                }
-                return "";
-            })(),
-            gtmId: (() => {
-                if (user.profile && 'googleTagManager' in user.profile) {
-                    try {
-                        // @ts-ignore
-                        const gtm = user.profile.googleTagManager;
-                        const p = typeof gtm === 'string' ? JSON.parse(gtm) : gtm;
-                        return p?.containerId || "";
-                    } catch { }
-                }
-                return "";
-            })(),
-            hotjarId: (() => {
-                if (user.profile && 'hotjar' in user.profile) {
-                    try {
-                        // @ts-ignore
-                        const hj = user.profile.hotjar;
-                        const p = typeof hj === 'string' ? JSON.parse(hj) : hj;
-                        return p?.siteId || "";
-                    } catch { }
-                }
-                return "";
-            })(),
-            coverImage: (() => {
-                if (user.profile?.metadata) {
-                    try {
-                        const meta = typeof user.profile.metadata === 'string' ? JSON.parse(user.profile.metadata) : user.profile.metadata;
-                        return meta?.coverImage || null;
-                    } catch { }
-                }
-                return null;
-            })(),
+            dateFormat: (preferences.dateFormat || "DD/MM/YYYY") as "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD",
+            timeFormat: (preferences.timeFormat || "12h") as "12h" | "24h",
+            emailNotifications: preferences.notifications?.email ?? true,
+
+            profileCompletedPercentage,
         };
     } catch (error) {
         console.error("Failed to fetch settings:", error);
@@ -137,18 +155,21 @@ export async function updateSettings(data: SettingsFormData) {
 
     const validated = SettingsSchema.safeParse(data);
     if (!validated.success) {
-        return { success: false, error: "Invalid data" };
+        return { success: false, error: "Datos inválidos: " + validated.error.errors.map(e => e.message).join(", ") };
     }
 
     const {
         firstName, lastName, phone,
-        jobTitle, bio,
-        linkedin, github, image, coverImage,
-        theme, language, emailNotifications, timezone, currency
+        jobTitle, department, bio, pronouns,
+        country, city, status, statusMessage, skills,
+        linkedin, github, twitter, website, calendarUrl,
+        image, coverImage,
+        theme, language, emailNotifications, timezone, currency,
+        dateFormat, timeFormat
     } = validated.data;
 
     try {
-        // Update User basic info
+        // 1. Update User base entity
         await prisma.user.update({
             where: { id: session.user.id },
             data: {
@@ -159,31 +180,173 @@ export async function updateSettings(data: SettingsFormData) {
             }
         });
 
-        // Upsert User Profile
+        // 2. Fetch existing profile metadata and preferences for deep merge
+        const existingProfile = await prisma.userProfile.findUnique({
+            where: { userId: session.user.id }
+        });
+
+        let existingPrefs: any = {};
+        if (existingProfile?.preferences) {
+            existingPrefs = typeof existingProfile.preferences === 'string'
+                ? JSON.parse(existingProfile.preferences)
+                : existingProfile.preferences;
+        }
+
+        let existingMeta: any = {};
+        if (existingProfile?.metadata) {
+            existingMeta = typeof existingProfile.metadata === 'string'
+                ? JSON.parse(existingProfile.metadata)
+                : existingProfile.metadata;
+        }
+
+        const mergedPreferences = {
+            ...existingPrefs,
+            theme,
+            language,
+            notifications: {
+                ...(existingPrefs.notifications || {}),
+                email: emailNotifications
+            },
+            timezone,
+            currency,
+            dateFormat,
+            timeFormat
+        };
+
+        const mergedMetadata = {
+            ...existingMeta,
+            coverImage,
+            country,
+            city,
+            status,
+            statusMessage,
+            pronouns,
+            skills: skills || []
+        };
+
+        const mergedSocialLinks = {
+            linkedin,
+            github,
+            twitter,
+            website,
+            calendarUrl
+        };
+
+        // 3. Upsert User Profile
         await prisma.userProfile.upsert({
             where: { userId: session.user.id },
             create: {
                 userId: session.user.id,
                 jobTitle,
+                department,
                 bio,
-                socialLinks: { linkedin, github },
-                preferences: { theme, language, notifications: { email: emailNotifications }, timezone, currency },
-                metadata: { coverImage }
+                socialLinks: mergedSocialLinks,
+                preferences: mergedPreferences,
+                metadata: mergedMetadata
             },
             update: {
                 jobTitle,
+                department,
                 bio,
-                socialLinks: { linkedin, github },
-                preferences: { theme, language, notifications: { email: emailNotifications }, timezone, currency },
-                metadata: { coverImage }
+                socialLinks: mergedSocialLinks,
+                preferences: mergedPreferences,
+                metadata: mergedMetadata
             }
         });
 
+        // 4. Record Audit / Activity Log
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId: session.user.id,
+                    action: "PROFILE_UPDATED",
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        updatedFields: ["profile", "preferences", "presence"]
+                    }
+                }
+            });
+        } catch { }
+
+        revalidatePath("/dashboard/settings/profile");
         revalidatePath("/dashboard/settings");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to update settings:", error);
-        return { success: false, error: "Failed to update settings" };
+        return { success: false, error: error.message || "Failed to update settings" };
+    }
+}
+
+export async function deleteAvatar() {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    try {
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { image: null }
+        });
+        revalidatePath("/dashboard/settings/profile");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function exportAccountData() {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            include: {
+                profile: true,
+                companies: { include: { company: true } },
+                accounts: true,
+                sessions: true,
+                activityLogs: { take: 50, orderBy: { createdAt: "desc" } }
+            }
+        });
+
+        if (!user) throw new Error("Usuario no encontrado");
+
+        const exportData = {
+            exportMetadata: {
+                platform: "LegacyMark SAS",
+                compliance: "GDPR / Habeas Data (Ley 1581 de 2012)",
+                exportedAt: new Date().toISOString(),
+                exportId: crypto.randomUUID(),
+            },
+            user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phone: user.phone,
+                role: user.role,
+                globalRole: user.globalRole,
+                mfaEnabled: user.mfaEnabled,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            },
+            profile: user.profile,
+            organizations: user.companies.map(c => ({
+                companyId: c.companyId,
+                companyName: c.company.name,
+                role: c.role,
+                joinedAt: c.createdAt
+            })),
+            connectedAccounts: user.accounts.map(a => ({
+                provider: a.provider,
+                type: a.type
+            })),
+            recentActivity: user.activityLogs
+        };
+
+        return { success: true, data: exportData };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
 }
 
