@@ -88,7 +88,6 @@ describe("CRM Domain Logic", () => {
     it("creates, scores, and routes lead via mock ports without database dependency", async () => {
       const { CrmUseCases } = await import("./core/usecases/crm.usecases");
       const { LeadDomain } = await import("./core/domain/crm.domain");
-      const { ICrmLeadRepositoryPort, ICrmEventPublisherPort } = await import("./core/ports/crm.ports");
 
       const store = new Map<string, any>();
       const publishedEvents: Array<{ topic: string; event: any }> = [];

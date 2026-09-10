@@ -97,7 +97,7 @@ eventBus.subscribe("invoice.paid", async (data) => {
   console.log(`[finance-service] invoice.paid event received`, { invoiceId: (data as any).invoiceId });
 }).catch((err) => console.warn("[finance-service] EventBus subscribe warning:", err));
 
-eventBus.subscribe("payment.succeeded", async (data: any) => {
+eventBus.subscribe("payment.succeeded" as any, async (data: any) => {
   console.log(`[finance-service] payment.succeeded event received:`, data);
   try {
     if (data.invoiceId) {

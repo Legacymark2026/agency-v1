@@ -21,8 +21,10 @@ vi.mock("redis", () => ({
   }),
 }));
 
-vi.mock("@agency/database", () => ({
-  prisma: {
+vi.mock("@agency/database", () => {
+  const vouchers: any[] = [];
+  const linesList: any[] = [];
+  const mockPrisma = {
     expense: {
       findMany: vi.fn().mockResolvedValue([]),
       aggregate: vi.fn().mockResolvedValue({ _sum: { amount: null } }),
@@ -31,8 +33,39 @@ vi.mock("@agency/database", () => ({
       findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn().mockResolvedValue({ id: "inv-1", status: "PAID" }),
     },
-  },
-}));
+    accountingVoucher: {
+      create: vi.fn().mockImplementation((args: any) => {
+        const item = {
+          id: `v-${Date.now()}`,
+          date: new Date(),
+          voucherNumber: args.data.voucherNumber,
+          documentType: args.data.documentType || "CC",
+          concept: args.data.concept,
+          totalDebit: args.data.totalDebit,
+          totalCredit: args.data.totalCredit,
+          isBalanced: args.data.isBalanced,
+          companyId: args.data.companyId,
+          hashSeal: args.data.hashSeal,
+          previousHash: args.data.previousHash,
+          status: args.data.status,
+          lines: (args.data.lines?.create || []).map((l: any, i: number) => ({ id: `l-${i}`, ...l })),
+        };
+        vouchers.push(item);
+        if (item.lines) linesList.push(...item.lines);
+        return Promise.resolve(item);
+      }),
+      findFirst: vi.fn().mockImplementation(() => Promise.resolve(vouchers[vouchers.length - 1] || null)),
+      findMany: vi.fn().mockImplementation(() => Promise.resolve(vouchers)),
+    },
+    accountingVoucherLine: {
+      findMany: vi.fn().mockImplementation(() => Promise.resolve(linesList)),
+    },
+    $transaction: vi.fn().mockImplementation(async (callback: any) => {
+      return await callback(mockPrisma);
+    }),
+  };
+  return { prisma: mockPrisma };
+});
 
 // ── ColombianAccountingService ─────────────────────────────────────────────────
 describe("ColombianAccountingService", () => {
@@ -51,7 +84,7 @@ describe("ColombianAccountingService", () => {
     expect(result.reteFuenteRate).toBe(0.025);
     expect(result.reteFuenteAmount).toBe(25_000);
     expect(result.vatAmount).toBe(190_000); // 19% IVA
-    expect(result.netPayable).toBe(1_000_000 + 190_000 - 25_000);
+    expect(result.netPayable).toBe(1_000_000 + 190_000 - 25_000 - result.reteIcaAmount);
   });
 
   it("calculateWithholdings — HONORARIOS: correct ReteFuente 10%", () => {

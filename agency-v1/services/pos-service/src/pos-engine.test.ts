@@ -80,7 +80,7 @@ describe("POS Service — Hexagonal Inbound & Outbound Ports (PosUseCases)", () 
             findOrderById: async () => null,
         };
         const mockAccounting: IPosAccountingPort = {
-            recordSaleVoucher: async () => ({ success: true }),
+            recordSaleVoucher: async () => ({ success: true, voucherNumber: "V-SALE-01" }),
             recordCierreZAdjustment: async (diff, sessionId) => ({
                 success: true,
                 voucherNumber: `VOUCHER-CIERRE-${sessionId}`
@@ -89,6 +89,8 @@ describe("POS Service — Hexagonal Inbound & Outbound Ports (PosUseCases)", () 
 
         const useCases = new PosUseCases(mockRepo, mockAccounting);
         const result = await useCases.executeCierreZ({
+            companyId: "comp-1",
+            registerName: "Caja 1",
             sessionId: "sess-99",
             cashierName: "Cajero 1",
             expectedCash: 200000,

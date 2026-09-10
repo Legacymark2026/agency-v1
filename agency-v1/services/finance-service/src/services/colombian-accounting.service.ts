@@ -18,21 +18,266 @@
 import { prisma } from "@agency/database";
 import crypto from "crypto";
 
-// ── Re-export engine functions ───────────────────────────────────────────────
+// ── Core Engine Functions (Pure Colombian Accounting & DIAN Engine) ──────────
 
-export {
-  calculateWithholdings,
-  validateDoubleEntry,
-  generateCUFE,
-  generateCUNE,
-  generateCUDS,
-  classifyPUCAccount,
-  calculateDianDV,
-  calculatePayrollProvisions,
-} from "../../apps/web/modules/accounting/services/accounting-engine.service";
+export interface WithholdingInput {
+  subtotal: number;
+  vatRate?: number;
+  transactionType: "COMPRAS" | "SERVICIOS" | "HONORARIOS";
+  applyReteIVA?: boolean;
+  reteIcaRatePerMil?: number;
+}
 
-// Note: The above re-export path may need adjustment depending on the monorepo
-// resolution. The service can also import directly from the local copy below.
+export interface WithholdingResult {
+  subtotal: number;
+  vatAmount: number;
+  reteFuenteRate: number;
+  reteFuenteAmount: number;
+  reteIvaRate: number;
+  reteIvaAmount: number;
+  reteIcaRate: number;
+  reteIcaAmount: number;
+  totalWithholdings: number;
+  netPayable: number;
+}
+
+export type PUCCategory = "ACTIVO" | "PASIVO" | "PATRIMONIO" | "INGRESOS" | "GASTOS" | "COSTOS" | "CUENTAS_DE_ORDEN";
+export type PUCNature = "DEBITO" | "CREDITO";
+
+const RETE_FUENTE_RATES: Record<string, number> = {
+  COMPRAS: 0.025,
+  SERVICIOS: 0.04,
+  HONORARIOS: 0.10,
+};
+
+const RETE_IVA_RATE = 0.15;
+
+export function calculateWithholdings(input: WithholdingInput): WithholdingResult {
+  const subtotal = Math.max(0, input.subtotal || 0);
+  const vatRate = input.vatRate ?? 0.19;
+  const vatAmount = Math.round(subtotal * vatRate);
+
+  const reteFuenteRate = RETE_FUENTE_RATES[input.transactionType] ?? 0.025;
+  const reteFuenteAmount = Math.round(subtotal * reteFuenteRate);
+
+  const reteIvaRate = input.applyReteIVA ? RETE_IVA_RATE : 0;
+  const reteIvaAmount = input.applyReteIVA ? Math.round(vatAmount * RETE_IVA_RATE) : 0;
+
+  const reteIcaRate = (input.reteIcaRatePerMil ?? 9.66) / 1000;
+  const reteIcaAmount = Math.round(subtotal * reteIcaRate);
+
+  const totalWithholdings = reteFuenteAmount + reteIvaAmount + reteIcaAmount;
+  const netPayable = subtotal + vatAmount - totalWithholdings;
+
+  return {
+    subtotal,
+    vatAmount,
+    reteFuenteRate,
+    reteFuenteAmount,
+    reteIvaRate,
+    reteIvaAmount,
+    reteIcaRate,
+    reteIcaAmount,
+    totalWithholdings,
+    netPayable,
+  };
+}
+
+export function validateDoubleEntry(
+  voucherNumber: string,
+  concept: string,
+  lines: Array<{
+    accountCode: string;
+    accountName?: string;
+    thirdPartyNit?: string;
+    thirdPartyName?: string;
+    costCenterCode?: string;
+    description?: string;
+    debit: number;
+    credit: number;
+  }>
+): { isBalanced: boolean; totalDebit: number; totalCredit: number; difference: number; hashSeal: string } {
+  const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
+  const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
+  const difference = Math.abs(totalDebit - totalCredit);
+  const isBalanced = difference < 0.01;
+
+  const rawPayload = JSON.stringify({
+    voucherNumber,
+    concept,
+    totalDebit,
+    totalCredit,
+    timestamp: new Date().toISOString(),
+    lines: lines.map(l => ({
+      accountCode: l.accountCode,
+      debit: l.debit,
+      credit: l.credit,
+      nit: l.thirdPartyNit,
+    })),
+  });
+
+  const hashSeal = crypto.createHash("sha256").update(rawPayload).digest("hex");
+
+  return { isBalanced, totalDebit, totalCredit, difference, hashSeal };
+}
+
+export function generateCUFE(params: {
+  invoiceNumber: string;
+  subtotal: number;
+  taxAmount: number;
+  clientNit: string;
+  dateStr: string;
+  softwareNit?: string;
+  technicalKey?: string;
+}): { cufe: string; valid: boolean } {
+  const softwareNit = params.softwareNit || process.env.DIAN_SOFTWARE_NIT;
+  const technicalKey = params.technicalKey || process.env.DIAN_TECHNICAL_KEY;
+
+  if (!softwareNit || !technicalKey) {
+    return {
+      cufe: `MISSING_DIAN_CONFIG_${crypto.randomBytes(8).toString("hex")}`,
+      valid: false,
+    };
+  }
+
+  const dianDate = new Date(params.dateStr)
+    .toISOString()
+    .replace(/[-:T.Z]/g, "")
+    .slice(0, 14);
+
+  const rawString = [
+    params.invoiceNumber,
+    params.subtotal.toFixed(2),
+    params.taxAmount.toFixed(2),
+    params.clientNit,
+    softwareNit,
+    dianDate,
+    technicalKey,
+  ].join("");
+
+  return {
+    cufe: crypto.createHash("sha384").update(rawString).digest("hex"),
+    valid: true,
+  };
+}
+
+export function generateCUNE(params: {
+  documentNumber: string;
+  dateStr: string;
+  totalEarnings: number;
+  totalDeductions: number;
+  netPay: number;
+  employeeNit: string;
+  employerNit?: string;
+}): string {
+  const employerNit = params.employerNit || process.env.DIAN_SOFTWARE_NIT || "902028722-3";
+  const pin = process.env.DIAN_PAYROLL_PIN || "PIN_DIAN_SECRET_NOMINA";
+
+  const rawCUNE = [
+    params.documentNumber, params.dateStr,
+    params.totalEarnings, params.totalDeductions,
+    params.netPay, params.employeeNit,
+    employerNit, pin,
+  ].join("|");
+
+  return crypto.createHash("sha384").update(rawCUNE).digest("hex").toUpperCase();
+}
+
+export function generateCUDS(params: {
+  dseNumber: string;
+  dateStr: string;
+  subtotal: number;
+  reteFuente: number;
+  vendorNit: string;
+  employerNit?: string;
+}): string {
+  const employerNit = params.employerNit || process.env.DIAN_SOFTWARE_NIT || "902028722-3";
+  const pin = process.env.DIAN_DSE_PIN || "PIN_DIAN_SECRET";
+
+  const raw = [
+    params.dseNumber, params.dateStr,
+    params.subtotal, params.reteFuente,
+    params.vendorNit, employerNit, pin,
+  ].join("|");
+
+  return crypto.createHash("sha256").update(raw).digest("hex").toUpperCase();
+}
+
+export function classifyPUCAccount(code: string): { category: PUCCategory; nature: PUCNature } {
+  const firstDigit = code.charAt(0);
+
+  switch (firstDigit) {
+    case "1": return { category: "ACTIVO", nature: "DEBITO" };
+    case "2": return { category: "PASIVO", nature: "CREDITO" };
+    case "3": return { category: "PATRIMONIO", nature: "CREDITO" };
+    case "4": return { category: "INGRESOS", nature: "CREDITO" };
+    case "5": return { category: "GASTOS", nature: "DEBITO" };
+    case "6": return { category: "COSTOS", nature: "DEBITO" };
+    case "7": return { category: "COSTOS", nature: "DEBITO" };
+    case "8":
+    case "9": return { category: "CUENTAS_DE_ORDEN", nature: "DEBITO" };
+    default:  return { category: "ACTIVO", nature: "DEBITO" };
+  }
+}
+
+export function calculateDianDV(rawNit: string): { nit: string; dv: number; formatted: string } {
+  const cleanNit = rawNit.replace(/\D/g, "");
+  if (!cleanNit) return { nit: "", dv: 0, formatted: "" };
+
+  const primeWeights = [71, 67, 59, 53, 47, 43, 41, 37, 29, 23, 19, 17, 13, 7, 3];
+  const digits = cleanNit.padStart(15, "0").split("").map(Number);
+
+  let sum = 0;
+  for (let i = 0; i < 15; i++) {
+    sum += digits[i] * primeWeights[i];
+  }
+
+  const remainder = sum % 11;
+  const dv = remainder > 1 ? 11 - remainder : remainder;
+  const formatted = `${cleanNit}-${dv}`;
+
+  return { nit: cleanNit, dv, formatted };
+}
+
+export function calculatePayrollProvisions(baseSalary: number) {
+  const salary = Math.max(0, baseSalary || 0);
+  const transportAllowance = salary <= 2600000 ? 162000 : 0;
+  const totalAccrued = salary + transportAllowance;
+
+  const cesantias = Math.round(totalAccrued * 0.0833);
+  const interesesCesantias = Math.round(cesantias * 0.12 / 12);
+  const primaServicios = Math.round(totalAccrued * 0.0833);
+  const vacaciones = Math.round(salary * 0.0417);
+
+  const pensionEmployer = Math.round(salary * 0.12);
+  const healthEmployer = 0;
+  const arlRisk1 = Math.round(salary * 0.00522);
+  const cajaCompensacion = Math.round(salary * 0.04);
+  const sena = 0;
+  const icbf = 0;
+
+  const totalProvisions = cesantias + interesesCesantias + primaServicios + vacaciones
+    + pensionEmployer + healthEmployer + arlRisk1 + cajaCompensacion + sena + icbf;
+  const totalCompanyCost = totalAccrued + totalProvisions;
+
+  return {
+    baseSalary: salary,
+    transportAllowance,
+    totalAccrued,
+    cesantias,
+    interesesCesantias,
+    primaServicios,
+    vacaciones,
+    pensionEmployer,
+    healthEmployer,
+    arlRisk1,
+    cajaCompensacion,
+    sena,
+    icbf,
+    totalProvisions,
+    totalCompanyCost,
+  };
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -131,25 +376,45 @@ export const COLOMBIAN_PUC_CATALOG: Record<string, PUCAccount> = {
 
 export class ColombianAccountingService {
 
+  public calculateWithholdings(input: WithholdingInput): WithholdingResult {
+    return calculateWithholdings(input);
+  }
+
   /**
    * Creates and registers a strict double-entry journal voucher in PostgreSQL.
    * Validates balance, generates integrity hash, and chains to previous voucher.
    */
-  public async recordJournalVoucher(params: {
-    voucherNumber: string;
-    documentType?: string;
-    concept: string;
-    companyId: string;
-    costCenterCode?: string;
-    createdById: string;
-    periodId?: string;
-    sourceInvoiceId?: string;
-    sourceExpenseId?: string;
-    sourcePayrollId?: string;
-    lines: JournalEntryLine[];
-  }): Promise<JournalVoucher> {
-    const totalDebit = params.lines.reduce((sum, l) => sum + (l.debit || 0), 0);
-    const totalCredit = params.lines.reduce((sum, l) => sum + (l.credit || 0), 0);
+  public async recordJournalVoucher(
+    paramsOrVoucherNumber: string | {
+      voucherNumber: string;
+      documentType?: string;
+      concept: string;
+      companyId: string;
+      costCenterCode?: string;
+      createdById?: string;
+      periodId?: string;
+      sourceInvoiceId?: string;
+      sourceExpenseId?: string;
+      sourcePayrollId?: string;
+      lines: JournalEntryLine[];
+    },
+    conceptArg?: string,
+    companyIdArg?: string,
+    linesArg?: JournalEntryLine[]
+  ): Promise<JournalVoucher> {
+    const params = typeof paramsOrVoucherNumber === "string"
+      ? {
+          voucherNumber: paramsOrVoucherNumber,
+          concept: conceptArg || "",
+          companyId: companyIdArg || "",
+          createdById: "system",
+          lines: linesArg || [],
+        }
+      : paramsOrVoucherNumber;
+
+    const lines = params.lines || [];
+    const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
+    const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
     const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
     if (!isBalanced) {
@@ -166,7 +431,7 @@ export class ColombianAccountingService {
       totalDebit,
       totalCredit,
       timestamp: new Date().toISOString(),
-      lines: params.lines.map(l => ({
+      lines: lines.map(l => ({
         accountCode: l.accountCode,
         debit: l.debit,
         credit: l.credit,
@@ -207,7 +472,7 @@ export class ColombianAccountingService {
           sourcePayrollId: params.sourcePayrollId || null,
           createdById: params.createdById,
           lines: {
-            create: params.lines.map((line, idx) => ({
+            create: lines.map((line, idx) => ({
               lineNumber: idx + 1,
               accountCode: line.accountCode,
               accountName: line.accountName,

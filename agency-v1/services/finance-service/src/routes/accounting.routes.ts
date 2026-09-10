@@ -58,7 +58,7 @@ accountingRouter.post("/vouchers/:id/reverse", async (req: Request, res: Respons
       return res.status(400).json({ success: false, error: "El motivo de anulación es obligatorio." });
     }
 
-    const result = await AccountingCommandService.reverseJournalVoucher(id, reason);
+    const result = await AccountingCommandService.reverseJournalVoucher(String(id), reason);
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ success: false, error: err.message });

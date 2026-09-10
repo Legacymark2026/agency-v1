@@ -130,7 +130,7 @@ export class AccountingCommandService {
 
     // 5. Despacho optimista al EventBus
     try {
-      await eventBus.publish("accounting.voucher.created", {
+      await eventBus.publish("accounting.voucher.created" as any, {
         voucherNumber,
         companyId: dto.companyId,
         totalDebit,

@@ -13,7 +13,7 @@
  *  - Subtotal, IVA, ReteFuente, ReteIVA, ReteICA, Total
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@agency/database";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ async function extractWithGeminiVision(
       return { data: null, confidence: 0 };
     }
 
-    const result = await response.json();
+    const result: any = await response.json();
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
