@@ -4,7 +4,7 @@ import { exportAccountData } from "@/actions/settings";
 
 export async function GET(_req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user) {
     return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
   }
 
@@ -16,7 +16,8 @@ export async function GET(_req: NextRequest) {
 
     const jsonString = JSON.stringify(result.data, null, 2);
     const dateStr = new Date().toISOString().split("T")[0];
-    const fileName = `legacymark-data-export-${session.user.id.slice(0, 8)}-${dateStr}.json`;
+    const fileId = session.user.id ? session.user.id.slice(0, 8) : "user";
+    const fileName = `legacymark-data-export-${fileId}-${dateStr}.json`;
 
     return new NextResponse(jsonString, {
       status: 200,

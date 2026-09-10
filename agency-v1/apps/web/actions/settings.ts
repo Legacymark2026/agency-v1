@@ -7,27 +7,107 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { safeTableQuery } from "@/lib/db-utils";
 
+// Helper to safely get the current authenticated user ID, supporting both id and email lookups
+async function resolveCurrentUserId(): Promise<{ id: string; email?: string | null; name?: string | null; image?: string | null } | null> {
+    const session = await auth();
+    if (!session?.user) return null;
+
+    if (session.user.id) {
+        return {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            image: session.user.image,
+        };
+    }
+
+    if (session.user.email) {
+        try {
+            const dbUser = await prisma.user.findUnique({
+                where: { email: session.user.email },
+                select: { id: true, email: true, name: true, image: true }
+            });
+            if (dbUser) {
+                return dbUser;
+            }
+        } catch (e) {
+            console.warn("[resolveCurrentUserId] Error querying user by email:", e);
+        }
+    }
+
+    return null;
+}
+
 export async function getSettings() {
     const session = await auth();
-    if (!session?.user?.id) return null;
+    if (!session?.user) return null;
+
+    const sessionUserId = session.user.id;
+    const sessionUserEmail = session.user.email;
+    const sessionUserName = session.user.name || "";
+    const sessionUserImage = session.user.image || "";
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: {
-                profile: true,
-                companies: {
+        let user: any = null;
+
+        // 1. Fetch user entity safely with profile only (no risky joined relations)
+        if (sessionUserId) {
+            user = await prisma.user.findUnique({
+                where: { id: sessionUserId },
+                include: { profile: true }
+            });
+        }
+
+        if (!user && sessionUserEmail) {
+            user = await prisma.user.findUnique({
+                where: { email: sessionUserEmail },
+                include: { profile: true }
+            });
+        }
+
+        const resolvedId = user?.id || sessionUserId || "";
+        const email = user?.email || sessionUserEmail || "";
+        const role = user?.role || (session.user as any).role || "member";
+        const globalRole = user?.globalRole || "client_user";
+        const emailVerified = Boolean(user?.emailVerified);
+        const mfaEnabled = Boolean(user?.mfaEnabled);
+        const createdAt = user?.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString();
+
+        // 2. Fetch company membership independently (isolated try-catch)
+        let companyName = "Organización Principal";
+        if (resolvedId) {
+            try {
+                const membership = await prisma.companyUser.findFirst({
+                    where: { userId: resolvedId },
                     include: { company: true }
-                },
-                accounts: {
-                    select: { provider: true }
+                });
+                if (membership?.company?.name) {
+                    companyName = membership.company.name;
                 }
+            } catch (e) {
+                console.warn("[getSettings] Non-critical: could not fetch company:", e);
             }
-        });
+        }
 
-        if (!user) return null;
+        // 3. Fetch connected OAuth accounts independently (isolated try-catch)
+        let connectedProviders: string[] = [];
+        if (resolvedId) {
+            try {
+                const accounts = await prisma.account.findMany({
+                    where: { userId: resolvedId },
+                    select: { provider: true }
+                });
+                if (Array.isArray(accounts)) {
+                    connectedProviders = accounts.map(a => a.provider);
+                }
+            } catch (e) {
+                console.warn("[getSettings] Non-critical: could not fetch accounts:", e);
+            }
+        }
 
-        // Parse preferences from JSON, ensuring type safety
+        const profile = user?.profile;
+
+        // 4. Parse preferences
         let preferences: any = {
             theme: "system",
             language: "es",
@@ -37,19 +117,18 @@ export async function getSettings() {
             dateFormat: "DD/MM/YYYY",
             timeFormat: "12h"
         };
-        if (user.profile?.preferences) {
+        if (profile?.preferences) {
             try {
-                const prefs = typeof user.profile.preferences === 'string'
-                    ? JSON.parse(user.profile.preferences)
-                    : user.profile.preferences;
-
-                if (prefs) {
+                const prefs = typeof profile.preferences === 'string'
+                    ? JSON.parse(profile.preferences)
+                    : profile.preferences;
+                if (prefs && typeof prefs === 'object') {
                     preferences = { ...preferences, ...prefs };
                 }
             } catch { }
         }
 
-        // Parse social links
+        // 5. Parse social links
         let socialLinks = {
             linkedin: "",
             github: "",
@@ -57,18 +136,18 @@ export async function getSettings() {
             website: "",
             calendarUrl: ""
         };
-        if (user.profile?.socialLinks) {
+        if (profile?.socialLinks) {
             try {
-                const links = typeof user.profile.socialLinks === 'string'
-                    ? JSON.parse(user.profile.socialLinks)
-                    : user.profile.socialLinks;
-                if (links) {
+                const links = typeof profile.socialLinks === 'string'
+                    ? JSON.parse(profile.socialLinks)
+                    : profile.socialLinks;
+                if (links && typeof links === 'object') {
                     socialLinks = { ...socialLinks, ...links };
                 }
             } catch { }
         }
 
-        // Parse metadata
+        // 6. Parse metadata
         let metadata: any = {
             coverImage: null,
             country: "Colombia",
@@ -78,47 +157,53 @@ export async function getSettings() {
             pronouns: "",
             skills: []
         };
-        if (user.profile?.metadata) {
+        if (profile?.metadata) {
             try {
-                const meta = typeof user.profile.metadata === 'string'
-                    ? JSON.parse(user.profile.metadata)
-                    : user.profile.metadata;
-                if (meta) {
+                const meta = typeof profile.metadata === 'string'
+                    ? JSON.parse(profile.metadata)
+                    : profile.metadata;
+                if (meta && typeof meta === 'object') {
                     metadata = { ...metadata, ...meta };
                 }
             } catch { }
         }
 
-        // Calculate Profile Completeness Percentage
+        // 7. Extract names safely
+        const rawName = (user?.name || sessionUserName || "").trim();
+        const nameParts = rawName ? rawName.split(/\s+/) : [];
+        const firstName = user?.firstName || nameParts[0] || "";
+        const lastName = user?.lastName || nameParts.slice(1).join(" ") || "";
+
+        // 8. Calculate Profile Completeness Percentage
         let completionScore = 0;
-        if (user.firstName && user.lastName) completionScore += 20;
-        if (user.image) completionScore += 15;
-        if (user.phone) completionScore += 10;
-        if (user.profile?.jobTitle || user.jobTitle) completionScore += 15;
-        if (user.profile?.department) completionScore += 10;
-        if (user.profile?.bio) completionScore += 10;
+        if (firstName && lastName) completionScore += 20;
+        if (user?.image || sessionUserImage) completionScore += 15;
+        if (user?.phone) completionScore += 10;
+        if (profile?.jobTitle || user?.jobTitle) completionScore += 15;
+        if (profile?.department) completionScore += 10;
+        if (profile?.bio) completionScore += 10;
         if (socialLinks.linkedin || socialLinks.github || socialLinks.twitter || socialLinks.website) completionScore += 10;
-        if (user.mfaEnabled) completionScore += 10;
+        if (mfaEnabled) completionScore += 10;
         const profileCompletedPercentage = Math.min(100, completionScore);
 
         return {
-            id: user.id,
-            email: user.email || "",
-            emailVerified: Boolean(user.emailVerified),
-            role: user.role || "member",
-            globalRole: user.globalRole || "client_user",
-            mfaEnabled: Boolean(user.mfaEnabled),
-            createdAt: user.createdAt.toISOString(),
-            companyName: user.companies?.[0]?.company?.name || "Organización Principal",
-            connectedProviders: user.accounts.map(a => a.provider),
+            id: resolvedId,
+            email,
+            emailVerified,
+            role,
+            globalRole,
+            mfaEnabled,
+            createdAt,
+            companyName,
+            connectedProviders,
 
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            phone: user.phone || "",
-            image: user.image || "",
-            jobTitle: user.profile?.jobTitle || user.jobTitle || "",
-            department: user.profile?.department || "",
-            bio: user.profile?.bio || "",
+            firstName,
+            lastName,
+            phone: user?.phone || "",
+            image: user?.image || sessionUserImage,
+            jobTitle: profile?.jobTitle || user?.jobTitle || "",
+            department: profile?.department || "",
+            bio: profile?.bio || "",
             pronouns: metadata.pronouns || "",
             country: metadata.country || "Colombia",
             city: metadata.city || "Bogotá",
@@ -144,14 +229,53 @@ export async function getSettings() {
             profileCompletedPercentage,
         };
     } catch (error) {
-        console.error("Failed to fetch settings:", error);
-        return null;
+        console.error("Failed to fetch settings, using resilient fallback:", error);
+        const rawName = (sessionUserName || "").trim();
+        const nameParts = rawName ? rawName.split(/\s+/) : [];
+        return {
+            id: sessionUserId || "",
+            email: sessionUserEmail || "",
+            emailVerified: false,
+            role: (session.user as any).role || "member",
+            globalRole: "client_user",
+            mfaEnabled: false,
+            createdAt: new Date().toISOString(),
+            companyName: "Organización Principal",
+            connectedProviders: [],
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            phone: "",
+            image: sessionUserImage,
+            jobTitle: "",
+            department: "",
+            bio: "",
+            pronouns: "",
+            country: "Colombia",
+            city: "Bogotá",
+            status: "ONLINE" as const,
+            statusMessage: "",
+            skills: [],
+            coverImage: null,
+            linkedin: "",
+            github: "",
+            twitter: "",
+            website: "",
+            calendarUrl: "",
+            theme: "system" as const,
+            language: "es" as const,
+            timezone: "America/Bogota",
+            currency: "USD",
+            dateFormat: "DD/MM/YYYY" as const,
+            timeFormat: "12h" as const,
+            emailNotifications: true,
+            profileCompletedPercentage: 25,
+        };
     }
 }
 
 export async function updateSettings(data: SettingsFormData) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
 
     const validated = SettingsSchema.safeParse(data);
     if (!validated.success) {
@@ -169,9 +293,11 @@ export async function updateSettings(data: SettingsFormData) {
     } = validated.data;
 
     try {
+        const userId = userAuth.id;
+
         // 1. Update User base entity
         await prisma.user.update({
-            where: { id: session.user.id },
+            where: { id: userId },
             data: {
                 firstName,
                 lastName,
@@ -181,22 +307,29 @@ export async function updateSettings(data: SettingsFormData) {
         });
 
         // 2. Fetch existing profile metadata and preferences for deep merge
-        const existingProfile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id }
-        });
+        let existingProfile: any = null;
+        try {
+            existingProfile = await prisma.userProfile.findUnique({
+                where: { userId }
+            });
+        } catch { }
 
         let existingPrefs: any = {};
         if (existingProfile?.preferences) {
-            existingPrefs = typeof existingProfile.preferences === 'string'
-                ? JSON.parse(existingProfile.preferences)
-                : existingProfile.preferences;
+            try {
+                existingPrefs = typeof existingProfile.preferences === 'string'
+                    ? JSON.parse(existingProfile.preferences)
+                    : existingProfile.preferences;
+            } catch { }
         }
 
         let existingMeta: any = {};
         if (existingProfile?.metadata) {
-            existingMeta = typeof existingProfile.metadata === 'string'
-                ? JSON.parse(existingProfile.metadata)
-                : existingProfile.metadata;
+            try {
+                existingMeta = typeof existingProfile.metadata === 'string'
+                    ? JSON.parse(existingProfile.metadata)
+                    : existingProfile.metadata;
+            } catch { }
         }
 
         const mergedPreferences = {
@@ -204,7 +337,7 @@ export async function updateSettings(data: SettingsFormData) {
             theme,
             language,
             notifications: {
-                ...(existingPrefs.notifications || {}),
+                ...(existingPrefs?.notifications || {}),
                 email: emailNotifications
             },
             timezone,
@@ -234,9 +367,9 @@ export async function updateSettings(data: SettingsFormData) {
 
         // 3. Upsert User Profile
         await prisma.userProfile.upsert({
-            where: { userId: session.user.id },
+            where: { userId },
             create: {
-                userId: session.user.id,
+                userId,
                 jobTitle,
                 department,
                 bio,
@@ -254,11 +387,11 @@ export async function updateSettings(data: SettingsFormData) {
             }
         });
 
-        // 4. Record Audit / Activity Log
+        // 4. Record Audit / Activity Log (fail-safe)
         try {
             await (prisma as any).userActivityLog.create({
                 data: {
-                    userId: session.user.id,
+                    userId,
                     action: "PROFILE_UPDATED",
                     metadata: {
                         timestamp: new Date().toISOString(),
@@ -278,12 +411,12 @@ export async function updateSettings(data: SettingsFormData) {
 }
 
 export async function deleteAvatar() {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
 
     try {
         await prisma.user.update({
-            where: { id: session.user.id },
+            where: { id: userAuth.id },
             data: { image: null }
         });
         revalidatePath("/dashboard/settings/profile");
@@ -294,12 +427,14 @@ export async function deleteAvatar() {
 }
 
 export async function exportAccountData() {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) throw new Error("Unauthorized");
 
     try {
+        const userId = userAuth.id;
+
         const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
+            where: { id: userId },
             include: {
                 profile: true,
                 companies: { include: { company: true } },
@@ -331,17 +466,17 @@ export async function exportAccountData() {
                 updatedAt: user.updatedAt,
             },
             profile: user.profile,
-            organizations: user.companies.map(c => ({
+            organizations: (user.companies || []).map(c => ({
                 companyId: c.companyId,
-                companyName: c.company.name,
-                role: c.role,
-                joinedAt: c.createdAt
+                companyName: c.company?.name || "Organización",
+                role: c.roleName || "member",
+                joinedAt: c.joinedAt
             })),
-            connectedAccounts: user.accounts.map(a => ({
+            connectedAccounts: (user.accounts || []).map(a => ({
                 provider: a.provider,
                 type: a.type
             })),
-            recentActivity: user.activityLogs
+            recentActivity: user.activityLogs || []
         };
 
         return { success: true, data: exportData };

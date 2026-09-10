@@ -5,7 +5,7 @@ import { SettingsSchema } from "@/lib/schemas";
 
 export async function GET(_req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user) {
     return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
   }
 
@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user) {
     return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
   }
 
@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(_req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user) {
     return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
   }
 
