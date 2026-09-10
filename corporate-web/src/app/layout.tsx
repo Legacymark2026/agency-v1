@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://neogestion.software"),
   title: "NEOGESTIÓN | Transformamos la complejidad en eficiencia",
   description:
     "Ecosistema de tecnología, consultoría y formación empresarial. NeoGestión es un producto de Consultoría de Colombia S.A.S. especializado en estrategia corporativa, optimización de procesos y sistemas integrados de gestión.",
