@@ -1,6 +1,10 @@
+/**
+ * Payment Service — Express Inbound Router (Driving Adapter)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { paymentService } from "../services/payment.service";
+import { IPaymentUseCases } from "../core/ports/payment.ports";
 
 const checkoutSessionSchema = z.object({
   companyId: z.string().min(1),
@@ -25,52 +29,52 @@ const posPaymentSchema = z.object({
   terminalId: z.string().optional(),
 });
 
-export const paymentRouter = Router();
+export function createPaymentRouter(useCases: IPaymentUseCases): Router {
+  const router = Router();
 
-// GET /api/payments/gateways
-paymentRouter.get("/gateways", (_req: Request, res: Response) => {
-  const gateways = paymentService.getAvailableGateways();
-  res.json({ success: true, gateways });
-});
+  router.get("/gateways", (_req: Request, res: Response) => {
+    const gateways = useCases.getAvailableGateways();
+    res.json({ success: true, gateways });
+  });
 
-// POST /api/payments/checkout-session
-paymentRouter.post("/checkout-session", async (req: Request, res: Response) => {
-  try {
-    const parsed = checkoutSessionSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ success: false, errors: parsed.error.errors });
+  router.post("/checkout-session", async (req: Request, res: Response) => {
+    try {
+      const parsed = checkoutSessionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, errors: parsed.error.errors });
+      }
+
+      const result = await useCases.createCheckoutSession(parsed.data as any);
+      res.json({ success: true, ...result });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
     }
+  });
 
-    const result = await paymentService.createCheckoutSession(parsed.data);
-    res.json({ success: true, ...result });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+  router.post("/pos/create", async (req: Request, res: Response) => {
+    try {
+      const parsed = posPaymentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, errors: parsed.error.errors });
+      }
 
-// POST /api/payments/pos/create
-paymentRouter.post("/pos/create", async (req: Request, res: Response) => {
-  try {
-    const parsed = posPaymentSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ success: false, errors: parsed.error.errors });
+      const tx = await useCases.processPOSPayment(parsed.data as any);
+      res.status(201).json({ success: true, transaction: tx.toJSON() });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
     }
+  });
 
-    const transaction = await paymentService.processPOSPayment(parsed.data);
-    res.status(201).json({ success: true, transaction });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+  router.post("/webhooks/:provider", async (req: Request, res: Response) => {
+    try {
+      const { provider } = req.params;
+      const signature = (req.headers["stripe-signature"] || req.headers["x-signature"] || "") as string;
+      const result = await useCases.handleWebhook(provider, req.body, signature);
+      res.json({ success: true, ...result });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
 
-// POST /api/payments/webhooks/:provider
-paymentRouter.post("/webhooks/:provider", async (req: Request, res: Response) => {
-  try {
-    const { provider } = req.params;
-    const signature = (req.headers["stripe-signature"] || req.headers["x-signature"] || "") as string;
-    const result = await paymentService.handleWebhook(provider, req.body, signature);
-    res.json({ success: true, ...result });
-  } catch (err: any) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-});
+  return router;
+}

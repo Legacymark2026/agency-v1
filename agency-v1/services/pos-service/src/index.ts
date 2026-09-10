@@ -35,16 +35,18 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 const eventBus = new EventBus(REDIS_URL, "pos-service");
 const catalogService = new CatalogService(eventBus);
-const grpcServer = new CatalogGRPCServer(catalogService.getRepository(), GRPC_PORT);
-grpcServer.start().catch((err) => console.warn("Catalog gRPC Server fallback/disabled:", err.message));
 
-const invoicingGrpcServer = new InvoicingGRPCServer(INVOICING_GRPC_PORT);
-invoicingGrpcServer.start().catch((err) => console.warn("Invoicing gRPC Server fallback/disabled:", err.message));
+if (process.env.NODE_ENV !== "test") {
+    const grpcServer = new CatalogGRPCServer(catalogService.getRepository(), GRPC_PORT);
+    grpcServer.start().catch((err) => console.warn("Catalog gRPC Server fallback/disabled:", err.message));
+
+    const invoicingGrpcServer = new InvoicingGRPCServer(INVOICING_GRPC_PORT);
+    invoicingGrpcServer.start().catch((err) => console.warn("Invoicing gRPC Server fallback/disabled:", err.message));
+}
 
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
-
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "pos-service" });
 });
@@ -1182,10 +1184,12 @@ app.post("/api/pos/payments/verify-transfer", async (req, res) => {
     }
 });
 
-const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🛍️ Enterprise POS Service running on port ${PORT}`);
-});
-setupGracefulShutdown(server);
+if (process.env.NODE_ENV !== "test") {
+    const server = app.listen(PORT, "0.0.0.0", () => {
+        console.log(`🛍️ Enterprise POS Service running on port ${PORT}`);
+    });
+    setupGracefulShutdown(server);
+}
 
 process.on("SIGTERM", async () => {
     await eventBus.disconnect();

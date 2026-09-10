@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { evaluateCartPromotions } from "./index";
+import {
+    calculatePosCart,
+    calculateCashChange,
+    evaluateCartPromotions,
+    PosOrderDomain
+} from "./core/domain/pos.domain";
+import { PosUseCases } from "./core/usecases/pos.usecases";
+import { IPosOrderRepositoryPort, IPosAccountingPort } from "./core/ports/pos.ports";
 import {
     calculateDianCufe,
     calculateNitDv,
@@ -8,32 +15,7 @@ import {
     generateDianZipEnvelope
 } from "./dian-engine";
 
-function calculatePosCart(items: Array<{ quantity: number; unitPrice: number; taxRate: number }>, discount = 0) {
-    let subtotal = 0;
-    let tax = 0;
-
-    items.forEach((item) => {
-        const lineSub = item.quantity * item.unitPrice;
-        const lineTax = lineSub * item.taxRate;
-        subtotal += lineSub;
-        tax += lineTax;
-    });
-
-    const totalGross = subtotal + tax;
-    const finalTotal = Math.max(0, totalGross - discount);
-
-    return {
-        subtotal: Math.round(subtotal * 100) / 100,
-        tax: Math.round(tax * 100) / 100,
-        total: Math.round(finalTotal * 100) / 100,
-    };
-}
-
-function calculateCashChange(total: number, cashReceived: number) {
-    return Math.max(0, cashReceived - total);
-}
-
-describe("POS Service — Cart & Change Calculations", () => {
+describe("POS Service — Cart & Change Calculations (Core Domain)", () => {
     it("calculates POS cart subtotal, 19% VAT, and final total correctly", () => {
         const items = [
             { quantity: 2, unitPrice: 50000, taxRate: 0.19 },
@@ -49,6 +31,73 @@ describe("POS Service — Cart & Change Calculations", () => {
     it("calculates cash change correctly for POS register", () => {
         expect(calculateCashChange(85000, 100000)).toBe(15000);
         expect(calculateCashChange(50000, 50000)).toBe(0);
+    });
+});
+
+describe("POS Service — Hexagonal Inbound & Outbound Ports (PosUseCases)", () => {
+    it("creates an order and dispatches accounting voucher via outbound ports", async () => {
+        const savedOrders: PosOrderDomain[] = [];
+        const recordedVouchers: string[] = [];
+
+        const mockRepo: IPosOrderRepositoryPort = {
+            async saveOrder(order) {
+                savedOrders.push(order);
+                return order;
+            },
+            async findOrderById(id) {
+                return savedOrders.find(o => o.id === id) || null;
+            }
+        };
+
+        const mockAccounting: IPosAccountingPort = {
+            async recordSaleVoucher(order) {
+                recordedVouchers.push(`VOUCHER-${order.receiptNo}`);
+                return { success: true, voucherNumber: `VOUCHER-${order.receiptNo}` };
+            },
+            async recordCierreZAdjustment(diff, sessionId, cashier) {
+                return { success: true, voucherNumber: `ADJ-${sessionId}` };
+            }
+        };
+
+        const useCases = new PosUseCases(mockRepo, mockAccounting);
+        const created = await useCases.createOrder({
+            companyId: "comp-123",
+            paymentMethod: "CASH",
+            items: [
+                { sku: "ITEM-1", title: "Cafe Especial", quantity: 2, unitPrice: 15000, taxRate: 0.19 }
+            ]
+        });
+
+        expect(created.total).toBe(35700);
+        expect(savedOrders.length).toBe(1);
+        expect(recordedVouchers.length).toBe(1);
+        expect(recordedVouchers[0]).toContain(created.receiptNo);
+    });
+
+    it("executes Cierre Z with shortage/surplus calculation and generates accounting adjustment", async () => {
+        const mockRepo: IPosOrderRepositoryPort = {
+            saveOrder: async (o) => o,
+            findOrderById: async () => null,
+        };
+        const mockAccounting: IPosAccountingPort = {
+            recordSaleVoucher: async () => ({ success: true }),
+            recordCierreZAdjustment: async (diff, sessionId) => ({
+                success: true,
+                voucherNumber: `VOUCHER-CIERRE-${sessionId}`
+            }),
+        };
+
+        const useCases = new PosUseCases(mockRepo, mockAccounting);
+        const result = await useCases.executeCierreZ({
+            sessionId: "sess-99",
+            cashierName: "Cajero 1",
+            expectedCash: 200000,
+            actualCash: 195000
+        });
+
+        expect(result.status).toBe("SHORTAGE");
+        expect(result.difference).toBe(-5000);
+        expect(result.adjustmentVoucher).toBe("VOUCHER-CIERRE-sess-99");
     });
 });
 

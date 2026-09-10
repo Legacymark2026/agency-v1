@@ -10,59 +10,125 @@
  */
 
 import { describe, it, expect } from "vitest";
+import {
+  calculateInvoiceTotals,
+  convertToStripeCents,
+  calculateStripeFee,
+  isValidStatusTransition,
+  InvoiceItem,
+  InvoiceStatus,
+  VoucherDomain,
+} from "./core/domain/finance.domain";
+import { FinanceUseCases } from "./core/usecases/finance.usecases";
+import { IFinancePersistencePort, IFinanceEventPublisherPort } from "./core/ports/finance.ports";
 
-interface InvoiceItem {
-  description: string;
-  quantity: number;
-  unitPrice: number;
-}
 
-type InvoiceStatus = "DRAFT" | "SENT" | "PAID" | "OVERDUE" | "CANCELLED";
+describe("Finance Service — Hexagonal Inbound & Outbound Ports (FinanceUseCases)", () => {
+  it("orchestrates journal voucher creation with hash-chaining and event publishing", async () => {
+    const savedVouchers: VoucherDomain[] = [];
+    const publishedEvents: Array<{ topic: string; event: any }> = [];
 
-function calculateInvoiceTotals(
-  items: InvoiceItem[],
-  taxRate = 0.19, // 19% IVA default
-  discountPercent = 0
-) {
-  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  const discountAmount = subtotal * (discountPercent / 100);
-  const taxableAmount = Math.max(0, subtotal - discountAmount);
-  const taxAmount = taxableAmount * taxRate;
-  const total = taxableAmount + taxAmount;
+    const mockRepo: IFinancePersistencePort = {
+      findLastVoucher: async () => null, // Genesis
+      saveVoucher: async (v) => {
+        savedVouchers.push(v);
+        return v;
+      },
+      findVouchersByCompany: async () => savedVouchers,
+      saveInvoice: async (inv) => inv,
+    };
 
-  return {
-    subtotal: Math.round(subtotal * 100) / 100,
-    discountAmount: Math.round(discountAmount * 100) / 100,
-    taxableAmount: Math.round(taxableAmount * 100) / 100,
-    taxAmount: Math.round(taxAmount * 100) / 100,
-    total: Math.round(total * 100) / 100,
-  };
-}
+    const mockEventBus: IFinanceEventPublisherPort = {
+      publishAccountingEvent: async (topic, event) => {
+        publishedEvents.push({ topic, event });
+      },
+    };
 
-function convertToStripeCents(amount: number): number {
-  return Math.round(amount * 100);
-}
+    const useCases = new FinanceUseCases(mockRepo, mockEventBus);
+    const voucher = await useCases.createJournalVoucher({
+      companyId: "comp-fin-1",
+      documentType: "INGRESO",
+      date: "2026-09-10",
+      concept: "Pago de suscripción anual",
+      lines: [
+        { accountCode: "110505", accountName: "Caja General", debit: 500000, credit: 0 },
+        { accountCode: "413501", accountName: "Ingresos Operacionales", debit: 0, credit: 500000 },
+      ],
+    });
 
-function calculateStripeFee(amount: number, feePercent = 3.5, fixedFee = 0.3) {
-  const fee = (amount * (feePercent / 100)) + fixedFee;
-  const net = amount - fee;
-  return {
-    fee: Math.round(fee * 100) / 100,
-    net: Math.round(net * 100) / 100,
-  };
-}
+    expect(voucher.voucherNumber).toBe("CC-000001");
+    expect(voucher.totalDebit).toBe(500000);
+    expect(voucher.totalCredit).toBe(500000);
+    expect(voucher.hashSeal).toBeDefined();
+    expect(voucher.hashSeal.length).toBe(64);
+    expect(savedVouchers.length).toBe(1);
+    expect(publishedEvents.length).toBe(1);
+    expect(publishedEvents[0].topic).toBe("accounting.voucher.created");
+  });
 
-function isValidStatusTransition(currentStatus: InvoiceStatus, newStatus: InvoiceStatus): boolean {
-  const allowedTransitions: Record<InvoiceStatus, InvoiceStatus[]> = {
-    DRAFT: ["SENT", "CANCELLED"],
-    SENT: ["PAID", "OVERDUE", "CANCELLED"],
-    OVERDUE: ["PAID", "CANCELLED"],
-    PAID: [], // Terminal state
-    CANCELLED: [], // Terminal state
-  };
+  it("verifies tamper detection in ledger chain via use cases", async () => {
+    const v1 = VoucherDomain.create({
+      companyId: "comp-chain-1",
+      voucherNumber: "CC-000001",
+      documentType: "INGRESO",
+      date: "2026-09-01",
+      concept: "Voucher 1",
+      lines: [
+        { accountCode: "110505", debit: 100, credit: 0 },
+        { accountCode: "413501", debit: 0, credit: 100 },
+      ],
+    });
 
-  return allowedTransitions[currentStatus]?.includes(newStatus) ?? false;
-}
+    const v2 = VoucherDomain.create({
+      companyId: "comp-chain-1",
+      voucherNumber: "CC-000002",
+      documentType: "INGRESO",
+      date: "2026-09-02",
+      concept: "Voucher 2",
+      previousHash: v1.hashSeal,
+      lines: [
+        { accountCode: "110505", debit: 200, credit: 0 },
+        { accountCode: "413501", debit: 0, credit: 200 },
+      ],
+    });
+
+    const mockRepo: IFinancePersistencePort = {
+      findLastVoucher: async () => null,
+      saveVoucher: async (v) => v,
+      findVouchersByCompany: async () => [v1, v2],
+      saveInvoice: async (i) => i,
+    };
+
+    const mockEventBus: IFinanceEventPublisherPort = {
+      publishAccountingEvent: async () => {},
+    };
+
+    const useCases = new FinanceUseCases(mockRepo, mockEventBus);
+    const integrityValid = await useCases.verifyLedgerIntegrity("comp-chain-1");
+    expect(integrityValid.valid).toBe(true);
+    expect(integrityValid.checkedCount).toBe(2);
+
+    // Tamper with v1 amounts
+    const tamperedV1 = new VoucherDomain(
+      v1.id,
+      v1.companyId,
+      v1.voucherNumber,
+      v1.documentType,
+      v1.date,
+      v1.concept,
+      99999, // tampered
+      v1.totalCredit,
+      v1.previousHash,
+      v1.hashSeal,
+      v1.lines,
+      v1.createdAt
+    );
+
+    mockRepo.findVouchersByCompany = async () => [tamperedV1, v2];
+    const integrityInvalid = await useCases.verifyLedgerIntegrity("comp-chain-1");
+    expect(integrityInvalid.valid).toBe(false);
+  });
+});
 
 describe("Finance Service — Invoice Total Calculations", () => {
   it("calculates subtotal, 19% VAT tax, and total accurately", () => {
