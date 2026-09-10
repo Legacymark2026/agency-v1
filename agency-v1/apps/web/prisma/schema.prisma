@@ -4476,4 +4476,176 @@ model EnterprisePostComment {
   deletedAt DateTime? @map("col_deleted_at")
 }
 
+// ── INVENTORY & SUPPLY CHAIN MODELS ─────────────────────────────────────────
+
+model Warehouse {
+  id            String   @id @default(uuid())
+  companyId     String   @map("company_id")
+  name          String
+  code          String
+  address       String?
+  city          String?
+  isMain        Boolean  @default(false) @map("is_main")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("tbl_warehouses")
+}
+
+model StockItem {
+  id                String    @id @default(uuid())
+  warehouseId       String    @map("warehouse_id")
+  productId         String    @map("product_id")
+  companyId         String    @map("company_id")
+  sku               String
+  productName       String    @map("product_name")
+  quantity          Float     @default(0)
+  reservedQuantity  Float     @default(0) @map("reserved_quantity")
+  availableQuantity Float     @default(0) @map("available_quantity")
+  averageCost       Float     @default(0) @map("average_cost")
+  reorderPoint      Float     @default(10) @map("reorder_point")
+  lotNumber         String?   @map("lot_number")
+  expiryDate        DateTime? @map("expiry_date")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@unique([warehouseId, productId])
+  @@index([companyId, warehouseId])
+  @@index([companyId, sku])
+  @@map("tbl_inventory_stock")
+}
+
+model StockMovement {
+  id            String   @id @default(uuid())
+  companyId     String   @map("company_id")
+  warehouseId   String   @map("warehouse_id")
+  productId     String   @map("product_id")
+  sku           String?
+  movementType  String   @map("movement_type") // IN_PURCHASE, OUT_SALE, TRANSFER_IN, TRANSFER_OUT, ADJUSTMENT
+  quantity      Float
+  unitCost      Float    @default(0) @map("unit_cost")
+  totalCost     Float    @default(0) @map("total_cost")
+  balanceAfter  Float    @default(0) @map("balance_after")
+  reference     String?
+  note          String?
+  createdById   String?  @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([companyId, warehouseId])
+  @@index([companyId, productId])
+  @@map("tbl_inventory_movements")
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  orderNumber String   @map("order_number")
+  companyId   String   @map("company_id")
+  warehouseId String   @map("warehouse_id")
+  vendorId    String?  @map("vendor_id")
+  vendorName  String   @map("vendor_name")
+  vendorNit   String?  @map("vendor_nit")
+  status      String   @default("DRAFT") // DRAFT, APPROVED, RECEIVED, CANCELLED
+  subtotal    Float    @default(0)
+  taxAmount   Float    @default(0) @map("tax_amount")
+  total       Float    @default(0)
+  items       Json     @default("[]")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([companyId, orderNumber])
+  @@index([companyId])
+  @@map("tbl_inventory_purchase_orders")
+}
+
+model TransferOrder {
+  id                     String    @id @default(uuid())
+  transferNumber         String    @map("transfer_number")
+  companyId              String    @map("company_id")
+  originWarehouseId      String    @map("origin_warehouse_id")
+  destinationWarehouseId String    @map("destination_warehouse_id")
+  status                 String    @default("DRAFT") // DRAFT, DISPATCHED, RECEIVED, CANCELLED
+  items                  Json      @default("[]")
+  trackingCode           String?   @map("tracking_code")
+  notes                  String?
+  dispatchedAt           DateTime? @map("dispatched_at")
+  receivedAt             DateTime? @map("received_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+
+  @@unique([companyId, transferNumber])
+  @@index([companyId])
+  @@map("tbl_inventory_transfers")
+}
+
+// ── DIAN COMPLIANCE MODELS ──────────────────────────────────────────────────
+
+model DianDocument {
+  id             String    @id @default(uuid())
+  companyId      String    @map("company_id")
+  documentType   String    @map("document_type") // INVOICE, POS_EQUIVALENT, PAYROLL, SUPPORT_DOCUMENT
+  documentNumber String    @map("document_number")
+  prefix         String?
+  cufe           String?   // CUFE / CUNE / CUDS
+  qrCode         String?   @map("qr_code")
+  xmlContent     String?   @map("xml_content")
+  dianStatus     String    @default("PENDING") @map("dian_status") // PENDING, ACCEPTED, REJECTED, QUEUED
+  dianResponse   Json?     @map("dian_response")
+  totalAmount    Float     @default(0) @map("total_amount")
+  taxAmount      Float     @default(0) @map("tax_amount")
+  receiverNit    String    @map("receiver_nit")
+  receiverName   String    @map("receiver_name")
+  issuedAt       DateTime  @default(now()) @map("issued_at")
+  sentAt         DateTime? @map("sent_at")
+  validatedAt    DateTime? @map("validated_at")
+
+  @@index([companyId, documentType])
+  @@index([companyId, dianStatus])
+  @@index([cufe])
+  @@map("tbl_dian_documents")
+}
+
+model DianResolution {
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  resolutionNumber String   @map("resolution_number")
+  prefix           String
+  fromNumber       Int      @map("from_number")
+  toNumber         Int      @map("to_number")
+  currentNumber    Int      @map("current_number")
+  validFrom        DateTime @map("valid_from")
+  validTo          DateTime @map("valid_to")
+  technicalKey     String?  @map("technical_key")
+  isActive         Boolean  @default(true) @map("is_active")
+
+  @@unique([companyId, prefix, resolutionNumber])
+  @@index([companyId])
+  @@map("tbl_dian_resolutions")
+}
+
+// ── AUDIT SECURITY LEDGER MODEL ─────────────────────────────────────────────
+
+model AuditSecurityLedger {
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  actorId      String   @map("actor_id")
+  actorEmail   String   @map("actor_email")
+  actorRole    String   @map("actor_role")
+  action       String   // CREATE, READ_SENSITIVE, UPDATE, DELETE, EXPORT, PERMISSION_CHANGE
+  resource     String   // INVOICE, ACCOUNTING, HR, USER, SETTINGS
+  resourceId   String?  @map("resource_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  details      Json     @default("{}")
+  hashSeal     String   @map("hash_seal")
+  previousHash String?  @map("previous_hash")
+  timestamp    DateTime @default(now())
+
+  @@index([companyId, timestamp])
+  @@index([companyId, resource])
+  @@map("tbl_audit_security_ledger")
+}
+
+
 

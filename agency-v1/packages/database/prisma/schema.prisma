@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  url        = env("POSTGRES_EXTERNAL_URL")
+  url        = env("DATABASE_URL")
   extensions = [vector]
 }
 
@@ -83,6 +83,7 @@ model User {
   aiauditLogs             AIAuditLog[]
   agentMemories           AgentMemory[]
   mediaUploads            MediaAsset[]              @relation("MediaUploader")
+  accountingVouchers      AccountingVoucher[]       @relation("VoucherCreator")
 
   @@index([role])
   @@index([email])
@@ -285,6 +286,8 @@ model Company {
   agentConversations        AgentConversation[]
   aiAgents                  AIAgent[]
   apiKeys                   ApiKey[]
+  apiUsageLogs              ApiUsageLog[]
+  wallet                    CompanyWallet?
   assetCollections          AssetCollection[]
   brandKit                  BrandKit?
   campaignAssets            CampaignAsset[]
@@ -346,7 +349,10 @@ model Company {
   videoRenderJobs           VideoRenderJob[]
   brandStyles               BrandStyle[]
   assetCatalogs             AssetCatalog[]
-  leadAssignmentRules       LeadAssignmentRule[]
+  accountingPeriods         AccountingPeriod[]
+  accountingVouchers        AccountingVoucher[]
+  chartOfAccounts           ChartOfAccounts[]
+  paymentTransactions       PaymentTransaction[]
 
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -1350,43 +1356,6 @@ model Lead {
   deletedAt DateTime? @map("col_deleted_at")
 }
 
-model LeadAssignmentRule {
-  id                String                           @id @default(uuid())
-  name              String
-  priority          Int                              @default(0)
-  isActive          Boolean                          @default(true) @map("is_active")
-  conditions        Json                             // Array of { field: string, operator: string, value: string }
-  assignedUserId    String?                          @map("assigned_user_id")
-  teamId            String?                          @map("team_id")
-  roundRobinEnabled Boolean                          @default(false) @map("round_robin_enabled")
-  companyId         String                           @map("company_id")
-  createdAt         DateTime                         @default(now()) @map("created_at")
-  updatedAt         DateTime                         @updatedAt @map("updated_at")
-  company           Company                          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  roundRobinStates  LeadAssignmentRoundRobinState[]
-
-  @@index([companyId])
-  @@map("tbl_lead_assignment_rules")
-  schemaVersion Int @default(0) @map("col_schema_version")
-  deletedAt DateTime? @map("col_deleted_at")
-}
-
-model LeadAssignmentRoundRobinState {
-  id                 String             @id @default(uuid())
-  ruleId             String?            @map("rule_id")
-  teamId             String?            @map("team_id")
-  lastAssignedUserId String             @map("last_assigned_user_id")
-  companyId          String             @map("company_id")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  rule               LeadAssignmentRule? @relation(fields: [ruleId], references: [id], onDelete: Cascade)
-
-  @@unique([companyId, ruleId])
-  @@unique([companyId, teamId])
-  @@map("tbl_lead_assignment_round_robin_states")
-  schemaVersion Int @default(0) @map("col_schema_version")
-  deletedAt DateTime? @map("col_deleted_at")
-}
-
 model MarketingEvent {
   id         String    @id @default(uuid())
   eventType  String
@@ -1579,7 +1548,6 @@ model Conversation {
   updatedAt          DateTime             @updatedAt @map("updated_at")
   sentiment          String?
   topic              String?
-  contactName        String?              @map("contact_name")
   assignee           User?                @relation(fields: [assignedTo], references: [id])
   company            Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
   lead               Lead?                @relation(fields: [leadId], references: [id])
@@ -1611,8 +1579,6 @@ model Message {
   mediaType      String?             @map("media_type")
   externalId     String?             @map("external_id")
   metadata       Json?               @default("{}")
-  senderType     String?             @map("sender_type")
-  channel        String?             @map("channel")
   inReplyToId    String?             @map("in_reply_to_id")
   createdAt      DateTime            @default(now()) @map("created_at")
   conversation   Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -4008,114 +3974,91 @@ model VideoRenderJob {
   deletedAt DateTime? @map("col_deleted_at")
 }
 
-enum AffiliateStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
+// ══════════════════════════════════════════════════════════════
+// API MONETIZATION & METERED BILLING
+// ══════════════════════════════════════════════════════════════
 
-enum PlanType {
-  FIXED
-  PERCENTAGE
-}
+model ApiUsageLog {
+  id             String   @id @default(uuid())
+  companyId      String   @map("company_id")
+  apiKeyId       String   @map("api_key_id")
+  serviceName    String   @map("service_name")
+  endpoint       String   @map("endpoint")
+  method         String   @map("method")
+  statusCode     Int      @map("status_code")
+  durationMs     Int      @map("duration_ms")
+  requestBytes   Int      @default(0) @map("request_bytes")
+  responseBytes  Int      @default(0) @map("response_bytes")
+  unitsConsumed  Float    @default(1.0) @map("units_consumed")
+  unitType       String   @default("REQUESTS") @map("unit_type")
+  totalCostUsd   Float    @default(0.0) @map("total_cost_usd")
+  createdAt      DateTime @default(now()) @map("created_at")
 
-enum PayoutStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  PAID
-}
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-model AffiliateProfile {
-  id              String          @id @default(uuid())
-  userId          String          @unique @map("user_id") // Soft link a Auth DB (User)
-  code            String          @unique @map("code") // ej: "JUAN10"
-  status          AffiliateStatus @default(ACTIVE) @map("status")
-  commissionPlanId String         @map("commission_plan_id")
-  
-  commissionPlan  CommissionPlan  @relation(fields: [commissionPlanId], references: [id])
-  clicks          Click[]
-  referrals       Referral[]
-
-  createdAt       DateTime        @default(now()) @map("created_at")
-  updatedAt       DateTime        @updatedAt @map("updated_at")
-
-  @@index([code])
-  @@map("tbl_affiliate_profiles")
+  @@index([companyId, createdAt])
+  @@index([apiKeyId, createdAt])
+  @@index([serviceName, createdAt])
+  @@map("tbl_api_usage_logs")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }
 
-model CommissionPlan {
-  id                String             @id @default(uuid())
-  name              String             @map("name")
-  type              PlanType           @map("type")
-  value             Decimal            @db.Decimal(10, 2) @map("value")
-  cookieLifetimeInt Int                @default(30) @map("cookie_lifetime_int") // en días
-  profiles          AffiliateProfile[]
+model CompanyWallet {
+  id                  String   @id @default(uuid())
+  companyId           String   @unique @map("company_id")
+  balanceUsd          Float    @default(0.0) @map("balance_usd")
+  autoRechargeEnabled Boolean  @default(false) @map("auto_recharge_enabled")
+  autoRechargeThreshold Float  @default(10.0) @map("auto_recharge_threshold")
+  autoRechargeAmount  Float    @default(50.0) @map("auto_recharge_amount")
+  currency            String   @default("USD")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@map("tbl_commission_plans")
+  @@map("tbl_company_wallets")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }
 
-model Click {
-  id            String           @id @default(uuid())
-  affiliateCode String           @map("affiliate_code")
-  ip            String           @map("ip")
-  userAgent     String           @map("user_agent")
-  referer       String?          @map("referer")
-  
-  affiliate     AffiliateProfile @relation(fields: [affiliateCode], references: [code])
+model VoiceProfile {
+  id             String         @id @default(uuid())
+  companyId      String         @map("company_id")
+  name           String
+  description    String?
+  language       String         @default("es")
+  engine         String         @default("kokoro")
+  sampleUrl      String         @map("sample_url")
+  effectsConfig  Json?          @map("effects_config")
+  isDefault      Boolean        @default(false) @map("is_default")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  createdAt     DateTime         @default(now()) @map("created_at")
+  voiceCaptures  VoiceCapture[]
 
-  @@index([affiliateCode])
-  @@index([ip, affiliateCode])
-  @@map("tbl_affiliate_clicks")
+  @@index([companyId])
+  @@map("tbl_voice_profiles")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }
 
-model Referral {
-  id              String           @id @default(uuid())
-  affiliateId     String           @map("affiliate_id")
-  referredUserId  String           @unique @map("referred_user_id") // Comprador
-  orderId         String           @unique @map("order_id") // Idempotencia de orden
-  orderAmount     Decimal          @db.Decimal(10, 2) @map("order_amount")
-  commissionAmount Decimal         @db.Decimal(10, 2) @map("commission_amount")
-  status          PayoutStatus     @default(PENDING) @map("status")
-  payoutId        String?          @map("payout_id")
+model VoiceCapture {
+  id                String        @id @default(uuid())
+  companyId         String        @map("company_id")
+  userId            String?       @map("user_id")
+  voiceProfileId    String?       @map("voice_profile_id")
+  audioUrl          String        @map("audio_url")
+  rawTranscript     String        @map("raw_transcript")
+  refinedTranscript String        @map("refined_transcript")
+  durationSeconds   Float         @default(0.0) @map("duration_seconds")
+  language          String        @default("es")
+  createdAt         DateTime      @default(now()) @map("created_at")
 
-  affiliate       AffiliateProfile @relation(fields: [affiliateId], references: [id])
-  payout          Payout?          @relation(fields: [payoutId], references: [id])
+  voiceProfile      VoiceProfile? @relation(fields: [voiceProfileId], references: [id], onDelete: SetNull)
 
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
-
-  @@index([affiliateId])
-  @@index([orderId])
-  @@map("tbl_affiliate_referrals")
-  schemaVersion Int @default(0) @map("col_schema_version")
-  deletedAt DateTime? @map("col_deleted_at")
-}
-
-model Payout {
-  id          String     @id @default(uuid())
-  affiliateId String     @map("affiliate_id")
-  amount      Decimal    @db.Decimal(10, 2) @map("amount")
-  status      String     @default("PROCESSING") // PAID, FAILED, PROCESSING
-  paidAt      DateTime?  @map("paid_at")
-  referrals   Referral[]
-
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-
-  @@index([affiliateId])
-  @@map("tbl_affiliate_payouts")
+  @@index([companyId])
+  @@index([userId])
+  @@map("tbl_voice_captures")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
 }
@@ -4194,6 +4137,514 @@ model Appointment {
   @@map("tbl_appointments")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ACCOUNTING MODULE — NIIF / PUC / DIAN Compliance
+// ══════════════════════════════════════════════════════════════════════════════
+
+model AccountingPeriod {
+  id          String              @id @default(uuid())
+  companyId   String              @map("company_id")
+  name        String              // "Agosto 2026", "Año Gravable 2026"
+  startDate   DateTime            @map("start_date") @db.Date
+  endDate     DateTime            @map("end_date") @db.Date
+  status      String              @default("OPEN") // OPEN, CLOSING, CLOSED
+  closedById  String?             @map("closed_by_id")
+  closedAt    DateTime?           @map("closed_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vouchers    AccountingVoucher[]
+
+  @@unique([companyId, startDate, endDate])
+  @@index([companyId])
+  @@index([status])
+  @@map("tbl_accounting_periods")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AccountingVoucher {
+  id              String                  @id @default(uuid())
+  companyId       String                  @map("company_id")
+  periodId        String?                 @map("period_id")
+  voucherNumber   String                  @map("voucher_number")
+  documentType    String                  @default("CC") @map("document_type") // CC, CE, FC, FV, ND, NC, NE, DSE, RC
+  date            DateTime                @default(now())
+  concept         String
+  costCenterCode  String?                 @map("cost_center_code")
+  totalDebit      Float                   @map("total_debit")
+  totalCredit     Float                   @map("total_credit")
+  isBalanced      Boolean                 @map("is_balanced")
+  hashSeal        String?                 @map("hash_seal")
+  previousHash    String?                 @map("previous_hash") // Append-only chain integrity
+  status          String                  @default("ACTIVE") // ACTIVE, REVERSED, VOID
+  reversedById    String?                 @map("reversed_by_id") // References the reversing voucher
+  sourceInvoiceId String?                 @map("source_invoice_id")
+  sourceExpenseId String?                 @map("source_expense_id")
+  sourcePayrollId String?                 @map("source_payroll_id")
+  createdById     String                  @map("created_by_id")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  company         Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  period          AccountingPeriod?       @relation(fields: [periodId], references: [id])
+  createdBy       User                    @relation("VoucherCreator", fields: [createdById], references: [id])
+  lines           AccountingVoucherLine[]
+
+  @@unique([companyId, voucherNumber])
+  @@index([companyId, date])
+  @@index([periodId])
+  @@index([documentType])
+  @@index([status])
+  @@index([sourceInvoiceId])
+  @@index([sourceExpenseId])
+  @@map("tbl_accounting_vouchers")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model AccountingVoucherLine {
+  id              String            @id @default(uuid())
+  voucherId       String            @map("voucher_id")
+  lineNumber      Int               @default(1) @map("line_number")
+  accountCode     String            @map("account_code")
+  accountName     String            @map("account_name")
+  thirdPartyNit   String?           @map("third_party_nit")
+  thirdPartyName  String?           @map("third_party_name")
+  costCenterCode  String?           @map("cost_center_code")
+  description     String?
+  debit           Float             @default(0)
+  credit          Float             @default(0)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  voucher         AccountingVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+
+  @@index([voucherId])
+  @@index([accountCode])
+  @@index([thirdPartyNit])
+  @@map("tbl_accounting_voucher_lines")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ChartOfAccounts {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  code        String   // "110505" — PUC code
+  name        String   // "Caja General"
+  category    String   // ACTIVO, PASIVO, PATRIMONIO, INGRESOS, GASTOS, COSTOS, CUENTAS_DE_ORDEN
+  nature      String   // DEBITO, CREDITO
+  parentCode  String?  @map("parent_code")
+  level       Int      @default(6) // 1=clase, 2=grupo, 3=cuenta, 4=subcuenta, 5-6=auxiliar
+  isActive    Boolean  @default(true) @map("is_active")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([companyId, category])
+  @@index([companyId, isActive])
+  @@index([parentCode])
+  @@map("tbl_chart_of_accounts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════
+// DECOUPLED PAYMENT SERVICE & PCI DSS AUDIT MODELS
+// ══════════════════════════════════════════════════════════════
+
+model PaymentTransaction {
+  id                    String    @id @default(uuid())
+  companyId             String    @map("company_id")
+  reference             String    @unique
+  amount                Decimal   @db.Decimal(15, 2)
+  currency              String    @default("COP")
+  provider              String    // STRIPE, WOMPI, PAYPAL, MERCADOPAGO, BOLD, PSE, REDEBAN, CREDIBANCO, TRANSFER, CASH
+  status                String    @default("PENDING") // PENDING, APPROVED, DECLINED, REJECTED, REFUNDED
+  category              String    @default("INVOICE") // INVOICE, SUBSCRIPTION, POS_SALE, PREPAID_WALLET, CUSTOM
+  orderId               String?   @map("order_id")
+  invoiceId             String?   @map("invoice_id")
+  customerEmail         String?   @map("customer_email")
+  customerName          String?   @map("customer_name")
+  customerNit           String?   @map("customer_nit")
+  // ISO 8583 & POS EMV Standard Compliance Fields
+  isoResponseCode       String?   @default("00") @map("iso_response_code") // Field 39
+  approvalCode          String?   @map("approval_code") // Field 38 (6 digits)
+  rrn                   String?   // Field 37 (12 digits Retrieval Reference Number)
+  stan                  String?   // Field 11 (6 digits System Trace Audit Number)
+  terminalId            String?   @map("terminal_id") // Field 41
+  merchantId            String?   @map("merchant_id") // Field 42
+  // PCI DSS Tokenized Card Fields (NO PAN, NO CVV)
+  cardBrand             String?   @map("card_brand")
+  cardLast4             String?   @map("card_last_4")
+  cardBin               String?   @map("card_bin")
+  // Cryptographic Audit & Blockchain Trail
+  hmacSignature         String?   @map("hmac_signature")
+  previousHash          String?   @map("previous_hash")
+  hashSeal              String?   @map("hash_seal")
+  // Financial Reconciliation
+  gatewayFee            Decimal?  @map("gateway_fee") @db.Decimal(15, 2)
+  netAmount             Decimal?  @map("net_amount") @db.Decimal(15, 2)
+  gatewayTransactionId  String?   @map("gateway_transaction_id")
+  metadata              Json?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  company               Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([invoiceId])
+  @@index([orderId])
+  @@index([reference])
+  @@index([provider])
+  @@map("tbl_payment_transactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PaymentOutbox {
+  id            String    @id @default(uuid())
+  companyId     String?   @map("company_id")
+  aggregateType String    @default("PAYMENT") @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id")
+  eventType     String    @map("event_type") // payment.authorized, payment.succeeded, payment.failed, refund.completed
+  payload       Json
+  status        String    @default("PENDING") // PENDING, PUBLISHED, FAILED
+  retryCount    Int       @default(0) @map("retry_count")
+  error         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  publishedAt   DateTime? @map("published_at")
+
+  @@index([status, createdAt])
+  @@map("tbl_payment_outbox")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model PaymentIdempotencyRecord {
+  id              String    @id @default(uuid())
+  idempotencyKey  String    @unique @map("idempotency_key")
+  companyId       String    @map("company_id")
+  requestHash     String    @map("request_hash")
+  responseBody    Json      @map("response_body")
+  statusCode      Int       @default(200) @map("status_code")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  expiresAt       DateTime  @map("expires_at")
+
+  @@index([idempotencyKey, companyId])
+  @@index([expiresAt])
+  @@map("tbl_payment_idempotency_records")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MULTITENANT ENTERPRISE CHAT & REALTIME COMMUNICATION (chat-service)
+// ══════════════════════════════════════════════════════════════════════════════
+
+model ChatChannel {
+  id          String              @id @default(uuid())
+  companyId   String              @map("company_id")
+  name        String
+  description String?
+  type        String              @default("PUBLIC") // PUBLIC, PRIVATE, DIRECT_MESSAGE
+  isArchived  Boolean             @default(false) @map("is_archived")
+  createdById String              @map("created_by_id")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  members     ChatChannelMember[]
+  messages    ChatMessage[]
+
+  @@index([companyId])
+  @@index([type])
+  @@map("tbl_chat_channels")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ChatChannelMember {
+  id          String       @id @default(uuid())
+  channelId   String       @map("channel_id")
+  companyId   String       @map("company_id")
+  userId      String       @map("user_id")
+  role        String       @default("MEMBER") // OWNER, ADMIN, MEMBER
+  joinedAt    DateTime     @default(now()) @map("joined_at")
+  lastReadAt  DateTime?    @map("last_read_at")
+
+  channel     ChatChannel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId, companyId])
+  @@map("tbl_chat_channel_members")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model ChatMessage {
+  id          String       @id @default(uuid())
+  channelId   String       @map("channel_id")
+  companyId   String       @map("company_id")
+  senderId    String       @map("sender_id")
+  senderName  String       @map("sender_name")
+  content     String
+  type        String       @default("TEXT") // TEXT, IMAGE, FILE, RICHTEXT_CARD
+  metadata    Json?        @default("{}")
+  isEdited    Boolean      @default(false) @map("is_edited")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  channel     ChatChannel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([companyId])
+  @@map("tbl_chat_messages")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MULTITENANT ENTERPRISE FEED & CORPORATE PUBLICATIONS (feed-service)
+// ══════════════════════════════════════════════════════════════════════════════
+
+model EnterprisePost {
+  id              String                    @id @default(uuid())
+  companyId       String                    @map("company_id")
+  authorId        String                    @map("author_id")
+  authorName      String                    @map("author_name")
+  authorAvatar    String?                   @map("author_avatar")
+  title           String?
+  content         String
+  mediaUrls       Json                      @default("[]") @map("media_urls")
+  audienceScope   String                    @default("COMPANY_WIDE") @map("audience_scope") // COMPANY_WIDE, DEPARTMENT, CONFIDENTIAL_MANAGEMENT
+  departmentId    String?                   @map("department_id")
+  tags            Json                      @default("[]")
+  isPinned        Boolean                   @default(false) @map("is_pinned")
+  isLocked        Boolean                   @default(false) @map("is_locked")
+  viewCount       Int                       @default(0) @map("view_count")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
+
+  reactions       EnterprisePostReaction[]
+  comments        EnterprisePostComment[]
+
+  @@index([companyId, audienceScope])
+  @@index([companyId, isPinned, createdAt])
+  @@map("tbl_enterprise_posts")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EnterprisePostReaction {
+  id          String         @id @default(uuid())
+  postId      String         @map("post_id")
+  companyId   String         @map("company_id")
+  userId      String         @map("user_id")
+  type        String         // LIKE, LOVE, CELEBRATE, INSIGHTFUL, CURIOUS
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  post        EnterprisePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, type])
+  @@index([postId, companyId])
+  @@map("tbl_enterprise_post_reactions")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+model EnterprisePostComment {
+  id          String                  @id @default(uuid())
+  postId      String                  @map("post_id")
+  companyId   String                  @map("company_id")
+  authorId    String                  @map("author_id")
+  authorName  String                  @map("author_name")
+  authorAvatar String?                @map("author_avatar")
+  parentId    String?                 @map("parent_id")
+  content     String
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+
+  post        EnterprisePost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent      EnterprisePostComment?  @relation("NestedComments", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     EnterprisePostComment[] @relation("NestedComments")
+
+  @@index([postId, companyId])
+  @@index([parentId])
+  @@map("tbl_enterprise_post_comments")
+  schemaVersion Int @default(0) @map("col_schema_version")
+  deletedAt DateTime? @map("col_deleted_at")
+}
+
+// ── INVENTORY & SUPPLY CHAIN MODELS ─────────────────────────────────────────
+
+model Warehouse {
+  id            String   @id @default(uuid())
+  companyId     String   @map("company_id")
+  name          String
+  code          String
+  address       String?
+  city          String?
+  isMain        Boolean  @default(false) @map("is_main")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("tbl_warehouses")
+}
+
+model StockItem {
+  id                String    @id @default(uuid())
+  warehouseId       String    @map("warehouse_id")
+  productId         String    @map("product_id")
+  companyId         String    @map("company_id")
+  sku               String
+  productName       String    @map("product_name")
+  quantity          Float     @default(0)
+  reservedQuantity  Float     @default(0) @map("reserved_quantity")
+  availableQuantity Float     @default(0) @map("available_quantity")
+  averageCost       Float     @default(0) @map("average_cost")
+  reorderPoint      Float     @default(10) @map("reorder_point")
+  lotNumber         String?   @map("lot_number")
+  expiryDate        DateTime? @map("expiry_date")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@unique([warehouseId, productId])
+  @@index([companyId, warehouseId])
+  @@index([companyId, sku])
+  @@map("tbl_inventory_stock")
+}
+
+model StockMovement {
+  id            String   @id @default(uuid())
+  companyId     String   @map("company_id")
+  warehouseId   String   @map("warehouse_id")
+  productId     String   @map("product_id")
+  sku           String?
+  movementType  String   @map("movement_type") // IN_PURCHASE, OUT_SALE, TRANSFER_IN, TRANSFER_OUT, ADJUSTMENT
+  quantity      Float
+  unitCost      Float    @default(0) @map("unit_cost")
+  totalCost     Float    @default(0) @map("total_cost")
+  balanceAfter  Float    @default(0) @map("balance_after")
+  reference     String?
+  note          String?
+  createdById   String?  @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([companyId, warehouseId])
+  @@index([companyId, productId])
+  @@map("tbl_inventory_movements")
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  orderNumber String   @map("order_number")
+  companyId   String   @map("company_id")
+  warehouseId String   @map("warehouse_id")
+  vendorId    String?  @map("vendor_id")
+  vendorName  String   @map("vendor_name")
+  vendorNit   String?  @map("vendor_nit")
+  status      String   @default("DRAFT") // DRAFT, APPROVED, RECEIVED, CANCELLED
+  subtotal    Float    @default(0)
+  taxAmount   Float    @default(0) @map("tax_amount")
+  total       Float    @default(0)
+  items       Json     @default("[]")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([companyId, orderNumber])
+  @@index([companyId])
+  @@map("tbl_inventory_purchase_orders")
+}
+
+model TransferOrder {
+  id                     String    @id @default(uuid())
+  transferNumber         String    @map("transfer_number")
+  companyId              String    @map("company_id")
+  originWarehouseId      String    @map("origin_warehouse_id")
+  destinationWarehouseId String    @map("destination_warehouse_id")
+  status                 String    @default("DRAFT") // DRAFT, DISPATCHED, RECEIVED, CANCELLED
+  items                  Json      @default("[]")
+  trackingCode           String?   @map("tracking_code")
+  notes                  String?
+  dispatchedAt           DateTime? @map("dispatched_at")
+  receivedAt             DateTime? @map("received_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+
+  @@unique([companyId, transferNumber])
+  @@index([companyId])
+  @@map("tbl_inventory_transfers")
+}
+
+// ── DIAN COMPLIANCE MODELS ──────────────────────────────────────────────────
+
+model DianDocument {
+  id             String    @id @default(uuid())
+  companyId      String    @map("company_id")
+  documentType   String    @map("document_type") // INVOICE, POS_EQUIVALENT, PAYROLL, SUPPORT_DOCUMENT
+  documentNumber String    @map("document_number")
+  prefix         String?
+  cufe           String?   // CUFE / CUNE / CUDS
+  qrCode         String?   @map("qr_code")
+  xmlContent     String?   @map("xml_content")
+  dianStatus     String    @default("PENDING") @map("dian_status") // PENDING, ACCEPTED, REJECTED, QUEUED
+  dianResponse   Json?     @map("dian_response")
+  totalAmount    Float     @default(0) @map("total_amount")
+  taxAmount      Float     @default(0) @map("tax_amount")
+  receiverNit    String    @map("receiver_nit")
+  receiverName   String    @map("receiver_name")
+  issuedAt       DateTime  @default(now()) @map("issued_at")
+  sentAt         DateTime? @map("sent_at")
+  validatedAt    DateTime? @map("validated_at")
+
+  @@index([companyId, documentType])
+  @@index([companyId, dianStatus])
+  @@index([cufe])
+  @@map("tbl_dian_documents")
+}
+
+model DianResolution {
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  resolutionNumber String   @map("resolution_number")
+  prefix           String
+  fromNumber       Int      @map("from_number")
+  toNumber         Int      @map("to_number")
+  currentNumber    Int      @map("current_number")
+  validFrom        DateTime @map("valid_from")
+  validTo          DateTime @map("valid_to")
+  technicalKey     String?  @map("technical_key")
+  isActive         Boolean  @default(true) @map("is_active")
+
+  @@unique([companyId, prefix, resolutionNumber])
+  @@index([companyId])
+  @@map("tbl_dian_resolutions")
+}
+
+// ── AUDIT SECURITY LEDGER MODEL ─────────────────────────────────────────────
+
+model AuditSecurityLedger {
+  id           String   @id @default(uuid())
+  companyId    String   @map("company_id")
+  actorId      String   @map("actor_id")
+  actorEmail   String   @map("actor_email")
+  actorRole    String   @map("actor_role")
+  action       String   // CREATE, READ_SENSITIVE, UPDATE, DELETE, EXPORT, PERMISSION_CHANGE
+  resource     String   // INVOICE, ACCOUNTING, HR, USER, SETTINGS
+  resourceId   String?  @map("resource_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  details      Json     @default("{}")
+  hashSeal     String   @map("hash_seal")
+  previousHash String?  @map("previous_hash")
+  timestamp    DateTime @default(now())
+
+  @@index([companyId, timestamp])
+  @@index([companyId, resource])
+  @@map("tbl_audit_security_ledger")
 }
 
 

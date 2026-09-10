@@ -116,7 +116,7 @@ export default async function DashboardLayout({
     // Pre-compute accessible routes (can't pass function to client component)
     const allRoutes = [
         "/dashboard/client", "/dashboard/client/proposals", "/dashboard/client/projects",
-        "/dashboard", "/dashboard/pos", "/dashboard/invoicing", "/dashboard/invoicing/ocr-scanner", "/dashboard/invoicing/fraud-guard",
+        "/dashboard", "/dashboard/pos", "/dashboard/inventory", "/dashboard/dian", "/dashboard/security/audit-ledger", "/dashboard/invoicing", "/dashboard/invoicing/ocr-scanner", "/dashboard/invoicing/fraud-guard",
         "/dashboard/accounting", "/dashboard/calendar",
         "/dashboard/catalog", "/dashboard/promotions", "/dashboard/kanban", "/dashboard/inbox", 
         "/dashboard/chat", "/dashboard/feed",

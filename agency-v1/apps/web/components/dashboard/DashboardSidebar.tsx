@@ -8,7 +8,8 @@ import {
     Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
     PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag, Package,
-    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award, Layers, Sparkles
+    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award, Layers, Sparkles,
+    Boxes, FileCheck
 } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
@@ -42,6 +43,8 @@ const NAV_GROUPS: NavGroup[] = [
         accent: "amber", icon: <Briefcase size={20} />,
         items: [
             { href: "/dashboard/pos", label: "Terminal POS (Caja)", icon: <ShoppingBag size={14} />, code: "POS" },
+            { href: "/dashboard/inventory", label: "Inventario & Bodegas", icon: <Boxes size={14} />, code: "INV" },
+            { href: "/dashboard/dian", label: "Cumplimiento Fiscal DIAN", icon: <FileCheck size={14} />, code: "DIA" },
             { href: "/dashboard/invoicing", label: "Facturación DIAN & RADIAN", icon: <ShieldCheck size={14} />, code: "FAC" },
             { href: "/dashboard/accounting", label: "Contabilidad & PUC / Libro Mayor", icon: <BookOpen size={14} />, code: "ACC" },
             { href: "/dashboard/calendar", label: "Agendación de Citas & Videollamadas", icon: <Calendar size={14} />, code: "CAL" },
@@ -153,6 +156,7 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/admin/invoices", label: "Facturación B2B", icon: <CreditCard size={14} />, code: "INV" },
             { href: "/dashboard/admin/treasury", label: "Tesorería", icon: <Landmark size={14} />, code: "TRS" },
             { href: "/dashboard/admin/audit-logs", label: "Logs de Auditoría Forense", icon: <FileText size={14} />, code: "LOG" },
+            { href: "/dashboard/security/audit-ledger", label: "Ledger Forense WORM (SHA-256)", icon: <ShieldCheck size={14} />, code: "WRM" },
             { href: "/dashboard/privacy-portal", label: "Portal Privacidad & GDPR", icon: <Shield size={14} />, code: "PRV" },
             { href: "/dashboard/users", label: "Gestión de Usuarios", icon: <Users size={14} />, code: "USR" },
             { href: "/dashboard/roles", label: "Control de Roles & Permisos", icon: <Shield size={14} />, code: "ROL" },
