@@ -83,4 +83,65 @@ describe("CRM Domain Logic", () => {
       expect(getStageProbability("PROPOSAL_SENT", 60)).toBe(60);
     });
   });
+
+  describe("Hexagonal Inbound & Outbound Ports (CrmUseCases)", () => {
+    it("creates, scores, and routes lead via mock ports without database dependency", async () => {
+      const { CrmUseCases } = await import("./core/usecases/crm.usecases");
+      const { LeadDomain } = await import("./core/domain/crm.domain");
+      const { ICrmLeadRepositoryPort, ICrmEventPublisherPort } = await import("./core/ports/crm.ports");
+
+      const store = new Map<string, any>();
+      const publishedEvents: Array<{ topic: string; event: any }> = [];
+
+      const mockRepo: any = {
+        saveLead: async (lead: any) => {
+          store.set(lead.id, lead);
+          return lead;
+        },
+        findLeadById: async (id: string) => store.get(id) || null,
+        findActiveRules: async () => [
+          {
+            id: "rule-1",
+            companyId: "c-1",
+            name: "Enterprise Rule",
+            priority: 1,
+            isActive: true,
+            conditions: [{ field: "tier", operator: "EQUALS", value: "enterprise" }],
+            useRoundRobin: true,
+            targetAgentIds: ["agent-enterprise-1", "agent-enterprise-2"],
+          },
+        ],
+        getRoundRobinIndex: async () => 0,
+        setRoundRobinIndex: async () => {},
+        getCompanyAgentIds: async () => ["fallback-agent"],
+      };
+
+      const mockEventBus: any = {
+        publishCrmEvent: async (topic: string, event: any) => {
+          publishedEvents.push({ topic, event });
+        },
+      };
+
+      const useCases = new CrmUseCases(mockRepo, mockEventBus);
+      const lead = await useCases.createLead({
+        companyId: "c-1",
+        email: "cto@bigcorp.com",
+        fullName: "Enterprise Buyer",
+        formData: { tier: "enterprise" },
+      });
+
+      expect(lead.id).toBeDefined();
+      expect(lead.assignedTo).toBe("agent-enterprise-1");
+      expect(lead.status).toBe("ASSIGNED");
+      expect(publishedEvents.some((e) => e.topic === "crm.lead.created")).toBe(true);
+      expect(publishedEvents.some((e) => e.topic === "crm.lead.assigned")).toBe(true);
+
+      const scored = await useCases.scoreLead(lead.id, [
+        { field: "tier", op: "equals", val: "enterprise", points: 50 },
+      ]);
+      expect(scored.score).toBe(50);
+      expect(publishedEvents.some((e) => e.topic === "crm.lead.scored")).toBe(true);
+    });
+  });
 });
+

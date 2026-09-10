@@ -97,4 +97,67 @@ describe("Notification Service Domain Tests", () => {
       expect(computePageSize(undefined)).toBe(20);
     });
   });
+
+  describe("Hexagonal Inbound & Outbound Ports (NotificationUseCases)", () => {
+    it("orchestrates notification sending, provider dispatch, and stats without database dependency", async () => {
+      const { NotificationUseCases } = await import("./core/usecases/notification.usecases");
+      const { NotificationDomain } = await import("./core/domain/notification.domain");
+
+      const store = new Map<string, any>();
+      const dispatched: any[] = [];
+      const publishedEvents: any[] = [];
+
+      const mockRepo: any = {
+        save: async (n: any) => {
+          store.set(n.id, n);
+          return n;
+        },
+        findById: async (id: string) => store.get(id) || null,
+        countByUser: async () => ({ total: 10, read: 8 }),
+      };
+
+      const mockProvider: any = {
+        dispatch: async (channel: any, recipient: string, title: string, message: string) => {
+          dispatched.push({ channel, recipient, title, message });
+          return { success: true, providerUsed: "PRIMARY" };
+        },
+      };
+
+      const mockPublisher: any = {
+        publishEvent: async (topic: string, event: any) => {
+          publishedEvents.push({ topic, event });
+        },
+      };
+
+      const useCases = new NotificationUseCases(mockRepo, mockProvider, mockPublisher);
+
+      // 1. Send notification
+      const notif = await useCases.send({
+        userId: "user-100",
+        companyId: "comp-100",
+        title: "Pago Exitoso",
+        message: "Tu factura #101 fue pagada",
+        channel: "EMAIL",
+        recipientAddress: "cliente@demo.com",
+      });
+
+      expect(notif.id).toBeDefined();
+      expect(notif.title).toBe("Pago Exitoso");
+      expect(dispatched.length).toBe(1);
+      expect(dispatched[0].recipient).toBe("cliente@demo.com");
+      expect(publishedEvents.some((e) => e.topic === "notification.sent")).toBe(true);
+
+      // 2. Mark as read
+      const updated = await useCases.markAsRead(notif.id, "user-100");
+      expect(updated.isRead).toBe(true);
+      expect(publishedEvents.some((e) => e.topic === "notification.read")).toBe(true);
+
+      // 3. Stats
+      const stats = await useCases.getStats("user-100");
+      expect(stats.total).toBe(10);
+      expect(stats.unread).toBe(2);
+      expect(stats.readRate).toBe(80);
+    });
+  });
 });
+

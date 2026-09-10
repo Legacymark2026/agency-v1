@@ -313,3 +313,77 @@ describe("findDuplicateConversations", () => {
     expect(result).toEqual([]);
   });
 });
+
+describe("Inbox Service — Hexagonal Inbound & Outbound Ports (InboxUseCases)", () => {
+  it("orchestrates incoming messages and SLA checks without live external dependencies", async () => {
+    const { InboxUseCases } = await import("../../core/usecases/inbox.usecases");
+    const { ConversationDomain, MessageDomain } = await import("../../core/domain/inbox.domain");
+
+    const convStore = new Map<string, any>();
+    const msgStore: any[] = [];
+    const publishedEvents: any[] = [];
+    const dispatchedMessages: any[] = [];
+
+    const mockRepo: any = {
+      findOrCreateConversation: async (companyId: string, channel: string, participantId: string) => {
+        const id = "conv_test_1";
+        const conv = new ConversationDomain(id, companyId, channel, participantId, "OPEN", new Date(), 0);
+        convStore.set(id, conv);
+        return conv;
+      },
+      findConversationById: async (id: string) => convStore.get(id) || null,
+      saveConversation: async (conv: any) => {
+        convStore.set(conv.id, conv);
+        return conv;
+      },
+      saveMessage: async (msg: any) => {
+        msgStore.push(msg);
+        return msg;
+      },
+    };
+
+    const mockDispatcher: any = {
+      dispatch: async (channel: string, recipient: string, text: string) => {
+        dispatchedMessages.push({ channel, recipient, text });
+        return true;
+      },
+    };
+
+    const mockPublisher: any = {
+      publishInboxEvent: async (topic: string, event: any) => {
+        publishedEvents.push({ topic, event });
+      },
+    };
+
+    const useCases = new InboxUseCases(mockRepo, mockDispatcher, mockPublisher);
+
+    // 1. Receive incoming
+    const result = await useCases.receiveIncoming({
+      companyId: "comp-1",
+      channel: "WHATSAPP",
+      senderPhoneOrId: "+573001234567",
+      content: "Hola, necesito cotización",
+    });
+
+    expect(result.conversation.id).toBe("conv_test_1");
+    expect(result.message.direction).toBe("INBOUND");
+    expect(publishedEvents.some((e) => e.topic === "inbox.message.received")).toBe(true);
+
+    // 2. Reply message
+    const reply = await useCases.replyMessage({
+      conversationId: "conv_test_1",
+      senderId: "agent-1",
+      content: "¡Hola! Con gusto te atendemos.",
+    });
+
+    expect(reply.direction).toBe("OUTBOUND");
+    expect(dispatchedMessages.length).toBe(1);
+    expect(dispatchedMessages[0].recipient).toBe("+573001234567");
+    expect(publishedEvents.some((e) => e.topic === "inbox.message.sent")).toBe(true);
+
+    // 3. SLA check
+    const sla = await useCases.getConversationSLA("conv_test_1");
+    expect(sla.status).toBe("OK");
+  });
+});
+
