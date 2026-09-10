@@ -10,7 +10,7 @@ import {
   EnterprisePostCommentDomain,
   EnterprisePostReactionDomain,
   ReactionType
-} from "../domain/feed.domain";
+} from "../core/domain/feed.domain";
 
 export class PrismaFeedRepositoryAdapter implements IFeedRepositoryPort {
   public async savePost(

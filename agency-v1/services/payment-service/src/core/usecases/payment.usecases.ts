@@ -80,7 +80,7 @@ export class PaymentUseCases implements IPaymentUseCases {
   }
 
   public async processPOSPayment(dto: CreatePOSPaymentDTO): Promise<PaymentTransactionDomain> {
-    const boldTx = BoldPosAdapter.createPOSTransaction(dto);
+    const boldTx = BoldPosAdapter.createPOSTransaction(dto as any);
 
     const tx = PaymentTransactionDomain.create({
       companyId: dto.companyId,
@@ -114,7 +114,7 @@ export class PaymentUseCases implements IPaymentUseCases {
     const prov = provider.toUpperCase();
 
     if (prov === "STRIPE") {
-      const event = StripeAdapter.constructWebhookEvent(payload, signature);
+      const event = StripeAdapter.verifyWebhookSignature(payload, signature);
       if (event.type === "checkout.session.completed") {
         const session = event.data.object as any;
         const ref = session.client_reference_id || session.id;

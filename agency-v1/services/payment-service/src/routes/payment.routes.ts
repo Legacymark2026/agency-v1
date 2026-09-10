@@ -67,7 +67,7 @@ export function createPaymentRouter(useCases: IPaymentUseCases): Router {
 
   router.post("/webhooks/:provider", async (req: Request, res: Response) => {
     try {
-      const { provider } = req.params;
+      const provider = String(req.params.provider);
       const signature = (req.headers["stripe-signature"] || req.headers["x-signature"] || "") as string;
       const result = await useCases.handleWebhook(provider, req.body, signature);
       res.json({ success: true, ...result });

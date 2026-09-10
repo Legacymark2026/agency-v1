@@ -93,7 +93,7 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
   router.get("/posts/:id", async (req: Request, res: Response) => {
     try {
       const ctx = getContext(req);
-      const post = await feedUseCases.getPostById(ctx.companyId, req.params.id);
+      const post = await feedUseCases.getPostById(ctx.companyId, String(req.params.id));
       res.json({ success: true, data: post });
     } catch (err: any) {
       res.status(404).json({ success: false, error: err.message });
@@ -108,7 +108,7 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
 
       const comment = await feedUseCases.addComment({
         companyId: ctx.companyId,
-        postId: req.params.id,
+        postId: String(req.params.id),
         authorId: ctx.userId,
         authorName: ctx.userName,
         content: parsed.content,
@@ -125,7 +125,7 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
   router.get("/posts/:id/comments", async (req: Request, res: Response) => {
     try {
       const ctx = getContext(req);
-      const comments = await feedUseCases.getPostComments(ctx.companyId, req.params.id);
+      const comments = await feedUseCases.getPostComments(ctx.companyId, String(req.params.id));
       res.json({ success: true, data: comments });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });
@@ -140,7 +140,7 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
 
       const result = await feedUseCases.toggleReaction({
         companyId: ctx.companyId,
-        postId: req.params.id,
+        postId: String(req.params.id),
         userId: ctx.userId,
         type: parsed.type
       });
@@ -157,7 +157,7 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
       const ctx = getContext(req);
       const isAdmin = ctx.userRole === "ADMIN" || ctx.userRole === "SUPERADMIN";
 
-      await feedUseCases.deletePost(ctx.companyId, req.params.id, ctx.userId, isAdmin);
+      await feedUseCases.deletePost(ctx.companyId, String(req.params.id), ctx.userId, isAdmin);
       res.json({ success: true, message: "Post deleted successfully" });
     } catch (err: any) {
       res.status(403).json({ success: false, error: err.message });

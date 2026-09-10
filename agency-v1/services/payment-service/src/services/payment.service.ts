@@ -93,7 +93,7 @@ export class PaymentService {
     const tx = BoldPosAdapter.createPOSTransaction(payload);
 
     // Asynchronously notify subscribers via EventBus (Event-Driven Decoupling)
-    paymentEventBus.publish("payment.succeeded", {
+    (paymentEventBus as any).publish("payment.succeeded", {
       transactionId: tx.id,
       companyId: tx.companyId,
       orderId: tx.orderId,
@@ -104,7 +104,7 @@ export class PaymentService {
       approvalCode: tx.approvalCode,
       rrn: tx.rrn,
       timestamp: tx.createdAt,
-    }).catch((err) => console.warn("[PaymentService] Event publish warning:", err.message));
+    }).catch((err: any) => console.warn("[PaymentService] Event publish warning:", err.message));
 
     return tx;
   }
@@ -132,7 +132,7 @@ export class PaymentService {
         const companyId = session.metadata?.companyId;
 
         // Publish normalized event
-        await paymentEventBus.publish("payment.succeeded", {
+        await (paymentEventBus as any).publish("payment.succeeded", {
           companyId,
           invoiceId,
           reference: session.id,
@@ -149,7 +149,7 @@ export class PaymentService {
     if (providerUpper === "WOMPI") {
       const data = rawPayload.data?.transaction;
       if (data && data.status === "APPROVED") {
-        await paymentEventBus.publish("payment.succeeded", {
+        await (paymentEventBus as any).publish("payment.succeeded", {
           reference: data.reference,
           amount: (data.amount_in_cents || 0) / 100,
           currency: data.currency || "COP",

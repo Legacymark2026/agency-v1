@@ -68,7 +68,7 @@ export function createChatRouter(chatUseCases: IChatUseCases): Router {
   router.get("/channels/:channelId/messages", async (req: Request, res: Response) => {
     try {
       const { companyId } = getContext(req);
-      const { channelId } = req.params;
+      const channelId = String(req.params.channelId);
       const limit = parseInt(req.query.limit as string) || 50;
       const beforeCursor = req.query.before as string | undefined;
 
@@ -83,7 +83,7 @@ export function createChatRouter(chatUseCases: IChatUseCases): Router {
   router.post("/channels/:channelId/messages", async (req: Request, res: Response) => {
     try {
       const { companyId, userId, userName } = getContext(req);
-      const { channelId } = req.params;
+      const channelId = String(req.params.channelId);
       const parsed = sendMessageSchema.parse(req.body);
 
       const message = await chatUseCases.sendMessage({

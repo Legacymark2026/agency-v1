@@ -52,7 +52,7 @@ export class TransactionalOutboxService {
 
     // 2. Optimistic Immediate Publish to EventBus
     try {
-      await paymentEventBus.publish(params.eventType, params.eventPayload);
+      await (paymentEventBus as any).publish(params.eventType, params.eventPayload);
       await (prisma as any).paymentOutbox.update({
         where: { id: outboxId },
         data: {
