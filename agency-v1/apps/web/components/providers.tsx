@@ -14,6 +14,9 @@ function AppearanceEnforcer() {
     const density = useUIStore((state) => state.density);
     const font = useUIStore((state) => state.font);
     const bgTheme = useUIStore((state) => state.bgTheme);
+    const borderRadius = useUIStore((state) => state.borderRadius);
+    const glassmorphism = useUIStore((state) => state.glassmorphism);
+    const highContrast = useUIStore((state) => state.highContrast);
     const animationsEnabled = useUIStore((state) => state.animationsEnabled);
     const { theme } = useTheme();
 
@@ -22,7 +25,13 @@ function AppearanceEnforcer() {
 
         // Remove old classes
         root.classList.forEach((cls) => {
-            if (cls.startsWith('theme-') || cls.startsWith('density-') || cls.startsWith('font-') || cls.startsWith('bg-')) {
+            if (
+                cls.startsWith('theme-') || 
+                cls.startsWith('density-') || 
+                cls.startsWith('font-') || 
+                cls.startsWith('bg-') ||
+                cls.startsWith('radius-')
+            ) {
                 root.classList.remove(cls);
             }
         });
@@ -32,13 +41,26 @@ function AppearanceEnforcer() {
         root.classList.add(`density-${density}`);
         root.classList.add(`font-${font}`);
         root.classList.add(`bg-${bgTheme}`);
+        root.classList.add(`radius-${borderRadius || 'sharp'}`);
+
+        if (highContrast) {
+            root.classList.add('high-contrast');
+        } else {
+            root.classList.remove('high-contrast');
+        }
+
+        if (!glassmorphism) {
+            root.classList.add('no-glassmorphism');
+        } else {
+            root.classList.remove('no-glassmorphism');
+        }
 
         if (!animationsEnabled) {
             root.classList.add('disable-animations');
         } else {
             root.classList.remove('disable-animations');
         }
-    }, [accent, density, font, bgTheme, animationsEnabled, theme]);
+    }, [accent, density, font, bgTheme, borderRadius, glassmorphism, highContrast, animationsEnabled, theme]);
 
     return null;
 }

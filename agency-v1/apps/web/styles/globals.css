@@ -340,6 +340,47 @@
 .font-jetbrains { --font-sans: "JetBrains Mono", monospace; }
 .font-geist { --font-sans: "Outfit", sans-serif; }
 
+/* ── Dynamic Border Radii ── */
+.radius-sharp {
+  --radius: 0.15rem;
+  --ds-radius: 0.15rem;
+}
+.radius-rounded {
+  --radius: 0.5rem;
+  --ds-radius: 0.5rem;
+}
+.radius-pill {
+  --radius: 1rem;
+  --ds-radius: 1rem;
+}
+
+/* ── High Contrast Mode (WCAG AAA) ── */
+.high-contrast {
+  --ds-border: rgba(255, 255, 255, 0.45);
+  --ds-border-glow: var(--ds-teal-bright);
+  --ds-text-muted: #cbd5e1;
+  --ds-text-dim: #94a3b8;
+  --ds-surface: rgba(10, 15, 30, 0.95);
+  --ds-surface-2: rgba(15, 25, 45, 0.95);
+}
+.light.high-contrast {
+  --ds-border: #0f172a;
+  --ds-border-glow: var(--ds-teal);
+  --ds-text-muted: #334155;
+  --ds-text-dim: #475569;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #f1f5f9;
+}
+
+/* ── No Glassmorphism Override ── */
+.no-glassmorphism *,
+.no-glassmorphism .backdrop-blur-md,
+.no-glassmorphism .backdrop-blur-sm,
+.no-glassmorphism .backdrop-blur-xl {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* ── Disable Animations ── */
 .disable-animations * {
   animation: none !important;

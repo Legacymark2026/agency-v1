@@ -226,6 +226,18 @@ export async function getSettings() {
             timeFormat: (preferences.timeFormat || "12h") as "12h" | "24h",
             emailNotifications: preferences.notifications?.email ?? true,
 
+            // Appearance Preferences
+            accent: preferences.accent || "teal",
+            density: preferences.density || "normal",
+            font: preferences.font || "inter",
+            bgTheme: preferences.bgTheme || "slate",
+            borderRadius: preferences.borderRadius || "sharp",
+            glassmorphism: preferences.glassmorphism !== false,
+            highContrast: Boolean(preferences.highContrast),
+            soundEffects: preferences.soundEffects !== false,
+            sidebarCollapsed: Boolean(preferences.sidebarCollapsed),
+            animationsEnabled: preferences.animationsEnabled !== false,
+
             profileCompletedPercentage,
         };
     } catch (error) {
@@ -268,6 +280,19 @@ export async function getSettings() {
             dateFormat: "DD/MM/YYYY" as const,
             timeFormat: "12h" as const,
             emailNotifications: true,
+
+            // Appearance Defaults
+            accent: "teal",
+            density: "normal",
+            font: "inter",
+            bgTheme: "slate",
+            borderRadius: "sharp",
+            glassmorphism: true,
+            highContrast: false,
+            soundEffects: true,
+            sidebarCollapsed: false,
+            animationsEnabled: true,
+
             profileCompletedPercentage: 25,
         };
     }
@@ -717,23 +742,31 @@ export async function updateUserAppearance(appearance: {
     density?: string;
     font?: string;
     bgTheme?: string;
+    borderRadius?: "sharp" | "rounded" | "pill";
+    glassmorphism?: boolean;
+    highContrast?: boolean;
+    soundEffects?: boolean;
     sidebarCollapsed?: boolean;
     animationsEnabled?: boolean;
 }) {
-    const session = await auth();
-    if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+    const userAuth = await resolveCurrentUserId();
+    if (!userAuth) return { success: false, error: "Unauthorized" };
 
     try {
+        const userId = userAuth.id;
+
         // Fetch existing profile/preferences
         const profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id }
+            where: { userId }
         });
 
         let preferences: any = {};
         if (profile?.preferences) {
-            preferences = typeof profile.preferences === 'string'
-                ? JSON.parse(profile.preferences)
-                : profile.preferences;
+            try {
+                preferences = typeof profile.preferences === 'string'
+                    ? JSON.parse(profile.preferences)
+                    : profile.preferences;
+            } catch { }
         }
 
         // Merge new appearance settings
@@ -743,9 +776,9 @@ export async function updateUserAppearance(appearance: {
         };
 
         await prisma.userProfile.upsert({
-            where: { userId: session.user.id },
+            where: { userId },
             create: {
-                userId: session.user.id,
+                userId,
                 preferences: updatedPreferences,
                 socialLinks: {},
                 jobTitle: "",
@@ -756,7 +789,22 @@ export async function updateUserAppearance(appearance: {
             }
         });
 
+        // Fail-safe audit log
+        try {
+            await (prisma as any).userActivityLog.create({
+                data: {
+                    userId,
+                    action: "APPEARANCE_UPDATED",
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        appearance
+                    }
+                }
+            });
+        } catch { }
+
         revalidatePath('/dashboard/settings/appearance');
+        revalidatePath('/dashboard/settings');
         return { success: true };
     } catch (error: any) {
         console.error("Failed to update user appearance:", error);
