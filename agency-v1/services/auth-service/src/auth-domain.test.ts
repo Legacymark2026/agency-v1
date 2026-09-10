@@ -94,4 +94,57 @@ describe("Auth Service Domain Tests", () => {
       expect(isValidRole("injection'; DROP TABLE users;--")).toBe(false);
     });
   });
+
+  describe("Hexagonal Inbound & Outbound Ports (AuthUseCases)", () => {
+    it("registers user, issues token, and verifies permissions with decoupled adapters", async () => {
+      const { AuthUseCases } = await import("./core/usecases/auth.usecases");
+      const { UserDomain } = await import("./core/domain/auth.domain");
+
+      const store = new Map<string, any>();
+      const publishedEvents: any[] = [];
+
+      const mockRepo: any = {
+        save: async (u: any) => {
+          store.set(u.email, u);
+          return u;
+        },
+        findByEmail: async (email: string) => store.get(email) || null,
+        findById: async () => null,
+      };
+
+      const mockSigner: any = {
+        sign: (payload: any) => `mock_token_for_${payload.sub}`,
+        verify: (token: string) => ({ sub: "usr-1", role: "admin" }),
+      };
+
+      const mockPublisher: any = {
+        publishEvent: async (topic: string, event: any) => {
+          publishedEvents.push({ topic, event });
+        },
+      };
+
+      const useCases = new AuthUseCases(mockRepo, mockSigner, mockPublisher);
+
+      // 1. Register
+      const user = await useCases.register({
+        email: "cfo@company.com",
+        role: "admin",
+        companyId: "comp-1",
+        permissions: ["finance.read", "finance.write"],
+      });
+
+      expect(user.id).toBeDefined();
+      expect(user.role).toBe("admin");
+      expect(publishedEvents.some((e) => e.topic === "auth.user.registered")).toBe(true);
+
+      // 2. Issue & verify token
+      const token = useCases.issueToken(user);
+      expect(token).toContain(user.id);
+
+      // 3. Check access
+      expect(useCases.checkAccess(user, "finance.read")).toBe(true);
+      expect(useCases.checkAccess(user, "billing.delete")).toBe(false);
+    });
+  });
 });
+
