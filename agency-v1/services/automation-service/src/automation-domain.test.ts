@@ -69,4 +69,74 @@ describe("Automation Service Domain Tests", () => {
       expect(evaluateCondition(50, "LESS_THAN", 100)).toBe(true);
     });
   });
+
+  describe("Hexagonal Inbound & Outbound Ports (AutomationUseCases)", () => {
+    it("creates workflow, triggers matching events and updates execution success rate", async () => {
+      const { AutomationUseCases } = await import("./core/usecases/automation.usecases");
+      const { WorkflowDomain } = await import("./core/domain/automation.domain");
+
+      const store = new Map<string, any>();
+      const dispatchedActions: any[] = [];
+      const publishedEvents: any[] = [];
+
+      const mockRepo: any = {
+        save: async (wf: any) => {
+          store.set(wf.id, wf);
+          return wf;
+        },
+        findById: async (id: string) => store.get(id) || null,
+        findMatchingWorkflows: async (companyId: string, triggerType: string) => {
+          return Array.from(store.values()).filter(
+            (w) => w.companyId === companyId && w.triggerType === triggerType
+          );
+        },
+      };
+
+      const mockDispatcher: any = {
+        dispatchAction: async (actionType: string, config: any, context: any) => {
+          dispatchedActions.push({ actionType, config, context });
+          return true;
+        },
+      };
+
+      const mockPublisher: any = {
+        publishEvent: async (topic: string, event: any) => {
+          publishedEvents.push({ topic, event });
+        },
+      };
+
+      const useCases = new AutomationUseCases(mockRepo, mockDispatcher, mockPublisher);
+
+      // 1. Create workflow
+      const wf = await useCases.createWorkflow({
+        companyId: "comp-auto-1",
+        name: "Auto Follow-up",
+        triggerType: "DEAL_WON",
+        actions: [{ type: "SEND_EMAIL", config: { template: "welcome" } }],
+      });
+
+      expect(wf.id).toBeDefined();
+      expect(store.size).toBe(1);
+      expect(publishedEvents.some((e) => e.topic === "automation.workflow.created")).toBe(true);
+
+      // 2. Trigger workflow
+      const result = await useCases.triggerWorkflows({
+        triggerType: "DEAL_WON",
+        companyId: "comp-auto-1",
+        payload: { dealId: "deal-1", value: 1000 },
+      });
+
+      expect(result.executedCount).toBe(1);
+      expect(result.results[0].success).toBe(true);
+      expect(dispatchedActions.length).toBe(1);
+      expect(dispatchedActions[0].actionType).toBe("SEND_EMAIL");
+
+      // 3. Stats
+      const stats = await useCases.getWorkflowStats(wf.id);
+      expect(stats.total).toBe(1);
+      expect(stats.failed).toBe(0);
+      expect(stats.successRate).toBe(100);
+    });
+  });
 });
+

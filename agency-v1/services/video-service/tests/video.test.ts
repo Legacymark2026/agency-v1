@@ -165,5 +165,60 @@ describe("VideoService Unit & AI Engines Contract Tests", () => {
     expect(clips[0].viralityScore).toBeGreaterThanOrEqual(80);
     expect(clips[0].hookHeadline).toContain("Gancho de Alta Retención");
   });
+
+  it("12. VideoService Hexagonal Architecture 5.0 (Inbound & Outbound Ports)", async () => {
+    const { VideoUseCases } = await import("../src/core/usecases/video.usecases");
+    const { VideoProjectDomain } = await import("../src/core/domain/video.domain");
+
+    const projectStore = new Map<string, any>();
+    const publishedEvents: any[] = [];
+
+    const mockStorage: any = {
+      saveProject: async (p: any) => {
+        projectStore.set(p.id, p);
+        return p;
+      },
+      findProjectById: async (id: string) => projectStore.get(id) || null,
+      uploadRender: async () => "https://cdn.agency.com/clip.mp4",
+    };
+
+    const mockFfmpeg: any = {
+      executeFilter: async () => true,
+    };
+
+    const mockPublisher: any = {
+      publishEvent: async (topic: string, event: any) => {
+        publishedEvents.push({ topic, event });
+      },
+    };
+
+    const useCases = new VideoUseCases(mockStorage, mockFfmpeg, mockPublisher);
+
+    // 1. Create project
+    const project = await useCases.createVideoJob({
+      companyId: "comp-vid-1",
+      title: "Podcast Ep 1",
+      sourceUrl: "https://videos.storage/podcast1.mp4",
+    });
+
+    expect(project.id).toBeDefined();
+    expect(project.status).toBe("QUEUED");
+    expect(publishedEvents.some((e) => e.topic === "video.job.created")).toBe(true);
+
+    // 2. Generate viral clips
+    const sentences = [
+      { text: "El secreto que nadie te cuenta sobre marketing digital", startSec: 0, endSec: 7, energyLevel: 0.95 },
+      { text: "es que el contenido en video corto retiene 3 veces más audiencia.", startSec: 7, endSec: 22, energyLevel: 0.88 },
+      { text: "Implementa esta estrategia hoy mismo para escalar tus ventas.", startSec: 22, endSec: 32, energyLevel: 0.82 }
+    ];
+
+    const clips = await useCases.generateViralClips(project.id, sentences);
+    expect(clips.length).toBeGreaterThan(0);
+    expect(publishedEvents.some((e) => e.topic === "video.clips.extracted")).toBe(true);
+
+    const updated = await mockStorage.findProjectById(project.id);
+    expect(updated.status).toBe("COMPLETED");
+  });
 });
+
 
