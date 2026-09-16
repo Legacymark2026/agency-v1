@@ -33,7 +33,7 @@ export async function getCompanyFeedAction(limit: number = 20, before?: string) 
         orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
         take: limit
       });
-      return { success: true, data: posts, count: posts.length };
+      return posts;
     }
   });
 }
@@ -93,7 +93,7 @@ export async function createEnterprisePostAction(data: {
           pollOptions: data.pollOptions || []
         }
       });
-      return { success: true, data: created };
+      return created;
     }
   });
 }

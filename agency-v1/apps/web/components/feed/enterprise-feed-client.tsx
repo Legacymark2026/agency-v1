@@ -108,15 +108,21 @@ export function EnterpriseFeedClient({
         pollOptions: formattedPollOptions
       });
 
-      if (res?.data) {
-        setPosts((prev) => [res.data, ...prev]);
+      const createdPost = res?.data?.data || res?.data;
+      if (createdPost && createdPost.id) {
+        setPosts((prev) => [createdPost, ...prev]);
         setNewPostContent("");
         setNewPostTitle("");
         setNewPostTags("");
         setPollQuestion("");
         setPollOptions(["", ""]);
         setActiveCategory("GENERAL");
+      } else if (res?.error) {
+        alert("Error al publicar: " + res.error);
       }
+    } catch (err: any) {
+      console.error("Error creating post:", err);
+      alert("Error al crear publicación: " + (err.message || "Error desconocido"));
     } finally {
       setIsPublishing(false);
     }
