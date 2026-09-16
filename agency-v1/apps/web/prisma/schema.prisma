@@ -4627,6 +4627,85 @@ model BillOfMaterial {
   @@map("tbl_inventory_boms")
 }
 
+// ── DISCOUNT & SALES FORECASTING MODELS ─────────────────────────────────────
+
+model DiscountTable {
+  id               String         @id @default(uuid())
+  companyId        String         @map("company_id")
+  name             String
+  code             String
+  description      String?
+  type             String         @default("VOLUME") // VOLUME, CUSTOMER_TIER, SEASONAL, PROMOTIONAL
+  strategy         String         @default("TIERED") // TIERED, FLAT, MARGIN_BASED
+  appliesTo        String         @default("ALL")    // ALL, CATEGORY, SPECIFIC_PRODUCTS
+  targetCategory   String?        @map("target_category")
+  targetProductIds String[]       @default([])       @map("target_product_ids")
+  isActive         Boolean        @default(true)     @map("is_active")
+  validFrom        DateTime?      @map("valid_from")
+  validTo          DateTime?      @map("valid_to")
+  tiers            DiscountTier[]
+  createdAt        DateTime       @default(now())    @map("created_at")
+  updatedAt        DateTime       @updatedAt         @map("updated_at")
+
+  @@unique([companyId, code])
+  @@index([companyId, isActive])
+  @@map("tbl_discount_tables")
+}
+
+model DiscountTier {
+  id               String        @id @default(uuid())
+  discountTableId  String        @map("discount_table_id")
+  minQuantity      Float         @map("min_quantity")
+  maxQuantity      Float?        @map("max_quantity")
+  discountPct      Float         @default(0) @map("discount_pct")
+  fixedDiscount    Float         @default(0) @map("fixed_discount")
+  minMarginFloorPct Float?       @map("min_margin_floor_pct") // Margen mínimo protegido
+  discountTable    DiscountTable @relation(fields: [discountTableId], references: [id], onDelete: Cascade)
+
+  @@index([discountTableId])
+  @@map("tbl_discount_tiers")
+}
+
+model SalesForecastRecord {
+  id                 String   @id @default(uuid())
+  companyId          String   @map("company_id")
+  productId          String   @map("product_id")
+  sku                String
+  productName        String   @map("product_name")
+  forecastPeriod     String   @map("forecast_period") // YYYY-MM or YYYY-WW
+  predictedUnits     Float    @map("predicted_units")
+  predictedRevenue   Float    @map("predicted_revenue")
+  confidenceScore    Float    @default(0.85) @map("confidence_score") // R2 / Accuracy
+  modelUsed          String   @default("EXPONENTIAL_SMOOTHING_ML") @map("model_used")
+  historicalTrendPct Float    @default(0) @map("historical_trend_pct")
+  seasonalityFactor  Float    @default(1.0) @map("seasonality_factor")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@unique([companyId, productId, forecastPeriod])
+  @@index([companyId, forecastPeriod])
+  @@map("tbl_sales_forecasts")
+}
+
+model ScenarioSimulation {
+  id                 String   @id @default(uuid())
+  companyId          String   @map("company_id")
+  name               String
+  description        String?
+  scenarioType       String   @default("DISCOUNT_SENSITIVITY") @map("scenario_type") // PRICE_ELASTICITY, SEASONAL_BOOST, CAMPAIGN_IMPACT
+  baseRevenue        Float    @map("base_revenue")
+  projectedRevenue   Float    @map("projected_revenue")
+  projectedMargin    Float    @map("projected_margin")
+  volumeChangePct    Float    @map("volume_change_pct")
+  marginChangePct    Float    @map("margin_change_pct")
+  parameters         Json     @default("{}") // Elasticity, discount applied, marketing spend
+  results            Json     @default("{}") // Detailed monthly simulated projection
+  createdById        String?  @map("created_by_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_scenario_simulations")
+}
+
 // ── DIAN COMPLIANCE MODELS ──────────────────────────────────────────────────
 
 model DianDocument {

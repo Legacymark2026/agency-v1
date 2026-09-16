@@ -559,6 +559,36 @@ services:
       - "traefik.http.routers.goldneez-rewards.tls.certresolver=le"
       - "traefik.http.services.goldneez-rewards.loadbalancer.server.port=4020"
 
+  # ── Sales Forecast & Discount Tabulation Service ──────────────────────────
+  sales-forecast-service:
+    <<: *microservice-base
+    build:
+      context: .
+      dockerfile: services/sales-forecast-service/Dockerfile
+    environment:
+      PORT: "4035"
+      DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
+      DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
+      NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
+    depends_on:
+      pgbouncer: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4035/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sales-forecast.rule=PathPrefix(`/api/sales-forecast`)"
+      - "traefik.http.routers.sales-forecast.entrypoints=websecure"
+      - "traefik.http.routers.sales-forecast.tls=true"
+      - "traefik.http.routers.sales-forecast.tls.certresolver=le"
+      - "traefik.http.services.sales-forecast.loadbalancer.server.port=4035"
+
   # ── CRM Service ──────────────────────────────────────────────────────────
   crm-service:
     <<: *microservice-base
