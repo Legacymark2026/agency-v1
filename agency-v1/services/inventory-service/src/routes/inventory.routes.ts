@@ -117,5 +117,82 @@ export function createInventoryRouter(
     }
   });
 
+  // ── Lotes & FEFO ────────────────────────────────────────────────────────────
+  router.get("/lots", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const warehouseId = req.query.warehouseId as string;
+      const productId = req.query.productId as string;
+
+      if (!warehouseId || !productId) {
+        return res.status(400).json({ success: false, error: "warehouseId and productId are required" });
+      }
+
+      const lots = await repo.listLotsByProduct(companyId, warehouseId, productId);
+      res.json({ success: true, data: lots });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  router.get("/lots/expiring", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const days = parseInt((req.query.days as string) || "30", 10);
+      const expiring = await useCases.checkExpiringLotsAlerts(companyId, days);
+      res.json({ success: true, data: expiring });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // ── BOM (Bill of Materials / Recetas) ───────────────────────────────────────
+  router.get("/bom", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const parentProductId = req.query.parentProductId as string | undefined;
+
+      if (parentProductId) {
+        const components = await repo.getBomForProduct(companyId, parentProductId);
+        return res.json({ success: true, data: components });
+      }
+
+      const allBoms = await repo.listBoms(companyId);
+      res.json({ success: true, data: allBoms });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  router.post("/bom", async (req: Request, res: Response) => {
+    try {
+      const bom = await repo.createBomEntry(req.body);
+      res.status(201).json({ success: true, data: bom });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  router.post("/bom/decompose", async (req: Request, res: Response) => {
+    try {
+      const result = await useCases.decomposeAndDeductBom(req.body);
+      res.json({ success: true, data: result });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // ── IA Demand Forecasting (DOH & Reabastecimiento) ──────────────────────────
+  router.get("/forecast", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const warehouseId = req.query.warehouseId as string | undefined;
+      const forecasts = await useCases.generateDemandForecast(companyId, warehouseId);
+      res.json({ success: true, data: forecasts });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return router;
 }

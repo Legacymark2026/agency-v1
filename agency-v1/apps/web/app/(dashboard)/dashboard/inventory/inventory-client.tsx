@@ -20,7 +20,11 @@ import {
   Layers,
   ArrowDownRight,
   ArrowUpRight,
-  Truck
+  Truck,
+  Calendar,
+  Sparkles,
+  ChefHat,
+  Tag
 } from 'lucide-react';
 
 interface WarehouseData {
@@ -69,8 +73,37 @@ interface TransferOrder {
   status: 'DISPATCHED' | 'RECEIVED' | 'PENDING';
 }
 
+interface ProductLotUI {
+  id: string;
+  sku: string;
+  lotNumber: string;
+  productName: string;
+  warehouseName: string;
+  quantity: number;
+  expiryDate: string;
+  daysRemaining: number;
+  status: 'FRESH' | 'WARNING' | 'EXPIRED';
+}
+
+interface BomRecipeUI {
+  id: string;
+  parentSku: string;
+  parentName: string;
+  components: { childSku: string; childName: string; quantityRequired: number; unit: string }[];
+}
+
+interface DemandForecastUI {
+  sku: string;
+  productName: string;
+  currentStock: number;
+  averageDailySales: number;
+  daysOnHand: number;
+  suggestedReorder: number;
+  riskLevel: 'CRITICAL' | 'LOW_STOCK' | 'OPTIMAL' | 'OVERSTOCKED';
+}
+
 export function InventoryClient() {
-  const [activeTab, setActiveTab] = useState<'stock' | 'kardex' | 'transfers'>('stock');
+  const [activeTab, setActiveTab] = useState<'stock' | 'kardex' | 'transfers' | 'lots' | 'bom' | 'forecast'>('stock');
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
@@ -102,6 +135,43 @@ export function InventoryClient() {
     { id: 'tr-2', transferNumber: 'TRF-00190', origin: 'Bodega Central Fontibón', destination: 'Centro Logístico Medellín', itemsSummary: '50x Miel Orgánica', date: '2026-09-10', status: 'DISPATCHED' },
   ]);
 
+  const [lotItems] = useState<ProductLotUI[]>([
+    { id: 'lot-1', sku: 'ALM-001', lotNumber: 'LOTE-2026-04A', productName: 'Café Especial Geisha 500g', warehouseName: 'Bodega Central', quantity: 180, expiryDate: '2026-10-15', daysRemaining: 29, status: 'WARNING' },
+    { id: 'lot-2', sku: 'ALM-001', lotNumber: 'LOTE-2026-05B', productName: 'Café Especial Geisha 500g', warehouseName: 'Bodega Central', quantity: 270, expiryDate: '2026-12-20', daysRemaining: 95, status: 'FRESH' },
+    { id: 'lot-3', sku: 'ALM-002', lotNumber: 'MIEL-26-01', productName: 'Miel Orgánica de Bosque', warehouseName: 'Bodega Central', quantity: 18, expiryDate: '2027-03-30', daysRemaining: 195, status: 'FRESH' },
+    { id: 'lot-4', sku: 'BEV-010', lotNumber: 'MATCHA-2026-X', productName: 'Té Matcha Japonés', warehouseName: 'Bodega Central', quantity: 85, expiryDate: '2026-11-01', daysRemaining: 46, status: 'FRESH' },
+  ]);
+
+  const [bomRecipes] = useState<BomRecipeUI[]>([
+    {
+      id: 'bom-1',
+      parentSku: 'BEV-LATTE-8OZ',
+      parentName: 'Café Latte Caliente (8oz)',
+      components: [
+        { childSku: 'ALM-001', childName: 'Café Geisha Tostado', quantityRequired: 18, unit: 'g' },
+        { childSku: 'RAW-LECHE-ENT', childName: 'Leche Entera Barista', quantityRequired: 200, unit: 'ml' },
+        { childSku: 'PKG-CUP-8OZ', childName: 'Vaso Biodegradable 8oz con Tapa', quantityRequired: 1, unit: 'un' },
+      ]
+    },
+    {
+      id: 'bom-2',
+      parentSku: 'KIT-BARISTA-PRO',
+      parentName: 'Kit Barista Starter Pack',
+      components: [
+        { childSku: 'ALM-001', childName: 'Café Especial Geisha 500g', quantityRequired: 2, unit: 'un' },
+        { childSku: 'ACC-099', childName: 'Prensa Francesa Borosilicato', quantityRequired: 1, unit: 'un' },
+        { childSku: 'ALM-002', childName: 'Miel Orgánica 300ml', quantityRequired: 1, unit: 'un' },
+      ]
+    }
+  ]);
+
+  const [forecastItems] = useState<DemandForecastUI[]>([
+    { sku: 'ALM-001', productName: 'Café Especial Geisha 500g', currentStock: 462, averageDailySales: 16.4, daysOnHand: 28.1, suggestedReorder: 0, riskLevel: 'OPTIMAL' },
+    { sku: 'ALM-002', productName: 'Miel Orgánica de Bosque', currentStock: 18, averageDailySales: 4.2, daysOnHand: 4.2, suggestedReorder: 85, riskLevel: 'LOW_STOCK' },
+    { sku: 'ACC-099', productName: 'Prensa Francesa Vidrio', currentStock: 4, averageDailySales: 1.8, daysOnHand: 2.2, suggestedReorder: 45, riskLevel: 'CRITICAL' },
+    { sku: 'BEV-010', productName: 'Té Matcha Japonés', currentStock: 85, averageDailySales: 1.2, daysOnHand: 70.8, suggestedReorder: 0, riskLevel: 'OVERSTOCKED' },
+  ]);
+
   const totalValue = stockItems.reduce((sum, item) => sum + (item.quantity * item.averageCost), 0);
   const lowStockCount = stockItems.filter(i => i.status !== 'OK').length;
 
@@ -123,7 +193,7 @@ export function InventoryClient() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Gestión de Inventario & Bodegas</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Control multisede de existencias, Kárdex con costeo promedio ponderado (PEPS), compras y traslados.
+            Control multisede de existencias, Kárdex con costeo promedio ponderado, Lotes FEFO, Recetas (BOM) y Forecasting con IA.
           </p>
         </div>
 
@@ -153,7 +223,7 @@ export function InventoryClient() {
             <DollarSign size={18} className="text-emerald-500" />
           </div>
           <div className="text-2xl font-bold mt-2 text-foreground">
-            $${totalValue.toLocaleString('es-CO')} <span className="text-xs font-normal text-muted-foreground">COP</span>
+            ${totalValue.toLocaleString('es-CO')} <span className="text-xs font-normal text-muted-foreground">COP</span>
           </div>
           <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
             <TrendingUp size={12} className="text-emerald-500" /> Costeo promedio ponderado
@@ -191,39 +261,72 @@ export function InventoryClient() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border flex items-center gap-6">
+      <div className="border-b border-border flex items-center gap-4 overflow-x-auto pb-px">
         <button
           onClick={() => setActiveTab('stock')}
-          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition ${
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
             activeTab === 'stock'
               ? 'border-amber-500 text-amber-500'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Layers size={16} />
-          Existencias por Bodega
+          Existencias
         </button>
         <button
           onClick={() => setActiveTab('kardex')}
-          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition ${
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
             activeTab === 'kardex'
               ? 'border-amber-500 text-amber-500'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <History size={16} />
-          Kárdex Contable (PEPS)
+          Kárdex
         </button>
         <button
           onClick={() => setActiveTab('transfers')}
-          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition ${
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
             activeTab === 'transfers'
               ? 'border-amber-500 text-amber-500'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Truck size={16} />
-          Traslados de Mercancía ({transfers.length})
+          Traslados ({transfers.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('lots')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'lots'
+              ? 'border-amber-500 text-amber-500'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Calendar size={16} />
+          Lotes & Vencimientos (FEFO)
+        </button>
+        <button
+          onClick={() => setActiveTab('bom')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'bom'
+              ? 'border-amber-500 text-amber-500'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ChefHat size={16} />
+          Recetas & Ensambles (BOM)
+        </button>
+        <button
+          onClick={() => setActiveTab('forecast')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'forecast'
+              ? 'border-amber-500 text-amber-500'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Sparkles size={16} className="text-amber-400" />
+          Demanda & Reabastecimiento IA
         </button>
       </div>
 
@@ -390,6 +493,205 @@ export function InventoryClient() {
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500">
                         <CheckCircle2 size={12} /> {tr.status === 'RECEIVED' ? 'Recibido' : 'Despachado'}
                       </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Lots & FEFO */}
+      {activeTab === 'lots' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border">
+            <div>
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Calendar size={18} className="text-amber-500" />
+                Control de Lotes y Vencimientos (Estrategia FEFO)
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Despacho inteligente priorizando el lote con fecha de expiración más próxima (*First-Expired, First-Out*).
+              </p>
+            </div>
+            <span className="text-xs font-medium px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-md">
+              FEFO Activo
+            </span>
+          </div>
+
+          <div className="rounded-lg border border-border overflow-hidden bg-card">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-semibold">
+                <tr>
+                  <th className="px-4 py-3">Lote / SKU</th>
+                  <th className="px-4 py-3">Producto</th>
+                  <th className="px-4 py-3">Bodega</th>
+                  <th className="px-4 py-3 text-right">Existencia</th>
+                  <th className="px-4 py-3">Fecha Vencimiento</th>
+                  <th className="px-4 py-3 text-center">Días Restantes</th>
+                  <th className="px-4 py-3 text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {lotItems.map(lot => (
+                  <tr key={lot.id} className="hover:bg-muted/30 transition">
+                    <td className="px-4 py-3">
+                      <div className="font-mono text-xs font-bold text-foreground">{lot.lotNumber}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{lot.sku}</div>
+                    </td>
+                    <td className="px-4 py-3 font-medium text-foreground">{lot.productName}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">{lot.warehouseName}</td>
+                    <td className="px-4 py-3 text-right font-bold text-foreground">{lot.quantity}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{lot.expiryDate}</td>
+                    <td className="px-4 py-3 text-center font-mono text-xs font-semibold">
+                      {lot.daysRemaining} días
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {lot.status === 'FRESH' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500">
+                          <CheckCircle2 size={12} /> Vigente
+                        </span>
+                      )}
+                      {lot.status === 'WARNING' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500">
+                          <AlertTriangle size={12} /> Por Vencer
+                        </span>
+                      )}
+                      {lot.status === 'EXPIRED' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500">
+                          <AlertTriangle size={12} /> Vencido
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: BOM (Bill of Materials) */}
+      {activeTab === 'bom' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border">
+            <div>
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <ChefHat size={18} className="text-amber-500" />
+                Estructura de Materiales & Recetas (BOM)
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Descuento automático de ingredientes, materias primas y empaques tras cada venta en el POS.
+              </p>
+            </div>
+            <button
+              onClick={() => alert("Módulo de alta de receta disponible en el backend.")}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-md transition shadow-sm"
+            >
+              <Plus size={14} /> Nueva Receta
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {bomRecipes.map(recipe => (
+              <div key={recipe.id} className="p-4 rounded-xl border border-border bg-card shadow-sm space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-xs font-mono text-amber-500 font-semibold">{recipe.parentSku}</span>
+                    <h4 className="text-sm font-bold text-foreground mt-0.5">{recipe.parentName}</h4>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    {recipe.components.length} insumos
+                  </span>
+                </div>
+
+                <div className="border-t border-border pt-2 space-y-2">
+                  <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Insumos y Mermas:</span>
+                  <div className="divide-y divide-border/60">
+                    {recipe.components.map((c, i) => (
+                      <div key={i} className="py-1.5 flex items-center justify-between text-xs">
+                        <div>
+                          <span className="font-medium text-foreground">{c.childName}</span>
+                          <span className="text-muted-foreground font-mono ml-2">({c.childSku})</span>
+                        </div>
+                        <span className="font-bold text-amber-500 font-mono">
+                          {c.quantityRequired} {c.unit}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Demand Forecasting (IA) */}
+      {activeTab === 'forecast' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-card p-4 rounded-lg border border-border">
+            <div>
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Sparkles size={18} className="text-amber-400" />
+                Predicción de Demanda & DOH (*Days on Hand*) con IA
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Cálculo predictivo de días de stock restantes según consumo diario y órdenes de reabastecimiento sugeridas.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border overflow-hidden bg-card">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-semibold">
+                <tr>
+                  <th className="px-4 py-3">SKU</th>
+                  <th className="px-4 py-3">Producto</th>
+                  <th className="px-4 py-3 text-right">Stock Actual</th>
+                  <th className="px-4 py-3 text-right">Venta Diaria Promedio</th>
+                  <th className="px-4 py-3 text-center">Días de Stock (DOH)</th>
+                  <th className="px-4 py-3 text-right">Reorden Sugerido</th>
+                  <th className="px-4 py-3 text-center">Nivel de Riesgo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {forecastItems.map((fc, i) => (
+                  <tr key={i} className="hover:bg-muted/30 transition">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-foreground">{fc.sku}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{fc.productName}</td>
+                    <td className="px-4 py-3 text-right font-bold text-foreground">{fc.currentStock}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
+                      {fc.averageDailySales} un/día
+                    </td>
+                    <td className="px-4 py-3 text-center font-bold font-mono text-sm">
+                      {fc.daysOnHand} días
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold font-mono text-amber-500">
+                      {fc.suggestedReorder > 0 ? `+${fc.suggestedReorder} un` : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {fc.riskLevel === 'OPTIMAL' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500">
+                          <CheckCircle2 size={12} /> Óptimo
+                        </span>
+                      )}
+                      {fc.riskLevel === 'LOW_STOCK' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500">
+                          <AlertTriangle size={12} /> Reabastecer Pronto
+                        </span>
+                      )}
+                      {fc.riskLevel === 'CRITICAL' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500">
+                          <AlertTriangle size={12} /> Quiebre Inminente
+                        </span>
+                      )}
+                      {fc.riskLevel === 'OVERSTOCKED' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-500">
+                          Sobreinventario
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

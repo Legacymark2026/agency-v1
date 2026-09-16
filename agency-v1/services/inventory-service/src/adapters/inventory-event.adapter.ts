@@ -35,4 +35,31 @@ export class RedisInventoryEventAdapter implements IInventoryEventPublisherPort 
       console.warn("[InventoryEventAdapter] Could not publish inventory.movement.recorded:", err.message);
     }
   }
+
+  async publishLotExpiringSoon(payload: {
+    companyId: string;
+    lotId: string;
+    lotNumber: string;
+    sku: string;
+    daysRemaining: number;
+  }): Promise<void> {
+    try {
+      await eventBus.publish("inventory.lot.expiring_soon" as any, payload);
+    } catch (err: any) {
+      console.warn("[InventoryEventAdapter] Could not publish inventory.lot.expiring_soon:", err.message);
+    }
+  }
+
+  async publishReorderSuggested(payload: {
+    companyId: string;
+    productId: string;
+    sku: string;
+    suggestedQuantity: number;
+  }): Promise<void> {
+    try {
+      await eventBus.publish("inventory.reorder.suggested" as any, payload);
+    } catch (err: any) {
+      console.warn("[InventoryEventAdapter] Could not publish inventory.reorder.suggested:", err.message);
+    }
+  }
 }

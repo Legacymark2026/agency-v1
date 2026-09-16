@@ -4582,6 +4582,51 @@ model TransferOrder {
   @@map("tbl_inventory_transfers")
 }
 
+model ProductLot {
+  id               String    @id @default(uuid())
+  companyId        String    @map("company_id")
+  warehouseId      String    @map("warehouse_id")
+  productId        String    @map("product_id")
+  sku              String
+  lotNumber        String    @map("lot_number")
+  quantity         Float     @default(0)
+  initialQuantity  Float     @default(0) @map("initial_quantity")
+  unitCost         Float     @default(0) @map("unit_cost")
+  manufactureDate  DateTime? @map("manufacture_date")
+  expiryDate       DateTime  @map("expiry_date")
+  status           String    @default("ACTIVE") // ACTIVE, EXPIRED, DEPLETED, QUARANTINE
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([warehouseId, productId, lotNumber])
+  @@index([companyId, warehouseId])
+  @@index([companyId, productId])
+  @@index([expiryDate])
+  @@map("tbl_inventory_lots")
+}
+
+model BillOfMaterial {
+  id               String    @id @default(uuid())
+  companyId        String    @map("company_id")
+  parentProductId  String    @map("parent_product_id")
+  parentSku        String    @map("parent_sku")
+  parentName       String    @map("parent_name")
+  childProductId   String    @map("child_product_id")
+  childSku         String    @map("child_sku")
+  childName        String    @map("child_name")
+  quantityRequired Float     @map("quantity_required")
+  unit             String    @default("UN") // UN, G, ML, KG, L
+  wasteFactorPct   Float     @default(0) @map("waste_factor_pct")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([companyId, parentProductId, childProductId])
+  @@index([companyId, parentProductId])
+  @@map("tbl_inventory_boms")
+}
+
 // ── DIAN COMPLIANCE MODELS ──────────────────────────────────────────────────
 
 model DianDocument {

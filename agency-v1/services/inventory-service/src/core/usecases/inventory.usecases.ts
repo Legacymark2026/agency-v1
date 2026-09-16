@@ -1,7 +1,12 @@
-/**
- * Inventory Core UseCases Orchestrator (Hexagonal 5.0)
- */
-import { KardexCalculator, StockItemProps, StockMovementProps } from "../domain/inventory.domain";
+import {
+  KardexCalculator,
+  FEFOEngine,
+  DemandForecastingEngine,
+  StockItemProps,
+  StockMovementProps,
+  ProductLotProps,
+  DemandForecastResult
+} from "../domain/inventory.domain";
 import { IInventoryRepositoryPort, IInventoryEventPublisherPort, IInventoryUseCases } from "../ports/inventory.ports";
 
 export class InventoryUseCases implements IInventoryUseCases {
@@ -20,7 +25,9 @@ export class InventoryUseCases implements IInventoryUseCases {
     unitCost: number;
     reference?: string;
     note?: string;
-  }): Promise<{ stock: StockItemProps; movement: StockMovementProps }> {
+    lotNumber?: string;
+    expiryDate?: Date;
+  }): Promise<{ stock: StockItemProps; movement: StockMovementProps; lot?: ProductLotProps }> {
     if (params.quantity <= 0) {
       throw new Error("La cantidad de entrada debe ser superior a 0.");
     }
@@ -53,6 +60,24 @@ export class InventoryUseCases implements IInventoryUseCases {
 
     const savedStock = await this.repo.upsertStockItem(updatedStock);
 
+    // Si viene información de lote y vencimiento, registrar en tbl_inventory_lots
+    let createdLot: ProductLotProps | undefined;
+    if (params.lotNumber && params.expiryDate) {
+      createdLot = await this.repo.createProductLot({
+        companyId: params.companyId,
+        warehouseId: params.warehouseId,
+        productId: params.productId,
+        sku: params.sku,
+        lotNumber: params.lotNumber,
+        quantity: params.quantity,
+        initialQuantity: params.quantity,
+        unitCost: params.unitCost,
+        expiryDate: params.expiryDate,
+        status: "ACTIVE",
+        notes: params.note,
+      });
+    }
+
     const movement = await this.repo.recordMovement({
       companyId: params.companyId,
       warehouseId: params.warehouseId,
@@ -74,7 +99,7 @@ export class InventoryUseCases implements IInventoryUseCases {
       quantity: params.quantity,
     });
 
-    return { stock: savedStock, movement };
+    return { stock: savedStock, movement, lot: createdLot };
   }
 
   async registerStockExit(params: {
@@ -84,7 +109,8 @@ export class InventoryUseCases implements IInventoryUseCases {
     quantity: number;
     reference?: string;
     note?: string;
-  }): Promise<{ stock: StockItemProps; movement: StockMovementProps }> {
+    useFefo?: boolean;
+  }): Promise<{ stock: StockItemProps; movement: StockMovementProps; allocatedLots?: { lotId: string; lotNumber: string; quantityToDeduct: number }[] }> {
     if (params.quantity <= 0) {
       throw new Error("La cantidad de salida debe ser superior a 0.");
     }
@@ -94,6 +120,22 @@ export class InventoryUseCases implements IInventoryUseCases {
       throw new Error(
         `Stock insuficiente en bodega. Disponible: ${stock ? stock.quantity : 0}, Solicitado: ${params.quantity}`
       );
+    }
+
+    // FEFO (First-Expired, First-Out) inteligente si está activado
+    let allocatedLots: { lotId: string; lotNumber: string; quantityToDeduct: number }[] | undefined;
+    if (params.useFefo !== false) {
+      const activeLots = await this.repo.listLotsByProduct(params.companyId, params.warehouseId, params.productId);
+      if (activeLots.length > 0) {
+        try {
+          allocatedLots = FEFOEngine.allocateLotsFEFO(activeLots, params.quantity);
+          for (const alloc of allocatedLots) {
+            await this.repo.deductFromLot(alloc.lotId, alloc.quantityToDeduct);
+          }
+        } catch {
+          // Si no alcanzan los lotes trazados, procede con la salida regular
+        }
+      }
     }
 
     const newQty = stock.quantity - params.quantity;
@@ -119,7 +161,7 @@ export class InventoryUseCases implements IInventoryUseCases {
       note: params.note,
     });
 
-    // Check reorder point
+    // Validar punto de reorden
     if (KardexCalculator.isReorderRequired(newQty, stock.reorderPoint)) {
       await this.eventPublisher.publishStockLow({
         companyId: params.companyId,
@@ -138,7 +180,7 @@ export class InventoryUseCases implements IInventoryUseCases {
       quantity: params.quantity,
     });
 
-    return { stock: savedStock, movement };
+    return { stock: savedStock, movement, allocatedLots };
   }
 
   async executeTransfer(params: {
@@ -188,5 +230,89 @@ export class InventoryUseCases implements IInventoryUseCases {
     });
 
     return { success: true, transferNumber };
+  }
+
+  /**
+   * BOM (Bill of Materials): Descompone un producto compuesto y descuenta ingredientes/insumos
+   */
+  async decomposeAndDeductBom(params: {
+    companyId: string;
+    warehouseId: string;
+    parentProductId: string;
+    parentQuantity: number;
+    reference?: string;
+  }): Promise<{ componentsDeducted: number }> {
+    const components = await this.repo.getBomForProduct(params.companyId, params.parentProductId);
+    if (components.length === 0) {
+      return { componentsDeducted: 0 };
+    }
+
+    for (const comp of components) {
+      const wasteMultiplier = 1 + (comp.wasteFactorPct || 0) / 100;
+      const totalRequired = comp.quantityRequired * params.parentQuantity * wasteMultiplier;
+
+      await this.registerStockExit({
+        companyId: params.companyId,
+        warehouseId: params.warehouseId,
+        productId: comp.childProductId,
+        quantity: totalRequired,
+        reference: params.reference || `BOM-${comp.parentSku}`,
+        note: `Consumo automático por ensamble de ${params.parentQuantity}x ${comp.parentName}`,
+      });
+    }
+
+    return { componentsDeducted: components.length };
+  }
+
+  /**
+   * Genera reporte de DOH (Days on Hand) y sugerencias de reabastecimiento con IA
+   */
+  async generateDemandForecast(companyId: string, warehouseId?: string): Promise<DemandForecastResult[]> {
+    const stockItems = await this.repo.listStockByWarehouse(companyId, warehouseId);
+    const forecasts: DemandForecastResult[] = [];
+
+    for (const item of stockItems) {
+      const sales30Days = await this.repo.getSalesVolumeLast30Days(companyId, item.productId);
+      const forecast = DemandForecastingEngine.calculateForecast(
+        item.productId,
+        item.sku,
+        item.quantity,
+        sales30Days
+      );
+
+      if (forecast.isReorderSuggested) {
+        await this.eventPublisher.publishReorderSuggested({
+          companyId,
+          productId: item.productId,
+          sku: item.sku,
+          suggestedQuantity: forecast.suggestedReorderQuantity,
+        });
+      }
+
+      forecasts.push(forecast);
+    }
+
+    return forecasts;
+  }
+
+  /**
+   * Alertas automáticas de lotes próximos a vencer
+   */
+  async checkExpiringLotsAlerts(companyId: string, withinDays: number = 30): Promise<ProductLotProps[]> {
+    const lots = await this.repo.listExpiringLots(companyId, withinDays);
+    const now = Date.now();
+
+    for (const lot of lots) {
+      const daysRemaining = Math.max(0, Math.ceil((new Date(lot.expiryDate).getTime() - now) / (1000 * 60 * 60 * 24)));
+      await this.eventPublisher.publishLotExpiringSoon({
+        companyId,
+        lotId: lot.id,
+        lotNumber: lot.lotNumber,
+        sku: lot.sku,
+        daysRemaining,
+      });
+    }
+
+    return lots;
   }
 }

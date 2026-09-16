@@ -97,6 +97,73 @@ export class PrismaInventoryAdapter implements IInventoryRepositoryPort {
     });
   }
 
+  async createProductLot(lot: Omit<ProductLotProps, "id" | "createdAt">): Promise<ProductLotProps> {
+    return (prisma as any).productLot.create({ data: lot });
+  }
+
+  async listLotsByProduct(companyId: string, warehouseId: string, productId: string): Promise<ProductLotProps[]> {
+    return (prisma as any).productLot.findMany({
+      where: { companyId, warehouseId, productId, status: "ACTIVE" },
+      orderBy: { expiryDate: "asc" },
+    });
+  }
+
+  async listExpiringLots(companyId: string, withinDays: number): Promise<ProductLotProps[]> {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() + withinDays);
+    return (prisma as any).productLot.findMany({
+      where: {
+        companyId,
+        status: "ACTIVE",
+        expiryDate: { lte: threshold },
+      },
+      orderBy: { expiryDate: "asc" },
+    });
+  }
+
+  async deductFromLot(lotId: string, quantity: number): Promise<ProductLotProps> {
+    const current = await (prisma as any).productLot.findUnique({ where: { id: lotId } });
+    if (!current) throw new Error("Lote no encontrado");
+    const newQty = Math.max(0, current.quantity - quantity);
+    const status = newQty === 0 ? "DEPLETED" : current.status;
+    return (prisma as any).productLot.update({
+      where: { id: lotId },
+      data: { quantity: newQty, status },
+    });
+  }
+
+  async createBomEntry(bom: Omit<BillOfMaterialProps, "id">): Promise<BillOfMaterialProps> {
+    return (prisma as any).billOfMaterial.create({ data: bom });
+  }
+
+  async getBomForProduct(companyId: string, parentProductId: string): Promise<BillOfMaterialProps[]> {
+    return (prisma as any).billOfMaterial.findMany({
+      where: { companyId, parentProductId, isActive: true },
+    });
+  }
+
+  async listBoms(companyId: string): Promise<BillOfMaterialProps[]> {
+    return (prisma as any).billOfMaterial.findMany({
+      where: { companyId, isActive: true },
+      orderBy: { parentName: "asc" },
+    });
+  }
+
+  async getSalesVolumeLast30Days(companyId: string, productId: string): Promise<number> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const movements = await (prisma as any).stockMovement.findMany({
+      where: {
+        companyId,
+        productId,
+        movementType: "OUT_SALE",
+        createdAt: { gte: thirtyDaysAgo },
+      },
+      select: { quantity: true },
+    });
+    return movements.reduce((acc: number, m: any) => acc + (Number(m.quantity) || 0), 0);
+  }
+
   async updateTransferStatus(id: string, status: string, timestampField: string): Promise<any> {
     return (prisma as any).transferOrder.update({
       where: { id },
