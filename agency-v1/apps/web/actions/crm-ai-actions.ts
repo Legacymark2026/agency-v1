@@ -150,24 +150,37 @@ export async function getRealSalesReps(companyId: string): Promise<SalesRepAvail
             select: { id: true, name: true, email: true }
         });
 
-        const repsWithWorkload = await Promise.all(
-            users.map(async (u) => {
-                const activeDealsCount = await prisma.deal.count({
-                    where: {
-                        companyId,
-                        stage: { notIn: ['WON', 'LOST', 'Closed Won', 'Closed Lost'] }
-                    }
-                });
-                return {
-                    id: u.id,
-                    name: u.name || u.email,
-                    email: u.email,
-                    activeDealsCount,
-                    workingHours: { start: '09:00', end: '18:00' },
-                    timezone: 'America/Bogota',
-                };
-            })
-        );
+        if (users.length === 0) return [];
+
+        // High-performance single batch query to count active deals per rep
+        const userIds = users.map(u => u.id);
+        const dealCounts = await prisma.deal.groupBy({
+            by: ['assignedTo'],
+            where: {
+                companyId,
+                assignedTo: { in: userIds },
+                stage: { notIn: ['WON', 'LOST', 'Closed Won', 'Closed Lost'] }
+            },
+            _count: {
+                _all: true
+            }
+        });
+
+        const countsMap = new Map<string, number>();
+        for (const item of dealCounts) {
+            if (item.assignedTo) {
+                countsMap.set(item.assignedTo, item._count._all);
+            }
+        }
+
+        const repsWithWorkload: SalesRepAvailability[] = users.map((u) => ({
+            id: u.id,
+            name: u.name || u.email || "Usuario",
+            email: u.email || "",
+            activeDealsCount: countsMap.get(u.id) || 0,
+            workingHours: { start: '09:00', end: '18:00' },
+            timezone: 'America/Bogota',
+        }));
 
         return repsWithWorkload;
     } catch (error) {

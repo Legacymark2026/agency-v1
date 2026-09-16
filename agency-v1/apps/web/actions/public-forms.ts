@@ -3,9 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { triggerWorkflow } from "./automation";
 import { createLocalNotification } from "./notifications";
-
-// Rate Limit simulado para prevenir SPAM básico en la ruta de Edge/Server Actions
-// En producción se recomienda usar algo como @upstash/ratelimit
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function submitLeadMagnetForm(data: {
     name: string;
@@ -15,8 +13,12 @@ export async function submitLeadMagnetForm(data: {
     message?: string;
     source?: string;
 }) {
-    // 1. Basic Rate Limiting (por IP en un entorno ideal, aquí proxy de email)
-    // TODO: Implementar Upstash Rate Limit aquí. Por ahora se permite el paso.
+    // 1. Rate Limiting por email para prevenir spam y saturación de la base de datos
+    const normalizedEmail = (data.email || "").trim().toLowerCase();
+    const isAllowed = await rateLimit(`lead_magnet:${normalizedEmail}`, 5, 10 * 60 * 1000);
+    if (!isAllowed) {
+        return { error: "Has enviado demasiadas solicitudes en poco tiempo. Por favor espera unos minutos." };
+    }
 
     try {
         // En un escenario real, si el sistema es Multi-Tenant para varias empresas,

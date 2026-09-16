@@ -231,6 +231,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("tbl_accounts")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -245,6 +246,7 @@ model Session {
   userAgent    String?  @map("user_agent")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("tbl_sessions")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -432,6 +434,7 @@ model CompanyUser {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, companyId])
+  @@index([companyId])
   @@index([roleName])
   @@index([roleId])
   @@map("tbl_company_users")
