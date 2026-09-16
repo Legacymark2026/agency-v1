@@ -41,8 +41,14 @@ export function EnterpriseChatClient({
   currentUserName: string;
   companyId: string;
 }) {
-  const [channels, setChannels] = useState<Channel[]>(initialChannels);
-  const [activeChannel, setActiveChannel] = useState<Channel | null>(initialChannels[0] || null);
+  const safeInitialChannels: Channel[] = Array.isArray(initialChannels)
+    ? initialChannels
+    : Array.isArray((initialChannels as any)?.data)
+    ? (initialChannels as any).data
+    : [];
+
+  const [channels, setChannels] = useState<Channel[]>(safeInitialChannels);
+  const [activeChannel, setActiveChannel] = useState<Channel | null>(safeInitialChannels[0] || null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -105,10 +111,17 @@ export function EnterpriseChatClient({
 
     getChannelMessagesAction(activeChannel.id)
       .then((res: any) => {
-        if (res?.data) {
+        if (Array.isArray(res)) {
+          setMessages(res);
+        } else if (Array.isArray(res?.data)) {
           setMessages(res.data);
+        } else if (Array.isArray(res?.data?.data)) {
+          setMessages(res.data.data);
+        } else {
+          setMessages([]);
         }
       })
+      .catch(() => setMessages([]))
       .finally(() => setLoading(false));
 
     // Join channel in websocket if open
@@ -196,10 +209,10 @@ export function EnterpriseChatClient({
         {/* Channels List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           <div className="px-2 py-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Canales ({channels.length})
+            Canales ({(Array.isArray(channels) ? channels : []).length})
           </div>
 
-          {channels.map((channel) => {
+          {(Array.isArray(channels) ? channels : []).map((channel) => {
             const isActive = activeChannel?.id === channel.id;
             return (
               <button
@@ -255,14 +268,14 @@ export function EnterpriseChatClient({
                 <div className="flex items-center justify-center h-full text-sm text-slate-500">
                   Cargando mensajes del canal...
                 </div>
-              ) : messages.length === 0 ? (
+              ) : (Array.isArray(messages) ? messages : []).length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-2">
                   <MessageSquare className="w-10 h-10 stroke-1 text-slate-600" />
                   <p className="text-sm">No hay mensajes aún en #{activeChannel.name}.</p>
                   <p className="text-xs text-slate-600">¡Sé el primero en iniciar la conversación!</p>
                 </div>
               ) : (
-                messages.map((msg) => {
+                (Array.isArray(messages) ? messages : []).map((msg) => {
                   const isMine = msg.senderId === currentUserId;
                   return (
                     <div

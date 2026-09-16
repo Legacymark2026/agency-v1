@@ -14,11 +14,15 @@ export default async function ChatPage() {
     redirect("/auth/login");
   }
 
-  let channels = [];
+  let channels: any[] = [];
   try {
     const res: any = await getChatChannelsAction();
-    if (res?.data) {
+    if (Array.isArray(res)) {
+      channels = res;
+    } else if (Array.isArray(res?.data)) {
       channels = res.data;
+    } else if (Array.isArray(res?.data?.data)) {
+      channels = res.data.data;
     }
   } catch (err) {
     console.error("Error fetching channels:", err);

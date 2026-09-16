@@ -33,7 +33,7 @@ export async function getChatChannelsAction() {
         },
         orderBy: { updatedAt: "desc" }
       });
-      return { success: true, data: channels };
+      return channels;
     }
   });
 }
@@ -96,7 +96,7 @@ export async function getChannelMessagesAction(channelId: string, limit: number 
         orderBy: { createdAt: "asc" },
         take: limit
       });
-      return { success: true, data: messages, count: messages.length };
+      return messages;
     }
   });
 }
