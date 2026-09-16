@@ -44,6 +44,7 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/pos", label: "Terminal POS (Caja)", icon: <ShoppingBag size={14} />, code: "POS" },
             { href: "/dashboard/inventory", label: "Inventario & Bodegas", icon: <Boxes size={14} />, code: "INV" },
+            { href: "/dashboard/sales-forecast", label: "Tabulación & Proyección Ventas", icon: <TrendingUp size={14} />, code: "FCT" },
             { href: "/dashboard/dian", label: "Cumplimiento Fiscal DIAN", icon: <FileCheck size={14} />, code: "DIA" },
             { href: "/dashboard/invoicing", label: "Facturación DIAN & RADIAN", icon: <ShieldCheck size={14} />, code: "FAC" },
             { href: "/dashboard/accounting", label: "Contabilidad & PUC / Libro Mayor", icon: <BookOpen size={14} />, code: "ACC" },

@@ -70,21 +70,33 @@ export class PrismaSalesForecastAdapter implements ISalesForecastRepositoryPort 
       orderBy: { createdAt: "asc" },
     });
 
-    const monthlyMap = new Map<string, { units: number; revenue: number }>();
+    // Agrupar por producto y por periodo mensual
+    const monthlyMap = new Map<string, { units: number; revenue: number; productId: string; sku?: string; productName?: string }>();
     for (const m of movements) {
       const d = new Date(m.createdAt);
       const periodKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const cur = monthlyMap.get(periodKey) || { units: 0, revenue: 0 };
+      const prodKey = `${m.productId || "default"}__${periodKey}`;
+      const cur = monthlyMap.get(prodKey) || {
+        units: 0,
+        revenue: 0,
+        productId: m.productId || "default",
+        sku: m.sku || "SKU-GEN",
+        productName: m.productName || "Producto Comercial",
+      };
       cur.units += Number(m.quantity) || 0;
       cur.revenue += Number(m.totalCost) || 0;
-      monthlyMap.set(periodKey, cur);
+      monthlyMap.set(prodKey, cur);
     }
 
     const points: HistoricalSalePoint[] = [];
-    for (const [period, data] of monthlyMap.entries()) {
+    for (const [key, data] of monthlyMap.entries()) {
+      const period = key.split("__")[1];
       points.push({
         date: new Date(`${period}-01`),
         period,
+        productId: data.productId,
+        sku: data.sku,
+        productName: data.productName,
         unitsSold: data.units,
         revenue: data.revenue,
         avgPrice: data.units > 0 ? Math.round(data.revenue / data.units) : 0,
