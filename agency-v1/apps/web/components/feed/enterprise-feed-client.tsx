@@ -108,7 +108,7 @@ export function EnterpriseFeedClient({
         pollOptions: formattedPollOptions
       });
 
-      const createdPost = res?.data?.data || res?.data;
+      const createdPost = res?.data?.data || (res?.data?.id ? res?.data : (res?.id ? res : null));
       if (createdPost && createdPost.id) {
         setPosts((prev) => [createdPost, ...prev]);
         setNewPostContent("");

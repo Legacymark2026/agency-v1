@@ -93,7 +93,7 @@ export async function createEnterprisePostAction(data: {
           pollOptions: data.pollOptions || []
         }
       });
-      return created;
+      return { success: true, data: created };
     }
   });
 }

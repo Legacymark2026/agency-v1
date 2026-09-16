@@ -224,14 +224,22 @@ export async function dispatchMicroserviceRequest<T = any>(
           statusCode: response.status,
         };
       } else {
-        if (response.status >= 500) {
-          recordFailure(serviceKey);
-          // If server error and fallback exists, trigger fallback
+        const json = await response.json().catch(() => ({}));
+
+        // Trigger fallback if microservice route does not exist (404) or on server errors (>= 500)
+        if (response.status >= 500 || response.status === 404) {
+          if (response.status >= 500) {
+            recordFailure(serviceKey);
+          }
           if (options.fallback) {
-            return tryFallback(`Servicio ${serviceKey} retornó HTTP ${response.status}`);
+            return tryFallback(
+              response.status === 404
+                ? `Ruta no encontrada (404) en gateway para ${serviceKey}`
+                : `Servicio ${serviceKey} retornó HTTP ${response.status}`
+            );
           }
         }
-        const json = await response.json().catch(() => ({}));
+
         return {
           success: false,
           error: json.error || json.message || `Error HTTP ${response.status}`,
