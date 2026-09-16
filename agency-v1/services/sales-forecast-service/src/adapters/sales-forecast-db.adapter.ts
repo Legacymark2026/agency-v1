@@ -2,11 +2,12 @@ import { prisma } from "@agency/database";
 import { ISalesForecastRepositoryPort } from "../core/ports/sales-forecast.ports";
 import {
   DiscountTableProps,
+  DiscountTierProps,
   HistoricalSalePoint,
   MLForecastResult,
   ScenarioSimulationProps,
   ScenarioSimulationResult
-} from "../domain/sales-forecast.domain";
+} from "../core/domain/sales-forecast.domain";
 
 export class PrismaSalesForecastAdapter implements ISalesForecastRepositoryPort {
   async createDiscountTable(table: Omit<DiscountTableProps, "id">): Promise<DiscountTableProps> {
@@ -15,7 +16,7 @@ export class PrismaSalesForecastAdapter implements ISalesForecastRepositoryPort 
       data: {
         ...rest,
         tiers: {
-          create: tiers.map((t) => ({
+          create: tiers.map((t: DiscountTierProps) => ({
             minQuantity: t.minQuantity,
             maxQuantity: t.maxQuantity,
             discountPct: t.discountPct,

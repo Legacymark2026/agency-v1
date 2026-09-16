@@ -39,8 +39,9 @@ export function createSalesForecastRouter(
 
   router.patch("/discount-tables/:id/toggle", async (req: Request, res: Response) => {
     try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       const { isActive } = req.body;
-      const updated = await repo.toggleDiscountTable(req.params.id, Boolean(isActive));
+      const updated = await repo.toggleDiscountTable(id, Boolean(isActive));
       res.json({ success: true, data: updated });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });

@@ -35,6 +35,9 @@ export interface HistoricalSalePoint {
   unitsSold: number;
   revenue: number;
   avgPrice: number;
+  productId?: string;
+  sku?: string;
+  productName?: string;
 }
 
 export interface MLForecastResult {

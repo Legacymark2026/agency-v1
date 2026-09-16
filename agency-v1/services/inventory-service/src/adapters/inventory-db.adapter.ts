@@ -3,7 +3,13 @@
  */
 import { prisma } from "@agency/database";
 import { IInventoryRepositoryPort } from "../core/ports/inventory.ports";
-import { WarehouseProps, StockItemProps, StockMovementProps } from "../core/domain/inventory.domain";
+import {
+  WarehouseProps,
+  StockItemProps,
+  StockMovementProps,
+  ProductLotProps,
+  BillOfMaterialProps,
+} from "../core/domain/inventory.domain";
 
 export class PrismaInventoryAdapter implements IInventoryRepositoryPort {
   async createWarehouse(data: Omit<WarehouseProps, "id">): Promise<WarehouseProps> {
