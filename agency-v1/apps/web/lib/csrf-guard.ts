@@ -7,7 +7,16 @@
 
 import crypto from "crypto";
 
-const CSRF_SECRET = process.env.CSRF_SECRET || "legacymark_super_secure_csrf_secret_key_2026";
+const CSRF_SECRET = (() => {
+  const secret = process.env.CSRF_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build") {
+      throw new Error("[FATAL] CSRF_SECRET no está configurado en producción. Es obligatorio para la protección Anti-CSRF.");
+    }
+    return "legacymark-dev-csrf-secret-only-for-development-mode!";
+  }
+  return secret;
+})();
 
 export interface CSRFTokenData {
   token: string;

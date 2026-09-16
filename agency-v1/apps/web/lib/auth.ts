@@ -49,8 +49,11 @@ const authSecret = (() => {
             return "build-dummy-auth-secret-32-characters-minimum-for-compilation!";
         }
         if (process.env.NODE_ENV === "production") {
-            // Si está en tiempo de ejecución en producción pero no se configuró la variable
-            return "build-dummy-auth-secret-32-characters-minimum-for-compilation!";
+            throw new Error(
+                "[FATAL] AUTH_SECRET no está configurado en producción. " +
+                "Configura la variable de entorno AUTH_SECRET antes de iniciar el servidor. " +
+                "Esto es obligatorio para la firma segura de sesiones."
+            );
         }
         return "legacymark-dev-ephemeral-auth-secret-32-chars-min!";
     }

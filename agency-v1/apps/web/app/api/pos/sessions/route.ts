@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 const POS_SERVICE_URL = process.env.POS_SERVICE_URL || "http://pos-service:4020";
 
@@ -6,6 +7,11 @@ const POS_SERVICE_URL = process.env.POS_SERVICE_URL || "http://pos-service:4020"
 const fallbackSessions = new Map<string, any>();
 
 export async function GET(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("companyId") || "company_default_pos";
@@ -40,3 +46,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+

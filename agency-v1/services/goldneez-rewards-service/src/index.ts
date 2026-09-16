@@ -15,7 +15,14 @@ const app = express();
 app.use(metricsMiddleware("goldneez-rewards-service"));
 app.get("/metrics", metricsEndpoint);
 const PORT = parseInt(process.env.PORT || "4020", 10);
-const GOLDNEEZ_DB_URL = process.env.GOLDNEEZ_DB_URL || "postgresql://legacyuser:g%2Fd1b0VLZJQdTaoRdThivfuzqyT3%2BouU@187.77.195.9:5432/legacymark?schema=goldneez&search_path=goldneez,public";
+const GOLDNEEZ_DB_URL = (() => {
+  const url = process.env.GOLDNEEZ_DB_URL || process.env.DATABASE_URL;
+  if (!url) {
+    console.error("[FATAL] GOLDNEEZ_DB_URL o DATABASE_URL no configurado. Servicio no puede iniciar.");
+    process.exit(1);
+  }
+  return url;
+})();
 
 // Configurar el Pool de conexión a la base de datos
 const pool = new Pool({
