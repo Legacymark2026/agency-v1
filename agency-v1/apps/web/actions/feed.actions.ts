@@ -41,11 +41,14 @@ export async function getCompanyFeedAction(limit: number = 20, before?: string) 
 export async function createEnterprisePostAction(data: {
   title?: string;
   content: string;
+  category?: "GENERAL" | "OFFICIAL_ANNOUNCEMENT" | "KUDOS_RECOGNITION" | "LIVE_POLL" | "INNOVATION_IDEA";
   mediaUrls?: string[];
   audienceScope?: "COMPANY_WIDE" | "DEPARTMENT" | "CONFIDENTIAL_MANAGEMENT";
   departmentId?: string;
   tags?: string[];
   isPinned?: boolean;
+  pollQuestion?: string;
+  pollOptions?: Array<{ id: string; text: string; votes: number; voters: string[] }>;
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("No autenticado");
@@ -54,6 +57,7 @@ export async function createEnterprisePostAction(data: {
   const userId = session.user.id;
   const userName = session.user.name || "Colaborador";
   const userAvatar = session.user.image || null;
+  const userRole = session.user.role || "Colaborador";
 
   return executeMicroserviceRequest({
     service: "feed",
@@ -66,7 +70,8 @@ export async function createEnterprisePostAction(data: {
     },
     body: {
       ...data,
-      authorAvatar: userAvatar
+      authorAvatar: userAvatar,
+      authorRole: userRole
     },
     fallback: async () => {
       const created = await (prisma as any).enterprisePost.create({
@@ -75,13 +80,17 @@ export async function createEnterprisePostAction(data: {
           authorId: userId,
           authorName: userName,
           authorAvatar: userAvatar,
+          authorRole: userRole,
           title: data.title || null,
           content: data.content,
+          category: data.category || "GENERAL",
           mediaUrls: data.mediaUrls || [],
           audienceScope: data.audienceScope || "COMPANY_WIDE",
           departmentId: data.departmentId || null,
           tags: data.tags || [],
-          isPinned: data.isPinned || false
+          isPinned: data.isPinned || false,
+          pollQuestion: data.pollQuestion || null,
+          pollOptions: data.pollOptions || []
         }
       });
       return { success: true, data: created };
@@ -164,3 +173,52 @@ export async function addPostCommentAction(postId: string, content: string, pare
     }
   });
 }
+
+export async function voteOnPollAction(postId: string, optionId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("No autenticado");
+
+  const companyId = session.user.companyId || "default-tenant";
+  const userId = session.user.id;
+
+  return executeMicroserviceRequest({
+    service: "feed",
+    path: `/api/feed/posts/${postId}/vote`,
+    method: "POST",
+    companyId,
+    userId,
+    body: { optionId },
+    fallback: async () => {
+      const post = await (prisma as any).enterprisePost.findUnique({
+        where: { id: postId }
+      });
+
+      if (!post || !Array.isArray(post.pollOptions)) {
+        throw new Error("Encuesta no encontrada");
+      }
+
+      const options = post.pollOptions as Array<{ id: string; text: string; votes: number; voters: string[] }>;
+      const updatedOptions = options.map((opt) => {
+        // Remover voto previo del usuario si existía
+        const hadVoted = opt.voters?.includes(userId);
+        let voters = (opt.voters || []).filter((v: string) => v !== userId);
+        let votes = voters.length;
+
+        if (opt.id === optionId) {
+          voters.push(userId);
+          votes = voters.length;
+        }
+
+        return { ...opt, votes, voters };
+      });
+
+      const updated = await (prisma as any).enterprisePost.update({
+        where: { id: postId },
+        data: { pollOptions: updatedOptions }
+      });
+
+      return { success: true, data: updated };
+    }
+  });
+}
+
