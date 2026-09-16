@@ -274,3 +274,153 @@ export class CommercialScenarioSimulator {
     };
   }
 }
+
+/**
+ * ── OPTIMIZADOR PRESCRIPTIVO DE PRECIOS & MARGEN (AI Margin Maximizer) ──
+ * Resuelve analíticamente el descuento óptimo P* que maximiza la utilidad neta
+ * U(P) = (Precio(P) - Costo) * Demanda(P)
+ */
+export interface OptimalDiscountResult {
+  optimalDiscountPct: number;
+  optimalUnitPrice: number;
+  expectedUnits: number;
+  expectedRevenue: number;
+  expectedGrossProfit: number;
+  effectiveMarginPct: number;
+  profitGainVsBasePct: number;
+  elasticityCategory: "HIGHLY_ELASTIC" | "ELASTIC" | "INELASTIC";
+  curvePoints: Array<{ discountPct: number; expectedProfit: number; expectedRevenue: number }>;
+}
+
+export class OptimalPriceOptimizer {
+  static calculateOptimalDiscount(params: {
+    basePrice: number;
+    unitCost: number;
+    baseUnits: number;
+    priceElasticity: number; // e.g. 1.5
+    minMarginFloorPct: number; // e.g. 20%
+    maxAllowedDiscountPct?: number; // e.g. 35%
+  }): OptimalDiscountResult {
+    const { basePrice, unitCost, baseUnits, priceElasticity, minMarginFloorPct } = params;
+    const maxDiscount = params.maxAllowedDiscountPct || 40;
+
+    let bestDiscountPct = 0;
+    let maxProfit = -Infinity;
+    let bestUnits = baseUnits;
+    let bestRevenue = baseUnits * basePrice;
+    const curvePoints: Array<{ discountPct: number; expectedProfit: number; expectedRevenue: number }> = [];
+
+    // Barrido analítico en incrementos de 0.5%
+    for (let d = 0; d <= maxDiscount; d += 0.5) {
+      const discountedPrice = basePrice * (1 - d / 100);
+      const currentMarginPct = ((discountedPrice - unitCost) / discountedPrice) * 100;
+
+      // Respetar piso inviolable de margen
+      if (currentMarginPct < minMarginFloorPct) break;
+
+      // Demanda según elasticidad
+      const volumeUpliftPct = priceElasticity * d;
+      const units = Math.round(baseUnits * (1 + volumeUpliftPct / 100));
+      const revenue = units * discountedPrice;
+      const profit = units * (discountedPrice - unitCost);
+
+      if (d % 2 === 0) {
+        curvePoints.push({
+          discountPct: d,
+          expectedProfit: Math.round(profit),
+          expectedRevenue: Math.round(revenue),
+        });
+      }
+
+      if (profit > maxProfit) {
+        maxProfit = profit;
+        bestDiscountPct = d;
+        bestUnits = units;
+        bestRevenue = revenue;
+      }
+    }
+
+    const baseProfit = baseUnits * (basePrice - unitCost);
+    const profitGainVsBasePct = baseProfit > 0 ? ((maxProfit - baseProfit) / baseProfit) * 100 : 0;
+    const optimalPrice = basePrice * (1 - bestDiscountPct / 100);
+
+    return {
+      optimalDiscountPct: bestDiscountPct,
+      optimalUnitPrice: Math.round(optimalPrice),
+      expectedUnits: bestUnits,
+      expectedRevenue: Math.round(bestRevenue),
+      expectedGrossProfit: Math.round(maxProfit),
+      effectiveMarginPct: Math.round(((optimalPrice - unitCost) / optimalPrice) * 1000) / 10,
+      profitGainVsBasePct: Math.round(profitGainVsBasePct * 10) / 10,
+      elasticityCategory:
+        priceElasticity >= 1.5 ? "HIGHLY_ELASTIC" : priceElasticity >= 1.0 ? "ELASTIC" : "INELASTIC",
+      curvePoints,
+    };
+  }
+}
+
+/**
+ * ── LIQUIDACIÓN DINÁMICA DE LOTES EN RIESGO (Markdown Optimization) ──
+ * Sugiere escalas de descuento escalonadas para evitar obsolescencia y pérdidas de inventario
+ */
+export interface BatchMarkdownSuggestion {
+  lotId: string;
+  sku: string;
+  productName: string;
+  quantityInStock: number;
+  daysToExpiry: number;
+  riskLevel: "CRITICAL" | "HIGH" | "MEDIUM" | "NORMAL";
+  suggestedDiscountPct: number;
+  liquidationStrategy: string;
+  expectedCostRecovery: number;
+}
+
+export class BatchMarkdownOptimizer {
+  static evaluateLotMarkdown(lot: {
+    id: string;
+    sku: string;
+    productName: string;
+    quantity: number;
+    unitCost: number;
+    unitPrice: number;
+    expiryDate: Date;
+  }): BatchMarkdownSuggestion {
+    const today = new Date();
+    const diffTime = lot.expiryDate.getTime() - today.getTime();
+    const daysToExpiry = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+    let riskLevel: "CRITICAL" | "HIGH" | "MEDIUM" | "NORMAL" = "NORMAL";
+    let suggestedDiscountPct = 0;
+    let strategy = "Precio comercial estándar. Rotación dentro de parámetros normales.";
+
+    if (daysToExpiry <= 15) {
+      riskLevel = "CRITICAL";
+      suggestedDiscountPct = 40;
+      strategy = "Liquidación Relámpago (Flash Markdown): Rebaja al costo para recuperar capital de trabajo antes de caducidad inminente.";
+    } else if (daysToExpiry <= 35) {
+      riskLevel = "HIGH";
+      suggestedDiscountPct = 25;
+      strategy = "Promoción de Alta Rotación: Paquetizar 2x1 o combos comerciales agresivos.";
+    } else if (daysToExpiry <= 60) {
+      riskLevel = "MEDIUM";
+      suggestedDiscountPct = 12;
+      strategy = "Descuento Preventivo: Ofrecer escala mayorista a distribuidores prioritarios.";
+    }
+
+    const discountedPrice = lot.unitPrice * (1 - suggestedDiscountPct / 100);
+    const expectedCostRecovery = Math.round(lot.quantity * Math.max(lot.unitCost * 0.8, discountedPrice));
+
+    return {
+      lotId: lot.id,
+      sku: lot.sku,
+      productName: lot.productName,
+      quantityInStock: lot.quantity,
+      daysToExpiry,
+      riskLevel,
+      suggestedDiscountPct,
+      liquidationStrategy: strategy,
+      expectedCostRecovery,
+    };
+  }
+}
+

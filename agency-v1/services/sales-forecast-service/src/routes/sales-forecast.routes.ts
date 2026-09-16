@@ -96,5 +96,41 @@ export function createSalesForecastRouter(
     }
   });
 
+  router.post("/simulations/compare", async (req: Request, res: Response) => {
+    try {
+      const { scenarios } = req.body;
+      if (!Array.isArray(scenarios)) {
+        res.status(400).json({ success: false, error: "scenarios debe ser un arreglo" });
+        return;
+      }
+      const results = await useCases.compareScenarios(scenarios);
+      res.json({ success: true, data: results });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // ── Optimizador Prescriptivo de Descuento (AI Margin Maximizer) ───────────
+  router.post("/optimizer/optimal-discount", async (req: Request, res: Response) => {
+    try {
+      const result = await useCases.calculateOptimalDiscount(req.body);
+      res.json({ success: true, data: result });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // ── Liquidación Preventiva de Lotes Próximos a Vencer (Markdown) ─────────
+  router.get("/markdown/lot-recommendations", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const withinDays = req.query.withinDays ? parseInt(req.query.withinDays as string, 10) : 60;
+      const suggestions = await useCases.getBatchMarkdownSuggestions(companyId, withinDays);
+      res.json({ success: true, data: suggestions });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return router;
 }

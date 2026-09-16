@@ -3,7 +3,9 @@ import {
   HistoricalSalePoint,
   MLForecastResult,
   ScenarioSimulationProps,
-  ScenarioSimulationResult
+  ScenarioSimulationResult,
+  OptimalDiscountResult,
+  BatchMarkdownSuggestion
 } from "../domain/sales-forecast.domain";
 
 export interface ISalesForecastRepositoryPort {
@@ -29,12 +31,16 @@ export interface ISalesForecastRepositoryPort {
     params: ScenarioSimulationProps;
   }): Promise<any>;
   listSimulations(companyId: string): Promise<any[]>;
+
+  // Expiring Lots for Markdown
+  getExpiringLotsForMarkdown(companyId: string, withinDays: number): Promise<any[]>;
 }
 
 export interface ISalesForecastEventPublisherPort {
   publishForecastGenerated(payload: { companyId: string; period: string; totalRevenueProjected: number }): Promise<void>;
   publishDiscountTableChanged(payload: { companyId: string; tableCode: string; action: string }): Promise<void>;
   publishScenarioSimulated(payload: { companyId: string; scenarioName: string; isViable: boolean }): Promise<void>;
+  publishReorderSuggested(payload: { companyId: string; productId: string; sku: string; suggestedUnits: number; targetPeriod: string }): Promise<void>;
 }
 
 export interface ISalesForecastUseCases {
@@ -47,4 +53,14 @@ export interface ISalesForecastUseCases {
   }): Promise<any>;
   runMLSalesForecast(params: { companyId: string; targetPeriod: string; productId?: string }): Promise<MLForecastResult[]>;
   simulateCommercialScenario(params: ScenarioSimulationProps & { companyId: string }): Promise<ScenarioSimulationResult>;
+  calculateOptimalDiscount(params: {
+    basePrice: number;
+    unitCost: number;
+    baseUnits: number;
+    priceElasticity: number;
+    minMarginFloorPct: number;
+    maxAllowedDiscountPct?: number;
+  }): Promise<OptimalDiscountResult>;
+  getBatchMarkdownSuggestions(companyId: string, withinDays?: number): Promise<BatchMarkdownSuggestion[]>;
+  compareScenarios(scenarios: Array<ScenarioSimulationProps & { companyId: string }>): Promise<ScenarioSimulationResult[]>;
 }

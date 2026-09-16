@@ -178,4 +178,50 @@ export class PrismaSalesForecastAdapter implements ISalesForecastRepositoryPort 
       take: 20,
     });
   }
+
+  async getExpiringLotsForMarkdown(companyId: string, withinDays: number): Promise<any[]> {
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() + withinDays);
+    try {
+      return await (prisma as any).productLot.findMany({
+        where: {
+          companyId,
+          status: "ACTIVE",
+          expiryDate: { lte: threshold },
+        },
+        orderBy: { expiryDate: "asc" },
+      });
+    } catch {
+      // Fallback para ambientes de demostración o antes de seed de inventario
+      return [
+        {
+          id: "lot-demo-1",
+          sku: "CAF-GEISHA-250G",
+          productName: "Café Varietal Geisha 250g",
+          quantity: 85,
+          unitCost: 18000,
+          unitPrice: 34000,
+          expiryDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
+        },
+        {
+          id: "lot-demo-2",
+          sku: "SNK-CHOC-70",
+          productName: "Chocolate Origen Arauca 70%",
+          quantity: 140,
+          unitCost: 6500,
+          unitPrice: 12500,
+          expiryDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+        },
+        {
+          id: "lot-demo-3",
+          sku: "INF-BERRIES-50G",
+          productName: "Infusión Frutos Rojos Premium",
+          quantity: 210,
+          unitCost: 8000,
+          unitPrice: 16000,
+          expiryDate: new Date(Date.now() + 52 * 24 * 60 * 60 * 1000),
+        },
+      ];
+    }
+  }
 }

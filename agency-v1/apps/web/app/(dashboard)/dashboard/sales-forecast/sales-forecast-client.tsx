@@ -14,7 +14,15 @@ import {
   RefreshCw,
   BarChart3,
   Plus,
-  Table as TableIcon
+  Table as TableIcon,
+  Zap,
+  Tag,
+  Clock,
+  Layers,
+  ArrowRight,
+  Download,
+  Flame,
+  Check
 } from 'lucide-react';
 
 interface DiscountTier {
@@ -44,21 +52,78 @@ interface ForecastPoint {
   confidenceHigh: number;
 }
 
+interface MarkdownLot {
+  id: string;
+  sku: string;
+  productName: string;
+  warehouse: string;
+  quantity: number;
+  daysToExpiry: number;
+  unitCost: number;
+  unitPrice: number;
+  riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'NORMAL';
+  suggestedDiscountPct: number;
+  liquidationStrategy: string;
+}
+
 export function SalesForecastClient() {
-  const [activeTab, setActiveTab] = useState<'forecast' | 'discounts' | 'simulator'>('forecast');
+  const [activeTab, setActiveTab] = useState<'forecast' | 'optimizer' | 'markdown' | 'compare' | 'discounts'>('forecast');
   
-  // Model state & Parameters
+  // Model state & Parameters (Holt-Winters)
   const [forecastHorizon, setForecastHorizon] = useState<'30' | '60' | '90'>('60');
   const [alpha, setAlpha] = useState<number>(0.3);
   const [beta, setBeta] = useState<number>(0.1);
   const [isRecalculating, setIsRecalculating] = useState<boolean>(false);
 
-  // Simulation Parameters
-  const [simBaseRevenue, setSimBaseRevenue] = useState<number>(185000000);
-  const [simDiscountPct, setSimDiscountPct] = useState<number>(12);
-  const [simElasticity, setSimElasticity] = useState<number>(1.45);
-  const [simMarketingSpend, setSimMarketingSpend] = useState<number>(15000000);
-  const [simCostRatio, setSimCostRatio] = useState<number>(0.55);
+  // Optimizer Inputs (AI Margin Maximizer)
+  const [optBasePrice, setOptBasePrice] = useState<number>(45000);
+  const [optUnitCost, setOptUnitCost] = useState<number>(24000);
+  const [optBaseUnits, setOptBaseUnits] = useState<number>(1200);
+  const [optElasticity, setOptElasticity] = useState<number>(1.65);
+  const [optMarginFloor, setOptMarginFloor] = useState<number>(22.0);
+
+  // Markdown Lots State
+  const [markdownLots, setMarkdownLots] = useState<MarkdownLot[]>([
+    {
+      id: 'lot-01',
+      sku: 'CAF-GEISHA-250G',
+      productName: 'Café Varietal Geisha Especial 250g',
+      warehouse: 'Bodega Principal Bogotá',
+      quantity: 85,
+      daysToExpiry: 12,
+      unitCost: 18000,
+      unitPrice: 38000,
+      riskLevel: 'CRITICAL',
+      suggestedDiscountPct: 40,
+      liquidationStrategy: 'Liquidación Relámpago (Flash Markdown): Rebaja rápida al costo para recuperar capital antes de merma total.'
+    },
+    {
+      id: 'lot-02',
+      sku: 'SNK-CHOC-70',
+      productName: 'Chocolate Fino de Aroma Arauca 70%',
+      warehouse: 'Bodega Medellín Hub',
+      quantity: 160,
+      daysToExpiry: 26,
+      unitCost: 6500,
+      unitPrice: 13500,
+      riskLevel: 'HIGH',
+      suggestedDiscountPct: 25,
+      liquidationStrategy: 'Promoción de Rotación Acelerada: Armar packs 2x1 en tienda física POS y canal B2B.'
+    },
+    {
+      id: 'lot-03',
+      sku: 'INF-BERRIES-50G',
+      productName: 'Infusión Frutos Rojos Premium 50g',
+      warehouse: 'Bodega Cali Valle',
+      quantity: 240,
+      daysToExpiry: 48,
+      unitCost: 8200,
+      unitPrice: 17000,
+      riskLevel: 'MEDIUM',
+      suggestedDiscountPct: 12,
+      liquidationStrategy: 'Descuento Preventivo: Ofrecer escala mayorista con volumen mínimo a distribuidores prioritarios.'
+    }
+  ]);
 
   // Discount Tables State
   const [discountTables] = useState<DiscountTable[]>([
@@ -93,6 +158,15 @@ export function SalesForecastClient() {
     }
   ]);
 
+  // Formatters
+  const formatCOP = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   // Forecast historical base points (months)
   const historicalData = useMemo(() => [
     { period: 'Abr 2026', units: 1250, revenue: 142000000 },
@@ -122,8 +196,8 @@ export function SalesForecastClient() {
       const variance = predRev * 0.07;
 
       points.push({
-        date: `2026-${10 + i}-01`,
-        label: names[i] || `Mes +${i + 1}`,
+        date: '2026-' + (10 + i) + '-01',
+        label: names[i] || 'Mes +' + (i + 1),
         predictedUnits: predUnits,
         predictedRevenue: predRev,
         confidenceLow: Math.round(predRev - variance),
@@ -134,36 +208,106 @@ export function SalesForecastClient() {
     return points;
   }, [historicalData, forecastHorizon, alpha]);
 
-  // Simulator Outcome Calculations
-  const simulationResults = useMemo(() => {
-    const volumeIncreasePct = (simElasticity * (simDiscountPct / 100));
-    const projectedUnits = Math.round(1500 * (1 + volumeIncreasePct));
-    
-    const grossPriceUnit = simBaseRevenue / 1500;
-    const netPriceUnit = grossPriceUnit * (1 - simDiscountPct / 100);
-    const grossProjectedRev = projectedUnits * netPriceUnit;
+  // AI Margin Maximizer Calculations
+  const optimizerResults = useMemo(() => {
+    let bestDiscount = 0;
+    let maxProfit = -Infinity;
+    let bestUnits = optBaseUnits;
+    let bestRevenue = optBaseUnits * optBasePrice;
+    const curve: Array<{ discount: number; profit: number; revenue: number; marginPct: number }> = [];
 
-    const marketingUplift = simMarketingSpend * 1.85;
-    const totalProjectedRevenue = Math.round(grossProjectedRev + marketingUplift);
+    for (let d = 0; d <= 35; d += 1) {
+      const discountedPrice = optBasePrice * (1 - d / 100);
+      const marginPct = ((discountedPrice - optUnitCost) / discountedPrice) * 100;
 
-    const cogs = totalProjectedRevenue * simCostRatio;
-    const grossProfit = totalProjectedRevenue - cogs;
-    const netCommercialMargin = grossProfit - simMarketingSpend;
-    const marginPct = (netCommercialMargin / totalProjectedRevenue) * 100;
+      if (marginPct < optMarginFloor) break;
 
-    const isViable = marginPct >= 20.0;
+      const demandUplift = optElasticity * d;
+      const units = Math.round(optBaseUnits * (1 + demandUplift / 100));
+      const revenue = units * discountedPrice;
+      const profit = units * (discountedPrice - optUnitCost);
+
+      curve.push({ discount: d, profit: Math.round(profit), revenue: Math.round(revenue), marginPct });
+
+      if (profit > maxProfit) {
+        maxProfit = profit;
+        bestDiscount = d;
+        bestUnits = units;
+        bestRevenue = revenue;
+      }
+    }
+
+    const baseProfit = optBaseUnits * (optBasePrice - optUnitCost);
+    const profitDeltaPct = baseProfit > 0 ? ((maxProfit - baseProfit) / baseProfit) * 100 : 0;
+    const optimalPrice = optBasePrice * (1 - bestDiscount / 100);
 
     return {
-      projectedRevenue: totalProjectedRevenue,
-      revenueDeltaPct: ((totalProjectedRevenue - simBaseRevenue) / simBaseRevenue) * 100,
-      projectedUnits,
-      unitDeltaPct: volumeIncreasePct * 100,
-      netCommercialMargin,
-      marginPct,
-      isViable,
-      roiMarketing: ((marketingUplift - simMarketingSpend) / simMarketingSpend) * 100
+      bestDiscount,
+      optimalPrice: Math.round(optimalPrice),
+      bestUnits,
+      bestRevenue: Math.round(bestRevenue),
+      maxProfit: Math.round(maxProfit),
+      baseProfit: Math.round(baseProfit),
+      profitDeltaPct: Math.round(profitDeltaPct * 10) / 10,
+      effectiveMarginPct: Math.round(((optimalPrice - optUnitCost) / optimalPrice) * 1000) / 10,
+      curve
     };
-  }, [simBaseRevenue, simDiscountPct, simElasticity, simMarketingSpend, simCostRatio]);
+  }, [optBasePrice, optUnitCost, optBaseUnits, optElasticity, optMarginFloor]);
+
+  // Multi-Scenario Comparison Engine
+  const scenariosData = useMemo(() => {
+    const baseRev = 185000000;
+    const baseCost = 101750000; // 55%
+    const baseProfit = baseRev - baseCost;
+
+    return [
+      {
+        id: 'sc-1',
+        title: 'Escenario 1: Conservador (Status Quo)',
+        tag: 'Bajo Riesgo',
+        tagColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        discountPct: 5,
+        elasticity: 1.1,
+        mktgSpend: 5000000,
+        projectedUnits: 1580,
+        projectedRevenue: 198000000,
+        projectedProfit: 86500000,
+        marginPct: 43.6,
+        profitDeltaPct: 3.8,
+        verdict: 'Estabilidad de flujo con mínimo riesgo de rotación.'
+      },
+      {
+        id: 'sc-2',
+        title: 'Escenario 2: Optimizado AI (Recomendado)',
+        tag: 'Máxima Rentabilidad',
+        tagColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+        discountPct: 14,
+        elasticity: 1.65,
+        mktgSpend: 15000000,
+        projectedUnits: 2150,
+        projectedRevenue: 242000000,
+        projectedProfit: 104200000,
+        marginPct: 43.0,
+        profitDeltaPct: 25.1,
+        verdict: 'Óptimo global: Mayor ganancia neta absoluta aprovechando elasticidad.'
+      },
+      {
+        id: 'sc-3',
+        title: 'Escenario 3: Agresivo Expansión Cuota',
+        tag: 'Alto Crecimiento',
+        tagColor: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        discountPct: 24,
+        elasticity: 1.8,
+        mktgSpend: 28000000,
+        projectedUnits: 2820,
+        projectedRevenue: 275000000,
+        projectedProfit: 95500000,
+        marginPct: 34.7,
+        profitDeltaPct: 14.7,
+        verdict: 'Penetración rápida de mercado pero con mayor compresión de margen.'
+      }
+    ];
+  }, []);
 
   const handleRecalculate = () => {
     setIsRecalculating(true);
@@ -172,23 +316,15 @@ export function SalesForecastClient() {
     }, 600);
   };
 
-  const formatCOP = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800/80 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800/80 pb-5">
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
-              Intelligence Engine v2.4
+              Intelligence Engine Enterprise v2.5
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -200,49 +336,71 @@ export function SalesForecastClient() {
             Tabulación de Descuentos & Proyección de Ventas
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Modelado predictivo Holt-Winters, simulación de elasticidad de demanda y control estricto de tablas de descuento.
+            Ensemble predictivo Holt-Winters, optimización prescriptiva de precios (AI Margin Maximizer) y liquidación de lotes.
           </p>
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex items-center bg-slate-900/90 border border-slate-800 p-1 rounded-xl">
+        {/* Tab Controls (5 Ultraprofessional Tabs) */}
+        <div className="flex items-center bg-slate-900/90 border border-slate-800 p-1 rounded-xl overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('forecast')}
-            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
               activeTab === 'forecast'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200'
-            }`}
+            )}
           >
             <BarChart3 className="w-3.5 h-3.5" />
             Proyección ML
           </button>
           <button
+            onClick={() => setActiveTab('optimizer')}
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
+              activeTab === 'optimizer'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            Precio Óptimo AI
+          </button>
+          <button
+            onClick={() => setActiveTab('markdown')}
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
+              activeTab === 'markdown'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <Flame className="w-3.5 h-3.5 text-rose-400" />
+            Liquidación Lotes
+          </button>
+          <button
+            onClick={() => setActiveTab('compare')}
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
+              activeTab === 'compare'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Comparar Escenarios
+          </button>
+          <button
             onClick={() => setActiveTab('discounts')}
-            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
               activeTab === 'discounts'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
                 : 'text-slate-400 hover:text-slate-200'
-            }`}
+            )}
           >
             <TableIcon className="w-3.5 h-3.5" />
-            Tablas de Descuento
-          </button>
-          <button
-            onClick={() => setActiveTab('simulator')}
-            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
-              activeTab === 'simulator'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            Simulador de Escenarios
+            Tablas Descuento
           </button>
         </div>
       </div>
 
-      {/* TAB 1: ML FORECAST */}
+      {/* ── TAB 1: PROYECCIÓN ML ────────────────────────────────────────────── */}
       {activeTab === 'forecast' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -298,7 +456,7 @@ export function SalesForecastClient() {
                 disabled={isRecalculating}
                 className="px-3.5 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-xs font-medium hover:bg-indigo-600/30 transition-all flex items-center gap-1.5"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin' : ''}`} />
+                <RefreshCw className={'w-3.5 h-3.5 ' + (isRecalculating ? 'animate-spin' : '')} />
                 {isRecalculating ? 'Recalculando matriz...' : 'Recalcular Proyección'}
               </button>
             </div>
@@ -318,7 +476,6 @@ export function SalesForecastClient() {
                   onChange={(e) => setAlpha(parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">Valores bajos dan más peso a ventas lejanas; valores altos responden a picos recientes.</p>
               </div>
 
               <div>
@@ -335,7 +492,6 @@ export function SalesForecastClient() {
                   onChange={(e) => setBeta(parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">Regula la pendiente acumulativa entre periodos contables cerrados.</p>
               </div>
 
               <div>
@@ -348,17 +504,16 @@ export function SalesForecastClient() {
                     <button
                       key={h}
                       onClick={() => setForecastHorizon(h)}
-                      className={`py-1.5 text-xs font-medium rounded-lg border ${
+                      className={'py-1.5 text-xs font-medium rounded-lg border ' + (
                         forecastHorizon === h
                           ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200'
                           : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                      }`}
+                      )}
                     >
                       {h} días
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">Horizonte predictivo para planificación de compras y flujo de caja.</p>
               </div>
             </div>
           </div>
@@ -419,7 +574,330 @@ export function SalesForecastClient() {
         </div>
       )}
 
-      {/* TAB 2: DISCOUNT TABLES */}
+      {/* ── TAB 2: AI MARGIN MAXIMIZER (OPTIMIZADOR PRESCRIPTIVO) ─────────── */}
+      {activeTab === 'optimizer' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-5 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm space-y-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-bold text-white">
+                  Prescriptor de Precio y Margen Óptimo
+                </h2>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Calcula analíticamente el punto exacto de la curva de elasticidad donde la ganancia neta total es máxima.
+              </p>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                <span>Precio Unitario Base</span>
+                <span className="font-mono text-indigo-400">{formatCOP(optBasePrice)}</span>
+              </div>
+              <input
+                type="range"
+                min="10000"
+                max="200000"
+                step="2000"
+                value={optBasePrice}
+                onChange={(e) => setOptBasePrice(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                <span>Costo Unitario de Mercancía (COGS)</span>
+                <span className="font-mono text-indigo-400">{formatCOP(optUnitCost)}</span>
+              </div>
+              <input
+                type="range"
+                min="5000"
+                max="100000"
+                step="1000"
+                value={optUnitCost}
+                onChange={(e) => setOptUnitCost(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                <span>Demanda Mensual Base (Sin Descuento)</span>
+                <span className="font-mono text-indigo-400">{optBaseUnits.toLocaleString()} unidades</span>
+              </div>
+              <input
+                type="range"
+                min="200"
+                max="5000"
+                step="50"
+                value={optBaseUnits}
+                onChange={(e) => setOptBaseUnits(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                <span>Elasticidad Precio Demanda (Ed)</span>
+                <span className="font-mono text-amber-400">{optElasticity}</span>
+              </div>
+              <input
+                type="range"
+                min="0.6"
+                max="2.5"
+                step="0.05"
+                value={optElasticity}
+                onChange={(e) => setOptElasticity(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                <span>Piso Protector de Margen Mínimo</span>
+                <span className="font-mono text-emerald-400">{optMarginFloor}%</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="35"
+                step="1"
+                value={optMarginFloor}
+                onChange={(e) => setOptMarginFloor(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="lg:col-span-7 space-y-6">
+            <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-emerald-500/10 border border-indigo-500/30 rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                    Punto Óptimo Prescrito por IA
+                  </span>
+                  <div className="text-3xl font-bold text-white mt-2 font-mono">
+                    Descuento Óptimo: {optimizerResults.bestDiscount}%
+                  </div>
+                  <div className="text-xs text-slate-300 mt-1">
+                    Precio final sugerido: <span className="text-emerald-400 font-bold font-mono">{formatCOP(optimizerResults.optimalPrice)}</span> (Margen efectivo: {optimizerResults.effectiveMarginPct}%)
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-slate-400">Ganancia Neta Adicional</div>
+                  <div className="text-2xl font-bold text-emerald-400 font-mono">
+                    +{optimizerResults.profitDeltaPct}%
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    vs. Venta a precio de lista
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+                <div className="text-xs font-medium text-slate-400 uppercase">Ganancia Bruta Óptima</div>
+                <div className="text-2xl font-bold text-white mt-1">
+                  {formatCOP(optimizerResults.maxProfit)}
+                </div>
+                <div className="text-xs text-slate-500 mt-2">
+                  Base sin descuento: {formatCOP(optimizerResults.baseProfit)}
+                </div>
+              </div>
+
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+                <div className="text-xs font-medium text-slate-400 uppercase">Volumen Proyectado</div>
+                <div className="text-2xl font-bold text-indigo-400 mt-1">
+                  {optimizerResults.bestUnits.toLocaleString()} unidades
+                </div>
+                <div className="text-xs text-slate-500 mt-2">
+                  +{optimizerResults.bestUnits - optBaseUnits} unidades incrementales
+                </div>
+              </div>
+            </div>
+
+            {/* Sweep Curve Table */}
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                Curva de Sensibilidad: Descuento vs. Utilidad Neta
+              </h3>
+              <div className="space-y-2">
+                {optimizerResults.curve.slice(0, 7).map((pt, idx) => (
+                  <div
+                    key={idx}
+                    className={'flex items-center justify-between p-2.5 rounded-xl border text-xs ' + (
+                      pt.discount === optimizerResults.bestDiscount
+                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200'
+                        : 'bg-slate-950/50 border-slate-800/60 text-slate-300'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold">{pt.discount}% Descuento</span>
+                      {pt.discount === optimizerResults.bestDiscount && (
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase">
+                          Máximo Global
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-mono">{formatCOP(pt.revenue)} venta</div>
+                    <div className="font-mono font-bold text-emerald-400">{formatCOP(pt.profit)} ganancia</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: LIQUIDACIÓN DINÁMICA DE LOTES (MARKDOWN) ────────────────── */}
+      {activeTab === 'markdown' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-indigo-500/10 border border-rose-500/30 rounded-2xl p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 bg-rose-500/20 px-2.5 py-0.5 rounded-full border border-rose-500/30 flex items-center gap-1.5 w-fit">
+                  <Flame className="w-3 h-3" />
+                  Liquidación Preventiva Anti-Mermas
+                </span>
+                <h2 className="text-xl font-bold text-white mt-2">
+                  Lotes Próximos a Vencer & Descuentos Markdown Sugeridos
+                </h2>
+                <p className="text-xs text-slate-300 mt-1">
+                  Evita pérdidas operativas aplicando descuentos automáticos escalonados según la vida útil remanente.
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-slate-400">Capital en Riesgo Detectado</div>
+                <div className="text-2xl font-bold text-rose-400 font-mono">
+                  {formatCOP(markdownLots.reduce((a, b) => a + (b.quantity * b.unitCost), 0))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {markdownLots.map((lot) => (
+              <div key={lot.id} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                        {lot.sku}
+                      </span>
+                      <h3 className="text-base font-bold text-white">{lot.productName}</h3>
+                      <span className={'px-2 py-0.5 rounded text-[10px] font-bold uppercase border ' + (
+                        lot.riskLevel === 'CRITICAL'
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : lot.riskLevel === 'HIGH'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                      )}>
+                        {lot.riskLevel === 'CRITICAL' ? 'Vence en ' + lot.daysToExpiry + ' días' : 'Vence en ' + lot.daysToExpiry + ' días'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Ubicación: <span className="text-slate-300">{lot.warehouse}</span> | Stock disponible: <span className="text-slate-200 font-bold">{lot.quantity} unidades</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-[11px] text-slate-400">Rebaja Markdown Recomendada</div>
+                      <div className="text-xl font-bold text-rose-400 font-mono">
+                        {lot.suggestedDiscountPct}% OFF
+                      </div>
+                    </div>
+                    <button className="px-3.5 py-2 rounded-xl bg-rose-600/20 border border-rose-500/30 text-rose-300 hover:bg-rose-600/30 text-xs font-semibold transition-all">
+                      Activar Rebaja
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2 text-xs text-slate-300 bg-slate-950/40 p-3 rounded-xl border border-slate-800/60">
+                  <span className="font-semibold text-amber-400">Estrategia Comercial: </span>
+                  {lot.liquidationStrategy}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: COMPARADOR LADO A LADO DE ESCENARIOS ─────────────────────── */}
+      {activeTab === 'compare' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Layers className="w-5 h-5 text-indigo-400" />
+                Matriz Comparativa de Estrategias Comerciales
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Evaluación simultánea de impacto en demanda, flujo y margen bruto neto.
+              </p>
+            </div>
+            <button className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-all flex items-center gap-1.5">
+              <Download className="w-3.5 h-3.5" />
+              Exportar Matriz PDF / Excel
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {scenariosData.map((sc) => (
+              <div key={sc.id} className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className={'text-[10px] font-bold uppercase px-2 py-0.5 rounded border ' + sc.tagColor}>
+                      {sc.tag}
+                    </span>
+                    <span className="text-xs font-mono text-slate-400">{sc.discountPct}% Descuento</span>
+                  </div>
+
+                  <h3 className="text-base font-bold text-white mt-3">{sc.title}</h3>
+                  <p className="text-xs text-slate-400 mt-1 min-h-[36px]">{sc.verdict}</p>
+
+                  <div className="space-y-3 mt-5 pt-4 border-t border-slate-800/60">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Ingreso Facturado</span>
+                      <span className="text-slate-200 font-bold font-mono">{formatCOP(sc.projectedRevenue)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Demanda Unidades</span>
+                      <span className="text-slate-200 font-mono">{sc.projectedUnits.toLocaleString()} u</span>
+                    </div>
+
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Ganancia Neta Operativa</span>
+                      <span className="text-emerald-400 font-bold font-mono">{formatCOP(sc.projectedProfit)}</span>
+                    </div>
+
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Margen Comercial</span>
+                      <span className="text-indigo-400 font-bold font-mono">{sc.marginPct}%</span>
+                    </div>
+
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Crecimiento Ganancia</span>
+                      <span className="text-emerald-400 font-bold font-mono">+{sc.profitDeltaPct}% vs base</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button className="mt-6 w-full py-2.5 rounded-xl bg-slate-800/80 hover:bg-indigo-600 text-white text-xs font-semibold border border-slate-700 hover:border-indigo-500 transition-all flex items-center justify-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" />
+                  Elegir esta Estrategia
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: TABLAS DE DESCUENTO ─────────────────────────────────────── */}
       {activeTab === 'discounts' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -489,160 +967,6 @@ export function SalesForecastClient() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: SCENARIO SIMULATOR */}
-      {activeTab === 'simulator' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-5 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm space-y-6">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-indigo-400" />
-                Variables del Escenario
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Ajusta los factores comerciales para proyectar elasticidad de demanda y rentabilidad neta.
-              </p>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                <span>Ingreso Mensual Base</span>
-                <span className="font-mono text-indigo-400">{formatCOP(simBaseRevenue)}</span>
-              </div>
-              <input
-                type="range"
-                min="50000000"
-                max="500000000"
-                step="5000000"
-                value={simBaseRevenue}
-                onChange={(e) => setSimBaseRevenue(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                <span>Descuento Comercial Ofrecido</span>
-                <span className="font-mono text-indigo-400">{simDiscountPct}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="35"
-                step="0.5"
-                value={simDiscountPct}
-                onChange={(e) => setSimDiscountPct(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                <span>Coeficiente de Elasticidad Precio (Ed)</span>
-                <span className="font-mono text-indigo-400">{simElasticity}</span>
-              </div>
-              <input
-                type="range"
-                min="0.5"
-                max="3.0"
-                step="0.05"
-                value={simElasticity}
-                onChange={(e) => setSimElasticity(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-              />
-              <p className="text-[11px] text-slate-500 mt-1">
-                {simElasticity > 1 ? 'Demanda Elástica: Un descuento incrementa fuertemente el volumen' : 'Demanda Inelástica: Riesgo de pérdida por reducción de precio sin volumen compensatorio'}
-              </p>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                <span>Inversión Pauta / Marketing</span>
-                <span className="font-mono text-indigo-400">{formatCOP(simMarketingSpend)}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="50000000"
-                step="1000000"
-                value={simMarketingSpend}
-                onChange={(e) => setSimMarketingSpend(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-              />
-            </div>
-          </div>
-
-          <div className="lg:col-span-7 space-y-6">
-            <div className={`border rounded-2xl p-5 flex items-start gap-3.5 ${
-              simulationResults.isViable
-                ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-300'
-                : 'bg-red-950/20 border-red-500/40 text-red-300'
-            }`}>
-              {simulationResults.isViable ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              )}
-              <div>
-                <div className="font-bold text-sm">
-                  {simulationResults.isViable
-                    ? 'Escenario Comercial Viable y Rentable'
-                    : 'Alerta de Riesgo: Margen debajo del piso permitido (< 20%)'}
-                </div>
-                <div className="text-xs text-slate-400 mt-1">
-                  {simulationResults.isViable
-                    ? 'La elasticidad de demanda compensa el descuento aplicado generando margen neto positivo superior a las metas de la compañía.'
-                    : 'El descuento seleccionado erosiona el margen bruto operativo. Ajuste el porcentaje de rebaja o incremente el volumen mínimo por pedido.'}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-                <div className="text-xs font-medium text-slate-400 uppercase">Facturación Estimada</div>
-                <div className="text-2xl font-bold text-white mt-1">
-                  {formatCOP(simulationResults.projectedRevenue)}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-400 mt-2 font-medium">
-                  <ArrowUpRight className="w-4 h-4" />
-                  {simulationResults.revenueDeltaPct.toFixed(1)}% vs. Ingreso base
-                </div>
-              </div>
-
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-                <div className="text-xs font-medium text-slate-400 uppercase">Volumen Unidades</div>
-                <div className="text-2xl font-bold text-white mt-1">
-                  {simulationResults.projectedUnits.toLocaleString('es-CO')} u
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-indigo-400 mt-2 font-medium">
-                  <ArrowUpRight className="w-4 h-4" />
-                  +{simulationResults.unitDeltaPct.toFixed(1)}% aumento de demanda
-                </div>
-              </div>
-
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-                <div className="text-xs font-medium text-slate-400 uppercase">Margen Neto Operativo</div>
-                <div className="text-2xl font-bold text-white mt-1">
-                  {formatCOP(simulationResults.netCommercialMargin)}
-                </div>
-                <div className="text-xs text-slate-400 mt-2 font-mono">
-                  Margen: {simulationResults.marginPct.toFixed(1)}%
-                </div>
-              </div>
-
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-                <div className="text-xs font-medium text-slate-400 uppercase">Retorno en Inversión Pauta</div>
-                <div className="text-2xl font-bold text-indigo-400 mt-1">
-                  {simulationResults.roiMarketing.toFixed(0)}% ROI
-                </div>
-                <div className="text-xs text-slate-500 mt-2">
-                  Multiplicador estimado de 1.85x
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}

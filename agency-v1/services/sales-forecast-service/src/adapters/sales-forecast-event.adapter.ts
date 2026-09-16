@@ -27,4 +27,12 @@ export class RedisSalesForecastEventAdapter implements ISalesForecastEventPublis
       console.warn("[SalesForecastEventAdapter] Warning:", err.message);
     }
   }
+
+  async publishReorderSuggested(payload: { companyId: string; productId: string; sku: string; suggestedUnits: number; targetPeriod: string }): Promise<void> {
+    try {
+      await eventBus.publish("forecast.reorder.suggested" as any, payload);
+    } catch (err: any) {
+      console.warn("[SalesForecastEventAdapter] Warning:", err.message);
+    }
+  }
 }

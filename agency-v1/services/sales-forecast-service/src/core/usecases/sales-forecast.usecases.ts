@@ -2,6 +2,8 @@ import {
   DiscountEngine,
   MLForecastEngine,
   CommercialScenarioSimulator,
+  OptimalPriceOptimizer,
+  BatchMarkdownOptimizer,
   MLForecastResult,
   ScenarioSimulationProps,
   ScenarioSimulationResult
@@ -116,5 +118,40 @@ export class SalesForecastUseCases implements ISalesForecastUseCases {
     });
 
     return simulationResult;
+  }
+
+  async calculateOptimalDiscount(params: {
+    basePrice: number;
+    unitCost: number;
+    baseUnits: number;
+    priceElasticity: number;
+    minMarginFloorPct: number;
+    maxAllowedDiscountPct?: number;
+  }) {
+    return OptimalPriceOptimizer.calculateOptimalDiscount(params);
+  }
+
+  async getBatchMarkdownSuggestions(companyId: string, withinDays: number = 60) {
+    const expiringLots = await this.repo.getExpiringLotsForMarkdown(companyId, withinDays);
+    return expiringLots.map((lot) =>
+      BatchMarkdownOptimizer.evaluateLotMarkdown({
+        id: lot.id,
+        sku: lot.sku,
+        productName: lot.productName || "Producto en Bodega",
+        quantity: lot.quantity,
+        unitCost: lot.unitCost || 15000,
+        unitPrice: lot.unitPrice || 25000,
+        expiryDate: new Date(lot.expiryDate),
+      })
+    );
+  }
+
+  async compareScenarios(scenarios: Array<ScenarioSimulationProps & { companyId: string }>) {
+    const results: ScenarioSimulationResult[] = [];
+    for (const sc of scenarios) {
+      const res = await this.simulateCommercialScenario(sc);
+      results.push(res);
+    }
+    return results;
   }
 }
