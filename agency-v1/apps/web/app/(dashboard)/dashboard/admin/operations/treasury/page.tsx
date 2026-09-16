@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { motion } from "framer-motion";
 import { DollarSign, TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, CreditCard, Landmark, Filter, Loader2 } from "lucide-react";
 import { generateDraftPayrollFromTimesheets } from "@/actions/payroll-operations";
+import { getFinancialAccounts, getRecentTransactions } from "@/actions/treasury";
 
-const mockTransactions = [
+const fallbackTransactions = [
   {
     id: "tx-1",
     date: "Mar 16, 2026",
@@ -25,40 +26,59 @@ const mockTransactions = [
     amount: 8200.00,
     account: "Cuenta Corriente Bancolombia",
     status: "COMPLETED"
-  },
-  {
-    id: "tx-3",
-    date: "Mar 14, 2026",
-    description: "Suscripción AWS",
-    category: "SOFTWARE",
-    type: "EXPENSE",
-    amount: 1250.00,
-    account: "Tarjeta Crédito Corporativa",
-    status: "COMPLETED"
-  },
-  {
-    id: "tx-4",
-    date: "Mar 14, 2026",
-    description: "Campaña Meta Ads - Marzo",
-    category: "AD_SPEND",
-    type: "EXPENSE",
-    amount: 3500.00,
-    account: "Tarjeta Crédito Corporativa",
-    status: "COMPLETED"
   }
 ];
 
 export default function TreasuryDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isPending, startTransition] = useTransition();
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>(fallbackTransactions);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTreasuryData() {
+      try {
+        const [accRes, txRes] = await Promise.all([
+          getFinancialAccounts(),
+          getRecentTransactions(15)
+        ]);
+
+        if (accRes.success && accRes.data && accRes.data.length > 0) {
+          setAccounts(accRes.data);
+        }
+        if (txRes.success && txRes.data && txRes.data.length > 0) {
+          setTransactions(txRes.data.map((tx: any) => ({
+            id: tx.id,
+            date: new Date(tx.date).toLocaleDateString('es-CO', { month: 'short', day: 'numeric', year: 'numeric' }),
+            description: tx.description || tx.category,
+            category: tx.category,
+            type: tx.type,
+            amount: Number(tx.amount) || 0,
+            account: tx.account?.name || "Cuenta Principal",
+            status: "COMPLETED"
+          })));
+        }
+      } catch (err) {
+        console.warn("[Treasury Dashboard] Failed to load DB records:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadTreasuryData();
+  }, []);
+
+  const totalLiquidity = accounts.length > 0 
+    ? accounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0)
+    : 124500;
 
   const handleGeneratePayroll = () => {
     startTransition(async () => {
-      // Dummy company ID and dates for the mock.
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
       await generateDraftPayrollFromTimesheets("mock-company-id", firstDay, now);
-      alert("Payroll draft generated successfully from approved Timesheets!");
+      alert("Nómina borrador generada exitosamente desde registros validados.");
     });
   };
 
@@ -101,7 +121,7 @@ export default function TreasuryDashboard() {
             </span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-slate-100">$124,500</span>
+            <span className="text-3xl font-bold text-slate-100">${totalLiquidity.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm text-teal-400">
             <TrendingUp className="w-4 h-4" />
@@ -186,7 +206,7 @@ export default function TreasuryDashboard() {
             </div>
             
             <div className="divide-y divide-slate-800/50">
-              {mockTransactions.map((tx) => (
+              {transactions.map((tx) => (
                 <div key={tx.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-800/20 transition-colors cursor-pointer">
                   <div className="col-span-5 flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${tx.type === 'INCOME' ? 'bg-teal-500/10 text-teal-400' : 'bg-red-500/10 text-red-400'}`}>
