@@ -59,8 +59,15 @@ const server = app.listen(PORT, () => {
   console.log(`[dian-compliance-service] Listening on port ${PORT}`);
 });
 
+import { prisma } from "@agency/database";
+
 setupGracefulShutdown(server, async () => {
   await eventBus.disconnect();
+  try {
+    await (prisma as any).$disconnect();
+  } catch (err: any) {
+    console.warn("[DianComplianceService] Error disconnecting prisma:", err.message);
+  }
 });
 
 export default app;

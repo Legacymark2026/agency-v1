@@ -60,8 +60,15 @@ const server = app.listen(PORT, () => {
   console.log(`[inventory-service] Listening on port ${PORT}`);
 });
 
+import { prisma } from "@agency/database";
+
 setupGracefulShutdown(server, async () => {
   await eventBus.disconnect();
+  try {
+    await (prisma as any).$disconnect();
+  } catch (err: any) {
+    console.warn("[InventoryService] Error disconnecting prisma:", err.message);
+  }
 });
 
 export default app;
