@@ -89,6 +89,9 @@ export function SalesForecastClient() {
   const [drillDownCategory, setDrillDownCategory] = useState<string>("ALL");
   const [drillDownRegion, setDrillDownRegion] = useState<string>("ALL");
   
+  const [isConfigExpanded, setIsConfigExpanded] = useState<boolean>(false);
+  const [manualOverrides, setManualOverrides] = useState<Record<string, number>>({});
+
   const [alpha, setAlpha] = useState<number>(0.3);
   const [beta, setBeta] = useState<number>(0.1);
   const [isRecalculating, setIsRecalculating] = useState<boolean>(false);
@@ -231,8 +234,17 @@ export function SalesForecastClient() {
 
     for (let i = 0; i < monthsAhead; i++) {
       const multiplier = Math.pow(1 + growthRate, i + 1);
+      
+      const dateKey = '2026-' + (10 + i) + '-01';
       let predRev = Math.round(lastRev * multiplier);
       let predUnits = Math.round(lastUnits * multiplier);
+      
+      // Aplicar Override Manual si existe
+      if (manualOverrides[dateKey] !== undefined) {
+        predUnits = manualOverrides[dateKey];
+        predRev = Math.round(predUnits * (lastRev / lastUnits)); // Estimar revenue basado en avgPrice implícito
+      }
+
       let varianceBase = 0.07;
       if (algorithm === 'LSTM') varianceBase = 0.04;
       if (algorithm === 'PROPHET') varianceBase = 0.05;
@@ -240,7 +252,7 @@ export function SalesForecastClient() {
       const variance = predRev * varianceBase;
 
       combinedData.push({
-        date: '2026-' + (10 + i) + '-01',
+        date: dateKey,
         label: names[i] || 'Mes +' + (i + 1),
         historicalRevenue: null,
         predictedUnits: predUnits,
@@ -260,7 +272,7 @@ export function SalesForecastClient() {
     }, 0);
 
     return combinedData;
-  }, [historicalData, forecastHorizon, alpha, algorithm, exogenousFactors]);
+  }, [historicalData, forecastHorizon, alpha, algorithm, exogenousFactors, manualOverrides]);
 
   // AI Margin Maximizer Calculations
   const optimizerResults = useMemo(() => {
@@ -477,7 +489,7 @@ export function SalesForecastClient() {
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Ingreso Estimado Q4</div>
               <div className="text-2xl font-bold text-white mt-2">
-                {formatCOP(forecastPoints.reduce((acc, p) => acc + p.predictedRevenue, 0))}
+                {formatCOP(forecastPoints.reduce((acc, p) => acc + (p.predictedRevenue || 0), 0))}
               </div>
               <div className="flex items-center gap-1.5 text-xs text-emerald-400 mt-2 font-medium">
                 <ArrowUpRight className="w-4 h-4" />
@@ -488,7 +500,7 @@ export function SalesForecastClient() {
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Unidades Proyectadas</div>
               <div className="text-2xl font-bold text-white mt-2">
-                {forecastPoints.reduce((acc, p) => acc + p.predictedUnits, 0).toLocaleString('es-CO')} u
+                {forecastPoints.reduce((acc, p) => acc + (p.predictedUnits || 0), 0).toLocaleString('es-CO')} u
               </div>
               <div className="flex items-center gap-1.5 text-xs text-indigo-400 mt-2 font-medium">
                 <TrendingUp className="w-4 h-4" />
@@ -498,7 +510,7 @@ export function SalesForecastClient() {
 
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm">
               <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Precisión Modelo (MAPE)</div>
-              <div className="text-2xl font-bold text-emerald-400 mt-2">94.2%</div>
+              <div className="text-2xl font-bold text-emerald-400 mt-2">{modelMetrics.mape.toFixed(1)}%</div>
               <div className="text-xs text-slate-500 mt-2">
                 Margen de error promedio &lt; 5.8%
               </div>
@@ -515,12 +527,18 @@ export function SalesForecastClient() {
 
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/60">
-              <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+                className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+              >
                 <Sparkles className="w-4 h-4 text-indigo-400" />
                 <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
                   Configuración del Motor Machine Learning
                 </h2>
-              </div>
+                <svg className={`w-4 h-4 text-slate-500 transition-transform ${isConfigExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
               <div className="flex gap-2">
                 <button
                   onClick={handleAutoTune}
@@ -548,102 +566,104 @@ export function SalesForecastClient() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4">
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                  <span>Algoritmo Predictivo</span>
+            {isConfigExpanded && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div>
+                  <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                    <span>Algoritmo Predictivo</span>
+                  </div>
+                  <select
+                    value={algorithm}
+                    onChange={(e) => setAlgorithm(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="HOLT_WINTERS">Holt-Winters (Doble Suavización)</option>
+                    <option value="PROPHET">Facebook Prophet (Aditivo)</option>
+                    <option value="LSTM">Deep Learning LSTM</option>
+                    <option value="XGBOOST">XGBoost (Árboles)</option>
+                    <option value="SARIMAX">SARIMAX (Autorregresivo)</option>
+                  </select>
                 </div>
-                <select
-                  value={algorithm}
-                  onChange={(e) => setAlgorithm(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="HOLT_WINTERS">Holt-Winters (Doble Suavización)</option>
-                  <option value="PROPHET">Facebook Prophet (Aditivo)</option>
-                  <option value="LSTM">Deep Learning LSTM</option>
-                  <option value="XGBOOST">XGBoost (Árboles)</option>
-                  <option value="SARIMAX">SARIMAX (Autorregresivo)</option>
-                </select>
-              </div>
 
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                  <span>Factores Exógenos (Shock)</span>
+                <div>
+                  <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                    <span>Factores Exógenos (Shock)</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { id: 'BLACK_FRIDAY', label: 'Black Friday' },
+                      { id: 'PROMO_CAMPAIGN', label: 'Promo Q4' },
+                      { id: 'INFLATION_HIGH', label: 'Inflación +' },
+                    ].map((factor) => (
+                      <button
+                        key={factor.id}
+                        onClick={() => {
+                          if (exogenousFactors.includes(factor.id)) {
+                            setExogenousFactors(exogenousFactors.filter(f => f !== factor.id));
+                          } else {
+                            setExogenousFactors([...exogenousFactors, factor.id]);
+                          }
+                        }}
+                        className={'px-2 py-1 text-[10px] rounded-md font-semibold border ' + (
+                          exogenousFactors.includes(factor.id)
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            : 'bg-slate-900 border-slate-700 text-slate-500 hover:text-slate-300'
+                        )}
+                      >
+                        {factor.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: 'BLACK_FRIDAY', label: 'Black Friday' },
-                    { id: 'PROMO_CAMPAIGN', label: 'Promo Q4' },
-                    { id: 'INFLATION_HIGH', label: 'Inflación +' },
-                  ].map((factor) => (
-                    <button
-                      key={factor.id}
-                      onClick={() => {
-                        if (exogenousFactors.includes(factor.id)) {
-                          setExogenousFactors(exogenousFactors.filter(f => f !== factor.id));
-                        } else {
-                          setExogenousFactors([...exogenousFactors, factor.id]);
-                        }
-                      }}
-                      className={'px-2 py-1 text-[10px] rounded-md font-semibold border ' + (
-                        exogenousFactors.includes(factor.id)
-                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                          : 'bg-slate-900 border-slate-700 text-slate-500 hover:text-slate-300'
-                      )}
-                    >
-                      {factor.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                  <span>Inercia (α = {alpha.toFixed(2)}) &amp; Tendencia (β = {beta.toFixed(2)})</span>
+                <div>
+                  <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                    <span>Inercia (α = {alpha.toFixed(2)}) &amp; Tendencia (β = {beta.toFixed(2)})</span>
+                  </div>
+                  <div className="space-y-3">
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="0.8"
+                      step="0.05"
+                      value={alpha}
+                      onChange={(e) => setAlpha(parseFloat(e.target.value))}
+                      className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    />
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="0.5"
+                      step="0.05"
+                      value={beta}
+                      onChange={(e) => setBeta(parseFloat(e.target.value))}
+                      className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="0.8"
-                    step="0.05"
-                    value={alpha}
-                    onChange={(e) => setAlpha(parseFloat(e.target.value))}
-                    className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="0.5"
-                    step="0.05"
-                    value={beta}
-                    onChange={(e) => setBeta(parseFloat(e.target.value))}
-                    className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
-                  <span>Horizonte (Días)</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['30', '60', '90'] as const).map((h) => (
-                    <button
-                      key={h}
-                      onClick={() => setForecastHorizon(h)}
-                      className={'py-1.5 text-xs font-medium rounded-lg border ' + (
-                        forecastHorizon === h
-                          ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200'
-                          : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                      )}
-                    >
-                      {h}
-                    </button>
-                  ))}
+                <div>
+                  <div className="flex justify-between text-xs font-medium text-slate-300 mb-1.5">
+                    <span>Horizonte (Días)</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['30', '60', '90'] as const).map((h) => (
+                      <button
+                        key={h}
+                        onClick={() => setForecastHorizon(h)}
+                        className={'py-1.5 text-xs font-medium rounded-lg border ' + (
+                          forecastHorizon === h
+                            ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200'
+                            : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                        )}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             
             {/* Filtros Drill Down */}
             <div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-4">
@@ -739,7 +759,20 @@ export function SalesForecastClient() {
                       Estimado
                     </span>
                     <div className="text-sm font-bold text-indigo-200 mt-2">{pt.label}</div>
-                    <div className="text-xs text-indigo-400">{pt.predictedUnits.toLocaleString()} unidades est.</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input 
+                        type="number"
+                        className="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-indigo-300 focus:outline-none focus:border-indigo-500"
+                        value={pt.predictedUnits}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val)) {
+                            setManualOverrides({ ...manualOverrides, [pt.date]: val });
+                          }
+                        }}
+                      />
+                      <span className="text-[10px] text-slate-500">unidades</span>
+                    </div>
                   </div>
                   <div className="mt-4 pt-3 border-t border-indigo-900/40">
                     <div className="text-[11px] text-indigo-400">Proyección Media</div>
@@ -752,6 +785,51 @@ export function SalesForecastClient() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm mt-6">
+              <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-400" />
+                Matriz de Desglose por SKU y Riesgo de Desabastecimiento
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-slate-300">
+                  <thead className="bg-slate-950/50 text-xs uppercase text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 rounded-tl-lg">Producto (Top SKUs)</th>
+                      <th className="px-4 py-3">Inventario Actual</th>
+                      <th className="px-4 py-3">Demanda Proyectada (Q4)</th>
+                      <th className="px-4 py-3">Stockout Risk</th>
+                      <th className="px-4 py-3 rounded-tr-lg">Acción Automática</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {[
+                      { name: 'Café Geisha Especial 500g', stock: 1200, demand: 850, risk: 'LOW' },
+                      { name: 'Cacao Fino de Aroma 250g', stock: 450, demand: 520, risk: 'HIGH' },
+                      { name: 'Mezcla Espresso Dark 1Kg', stock: 800, demand: 790, risk: 'MEDIUM' }
+                    ].map((sku, i) => (
+                      <tr key={i} className="hover:bg-slate-800/20 transition-colors">
+                        <td className="px-4 py-3 font-medium text-slate-200">{sku.name}</td>
+                        <td className="px-4 py-3 font-mono">{sku.stock} u</td>
+                        <td className="px-4 py-3 font-mono text-indigo-300">{sku.demand} u</td>
+                        <td className="px-4 py-3">
+                          {sku.risk === 'LOW' && <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-[10px] font-bold">Sin Riesgo</span>}
+                          {sku.risk === 'MEDIUM' && <span className="px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-[10px] font-bold">Punto Reorden</span>}
+                          {sku.risk === 'HIGH' && <span className="px-2 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-[10px] font-bold">Quiebre Inminente</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {sku.risk !== 'LOW' ? (
+                            <button className="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium">
+                              Generar PO Automática
+                            </button>
+                          ) : <span className="text-xs text-slate-600">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
       )}

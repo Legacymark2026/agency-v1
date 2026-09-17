@@ -114,6 +114,25 @@ export class SalesForecastUseCases implements ISalesForecastUseCases {
       totalRevenueProjected: totalProjectedRevenue,
     });
 
+    // Validar Anomalías y Reabastecimiento
+    for (const res of results) {
+      if (res.mape > 15.0) {
+        // Simular alerta de desviación a Slack/Email
+        console.warn(`[ALERT] Forecast accuracy low for ${res.sku}. MAPE: ${res.mape}% > 15% threshold.`);
+      }
+
+      // Simulación básica de inventario: si la demanda proyectada > 500, lanzar evento de Reorder
+      if (res.predictedUnits > 500) {
+        await this.eventPublisher.publishReorderSuggested({
+          companyId: params.companyId,
+          productId: res.productId,
+          sku: res.sku,
+          suggestedUnits: Math.round(res.predictedUnits * 1.2), // Safety stock +20%
+          targetPeriod: params.targetPeriod
+        });
+      }
+    }
+
     return results;
   }
 
