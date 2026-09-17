@@ -244,6 +244,67 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     });
 
     const [showDatafonoConfigModal, setShowDatafonoConfigModal] = useState(false);
+    
+    // ==========================================
+    // FASE 1: AGILIDAD Y OPERATIVA
+    // ==========================================
+    const [pausedCarts, setPausedCarts] = useState<{ id: string, cart: CartItem[], customerName: string, time: string }[]>([]);
+    const [showPausedCartsModal, setShowPausedCartsModal] = useState(false);
+    
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Prevent default browser shortcuts like Help (F1), Find (F3), etc. if needed
+            if (e.key === "F2") {
+                e.preventDefault();
+                // trigger checkout modal
+                if (cart.length > 0) handleCheckout();
+            } else if (e.key === "F4") {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            } else if (e.key === "F5") {
+                e.preventDefault();
+                handlePauseCart();
+            } else if (e.key === "F8") {
+                e.preventDefault();
+                // We'll focus discount or open a modal
+                const disc = prompt("Ingresar Descuento Global ($):");
+                if (disc && !isNaN(Number(disc))) setDiscountAmount(Number(disc));
+            } else if (e.key === "Escape") {
+                if (cart.length > 0) {
+                    if (window.confirm("¿Seguro que deseas limpiar el carrito actual?")) {
+                        setCart([]);
+                        setDiscountAmount(0);
+                    }
+                }
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [cart]);
+
+    const handlePauseCart = () => {
+        if (cart.length === 0) return;
+        setPausedCarts(prev => [
+            ...prev,
+            { id: Date.now().toString(), cart: [...cart], customerName: customerName || "Cliente sin nombre", time: new Date().toLocaleTimeString() }
+        ]);
+        setCart([]);
+        setDiscountAmount(0);
+    };
+
+    const handleResumeCart = (id: string) => {
+        const found = pausedCarts.find(c => c.id === id);
+        if (found) {
+            setCart(found.cart);
+            setCustomerName(found.customerName);
+            setPausedCarts(prev => prev.filter(c => c.id !== id));
+            setShowPausedCartsModal(false);
+        }
+    };
+    // ==========================================
 
     const fetchMovements = async () => {
         try {
@@ -1031,6 +1092,24 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                                 >
                                     <TrendingUp className="w-3 h-3 text-indigo-400" /> IA Pronóstico
                                 </button>
+                                
+                                {/* CARRITOS PAUSADOS (HOLD SALES) */}
+                                {cart.length > 0 && (
+                                    <button
+                                        onClick={handlePauseCart}
+                                        className="px-2 py-1.5 rounded-lg border bg-amber-500/10 text-amber-300 border-amber-500/30 text-[11px] font-bold hover:bg-amber-500/20 transition-all flex items-center gap-1"
+                                    >
+                                        <Wallet className="w-3 h-3" /> Pausar (F5)
+                                    </button>
+                                )}
+                                {pausedCarts.length > 0 && (
+                                    <button
+                                        onClick={() => setShowPausedCartsModal(true)}
+                                        className="px-2 py-1.5 rounded-lg border bg-teal-500/10 text-teal-300 border-teal-500/30 text-[11px] font-bold hover:bg-teal-500/20 transition-all flex items-center gap-1"
+                                    >
+                                        <CheckCircle2 className="w-3 h-3" /> Recuperar ({pausedCarts.length})
+                                    </button>
+                                )}
                             </div>
 
                             <div className="flex gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
@@ -1277,6 +1356,23 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                                         onChange={(e) => setCashReceived(e.target.value ? Number(e.target.value) : "")}
                                         className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-right text-white font-mono font-bold text-sm w-36 focus:outline-none focus:border-teal-500"
                                     />
+                                </div>
+                                <div className="flex gap-2 justify-end mb-2">
+                                    {[20000, 50000, 100000].map(amt => (
+                                        <button 
+                                            key={amt} 
+                                            onClick={() => setCashReceived((typeof cashReceived === "number" ? cashReceived : 0) + amt)}
+                                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold text-emerald-400 border border-slate-700 transition-colors"
+                                        >
+                                            +{formatCOP(amt)}
+                                        </button>
+                                    ))}
+                                    <button 
+                                        onClick={() => setCashReceived(finalTotal)}
+                                        className="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 rounded text-[10px] font-bold text-emerald-300 border border-emerald-500/30 transition-colors"
+                                    >
+                                        Exacto
+                                    </button>
                                 </div>
                                 <div className="flex justify-between items-center pt-1 border-t border-slate-800">
                                     <span className="text-slate-400 font-bold">Cambio / Devueltas:</span>
@@ -2184,6 +2280,63 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                 onClose={() => setShowDatafonoConfigModal(false)}
                 onSaveSuccess={() => alert("✅ Configuración estructurada del Datáfono guardada en la base de datos.")}
             />
+
+            {/* MODAL: CARRITOS PAUSADOS (VENTAS EN ESPERA) */}
+            {showPausedCartsModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-400 border border-teal-500/30 flex items-center justify-center">
+                                    <ShoppingCart className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Ventas en Espera ({pausedCarts.length})</h2>
+                                    <p className="text-xs text-slate-400">Recupera una venta pausada para continuar el cobro</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowPausedCartsModal(false)} className="text-slate-400 hover:text-white">✕</button>
+                        </div>
+                        
+                        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+                            {pausedCarts.length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-6">No hay ventas pausadas.</p>
+                            ) : (
+                                pausedCarts.map(pc => (
+                                    <div key={pc.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between hover:border-teal-500/50 transition-colors">
+                                        <div>
+                                            <div className="text-sm font-bold text-white flex items-center gap-2">
+                                                {pc.customerName}
+                                            </div>
+                                            <div className="text-xs text-slate-400 mt-1 flex items-center gap-3">
+                                                <span><Clock className="w-3 h-3 inline mr-1" /> {pc.time}</span>
+                                                <span className="text-teal-400">{pc.cart.length} ítems</span>
+                                                <span className="font-mono text-emerald-400">{formatCOP(pc.cart.reduce((s, i) => s + (i.unitPrice * i.quantity), 0))}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => {
+                                                    setPausedCarts(prev => prev.filter(c => c.id !== pc.id));
+                                                }}
+                                                className="p-2 rounded-xl border border-slate-800 text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleResumeCart(pc.id)}
+                                                className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-lg shadow-teal-600/20 transition-all flex items-center gap-2"
+                                            >
+                                                Retomar Venta <ArrowRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* MODAL: CASH DENOMINATION & ARQUEO Z */}
             {showCashDenominationModal && (
