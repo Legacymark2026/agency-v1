@@ -91,6 +91,7 @@ export function SalesForecastClient() {
   
   const [isConfigExpanded, setIsConfigExpanded] = useState<boolean>(false);
   const [manualOverrides, setManualOverrides] = useState<Record<string, number>>({});
+  const [toastMsg, setToastMsg] = useState<{title: string, message: string} | null>(null);
 
   const [alpha, setAlpha] = useState<number>(0.3);
   const [beta, setBeta] = useState<number>(0.1);
@@ -820,7 +821,16 @@ export function SalesForecastClient() {
                         </td>
                         <td className="px-4 py-3">
                           {sku.risk !== 'LOW' ? (
-                            <button className="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium">
+                            <button 
+                              onClick={() => {
+                                setToastMsg({
+                                  title: 'PO Autogenerada',
+                                  message: `Se emitió solicitud de compras por ${Math.round(sku.demand * 1.2)} unidades para ${sku.name} (Lead Time: 15 días).`
+                                });
+                                setTimeout(() => setToastMsg(null), 4000);
+                              }}
+                              className="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium"
+                            >
                               Generar PO Automática
                             </button>
                           ) : <span className="text-xs text-slate-600">-</span>}
@@ -932,6 +942,31 @@ export function SalesForecastClient() {
           </div>
 
           <div className="lg:col-span-7 space-y-6">
+            
+            {/* Alerta FEFO & Simulación de Promociones */}
+            <div className="bg-gradient-to-r from-rose-900/40 to-slate-900/60 border border-rose-500/30 rounded-2xl p-5 backdrop-blur-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Flame className="w-24 h-24 text-rose-500" />
+              </div>
+              <div className="flex items-center gap-2 text-rose-400 mb-2">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="text-sm font-bold uppercase tracking-wider">Riesgo FEFO Detectado (Lotes por Vencer)</h3>
+              </div>
+              <p className="text-xs text-slate-300 mb-4 max-w-md">
+                El lote #L-9982 (Cacao Fino 250g) vence en 45 días. Riesgo de pérdida: <span className="font-mono text-rose-300 font-bold">$4.500.000</span>.
+              </p>
+              <button 
+                onClick={() => {
+                  setOptBaseUnits(optBaseUnits * 1.5);
+                  setOptElasticity(1.8);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2"
+              >
+                <Tag className="w-4 h-4" />
+                Simular Promoción de Liquidación Rápida
+              </button>
+            </div>
+
             <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-emerald-500/10 border border-indigo-500/30 rounded-2xl p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -979,13 +1014,33 @@ export function SalesForecastClient() {
               </div>
             </div>
 
-            {/* Sweep Curve Table */}
+            {/* Elasticity Graph */}
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
+              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-indigo-400" />
                 Curva de Sensibilidad: Descuento vs. Utilidad Neta
               </h3>
+              
+              <div className="h-64 w-full mb-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={optimizerResults.curve} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <XAxis dataKey="discount" stroke="#64748b" fontSize={11} tickFormatter={(val) => `${val}%`} />
+                    <YAxis yAxisId="left" stroke="#64748b" fontSize={11} tickFormatter={(val) => `$${(val / 1000000).toFixed(1)}M`} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#818cf8" fontSize={11} tickFormatter={(val) => `${val}u`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px', fontSize: '12px' }}
+                      formatter={(value: any, name: string) => [name === 'profit' ? formatCOP(value) : value, name === 'profit' ? 'Utilidad Neta' : 'Unidades Vendidas']}
+                      labelFormatter={(label) => `Descuento: ${label}%`}
+                    />
+                    <Area yAxisId="left" type="monotone" dataKey="profit" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={2} />
+                    <Line yAxisId="right" type="monotone" dataKey="projectedUnits" stroke="#818cf8" strokeWidth={2} dot={false} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
               <div className="space-y-2">
-                {optimizerResults.curve.slice(0, 7).map((pt, idx) => (
+                {optimizerResults.curve.slice(0, 5).map((pt, idx) => (
                   <div
                     key={idx}
                     className={'flex items-center justify-between p-2.5 rounded-xl border text-xs ' + (
@@ -1228,6 +1283,20 @@ export function SalesForecastClient() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Global Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 bg-slate-900 border border-indigo-500/50 shadow-2xl shadow-indigo-500/20 rounded-xl p-4 flex items-start gap-3 z-50 animate-in fade-in slide-in-from-bottom-4">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-bold text-white">{toastMsg.title}</h4>
+            <p className="text-xs text-slate-300 mt-1 max-w-xs">{toastMsg.message}</p>
+          </div>
+          <button onClick={() => setToastMsg(null)} className="text-slate-500 hover:text-slate-300 ml-2">
+            &times;
+          </button>
         </div>
       )}
     </div>

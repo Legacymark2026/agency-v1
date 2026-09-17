@@ -40,7 +40,7 @@ export interface ISalesForecastEventPublisherPort {
   publishForecastGenerated(payload: { companyId: string; period: string; totalRevenueProjected: number }): Promise<void>;
   publishDiscountTableChanged(payload: { companyId: string; tableCode: string; action: string }): Promise<void>;
   publishScenarioSimulated(payload: { companyId: string; scenarioName: string; isViable: boolean }): Promise<void>;
-  publishReorderSuggested(payload: { companyId: string; productId: string; sku: string; suggestedUnits: number; targetPeriod: string }): Promise<void>;
+  publishReorderSuggested(payload: { companyId: string; productId: string; sku: string; suggestedUnits: number; targetPeriod: string; leadTimeDays: number; safetyStockLevel: number }): Promise<void>;
 }
 
 export interface ISalesForecastUseCases {

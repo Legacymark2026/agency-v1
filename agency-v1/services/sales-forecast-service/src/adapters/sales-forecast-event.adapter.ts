@@ -28,7 +28,7 @@ export class RedisSalesForecastEventAdapter implements ISalesForecastEventPublis
     }
   }
 
-  async publishReorderSuggested(payload: { companyId: string; productId: string; sku: string; suggestedUnits: number; targetPeriod: string }): Promise<void> {
+  async publishReorderSuggested(payload: { companyId: string; productId: string; sku: string; suggestedUnits: number; targetPeriod: string; leadTimeDays: number; safetyStockLevel: number }): Promise<void> {
     try {
       await eventBus.publish("forecast.reorder.suggested" as any, payload);
     } catch (err: any) {

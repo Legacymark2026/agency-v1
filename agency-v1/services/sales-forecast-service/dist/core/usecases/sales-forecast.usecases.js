@@ -76,7 +76,9 @@ class SalesForecastUseCases {
                     productId: res.productId,
                     sku: res.sku,
                     suggestedUnits: Math.round(res.predictedUnits * 1.2), // Safety stock +20%
-                    targetPeriod: params.targetPeriod
+                    targetPeriod: params.targetPeriod,
+                    leadTimeDays: 15,
+                    safetyStockLevel: Math.round(res.predictedUnits * 0.2)
                 });
             }
         }
