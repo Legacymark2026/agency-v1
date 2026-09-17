@@ -62,13 +62,18 @@ export function createSalesForecastRouter(
 
   router.post("/projections/generate", async (req: Request, res: Response) => {
     try {
-      const { companyId = "default", targetPeriod, productId } = req.body;
+      const { companyId = "default", targetPeriod, productId, algorithm, alpha, beta, exogenousFactors, autoTune } = req.body;
       const now = new Date();
       const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 2).padStart(2, "0")}`;
       const forecasts = await useCases.runMLSalesForecast({
         companyId,
         targetPeriod: targetPeriod || defaultPeriod,
         productId,
+        algorithm,
+        alpha,
+        beta,
+        exogenousFactors,
+        autoTune
       });
       res.json({ success: true, data: forecasts });
     } catch (err: any) {

@@ -51,7 +51,16 @@ export interface ISalesForecastUseCases {
     baseUnitPrice: number;
     unitCost: number;
   }): Promise<any>;
-  runMLSalesForecast(params: { companyId: string; targetPeriod: string; productId?: string }): Promise<MLForecastResult[]>;
+  runMLSalesForecast(params: {
+    companyId: string;
+    targetPeriod: string;
+    productId?: string;
+    algorithm?: "HOLT_WINTERS" | "PROPHET" | "SARIMAX" | "XGBOOST" | "LSTM";
+    alpha?: number;
+    beta?: number;
+    exogenousFactors?: string[];
+    autoTune?: boolean;
+  }): Promise<MLForecastResult[]>;
   simulateCommercialScenario(params: ScenarioSimulationProps & { companyId: string }): Promise<ScenarioSimulationResult>;
   calculateOptimalDiscount(params: {
     basePrice: number;

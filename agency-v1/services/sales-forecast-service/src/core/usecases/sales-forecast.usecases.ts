@@ -44,6 +44,11 @@ export class SalesForecastUseCases implements ISalesForecastUseCases {
     companyId: string;
     targetPeriod: string;
     productId?: string;
+    algorithm?: "HOLT_WINTERS" | "PROPHET" | "SARIMAX" | "XGBOOST" | "LSTM";
+    alpha?: number;
+    beta?: number;
+    exogenousFactors?: string[];
+    autoTune?: boolean;
   }): Promise<MLForecastResult[]> {
     const history = await this.repo.getHistoricalSales(params.companyId, params.productId, 12);
     
@@ -69,7 +74,14 @@ export class SalesForecastUseCases implements ISalesForecastUseCases {
           { date: new Date(2026, 7, 1), period: "2026-08", unitsSold: 380, revenue: 10830000, avgPrice: 28500 },
           { date: new Date(2026, 8, 1), period: "2026-09", unitsSold: 440, revenue: 12540000, avgPrice: 28500 }
         ],
-        params.targetPeriod
+        params.targetPeriod,
+        {
+          algorithm: params.algorithm,
+          alpha: params.alpha,
+          beta: params.beta,
+          exogenousFactors: params.exogenousFactors,
+          autoTune: params.autoTune
+        }
       );
       results.push(sample);
       totalProjectedRevenue += sample.predictedRevenue;
@@ -81,7 +93,14 @@ export class SalesForecastUseCases implements ISalesForecastUseCases {
           (records[0] as any).sku || "SKU-GEN",
           (records[0] as any).productName || "Producto Comercial",
           records,
-          params.targetPeriod
+          params.targetPeriod,
+          {
+            algorithm: params.algorithm,
+            alpha: params.alpha,
+            beta: params.beta,
+            exogenousFactors: params.exogenousFactors,
+            autoTune: params.autoTune
+          }
         );
         results.push(forecast);
         totalProjectedRevenue += forecast.predictedRevenue;
