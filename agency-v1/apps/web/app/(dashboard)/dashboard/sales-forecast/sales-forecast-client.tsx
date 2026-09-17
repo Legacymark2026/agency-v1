@@ -80,7 +80,7 @@ interface MarkdownLot {
 }
 
 export function SalesForecastClient() {
-  const [activeTab, setActiveTab] = useState<'forecast' | 'optimizer' | 'markdown' | 'compare' | 'discounts'>('forecast');
+  const [activeTab, setActiveTab] = useState<'forecast' | 'optimizer' | 'markdown' | 'compare' | 'discounts' | 'cash-flow' | 'budget-gap' | 'governance'>('forecast');
   
   // Model state & Parameters (Holt-Winters)
   const [forecastHorizon, setForecastHorizon] = useState<'30' | '60' | '90'>('60');
@@ -479,6 +479,42 @@ export function SalesForecastClient() {
           >
             <TableIcon className="w-3.5 h-3.5" />
             Tablas Descuento
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('cash-flow')}
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
+              activeTab === 'cash-flow'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                : 'text-emerald-400/80 hover:text-emerald-300'
+            )}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            Flujo de Caja
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('budget-gap')}
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
+              activeTab === 'budget-gap'
+                ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
+                : 'text-amber-400/80 hover:text-amber-300'
+            )}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Análisis de Brechas
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('governance')}
+            className={'px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ' + (
+              activeTab === 'governance'
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+                : 'text-purple-400/80 hover:text-purple-300'
+            )}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Auditoría
           </button>
         </div>
       </div>
@@ -1286,7 +1322,186 @@ export function SalesForecastClient() {
         </div>
       )}
 
-      {/* Global Toast Notification */}
+      {/* ── TAB 6: FLUJO DE CAJA (CASH FLOW FORECASTING) ──────────────────── */}
+      {activeTab === 'cash-flow' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
+            <h3 className="text-base font-bold text-white flex items-center gap-2 mb-2">
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              Proyección de Liquidez a 90 Días
+            </h3>
+            <p className="text-xs text-slate-400 mb-6">Simulación cruzando los ingresos predictivos de ML (Cash In) contra cuentas por pagar y OPEX fijos (Cash Out).</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs text-slate-400 mb-1">Cuentas por Pagar (AP) Estimadas</div>
+                <div className="text-xl font-bold text-rose-400 font-mono">{formatCOP(185000000)} / mes</div>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs text-slate-400 mb-1">Gastos Operativos (OPEX) Fijos</div>
+                <div className="text-xl font-bold text-rose-400 font-mono">{formatCOP(45000000)} / mes</div>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-emerald-500/30">
+                <div className="text-xs text-emerald-400/80 mb-1">Net Cash Flow Promedio Proyectado</div>
+                <div className="text-xl font-bold text-emerald-400 font-mono">+ {formatCOP(35000000)} / mes</div>
+              </div>
+            </div>
+
+            <div className="h-72 w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={[
+                    { period: 'Oct 2026', cashIn: 228000000, cashOut: 230000000, netFlow: -2000000 },
+                    { period: 'Nov 2026', cashIn: 265000000, cashOut: 230000000, netFlow: 35000000 },
+                    { period: 'Dic 2026', cashIn: 310000000, cashOut: 240000000, netFlow: 70000000 }
+                  ]}
+                  margin={{ top: 10, right: 30, left: 20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+                  <XAxis dataKey="period" stroke="#94a3b8" fontSize={11} tickMargin={10} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(val) => `$${(val / 1000000)}M`} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }}
+                    itemStyle={{ fontSize: '12px' }}
+                    formatter={(value: number) => formatCOP(value)}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                  <Bar dataKey="cashIn" name="Ingresos Proyectados (+)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
+                  <Bar dataKey="cashOut" name="Egresos (OPEX + AP) (-)" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={40} />
+                  <Line type="monotone" dataKey="netFlow" name="Flujo Neto (Net Cash Flow)" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6' }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong>Alerta de Liquidez (Cash Crunch):</strong> Se proyecta un flujo neto negativo de {formatCOP(2000000)} para el mes de Octubre 2026. Se recomienda adelantar cobros de cartera o renegociar plazos de pago a proveedores.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 7: ANÁLISIS DE BRECHAS (BUDGET GAP ANALYSIS) ────────────────── */}
+      {activeTab === 'budget-gap' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
+            <h3 className="text-base font-bold text-white flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              Análisis de Brechas: Presupuesto vs Real vs Proyección
+            </h3>
+            <p className="text-xs text-slate-400 mb-6">Comparativa de las metas fijadas (Quota Anual) contra lo ejecutado a la fecha (YTD) y lo que la IA estima que lograremos a fin de año.</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs text-slate-400 mb-1">Presupuesto Comercial 2026</div>
+                <div className="text-lg font-bold text-white font-mono">{formatCOP(2500000000)}</div>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs text-slate-400 mb-1">Venta Real (YTD Septiembre)</div>
+                <div className="text-lg font-bold text-indigo-400 font-mono">{formatCOP(1430000000)}</div>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div className="text-xs text-slate-400 mb-1">Proyección Q4 (ML Forecast)</div>
+                <div className="text-lg font-bold text-emerald-400 font-mono">{formatCOP(803000000)}</div>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-rose-500/30">
+                <div className="text-xs text-rose-400/80 mb-1">Brecha Estimada (Forecast GAP)</div>
+                <div className="text-lg font-bold text-rose-400 font-mono">- {formatCOP(267000000)}</div>
+              </div>
+            </div>
+
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart layout="vertical" data={[{ name: "Ingresos 2026", budget: 2500000000, real: 1430000000, projected: 803000000 }]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} horizontal={false} />
+                  <XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(val) => `$${(val / 1000000)}M`} />
+                  <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={11} width={80} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }} formatter={(value: number) => formatCOP(value)} />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  <Bar dataKey="real" stackId="a" name="Venta Real (YTD)" fill="#6366f1" barSize={30} />
+                  <Bar dataKey="projected" stackId="a" name="Proyección Q4 (Go-To)" fill="#10b981" barSize={30} />
+                  <Scatter dataKey="budget" name="Meta (Presupuesto)" fill="#f59e0b" shape="triangle" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="text-center text-xs text-slate-400 mt-2">La proyección sumada a la venta real no alcanza el presupuesto por {formatCOP(267000000)}. Se requiere estrategia correctiva de impulso comercial.</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 8: AUDITORÍA Y WORKFLOW (FORECAST GOVERNANCE) ───────────────── */}
+      {activeTab === 'governance' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
+            <h3 className="text-base font-bold text-white flex items-center gap-2 mb-2">
+              <ShieldCheck className="w-5 h-5 text-purple-400" />
+              Auditoría y Aprobaciones de Escenarios (Overrides)
+            </h3>
+            <p className="text-xs text-slate-400 mb-6">Flujo de aprobación para sobre-escrituras manuales a las predicciones de la Inteligencia Artificial (Tracking de Precisión Humano vs IA).</p>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-950 text-slate-300">
+                  <tr>
+                    <th className="p-3 font-semibold border-b border-slate-800">Periodo</th>
+                    <th className="p-3 font-semibold border-b border-slate-800">Analista</th>
+                    <th className="p-3 font-semibold border-b border-slate-800">Pronóstico ML</th>
+                    <th className="p-3 font-semibold border-b border-slate-800">Ajuste Manual (Override)</th>
+                    <th className="p-3 font-semibold border-b border-slate-800">Motivo de Ajuste</th>
+                    <th className="p-3 font-semibold border-b border-slate-800 text-center">Estado / Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-slate-900/40 text-slate-300">
+                  <tr className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                    <td className="p-3">Oct 2026</td>
+                    <td className="p-3 font-medium text-white">Camilo R. (Sales Ops)</td>
+                    <td className="p-3 text-slate-400">2,450 uds</td>
+                    <td className="p-3 text-emerald-400 font-bold">2,900 uds</td>
+                    <td className="p-3 text-slate-400 truncate max-w-[150px]">Cierre trato B2B Grupo Éxito</td>
+                    <td className="p-3 flex justify-center gap-2">
+                      <button className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-bold">Aprobar</button>
+                      <button className="px-2 py-1 rounded bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 font-bold">Rechazar</button>
+                    </td>
+                  </tr>
+                  <tr className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                    <td className="p-3">Nov 2026</td>
+                    <td className="p-3 font-medium text-white">Diana M. (Mktg)</td>
+                    <td className="p-3 text-slate-400">2,850 uds</td>
+                    <td className="p-3 text-emerald-400 font-bold">3,500 uds</td>
+                    <td className="p-3 text-slate-400 truncate max-w-[150px]">Black Friday presupuesto triplicado</td>
+                    <td className="p-3 flex justify-center gap-2">
+                      <button className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 font-bold">Aprobar</button>
+                      <button className="px-2 py-1 rounded bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 font-bold">Rechazar</button>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-slate-800/30">
+                    <td className="p-3">Ago 2026</td>
+                    <td className="p-3 font-medium text-white">Andrés F. (Sales Ops)</td>
+                    <td className="p-3 text-slate-400">1,580 uds</td>
+                    <td className="p-3 text-slate-400">1,800 uds</td>
+                    <td className="p-3 text-slate-400 truncate max-w-[150px]">Optimismo mercado general</td>
+                    <td className="p-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300">Aprobado y Evaluado</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div className="text-xs text-slate-400">Forecast Accuracy Tracking (Ago 2026)</div>
+                <div className="text-sm font-bold text-white mt-1">El modelo ML tuvo un <span className="text-emerald-400">92%</span> de precisión (Real: 1,620). El ajuste humano (1,800) tuvo <span className="text-rose-400">88%</span>.</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-slate-500 uppercase">Vencedor Histórico</div>
+                <div className="text-sm font-bold text-indigo-400">Inteligencia Artificial</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toastMsg && (
         <div className="fixed bottom-6 right-6 bg-slate-900 border border-indigo-500/50 shadow-2xl shadow-indigo-500/20 rounded-xl p-4 flex items-start gap-3 z-50 animate-in fade-in slide-in-from-bottom-4">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5" />
