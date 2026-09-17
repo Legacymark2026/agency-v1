@@ -729,7 +729,7 @@ export function SalesForecastClient() {
                 </div>
               ))}
 
-              {forecastPoints.map((pt, idx) => (
+              {forecastPoints.filter(pt => pt.predictedUnits !== undefined).map((pt, idx) => (
                 <div key={idx} className="bg-indigo-950/20 border border-indigo-500/40 rounded-xl p-4 flex flex-col justify-between relative overflow-hidden">
                   <div className="absolute top-0 right-0 px-2 py-0.5 bg-indigo-500 text-[9px] font-bold uppercase text-white rounded-bl">
                     ML Forecast
@@ -754,7 +754,6 @@ export function SalesForecastClient() {
               ))}
             </div>
           </div>
-        </div>
       )}
 
       {/* ── TAB 2: AI MARGIN MAXIMIZER (OPTIMIZADOR PRESCRIPTIVO) ─────────── */}
