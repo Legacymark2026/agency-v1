@@ -165,7 +165,7 @@ export function ChannelsClient() {
               disabled={isSyncing}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all"
             >
-              <RefreshCw className={\`w-4 h-4 \${isSyncing ? 'animate-spin text-indigo-400' : ''}\`} />
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-indigo-400' : ''}`} />
               {isSyncing ? 'Sincronizando APIs...' : 'Sincronizar APIs Logísticas'}
             </button>
           </div>
@@ -239,8 +239,8 @@ export function ChannelsClient() {
                 <ComposedChart data={profitabilityAnalysis} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
                   <XAxis dataKey="channelName" stroke="#94a3b8" fontSize={11} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(val) => \`\${val}%\`} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }} formatter={(val: number) => \`\${val.toFixed(2)}%\`} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(val) => `${val}%`} />
+                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '8px' }} formatter={(val: number) => `${val.toFixed(2)}%`} />
                   <Legend wrapperStyle={{ fontSize: '11px' }} />
                   <Bar dataKey="baseGrossMargin" name="Margen Bruto Base (%)" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} opacity={0.5} />
                   <Bar dataKey="netMargin" name="Margen Neto Proyectado (%)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
@@ -338,7 +338,7 @@ export function ChannelsClient() {
                       <td className="p-3 text-right font-mono text-rose-400">-{formatCOP(row.logisticsCost)}</td>
                       <td className="p-3 text-right font-mono text-emerald-400 font-bold">{formatCOP(row.netProfit)}</td>
                       <td className="p-3 text-right font-bold">
-                        <span className={\`\${row.netMarginPct < 25 ? 'text-amber-400' : 'text-emerald-400'}\`}>
+                        <span className={`${row.netMarginPct < 25 ? 'text-amber-400' : 'text-emerald-400'}`}>
                           {row.netMarginPct.toFixed(1)}%
                         </span>
                       </td>
