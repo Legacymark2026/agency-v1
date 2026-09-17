@@ -24,7 +24,11 @@ import {
   Calendar,
   Sparkles,
   ChefHat,
-  Tag
+  Tag,
+  MapPin,
+  ListChecks,
+  ClipboardCheck,
+  Printer
 } from 'lucide-react';
 
 interface WarehouseData {
@@ -103,7 +107,7 @@ interface DemandForecastUI {
 }
 
 export function InventoryClient() {
-  const [activeTab, setActiveTab] = useState<'stock' | 'kardex' | 'transfers' | 'lots' | 'bom' | 'forecast'>('stock');
+  const [activeTab, setActiveTab] = useState<'stock' | 'kardex' | 'transfers' | 'lots' | 'bom' | 'forecast' | 'locations' | 'fulfillment' | 'audit'>('stock');
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
@@ -327,6 +331,39 @@ export function InventoryClient() {
         >
           <Sparkles size={16} className="text-amber-400" />
           Demanda & Reabastecimiento IA
+        </button>
+        <button
+          onClick={() => setActiveTab('locations')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'locations'
+              ? 'border-amber-500 text-amber-500'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <MapPin size={16} className="text-blue-400" />
+          Mapa de Ubicaciones Físicas
+        </button>
+        <button
+          onClick={() => setActiveTab('fulfillment')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'fulfillment'
+              ? 'border-amber-500 text-amber-500'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ListChecks size={16} className="text-emerald-400" />
+          Pick, Pack & Ship (Fulfillment)
+        </button>
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'audit'
+              ? 'border-amber-500 text-amber-500'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <ClipboardCheck size={16} className="text-purple-400" />
+          Auditoría y Arqueo Cíclico
         </button>
       </div>
 
@@ -695,6 +732,204 @@ export function InventoryClient() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Locations */}
+      {activeTab === 'locations' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-500" />
+              Gestión Espacial (Bin & Location)
+            </h2>
+            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Nueva Ubicación
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">Mapeo físico de la Bodega Central. Asigna coordenadas (Zona, Pasillo, Rack, Nivel) a los SKUs.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Racks Summary */}
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="text-xs font-bold text-muted-foreground uppercase mb-3">Pasillo A - Racks Secos</div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                  <span className="font-mono">RACK-A1</span>
+                  <span className="text-emerald-500 font-bold">85% Ocupado</span>
+                </div>
+                <div className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                  <span className="font-mono">RACK-A2</span>
+                  <span className="text-emerald-500 font-bold">60% Ocupado</span>
+                </div>
+                <div className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded">
+                  <span className="font-mono">RACK-A3</span>
+                  <span className="text-amber-500 font-bold">95% Ocupado</span>
+                </div>
+              </div>
+            </div>
+            {/* Visual Heatmap representation (Mocked) */}
+            <div className="md:col-span-2 bg-card border border-border rounded-xl p-4 flex flex-col justify-center items-center h-48 border-dashed">
+              <MapPin className="w-8 h-8 text-muted-foreground mb-2 opacity-50" />
+              <span className="text-sm font-medium text-muted-foreground">Mapa Visual de Bodega (Drag & Drop de SKUs) en Desarrollo</span>
+              <span className="text-xs text-muted-foreground/70 mt-1">Soporte para Códigos de Barras en Posiciones</span>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto rounded-xl border border-border mt-4">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-muted text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">SKU / Producto</th>
+                  <th className="px-4 py-3 font-semibold">Coordenada (Bin Location)</th>
+                  <th className="px-4 py-3 font-semibold">Tipo Almacenaje</th>
+                  <th className="px-4 py-3 font-semibold">Stock Físico en Posición</th>
+                </tr>
+              </thead>
+              <tbody className="bg-card text-card-foreground">
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-3 font-medium">Café Especial Geisha 500g <span className="text-xs text-muted-foreground ml-1">ALM-001</span></td>
+                  <td className="px-4 py-3 font-mono font-bold text-blue-400">Z1-PA-R2-N3</td>
+                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">Seco (Ambiente)</span></td>
+                  <td className="px-4 py-3">450 un</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-3 font-medium">Té Matcha Japonés <span className="text-xs text-muted-foreground ml-1">BEV-010</span></td>
+                  <td className="px-4 py-3 font-mono font-bold text-blue-400">Z1-PA-R1-N1</td>
+                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">Seco (Ambiente)</span></td>
+                  <td className="px-4 py-3">85 un</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium">Miel Orgánica de Bosque <span className="text-xs text-muted-foreground ml-1">ALM-002</span></td>
+                  <td className="px-4 py-3 font-mono font-bold text-blue-400">Z2-PB-R5-N2</td>
+                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400">Refrigerado (15°C)</span></td>
+                  <td className="px-4 py-3 text-amber-500 font-bold">18 un</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Fulfillment */}
+      {activeTab === 'fulfillment' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <ListChecks className="w-5 h-5 text-emerald-500" />
+              Listas de Recolección (Wave Picking)
+            </h2>
+            <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-2">
+              <Printer className="w-4 h-4" /> Imprimir Wave
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">Órdenes de preparación optimizadas por la ruta más corta en la bodega.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-card border border-border rounded-xl p-5 border-l-4 border-l-amber-500">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-bold text-foreground">WAVE-202609-01 (Urgente)</h3>
+                  <span className="text-xs text-muted-foreground">3 Pedidos B2B Consolidados</span>
+                </div>
+                <span className="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500">EN PICKING</span>
+              </div>
+              <div className="space-y-2 mt-4 text-sm">
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" className="rounded border-border bg-background" defaultChecked />
+                  <span className="text-muted-foreground line-through">1. Z1-PA-R1-N1: 10x Té Matcha</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" className="rounded border-border bg-background" />
+                  <span className="font-medium">2. Z1-PA-R2-N3: 150x Café Geisha 500g</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" className="rounded border-border bg-background" />
+                  <span className="font-medium">3. Z2-PB-R5-N2: 12x Miel Orgánica</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">Operario: Carlos S.</div>
+                <button className="text-xs text-emerald-500 hover:text-emerald-400 font-bold">Completar Recolección</button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-5 border-l-4 border-l-blue-500">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-bold text-foreground">WAVE-202609-02 (E-Commerce)</h3>
+                  <span className="text-xs text-muted-foreground">15 Pedidos Retail Consolidados</span>
+                </div>
+                <span className="px-2 py-1 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400">PENDIENTE</span>
+              </div>
+              <div className="space-y-2 mt-4 text-sm">
+                <div className="text-muted-foreground italic text-xs mb-2">Ruta optimizada pendiente de inicio...</div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">1. Z1-PA-R2-N3: 15x Café Geisha 500g</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">2. Z3-PC-R1-N1: 15x Caja Envío E-Commerce Pequeña</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">Operario: Sin Asignar</div>
+                <button className="text-xs text-blue-500 hover:text-blue-400 font-bold">Asignar e Iniciar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Audit */}
+      {activeTab === 'audit' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5 text-purple-500" />
+              Auditoría y Arqueo Cíclico (A Ciegas)
+            </h2>
+            <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-lg flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Iniciar Conteo
+            </button>
+          </div>
+          <p className="text-sm text-muted-foreground">Flujo de revisión de existencias para detección de mermas o descuadres sin revelar el saldo teórico del sistema al auditor.</p>
+
+          <div className="overflow-x-auto rounded-xl border border-border mt-4">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-muted text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">ID Arqueo</th>
+                  <th className="px-4 py-3 font-semibold">Zona Auditada</th>
+                  <th className="px-4 py-3 font-semibold">Auditor</th>
+                  <th className="px-4 py-3 font-semibold">SKUs Revisados</th>
+                  <th className="px-4 py-3 font-semibold">Precisión (Match)</th>
+                  <th className="px-4 py-3 font-semibold text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="bg-card text-card-foreground">
+                <tr className="border-b border-border/50">
+                  <td className="px-4 py-3 font-mono font-bold">AUDIT-084</td>
+                  <td className="px-4 py-3">Bodega Central (Pasillo A)</td>
+                  <td className="px-4 py-3">Juan D.</td>
+                  <td className="px-4 py-3">45 SKUs</td>
+                  <td className="px-4 py-3"><span className="text-emerald-500 font-bold">100%</span> (Sin mermas)</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500">APROBADO</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-mono font-bold">AUDIT-085</td>
+                  <td className="px-4 py-3">Bodega Central (Refrigerados)</td>
+                  <td className="px-4 py-3">Diana M.</td>
+                  <td className="px-4 py-3">12 SKUs</td>
+                  <td className="px-4 py-3"><span className="text-rose-500 font-bold">91%</span> (Faltan 2 un. Miel)</td>
+                  <td className="px-4 py-3 text-center">
+                    <button className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold">CONCILIAR DIFERENCIA</button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
