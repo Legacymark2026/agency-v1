@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
@@ -275,16 +275,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                 if (disc && !isNaN(Number(disc))) setDiscountAmount(Number(disc));
             } else if (e.key === "Escape") {
                 if (cart.length > 0) {
-                    if (window.confirm("¿Seguro que deseas limpiar el carrito actual?")) {
-                        setCart([]);
-                        setDiscountAmount(0);
-                    }
+                    clearCart();
                 }
             }
         };
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [cart]);
+    }, [cart, clearCart]);
 
     const handlePauseCart = () => {
         if (cart.length === 0) return;
@@ -611,14 +608,25 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     };
 
     const removeFromCart = (id: string) => {
+        // AUTORIZACIÓN CON PIN DE SUPERVISOR
+        const pin = prompt("🔒 ACCIÓN RESTRINGIDA:\nIngrese PIN de Supervisor para eliminar el artículo (Ej. 1234):");
+        if (pin !== "1234") {
+            alert("❌ PIN Incorrecto. Operación cancelada.");
+            return;
+        }
         setCart((prev) => prev.filter((item) => item.id !== id));
     };
 
-    const clearCart = () => {
+    const clearCart = useCallback(() => {
+        const pin = prompt("🔒 ACCIÓN RESTRINGIDA:\nIngrese PIN de Supervisor para anular la transacción completa (Ej. 1234):");
+        if (pin !== "1234") {
+            alert("❌ PIN Incorrecto. Operación cancelada.");
+            return;
+        }
         setCart([]);
         setDiscountAmount(0);
         setCashReceived("");
-    };
+    }, []);
 
     // Dynamic Price Tier Unit Price & Net Profit Margin
     const getEffectiveUnitPrice = (item: Product) => {

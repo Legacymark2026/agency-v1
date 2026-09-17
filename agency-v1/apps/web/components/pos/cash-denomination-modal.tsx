@@ -125,21 +125,17 @@ export function CashDenominationModal({ expectedCash, onClose, onConfirmClose }:
                             ))}
                         </div>
 
-                        {/* SUMMARY CARD */}
+                        {/* SUMMARY CARD (BLIND CLOSE / ARQUEO CIEGO) */}
                         <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
-                            <div className="flex justify-between text-slate-400">
-                                <span>Efectivo Esperado en Sistema (Apertura + Ventas):</span>
-                                <span className="font-bold text-white">{fmtCOP(expectedCash)}</span>
+                            <div className="flex items-center gap-2 text-indigo-400 font-bold mb-2">
+                                <ShieldCheck className="w-4 h-4" /> Modalidad: Arqueo a Ciegas (Blind Close)
                             </div>
-                            <div className="flex justify-between text-slate-400">
-                                <span>Conteo Físico Real Ingresado:</span>
-                                <span className="font-bold text-teal-300">{fmtCOP(physicalTotal)}</span>
+                            <div className="text-slate-400 pb-2">
+                                Por políticas de seguridad, el sistema no mostrará el valor esperado ni diferencias. Por favor ingrese el valor físico exacto contado. El sistema generará alertas automáticas en caso de descuadre.
                             </div>
-                            <div className="flex justify-between pt-2 border-t border-slate-800 font-bold text-sm">
-                                <span>Diferencia (Sobrante / Faltante):</span>
-                                <span className={difference === 0 ? "text-emerald-400" : difference > 0 ? "text-emerald-300" : "text-rose-400"}>
-                                    {difference === 0 ? "✓ Cuadrada $ 0" : difference > 0 ? `+ ${fmtCOP(difference)} (Sobrante)` : `- ${fmtCOP(Math.abs(difference))} (Faltante)`}
-                                </span>
+                            <div className="flex justify-between items-center pt-3 border-t border-slate-800">
+                                <span className="font-bold text-slate-300">Conteo Físico Real Ingresado:</span>
+                                <span className="font-bold text-xl text-teal-300 font-mono">{fmtCOP(physicalTotal)}</span>
                             </div>
                         </div>
                     </div>
