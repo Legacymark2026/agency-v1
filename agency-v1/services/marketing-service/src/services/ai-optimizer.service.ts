@@ -88,7 +88,7 @@ export class AiOptimizerService {
     const topic = input.topic;
 
     try {
-      const response = await fetch("http://ai-engine:3000/api/v1/agents/run", {
+      const response = await fetch(`${process.env.AI_ENGINE_URL || "http://ai-engine:4004"}/api/v1/agents/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-company-id": "system" },
         body: JSON.stringify({

@@ -9,6 +9,31 @@
 import { Request, Response, NextFunction } from "express";
 import { GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
 import { resolveServiceUrl } from "../lib/service-registry";
+import { createHash } from 'crypto';
+
+// ── Token Validation Cache (30s TTL) ──────────────────────────────────────
+const TOKEN_CACHE_TTL_MS = 30_000;
+const TOKEN_CACHE_MAX_SIZE = 5_000;
+const tokenCache = new Map<string, { user: any; expiresAt: number }>();
+
+function getFromTokenCache(tokenHash: string): any | null {
+  const entry = tokenCache.get(tokenHash);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    tokenCache.delete(tokenHash);
+    return null;
+  }
+  return entry.user;
+}
+
+function setInTokenCache(tokenHash: string, user: any): void {
+  // Evict oldest entries if cache is full
+  if (tokenCache.size >= TOKEN_CACHE_MAX_SIZE) {
+    const firstKey = tokenCache.keys().next().value;
+    if (firstKey) tokenCache.delete(firstKey);
+  }
+  tokenCache.set(tokenHash, { user, expiresAt: Date.now() + TOKEN_CACHE_TTL_MS });
+}
 
 const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
 
@@ -42,6 +67,21 @@ export async function authenticateGatewayRequest(
     return next();
   }
 
+  const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+  const cachedUser = getFromTokenCache(tokenHash);
+  if (cachedUser) {
+    if (cachedUser.userId) {
+      req.headers["x-user-id"] = String(cachedUser.userId);
+      if (cachedUser.companyId) {
+        req.headers["x-company-id"] = String(cachedUser.companyId);
+      }
+      if (cachedUser.role) {
+        req.headers["x-user-role"] = String(cachedUser.role);
+      }
+    }
+    return next();
+  }
+
   try {
     // 2. Validate token synchronously via gRPC with circuit-breaker and HTTP fallback
     const result: any = await authGrpcClient.call("ValidateToken", { token: rawToken }, async () => {
@@ -63,6 +103,8 @@ export async function authenticateGatewayRequest(
     });
 
     if (result && result.valid && result.userId) {
+      setInTokenCache(tokenHash, result);
+
       // 3. Inject verified identity headers before proxying
       req.headers["x-user-id"] = String(result.userId);
       if (result.companyId) {

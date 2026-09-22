@@ -17,10 +17,12 @@ const redisClient = new Redis(REDIS_URL);
 // Helper to invalidate CQRS Read View cache in Redis
 async function invalidateCqrsReadView(companyId: string, resource: string) {
   try {
-    const keys = await redisClient.keys(`crm:view:${resource}:${companyId}:*`);
-    if (keys.length > 0) {
-      await redisClient.del(...keys);
-    }
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redisClient.scan(cursor, 'MATCH', `crm:view:${resource}:${companyId}:*`, 'COUNT', '100');
+      cursor = nextCursor;
+      if (keys.length > 0) await redisClient.del(...keys);
+    } while (cursor !== '0');
   } catch (err: any) {
     console.error("[CQRS:Command] Read view invalidation error:", err.message);
   }

@@ -20,7 +20,6 @@ x-microservice-base: &microservice-base
   logging: *default-logging
   networks:
     - backend-net
-    - database-net
   volumes:
     - ./certs:/certs:ro
   deploy:
@@ -231,7 +230,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     environment:
-      AUTOHEAL_CONTAINER_LABEL: disabled
+      AUTOHEAL_CONTAINER_LABEL: all
       AUTOHEAL_INTERVAL: 30
       AUTOHEAL_START_PERIOD: 300
     volumes:
@@ -296,7 +295,7 @@ services:
     ports:
       - "7860:7860"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:7860/health || exit 0"]
+      test: ["CMD-SHELL", "curl -f http://localhost:7860/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -400,7 +399,7 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production}
       INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
-      NODE_OPTIONS: "--max-old-space-size=1024"
+      NODE_OPTIONS: "--max-old-space-size=768"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -423,7 +422,6 @@ services:
     networks:
       - frontend-net
       - backend-net
-      - database-net
     deploy:
       resources:
         limits:
@@ -472,7 +470,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=PathPrefix(`/graphql`)"
@@ -512,7 +510,8 @@ services:
       ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
       ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_OPTIONS: "--max-old-space-size=256"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     volumes:
       - ./certs:/certs:ro
@@ -523,7 +522,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/api/v1/auth`)"
@@ -542,7 +541,8 @@ services:
       PORT: "4020"
       GOLDNEEZ_DB_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_OPTIONS: "--max-old-space-size=192"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -550,7 +550,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4020/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.goldneez-rewards.rule=PathPrefix(`/api/goldneez-rewards`)"
@@ -571,7 +571,8 @@ services:
       DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_core?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
+      NODE_OPTIONS: "--max-old-space-size=192"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -580,7 +581,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4035/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sales-forecast.rule=PathPrefix(`/api/sales-forecast`)"
@@ -614,7 +615,7 @@ services:
       ANALYTICS_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
       ANALYTICS_DATABASE_READ_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer-replica:6433/legacymark_analytics?connection_limit=5&pgbouncer=true&statement_timeout=10000&sslmode=require
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       NODE_OPTIONS: "--max-old-space-size=256"
       NODE_EXTRA_CA_CERTS: /certs/db/ca.crt
     depends_on:
@@ -624,7 +625,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crm.rule=PathPrefix(`/api/leads`) || PathPrefix(`/api/deals`) || PathPrefix(`/api/crm`)"
@@ -642,6 +643,8 @@ services:
     environment:
       <<: *common-env
       PORT: "4003"
+      OTEL_SERVICE_NAME: automation-service
+      NODE_OPTIONS: "--max-old-space-size=1536"
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -650,10 +653,11 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     deploy:
       resources:
         limits: { cpus: "2.0", memory: 2G }
+        reservations: { cpus: "0.25", memory: 256M }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.automation.rule=PathPrefix(`/api/workflows`) || PathPrefix(`/api/automation`) || PathPrefix(`/api/cron/run-automation`) || PathPrefix(`/api/cron/social-publisher`) || PathPrefix(`/api/cron/process-sequences`)"
@@ -671,6 +675,8 @@ services:
     environment:
       <<: *common-env
       PORT: "4004"
+      OTEL_SERVICE_NAME: ai-engine
+      NODE_OPTIONS: "--max-old-space-size=3072"
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
       GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -685,6 +691,7 @@ services:
     deploy:
       resources:
         limits: { cpus: "4.0", memory: 4G }
+        reservations: { cpus: "0.5", memory: 512M }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ai.rule=PathPrefix(`/api/agents`) || PathPrefix(`/api/ai`) || PathPrefix(`/api/knowledge-bases`)"
@@ -702,6 +709,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4005"
+      OTEL_SERVICE_NAME: inbox-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -709,7 +717,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4005/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inbox.rule=PathPrefix(`/api/inbox`) || PathPrefix(`/api/webhooks/whatsapp`) || PathPrefix(`/api/webhooks/meta`) || PathPrefix(`/api/webhooks/channels`) || PathPrefix(`/api/cron/email-worker`)"
@@ -727,6 +735,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4006"
+      OTEL_SERVICE_NAME: finance-service
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     depends_on:
@@ -736,7 +745,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4006/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.finance.rule=PathPrefix(`/api/invoices`) || PathPrefix(`/api/payroll`) || PathPrefix(`/api/expenses`) || PathPrefix(`/api/payments`) || PathPrefix(`/api/subscriptions`) || PathPrefix(`/api/webhooks/stripe`) || PathPrefix(`/api/webhooks/wompi`) || PathPrefix(`/api/webhooks/paypal`) || PathPrefix(`/api/cron/subscriptions`)"
@@ -754,6 +763,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4020"
+      OTEL_SERVICE_NAME: pos-service
       GRPC_PORT: "50051"
       INVOICING_GRPC_PORT: "50052"
     depends_on:
@@ -763,7 +773,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4020/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pos.rule=PathPrefix(`/api/pos`)"
@@ -781,6 +791,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4025"
+      OTEL_SERVICE_NAME: inventory-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -788,7 +799,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4025/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.inventory.rule=PathPrefix(`/api/inventory`)"
@@ -806,6 +817,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4026"
+      OTEL_SERVICE_NAME: dian-compliance-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -813,7 +825,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4026/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dian.rule=PathPrefix(`/api/dian`)"
@@ -831,6 +843,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4030"
+      OTEL_SERVICE_NAME: audit-security-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -838,7 +851,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4030/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.audit.rule=PathPrefix(`/api/audit`)"
@@ -856,6 +869,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4022"
+      OTEL_SERVICE_NAME: payment-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -863,7 +877,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4022/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.payment.rule=PathPrefix(`/api/payments`)"
@@ -881,6 +895,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4023"
+      OTEL_SERVICE_NAME: chat-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -888,7 +903,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4023/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.chat.rule=PathPrefix(`/api/chat`)"
@@ -906,6 +921,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4024"
+      OTEL_SERVICE_NAME: feed-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -913,7 +929,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4024/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.feed.rule=PathPrefix(`/api/feed`)"
@@ -931,6 +947,8 @@ services:
     environment:
       <<: *common-env
       PORT: "4007"
+      OTEL_SERVICE_NAME: video-service
+      NODE_OPTIONS: "--max-old-space-size=1536"
       REDIS_URL: redis://redis-queue:6379
       NEXT_APP_URL: http://web:3000
       INTERNAL_SECRET: ${INTERNAL_SECRET:-video-service-secret-change-in-production}
@@ -945,10 +963,11 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4007/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     deploy:
       resources:
         limits: { cpus: "2.0", memory: 2G }
+        reservations: { cpus: "0.25", memory: 256M }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.video.rule=PathPrefix(`/api/video`)"
@@ -966,6 +985,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4008"
+      OTEL_SERVICE_NAME: calendar-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -973,7 +993,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4008/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.calendar.rule=PathPrefix(`/api/calendar`) || PathPrefix(`/api/scheduling`) || PathPrefix(`/api/booking`)"
@@ -991,6 +1011,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4009"
+      OTEL_SERVICE_NAME: marketing-service
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_media?connection_limit=5&pgbouncer=true&sslmode=require
       AUTH_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_auth?connection_limit=5&pgbouncer=true&sslmode=require
       CORE_DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_core?connection_limit=5&pgbouncer=true&sslmode=require
@@ -1003,7 +1024,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4009/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.marketing.rule=PathPrefix(`/api/marketing`) || PathPrefix(`/api/campaigns`) || PathPrefix(`/api/email-blast`) || PathPrefix(`/api/creative`)"
@@ -1021,6 +1042,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4010"
+      OTEL_SERVICE_NAME: integration-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1028,7 +1050,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4010/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.integration.rule=PathPrefix(`/api/integrations`) || PathPrefix(`/api/webhooks/shopify`) || PathPrefix(`/api/webhooks/wix`)"
@@ -1046,6 +1068,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4011"
+      OTEL_SERVICE_NAME: document-service
       GRPC_PORT: "50053"
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -1054,7 +1077,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4011/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.document.rule=PathPrefix(`/api/proposals`) || PathPrefix(`/api/propuesta`) || PathPrefix(`/api/kb`)"
@@ -1072,6 +1095,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4012"
+      OTEL_SERVICE_NAME: agent-team-engine
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1079,7 +1103,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4012/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.agentTeam.rule=PathPrefix(`/api/agent/teams`) || PathPrefix(`/api/agent/presets`) || PathPrefix(`/api/test-flow`)"
@@ -1097,6 +1121,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4013"
+      OTEL_SERVICE_NAME: analytics-service
       DATABASE_URL: postgresql://legacymark:${POSTGRES_PASSWORD:-legacymark_dev}@pgbouncer:6432/legacymark_analytics?connection_limit=5&pgbouncer=true&sslmode=require
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -1105,7 +1130,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4013/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.analytics.rule=PathPrefix(`/api/analytics`) || PathPrefix(`/api/track`)"
@@ -1123,6 +1148,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4014"
+      OTEL_SERVICE_NAME: admin-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1130,7 +1156,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4014/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin.rule=PathPrefix(`/api/admin`) || PathPrefix(`/api/diagnostics`) || PathPrefix(`/api/debug`)"
@@ -1148,6 +1174,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4015"
+      OTEL_SERVICE_NAME: public-api-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1155,7 +1182,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4015/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.publicApi.rule=PathPrefix(`/api/v1`) || PathPrefix(`/api/public`)"
@@ -1173,6 +1200,8 @@ services:
     environment:
       <<: *common-env
       PORT: "4016"
+      OTEL_SERVICE_NAME: notification-service
+      REDIS_URL: redis://redis-queue:6379
       GRPC_PORT: "50055"
       RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
@@ -1182,7 +1211,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4016/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.notification.rule=PathPrefix(`/api/notifications`) || PathPrefix(`/api/notification-preferences`)"
@@ -1200,6 +1229,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4017"
+      OTEL_SERVICE_NAME: hr-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1207,7 +1237,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4017/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hr.rule=PathPrefix(`/api/employees`) || PathPrefix(`/api/hr`) || PathPrefix(`/api/time-tracking`) || PathPrefix(`/api/payroll-hr`)"
@@ -1225,6 +1255,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4018"
+      OTEL_SERVICE_NAME: project-service
       GRPC_PORT: "50054"
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -1233,7 +1264,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4018/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.project.rule=PathPrefix(`/api/projects`) || PathPrefix(`/api/kanban`) || PathPrefix(`/api/tasks`)"
@@ -1251,6 +1282,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4019"
+      OTEL_SERVICE_NAME: affiliate-service
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -1258,7 +1290,7 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4019/health"]
       interval: 15s
       timeout: 5s
-      start_period: 10s
+      start_period: 45s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.affiliate.rule=PathPrefix(`/r`) || PathPrefix(`/api/affiliates`)"

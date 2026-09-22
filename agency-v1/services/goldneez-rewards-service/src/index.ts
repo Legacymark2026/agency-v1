@@ -269,7 +269,7 @@ function getTierFromPoints(points: number): string {
 
 async function dispatchLoyaltyNotification(userId: string, title: string, message: string) {
   try {
-    const response = await fetch("http://127.0.0.1:4016/api/notifications", {
+    const response = await fetch(`${process.env.NOTIFICATION_SERVICE_URL || "http://notification-service:4016"}/api/notifications`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

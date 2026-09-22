@@ -429,7 +429,7 @@ export class MarketingService {
    */
   static async generateAiCopy(companyId: string, topic: string, channel: 'email' | 'sms' | 'whatsapp') {
     try {
-      const response = await fetch("http://127.0.0.1:4004/api/agents/triage", {
+      const response = await fetch(`${process.env.AI_ENGINE_URL || "http://ai-engine:4004"}/api/agents/triage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

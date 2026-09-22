@@ -43,10 +43,12 @@ export async function invalidateUnreadCount(userId: string, companyId?: string):
     if (companyId) {
       await redisCache.del(`notif:unread_count:${userId}:${companyId}`);
     } else {
-      const keys = await redisCache.keys(`notif:unread_count:${userId}:*`);
-      if (keys.length > 0) {
-        await redisCache.del(...keys);
-      }
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redisCache.scan(cursor, 'MATCH', `notif:unread_count:${userId}:*`, 'COUNT', '100');
+        cursor = nextCursor;
+        if (keys.length > 0) await redisCache.del(...keys);
+      } while (cursor !== '0');
     }
   } catch (err: any) {
     console.error("[notification-cache] Invalidation error:", err.message);
