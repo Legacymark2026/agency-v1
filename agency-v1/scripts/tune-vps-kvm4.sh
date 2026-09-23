@@ -62,19 +62,25 @@ EOF
 echo -e "${GREEN}✔ Límites de procesos y descriptores aumentados a 65535.${NC}"
 
 # 3. Configurar zram (Compresión ultrarrápida de memoria en RAM)
-echo -e "\n${YELLOW}[3/5] Configurando ZRAM (Compresión en RAM para evitar OOM)...${NC}"
-apt-get update -qq
-apt-get install -y -qq zram-tools > /dev/null
+echo -e "\n${YELLOW}[3/5] Configurando ZRAM (Compresión nativa en RAM para evitar OOM)...${NC}"
+cat << 'EOF' > /etc/systemd/system/legacymark-zram.service
+[Unit]
+Description=LegacyMark Native ZRAM Compressed Swap
+After=local-fs.target
 
-cat << 'EOF' > /etc/default/zramswap
-# Asignar 25% de la RAM (4 GB) como swap comprimido en RAM con zstd
-ALGO=zstd
-PERCENT=25
-PRIORITY=100
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'modprobe zram num_devices=1 2>/dev/null || true; DEV=$(zramctl --find --size 4G --algorithm zstd 2>/dev/null || echo "/dev/zram0"); mkswap $DEV >/dev/null 2>&1 || true; swapon -p 100 $DEV >/dev/null 2>&1 || true'
+ExecStop=/bin/sh -c 'swapoff /dev/zram0 2>/dev/null || true; zramctl --reset /dev/zram0 2>/dev/null || true'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
-systemctl restart zramswap || service zramswap restart || true
-echo -e "${GREEN}✔ ZRAM activado con compresión zstd (4 GB extra de memoria efectiva).${NC}"
+systemctl daemon-reload
+systemctl enable --now legacymark-zram.service || true
+echo -e "${GREEN}✔ ZRAM activado nativamente con compresión zstd (4 GB extra de memoria efectiva).${NC}"
 
 # 4. Optimizar Docker Daemon (Live-restore y límites)
 echo -e "\n${YELLOW}[4/5] Ajustando daemon de Docker (/etc/docker/daemon.json)...${NC}"
