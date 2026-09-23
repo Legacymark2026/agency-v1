@@ -48,8 +48,8 @@ gcloud artifacts repositories create legacymark \
   --description="LegacyMark container images" \
   --project=$PROJECT_ID 2>/dev/null || echo "  Registry already exists"
 
-# ── Step 3: Create GKE Cluster ────────────────────────────────────────────────
-echo "☸️  Creating GKE cluster..."
+# ── Step 3: Create GKE Cluster with Cluster Autoscaler ────────────────────────
+echo "☸️  Creating GKE cluster with Cluster Autoscaler..."
 gcloud container clusters create $CLUSTER_NAME \
   --zone=$ZONE \
   --project=$PROJECT_ID \
@@ -58,6 +58,8 @@ gcloud container clusters create $CLUSTER_NAME \
   --enable-autoscaling \
   --min-nodes=$MIN_NODES \
   --max-nodes=$MAX_NODES \
+  --autoscaling-profile=optimize-utilization \
+  --enable-vertical-pod-autoscaling \
   --enable-autorepair \
   --enable-autoupgrade \
   --enable-ip-alias \
@@ -66,6 +68,21 @@ gcloud container clusters create $CLUSTER_NAME \
   --workload-pool=$PROJECT_ID.svc.id.goog \
   --disk-size=50GB \
   --disk-type=pd-standard
+
+echo "⚡ Creating High-Compute Node Pool (scales 0 -> 6 for AI/Video/Rendering)..."
+gcloud container node-pools create compute-heavy-pool \
+  --cluster=$CLUSTER_NAME \
+  --zone=$ZONE \
+  --project=$PROJECT_ID \
+  --machine-type=e2-highcpu-8 \
+  --num-nodes=0 \
+  --enable-autoscaling \
+  --min-nodes=0 \
+  --max-nodes=6 \
+  --node-taints=workload=heavy:PreferNoSchedule \
+  --node-labels=workload=heavy \
+  --disk-size=100GB \
+  --disk-type=pd-ssd 2>/dev/null || echo "  compute-heavy-pool already exists"
 
 # ── Step 4: Get credentials ───────────────────────────────────────────────────
 echo "🔑 Configuring kubectl..."
@@ -105,8 +122,11 @@ kubectl create secret generic service-secrets \
 echo "📊 Installing metrics-server..."
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 2>/dev/null || echo "  Metrics server already installed"
 
-# ── Step 8: Deploy ────────────────────────────────────────────────────────────
-echo "🚀 Deploying services..."
+# ── Step 8: Apply Priority Classes & Workloads ────────────────────────────────
+echo "🏷️  Applying Pod PriorityClasses..."
+kubectl apply -f infrastructure/k8s/autoscaling/priority-classes.yaml
+
+echo "🚀 Deploying services and Horizontal Pod Autoscalers..."
 kubectl apply -k infrastructure/k8s/overlays/production
 
 echo ""

@@ -16,11 +16,14 @@ spec:
           image: docker.io/legacymark2026/ai-engine:latest
           ports: [{ containerPort: 4004 }]
           resources:
-            requests: { cpu: "500m", memory: "512Mi" }
-            limits: { cpu: "2000m", memory: "2Gi" }
+            requests: { cpu: "500m", memory: "1024Mi" }
+            limits: { cpu: "4000m", memory: "4Gi" }
           envFrom: [{ secretRef: { name: service-secrets } }]
           env:
             - { name: PORT, value: "4004" }
+            - { name: NODE_ENV, value: "production" }
+            - { name: NODE_OPTIONS, value: "--max-old-space-size=3072" }
+            - { name: OTEL_SERVICE_NAME, value: "ai-engine" }
             - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: redis-credentials, key: url } } }
             - { name: POSTGRES_EXTERNAL_URL, valueFrom: { secretKeyRef: { name: db-credentials, key: url } } }
           livenessProbe:

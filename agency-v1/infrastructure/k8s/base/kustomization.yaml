@@ -94,6 +94,38 @@ resources:
   - video-service/deployment.yaml
   - video-service/service.yaml
   - video-service/hpa.yaml
+  # Sales Forecast Service
+  - sales-forecast-service/deployment.yaml
+  - sales-forecast-service/service.yaml
+  - sales-forecast-service/hpa.yaml
+  # Inventory Service
+  - inventory-service/deployment.yaml
+  - inventory-service/service.yaml
+  - inventory-service/hpa.yaml
+  # DIAN Compliance Service
+  - dian-compliance-service/deployment.yaml
+  - dian-compliance-service/service.yaml
+  - dian-compliance-service/hpa.yaml
+  # Audit & Security Service
+  - audit-security-service/deployment.yaml
+  - audit-security-service/service.yaml
+  - audit-security-service/hpa.yaml
+  # Payment Gateway Service
+  - payment-service/deployment.yaml
+  - payment-service/service.yaml
+  - payment-service/hpa.yaml
+  # Chat Service
+  - chat-service/deployment.yaml
+  - chat-service/service.yaml
+  - chat-service/hpa.yaml
+  # Feed Service
+  - feed-service/deployment.yaml
+  - feed-service/service.yaml
+  - feed-service/hpa.yaml
+  # Web Frontend
+  - web/deployment.yaml
+  - web/service.yaml
+  - web/hpa.yaml
   # CronJobs
   - cronjobs.yaml
 

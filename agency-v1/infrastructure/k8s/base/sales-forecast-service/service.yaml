@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sales-forecast-service
+spec:
+  type: ClusterIP
+  selector: { app: sales-forecast-service }
+  ports: [{ port: 4035, targetPort: 4035 }]

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sales-forecast-service
+  labels: { app: sales-forecast-service, tier: backend, priority: tier-b }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: sales-forecast-service }
+  template:
+    metadata:
+      labels: { app: sales-forecast-service, tier: backend }
+    spec:
+      priorityClassName: production-medium-priority
+      containers:
+        - name: sales-forecast-service
+          image: docker.io/legacymark2026/sales-forecast-service:latest
+          ports: [{ containerPort: 4035 }]
+          resources:
+            requests: { cpu: "100m", memory: "192Mi" }
+            limits: { cpu: "500m", memory: "384Mi" }
+          envFrom: [{ secretRef: { name: service-secrets } }]
+          env:
+            - { name: PORT, value: "4035" }
+            - { name: NODE_ENV, value: "production" }
+            - { name: NODE_OPTIONS, value: "--max-old-space-size=192" }
+            - { name: OTEL_SERVICE_NAME, value: "sales-forecast-service" }
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: redis-credentials, key: url } } }
+            - { name: DATABASE_URL, valueFrom: { secretKeyRef: { name: db-credentials, key: url } } }
+          livenessProbe:
+            httpGet: { path: /health, port: 4035 }
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /health, port: 4035 }
+            initialDelaySeconds: 15
+            periodSeconds: 10

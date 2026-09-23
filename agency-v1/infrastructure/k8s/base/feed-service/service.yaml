@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: feed-service
+spec:
+  type: ClusterIP
+  selector: { app: feed-service }
+  ports: [{ port: 4024, targetPort: 4024 }]

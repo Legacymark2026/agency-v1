@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dian-compliance-service
+  labels: { app: dian-compliance-service, tier: backend, priority: tier-b }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: dian-compliance-service }
+  template:
+    metadata:
+      labels: { app: dian-compliance-service, tier: backend }
+    spec:
+      priorityClassName: production-medium-priority
+      containers:
+        - name: dian-compliance-service
+          image: docker.io/legacymark2026/dian-compliance-service:latest
+          ports: [{ containerPort: 4026 }]
+          resources:
+            requests: { cpu: "100m", memory: "192Mi" }
+            limits: { cpu: "500m", memory: "384Mi" }
+          envFrom: [{ secretRef: { name: service-secrets } }]
+          env:
+            - { name: PORT, value: "4026" }
+            - { name: NODE_ENV, value: "production" }
+            - { name: NODE_OPTIONS, value: "--max-old-space-size=256" }
+            - { name: OTEL_SERVICE_NAME, value: "dian-compliance-service" }
+            - { name: REDIS_URL, valueFrom: { secretKeyRef: { name: redis-credentials, key: url } } }
+            - { name: DATABASE_URL, valueFrom: { secretKeyRef: { name: db-credentials, key: url } } }
+          livenessProbe:
+            httpGet: { path: /health, port: 4026 }
+            initialDelaySeconds: 45
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /health, port: 4026 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
