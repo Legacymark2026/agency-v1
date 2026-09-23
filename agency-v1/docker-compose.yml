@@ -340,8 +340,8 @@ services:
       - "--experimental.plugins.coraza.version=v0.3.0"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
-      - "--log.level=DEBUG"
-      - "--accesslog=true"
+      - "--log.level=INFO"
+      - "--accesslog=false"
     ports:
       - "8081:80"
       - "8443:443"
