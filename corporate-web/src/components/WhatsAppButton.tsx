@@ -196,9 +196,9 @@ export default function WhatsAppButton() {
           {/* Modo 1: WhatsApp Directo */}
           {mode === "whatsapp" && (
             <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-50 to-slate-100/60 min-h-[380px] flex flex-col justify-between text-xs space-y-4">
-              <div className="space-y-4 pt-2">
-                {/* Mensaje de Bienvenida con espacio superior de respiración */}
-                <div className="bg-white p-4 sm:p-4.5 rounded-2xl rounded-tl-sm border border-slate-200/80 shadow-xs text-slate-700 space-y-2.5">
+              <div className="space-y-4 pt-[30px]">
+                {/* Mensaje de Bienvenida con espacio superior de 30px */}
+                <div className="bg-white p-4 sm:p-4.5 rounded-2xl border border-slate-200/80 shadow-xs text-slate-700 space-y-2.5">
                   <div className="flex items-center justify-between text-[11px] pb-1.5 border-b border-slate-100">
                     <span className="font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#01426F]" />
