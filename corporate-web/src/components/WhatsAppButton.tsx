@@ -136,7 +136,7 @@ export default function WhatsAppButton() {
       
       {/* 1. Mini-Chat Popup */}
       {chatOpen && (
-        <div className="mb-3 w-[calc(100vw-2rem)] max-w-[380px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="mb-3 w-[calc(100vw-2rem)] max-w-[420px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header Directivo con respaldo institucional */}
           <div className="bg-[#01426F] p-4 text-white flex items-center justify-between border-b border-[#B08A1A]/40 relative">
             <div className="flex items-center gap-3">
@@ -195,58 +195,68 @@ export default function WhatsAppButton() {
 
           {/* Modo 1: WhatsApp Directo */}
           {mode === "whatsapp" && (
-            <div className="p-4 bg-slate-50 min-h-[350px] flex flex-col justify-between text-xs">
-              <div className="space-y-3">
+            <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-50 to-slate-100/60 min-h-[380px] flex flex-col justify-between text-xs space-y-4">
+              <div className="space-y-3.5">
                 {/* Mensaje de Bienvenida */}
-                <div className="bg-white p-3.5 rounded-2xl rounded-tl-none border border-slate-200 shadow-xs text-slate-700 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-slate-900">Equipo Directivo:</span>
-                    <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> En línea
+                <div className="bg-white p-4 rounded-2xl rounded-tl-sm border border-slate-200/80 shadow-xs text-slate-700 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] pb-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#01426F]" />
+                      Equipo Consultor Directivo
+                    </span>
+                    <span className="text-emerald-700 font-semibold flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      En línea
                     </span>
                   </div>
-                  <p className="text-slate-600 text-xs leading-relaxed">
-                    ¡Hola! Conecte directamente con un consultor directivo en nuestra línea corporativa verificada. Tiempo de respuesta promedio: &lt;10 minutos.
+                  <p className="text-slate-600 text-[12px] leading-relaxed">
+                    ¡Hola! Conecte directamente con un consultor directivo en nuestra línea corporativa verificada. Tiempo de respuesta promedio: <strong>&lt;10 minutos</strong>.
                   </p>
                 </div>
 
                 {/* Preguntas Rápidas */}
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-1">
                     Consultas Frecuentes:
                   </span>
-                  {quickQuestions.map((q, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSendWhatsApp(q)}
-                      className="w-full text-left p-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 text-[11px] transition-all flex items-center justify-between group shadow-2xs"
-                    >
-                      <span className="line-clamp-1">{q}</span>
-                      <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0 ml-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  ))}
+                  <div className="space-y-1.5">
+                    {quickQuestions.map((q, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSendWhatsApp(q)}
+                        className="w-full text-left p-2.5 rounded-xl bg-white hover:bg-emerald-50/80 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-900 text-[11.5px] transition-all flex items-center justify-between gap-2.5 group shadow-2xs cursor-pointer"
+                      >
+                        <span className="leading-snug flex-1">{q}</span>
+                        <div className="w-6 h-6 rounded-lg bg-slate-50 group-hover:bg-emerald-100 flex items-center justify-center shrink-0 transition-colors">
+                          <WhatsAppIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 px-1 pt-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Atención confidencial amparada bajo acuerdos de no divulgación.</span>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 px-1 py-1 bg-white/60 rounded-xl border border-slate-200/60">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 ml-1" />
+                  <span className="leading-tight">Atención confidencial amparada bajo acuerdos de no divulgación (NDA).</span>
                 </div>
               </div>
 
               {/* Formulario WhatsApp */}
-              <div className="pt-3 border-t border-slate-200 space-y-2">
-                <textarea
-                  rows={2}
-                  value={waMessage}
-                  onChange={(e) => setWaMessage(e.target.value)}
-                  placeholder="Escriba su requerimiento personalizado..."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-slate-200 text-slate-800 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                />
+              <div className="pt-3 border-t border-slate-200/90 space-y-2.5">
+                <div className="relative">
+                  <textarea
+                    rows={3}
+                    value={waMessage}
+                    onChange={(e) => setWaMessage(e.target.value)}
+                    placeholder="Escriba su requerimiento personalizado..."
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 leading-relaxed resize-none shadow-inner"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => handleSendWhatsApp()}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+                  className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer tracking-wide"
                 >
                   <WhatsAppIcon className="w-4 h-4" />
                   <span>Iniciar Conversación en WhatsApp</span>
