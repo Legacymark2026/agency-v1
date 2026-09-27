@@ -31,8 +31,8 @@ export default function WhatsAppButton() {
   // Configuración de Canales
   const phoneNumber = "573173720384";
   const emailAddress = "asist.gerencia@neogestion.co";
-  const linkedinUrl = "https://www.linkedin.com/company/consultoria-de-colombia";
-  const instagramUrl = "https://www.instagram.com/neogestion";
+  const linkedinUrl = "https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co";
+  const instagramUrl = "https://www.instagram.com/consultoria_colombia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==";
 
   // Estados de WhatsApp
   const [waMessage, setWaMessage] = useState(

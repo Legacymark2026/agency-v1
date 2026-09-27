@@ -250,7 +250,7 @@ export default function Navbar() {
             {/* Direct Social Media & Email Icons */}
             <div className="flex items-center gap-1 border-r border-amber-500/20 pr-2.5">
               <a
-                href="https://www.linkedin.com/company/consultoria-de-colombia"
+                href="https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co"
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Perfil Oficial en LinkedIn"
@@ -259,7 +259,7 @@ export default function Navbar() {
                 <LinkedInIcon className="w-4 h-4" />
               </a>
               <a
-                href="https://www.instagram.com/neogestion"
+                href="https://www.instagram.com/consultoria_colombia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Canal Oficial de Instagram"
@@ -407,7 +407,7 @@ export default function Navbar() {
             {/* Redes Sociales en Menú Móvil */}
             <div className="pt-2 flex items-center justify-center gap-3">
               <a
-                href="https://www.linkedin.com/company/consultoria-de-colombia"
+                href="https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center"
@@ -416,7 +416,7 @@ export default function Navbar() {
                 <LinkedInIcon className="w-4 h-4" />
               </a>
               <a
-                href="https://www.instagram.com/neogestion"
+                href="https://www.instagram.com/consultoria_colombia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center"

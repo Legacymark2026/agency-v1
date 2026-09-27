@@ -55,7 +55,7 @@ export default function Footer() {
               </span>
               <div className="flex items-center gap-2.5">
                 <a
-                  href="https://www.linkedin.com/company/consultoria-de-colombia"
+                  href="https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co"
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Perfil Oficial en LinkedIn"
@@ -64,7 +64,7 @@ export default function Footer() {
                   <LinkedInIcon className="w-4 h-4" />
                 </a>
                 <a
-                  href="https://www.instagram.com/neogestion"
+                  href="https://www.instagram.com/consultoria_colombia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Canal Oficial en Instagram"

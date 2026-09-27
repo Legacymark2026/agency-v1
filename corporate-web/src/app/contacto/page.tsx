@@ -125,7 +125,7 @@ export default function ContactoPage() {
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <a
-                    href="https://www.linkedin.com/company/consultoria-de-colombia"
+                    href="https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-50 hover:bg-[#0A66C2] text-slate-700 hover:text-white border border-slate-200 hover:border-[#0A66C2] transition-all text-xs font-bold group shadow-2xs"
@@ -137,7 +137,7 @@ export default function ContactoPage() {
                   </a>
 
                   <a
-                    href="https://www.instagram.com/neogestion"
+                    href="https://www.instagram.com/consultoria_colombia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-300 transition-all text-xs font-bold group shadow-2xs"
