@@ -14,7 +14,8 @@ import {
   FileText, 
   Users, 
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Server
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import { LinkedInIcon, InstagramIcon } from "./SocialIcons";
@@ -276,6 +277,15 @@ export default function Navbar() {
             </div>
 
             <Link
+              href="/#acceso-plataformas"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 hover:brightness-110 shadow-sm transition-all hover:scale-105 active:scale-95"
+              title="Acceso a Plataformas (Principal & Accesos Especiales)"
+            >
+              <Server className="w-3.5 h-3.5" />
+              <span>Plataformas</span>
+            </Link>
+
+            <Link
               href="/admin/login"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#D4AF37] hover:text-white border border-[#B08A1A]/40 hover:bg-slate-800/80 transition-colors"
               title="Acceso al Panel de Administración"
@@ -376,6 +386,15 @@ export default function Navbar() {
           })}
 
           <div className="pt-4 space-y-2">
+            <Link
+              href="/#acceso-plataformas"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-sm shadow-md"
+            >
+              <Server className="w-4 h-4" />
+              <span>Acceso a Plataformas</span>
+            </Link>
+
             <Link
               href="/admin/login"
               onClick={() => setMobileMenuOpen(false)}

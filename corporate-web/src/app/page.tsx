@@ -13,6 +13,7 @@ import {
 import HeroInteractive from "@/components/HeroInteractive";
 import ImpactMetrics from "@/components/ImpactMetrics";
 import ModuleExplorer from "@/components/ModuleExplorer";
+import PlatformAccessSection from "@/components/PlatformAccessSection";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
 import ClientsSection from "@/components/ClientsSection";
 import { servicesData } from "@/data/servicesData";
@@ -34,6 +35,9 @@ export default function Home() {
 
       {/* 3. EXPLORADOR DE MÓDULOS DE LA PLATAFORMA */}
       <ModuleExplorer />
+
+      {/* 4. SECCIÓN DESTACADA: ACCESO A PLATAFORMAS (Principal + Accesos Especiales) */}
+      <PlatformAccessSection />
 
       {/* 5. RESUMEN DE SERVICIOS: Grid Asimétrico / Mosaico */}
       <section id="servicios-destacados" className="py-24 bg-slate-50 border-b border-slate-200">
