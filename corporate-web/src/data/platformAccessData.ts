@@ -1,5 +1,3 @@
-import { LucideIcon } from "lucide-react";
-
 export interface CorporateAccessItem {
   id: string;
   companyName: string;
@@ -7,6 +5,7 @@ export interface CorporateAccessItem {
   badge: string;
   description: string;
   loginUrl: string;
+  displayUrl: string;
   logoSrc?: string;
   initials: string;
   accentColor: string;
@@ -16,95 +15,57 @@ export interface CorporateAccessItem {
 
 export const platformAccessData = {
   mainPlatform: {
-    title: "Plataforma Principal Multi-Empresa",
-    badge: "Acceso Universal Estándar",
-    subtitle: "Punto de acceso cloud unificado para organizaciones cliente en entorno productivo compartido.",
-    url: "https://app.neogestion.io",
+    title: "NeoGestión - SIG (Software ISO 9001, 14001, 45001)",
+    badge: "Plataforma Principal de Producción",
+    subtitle: "Con NeoGestión las organizaciones ahorran tiempo y dinero en las etapas de implementación, capacitación, auditorías internas y mejora continua, obteniendo un Retorno sobre la Inversión (ROI) en un tiempo promedio de un año.",
+    url: "https://neogestion.neoinf.com/neogestion2/index.php",
+    displayUrl: "neogestion.neoinf.com",
     features: [
-      "Autenticación segura multi-empresa con cifrado TLS 1.3",
-      "Módulos integrados HSEQ, Cero Papel, Gerencia y SG-SST",
-      "Acceso ilimitado por roles y usuarios sin costo por colaborador",
-      "Sincronización en tiempo real y compatibilidad con app móvil"
+      "Software Integral SIG para normas ISO 9001:2015, ISO 14001, ISO 45001",
+      "Implementación ágil, capacitación y auditorías internas con trazabilidad",
+      "Entorno productivo centralizado para empresas cliente",
+      "Retorno de inversión (ROI) comprobado en un tiempo promedio de 1 año"
     ],
     sla: "99.9% Uptime",
-    securityTier: "ISO 27001 / SOC 2 Type II Compliance",
+    securityTier: "Cifrado SSL / Aislamiento Corporativo",
   },
   corporateAccessList: [
     {
-      id: "sura-arl",
-      companyName: "SURA ARL",
-      sector: "Seguros & Riesgos Laborales",
+      id: "neocovolco",
+      companyName: "Covolco",
+      sector: "Cooperativo & Transporte",
       badge: "Instancia Corporativa",
-      description: "Portal privado de gestión y mitigación de riesgos laborales bajo normativas del Ministerio del Trabajo.",
-      loginUrl: "https://sura.neogestion.io",
-      logoSrc: "/images/clients/sura-arl.png",
-      initials: "SR",
-      accentColor: "#0033A0",
+      description: "Portal privado de gestión empresarial, operaciones y control normativo para la cooperativa Covolco.",
+      loginUrl: "https://neocovolco.neoinf.com/index.php",
+      displayUrl: "neocovolco.neoinf.com",
+      initials: "CV",
+      accentColor: "#01426F",
       dedicatedInstance: true,
       status: "active" as const,
     },
     {
-      id: "axa-colpatria",
-      companyName: "AXA Colpatria",
-      sector: "Servicios Financieros & Seguros",
-      badge: "Instancia Enterprise",
-      description: "Entorno dedicado para control de procesos directivos, gobierno corporativo y auditorías de cumplimiento.",
-      loginUrl: "https://axacolpatria.neogestion.io",
-      logoSrc: "/images/clients/axa-colpatria.png",
-      initials: "AX",
-      accentColor: "#00008F",
+      id: "metrolinea",
+      companyName: "Metrolínea",
+      sector: "Transporte Masivo & Sector Público",
+      badge: "Portal Institucional",
+      description: "Sistema institucional de gestión, control de procesos y atención al ciudadano para el Sistema Integrado de Transporte Masivo Metrolínea.",
+      loginUrl: "https://metrolinea.neoinf.com/publico/index.php",
+      displayUrl: "metrolinea.neoinf.com",
+      initials: "MT",
+      accentColor: "#059669",
       dedicatedInstance: true,
       status: "active" as const,
     },
     {
-      id: "contraloria-santander",
-      companyName: "Contraloría de Santander",
-      sector: "Sector Público & Control Fiscal",
+      id: "siplag",
+      companyName: "UNGRD - SIPLAG",
+      sector: "Gobierno & Gestión del Riesgo",
       badge: "Instancia Gubernamental",
-      description: "Plataforma Cero Papel institucional con radicación electrónica certificada y custodia legal inmutable.",
-      loginUrl: "https://contraloria.neogestion.io",
-      logoSrc: "/images/clients/contraloria-santander.png",
-      initials: "CS",
-      accentColor: "#006837",
-      dedicatedInstance: true,
-      status: "active" as const,
-    },
-    {
-      id: "precocidos-oriente",
-      companyName: "Precocidos del Oriente",
-      sector: "Agroalimentario & Manufactura",
-      badge: "Instancia Industrial",
-      description: "Control de calidad en planta, sistemas integrados de inocuidad y preparación de estándares HACCP.",
-      loginUrl: "https://precocidos.neogestion.io",
-      logoSrc: "/images/clients/precocidos.png",
-      initials: "PO",
-      accentColor: "#D97706",
-      dedicatedInstance: true,
-      status: "active" as const,
-    },
-    {
-      id: "ayuda-profesional",
-      companyName: "Ayuda Profesional",
-      sector: "Consultoría & Servicios B2B",
-      badge: "Instancia Especial",
-      description: "Medición de productividad de colaboradores, asignación de tareas operativas y flujos ágiles.",
-      loginUrl: "https://ayudaprofesional.neogestion.io",
-      logoSrc: "/images/clients/ayuda-profesional.png",
-      initials: "AP",
-      accentColor: "#0284C7",
-      dedicatedInstance: true,
-      status: "active" as const,
-    },
-    {
-      id: "colegio-comfenalco",
-      companyName: "Colegio Comfenalco",
-      sector: "Educación & Cooperativo",
-      badge: "Instancia Institucional",
-      description: "Gestión preventiva institucional de SG-SST, comités COPASST y protocolos de seguridad escolar.",
-      loginUrl: "https://comfenalco.neogestion.io",
-      logoSrc: "/images/clients/comfenalco.png",
-      initials: "CC",
-      accentColor: "#1B365D",
+      description: "Sistema para la Planeación y Gestión del Riesgo (SIPLAG) de la Unidad Nacional para la Gestión del Riesgo de Desastres (UNGRD).",
+      loginUrl: "https://siplag.gestiondelriesgo.gov.co/",
+      displayUrl: "siplag.gestiondelriesgo.gov.co",
+      initials: "GR",
+      accentColor: "#B08A1A",
       dedicatedInstance: true,
       status: "active" as const,
     }
