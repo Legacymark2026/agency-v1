@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "turbo dev",
-    "build": "turbo build",
+    "build": "turbo build --concurrency=2",
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "lint": "turbo lint",
