@@ -27,8 +27,9 @@ export const withPIIEncryption = Prisma.defineExtension({
       async $allOperations({ operation, args, query }) {
         // Encrypt fields on writes
         if (['create', 'update', 'upsert', 'createMany'].includes(operation)) {
-          if (args.data) {
-            const data = args.data as any;
+          const anyArgs = args as any;
+          if (anyArgs.data) {
+            const data = anyArgs.data;
             if (data.clientPhone) data.clientPhone = encryptPII(data.clientPhone);
             if (data.clientNit) data.clientNit = encryptPII(data.clientNit);
           }
@@ -58,8 +59,9 @@ export const withPIIEncryption = Prisma.defineExtension({
       async $allOperations({ operation, args, query }) {
         // Encrypt fields on writes
         if (['create', 'update', 'upsert', 'createMany'].includes(operation)) {
-          if (args.data) {
-            const data = args.data as any;
+          const anyArgs = args as any;
+          if (anyArgs.data) {
+            const data = anyArgs.data;
             if (data.clientPhone) data.clientPhone = encryptPII(data.clientPhone);
             if (data.clientNit) data.clientNit = encryptPII(data.clientNit);
           }

@@ -16,4 +16,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./vault-client"), exports);
 __exportStar(require("./env-loader"), exports);
+__exportStar(require("./crypto"), exports);
 //# sourceMappingURL=index.js.map
