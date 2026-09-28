@@ -33,7 +33,7 @@ export function metricsMiddleware(serviceName: string) {
       const diff = process.hrtime(start);
       const durationSeconds = diff[0] + diff[1] / 1e9;
 
-      const route = req.route ? req.route.path : req.path;
+      const route = req.route ? req.route.path : (req.path || '/').replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id').replace(/\/\d+/g, '/:id');
       const status = res.statusCode.toString();
 
       const labels = {

@@ -4,15 +4,9 @@
  * Redis JWT Blacklist Manager using config.
  */
 
-import Redis from "ioredis";
 import crypto from "crypto";
 import { envConfig } from "@config/env.config";
-
-const redis = new Redis(envConfig.redisUrl);
-
-redis.on("error", (err) => {
-  console.error("[auth-blacklist] Redis connection error:", err.message);
-});
+import { redisClient as redis } from "../lib/event-bus.singleton";
 
 function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");

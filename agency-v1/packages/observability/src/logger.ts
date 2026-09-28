@@ -1,5 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import winston from "winston";
+import { getTraceId } from "./tracing";
 
 const otelFormat = winston.format((info) => {
   const activeSpan = trace.getActiveSpan();
@@ -8,6 +9,11 @@ const otelFormat = winston.format((info) => {
     info.trace_id = spanContext.traceId;
     info.span_id = spanContext.spanId;
     info.trace_flags = spanContext.traceFlags.toString(16);
+  } else {
+    const traceId = getTraceId();
+    if (traceId) {
+      info.trace_id = traceId;
+    }
   }
   return info;
 });

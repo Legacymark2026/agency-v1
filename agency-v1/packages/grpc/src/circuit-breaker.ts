@@ -52,12 +52,15 @@ export class CircuitBreaker {
 
     try {
       // Wrap call with timeout
+      let timeoutId: NodeJS.Timeout | undefined;
       const result = await Promise.race([
         fn(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`[CircuitBreaker:${this.name}] Call timed out after ${this.timeoutMs}ms`)), this.timeoutMs)
-        ),
-      ]);
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error(`[CircuitBreaker:${this.name}] Call timed out after ${this.timeoutMs}ms`)), this.timeoutMs);
+        }),
+      ]).finally(() => {
+        if (timeoutId) clearTimeout(timeoutId);
+      });
 
       this.onSuccess();
       return result;

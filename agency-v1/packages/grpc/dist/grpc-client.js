@@ -78,7 +78,7 @@ class GrpcClientHelper {
                     console.error(`[gRPC Client] SSL/mTLS client init failed: ${err.message}. Falling back to insecure.`);
                 }
             }
-            const client = new ServiceCtor(targetAddress, credentials);
+            const client = new ServiceCtor(targetAddress, credentials, { 'grpc.keepalive_time_ms': 30000, 'grpc.keepalive_timeout_ms': 5000, 'grpc.keepalive_permit_without_calls': 1 });
             this.clientCache.set(cacheKey, client);
         }
         if (!this.breakers.has(cacheKey)) {
@@ -91,7 +91,8 @@ class GrpcClientHelper {
                 if (typeof rawClient[methodName] !== "function") {
                     return reject(new Error(`Method ${methodName} not found on gRPC client ${serviceClass}`));
                 }
-                rawClient[methodName](req, (err, response) => {
+                const deadline = new Date(Date.now() + (this.breakerOptions?.timeoutMs || 5000));
+                rawClient[methodName](req, { deadline }, (err, response) => {
                     if (err)
                         return reject(err);
                     resolve(response);

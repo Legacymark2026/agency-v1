@@ -194,6 +194,7 @@ export interface EventPayload {
 export class EventBus {
   private driver: "redis" | "kafka";
   private serviceName: string;
+  private isClosing = false;
 
   // Redis fields
   private redisUrl?: string;
@@ -305,6 +306,9 @@ export class EventBus {
       const streamKey = `events:${event}`;
       const messageId = await this.publisher.xadd(
         streamKey,
+        "MAXLEN",
+        "~",
+        "10000",
         "*",
         "payload",
         JSON.stringify(payload)
@@ -374,7 +378,7 @@ export class EventBus {
 
     // Start polling loop
     const poll = async () => {
-      while (true) {
+      while (!this.isClosing) {
         try {
           const results = await localSubscriber.xreadgroup(
             "GROUP",
@@ -464,6 +468,7 @@ export class EventBus {
    * Graceful shutdown
    */
   async disconnect(): Promise<void> {
+    this.isClosing = true;
     if (this.publisher) await this.publisher.quit();
     if (this.subscriber) await this.subscriber.quit();
     for (const sub of this.localSubscribers) {

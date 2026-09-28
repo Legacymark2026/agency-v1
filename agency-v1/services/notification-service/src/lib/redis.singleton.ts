@@ -28,6 +28,15 @@ redisBullConnection.on("error", (err) => {
   console.error("[notification-service] Redis BullMQ connection error:", err.message);
 });
 
+export const redisBullWorkerConnection = new Redis(REDIS_URL, {
+  maxRetriesPerRequest: null,
+  lazyConnect: true,
+});
+
+redisBullWorkerConnection.on("error", (err) => {
+  console.error("[notification-service] Redis BullMQ Worker connection error:", err.message);
+});
+
 export async function disconnectNotificationRedis(): Promise<void> {
   try {
     redisClient.disconnect();
@@ -38,5 +47,10 @@ export async function disconnectNotificationRedis(): Promise<void> {
     redisBullConnection.disconnect();
   } catch (err) {
     console.warn("[notification-service] Error disconnecting redisBullConnection:", err);
+  }
+  try {
+    redisBullWorkerConnection.disconnect();
+  } catch (err) {
+    console.warn("[notification-service] Error disconnecting redisBullWorkerConnection:", err);
   }
 }

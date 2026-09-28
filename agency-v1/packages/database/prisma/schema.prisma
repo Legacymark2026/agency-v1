@@ -86,8 +86,9 @@ model User {
   accountingVouchers      AccountingVoucher[]       @relation("VoucherCreator")
 
   @@index([role])
-  @@index([email])
   @@index([globalRole])
+  @@index([deletedAt])
+  @@index([createdAt])
   @@map("tbl_users")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -102,7 +103,6 @@ model RoleConfig {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  @@index([roleName])
   @@map("tbl_role_configs")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -154,6 +154,7 @@ model RolePermission {
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
+  @@index([permissionId])
   @@map("tbl_role_permissions")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -189,7 +190,7 @@ model PasswordResetToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([email])
-  @@index([token])
+  @@index([expiresAt])
   @@map("tbl_password_reset_tokens")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -3267,6 +3268,7 @@ model Notification {
 
   @@index([companyId])
   @@index([userId, isRead])
+  @@index([userId, companyId, isRead])
   @@index([createdAt])
   @@map("tbl_notifications")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -4779,4 +4781,111 @@ model AuditSecurityLedger {
   @@index([companyId, timestamp])
   @@index([companyId, resource])
   @@map("tbl_audit_security_ledger")
+}
+
+// --- POS Service Models ---
+
+model PosCatalog {
+  id          String   @id
+  companyId   String   @map("company_id")
+  name        String
+  description String?
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_catalogs")
+}
+
+model PosProduct {
+  id             String   @id
+  companyId      String   @map("company_id")
+  catalogId      String?  @map("catalog_id")
+  itemType       String   @default("PRODUCTO") @map("item_type")
+  sku            String
+  barcode        String?
+  title          String
+  description    String?
+  category       String?
+  unitPrice      Decimal  @map("unit_price")
+  costPrice      Decimal? @default(0) @map("cost_price")
+  wholesalePrice Decimal? @default(0) @map("wholesale_price")
+  taxRate        Decimal? @default(0.19) @map("tax_rate")
+  stock          Decimal? @default(0)
+  isActive       Boolean  @default(true) @map("is_active")
+  location       String?
+  imageUrl       String?  @map("image_url")
+  estimatedTime  String?  @map("estimated_time")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([companyId, sku])
+  @@index([companyId, barcode])
+  @@index([companyId, category])
+  @@map("tbl_pos_products")
+}
+
+model PosCoupon {
+  id                String   @id
+  companyId         String   @map("company_id")
+  code              String   @unique
+  discountType      String   @map("discount_type")
+  discountValue     Decimal  @map("discount_value")
+  minPurchaseAmount Decimal? @default(0) @map("min_purchase_amount")
+  usageLimit        Int?     @default(100) @map("usage_limit")
+  usedCount         Int?     @default(0) @map("used_count")
+  isActive          Boolean  @default(true) @map("is_active")
+  validUntil        String?  @map("valid_until")
+  description       String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_coupons")
+}
+
+model PosRegister {
+  id             String    @id
+  companyId      String    @map("company_id")
+  name           String
+  location       String?
+  initialFloat   Decimal?  @default(0) @map("initial_float")
+  currentBalance Decimal?  @default(0) @map("current_balance")
+  status         String?   @default("OPEN")
+  openedAt       DateTime? @default(now()) @map("opened_at")
+  closedAt       DateTime? @map("closed_at")
+  config         Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_registers")
+}
+
+model PosMovement {
+  id         String   @id
+  registerId String   @map("register_id")
+  type       String
+  amount     Decimal
+  reason     String?
+  userName   String?  @map("user_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([registerId])
+  @@map("tbl_pos_movements")
+}
+
+model PosCustomer {
+  id            String   @id
+  companyId     String   @map("company_id")
+  nit           String   @unique
+  name          String
+  email         String?
+  phone         String?
+  loyaltyPoints Int?     @default(0) @map("loyalty_points")
+  creditLimit   Decimal? @default(500000) @map("credit_limit")
+  usedCredit    Decimal? @default(0) @map("used_credit")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_customers")
 }

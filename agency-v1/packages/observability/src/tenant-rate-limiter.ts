@@ -35,6 +35,10 @@ export class TenantRateLimiter {
 
     let bucket = this.buckets.get(tenantId);
     if (!bucket) {
+      if (this.buckets.size >= 10000) {
+        const firstKey = this.buckets.keys().next().value;
+        if (firstKey) this.buckets.delete(firstKey);
+      }
       bucket = { tokens: config.capacity, lastRefill: now };
       this.buckets.set(tenantId, bucket);
     }

@@ -10,6 +10,20 @@
  *   await bus.publish("lead.created", { leadId: "...", companyId: "..." });
  *   await bus.subscribe("lead.created", "crm-service", handler);
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -156,6 +170,7 @@ exports.EVENTS = {
 class EventBus {
     driver;
     serviceName;
+    isClosing = false;
     // Redis fields
     redisUrl;
     publisher;
@@ -248,7 +263,7 @@ class EventBus {
         }
         if (this.publisher) {
             const streamKey = `events:${event}`;
-            const messageId = await this.publisher.xadd(streamKey, "*", "payload", JSON.stringify(payload));
+            const messageId = await this.publisher.xadd(streamKey, "MAXLEN", "~", "10000", "*", "payload", JSON.stringify(payload));
             console.log(`[EventBus:${this.serviceName}] Published ${event} to Redis Stream → ${messageId} (trace: ${payload.correlationId})`);
             return messageId;
         }
@@ -302,7 +317,7 @@ class EventBus {
         }
         // Start polling loop
         const poll = async () => {
-            while (true) {
+            while (!this.isClosing) {
                 try {
                     const results = await localSubscriber.xreadgroup("GROUP", groupName, consumerName, "COUNT", 10, "BLOCK", 5000, "STREAMS", streamKey, ">");
                     if (!results)
@@ -365,6 +380,7 @@ class EventBus {
      * Graceful shutdown
      */
     async disconnect() {
+        this.isClosing = true;
         if (this.publisher)
             await this.publisher.quit();
         if (this.subscriber)
@@ -383,4 +399,6 @@ class EventBus {
 }
 exports.EventBus = EventBus;
 exports.default = EventBus;
+__exportStar(require("./resilient-cache-client"), exports);
+__exportStar(require("./redis-pubsub-hub"), exports);
 //# sourceMappingURL=index.js.map

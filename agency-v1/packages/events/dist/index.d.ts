@@ -328,6 +328,7 @@ export interface EventPayload {
 export declare class EventBus {
     private driver;
     private serviceName;
+    private isClosing;
     private redisUrl?;
     private publisher?;
     private subscriber?;
@@ -354,4 +355,6 @@ export declare class EventBus {
     disconnect(): Promise<void>;
 }
 export default EventBus;
+export * from "./resilient-cache-client";
+export * from "./redis-pubsub-hub";
 //# sourceMappingURL=index.d.ts.map

@@ -14,7 +14,7 @@
  */
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
-import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
+import { metricsMiddleware, metricsEndpoint, tracingMiddleware } from "@agency/observability";
 import { setupGracefulShutdown } from "@agency/service-auth";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -33,6 +33,7 @@ const app = express();
 const PORT = parseInt(process.env.PORT || "8080", 10);
 
 // ── Observability & Security Middlewares ───────────────────────────────────────
+app.use(tracingMiddleware);
 app.use(metricsMiddleware("api-gateway"));
 app.use(rateLimit({
   windowMs: 60 * 1000,

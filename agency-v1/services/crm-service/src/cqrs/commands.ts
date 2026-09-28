@@ -6,13 +6,8 @@
  */
 
 import { prisma } from "@agency/database";
-import { EventBus } from "@agency/events";
-import Redis from "ioredis";
 import { routeLead } from "../assignment-engine";
-
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const eventBus = new EventBus(REDIS_URL, "crm-service");
-const redisClient = new Redis(REDIS_URL);
+import { eventBus, redisClient } from "../lib/event-bus.singleton";
 
 // Helper to invalidate CQRS Read View cache in Redis
 async function invalidateCqrsReadView(companyId: string, resource: string) {
@@ -62,7 +57,7 @@ export async function executeCreateLeadCommand(input: CreateLeadCommandInput) {
 
   // Automated Routing / Assignment
   try {
-    const assignedUserId = await routeLead(lead.id);
+    const assignedUserId = await routeLead(lead);
     if (assignedUserId) {
       await (eventBus as any).publish("lead.assigned", {
         leadId: lead.id,
@@ -101,7 +96,7 @@ export interface UpdateDealStageCommandInput {
 export async function executeUpdateDealStageCommand(input: UpdateDealStageCommandInput) {
   const { dealId, companyId, toStage } = input;
 
-  const existingDeal = await prisma.deal.findUnique({ where: { id: dealId } });
+  const existingDeal = await prisma.deal.findUnique({ where: { id: dealId, companyId } });
   if (!existingDeal) throw new Error("Deal not found");
 
   const fromStage = existingDeal.stage;

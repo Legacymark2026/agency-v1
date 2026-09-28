@@ -35,7 +35,7 @@ export const dispatchQueue = new Queue<NotificationJobData>("notification-dispat
     attempts: 5,
     backoff: {
       type: "exponential",
-      delay: 5000, // Initial 5s delay -> 15s -> 45s -> 135s -> 405s
+      delay: 2000,
     },
     removeOnComplete: { age: 86400, count: 5000 },
     removeOnFail: false,
@@ -47,19 +47,19 @@ export const dispatchQueue = new Queue<NotificationJobData>("notification-dispat
 // Email Queue: 100 emails / sec (Resend API Rate Compliance)
 export const emailQueue = new Queue<NotificationJobData>("notification-email", {
   connection: redisConnection as any,
-  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
+  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 2000 } },
 });
 
 // SMS Queue: 10 SMS / sec (Twilio API Rate Compliance)
 export const smsQueue = new Queue<NotificationJobData>("notification-sms", {
   connection: redisConnection as any,
-  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
+  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 2000 } },
 });
 
 // Push Queue: 500 push / sec (WebPush/FCM Rate Compliance)
 export const pushQueue = new Queue<NotificationJobData>("notification-push", {
   connection: redisConnection as any,
-  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 5000 } },
+  defaultJobOptions: { attempts: 5, backoff: { type: "exponential", delay: 2000 } },
 });
 
 // ── Dead Letter Queue (DLQ) ──────────────────────────────────────────────────
@@ -74,6 +74,30 @@ export const dlqQueue = new Queue<NotificationJobData & { errorReason?: string; 
     },
   }
 );
+
+const setupDLQListener = (queueName: string, queue: Queue) => {
+  const queueEvents = new QueueEvents(queueName, { connection: redisConnection as any });
+  queueEvents.on("failed", async ({ jobId, failedReason }) => {
+    try {
+      if (!jobId) return;
+      const job = await queue.getJob(jobId);
+      if (job) {
+        await dlqQueue.add(job.name, {
+          ...job.data,
+          errorReason: failedReason,
+          failedAt: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error(`Failed to move job ${jobId} from ${queueName} to DLQ:`, err);
+    }
+  });
+};
+
+setupDLQListener(dispatchQueue.name, dispatchQueue);
+setupDLQListener(emailQueue.name, emailQueue);
+setupDLQListener(smsQueue.name, smsQueue);
+setupDLQListener(pushQueue.name, pushQueue);
 
 // Priority Mapping for BullMQ (lower integer = higher priority)
 export function getPriorityValue(priority?: string): number {

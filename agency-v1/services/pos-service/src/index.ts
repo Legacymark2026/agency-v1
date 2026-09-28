@@ -104,7 +104,7 @@ async function resolveValidCompanyId(inputCompanyId?: string): Promise<string> {
 }
 
 // ── In-Memory Active Sessions Store ──────────────────────────────────────────
-const activeSessionsMap = new Map<string, any>();
+import { createSessionsRouter, activeSessionsMap } from "./routes/sessions.routes";
 
 // ── 1. PROMOTIONS & DYNAMIC PRICING ENGINE ──────────────────────────────────
 export interface PromotionRule {
@@ -372,7 +372,8 @@ app.post("/api/pos/dian/generate-cufe", (req, res) => {
 });
 
 // ── Standard Register Sessions & Products Routes ─────────────────────────────
-app.get("/api/pos/sessions", async (req, res) => {
+app.use("/api/pos/sessions", createSessionsRouter(eventBus, resolveValidCompanyId));
+/*
     try {
         const { companyId } = req.query;
         const cid = await resolveValidCompanyId(companyId ? String(companyId) : undefined);
@@ -456,6 +457,7 @@ app.post("/api/pos/sessions/close", async (req, res) => {
     }
 });
 
+*/
 app.post("/api/pos/orders", async (req, res) => {
     try {
         const {
@@ -545,18 +547,21 @@ app.post("/api/pos/orders", async (req, res) => {
                     },
                     include: { items: true },
                 });
-            } catch {
-                invoice = {
-                    id: `ord_mock_${Date.now()}`,
-                    companyId: cid,
-                    clientName: customerName,
-                    subtotalAmount,
-                    taxAmount,
-                    totalAmount,
-                    status: "PAID",
-                    items: processedItems.map((i: any) => ({ title: i.title, quantity: i.quantity, unitPrice: i.unitPrice, totalAmount: i.totalAmount })),
-                };
+            } catch (error) {
+                console.error("Database write failed:", error);
+                return res.status(500).json({ error: 'Database write failed', message: 'Order could not be saved. Please retry.' });
             }
+
+
+
+
+
+
+
+
+
+
+
         }
 
         const currentSession = activeSessionsMap.get(cid);

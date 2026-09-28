@@ -30,12 +30,9 @@ COPY packages/video-editor/ ./packages/video-editor/
 COPY packages/video-learning/ ./packages/video-learning/
 COPY packages/voicebox/ ./packages/voicebox/
 
-# Copy web and scripts files
-COPY apps/web/ ./apps/web/
-COPY scripts/ ./scripts/
+# Copy just the prisma schema to generate client
+COPY apps/web/prisma/ ./apps/web/prisma/
 
-
-# Generate Prisma client using schema in web app
 WORKDIR /app/apps/web
 RUN npx prisma generate
 
@@ -45,6 +42,11 @@ RUN npx tsc -p tsconfig.json --noEmit false
 
 WORKDIR /app/packages/video-editor
 RUN npx tsc -p tsconfig.json --noEmit false
+
+# Now copy the rest of the web app (so UI changes don't bust the cache above)
+WORKDIR /app
+COPY apps/web/ ./apps/web/
+COPY scripts/ ./scripts/
 
 # Build Next.js app using turbo from the root
 WORKDIR /app

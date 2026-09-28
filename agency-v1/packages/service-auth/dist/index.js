@@ -30,8 +30,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupGracefulShutdown = exports.idempotencyMiddleware = exports.requireUserOrServiceAuth = exports.requireServiceAuth = exports.verifyServiceToken = exports.signServiceToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 // ── Configuration ─────────────────────────────────────────────────────────────
-const SERVICE_JWT_SECRET = process.env.SERVICE_JWT_SECRET ||
-    "legacymark-service-internal-secret-CHANGE-IN-PROD-min-32-chars";
+function resolveServiceJwtSecret() {
+    const secret = process.env.SERVICE_JWT_SECRET;
+    if (!secret) {
+        if (process.env.NODE_ENV === "production") {
+            throw new Error("[FATAL SECURITY ERROR] SERVICE_JWT_SECRET environment variable is missing in production. Refusing to start with insecure fallback.");
+        }
+        return "legacymark-dev-ephemeral-service-secret-32-chars-minimum";
+    }
+    return secret;
+}
 const SERVICE_TOKEN_EXPIRY = "5m"; // Short-lived for security
 // ── Token Operations ──────────────────────────────────────────────────────────
 /**
@@ -43,7 +51,7 @@ const SERVICE_TOKEN_EXPIRY = "5m"; // Short-lived for security
  * @param permissions  — List of permissions (default: ['*'] = all)
  */
 const signServiceToken = (serviceId, serviceName, permissions = ["*"]) => {
-    return jsonwebtoken_1.default.sign({ serviceId, serviceName, permissions }, SERVICE_JWT_SECRET, { expiresIn: SERVICE_TOKEN_EXPIRY, issuer: "legacymark-services" });
+    return jsonwebtoken_1.default.sign({ serviceId, serviceName, permissions }, resolveServiceJwtSecret(), { expiresIn: SERVICE_TOKEN_EXPIRY, issuer: "legacymark-services" });
 };
 exports.signServiceToken = signServiceToken;
 /**
@@ -51,7 +59,7 @@ exports.signServiceToken = signServiceToken;
  * Throws if the token is invalid or expired.
  */
 const verifyServiceToken = (token) => {
-    return jsonwebtoken_1.default.verify(token, SERVICE_JWT_SECRET, {
+    return jsonwebtoken_1.default.verify(token, resolveServiceJwtSecret(), {
         issuer: "legacymark-services",
     });
 };

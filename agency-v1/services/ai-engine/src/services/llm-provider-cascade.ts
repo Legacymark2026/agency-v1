@@ -8,6 +8,9 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 
+const circuitBreakerOpen = new Map<string, number>(); // modelId -> timestamp until open
+const CIRCUIT_BREAKER_TIMEOUT_MS = 60000; // 60 seconds
+
 export interface CascadeOptions {
   systemPrompt: string;
   userMessage: string;
@@ -69,6 +72,12 @@ export async function executeResilientLLM(options: CascadeOptions): Promise<Casc
   let lastError: Error | null = null;
 
   for (const modelId of modelsToTry) {
+    const openUntil = circuitBreakerOpen.get(modelId);
+    if (openUntil && Date.now() < openUntil) {
+      console.warn(`[LLM-Cascade] Circuit breaker open for ${modelId}, skipping.`);
+      continue;
+    }
+
     attempts++;
     try {
       console.log(`[LLM-Cascade] Attempt ${attempts}: Trying ${modelId}...`);
@@ -81,6 +90,7 @@ export async function executeResilientLLM(options: CascadeOptions): Promise<Casc
       });
 
       if (response.text && response.text.trim().length > 0) {
+        circuitBreakerOpen.delete(modelId);
         const latencyMs = Date.now() - startTime;
         return {
           text: response.text.trim(),
@@ -92,6 +102,7 @@ export async function executeResilientLLM(options: CascadeOptions): Promise<Casc
         };
       }
     } catch (err: any) {
+      circuitBreakerOpen.set(modelId, Date.now() + CIRCUIT_BREAKER_TIMEOUT_MS);
       lastError = err;
       console.warn(`[LLM-Cascade] Provider ${modelId} failed on attempt ${attempts}:`, err?.message || err);
       // Wait 100ms before trying secondary provider

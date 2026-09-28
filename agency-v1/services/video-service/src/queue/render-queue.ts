@@ -2,7 +2,7 @@ import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { join } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { broadcastProgress, broadcastComplete, broadcastFailed } from '../websocket';
 
@@ -110,21 +110,28 @@ export function createWorker(outputDir: string): Worker {
         const platform = config?.platform ?? 'reels';
         const textOverlay = `Video Studio | ${platform.toUpperCase()} | ${duration}s`;
 
-        const ffmpegCmd = [
-          'ffmpeg -y',
-          `-f lavfi -i "color=c=${bgColor}:s=${width}x${height}:d=${duration}:r=30"`,
-          `-f lavfi -i "sine=frequency=440:duration=${duration}"`,
-          `-vf "drawtext=fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2:text='${textOverlay}':box=1:boxcolor=black@0.5:boxborderw=10"`,
-          `-c:v libx264 -preset fast -crf 23`,
-          `-c:a aac -b:a 128k`,
-          `-movflags +faststart`,
-          `"${outputPath}"`,
-        ].join(' ');
+        const ffmpegArgs = [
+          '-y',
+          '-f', 'lavfi', '-i', `color=c=${bgColor}:s=${width}x${height}:d=${duration}:r=30`,
+          '-f', 'lavfi', '-i', `sine=frequency=440:duration=${duration}`,
+          '-vf', `drawtext=fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2:text='${textOverlay}':box=1:boxcolor=black@0.5:boxborderw=10`,
+          '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+          '-c:a', 'aac', '-b:a', '128k',
+          '-movflags', '+faststart',
+          outputPath
+        ];
 
         await job.updateProgress(50);
         broadcastProgress(jobId, 50, 'PROCESSING');
 
-        await execAsync(ffmpegCmd, { timeout: 3600000, maxBuffer: 50 * 1024 * 1024 });
+        await new Promise<void>((resolve, reject) => {
+          const child = spawn('ffmpeg', ffmpegArgs, { stdio: 'ignore' });
+          child.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`FFmpeg exited with code ${code}`));
+          });
+          child.on('error', reject);
+        });
 
         await job.updateProgress(90);
         broadcastProgress(jobId, 90, 'PROCESSING');
@@ -188,11 +195,15 @@ export function createWorker(outputDir: string): Worker {
   return worker;
 }
 
+let _ffmpegAvailable: boolean | null = null;
 async function checkFFmpeg(): Promise<boolean> {
+  if (_ffmpegAvailable !== null) return _ffmpegAvailable;
   try {
     await execAsync('ffmpeg -version', { timeout: 5000 });
+    _ffmpegAvailable = true;
     return true;
   } catch {
+    _ffmpegAvailable = false;
     return false;
   }
 }
@@ -229,6 +240,8 @@ export async function cancelJob(jobId: string): Promise<boolean> {
     return true;
   }
 
+  // NOTE: If process was spawned via execAsync it is harder to kill cleanly without tracking child PIDs.
+  // Proper cancellation would require storing the child process reference and calling process.kill().
   try {
     await job.moveToFailed({ message: 'Cancelled by user' } as any, 'Cancelled by user');
     return true;

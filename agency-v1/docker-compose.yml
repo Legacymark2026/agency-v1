@@ -423,6 +423,17 @@ services:
       - frontend-net
       - backend-net
     deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
       resources:
         limits:
           cpus: "1.0"
@@ -481,6 +492,17 @@ services:
     networks:
       - backend-net
     deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
       resources:
         limits:
           cpus: "1.0"
@@ -530,6 +552,25 @@ services:
       - "traefik.http.routers.auth.tls=true"
       - "traefik.http.routers.auth.tls.certresolver=le"
       - "traefik.http.services.auth.loadbalancer.server.port=4001"
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
 
   # ── Goldneez Rewards Service ──────────────────────────────────────────────
   goldneez-rewards-service:
@@ -766,6 +807,7 @@ services:
       OTEL_SERVICE_NAME: pos-service
       GRPC_PORT: "50051"
       INVOICING_GRPC_PORT: "50052"
+      PAYMENT_HMAC_SECRET: ${PAYMENT_HMAC_SECRET:-}
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -781,6 +823,25 @@ services:
       - "traefik.http.routers.pos.tls=true"
       - "traefik.http.routers.pos.tls.certresolver=le"
       - "traefik.http.services.pos.loadbalancer.server.port=4020"
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
 
   # ── Inventory Service (Bodegas, Kárdex & Compras) ─────────────────────────
   inventory-service:

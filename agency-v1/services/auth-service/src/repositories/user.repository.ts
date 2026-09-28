@@ -22,6 +22,7 @@ export class PrismaUserRepository implements IUserRepository {
     try {
       const user = await prisma.user.findUnique({
         where: { id },
+        select: { id: true, name: true, email: true, emailVerified: true, image: true, firstName: true, lastName: true, phone: true, role: true, mfaEnabled: true, createdAt: true, updatedAt: true, globalRole: true, passwordHash: true }
       });
       return user as UserEntity | null;
     } catch (err: any) {
@@ -34,6 +35,7 @@ export class PrismaUserRepository implements IUserRepository {
     try {
       const user = await prisma.user.findUnique({
         where: { email },
+        select: { id: true, name: true, email: true, emailVerified: true, image: true, firstName: true, lastName: true, phone: true, role: true, mfaEnabled: true, createdAt: true, updatedAt: true, globalRole: true, passwordHash: true }
       });
       return user as UserEntity | null;
     } catch (err: any) {

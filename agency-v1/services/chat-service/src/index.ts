@@ -42,7 +42,7 @@ app.use("/api/v1/chat", createChatRouter(chatUseCases));
 const server = http.createServer(app);
 
 // Mount WebSocket Inbound Adapter
-export const wsAdapter = new WebSocketChatAdapter(server, chatUseCases);
+export const wsAdapter = new WebSocketChatAdapter(server, chatUseCases, REDIS_URL);
 
 if (process.env.NODE_ENV !== "test") {
   server.listen(PORT, () => {

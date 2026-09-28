@@ -54,8 +54,8 @@ redis.on('ready', () => {
 // ─── Middleware ──────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ limit: '500mb', extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Server timeouts for 60-minute long-form video rendering & uploads
 server.timeout = 3600000; // 60 minutes
@@ -103,6 +103,8 @@ initWebSocket(server);
 const outputDir = process.env.RENDER_OUTPUT_DIR || join(process.cwd(), 'renders');
 createWorker(outputDir);
 
+let ffmpegAvailable: boolean | null = null;
+
 // ─── Healthcheck ─────────────────────────────────────────────────────────────
 app.get('/health', async (_req: Request, res: Response) => {
   let redisStatus = 'disconnected';
@@ -118,12 +120,16 @@ app.get('/health', async (_req: Request, res: Response) => {
   }
 
   try {
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-    const execAsync = promisify(exec);
-    await execAsync('ffmpeg -version', { timeout: 3000 });
-    ffmpegStatus = true;
+    if (ffmpegAvailable === null) {
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+      await execAsync('ffmpeg -version', { timeout: 3000 });
+      ffmpegAvailable = true;
+    }
+    ffmpegStatus = ffmpegAvailable;
   } catch {
+    ffmpegAvailable = false;
     ffmpegStatus = false;
   }
 
@@ -531,7 +537,9 @@ app.get('/api/video/projects', async (req, res) => {
     if (!companyId) return res.status(400).json({ error: 'companyId required' });
     const projects = await prisma.videoEditorProject.findMany({
       where: { companyId: String(companyId) },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { updatedAt: 'desc' },
+      select: { id: true, name: true, createdAt: true, updatedAt: true, companyId: true },
+      take: 50
     });
     res.json({ projects });
   } catch (error: any) { res.status(500).json({ error: error.message }); }

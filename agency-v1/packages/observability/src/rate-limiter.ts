@@ -12,6 +12,14 @@ function getCache() {
       cache = {
         get: async (k: string) => memoryStore.get(k) || null,
         set: async (k: string, v: string) => memoryStore.set(k, v),
+        incr: async (k: string) => {
+          const val = (parseInt(memoryStore.get(k) || '0', 10) || 0) + 1;
+          memoryStore.set(k, String(val));
+          return val;
+        },
+        expire: async (k: string, s: number) => {
+          setTimeout(() => memoryStore.delete(k), s * 1000);
+        }
       };
     }
   }
@@ -38,10 +46,14 @@ export function resilientRateLimiter(options: RateLimiterOptions = {}) {
         "anonymous";
 
       const key = `${keyPrefix}:${clientIdentifier}:${Math.floor(Date.now() / (windowSeconds * 1000))}`;
-      const rawCount = await getCache().get(key);
-      const currentCount = rawCount ? parseInt(rawCount, 10) : 0;
+      
+      const cacheClient = getCache();
+      const count = await cacheClient.incr(key);
+      if (count === 1) {
+        await cacheClient.expire(key, windowSeconds);
+      }
 
-      if (currentCount >= maxRequests) {
+      if (count > maxRequests) {
         res.setHeader("Retry-After", windowSeconds);
         res.setHeader("X-RateLimit-Limit", maxRequests);
         res.setHeader("X-RateLimit-Remaining", 0);
@@ -52,10 +64,8 @@ export function resilientRateLimiter(options: RateLimiterOptions = {}) {
         });
       }
 
-      await getCache().set(key, String(currentCount + 1), windowSeconds);
-
       res.setHeader("X-RateLimit-Limit", maxRequests);
-      res.setHeader("X-RateLimit-Remaining", Math.max(0, maxRequests - (currentCount + 1)));
+      res.setHeader("X-RateLimit-Remaining", Math.max(0, maxRequests - count));
 
       next();
     } catch (err) {

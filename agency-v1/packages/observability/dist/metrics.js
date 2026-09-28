@@ -26,10 +26,14 @@ const httpRequestDuration = new prom_client_1.default.Histogram({
 function metricsMiddleware(serviceName) {
     return (req, res, next) => {
         const start = process.hrtime();
+        // Inject or reuse Distributed Correlation ID
+        const correlationId = req.headers["x-correlation-id"] || `corr_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+        req.correlationId = correlationId;
+        res.setHeader("x-correlation-id", correlationId);
         res.on("finish", () => {
             const diff = process.hrtime(start);
             const durationSeconds = diff[0] + diff[1] / 1e9;
-            const route = req.route ? req.route.path : req.path;
+            const route = req.route ? req.route.path : (req.path || '/').replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id').replace(/\/\d+/g, '/:id');
             const status = res.statusCode.toString();
             const labels = {
                 method: req.method,

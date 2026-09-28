@@ -11,7 +11,8 @@
  */
 
 import { Worker, Job } from "bullmq";
-import { NotificationJobData, redisConnection, dlqQueue } from "./notification.queue";
+import { NotificationJobData, dlqQueue } from "./notification.queue";
+import { redisBullWorkerConnection } from "../lib/redis.singleton";
 import { emailCircuitBreaker, pushCircuitBreaker } from "../circuit-breaker/provider.breaker";
 import { traceSpan } from "../observability/tracer";
 import { getUserProfileCached, invalidateUnreadCount } from "../cache/notification.cache";
@@ -87,7 +88,7 @@ export function startNotificationWorker() {
       });
     },
     {
-      connection: redisConnection as any,
+      connection: redisBullWorkerConnection as any,
       concurrency: 5,
       limiter: {
         max: 100,

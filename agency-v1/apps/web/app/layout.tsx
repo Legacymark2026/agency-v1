@@ -92,7 +92,7 @@ export async function generateMetadata(): Promise<Metadata> {
       shortcut: "/favicon.ico",
       apple: "/apple-touch-icon.png",
     },
-    manifest: "/site.webmanifest",
+    manifest: "/manifest.json",
     verification: {
       other: {
         "facebook-domain-verification": "fm9attbfbqwnfk3yfcn6t8v3rymszu",

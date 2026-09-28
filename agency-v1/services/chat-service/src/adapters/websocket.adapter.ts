@@ -4,43 +4,55 @@
  * Accepts client connections, authenticates JWT, binds tenant/channel rooms,
  * and relays inbound chat events to the hexagonal core.
  */
-import { WebSocketServer, WebSocket } from "ws";
+import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
+import { createAdapter } from "@socket.io/redis-adapter";
+import Redis from "ioredis";
 import { IChatUseCases } from "../core/ports/chat.ports";
 
-interface AuthenticatedSocket extends WebSocket {
+interface AuthenticatedSocket extends Socket {
   userId?: string;
   userName?: string;
   companyId?: string;
-  subscribedChannels?: Set<string>;
-  isAlive?: boolean;
 }
 
 export class WebSocketChatAdapter {
-  private wss: WebSocketServer;
-  private clientsByTenant: Map<string, Set<AuthenticatedSocket>> = new Map();
+  private io: SocketIOServer;
+  private pubClient: Redis;
+  private subClient: Redis;
 
   constructor(
     server: HttpServer,
-    private readonly chatUseCases: IChatUseCases
+    private readonly chatUseCases: IChatUseCases,
+    redisUrl: string
   ) {
-    this.wss = new WebSocketServer({ server, path: "/ws/chat" });
+    this.io = new SocketIOServer(server, {
+      path: "/ws/chat",
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+      }
+    });
+
+    this.pubClient = new Redis(redisUrl);
+    this.subClient = this.pubClient.duplicate();
+
+    this.io.adapter(createAdapter(this.pubClient, this.subClient));
+
     this.setupServer();
   }
 
   private setupServer(): void {
-    this.wss.on("connection", (socket: AuthenticatedSocket, req) => {
-      socket.isAlive = true;
-      socket.subscribedChannels = new Set();
-
+    this.io.on("connection", (socket: AuthenticatedSocket) => {
       // Extract handshake metadata (from query or headers)
-      const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
-      const companyId = url.searchParams.get("companyId") || (req.headers["x-company-id"] as string);
-      const userId = url.searchParams.get("userId") || (req.headers["x-user-id"] as string);
-      const userName = url.searchParams.get("userName") || (req.headers["x-user-name"] as string) || "User";
+      const req = socket.request;
+      const url = new URL(req.url || "", `http://${req.headers?.host || "localhost"}`);
+      const companyId = url.searchParams.get("companyId") || (req.headers["x-company-id"] as string) || socket.handshake.query.companyId as string || socket.handshake.headers["x-company-id"] as string;
+      const userId = url.searchParams.get("userId") || (req.headers["x-user-id"] as string) || socket.handshake.query.userId as string || socket.handshake.headers["x-user-id"] as string;
+      const userName = url.searchParams.get("userName") || (req.headers["x-user-name"] as string) || socket.handshake.query.userName as string || socket.handshake.headers["x-user-name"] as string || "User";
 
       if (!companyId || !userId) {
-        socket.close(4001, "Unauthorized: companyId and userId required");
+        socket.disconnect(true);
         return;
       }
 
@@ -48,55 +60,31 @@ export class WebSocketChatAdapter {
       socket.userId = userId;
       socket.userName = userName;
 
-      // Register client in tenant pool
-      if (!this.clientsByTenant.has(companyId)) {
-        this.clientsByTenant.set(companyId, new Set());
-      }
-      this.clientsByTenant.get(companyId)!.add(socket);
+      // Join tenant room
+      socket.join(companyId);
 
       // Mark user presence ONLINE
       this.chatUseCases.setUserPresence(companyId, userId, "ONLINE").catch(() => {});
 
-      // Handle inbound messages
-      socket.on("message", async (raw: string) => {
+      // Handle inbound raw messages
+      socket.on("message", async (raw: any) => {
         try {
-          const parsed = JSON.parse(raw.toString());
+          const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
           await this.handleClientMessage(socket, parsed);
         } catch (err: any) {
           socket.send(JSON.stringify({ error: err.message || "Invalid payload" }));
         }
       });
 
-      socket.on("close", () => {
-        if (socket.companyId) {
-          const set = this.clientsByTenant.get(socket.companyId);
-          if (set) {
-            set.delete(socket);
-            if (set.size === 0) this.clientsByTenant.delete(socket.companyId);
-          }
-          if (socket.userId) {
-            this.chatUseCases.setUserPresence(socket.companyId, socket.userId, "OFFLINE").catch(() => {});
-          }
+      socket.on("disconnect", () => {
+        if (socket.companyId && socket.userId) {
+          this.chatUseCases.setUserPresence(socket.companyId, socket.userId, "OFFLINE").catch(() => {});
         }
-      });
-
-      socket.on("pong", () => {
-        socket.isAlive = true;
       });
 
       // Send initial handshake success
       socket.send(JSON.stringify({ event: "connected", userId, companyId }));
     });
-
-    // Heartbeat ping/pong to prune dead sockets
-    setInterval(() => {
-      this.wss.clients.forEach((ws) => {
-        const socket = ws as AuthenticatedSocket;
-        if (!socket.isAlive) return socket.terminate();
-        socket.isAlive = false;
-        socket.ping();
-      });
-    }, 30000);
   }
 
   private async handleClientMessage(socket: AuthenticatedSocket, data: any): Promise<void> {
@@ -104,7 +92,7 @@ export class WebSocketChatAdapter {
 
     switch (action) {
       case "join_channel": {
-        socket.subscribedChannels?.add(payload.channelId);
+        socket.join(payload.channelId);
         socket.send(JSON.stringify({ event: "channel.joined", channelId: payload.channelId }));
         break;
       }
@@ -150,14 +138,7 @@ export class WebSocketChatAdapter {
   }
 
   public broadcastToChannel(tenantId: string, channelId: string, message: any): void {
-    const tenantSockets = this.clientsByTenant.get(tenantId);
-    if (!tenantSockets) return;
-
     const payloadStr = JSON.stringify(message);
-    tenantSockets.forEach((s) => {
-      if (s.readyState === WebSocket.OPEN && s.subscribedChannels?.has(channelId)) {
-        s.send(payloadStr);
-      }
-    });
+    this.io.to(channelId).emit("message", payloadStr);
   }
 }

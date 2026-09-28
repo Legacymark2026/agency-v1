@@ -51,10 +51,13 @@ export function computeTransactionHmac(reference: string, amount: number, provid
     return crypto.createHmac("sha256", PAYMENT_SECRET_KEY).update(dataStr).digest("hex");
 }
 
+let _tablesInitialized = false;
+
 /**
  * Ensures PostgreSQL table `tbl_pos_payment_transactions` exists for persistent audit logs.
  */
 export async function initPaymentDatabaseTables() {
+    if (_tablesInitialized) return;
     try {
         await prisma.$executeRawUnsafe(`
             CREATE TABLE IF NOT EXISTS tbl_pos_payment_transactions (
@@ -82,6 +85,7 @@ export async function initPaymentDatabaseTables() {
             );
         `);
         console.log("✅ Real PostgreSQL PCI-DSS Payment Transactions Table initialized.");
+        _tablesInitialized = true;
     } catch (err: any) {
         console.warn("Notice payment table init:", err.message);
     }
@@ -222,7 +226,9 @@ export async function verifyPaymentTransactionById(transactionIdOrApprovalCode: 
     }
 
     const expectedSignature = computeTransactionHmac(tx.reference, tx.amount, tx.provider, tx.approvalCode, tx.createdAt);
-    const signatureValid = expectedSignature === tx.hmacSignature || tx.hmacSignature.length > 10;
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+    const actualBuffer = Buffer.from(tx.hmacSignature, 'utf8');
+    const signatureValid = expectedBuffer.length === actualBuffer.length && crypto.timingSafeEqual(expectedBuffer, actualBuffer);
     const auditTrailData = `${tx.id}:${tx.reference}:${tx.companyId}:${tx.amount}:${tx.approvalCode}:${tx.hmacSignature}`;
     const expectedAuditHash = crypto.createHash("sha256").update(auditTrailData).digest("hex");
     const auditTrailValid = expectedAuditHash === tx.auditTrailHash || tx.auditTrailHash.length > 10;
@@ -368,6 +374,10 @@ export async function verifyElectronicTransfer(payload: {
             isReused = true;
         }
     } catch (e) {}
+
+    if (isReused) {
+        return { verified: false, reason: 'Comprobante ya utilizado previamente.' };
+    }
 
     const auditCode = `VERIFIED-BANK-${Date.now().toString().slice(-6)}`;
 

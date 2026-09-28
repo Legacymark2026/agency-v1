@@ -43,14 +43,18 @@ async function logActivity(
 }
 
 // ── JWKS Endpoint (JSON Web Key Set - Inter-service Public Key Verification) ──
+let cachedJwks: any = null;
 authRouter.get("/.well-known/jwks.json", (_req: Request, res: Response) => {
   try {
+    if (cachedJwks) {
+      return res.json(cachedJwks);
+    }
     const { publicKey } = getCryptoKeys();
     if (!publicKey) return res.status(500).json({ error: "Public key unavailable" });
 
     const pubKeyObj = crypto.createPublicKey(publicKey);
     const jwk = pubKeyObj.export({ format: "jwk" });
-    res.json({
+    cachedJwks = {
       keys: [
         {
           ...jwk,
@@ -59,7 +63,8 @@ authRouter.get("/.well-known/jwks.json", (_req: Request, res: Response) => {
           kid: "auth-service-rs256-key-1",
         },
       ],
-    });
+    };
+    res.json(cachedJwks);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

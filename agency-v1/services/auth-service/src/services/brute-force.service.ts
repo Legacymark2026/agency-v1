@@ -1,14 +1,4 @@
-import Redis from 'ioredis';
-
-const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
-let redis: Redis | null = null;
-
-try {
-  redis = new Redis(REDIS_URL, { maxRetriesPerRequest: 2, enableOfflineQueue: false });
-  redis.on('error', (err) => console.warn('[BruteForceService] Redis notice:', err.message));
-} catch (e) {
-  console.warn('[BruteForceService] Redis init notice:', e);
-}
+import { redisClient as redis } from '../lib/event-bus.singleton';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_TTL_SECONDS = 900; // 15 minutos

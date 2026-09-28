@@ -1,16 +1,6 @@
-import Redis from 'ioredis';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-
-const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
-let redis: Redis | null = null;
-
-try {
-  redis = new Redis(REDIS_URL, { maxRetriesPerRequest: 2, enableOfflineQueue: false });
-  redis.on('error', (err) => console.warn('[TokenRotationService] Redis notice:', err.message));
-} catch (e) {
-  console.warn('[TokenRotationService] Redis init notice:', e);
-}
+import { redisClient as redis } from '../lib/event-bus.singleton';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'legacymark_jwt_secret_dev_2026';
 const ACCESS_TOKEN_TTL_SECONDS = 900; // 15 minutos
@@ -137,10 +127,12 @@ export class TokenRotationService {
   static async revokeAllUserSessions(userId: string) {
     if (!redis || redis.status !== 'ready') return;
     try {
-      const keys = await redis.keys(`session:${userId}:*`);
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
+      let cursor = '0';
+      do {
+        const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `session:${userId}:*`, 'COUNT', '100');
+        cursor = nextCursor;
+        if (keys.length > 0) await redis.del(...keys);
+      } while (cursor !== '0');
     } catch (e: any) {
       console.warn('[TokenRotationService] Revoke all error:', e.message);
     }
@@ -152,7 +144,15 @@ export class TokenRotationService {
   static async getActiveUserSessions(userId: string): Promise<SessionSessionInfo[]> {
     if (!redis || redis.status !== 'ready') return [];
     try {
-      const keys = await redis.keys(`session:${userId}:*`);
+      let cursor = '0';
+      const allKeys: string[] = [];
+      do {
+        const [nextCursor, matchedKeys] = await redis.scan(cursor, 'MATCH', `session:${userId}:*`, 'COUNT', '100');
+        cursor = nextCursor;
+        allKeys.push(...matchedKeys);
+      } while (cursor !== '0');
+      
+      const keys = allKeys;
       if (keys.length === 0) return [];
       const values = await redis.mget(...keys);
       return values

@@ -1,0 +1,13 @@
+[Unit]
+Description=LegacyMark DR Backup Service
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Environment="DB_NAME=legacymark"
+Environment="DB_USER=postgres"
+Environment="S3_BUCKET=s3://legacymark-dr-backups/"
+# Provide webhook URL for Slack/Discord in an environment file
+# EnvironmentFile=/etc/default/legacymark-backup
+ExecStart=/opt/legacymark/scripts/dr-backup.sh

@@ -66,7 +66,8 @@ export class GrpcClientHelper {
 
       const client = new ServiceCtor(
         targetAddress,
-        credentials
+        credentials,
+        { 'grpc.keepalive_time_ms': 30000, 'grpc.keepalive_timeout_ms': 5000, 'grpc.keepalive_permit_without_calls': 1 }
       );
       this.clientCache.set(cacheKey, client);
     }
@@ -85,7 +86,8 @@ export class GrpcClientHelper {
             if (typeof rawClient[methodName] !== "function") {
               return reject(new Error(`Method ${methodName} not found on gRPC client ${serviceClass}`));
             }
-            rawClient[methodName](req, (err: any, response: Res) => {
+            const deadline = new Date(Date.now() + (breakerOptions?.timeoutMs || 5000));
+            rawClient[methodName](req, { deadline }, (err: any, response: Res) => {
               if (err) return reject(err);
               resolve(response);
             });

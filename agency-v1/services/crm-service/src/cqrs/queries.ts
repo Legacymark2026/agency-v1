@@ -6,10 +6,7 @@
  */
 
 import { prisma } from "@agency/database";
-import Redis from "ioredis";
-
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-const redisClient = new Redis(REDIS_URL);
+import { redisClient } from "../lib/event-bus.singleton";
 
 // ── Query: Get Leads Read View ───────────────────────────────────────────────
 
@@ -19,11 +16,12 @@ export interface GetLeadsQueryInput {
   source?: string;
   page?: number;
   pageSize?: number;
+  cursor?: string;
 }
 
 export async function executeGetLeadsQuery(input: GetLeadsQueryInput) {
-  const { companyId, status, source, page = 1, pageSize = 20 } = input;
-  const cacheKey = `crm:view:leads:${companyId}:${status || "ALL"}:${source || "ALL"}:${page}:${pageSize}`;
+  const { companyId, status, source, page = 1, pageSize = 20, cursor } = input;
+  const cacheKey = `crm:view:leads:${companyId}:${status || "ALL"}:${source || "ALL"}:${page}:${pageSize}:${cursor || "none"}`;
 
   try {
     const cached = await redisClient.get(cacheKey);
@@ -36,23 +34,32 @@ export async function executeGetLeadsQuery(input: GetLeadsQueryInput) {
   if (status) where.status = status;
   if (source) where.source = source;
 
-  const skip = (page - 1) * pageSize;
+  const queryOptions: any = {
+    where,
+    orderBy: { createdAt: "desc" },
+    take: pageSize,
+  };
+
+  if (cursor) {
+    queryOptions.cursor = { id: cursor };
+    queryOptions.skip = 1;
+  } else {
+    queryOptions.skip = (page - 1) * pageSize;
+  }
 
   const [leads, total] = await Promise.all([
-    prisma.lead.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: pageSize,
-    }),
+    prisma.lead.findMany(queryOptions),
     prisma.lead.count({ where }),
   ]);
+
+  const nextCursor = leads.length > 0 ? leads[leads.length - 1].id : undefined;
 
   const result = {
     leads,
     total,
     pages: Math.ceil(total / pageSize),
     page,
+    nextCursor,
   };
 
   try {

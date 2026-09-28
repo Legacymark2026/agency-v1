@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   compress: true,
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: false,
   // Prevent webpack from bundling native Node.js modules.
   // Prisma requires its native query engine binary at runtime — bundling breaks it.
   // bcryptjs uses native crypto APIs that also can't be bundled safely.
@@ -182,7 +182,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-const finalConfig = withBundleAnalyzer(withNextIntl(nextConfig));
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+});
+
+const finalConfig = withPWA(withBundleAnalyzer(withNextIntl(nextConfig)));
 
 export default process.env.SENTRY_AUTH_TOKEN
   ? withSentryConfig(
