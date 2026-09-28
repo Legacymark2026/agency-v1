@@ -176,7 +176,7 @@ export * from "./cache-helper";
 export default prisma;
 
 // Legacy compatibility aliases for split-schema clients
-export const getPrismaAuth = () => prisma;
-export const getPrismaCore = () => prisma;
-export const getPrismaMedia = () => prisma;
-export const getPrismaAnalytics = () => prisma;
+export const getPrismaAuth = (): PrismaClient => prisma;
+export const getPrismaCore = (): PrismaClient => prisma;
+export const getPrismaMedia = (): PrismaClient => prisma;
+export const getPrismaAnalytics = (): PrismaClient => prisma;

@@ -1,2 +1,1 @@
-import { Router } from "express";
-export declare function createAuthRouter(privateKey: string | null): Router;
+export declare const authRouter: import("express-serve-static-core").Router;

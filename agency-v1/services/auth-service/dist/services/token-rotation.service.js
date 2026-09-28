@@ -4,18 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TokenRotationService = void 0;
-const ioredis_1 = __importDefault(require("ioredis"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
-const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
-let redis = null;
-try {
-    redis = new ioredis_1.default(REDIS_URL, { maxRetriesPerRequest: 2, enableOfflineQueue: false });
-    redis.on('error', (err) => console.warn('[TokenRotationService] Redis notice:', err.message));
-}
-catch (e) {
-    console.warn('[TokenRotationService] Redis init notice:', e);
-}
+const event_bus_singleton_1 = require("../lib/event-bus.singleton");
 const JWT_SECRET = process.env.JWT_SECRET || 'legacymark_jwt_secret_dev_2026';
 const ACCESS_TOKEN_TTL_SECONDS = 900; // 15 minutos
 const REFRESH_TOKEN_TTL_SECONDS = 604800; // 7 días
@@ -33,7 +24,7 @@ class TokenRotationService {
         // Refresh Token (7 días)
         const refreshToken = jsonwebtoken_1.default.sign({ ...payload, isRefresh: true }, JWT_SECRET, { expiresIn: '7d' });
         // Registrar sesión en Redis
-        if (redis && redis.status === 'ready') {
+        if (event_bus_singleton_1.redisClient && event_bus_singleton_1.redisClient.status === 'ready') {
             try {
                 const sessionData = {
                     sessionId,
@@ -47,8 +38,8 @@ class TokenRotationService {
                 const sessionKey = `session:${userId}:${sessionId}`;
                 const familyKey = `family:${familyId}:${sessionId}`;
                 await Promise.all([
-                    redis.set(sessionKey, JSON.stringify(sessionData), 'EX', REFRESH_TOKEN_TTL_SECONDS),
-                    redis.set(familyKey, sessionId, 'EX', REFRESH_TOKEN_TTL_SECONDS)
+                    event_bus_singleton_1.redisClient.set(sessionKey, JSON.stringify(sessionData), 'EX', REFRESH_TOKEN_TTL_SECONDS),
+                    event_bus_singleton_1.redisClient.set(familyKey, sessionId, 'EX', REFRESH_TOKEN_TTL_SECONDS)
                 ]);
             }
             catch (e) {
@@ -77,9 +68,9 @@ class TokenRotationService {
             throw new Error('Formato de refresh token no válido.');
         }
         const { userId, email, sessionId, familyId } = decoded;
-        if (redis && redis.status === 'ready') {
+        if (event_bus_singleton_1.redisClient && event_bus_singleton_1.redisClient.status === 'ready') {
             const sessionKey = `session:${userId}:${sessionId}`;
-            const sessionExists = await redis.exists(sessionKey);
+            const sessionExists = await event_bus_singleton_1.redisClient.exists(sessionKey);
             // 🚨 ALERTA DE SEGURIDAD: El refresh token ya no existe en Redis (ha sido consumido o revocado).
             // Se asume ataque de reuso de token (Token Reuse Attack) -> REVOCAR TODAS LAS SESIONES DE LA CUENTA
             if (!sessionExists) {
@@ -88,7 +79,7 @@ class TokenRotationService {
                 throw new Error('Alerta de seguridad: Se detectó un intento de reuso de sesión. Todas las sesiones activas han sido cerradas.');
             }
             // Eliminar la sesión consumida
-            await redis.del(sessionKey, `family:${familyId}:${sessionId}`);
+            await event_bus_singleton_1.redisClient.del(sessionKey, `family:${familyId}:${sessionId}`);
         }
         // Emitir nuevo par de tokens preservando el familyId
         return await this.issueTokenPair(userId, email, ip, userAgent, familyId);
@@ -97,10 +88,10 @@ class TokenRotationService {
      * Cierra la sesión activa actual en Redis
      */
     static async logoutSession(userId, sessionId) {
-        if (!redis || redis.status !== 'ready')
+        if (!event_bus_singleton_1.redisClient || event_bus_singleton_1.redisClient.status !== 'ready')
             return;
         try {
-            await redis.del(`session:${userId}:${sessionId}`);
+            await event_bus_singleton_1.redisClient.del(`session:${userId}:${sessionId}`);
         }
         catch (e) {
             console.warn('[TokenRotationService] Logout error:', e.message);
@@ -110,13 +101,16 @@ class TokenRotationService {
      * Cierre de sesión de emergencia: Revoca TODAS las sesiones activas del usuario en Redis
      */
     static async revokeAllUserSessions(userId) {
-        if (!redis || redis.status !== 'ready')
+        if (!event_bus_singleton_1.redisClient || event_bus_singleton_1.redisClient.status !== 'ready')
             return;
         try {
-            const keys = await redis.keys(`session:${userId}:*`);
-            if (keys.length > 0) {
-                await redis.del(...keys);
-            }
+            let cursor = '0';
+            do {
+                const [nextCursor, keys] = await event_bus_singleton_1.redisClient.scan(cursor, 'MATCH', `session:${userId}:*`, 'COUNT', '100');
+                cursor = nextCursor;
+                if (keys.length > 0)
+                    await event_bus_singleton_1.redisClient.del(...keys);
+            } while (cursor !== '0');
         }
         catch (e) {
             console.warn('[TokenRotationService] Revoke all error:', e.message);
@@ -126,13 +120,20 @@ class TokenRotationService {
      * Obtiene la lista de sesiones activas del usuario
      */
     static async getActiveUserSessions(userId) {
-        if (!redis || redis.status !== 'ready')
+        if (!event_bus_singleton_1.redisClient || event_bus_singleton_1.redisClient.status !== 'ready')
             return [];
         try {
-            const keys = await redis.keys(`session:${userId}:*`);
+            let cursor = '0';
+            const allKeys = [];
+            do {
+                const [nextCursor, matchedKeys] = await event_bus_singleton_1.redisClient.scan(cursor, 'MATCH', `session:${userId}:*`, 'COUNT', '100');
+                cursor = nextCursor;
+                allKeys.push(...matchedKeys);
+            } while (cursor !== '0');
+            const keys = allKeys;
             if (keys.length === 0)
                 return [];
-            const values = await redis.mget(...keys);
+            const values = await event_bus_singleton_1.redisClient.mget(...keys);
             return values
                 .filter((v) => v !== null)
                 .map((v) => JSON.parse(v));

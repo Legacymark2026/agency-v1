@@ -15,6 +15,7 @@ class PrismaUserRepository {
         try {
             const user = await database_1.prisma.user.findUnique({
                 where: { id },
+                select: { id: true, name: true, email: true, emailVerified: true, image: true, firstName: true, lastName: true, phone: true, role: true, mfaEnabled: true, createdAt: true, updatedAt: true, globalRole: true, passwordHash: true }
             });
             return user;
         }
@@ -27,6 +28,7 @@ class PrismaUserRepository {
         try {
             const user = await database_1.prisma.user.findUnique({
                 where: { email },
+                select: { id: true, name: true, email: true, emailVerified: true, image: true, firstName: true, lastName: true, phone: true, role: true, mfaEnabled: true, createdAt: true, updatedAt: true, globalRole: true, passwordHash: true }
             });
             return user;
         }
