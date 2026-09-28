@@ -1,20 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MeteringAggregatorService = void 0;
-const ioredis_1 = __importDefault(require("ioredis"));
+const crypto_1 = require("crypto");
 const database_1 = require("@agency/database");
-const REDIS_URL = process.env.REDIS_URL || "redis://redis:6379";
-let redis = null;
-try {
-    redis = new ioredis_1.default(REDIS_URL, { maxRetriesPerRequest: 3 });
-    redis.on("error", (err) => console.warn("[MeteringAggregator] Redis warning:", err.message));
-}
-catch (err) {
-    console.warn("[MeteringAggregator] Redis init warning:", err);
-}
+const redis_singleton_1 = require("../lib/redis.singleton");
 class MeteringAggregatorService {
     /**
      * Obtiene estadísticas agregadas de consumo de API por empresa
@@ -66,14 +55,14 @@ class MeteringAggregatorService {
      * Inicia el Worker consumidor de Redis Streams para procesamiento en batch
      */
     static startStreamWorker() {
-        if (!redis)
+        if (!redis_singleton_1.redisClient)
             return;
         console.log("⚡ [MeteringAggregator] Stream Worker iniciado en api_usage_stream");
         setInterval(async () => {
-            if (!redis || redis.status !== "ready")
+            if (!redis_singleton_1.redisClient || redis_singleton_1.redisClient.status !== "ready")
                 return;
             try {
-                const entries = await redis.xread("COUNT", 100, "STREAMS", "api_usage_stream", "0");
+                const entries = await redis_singleton_1.redisClient.xread("COUNT", 100, "STREAMS", "api_usage_stream", "0");
                 if (!entries || entries.length === 0)
                     return;
                 const prisma = (0, database_1.getPrismaAnalytics)();
@@ -89,6 +78,7 @@ class MeteringAggregatorService {
                         kv[fields[i]] = fields[i + 1];
                     }
                     recordsToInsert.push({
+                        id: (0, crypto_1.randomUUID)(),
                         companyId: kv.companyId || "company-default",
                         apiKeyId: kv.apiKeyId || "public-api",
                         serviceName: kv.serviceName || "core",
@@ -106,7 +96,7 @@ class MeteringAggregatorService {
                 }
                 if (recordsToInsert.length > 0) {
                     await prisma.apiUsageLog.createMany({ data: recordsToInsert, skipDuplicates: true });
-                    await redis.xdel("api_usage_stream", ...idsToDelete);
+                    await redis_singleton_1.redisClient.xdel("api_usage_stream", ...idsToDelete);
                 }
             }
             catch (err) {

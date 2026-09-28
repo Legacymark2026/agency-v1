@@ -10,4 +10,8 @@ export declare const getReplicaClient: () => PrismaClient;
 export declare const prisma: any;
 export * from "./cache-helper";
 export default prisma;
+export declare const getPrismaAuth: () => any;
+export declare const getPrismaCore: () => any;
+export declare const getPrismaMedia: () => any;
+export declare const getPrismaAnalytics: () => any;
 //# sourceMappingURL=index.d.ts.map

@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.prisma = exports.getReplicaClient = exports.getPrimaryClient = exports.Prisma = exports.PrismaClient = exports.primaryDatabaseStorage = void 0;
+exports.getPrismaAnalytics = exports.getPrismaMedia = exports.getPrismaCore = exports.getPrismaAuth = exports.prisma = exports.getReplicaClient = exports.getPrimaryClient = exports.Prisma = exports.PrismaClient = exports.primaryDatabaseStorage = void 0;
 exports.runInPrimary = runInPrimary;
 const client_1 = require("@prisma/client");
 const async_hooks_1 = require("async_hooks");
@@ -165,4 +165,13 @@ if (getRuntimeEnv("NODE_ENV") !== "production") {
 }
 __exportStar(require("./cache-helper"), exports);
 exports.default = exports.prisma;
+// Legacy compatibility aliases for split-schema clients
+const getPrismaAuth = () => exports.prisma;
+exports.getPrismaAuth = getPrismaAuth;
+const getPrismaCore = () => exports.prisma;
+exports.getPrismaCore = getPrismaCore;
+const getPrismaMedia = () => exports.prisma;
+exports.getPrismaMedia = getPrismaMedia;
+const getPrismaAnalytics = () => exports.prisma;
+exports.getPrismaAnalytics = getPrismaAnalytics;
 //# sourceMappingURL=index.js.map

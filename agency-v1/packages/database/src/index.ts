@@ -174,3 +174,9 @@ if (getRuntimeEnv("NODE_ENV") !== "production") {
 
 export * from "./cache-helper";
 export default prisma;
+
+// Legacy compatibility aliases for split-schema clients
+export const getPrismaAuth = () => prisma;
+export const getPrismaCore = () => prisma;
+export const getPrismaMedia = () => prisma;
+export const getPrismaAnalytics = () => prisma;
