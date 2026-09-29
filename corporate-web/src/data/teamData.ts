@@ -51,18 +51,18 @@ export const corporateValues: CorporateValue[] = [
 
 export const teamData: TeamMember[] = [
   {
-    id: "carlos-mendoza",
-    name: "Carlos Mendoza R.",
-    role: "Socio Director General & Estrategia",
-    specialty: "M&A, Reestructuración & Finanzas Corporativas",
-    bio: "Ex-consultor senior en firmas globales con más de 20 años asesorando juntas directivas en expansión y optimización de capital.",
-    fullBio: "Carlos Mendoza cuenta con más de dos décadas liderando procesos de fusión, adquisición y reestructuración estratégica para grupos empresariales en América Latina y Europa. Ha participado en comités directivos de más de 30 corporaciones y es docente invitado en escuelas de negocios de alta dirección.",
+    id: "heyber-bohorquez",
+    name: "Heyber Enrique Bohórquez Flórez",
+    role: "Socio Director General & Estrategia Comercial",
+    specialty: "Marketing Estratégico, Negocios Internacionales & Desarrollo Corporativo",
+    bio: "Profesional en Marketing y Negocios Internacionales con amplia experiencia liderando procesos de expansión comercial, posicionamiento de marca y estrategia corporativa.",
+    fullBio: "Heyber Enrique Bohórquez Flórez es Profesional en Marketing y Negocios Internacionales egresado de las Unidades Tecnológicas de Santander (UTS). Con una sólida trayectoria en dirección comercial, desarrollo de negocios y posicionamiento estratégico de marca, lidera la visión corporativa de NEOGESTIÓN enfocada en la expansión de mercados, alianzas estratégicas y la consolidación de la propuesta de valor del ecosistema tecnológico para organizaciones en Colombia y Latinoamérica.",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
-    linkedIn: "https://linkedin.com",
+    linkedIn: "https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co",
     achievements: [
-      "+$450M en transacciones corporativas asesoradas con éxito",
-      "Líder del Comité de Estrategia en NEOGESTIÓN desde su fundación",
-      "Especialista certificado en Gobierno Corporativo y Finanzas",
+      "Profesional en Marketing y Negocios Internacionales — Unidades Tecnológicas de Santander (UTS)",
+      "Líder de la estrategia comercial y de expansión de NEOGESTIÓN",
+      "Especialista en desarrollo de negocios, alianzas corporativas y posicionamiento de marca",
     ],
   },
   {
