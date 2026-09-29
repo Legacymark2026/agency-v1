@@ -68,7 +68,7 @@ export const teamData: TeamMember[] = [
   {
     id: "liliana-lizarazo",
     name: "Liliana Lizarazo",
-    role: "Directora Administrativa y de Operaciones",
+    role: "CEO & Gerente General",
     specialty: "Gestión Organizacional & Optimización de Procesos",
     bio: "Profesional en Administración de Empresas, enfocada en el diseño operativo y la mejora continua de procesos corporativos.",
     fullBio: "Liliana Lizarazo es Profesional en Administración de Empresas y actualmente cursa la carrera de Ingeniería Industrial en la Corporación Universitaria Minuto de Dios (UNIMINUTO). Aporta un enfoque metódico y estructurado a NEOGESTIÓN, liderando la optimización de procesos internos, la gestión de recursos y asegurando la excelencia operativa en la prestación de servicios para nuestros clientes.",
