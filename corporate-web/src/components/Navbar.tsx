@@ -277,7 +277,7 @@ export default function Navbar() {
             </div>
 
             <Link
-              href="/#acceso-plataformas"
+              href="/accesos"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 hover:brightness-110 shadow-sm transition-all hover:scale-105 active:scale-95"
               title="Acceso a Plataformas (Principal & Accesos Especiales)"
             >
@@ -387,7 +387,7 @@ export default function Navbar() {
 
           <div className="pt-4 space-y-2">
             <Link
-              href="/#acceso-plataformas"
+              href="/accesos"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#B08A1A] to-[#D4AF37] text-slate-950 font-black text-sm shadow-md"
             >

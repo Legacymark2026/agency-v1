@@ -104,7 +104,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5">
               <li>
-                <Link href="/#acceso-plataformas" className="text-[#D4AF37] font-bold hover:text-white transition-colors flex items-center gap-1.5">
+                <Link href="/accesos" className="text-[#D4AF37] font-bold hover:text-white transition-colors flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#B08A1A]" />
                   <span>Acceso a Plataformas</span>
                 </Link>
