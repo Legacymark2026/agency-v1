@@ -57,7 +57,7 @@ export const teamData: TeamMember[] = [
     specialty: "Marketing Estratégico, Negocios Internacionales & Desarrollo Corporativo",
     bio: "Profesional en Marketing y Negocios Internacionales con amplia experiencia liderando procesos de expansión comercial, posicionamiento de marca y estrategia corporativa.",
     fullBio: "Heyber Enrique Bohórquez Flórez es Profesional en Marketing y Negocios Internacionales egresado de las Unidades Tecnológicas de Santander (UTS). Con una sólida trayectoria en dirección comercial, desarrollo de negocios y posicionamiento estratégico de marca, lidera la visión corporativa de NEOGESTIÓN enfocada en la expansión de mercados, alianzas estratégicas y la consolidación de la propuesta de valor del ecosistema tecnológico para organizaciones en Colombia y Latinoamérica.",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+    avatar: "/images/heyber-bohorquez.jpeg",
     linkedIn: "https://www.linkedin.com/company/neogestion-software/?originalSubdomain=co",
     achievements: [
       "Profesional en Marketing y Negocios Internacionales — Unidades Tecnológicas de Santander (UTS)",
