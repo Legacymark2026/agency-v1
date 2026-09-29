@@ -2,6 +2,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json tsconfig*.json ./
+COPY packages/vault-client/package.json ./packages/vault-client/
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/service-auth/package.json ./packages/service-auth/
@@ -13,6 +14,7 @@ COPY services/crm-service/package.json ./services/crm-service/
 
 RUN npm ci || npm install
 
+COPY packages/vault-client/ ./packages/vault-client/
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
 COPY packages/service-auth/ ./packages/service-auth/
@@ -22,6 +24,8 @@ COPY packages/openapi/ ./packages/openapi/
 COPY packages/scant/ ./packages/scant/
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 
+WORKDIR /app/packages/vault-client
+RUN npx tsc --outDir dist
 WORKDIR /app/packages/database
 RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npx tsc --outDir dist
@@ -47,7 +51,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+COPY --from=builder /app/packages/vault-client/dist ./packages/vault-client/dist
 COPY --from=builder /app/packages/database/dist ./packages/database/dist
+COPY --from=builder /app/packages/vault-client/package.json ./packages/vault-client/
 COPY --from=builder /app/packages/database/package.json ./packages/database/
 COPY --from=builder /app/packages/events/dist ./packages/events/dist
 COPY --from=builder /app/packages/events/package.json ./packages/events/
