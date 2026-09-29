@@ -39,7 +39,8 @@ RUN npx tsc --outDir dist
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY packages/vault-client/package.json ./packages/vault-client/\nCOPY packages/database/package.json ./packages/database/
+COPY packages/vault-client/package.json ./packages/vault-client/
+COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/observability/package.json ./packages/observability/
 COPY packages/service-auth/package.json ./packages/service-auth/
