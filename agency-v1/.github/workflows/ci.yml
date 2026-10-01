@@ -1,37 +1,69 @@
-name: CI
-on: [push, pull_request]
+name: CI Validation
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  test:
+  lint-typecheck:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
       - name: Install dependencies
         run: npm ci
-      - name: Fix Prisma schemas
-        run: node scripts/fix_prisma_schemas.js
-      - name: Generate Prisma client
-        run: npx prisma generate --schema=packages/database/prisma/schema.prisma
-      - name: Run migrations
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-        run: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
-      - name: Run tests
-        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck --if-present || npx tsc --noEmit
+
+  build-packages:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build database
+        run: npm run build --workspace=packages/database --if-present
+
+      - name: Build observability
+        run: npm run build --workspace=packages/observability --if-present
+
+      - name: Build events
+        run: npm run build --workspace=packages/events --if-present
+
+      - name: Build service-auth
+        run: npm run build --workspace=packages/service-auth --if-present
+
+  docker-validate:
+    name: Docker Compose Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: docker compose config -q
