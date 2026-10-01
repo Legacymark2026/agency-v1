@@ -95,6 +95,29 @@ setupGracefulShutdown(server, async () => {
 });
 
 // EventBus subscriptions for decoupled domain coordination
+eventBus.subscribe("pos.order.created" as any, async (event: any) => {
+  try {
+    if (event.orderId && event.totalAmount) {
+      await prisma.transaction.create({
+        data: {
+          companyId: event.companyId || "default",
+          type: "INCOME",
+          category: "SALES",
+          amount: event.totalAmount,
+          currency: "COP",
+          status: "COMPLETED",
+          reference: `POS-SALE-${event.orderId}`,
+          description: `Venta POS automática - Cliente: ${event.customerName || "Varios"}`,
+          date: new Date(),
+        }
+      });
+      console.log(`[finance-service] Revenue registered for POS sale ${event.orderId}`);
+    }
+  } catch (err: any) {
+    console.warn("[finance-service] Error handling pos.order.created:", err.message);
+  }
+}).catch((err: any) => console.warn("[finance-service] EventBus pos.order.created subscribe warning:", err));
+
 eventBus.subscribe("invoice.paid", async (data) => {
   console.log(`[finance-service] invoice.paid event received`, { invoiceId: (data as any).invoiceId });
 }).catch((err) => console.warn("[finance-service] EventBus subscribe warning:", err));
@@ -115,3 +138,4 @@ eventBus.subscribe("payment.succeeded" as any, async (data: any) => {
 }).catch((err) => console.warn("[finance-service] EventBus payment.succeeded subscribe warning:", err));
 
 export default app as any;
+

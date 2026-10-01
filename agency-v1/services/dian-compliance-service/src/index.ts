@@ -36,6 +36,26 @@ app.get("/health", (_req, res) => {
 });
 
 // Event listener: automatically emit electronic invoice when an invoice is issued
+eventBus.subscribe("pos.order.created" as any, async (event: any) => {
+  try {
+    if (event.orderId && event.totalAmount) {
+      await useCases.emitElectronicInvoice({
+        companyId: event.companyId || "default",
+        prefix: "POS",
+        emitterNit: "901234567-8",
+        emitterName: "LEGACYMARK S.A.S",
+        receiverNit: "222222222222",
+        receiverName: event.customerName || "CONSUMIDOR FINAL",
+        subtotal: event.totalAmount, // Mock simplification
+        vatAmount: 0,
+        items: event.items || [{ name: "Productos Varios", quantity: 1, unitPrice: event.totalAmount, subtotal: event.totalAmount }],
+      });
+    }
+  } catch (err: any) {
+    console.warn("[DianComplianceService] Failed to auto-emit POS invoice:", err.message);
+  }
+});
+
 eventBus.subscribe("invoice.issued" as any, async (event: any) => {
   try {
     if (event.invoiceId && event.subtotal) {
@@ -73,3 +93,4 @@ setupGracefulShutdown(server, async () => {
 });
 
 export default app;
+

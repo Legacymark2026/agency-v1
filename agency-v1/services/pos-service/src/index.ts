@@ -336,6 +336,7 @@ app.post("/api/pos/sync/offline-orders", async (req, res) => {
                 totalAmount: invoice.totalAmount,
                 paymentMethod: order.paymentMethod,
                 customerName: invoice.clientName,
+                items: order.items.map((i: any) => ({ productId: i.productId, warehouseId: i.warehouseId || 'default_warehouse', title: i.title, quantity: i.quantity, unitPrice: i.unitPrice })),
             });
         }
 
@@ -582,6 +583,7 @@ app.post("/api/pos/orders", async (req, res) => {
             totalAmount,
             paymentMethod,
             customerName,
+            items: items.map((i: any) => ({ productId: i.productId, warehouseId: i.warehouseId || 'default_warehouse', title: i.title, quantity: i.quantity, unitPrice: i.unitPrice })),
         });
 
         const receiptTicket = {
@@ -1206,3 +1208,4 @@ process.on("SIGTERM", async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
+
