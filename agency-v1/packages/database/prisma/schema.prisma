@@ -356,6 +356,7 @@ model Company {
   accountingVouchers        AccountingVoucher[]
   chartOfAccounts           ChartOfAccounts[]
   paymentTransactions       PaymentTransaction[]
+  paymentGatewayConfigs     PaymentGatewayConfig[]
 
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -4888,4 +4889,26 @@ model PosCustomer {
 
   @@index([companyId])
   @@map("tbl_pos_customers")
+}
+
+model PaymentGatewayConfig {
+  id                 String   @id @default(uuid())
+  companyId          String   @map("company_id")
+  provider           String   // Ej: STRIPE, WOMPI, MERCADOPAGO
+  publicKey          String?  @map("public_key") // Texto plano (seguro exponer)
+  encryptedSecretKey String?  @map("encrypted_secret_key")
+  encryptedEventsKey String?  @map("encrypted_events_key")
+  iv                 String?  // Vector de inicialización para AES-256-GCM
+  authTag            String?  @map("auth_tag") // Etiqueta de autenticación
+  isActive           Boolean  @default(false) @map("is_active")
+  isTestMode         Boolean  @default(true) @map("is_test_mode")
+  metadata           Json?    // Otros datos (merchantId, terminalId)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, provider])
+  @@index([companyId])
+  @@map("tbl_payment_gateway_configs")
 }

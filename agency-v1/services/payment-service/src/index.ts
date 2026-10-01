@@ -18,6 +18,7 @@ import { PaymentUseCases } from "./core/usecases/payment.usecases";
 import { PrismaPaymentPersistenceAdapter } from "./adapters/prisma-payment.adapter";
 import { EventBusPaymentPublisherAdapter } from "./adapters/eventbus-payment.adapter";
 import { createPaymentRouter } from "./routes/payment.routes";
+import { settingsRouter } from "./routes/settings.routes";
 import { pciDssSanitizerMiddleware } from "./middlewares/sanitizer.middleware";
 import { idempotencyMiddleware } from "./middlewares/idempotency.middleware";
 import { TransactionalOutboxService } from "./services/outbox.service";
@@ -64,6 +65,7 @@ app.get("/ready", (_req, res) => {
 
 // ── Payment Inbound Router ───────────────────────────────────────────────────
 app.use("/api/payments", createPaymentRouter(paymentUseCases));
+app.use("/api/v1/payments/settings", settingsRouter);
 app.use("/api/v1/payments", createPaymentRouter(paymentUseCases));
 
 const server = app.listen(PORT, "0.0.0.0", () => {
