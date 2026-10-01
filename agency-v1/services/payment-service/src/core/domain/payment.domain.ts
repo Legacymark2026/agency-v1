@@ -76,6 +76,10 @@ export class PaymentTransactionDomain {
   get updatedAt(): Date { return this.props.updatedAt; }
 
   public approve(gatewayTxId?: string, approvalCode?: string): PaymentTransactionDomain {
+    if (this.props.status === "APPROVED") return this; // Idempotent
+    if (this.props.status !== "PENDING") {
+      throw new Error(`Invalid state transition: Cannot approve transaction in ${this.props.status} state.`);
+    }
     return new PaymentTransactionDomain({
       ...this.props,
       status: "APPROVED",
@@ -86,6 +90,10 @@ export class PaymentTransactionDomain {
   }
 
   public decline(reason?: string): PaymentTransactionDomain {
+    if (this.props.status === "DECLINED") return this;
+    if (this.props.status !== "PENDING") {
+      throw new Error(`Invalid state transition: Cannot decline transaction in ${this.props.status} state.`);
+    }
     return new PaymentTransactionDomain({
       ...this.props,
       status: "DECLINED",

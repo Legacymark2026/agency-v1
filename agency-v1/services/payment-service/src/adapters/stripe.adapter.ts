@@ -19,6 +19,14 @@ export class StripeAdapter {
     return Boolean(STRIPE_SECRET_KEY && stripeClient);
   }
 
+  public static async getSessionStatus(sessionId: string): Promise<string> {
+    if (!stripeClient) throw new Error("Stripe not configured");
+    const session = await stripeClient.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status === "paid") return "APPROVED";
+    if (session.payment_status === "unpaid" && session.status === "expired") return "DECLINED";
+    return "PENDING";
+  }
+
   public static async createCheckoutSession(params: CreateCheckoutSessionDTO): Promise<{
     sessionId: string;
     url: string;

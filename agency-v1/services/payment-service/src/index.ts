@@ -81,4 +81,11 @@ setInterval(async () => {
   }
 }, OUTBOX_POLL_INTERVAL_MS).unref(); // .unref() so it doesn't block graceful shutdown
 
+// ── Auto-Reconciliation Worker ───────────────────────────────────────────────
+import { ReconciliationWorker } from "./services/reconciliation.service";
+const RECONCILIATION_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+setInterval(() => {
+  ReconciliationWorker.runReconciliationSweep().catch(console.error);
+}, RECONCILIATION_INTERVAL_MS).unref();
+
 export default app;

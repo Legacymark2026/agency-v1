@@ -14,6 +14,23 @@ export class WompiAdapter {
     return Boolean(WOMPI_PUBLIC_KEY && WOMPI_INTEGRITY_SECRET);
   }
 
+  public static async getTransactionStatus(transactionId: string): Promise<string> {
+    try {
+      const pubKey = process.env.WOMPI_PUBLIC_KEY || "";
+      const response = await fetch(`https://production.wompi.co/v1/transactions/${transactionId}`, {
+        headers: { Authorization: `Bearer ${pubKey}` }
+      });
+      if (!response.ok) return "PENDING";
+      const data = await response.json();
+      const status = data?.data?.status;
+      if (status === "APPROVED") return "APPROVED";
+      if (status === "DECLINED" || status === "VOIDED" || status === "ERROR") return "DECLINED";
+      return "PENDING";
+    } catch {
+      return "PENDING";
+    }
+  }
+
   /**
    * Generates Wompi SHA-256 integrity signature.
    * Formula: SHA-256(reference + amountInCents + currency + integritySecret)
