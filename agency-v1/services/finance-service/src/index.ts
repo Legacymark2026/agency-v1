@@ -118,6 +118,30 @@ eventBus.subscribe("pos.order.created" as any, async (event: any) => {
   }
 }).catch((err: any) => console.warn("[finance-service] EventBus pos.order.created subscribe warning:", err));
 
+eventBus.subscribe("payroll.paid" as any, async (payload: any) => {
+  try {
+    const data = payload.data || payload;
+    if (data.payrollId && data.companyId && data.netPay) {
+      await prisma.transaction.create({
+        data: {
+          companyId: data.companyId,
+          type: "EXPENSE",
+          category: "PAYROLL",
+          amount: data.netPay,
+          currency: "COP",
+          status: "COMPLETED",
+          reference: `PAYROLL-${data.payrollId}`,
+          description: `Pago automático de Nómina - Empleado: ${data.employeeId || "Desconocido"}`,
+          date: new Date(),
+        }
+      });
+      console.log(`[finance-service] Expense registered for payroll ${data.payrollId}`);
+    }
+  } catch (err: any) {
+    console.error("[finance-service] Error handling payroll.paid:", err.message);
+  }
+});
+
 eventBus.subscribe("invoice.paid", async (data) => {
   console.log(`[finance-service] invoice.paid event received`, { invoiceId: (data as any).invoiceId });
 }).catch((err) => console.warn("[finance-service] EventBus subscribe warning:", err));
@@ -138,4 +162,5 @@ eventBus.subscribe("payment.succeeded" as any, async (data: any) => {
 }).catch((err) => console.warn("[finance-service] EventBus payment.succeeded subscribe warning:", err));
 
 export default app as any;
+
 

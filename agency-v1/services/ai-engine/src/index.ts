@@ -70,9 +70,31 @@ app.use("/api/v1", governanceRouter);
 app.use(errorHandler);
 
 // ── Event Bus Subscriptions ──────────────────────────────────────────────────
+import { AiService } from "./services/ai.service";
 eventBus.subscribe("message.received", async (payload: any) => {
-  if (payload?.data?.messageId) {
-    console.log(`[ai-engine] Message received event acknowledged: ${payload.data.messageId}`);
+  try {
+    const data = payload.data || payload;
+    if (data.messageId && data.text) {
+      console.log(`[ai-engine] Processing message: ${data.messageId}`);
+      
+      const response = await AiService.runAgent({
+        agentId: "default-sales-agent",
+        companyId: data.companyId || "default",
+        userMessage: data.text,
+        conversationId: data.conversationId || data.messageId,
+      });
+
+      await eventBus.publish("ai.response.generated", {
+        messageId: data.messageId,
+        companyId: data.companyId,
+        response: response?.finalResponse || "Gracias por tu mensaje. Un asesor te contactará pronto.",
+        conversationId: data.conversationId,
+        channel: data.channel
+      });
+      console.log(`[ai-engine] Generated and published AI response for ${data.messageId}`);
+    }
+  } catch (err: any) {
+    console.error(`[ai-engine] Error processing message.received: ${err.message}`);
   }
 });
 
@@ -95,3 +117,4 @@ setupGracefulShutdown(server, async () => {
 });
 
 export default app as any;
+

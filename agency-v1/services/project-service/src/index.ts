@@ -433,6 +433,32 @@ const eventBus = new EventBus(REDIS_URL, "project-service");
 const redisClient = new Redis(REDIS_URL);
 redisClient.on("error", (err) => console.error("[project-service] Redis client error:", err.message));
 
+eventBus.subscribe("deal.won", async (payload: any) => {
+  try {
+    const data = payload.data || payload;
+    if (data.dealId && data.companyId) {
+      await prisma.kanbanProject.create({
+        data: {
+          companyId: data.companyId,
+          name: `Onboarding Cliente: ${data.clientEmail || data.dealId}`,
+          dealId: data.dealId,
+          description: "Proyecto automático generado por cierre de negocio.",
+          columns: {
+            create: [
+              { name: "Recolección de Requisitos", order: 0 },
+              { name: "En Progreso", order: 1 },
+              { name: "Entregado", order: 2 }
+            ]
+          }
+        }
+      });
+      console.log(`[project-service] Auto-created Onboarding Project for won deal: ${data.dealId}`);
+    }
+  } catch (err: any) {
+    console.error("[project-service] Error handling deal.won:", err.message);
+  }
+});
+
 // Sync: when a deal stage changes, update linked tasks
 eventBus.subscribe("deal.stage_changed", async (payload) => {
   try {
@@ -873,3 +899,4 @@ process.on("SIGTERM", async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
+

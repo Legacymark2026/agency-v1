@@ -77,9 +77,23 @@ app.use("/api/webhooks", createWebhooksRouter(eventBus));
 app.use(errorHandler);
 
 // ── EventBus subscriptions ────────────────────────────────────────────────────
-eventBus.subscribe("agent.response_ready", async (payload) => {
-  const conversationId = payload?.data?.conversationId ?? "unknown";
-  console.log(`[inbox-service] AI response ready: ${conversationId}`);
+import { InboxService } from "./services/inbox.service";
+eventBus.subscribe("ai.response.generated", async (payload: any) => {
+  const data = payload.data || payload;
+  if (data.response && data.conversationId) {
+    console.log(`[inbox-service] AI response ready for conv ${data.conversationId}, sending out...`);
+    try {
+      await InboxService.sendMessage({
+        companyId: data.companyId || "default",
+        conversationId: data.conversationId,
+        senderType: "AGENT",
+        text: data.response
+      });
+      console.log(`[inbox-service] Successfully dispatched AI response for conv ${data.conversationId}`);
+    } catch (err: any) {
+      console.error(`[inbox-service] Error sending AI response: ${err.message}`);
+    }
+  }
 });
 
 // ── Server bootstrap ──────────────────────────────────────────────────────────
@@ -95,3 +109,4 @@ setupGracefulShutdown(server, async () => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default app as any;
+
