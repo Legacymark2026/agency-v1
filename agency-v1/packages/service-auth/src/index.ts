@@ -256,3 +256,57 @@ export const setupGracefulShutdown = (
 };
 
 export type { ServiceTokenPayload, ServiceAuthContext };
+
+/**
+ * Middleware: Enforce Multi-Tenant Data Isolation
+ * Reads x-company-id injected by the API Gateway and forces it into req.query and req.body.
+ * This prevents clients from spoofing companyId in the URL parameters.
+ */
+export const tenantContextMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  const headerCompany = req.headers['x-company-id'];
+  if (headerCompany && typeof headerCompany === 'string') {
+    req.query.companyId = headerCompany;
+    if (req.body && typeof req.body === 'object') {
+      req.body.companyId = headerCompany;
+    }
+  }
+  next();
+};
+
+/**
+ * Middleware: Global Error Handler
+ * Standardizes error responses across all microservices and hides stack traces.
+ */
+export const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction): void => {
+  console.error('[GlobalErrorHandler]', err.stack || err.message || err);
+  const status = err.statusCode || err.status || 500;
+  res.status(status).json({
+    success: false,
+    error: err.message || 'Internal Server Error',
+    code: err.code || 'INTERNAL_ERROR',
+  });
+};
+
+
+
+export const validateRequest = (schema: any) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await schema.parseAsync({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      });
+      return next();
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Failed',
+        details: error.errors
+      });
+    }
+  };
+};
+
+
+

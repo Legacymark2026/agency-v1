@@ -9,7 +9,7 @@ try {
   /* optional */
 }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { EventBus } from "@agency/events";
 import express from "express";
 import cors from "cors";
@@ -36,6 +36,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 app.use(metricsMiddleware("payment-service"));
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "5mb" }));
 app.use(pciDssSanitizerMiddleware);
 app.use(idempotencyMiddleware);
@@ -68,6 +69,7 @@ app.use("/api/payments", createPaymentRouter(paymentUseCases));
 app.use("/api/payments/settings", settingsRouter);
 app.use("/api/v1/payments", createPaymentRouter(paymentUseCases));
 
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`💳 Payment Microservice running (Hexagonal 5.0) on port ${PORT}`);
 });

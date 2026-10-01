@@ -16,7 +16,7 @@
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -97,6 +97,7 @@ startNotificationWorker();
 startEmailWorker();
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔔 Notification Service running on port ${PORT}`);
 });

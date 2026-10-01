@@ -3,6 +3,8 @@
  */
 import { Router, Request, Response } from "express";
 import { IInventoryUseCases, IInventoryRepositoryPort } from "../core/ports/inventory.ports";
+import { validateRequest } from "@agency/service-auth";
+import { createWarehouseSchema } from "./inventory.schemas";
 
 export function createInventoryRouter(
   useCases: IInventoryUseCases,
@@ -21,7 +23,7 @@ export function createInventoryRouter(
     }
   });
 
-  router.post("/warehouses", async (req: Request, res: Response) => {
+  router.post("/warehouses", validateRequest(createWarehouseSchema), async (req: Request, res: Response) => {
     try {
       const warehouse = await repo.createWarehouse(req.body);
       res.status(201).json({ success: true, data: warehouse });
@@ -196,3 +198,4 @@ export function createInventoryRouter(
 
   return router;
 }
+

@@ -14,7 +14,7 @@
  */
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import { GrpcServerHelper, PROTO_PATHS } from "@agency/grpc";
 import express from "express";
@@ -199,6 +199,7 @@ grpcServer.start(GRPC_PORT).catch((err: any) => {
 });
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔐 Auth Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Sync)`);
 

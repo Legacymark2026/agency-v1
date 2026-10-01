@@ -7,7 +7,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { trackClick } from "./controllers/click.controller";
 import { processPayout } from "./controllers/payout.controller";
 import { startEventConsumers } from "./events/consumer";
@@ -20,6 +20,7 @@ const PORT = parseInt(process.env.PORT || "4019", 10);
 
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "10mb" }));
 
 // ── Health & Readiness Check ──────────────────────────────────────────────────
@@ -242,6 +243,7 @@ startEventConsumers();
 startReferralReleaseScheduler();
 
 // ── Arrancar Servidor ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Affiliate Service listening at http://localhost:${PORT}`);
 });

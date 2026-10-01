@@ -12,7 +12,7 @@
  */
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown, requireUserOrServiceAuth } from "@agency/service-auth";
+import { setupGracefulShutdown, requireUserOrServiceAuth, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -45,6 +45,7 @@ app.get("/metrics", metricsEndpoint);
 // ── Security headers ───────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 
 // ── Health & Readiness (no auth required) ─────────────────────────────────────
 app.get("/health", (_req, res) => {
@@ -83,6 +84,7 @@ app.use("/api/v1", requireUserOrServiceAuth, financeRouter);
 app.use(errorHandler);
 
 // ── Server startup ─────────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`💰 Finance Service running on port ${PORT}`);
 });

@@ -6,7 +6,7 @@ import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { Pool } from "pg";
 import { z } from "zod";
 import crypto from "crypto";
@@ -43,6 +43,7 @@ pool.on("error", (err) => {
 app.use(helmet());
 app.use(cors({ origin: "*" }));
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 // Catálogos iniciales para sembrar (Seeding)
 const REWARDS_CATALOG = [
@@ -969,6 +970,7 @@ app.post("/api/v1/goldneez-rewards/subscription", async (req, res) => {
 });
 
 // ── Start Server ─────────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`☕ Goldneez Rewards & Business Logic Service running on port ${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/health`);

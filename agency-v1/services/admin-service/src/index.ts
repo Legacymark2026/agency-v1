@@ -4,7 +4,7 @@ import express from "express";
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import cors from "cors";
 import helmet from "helmet";
 import { prisma } from "@agency/database";
@@ -17,6 +17,7 @@ const port = process.env.PORT || 4014;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'admin-service' });
@@ -113,6 +114,7 @@ app.use('/api/diagnostics', (req, res) => { res.status(200).json({ message: '/ap
 app.use('/api/debug', (req, res) => { res.status(200).json({ message: '/api/debug handled by admin-service' }); });
 app.use('/api/admin', (req, res) => { res.status(200).json({ message: '/api/admin fallback handled by admin-service' }); });
 
+app.use(globalErrorHandler);
 const server = app.listen(port, () => {
   console.log(`Admin Service listening at http://localhost:${port}`);
 });

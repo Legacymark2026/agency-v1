@@ -15,7 +15,7 @@
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint, tracingMiddleware } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import cors from "cors";
@@ -112,6 +112,7 @@ app.use((_req, res) => {
 });
 
 // ── Start HTTP Gateway Server ─────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🌐 API Gateway running on port ${PORT}`);
 });

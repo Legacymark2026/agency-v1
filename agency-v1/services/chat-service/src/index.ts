@@ -1,3 +1,4 @@
+import { tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 /**
  * Chat Service — Real-time Multi-tenant Enterprise Chat Microservice
  * ─────────────────────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 // Hexagonal Dependency Injection
 const persistenceAdapter = new PrismaChatPersistenceAdapter();

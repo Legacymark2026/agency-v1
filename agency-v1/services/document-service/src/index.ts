@@ -8,7 +8,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { EventBus } from "@agency/events";
 import { GrpcServerHelper, GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 
 const app = express();
 app.use(metricsMiddleware("document-service"));
@@ -20,6 +20,7 @@ const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok", service: "document-service", timestamp: new Date().toISOString() });
@@ -80,6 +81,7 @@ export const authGrpcClient = GrpcClientHelper.getClient(
   { failureThreshold: 3, resetTimeoutMs: 5000, timeoutMs: 3000 }
 );
 
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📄 Document Service running on port ${PORT} (HTTP) and port ${DOC_GRPC_PORT} (gRPC Sync)`);
 });

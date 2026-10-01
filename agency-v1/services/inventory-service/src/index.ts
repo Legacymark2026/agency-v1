@@ -6,7 +6,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { EventBus } from "@agency/events";
 import { PrismaInventoryAdapter } from "./adapters/inventory-db.adapter";
 import { RedisInventoryEventAdapter } from "./adapters/inventory-event.adapter";
@@ -21,6 +21,7 @@ const eventBus = new EventBus(REDIS_URL, "inventory-service");
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 app.use(metricsMiddleware("inventory-service"));
 app.get("/metrics", metricsEndpoint);
 
@@ -56,6 +57,7 @@ eventBus.subscribe("pos.order.created" as any, async (event: any) => {
   }
 }).catch((err: any) => console.warn("[InventoryService] EventBus subscribe warning:", err));
 
+app.use(globalErrorHandler);
 const server = app.listen(PORT, () => {
   console.log(`[inventory-service] Listening on port ${PORT}`);
 });

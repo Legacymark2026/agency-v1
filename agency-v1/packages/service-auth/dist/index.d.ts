@@ -66,4 +66,16 @@ export declare const idempotencyMiddleware: (req: Request, res: Response, next: 
  */
 export declare const setupGracefulShutdown: (server: import("http").Server, cleanup?: () => Promise<void>, timeoutMs?: number) => void;
 export type { ServiceTokenPayload, ServiceAuthContext };
+/**
+ * Middleware: Enforce Multi-Tenant Data Isolation
+ * Reads x-company-id injected by the API Gateway and forces it into req.query and req.body.
+ * This prevents clients from spoofing companyId in the URL parameters.
+ */
+export declare const tenantContextMiddleware: (req: Request, res: Response, next: NextFunction) => void;
+/**
+ * Middleware: Global Error Handler
+ * Standardizes error responses across all microservices and hides stack traces.
+ */
+export declare const globalErrorHandler: (err: any, req: Request, res: Response, next: NextFunction) => void;
+export declare const validateRequest: (schema: any) => (req: Request, res: Response, next: NextFunction) => Promise<void | Response<any, Record<string, any>>>;
 //# sourceMappingURL=index.d.ts.map

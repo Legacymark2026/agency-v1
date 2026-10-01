@@ -8,7 +8,7 @@ import helmet from "helmet";
 import { prisma } from "@agency/database";
 import { calendarRouter } from "./routes/calendar.routes";
 import { errorHandler } from "./middlewares/calendar.middleware";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 
 const app = express();
 app.use(metricsMiddleware("calendar-service"));
@@ -18,6 +18,7 @@ const port = process.env.PORT || 4008;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok", service: "calendar-service" });
@@ -35,6 +36,7 @@ app.get("/ready", async (_req, res) => {
 app.use("/api/v1", calendarRouter);
 app.use(errorHandler);
 
+app.use(globalErrorHandler);
 const server = app.listen(port, () => {
   console.log(`Calendar Service listening at http://localhost:${port}`);
 });

@@ -14,7 +14,7 @@
  */
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import { GrpcClientHelper, PROTO_PATHS } from "@agency/grpc";
 import { serveServiceDocs } from "@agency/scant";
@@ -58,6 +58,7 @@ const AUTH_GRPC_URL = process.env.AUTH_GRPC_URL || "auth-service:50051";
 app.use(metricsMiddleware("crm-service"));
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "5mb" }));
 
 // ── Interactive API Documentation (Swagger via Scant) ─────────────────────────
@@ -123,6 +124,7 @@ startMessageRelayWorker().catch((err) => {
 });
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📊 CRM Service running on port ${PORT} (HTTP) and port ${CRM_GRPC_PORT} (gRPC Sync)`);
 });

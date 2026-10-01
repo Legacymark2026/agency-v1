@@ -1,3 +1,4 @@
+import { tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 /**
  * Feed Service — Enterprise Corporate Publications & Social Feed Microservice
  * ─────────────────────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 // Hexagonal Dependency Injection
 const repository = new PrismaFeedRepositoryAdapter();
@@ -40,7 +42,8 @@ app.use("/api/feed", createFeedRouter(feedUseCases));
 app.use("/api/v1/feed", createFeedRouter(feedUseCases));
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
+  app.use(globalErrorHandler);
+app.listen(PORT, () => {
     console.log(`[FeedService] Running on port ${PORT}`);
   });
 }

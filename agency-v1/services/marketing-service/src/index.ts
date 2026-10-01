@@ -29,6 +29,7 @@ const PORT = parseInt(process.env.PORT || "4009", 10);
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "10mb" }));
 
 // ─── Health & Readiness ───────────────────────────────────────────────────────
@@ -159,6 +160,7 @@ import { MarketingService } from "./services/marketing.service";
 
 app.use(errorHandler);
 
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Marketing Service (Mass Email Platform v2.0) listening at http://localhost:${PORT}`);
 });

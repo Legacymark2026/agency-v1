@@ -6,7 +6,7 @@
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -22,6 +22,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "5mb" }));
 
 // ── Health & Readiness ───────────────────────────────────────────────────────
@@ -854,6 +855,7 @@ export const authGrpcClient = GrpcClientHelper.getClient(
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`📋 Project Service running on port ${PORT} (HTTP) and port ${PROJECT_GRPC_PORT} (gRPC Sync)`);
   console.log(`   Models: KanbanProject, KanbanTask, KanbanSwimlane, KanbanComment, KanbanAuditLog`);

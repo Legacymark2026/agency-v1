@@ -6,7 +6,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { EventBus } from "@agency/events";
 import { PrismaDianAdapter } from "./adapters/dian-db.adapter";
 import { RedisDianEventAdapter } from "./adapters/dian-event.adapter";
@@ -21,6 +21,7 @@ const eventBus = new EventBus(REDIS_URL, "dian-compliance-service");
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 app.use(metricsMiddleware("dian-compliance-service"));
 app.get("/metrics", metricsEndpoint);
 
@@ -55,6 +56,7 @@ eventBus.subscribe("invoice.issued" as any, async (event: any) => {
   }
 }).catch((err: any) => console.warn("[DianComplianceService] EventBus subscribe warning:", err));
 
+app.use(globalErrorHandler);
 const server = app.listen(PORT, () => {
   console.log(`[dian-compliance-service] Listening on port ${PORT}`);
 });

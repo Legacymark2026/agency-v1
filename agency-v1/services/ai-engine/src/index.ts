@@ -15,7 +15,7 @@
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -37,6 +37,7 @@ const PORT = parseInt(process.env.PORT || "4004", 10);
 app.use(metricsMiddleware("ai-engine"));
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "10mb" }));
 
 // ── Health & Readiness Checks ────────────────────────────────────────────────
@@ -82,6 +83,7 @@ eventBus.subscribe("workflow.ai_step", async (payload: any) => {
 });
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`🧠 AI Engine running on port ${PORT}`);
 });

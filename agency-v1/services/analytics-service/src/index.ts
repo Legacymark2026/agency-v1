@@ -14,7 +14,7 @@
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -36,6 +36,7 @@ const PORT = parseInt(process.env.PORT || "4013", 10);
 app.use(metricsMiddleware("analytics-service"));
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "5mb" }));
 
 // ── Health & Metrics Checks ──────────────────────────────────────────────────
@@ -120,6 +121,7 @@ async function runPartitionMaintenance(): Promise<void> {
 }
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", async () => {
   console.log(`📈 Analytics Service running on port ${PORT}`);
 

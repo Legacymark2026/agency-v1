@@ -15,7 +15,7 @@
 
 try { require("@agency/observability/register"); } catch { /* optional */ }
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -40,6 +40,7 @@ const PORT = parseInt(process.env.PORT || "4003", 10);
 app.use(metricsMiddleware("automation-service"));
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "10mb" }));
 
 // ── Health & Readiness Checks ────────────────────────────────────────────────
@@ -118,6 +119,7 @@ eventBus.subscribe("deal.stage_changed", async (payload: any) => {
 });
 
 // ── Start HTTP Server ────────────────────────────────────────────────────────
+app.use(globalErrorHandler);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`⚡ Automation Service running on port ${PORT}`);
 });

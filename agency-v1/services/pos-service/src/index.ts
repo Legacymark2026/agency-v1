@@ -8,7 +8,7 @@ import express from "express";
 try {
   require("@agency/observability/register");
 } catch { /* observability optional */ }
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import cors from "cors";
 import helmet from "helmet";
 import crypto from "crypto";
@@ -46,6 +46,7 @@ if (process.env.NODE_ENV !== "test") {
 
 app.use(helmet());
 app.use(cors());
+app.use(tenantContextMiddleware);
 app.use(express.json({ limit: "10mb" }));
 app.get("/health", (_req, res) => {
     res.json({ status: "healthy", service: "pos-service" });
@@ -1190,7 +1191,8 @@ app.post("/api/pos/payments/verify-transfer", async (req, res) => {
 });
 
 if (process.env.NODE_ENV !== "test") {
-    const server = app.listen(PORT, "0.0.0.0", () => {
+    app.use(globalErrorHandler);
+const server = app.listen(PORT, "0.0.0.0", () => {
         console.log(`🛍️ Enterprise POS Service running on port ${PORT}`);
     });
     setupGracefulShutdown(server);

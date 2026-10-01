@@ -6,7 +6,7 @@ try {
 import cors from 'cors';
 import helmet from 'helmet';
 import { prisma } from '@agency/database';
-import { setupGracefulShutdown } from "@agency/service-auth";
+import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 
 const app = express();
 app.use(metricsMiddleware("integration-service"));
@@ -16,6 +16,7 @@ const port = process.env.PORT || 4010;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(tenantContextMiddleware);
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -483,6 +484,7 @@ app.post('/api/integrations/domains', async (req, res) => {
   }
 });
 
+app.use(globalErrorHandler);
 const server = app.listen(port, () => {
   console.log(`Integration Service listening at http://localhost:${port}`);
 });
