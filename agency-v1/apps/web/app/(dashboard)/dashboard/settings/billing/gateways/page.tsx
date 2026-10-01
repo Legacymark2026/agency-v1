@@ -32,7 +32,7 @@ export default function GatewaysSettingsPage() {
   const fetchGateways = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/v1/payments/settings/gateways");
+      const res = await fetch("/api/payments/settings/gateways");
       if (res.ok) {
         const data = await res.json();
         setGateways(data.gateways || []);
@@ -50,7 +50,7 @@ export default function GatewaysSettingsPage() {
 
   const handleSave = async (payload: GatewayConfig) => {
     try {
-      const res = await fetch("/api/v1/payments/settings/gateways", {
+      const res = await fetch("/api/payments/settings/gateways", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

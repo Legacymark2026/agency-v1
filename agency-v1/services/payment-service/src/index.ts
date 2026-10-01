@@ -65,7 +65,7 @@ app.get("/ready", (_req, res) => {
 
 // ── Payment Inbound Router ───────────────────────────────────────────────────
 app.use("/api/payments", createPaymentRouter(paymentUseCases));
-app.use("/api/v1/payments/settings", settingsRouter);
+app.use("/api/payments/settings", settingsRouter);
 app.use("/api/v1/payments", createPaymentRouter(paymentUseCases));
 
 const server = app.listen(PORT, "0.0.0.0", () => {
