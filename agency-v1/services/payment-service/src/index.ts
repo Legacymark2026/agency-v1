@@ -20,6 +20,7 @@ import { EventBusPaymentPublisherAdapter } from "./adapters/eventbus-payment.ada
 import { createPaymentRouter } from "./routes/payment.routes";
 import { pciDssSanitizerMiddleware } from "./middlewares/sanitizer.middleware";
 import { idempotencyMiddleware } from "./middlewares/idempotency.middleware";
+import { TransactionalOutboxService } from "./services/outbox.service";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4022", 10);
@@ -66,5 +67,18 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 setupGracefulShutdown(server, async () => {
   console.log("[payment-service] Shutting down gracefully...");
 });
+
+// ── Transactional Outbox Recovery Poller ─────────────────────────────────────
+const OUTBOX_POLL_INTERVAL_MS = 30_000; // every 30 seconds
+setInterval(async () => {
+  try {
+    const processed = await TransactionalOutboxService.processPendingOutboxQueue(25);
+    if (processed > 0) {
+      console.log(`[Outbox] Recovered ${processed} pending payment events.`);
+    }
+  } catch (err: any) {
+    console.warn("[Outbox] Poller sweep error:", err.message);
+  }
+}, OUTBOX_POLL_INTERVAL_MS).unref(); // .unref() so it doesn't block graceful shutdown
 
 export default app;

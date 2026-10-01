@@ -29,15 +29,36 @@ export class WompiAdapter {
   }
 
   /**
-   * Verifies incoming webhook checksum from Wompi.
+   * Verifies incoming Wompi webhook signature.
+   * Reference: https://docs.wompi.co/docs/en/webhooks
+   * Formula: SHA256(transaction.id + transaction.status + transaction.amount_in_cents + timestamp + eventsSecret)
    */
-  public static verifyWebhookChecksum(
-    transactionData: { id: string; status: string; amount_in_cents: number },
-    timestamp: number,
-    receivedChecksum: string
+  public static verifyWebhookSignature(
+    payload: {
+      data: { transaction: { id: string; status: string; amount_in_cents: number } };
+      timestamp: number;
+      signature: { checksum: string };
+    }
   ): boolean {
-    const raw = `${transactionData.id}${transactionData.status}${transactionData.amount_in_cents}${timestamp}${WOMPI_INTEGRITY_SECRET}`;
+    const eventsSecret = process.env.WOMPI_EVENTS_SECRET || WOMPI_INTEGRITY_SECRET;
+    if (!eventsSecret) {
+      console.warn("[WompiAdapter] WOMPI_EVENTS_SECRET not configured — webhook validation skipped (insecure).");
+      return true; // Degraded mode: allow but log warning
+    }
+
+    const { transaction } = payload.data;
+    const raw = `${transaction.id}${transaction.status}${transaction.amount_in_cents}${payload.timestamp}${eventsSecret}`;
     const calculated = crypto.createHash("sha256").update(raw).digest("hex");
-    return calculated === receivedChecksum;
+
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(calculated, "hex"),
+      Buffer.from(payload.signature.checksum, "hex")
+    );
+
+    if (!isValid) {
+      console.error("[WompiAdapter] ❌ Webhook signature INVALID — potential spoofing attempt detected.");
+    }
+
+    return isValid;
   }
 }

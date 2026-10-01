@@ -8,7 +8,7 @@
  * 3. Background poller recovers any failed or pending events (Dead-Letter Queue policy).
  */
 import { prisma } from "@agency/database";
-import { paymentEventBus } from "./payment.service";
+import { paymentEventBus } from "../infrastructure/event-bus";
 import crypto from "crypto";
 
 export interface OutboxEventRecord {

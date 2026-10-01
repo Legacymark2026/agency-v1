@@ -131,6 +131,16 @@ export class PaymentUseCases implements IPaymentUseCases {
     }
 
     if (prov === "WOMPI") {
+      // Verify webhook authenticity before processing
+      if (payload?.signature && payload?.timestamp) {
+        const isValid = WompiAdapter.verifyWebhookSignature(payload);
+        if (!isValid) {
+          throw new Error("Invalid Wompi webhook signature — request rejected.");
+        }
+      } else {
+        console.warn("[PaymentUseCases] Wompi webhook received without signature fields — processing in degraded mode.");
+      }
+
       const event = payload?.data?.transaction;
       if (event && payload?.event === "transaction.updated") {
         const ref = event.reference;

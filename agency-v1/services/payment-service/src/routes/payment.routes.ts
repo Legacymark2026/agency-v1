@@ -68,6 +68,8 @@ export function createPaymentRouter(useCases: IPaymentUseCases): Router {
   router.post("/webhooks/:provider", async (req: Request, res: Response) => {
     try {
       const provider = String(req.params.provider);
+      // NOTE: For Stripe, the payload must be received as a raw buffer for signature verification.
+      // Wompi signatures are embedded in the body payload itself.
       const signature = (req.headers["stripe-signature"] || req.headers["x-signature"] || "") as string;
       const result = await useCases.handleWebhook(provider, req.body, signature);
       res.json({ success: true, ...result });

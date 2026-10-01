@@ -1,4 +1,9 @@
 /**
+ * @deprecated Este archivo es código legado y será eliminado en v2.0.
+ * Toda la lógica de dominio ha sido migrada a src/core/usecases/payment.usecases.ts
+ * La instancia de paymentEventBus ahora está en src/infrastructure/event-bus.ts
+ * No agregar nueva funcionalidad aquí.
+ * 
  * Payment Service Core Domain Logic
  * ─────────────────────────────────────────────────────────────────────────────
  * Decoupled orchestration for all payment providers.

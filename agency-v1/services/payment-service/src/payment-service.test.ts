@@ -2,7 +2,10 @@
  * Payment Service — Hexagonal Unit Tests (Zero DB & Network Dependencies)
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { resetIdempotencyCache } from './middlewares/idempotency.middleware';
+import { maskPAN, sanitizePayloadRecursively } from './middlewares/sanitizer.middleware';
+import { WompiAdapter } from './adapters/wompi.adapter';
 import { PaymentTransactionDomain } from "./core/domain/payment.domain";
 import { PaymentUseCases } from "./core/usecases/payment.usecases";
 import {
@@ -74,5 +77,48 @@ describe("Payment Service — Hexagonal Core Domain & UseCases", () => {
     expect(session.reference).toBeDefined();
     expect(session.url).toBeDefined();
     expect(mockPersistence.saveTransaction).toHaveBeenCalled();
+  });
+});
+
+describe('PCI-DSS PAN Masker', () => {
+  it('masks a 16-digit card number correctly (BIN + Last 4)', () => {
+    const masked = maskPAN('4111 1111 1111 1111');
+    expect(masked).toBe('411111******1111');
+  });
+
+  it('redacts CVV fields from payload', () => {
+    const sanitized = sanitizePayloadRecursively({ cvv: '123', amount: 100 });
+    expect(sanitized.cvv).toBe('[REDACTED_SAD]');
+    expect(sanitized.amount).toBe(100);
+  });
+});
+
+describe('PaymentTransactionDomain Extra', () => {
+  it('throws if amount is zero or negative', () => {
+    expect(() => PaymentTransactionDomain.create({
+      companyId: 'co1', reference: 'REF-1', amount: 0,
+      currency: 'COP', provider: 'BOLD',
+    })).toThrow('Payment amount must be greater than 0');
+  });
+
+  it('transitions to APPROVED state correctly', () => {
+    const tx = PaymentTransactionDomain.create({
+      companyId: 'co1', reference: 'REF-2', amount: 50000,
+      currency: 'COP', provider: 'WOMPI',
+    });
+    const approved = tx.approve('gw-tx-123', 'APPR-001');
+    expect(approved.status).toBe('APPROVED');
+  });
+});
+
+describe('Wompi Webhook Security', () => {
+  it('rejects payloads with invalid checksum', () => {
+    process.env.WOMPI_EVENTS_SECRET = 'test-secret';
+    const isValid = WompiAdapter.verifyWebhookSignature({
+      data: { transaction: { id: 'txn_1', status: 'APPROVED', amount_in_cents: 100000 } },
+      timestamp: 1700000000,
+      signature: { checksum: 'deadbeef00000000000000000000000000000000000000000000000000000000' },
+    });
+    expect(isValid).toBe(false);
   });
 });
