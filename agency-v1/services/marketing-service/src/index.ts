@@ -186,3 +186,20 @@ process.on("SIGTERM", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
+
+import { EventBus } from '@agency/events';
+import { SuppressionService } from './services/compliance.service';
+const eventBus = new EventBus(process.env.REDIS_URL || 'redis://localhost:6379', 'marketing-service');
+
+eventBus.subscribe('deal.won' as any, async (payload: any) => {
+  try {
+    const { companyId, clientEmail } = payload;
+    if (companyId && clientEmail) {
+      await SuppressionService.addToSuppression(companyId, clientEmail, 'Deal Won - Auto Suppressed');
+      console.log([marketing-service] Auto-suppressed marketing for won deal: );
+    }
+  } catch (error: any) {
+    console.error('[marketing-service] Failed to handle deal.won:', error.message);
+  }
+}).catch((err: any) => console.error('[marketing-service] deal.won subscription failed:', err));
+

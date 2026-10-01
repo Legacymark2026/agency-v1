@@ -377,6 +377,7 @@ dealsRouter.patch("/:id/stage", async (req: Request, res: Response) => {
         dealId: deal.id,
         value: deal.value,
         companyId: deal.companyId,
+        clientEmail: deal.contactEmail,
       }).catch((e) => logger.error("[deals] failed to publish deal.won", { error: String(e) }));
     }
 
@@ -555,3 +556,4 @@ dealsRouter.post("/:dealId/invoices", async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
+

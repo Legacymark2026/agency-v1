@@ -37,7 +37,7 @@ export function startEventConsumers() {
   }).catch(err => console.error("[EventConsumer] Click registration subscription failed:", err));
 
   // 2. Consumidor: order.completed (Atribución e Idempotencia de Comisión)
-  eventBus.subscribe("order.completed", async (payload: EventPayload) => {
+  const handleOrderCompleted = async (payload: EventPayload) => {
     const { orderId, id, userId, amount, orderAmount, affiliateCode } = payload.data as {
       orderId?: string;
       id?: string;
@@ -125,7 +125,9 @@ export function startEventConsumers() {
       console.error(`[EventConsumer] Error attributing commission for order ${actualOrderId}:`, err);
       throw err; // El EventBus se encargará de reintentar
     }
-  }).catch(err => console.error("[EventConsumer] order.completed subscription failed:", err));
+  };
+  eventBus.subscribe("order.completed", handleOrderCompleted).catch(err => console.error("[EventConsumer] order.completed subscription failed:", err));
+  eventBus.subscribe("pos.order.created", handleOrderCompleted).catch(err => console.error("[EventConsumer] pos.order.created subscription failed:", err));
 
   // 3. Consumidor: order.refunded (Reversión de Comisión)
   eventBus.subscribe("order.refunded", async (payload: EventPayload) => {
@@ -165,3 +167,4 @@ export function startEventConsumers() {
     }
   }).catch(err => console.error("[EventConsumer] order.refunded subscription failed:", err));
 }
+
