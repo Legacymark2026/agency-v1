@@ -26,6 +26,7 @@ const NAV_GROUPS: NavGroup[] = [
             { name: "Equipo & Roles", href: "/dashboard/settings/members", icon: Users },
             { name: "Roles y Permisos (RBAC)", href: "/dashboard/settings/roles", icon: Shield },
             { name: "Facturación & Plan B2B", href: "/dashboard/settings/billing", icon: CreditCard },
+            { name: "Pasarelas de Pago", href: "/dashboard/settings/billing/gateways", icon: CreditCard },
             { name: "Biblioteca de Integraciones", href: "/dashboard/admin/marketing/settings", icon: Blocks },
         ]
     },
