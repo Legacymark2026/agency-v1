@@ -7,21 +7,21 @@
 import crypto from "crypto";
 import { CreatePOSPaymentDTO, UnifiedPaymentTransaction } from "../types/payment.types";
 
-const HMAC_SECRET = (() => {
+function getHmacSecret(): string {
   const secret = process.env.PAYMENT_HMAC_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
-      throw new Error("[FATAL SECURITY ERROR] PAYMENT_HMAC_SECRET must be configured in production.");
+      throw new Error("[PAYMENT] PAYMENT_HMAC_SECRET is not configured. Please set this environment variable before processing payments.");
     }
     return "legacymark-dev-ephemeral-pos-secret-32-chars!";
   }
   return secret;
-})();
+}
 
 export class BoldPosAdapter {
   public static computeHmacSignature(reference: string, amount: number, provider: string, approvalCode: string, timestamp: string): string {
     const raw = `${reference}|${amount}|COP|${provider}|${approvalCode}|${timestamp}`;
-    return crypto.createHmac("sha256", HMAC_SECRET).update(raw).digest("hex");
+    return crypto.createHmac("sha256", getHmacSecret()).update(raw).digest("hex");
   }
 
   public static createPOSTransaction(payload: CreatePOSPaymentDTO): UnifiedPaymentTransaction {
