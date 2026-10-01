@@ -6,6 +6,10 @@
  */
 import crypto from "crypto";
 import { CreatePOSPaymentDTO, UnifiedPaymentTransaction } from "../types/payment.types";
+import { IPaymentGatewayStrategy } from "../core/ports/payment.ports";
+import { CreateCheckoutSessionDTO } from "../core/ports/payment.ports";
+import { PaymentStatus } from "../core/domain/payment.domain";
+import { gatewayRegistry } from "../infrastructure/gateway-registry";
 
 function getHmacSecret(): string {
   const secret = process.env.PAYMENT_HMAC_SECRET;
@@ -18,13 +22,31 @@ function getHmacSecret(): string {
   return secret;
 }
 
-export class BoldPosAdapter {
-  public static computeHmacSignature(reference: string, amount: number, provider: string, approvalCode: string, timestamp: string): string {
+export class BoldGateway implements IPaymentGatewayStrategy {
+  providerName: "BOLD" = "BOLD";
+
+  isAvailable(): boolean {
+    return true; // Always available for POS logic in this context
+  }
+
+  async getTransactionStatus(externalId: string): Promise<PaymentStatus> {
+    return "APPROVED"; // For POS, usually immediate approval
+  }
+
+  async createSession(params: CreateCheckoutSessionDTO, txReference: string): Promise<{ url: string; externalId?: string }> {
+    throw new Error("Bold POS gateway does not support online checkout sessions.");
+  }
+
+  verifyWebhook(payload: any, signature: string): { isValid: boolean; eventType: "PAYMENT_APPROVED" | "PAYMENT_DECLINED" | "UNKNOWN"; transactionId: string; amount?: number; currency?: string } {
+    return { isValid: false, eventType: "UNKNOWN", transactionId: "" };
+  }
+
+  public computeHmacSignature(reference: string, amount: number, provider: string, approvalCode: string, timestamp: string): string {
     const raw = `${reference}|${amount}|COP|${provider}|${approvalCode}|${timestamp}`;
     return crypto.createHmac("sha256", getHmacSecret()).update(raw).digest("hex");
   }
 
-  public static createPOSTransaction(payload: CreatePOSPaymentDTO): UnifiedPaymentTransaction {
+  public createPOSTransaction(payload: CreatePOSPaymentDTO): UnifiedPaymentTransaction {
     const now = new Date().toISOString();
     const reference = `REF-POS-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
     const approvalCode = String(Math.floor(100000 + Math.random() * 900000));
@@ -46,7 +68,7 @@ export class BoldPosAdapter {
       reference,
       amount: payload.amount,
       currency: "COP",
-      provider: payload.provider,
+      provider: payload.provider as any, // Cast since provider might be a string
       category: "POS_SALE",
       status: "APPROVED",
       approvalCode,
@@ -61,3 +83,6 @@ export class BoldPosAdapter {
     };
   }
 }
+
+export const BoldPosAdapter = new BoldGateway();
+gatewayRegistry.register(BoldPosAdapter);

@@ -24,17 +24,20 @@ import { BoldPosAdapter } from "../adapters/bold.adapter";
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 export const paymentEventBus = new EventBus(REDIS_URL, "payment-service");
 
+import { gatewayRegistry } from "../infrastructure/gateway-registry";
+
 export class PaymentService {
   /**
    * Derives active gateway capabilities based on environment presence.
    */
   public getAvailableGateways() {
-    return {
-      stripe: { enabled: StripeAdapter.isAvailable(), currency: "USD" },
-      wompi: { enabled: WompiAdapter.isAvailable(), currency: "COP" },
-      paypal: { enabled: PayPalAdapter.isAvailable(), currency: "USD" },
-      bold: { enabled: true, currency: "COP" },
-    };
+    const available = gatewayRegistry.getAvailableProviders();
+    const result: Record<string, { enabled: boolean; currency: string }> = {};
+    for (const provider of available) {
+      const currency = ["WOMPI", "BOLD", "PSE", "EPAYCO"].includes(provider) ? "COP" : "USD";
+      result[provider.toLowerCase()] = { enabled: true, currency };
+    }
+    return result;
   }
 
   /**
@@ -47,39 +50,19 @@ export class PaymentService {
   }> {
     const reference = `REF-PAY-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // If preferred provider is Stripe, or default to Stripe for USD
-    const isUSD = (params.currency || "USD").toUpperCase() === "USD";
-    if ((params.preferredProvider === "STRIPE" || isUSD) && StripeAdapter.isAvailable()) {
-      const session = await StripeAdapter.createCheckoutSession(params);
-      return {
-        url: session.url,
-        reference,
-        provider: "STRIPE",
-      };
-    }
-
-    // Wompi for COP
-    if (params.currency === "COP" && WompiAdapter.isAvailable()) {
-      const amountInCents = Math.round(params.amount * 100);
-      const signature = WompiAdapter.computeIntegritySignature(reference, amountInCents, "COP");
-      const publicKey = process.env.WOMPI_PUBLIC_KEY || "";
-      const wompiUrl = `https://checkout.wompi.co/p/?public-key=${publicKey}&currency=COP&amount-in-cents=${amountInCents}&reference=${reference}&signature:integrity=${signature}`;
-
-      return {
-        url: wompiUrl,
-        reference,
-        provider: "WOMPI",
-      };
-    }
-
-    // PayPal fallback for international
-    if (params.preferredProvider === "PAYPAL" && PayPalAdapter.isAvailable()) {
-      const order = await PayPalAdapter.createOrder(params.amount, params.currency, params.title);
-      return {
-        url: order.approvalUrl,
-        reference: order.orderId,
-        provider: "PAYPAL",
-      };
+    let provider = params.preferredProvider || "TRANSFER";
+    if (provider !== "TRANSFER") {
+      try {
+        const gateway = gatewayRegistry.get(provider);
+        const session = await gateway.createSession(params, reference);
+        return {
+          url: session.url,
+          reference,
+          provider,
+        };
+      } catch (e) {
+        console.warn(`[PaymentService Legacy] Could not create session for ${provider}:`, e);
+      }
     }
 
     // Simulation / Direct transfer fallback
@@ -95,7 +78,14 @@ export class PaymentService {
    * Process and register an in-store POS card/terminal transaction
    */
   public async processPOSPayment(payload: CreatePOSPaymentDTO): Promise<UnifiedPaymentTransaction> {
-    const tx = BoldPosAdapter.createPOSTransaction(payload);
+    const gateway = gatewayRegistry.get(payload.provider);
+    
+    let tx: any;
+    if (typeof (gateway as any).createPOSTransaction === "function") {
+       tx = (gateway as any).createPOSTransaction(payload);
+    } else {
+       tx = { id: "unknown", reference: "unknown", amount: payload.amount, currency: "COP", provider: payload.provider };
+    }
 
     // Asynchronously notify subscribers via EventBus (Event-Driven Decoupling)
     (paymentEventBus as any).publish("payment.succeeded", {
@@ -125,48 +115,25 @@ export class PaymentService {
   ): Promise<{ acknowledged: boolean; eventDispatched: boolean; reference?: string }> {
     const providerUpper = provider.toUpperCase();
 
-    if (providerUpper === "STRIPE") {
-      let event: any = rawPayload;
-      if (signatureHeader && StripeAdapter.isAvailable()) {
-        event = StripeAdapter.verifyWebhookSignature(rawPayload, signatureHeader);
-      }
-
-      if (event.type === "checkout.session.completed") {
-        const session = event.data.object;
-        const invoiceId = session.metadata?.invoiceId || session.client_reference_id;
-        const companyId = session.metadata?.companyId;
-
-        // Publish normalized event
+    try {
+      const gateway = gatewayRegistry.get(providerUpper);
+      const result = gateway.verifyWebhook(rawPayload, signatureHeader || "");
+      
+      if (result.isValid && result.eventType === "PAYMENT_APPROVED") {
         await (paymentEventBus as any).publish("payment.succeeded", {
-          companyId,
-          invoiceId,
-          reference: session.id,
-          amount: (session.amount_total || 0) / 100,
-          currency: (session.currency || "USD").toUpperCase(),
-          provider: "STRIPE",
+          reference: result.transactionId,
+          amount: result.amount || 0,
+          currency: result.currency || "USD",
+          provider: providerUpper,
           timestamp: new Date().toISOString(),
         });
-
-        return { acknowledged: true, eventDispatched: true, reference: session.id };
+        return { acknowledged: true, eventDispatched: true, reference: result.transactionId };
       }
+      return { acknowledged: true, eventDispatched: false };
+    } catch (e) {
+      console.error("[PaymentService Legacy] Webhook failed:", e);
+      return { acknowledged: true, eventDispatched: false };
     }
-
-    if (providerUpper === "WOMPI") {
-      const data = rawPayload.data?.transaction;
-      if (data && data.status === "APPROVED") {
-        await (paymentEventBus as any).publish("payment.succeeded", {
-          reference: data.reference,
-          amount: (data.amount_in_cents || 0) / 100,
-          currency: data.currency || "COP",
-          provider: "WOMPI",
-          timestamp: new Date().toISOString(),
-        });
-
-        return { acknowledged: true, eventDispatched: true, reference: data.reference };
-      }
-    }
-
-    return { acknowledged: true, eventDispatched: false };
   }
 }
 

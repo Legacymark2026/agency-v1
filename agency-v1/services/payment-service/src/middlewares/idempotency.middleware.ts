@@ -29,7 +29,7 @@ function getRedis(): Redis {
 }
 
 // In-memory fallback for when Redis is unavailable
-const LOCAL_CACHE = new Map<string, { statusCode: number; body: any; requestHash: string; ts: number }>();
+const LOCAL_CACHE = new Map<string, { statusCode: number; body: any; requestHash: string; timestamp: number }>();
 const LOCAL_LOCKS = new Set<string>();
 
 interface CachedResponse {

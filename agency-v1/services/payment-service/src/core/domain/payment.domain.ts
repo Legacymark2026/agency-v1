@@ -13,7 +13,17 @@ export type PaymentProvider =
   | "REDEBAN"
   | "CREDIBANCO"
   | "TRANSFER"
-  | "CASH";
+  | "CASH"
+  | "EPAYCO"
+  | "PAYU"
+  | "PLACETOPAY"
+  | "KUSHKI"
+  | "DLOCAL"
+  | "TWOCHECKOUT"
+  | "PADDLE"
+  | "LEMONSQUEEZY"
+  | "REBILL"
+  | "TRELI";
 
 export type PaymentStatus =
   | "PENDING"

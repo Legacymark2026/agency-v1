@@ -7,19 +7,7 @@
 import { prisma } from "@agency/database";
 import { PaymentTransactionDomain } from "../core/domain/payment.domain";
 import { PrismaPaymentPersistenceAdapter } from "../adapters/prisma-payment.adapter";
-import { StripeAdapter } from "../adapters/stripe.adapter";
-import { WompiAdapter } from "../adapters/wompi.adapter";
-
-// Ensure this file uses the correct pubsub or outbox service in the future.
-// In the prompt, paymentEventBus from "../infrastructure/event-bus" is used,
-// but looking at index.ts, we have EventBus from "@agency/events". 
-// Since we don't have the full tree, I will use a dummy or create the import from what's given.
-// Wait, index.ts uses:
-// import { EventBus } from "@agency/events";
-// const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
-// const eventBus = new EventBus(REDIS_URL, "payment-service");
-// So we can do the same, or just mock paymentEventBus if it doesn't exist.
-// Based on the user instructions, I'll put exact code.
+import { gatewayRegistry } from "../infrastructure/gateway-registry";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 import { EventBus } from "@agency/events";
@@ -49,22 +37,22 @@ export class ReconciliationWorker {
         let actualStatus = "PENDING";
 
         // Poll gateway
-        if (row.provider === "STRIPE" && row.gatewayTransactionId) {
-           actualStatus = await StripeAdapter.getSessionStatus(row.gatewayTransactionId);
-        } else if (row.provider === "WOMPI" && row.gatewayTransactionId) {
-           actualStatus = await WompiAdapter.getTransactionStatus(row.gatewayTransactionId);
+        if (row.provider && row.gatewayTransactionId) {
+           try {
+             const gateway = gatewayRegistry.get(row.provider);
+             actualStatus = await gateway.getTransactionStatus(row.gatewayTransactionId);
+           } catch (e) {
+             console.warn(`[Reconciliation] Error getting status for ${row.provider}:`, e);
+           }
         }
         
         // If state changed to APPROVED, enforce transition and trigger Outbox/EventBus
         if (actualStatus === "APPROVED") {
            await persistencePort.updateTransactionStatus(row.reference, "APPROVED", row.gatewayTransactionId);
-           await paymentEventBus.publish("payment.succeeded", {
-              reference: row.reference,
-              amount: Number(row.amount),
-              currency: row.currency,
-              companyId: row.companyId,
-              provider: row.provider,
-              timestamp: new Date().toISOString()
+           await paymentEventBus.publish("order.completed", {
+              id: row.reference,
+              orderId: row.orderId || row.reference,
+              userId: row.companyId
            });
            reconciledCount++;
            console.log(`[Reconciliation] Recovered lost APPROVED transaction: ${row.reference}`);
@@ -82,3 +70,4 @@ export class ReconciliationWorker {
     }
   }
 }
+

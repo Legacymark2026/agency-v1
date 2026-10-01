@@ -114,11 +114,11 @@ describe('PaymentTransactionDomain Extra', () => {
 describe('Wompi Webhook Security', () => {
   it('rejects payloads with invalid checksum', () => {
     process.env.WOMPI_EVENTS_SECRET = 'test-secret';
-    const isValid = WompiAdapter.verifyWebhookSignature({
+    const result = WompiAdapter.verifyWebhook({
       data: { transaction: { id: 'txn_1', status: 'APPROVED', amount_in_cents: 100000 } },
       timestamp: 1700000000,
       signature: { checksum: 'deadbeef00000000000000000000000000000000000000000000000000000000' },
-    });
-    expect(isValid).toBe(false);
+    }, '');
+    expect(result.isValid).toBe(false);
   });
 });

@@ -22,6 +22,12 @@ import { pciDssSanitizerMiddleware } from "./middlewares/sanitizer.middleware";
 import { idempotencyMiddleware } from "./middlewares/idempotency.middleware";
 import { TransactionalOutboxService } from "./services/outbox.service";
 
+// Ensure gateways are registered
+import "./adapters/stripe.adapter";
+import "./adapters/wompi.adapter";
+import "./adapters/paypal.adapter";
+import "./adapters/bold.adapter";
+
 const app = express();
 const PORT = parseInt(process.env.PORT || "4022", 10);
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";

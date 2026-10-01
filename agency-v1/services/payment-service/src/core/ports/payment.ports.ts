@@ -70,3 +70,11 @@ export interface IPaymentEventPublisherPort {
     reason?: string;
   }): Promise<void>;
 }
+
+export interface IPaymentGatewayStrategy {
+  providerName: PaymentProvider;
+  isAvailable(): boolean;
+  createSession(params: CreateCheckoutSessionDTO, txReference: string): Promise<{ url: string; externalId?: string }>;
+  verifyWebhook(payload: any, signature: string): { isValid: boolean; eventType: "PAYMENT_APPROVED" | "PAYMENT_DECLINED" | "UNKNOWN"; transactionId: string; amount?: number; currency?: string };
+  getTransactionStatus(externalId: string): Promise<PaymentStatus>;
+}
