@@ -1,0 +1,27 @@
+http:
+  middlewares:
+    # Rate limiting: 100 requests per minute per IP
+    rate-limit:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 50
+    
+    # Security headers
+    security-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""
+    
+    # Chain: apply both middlewares
+    secure-rate-limited:
+      chain:
+        middlewares:
+          - rate-limit
+          - security-headers

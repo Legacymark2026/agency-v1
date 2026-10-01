@@ -338,7 +338,7 @@ services:
       - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
       - "--experimental.plugins.coraza.modulename=github.com/jcchavezs/coraza-http-wasm-traefik"
       - "--experimental.plugins.coraza.version=v0.3.0"
-      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.filename=/etc/traefik/dynamic-config.yml"
       - "--providers.file.watch=true"
       - "--log.level=INFO"
       - "--accesslog=false"
@@ -350,7 +350,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "letsencrypt:/letsencrypt"
-      - "./infrastructure/traefik:/etc/traefik/dynamic:ro"
+      - "./infrastructure/traefik/dynamic-config.yml:/etc/traefik/dynamic-config.yml:ro"
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.security-headers.headers.referrerpolicy=no-referrer"
@@ -417,6 +417,7 @@ services:
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls=true"
       - "traefik.http.routers.web.tls.certresolver=le"
+      - "traefik.http.routers.web.middlewares=secure-rate-limited@file"
       - "traefik.http.services.web.loadbalancer.server.port=3000"
       - "traefik.http.routers.web.priority=1"
     networks:
@@ -488,6 +489,7 @@ services:
       - "traefik.http.routers.api-gateway.entrypoints=websecure"
       - "traefik.http.routers.api-gateway.tls=true"
       - "traefik.http.routers.api-gateway.tls.certresolver=le"
+      - "traefik.http.routers.api-gateway.middlewares=secure-rate-limited@file"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
     networks:
       - backend-net
@@ -551,6 +553,7 @@ services:
       - "traefik.http.routers.auth.entrypoints=websecure"
       - "traefik.http.routers.auth.tls=true"
       - "traefik.http.routers.auth.tls.certresolver=le"
+      - "traefik.http.routers.auth.middlewares=secure-rate-limited@file"
       - "traefik.http.services.auth.loadbalancer.server.port=4001"
     deploy:
       replicas: 1

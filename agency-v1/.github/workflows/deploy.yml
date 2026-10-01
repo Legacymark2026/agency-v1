@@ -1,0 +1,120 @@
+# Required Secrets for this workflow:
+# - SSH_HOST: IP address or domain of the deployment server (e.g. 187.77.195.9)
+# - SSH_USER: SSH username (e.g. root)
+# - SSH_PRIVATE_KEY: SSH private key for authenticating with the server
+
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    outputs:
+      changed_services: ${{ steps.detect_changes.outputs.services }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Detect changed services
+        id: detect_changes
+        run: |
+          SERVICES=""
+          # Using git diff to find which app directories changed
+          # Modify these grep matches depending on actual folder structure
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q -e "apps/api" -e "packages/"; then
+            SERVICES="api "
+          fi
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q -e "apps/web" -e "packages/"; then
+            SERVICES="${SERVICES}web "
+          fi
+          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push changed services
+        run: |
+          SERVICES="${{ steps.detect_changes.outputs.services }}"
+          if [ -z "$SERVICES" ]; then
+            echo "No services changed."
+            exit 0
+          fi
+          
+          # We use standard compose to build the changed services
+          # The compose file should use image tags for ghcr.io 
+          docker compose build $SERVICES
+          docker compose push $SERVICES
+          
+  deploy:
+    name: Deploy to Server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: needs.build-and-push.outputs.changed_services != ''
+    steps:
+      - name: Execute remote ssh commands to deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/agency-v1/agency-v1
+            
+            # Store current image info for rollback
+            PREV_SHA=$(git rev-parse HEAD)
+            
+            # Pull latest changes
+            git pull origin main
+            
+            # Pull new images and restart services
+            SERVICES="${{ needs.build-and-push.outputs.changed_services }}"
+            
+            docker compose pull $SERVICES
+            docker compose up -d --no-build $SERVICES
+            
+            # Wait for services to be ready
+            sleep 15
+            
+            # Smoke test
+            if ! curl -s -f http://localhost:3000/api/health; then
+              echo "Smoke test failed! Rolling back..."
+              git reset --hard $PREV_SHA
+              docker compose pull $SERVICES
+              docker compose up -d --no-build $SERVICES
+              exit 1
+            fi
+            echo "Deployment successful."
+
+  notify:
+    name: GitHub Commit Status
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+    steps:
+      - name: Update commit status
+        uses: myrotvorets/set-commit-status-action@master
+        with:
+          sha: ${{ github.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ needs.deploy.result == 'success' && 'success' || 'failure' }}
+          context: Deployment
+          description: ${{ needs.deploy.result == 'success' && 'Deployed successfully' || 'Deployment failed' }}
+          targetUrl: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

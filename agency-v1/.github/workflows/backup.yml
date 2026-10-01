@@ -1,0 +1,40 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # 3am UTC everyday
+  workflow_dispatch:
+
+jobs:
+  backup:
+    name: Create Backup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute remote ssh commands for backup
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            BACKUP_DIR="/var/backups/legacymark"
+            DATE=$(date +%Y-%m-%d_%H-%M-%S)
+            mkdir -p $BACKUP_DIR
+            
+            echo "Starting backup at $DATE"
+            cd ~/agency-v1/agency-v1
+            
+            # Find DB container ID (adjust name if necessary e.g. postgres, db, database)
+            DB_CONTAINER=$(docker compose ps -q db || docker compose ps -q postgres || echo "")
+            
+            if [ -n "$DB_CONTAINER" ]; then
+              docker exec $DB_CONTAINER pg_dumpall -U postgres | gzip > "$BACKUP_DIR/db_backup_$DATE.sql.gz"
+              echo "Backup created at $BACKUP_DIR/db_backup_$DATE.sql.gz"
+            else
+              echo "No database container found!"
+              exit 1
+            fi
+            
+            # Clean up backups older than 30 days
+            find $BACKUP_DIR -name "db_backup_*.sql.gz" -type f -mtime +30 -exec rm {} \;
+            echo "Old backups cleaned up."

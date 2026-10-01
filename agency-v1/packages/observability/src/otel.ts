@@ -3,7 +3,16 @@ export function initTelemetry(serviceName: string) {
     const { NodeSDK } = require("@opentelemetry/sdk-node");
     const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
     const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
-    const { Resource } = require("@opentelemetry/resources");
+    let Resource: any;
+    try {
+      Resource = require('@opentelemetry/resources').Resource;
+    } catch {
+      Resource = class MinimalResource {
+        constructor(attrs: Record<string, string>) { this._attrs = attrs; }
+        _attrs: Record<string, string>;
+        static merge(r1: any, r2: any) { return r2; }
+      };
+    }
     const { ATTR_SERVICE_NAME } = require("@opentelemetry/semantic-conventions");
 
     const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://jaeger:4318/v1/traces";
