@@ -3,6 +3,16 @@
  */
 import { Router, Request, Response } from "express";
 import { IAuditSecurityUseCases, IAuditRepositoryPort } from "../core/ports/audit.ports";
+import { z } from "zod";
+import { validateRequest } from "../middlewares/validateRequest";
+
+const logEventSchema = z.object({
+  action: z.string().optional(),
+  actorId: z.string().optional(),
+  resource: z.string().optional(),
+  details: z.any().optional(),
+  timestamp: z.string().optional()
+}).passthrough();
 
 export function createAuditRouter(
   useCases: IAuditSecurityUseCases,
@@ -20,7 +30,7 @@ export function createAuditRouter(
     }
   });
 
-  router.post("/logs", async (req: Request, res: Response) => {
+  router.post("/logs", validateRequest(logEventSchema), async (req: Request, res: Response) => {
     try {
       const record = await useCases.logEvent(req.body);
       res.status(201).json({ success: true, data: record });

@@ -6,6 +6,7 @@
 import { Router, Request, Response } from "express";
 import { IFeedUseCases } from "../core/ports/feed.ports";
 import { z } from "zod";
+import { validateRequest } from "../middlewares/validateRequest";
 
 const createPostSchema = z.object({
   title: z.string().optional(),
@@ -65,10 +66,10 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
   });
 
   // Create post
-  router.post("/posts", async (req: Request, res: Response) => {
+  router.post("/posts", validateRequest(createPostSchema), async (req: Request, res: Response) => {
     try {
       const ctx = getContext(req);
-      const parsed = createPostSchema.parse(req.body);
+      const parsed = req.body;
 
       const post = await feedUseCases.createPost({
         companyId: ctx.companyId,
@@ -101,10 +102,10 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
   });
 
   // Add comment
-  router.post("/posts/:id/comments", async (req: Request, res: Response) => {
+  router.post("/posts/:id/comments", validateRequest(addCommentSchema), async (req: Request, res: Response) => {
     try {
       const ctx = getContext(req);
-      const parsed = addCommentSchema.parse(req.body);
+      const parsed = req.body;
 
       const comment = await feedUseCases.addComment({
         companyId: ctx.companyId,
@@ -133,10 +134,10 @@ export function createFeedRouter(feedUseCases: IFeedUseCases): Router {
   });
 
   // Toggle reaction
-  router.post("/posts/:id/reactions", async (req: Request, res: Response) => {
+  router.post("/posts/:id/reactions", validateRequest(reactionSchema), async (req: Request, res: Response) => {
     try {
       const ctx = getContext(req);
-      const parsed = reactionSchema.parse(req.body);
+      const parsed = req.body;
 
       const result = await feedUseCases.toggleReaction({
         companyId: ctx.companyId,

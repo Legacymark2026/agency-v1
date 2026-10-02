@@ -1,6 +1,24 @@
 import { Router, Request, Response } from "express";
 import { ISalesForecastUseCases, ISalesForecastRepositoryPort } from "../core/ports/sales-forecast.ports";
 import { z } from "zod";
+import { validateRequest } from "../middlewares/validateRequest";
+
+const createDiscountTableSchema = z.object({}).passthrough();
+const evaluateDiscountSchema = z.object({}).passthrough();
+const toggleDiscountTableSchema = z.object({ isActive: z.boolean() });
+const generateProjectionSchema = z.object({
+  companyId: z.string().optional(),
+  targetPeriod: z.string().optional(),
+  productId: z.string().optional(),
+  algorithm: z.string().optional(),
+  alpha: z.number().optional(),
+  beta: z.number().optional(),
+  exogenousFactors: z.array(z.any()).optional(),
+  autoTune: z.boolean().optional()
+}).passthrough();
+const runSimulationSchema = z.object({}).passthrough();
+const compareScenariosSchema = z.object({ scenarios: z.array(z.any()) });
+const optimalDiscountSchema = z.object({}).passthrough();
 
 export function createSalesForecastRouter(
   useCases: ISalesForecastUseCases,
@@ -19,7 +37,7 @@ export function createSalesForecastRouter(
     }
   });
 
-  router.post("/discount-tables", async (req: Request, res: Response) => {
+  router.post("/discount-tables", validateRequest(createDiscountTableSchema), async (req: Request, res: Response) => {
     try {
       const table = await repo.createDiscountTable(req.body);
       res.status(201).json({ success: true, data: table });
@@ -28,7 +46,7 @@ export function createSalesForecastRouter(
     }
   });
 
-  router.post("/discount-tables/evaluate", async (req: Request, res: Response) => {
+  router.post("/discount-tables/evaluate", validateRequest(evaluateDiscountSchema), async (req: Request, res: Response) => {
     try {
       const result = await useCases.evaluateDiscount(req.body);
       res.json({ success: true, data: result });
@@ -37,7 +55,7 @@ export function createSalesForecastRouter(
     }
   });
 
-  router.patch("/discount-tables/:id/toggle", async (req: Request, res: Response) => {
+  router.patch("/discount-tables/:id/toggle", validateRequest(toggleDiscountTableSchema), async (req: Request, res: Response) => {
     try {
       const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
       const { isActive } = req.body;
@@ -60,7 +78,7 @@ export function createSalesForecastRouter(
     }
   });
 
-  router.post("/projections/generate", async (req: Request, res: Response) => {
+  router.post("/projections/generate", validateRequest(generateProjectionSchema), async (req: Request, res: Response) => {
     try {
       const { companyId = "default", targetPeriod, productId, algorithm, alpha, beta, exogenousFactors, autoTune } = req.body;
       const now = new Date();
@@ -92,7 +110,7 @@ export function createSalesForecastRouter(
     }
   });
 
-  router.post("/simulations/run", async (req: Request, res: Response) => {
+  router.post("/simulations/run", validateRequest(runSimulationSchema), async (req: Request, res: Response) => {
     try {
       const result = await useCases.simulateCommercialScenario(req.body);
       res.json({ success: true, data: result });
@@ -101,7 +119,7 @@ export function createSalesForecastRouter(
     }
   });
 
-  router.post("/simulations/compare", async (req: Request, res: Response) => {
+  router.post("/simulations/compare", validateRequest(compareScenariosSchema), async (req: Request, res: Response) => {
     try {
       const { scenarios } = req.body;
       if (!Array.isArray(scenarios)) {
@@ -116,7 +134,7 @@ export function createSalesForecastRouter(
   });
 
   // ── Optimizador Prescriptivo de Descuento (AI Margin Maximizer) ───────────
-  router.post("/optimizer/optimal-discount", async (req: Request, res: Response) => {
+  router.post("/optimizer/optimal-discount", validateRequest(optimalDiscountSchema), async (req: Request, res: Response) => {
     try {
       const result = await useCases.calculateOptimalDiscount(req.body);
       res.json({ success: true, data: result });

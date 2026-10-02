@@ -7,6 +7,7 @@
 import { Router, Request, Response } from "express";
 import { IChatUseCases } from "../core/ports/chat.ports";
 import { z } from "zod";
+import { validateRequest } from "../middlewares/validateRequest";
 
 const createChannelSchema = z.object({
   name: z.string().min(1).max(100),
@@ -46,10 +47,10 @@ export function createChatRouter(chatUseCases: IChatUseCases): Router {
   });
 
   // Create new channel
-  router.post("/channels", async (req: Request, res: Response) => {
+  router.post("/channels", validateRequest(createChannelSchema), async (req: Request, res: Response) => {
     try {
       const { companyId, userId } = getContext(req);
-      const parsed = createChannelSchema.parse(req.body);
+      const parsed = req.body;
       const channel = await chatUseCases.createChannel({
         companyId,
         name: parsed.name,
@@ -80,11 +81,11 @@ export function createChatRouter(chatUseCases: IChatUseCases): Router {
   });
 
   // Send message via REST (alternative to WebSocket)
-  router.post("/channels/:channelId/messages", async (req: Request, res: Response) => {
+  router.post("/channels/:channelId/messages", validateRequest(sendMessageSchema), async (req: Request, res: Response) => {
     try {
       const { companyId, userId, userName } = getContext(req);
       const channelId = String(req.params.channelId);
-      const parsed = sendMessageSchema.parse(req.body);
+      const parsed = req.body;
 
       const message = await chatUseCases.sendMessage({
         companyId,
