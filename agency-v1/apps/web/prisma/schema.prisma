@@ -86,8 +86,9 @@ model User {
   accountingVouchers      AccountingVoucher[]       @relation("VoucherCreator")
 
   @@index([role])
-  @@index([email])
   @@index([globalRole])
+  @@index([deletedAt])
+  @@index([createdAt])
   @@map("tbl_users")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -102,7 +103,6 @@ model RoleConfig {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  @@index([roleName])
   @@map("tbl_role_configs")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -154,6 +154,7 @@ model RolePermission {
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
+  @@index([permissionId])
   @@map("tbl_role_permissions")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -189,7 +190,7 @@ model PasswordResetToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([email])
-  @@index([token])
+  @@index([expiresAt])
   @@map("tbl_password_reset_tokens")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -355,7 +356,10 @@ model Company {
   accountingVouchers        AccountingVoucher[]
   chartOfAccounts           ChartOfAccounts[]
   paymentTransactions       PaymentTransaction[]
+  paymentGatewayConfigs     PaymentGatewayConfig[]
 
+  costCenters CostCenter[]
+  bankConnections BankConnection[]
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -2986,6 +2990,24 @@ model EmployeeBenefit {
   deletedAt DateTime? @map("col_deleted_at")
 }
 
+
+model CostCenter {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  name        String
+  code        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("tbl_cost_centers")
+}
+
 model ExpenseCategory {
   id        String    @id @default(uuid())
   companyId String    @map("company_id")
@@ -3025,6 +3047,14 @@ model Expense {
   paidAt        DateTime?         @map("paid_at")
   notes         String?
   createdById   String            @map("created_by_id")
+
+  // Cost Accounting Fields
+  costType      String?           @map("cost_type") // FIXED, VARIABLE, CIF, MOD, MPD
+  costCenterId  String?           @map("cost_center_id")
+  isDeductible  Boolean           @default(true) @map("is_deductible")
+  
+  costCenter    CostCenter?       @relation(fields: [costCenterId], references: [id])
+
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
   account       FinancialAccount? @relation(fields: [accountId], references: [id])
@@ -3267,6 +3297,7 @@ model Notification {
 
   @@index([companyId])
   @@index([userId, isRead])
+  @@index([userId, companyId, isRead])
   @@index([createdAt])
   @@map("tbl_notifications")
   schemaVersion Int @default(0) @map("col_schema_version")
@@ -4779,4 +4810,195 @@ model AuditSecurityLedger {
   @@index([companyId, timestamp])
   @@index([companyId, resource])
   @@map("tbl_audit_security_ledger")
+}
+
+// --- POS Service Models ---
+
+model PosCatalog {
+  id          String   @id
+  companyId   String   @map("company_id")
+  name        String
+  description String?
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_catalogs")
+}
+
+model PosProduct {
+  id             String   @id
+  companyId      String   @map("company_id")
+  catalogId      String?  @map("catalog_id")
+  itemType       String   @default("PRODUCTO") @map("item_type")
+  sku            String
+  barcode        String?
+  title          String
+  description    String?
+  category       String?
+  unitPrice      Decimal  @map("unit_price")
+  costPrice      Decimal? @default(0) @map("cost_price")
+  wholesalePrice Decimal? @default(0) @map("wholesale_price")
+  taxRate        Decimal? @default(0.19) @map("tax_rate")
+  stock          Decimal? @default(0)
+  isActive       Boolean  @default(true) @map("is_active")
+  location       String?
+  imageUrl       String?  @map("image_url")
+  estimatedTime  String?  @map("estimated_time")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([companyId, sku])
+  @@index([companyId, barcode])
+  @@index([companyId, category])
+  @@map("tbl_pos_products")
+}
+
+model PosCoupon {
+  id                String   @id
+  companyId         String   @map("company_id")
+  code              String   @unique
+  discountType      String   @map("discount_type")
+  discountValue     Decimal  @map("discount_value")
+  minPurchaseAmount Decimal? @default(0) @map("min_purchase_amount")
+  usageLimit        Int?     @default(100) @map("usage_limit")
+  usedCount         Int?     @default(0) @map("used_count")
+  isActive          Boolean  @default(true) @map("is_active")
+  validUntil        String?  @map("valid_until")
+  description       String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_coupons")
+}
+
+model PosRegister {
+  id             String    @id
+  companyId      String    @map("company_id")
+  name           String
+  location       String?
+  initialFloat   Decimal?  @default(0) @map("initial_float")
+  currentBalance Decimal?  @default(0) @map("current_balance")
+  status         String?   @default("OPEN")
+  openedAt       DateTime? @default(now()) @map("opened_at")
+  closedAt       DateTime? @map("closed_at")
+  config         Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_registers")
+}
+
+model PosMovement {
+  id         String   @id
+  registerId String   @map("register_id")
+  type       String
+  amount     Decimal
+  reason     String?
+  userName   String?  @map("user_name")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([registerId])
+  @@map("tbl_pos_movements")
+}
+
+model PosCustomer {
+  id            String   @id
+  companyId     String   @map("company_id")
+  nit           String   @unique
+  name          String
+  email         String?
+  phone         String?
+  loyaltyPoints Int?     @default(0) @map("loyalty_points")
+  creditLimit   Decimal? @default(500000) @map("credit_limit")
+  usedCredit    Decimal? @default(0) @map("used_credit")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@map("tbl_pos_customers")
+}
+
+model PaymentGatewayConfig {
+  id                 String   @id @default(uuid())
+  companyId          String   @map("company_id")
+  provider           String   // Ej: STRIPE, WOMPI, MERCADOPAGO
+  publicKey          String?  @map("public_key") // Texto plano (seguro exponer)
+  encryptedSecretKey String?  @map("encrypted_secret_key")
+  encryptedEventsKey String?  @map("encrypted_events_key")
+  iv                 String?  // Vector de inicialización para AES-256-GCM
+  authTag            String?  @map("auth_tag") // Etiqueta de autenticación
+  isActive           Boolean  @default(false) @map("is_active")
+  isTestMode         Boolean  @default(true) @map("is_test_mode")
+  metadata           Json?    // Otros datos (merchantId, terminalId)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, provider])
+  @@index([companyId])
+  @@map("tbl_payment_gateway_configs")
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// 1. BANK RECONCILIATION (Zero-Touch Accounting)
+// ════════════════════════════════════════════════════════════════════════════
+
+model BankConnection {
+  id              String            @id @default(uuid())
+  companyId       String            @map("company_id")
+  bankName        String            @map("bank_name")
+  provider        String            @default("BELVO") // PLAID, BELVO, PROMOCETE
+  accountId       String            @map("account_id") // Provider's account ID
+  accountType     String            @map("account_type") // CHECKING, SAVINGS, CREDIT
+  currency        String            @default("COP")
+  balance         Float             @default(0)
+  lastSyncedAt    DateTime?         @map("last_synced_at")
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions    BankTransaction[]
+
+  @@unique([companyId, accountId])
+  @@index([companyId])
+  @@map("tbl_bank_connections")
+}
+
+model BankTransaction {
+  id              String            @id @default(uuid())
+  connectionId    String            @map("connection_id")
+  providerTxId    String            @unique @map("provider_tx_id")
+  date            DateTime          @db.Date
+  amount          Float
+  description     String
+  status          String            @default("PENDING") // PENDING, RECONCILED, IGNORED
+  reconciledToId  String?           @map("reconciled_to_id") // Link to Expense or Invoice ID
+  reconciledType  String?           @map("reconciled_type") // EXPENSE, INVOICE, TRANSFER
+  createdAt       DateTime          @default(now()) @map("created_at")
+  
+  connection      BankConnection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, status])
+  @@map("tbl_bank_transactions")
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 3. AUTONOMOUS AI AGENTS (Delegated Access)
+// ════════════════════════════════════════════════════════════════════════════
+
+model AgentDelegation {
+  id              String            @id @default(uuid())
+  agentId         String            @map("agent_id") // Reference to existing AgentMemory/Agent
+  companyId       String            @map("company_id")
+  role            String            // e.g. "SUPPORT_TIER_1", "SALES_CLOSER"
+  allowedActions  String[]          @map("allowed_actions") // ["REFUND_APPROVE", "DISCOUNT_APPLY"]
+  maxBudgetUsd    Float             @default(0) @map("max_budget_usd")
+  requireApproval Boolean           @default(false) @map("require_approval")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  @@unique([agentId, companyId])
+  @@index([companyId])
+  @@map("tbl_agent_delegations")
 }
