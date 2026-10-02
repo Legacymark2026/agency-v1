@@ -142,6 +142,7 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { href: "/dashboard/tools/master-hub", label: "Consola Maestra de Herramientas", icon: <Terminal size={14} />, code: "HUB" },
             { href: "/dashboard/settings/agents", label: "Agentes Autónomos IA", icon: <Bot size={14} />, code: "AGT" },
+            { href: "/dashboard/settings/agents/delegation", label: "Delegación & Permisos (RBA)", icon: <ShieldCheck size={14} />, code: "DEL" },
             { href: "/dashboard/settings/agents/skillchains", label: "Cadenas de Habilidades", icon: <Workflow size={14} />, code: "SKL" },
             { href: "/dashboard/settings/agents/knowledge", label: "Bases de Conocimiento RAG", icon: <BookOpen size={14} />, code: "RAG" },
             { href: "/dashboard/admin/ai-insights", label: "AI Insights", icon: <Zap size={14} />, code: "INS" },
