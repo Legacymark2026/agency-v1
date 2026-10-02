@@ -49,10 +49,13 @@ export function SidebarClientContent(props: SidebarContentProps) {
     // Memoize accessible groups to prevent referential churn
     const accessibleGroups = useMemo(() => {
         const accessibleSet = new Set(accessibleRoutes);
-        return navGroups.map(group => ({
-            ...group,
-            items: group.items.filter(item => accessibleSet.has(item.href))
-        })).filter(group => group.items.length > 0);
+        return navGroups.map(group => {
+            const items = group.items ? group.items.filter(item => accessibleSet.has(item.href)) : [];
+            const subGroups = group.subGroups 
+                ? group.subGroups.map(sg => ({ ...sg, items: sg.items.filter(item => accessibleSet.has(item.href)) })).filter(sg => sg.items.length > 0)
+                : [];
+            return { ...group, items, subGroups };
+        }).filter(group => (group.items && group.items.length > 0) || (group.subGroups && group.subGroups.length > 0));
     }, [navGroups, accessibleRoutes]);
 
     // Initial group resolution
