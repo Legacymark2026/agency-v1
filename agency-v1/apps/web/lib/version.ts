@@ -17,8 +17,8 @@ export interface SystemVersion {
 
 export const PLATFORM_VERSION: SystemVersion = {
   version: "v3.8.5",
-  buildNumber: "2026.10.02-1158-129cdcdd",
-  buildDate: "2026-10-02 11:58 COT",
+  buildNumber: "2026.10.02-1224-383fa227",
+  buildDate: "2026-10-02 12:24 COT",
   releaseName: "Enterprise Auth & ISO 27001 Security Hardening",
   environment: process.env.NODE_ENV || "production",
   isoCertifications: [
