@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { ObjectTabs } from "../../../../../../components/crm/object-tabs";
+import { ObjectTabs } from "@/components/crm/object-tabs";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

@@ -28,6 +28,7 @@
     "generate:secrets": "node scripts/utils/generate-secrets.js"
   },
   "dependencies": {
+    "@agency/schemas": "^1.0.0",
     "@agency/video-agent": "file:../../packages/video-agent",
     "@agency/video-editor": "file:../../packages/video-editor",
     "@agency/video-learning": "file:../../packages/video-learning",

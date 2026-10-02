@@ -23,9 +23,9 @@ import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import dagre from 'dagre';
 
-import Sidebar from '../../../../../../components/automation/Sidebar';
-import { nodeTypes } from '../../../../../../components/automation/CustomNodes';
-import NodeConfigPanel from '../../../../../../components/automation/NodeConfigPanel';
+import Sidebar from '@/components/automation/Sidebar';
+import { nodeTypes } from '@/components/automation/CustomNodes';
+import NodeConfigPanel from '@/components/automation/NodeConfigPanel';
 import { saveUserWorkflow, getLatestWorkflow, getWorkflowById, getIntegrationsStatusMap } from '@/actions/automation';
 import { saveWorkflowVersion, getWorkflowVersions, rollbackWorkflowToVersion } from '@/actions/workflow-versions';
 
@@ -758,3 +758,4 @@ export default function Page() {
         </Suspense>
     );
 }
+
