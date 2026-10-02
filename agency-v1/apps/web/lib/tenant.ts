@@ -5,25 +5,25 @@ import { redirect } from "next/navigation";
 export async function requireTenant(shouldRedirect = true) {
     const session = await auth();
     
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
         if (shouldRedirect) redirect("/login");
         throw new Error("UNAUTHORIZED: No active session.");
     }
     
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        include: { companies: true }
+    // Cross-DB Query: Fetch user first (Auth DB), then fetch companyUser separately (Core DB)
+    const companyUser = await prisma.companyUser.findFirst({
+        where: { userId: session.user.id }
     });
     
-    if (!user || user.companies.length === 0) {
+    if (!companyUser) {
         if (shouldRedirect) redirect("/login");
         throw new Error("UNAUTHORIZED: User does not belong to any tenant.");
     }
     
     return {
-        userId: user.id,
-        email: user.email,
-        companyId: user.companies[0].companyId,
+        userId: session.user.id,
+        email: session.user.email,
+        companyId: companyUser.companyId,
         session
     };
 }
