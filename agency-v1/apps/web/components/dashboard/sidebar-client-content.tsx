@@ -12,7 +12,7 @@ import { useState, useEffect, useRef, useMemo, useTransition } from "react";
 import { PLATFORM_VERSION } from "@/lib/version";
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; code?: string; }
-interface NavGroup { title: string; code: string; accent?: string; icon?: React.ReactNode; items: NavItem[]; }
+interface NavGroup { title: string; code: string; accent?: string; icon?: React.ReactNode; items?: NavItem[]; subGroups?: { title: string; items: NavItem[] }[]; }
 
 interface SidebarContentProps {
     navGroups: NavGroup[];
@@ -58,7 +58,8 @@ export function SidebarClientContent(props: SidebarContentProps) {
     // Initial group resolution
     const [activeGroupId, setActiveGroupId] = useState<string>(() => {
         const currentGroup = accessibleGroups.find(g => 
-            g.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))
+            (g.items && g.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))) ||
+            (g.subGroups && g.subGroups.some(sg => sg.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))))
         );
         return currentGroup?.code || accessibleGroups[0]?.code || "DB_MAIN";
     });
@@ -69,7 +70,8 @@ export function SidebarClientContent(props: SidebarContentProps) {
         if (prevPathnameRef.current !== pathname) {
             prevPathnameRef.current = pathname;
             const currentGroup = accessibleGroups.find(g => 
-                g.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))
+                (g.items && g.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))) ||
+            (g.subGroups && g.subGroups.some(sg => sg.items.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href + '/')))))
             );
             if (currentGroup) {
                 setActiveGroupId(currentGroup.code);
@@ -242,34 +244,54 @@ export function SidebarClientContent(props: SidebarContentProps) {
 
                         {/* Navigation Items List */}
                         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1 no-scrollbar">
-                            {activeGroup.items.map((item) => {
-                                const isCurrent = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 group ${
-                                            isCurrent
-                                                ? 'bg-teal-500/15 text-teal-300 font-bold border border-teal-500/30 shadow-sm'
-                                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                            <span className={`shrink-0 ${isCurrent ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
-                                                {item.icon}
-                                            </span>
-                                            <span className="truncate">{item.label}</span>
-                                        </div>
-                                        {item.code && (
-                                            <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded tracking-tighter shrink-0 ${
-                                                isCurrent ? 'bg-teal-950 text-teal-400 border border-teal-800/50' : 'text-slate-600 bg-slate-900/60'
-                                            }`}>
-                                                {item.code}
-                                            </span>
-                                        )}
-                                    </Link>
-                                );
-                            })}
+                            
+{activeGroup.items && activeGroup.items.map((item) => {
+    const isCurrent = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
+    return (
+        <Link
+            key={item.href}
+            href={item.href}
+            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 group ${isCurrent ? 'bg-teal-500/15 text-teal-300 font-bold border border-teal-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}`}
+        >
+            <div className="flex items-center gap-2.5 min-w-0">
+                <span className={`shrink-0 ${isCurrent ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                    {item.icon}
+                </span>
+                <span className="truncate leading-tight">{item.label}</span>
+            </div>
+            {item.code && <span className="text-[9px] font-mono opacity-40 group-hover:opacity-100 transition-opacity">{item.code}</span>}
+        </Link>
+    );
+})}
+{activeGroup.subGroups && activeGroup.subGroups.map(subGroup => (
+    <div key={subGroup.title} className="mt-5 mb-2">
+        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-3 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500/50"></span>
+            {subGroup.title}
+        </h4>
+        <div className="space-y-1">
+            {subGroup.items.map((item) => {
+                const isCurrent = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
+                return (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 group ${isCurrent ? 'bg-teal-500/15 text-teal-300 font-bold border border-teal-500/30 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}`}
+                    >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={`shrink-0 ${isCurrent ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
+                                {item.icon}
+                            </span>
+                            <span className="truncate leading-tight">{item.label}</span>
+                        </div>
+                        {item.code && <span className="text-[9px] font-mono opacity-40 group-hover:opacity-100 transition-opacity">{item.code}</span>}
+                    </Link>
+                );
+            })}
+        </div>
+    </div>
+))}
+
                         </div>
 
                         {/* Footer Info & Logout */}

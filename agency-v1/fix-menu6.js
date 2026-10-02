@@ -1,25 +1,8 @@
-"use client";
+const fs = require('fs');
+const path = 'apps/web/components/dashboard/DashboardSidebar.tsx';
+let content = fs.readFileSync(path, 'utf8');
 
-import Link from "next/link";
-import {
-    LayoutDashboard, Users, Settings, FileText, LogOut,
-    Shield, ShieldCheck, BookOpen, Briefcase, BarChart2, Workflow,
-    MessageSquare, Target, TrendingUp, Link2, Building2,
-    Lock, UserCog, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
-    Activity, Wifi, Bot, Trello, CreditCard, Landmark, ChevronLeft, ChevronRight,
-    PanelLeftClose, PanelLeft, Image as ImageIcon, Share2, Percent, MousePointerClick, ShoppingBag, Package,
-    Cpu, Scan, AlertTriangle, Key, Terminal, Network, Search, Award, Layers, Sparkles,
-    Boxes, FileCheck
-} from "lucide-react";
-import { signOut } from "@/lib/auth";
-import Image from "next/image";
-import { NotificationBell } from "./notification-bell";
-import { SidebarClientContent } from "./sidebar-client-content";
-
-interface NavItem { href: string; label: string; icon: React.ReactNode; code?: string; }
-interface NavGroup { title: string; code: string; accent?: string; icon?: React.ReactNode; items: NavItem[]; }
-
-const NAV_GROUPS: NavGroup[] = [
+const newNavGroups = `const NAV_GROUPS: NavGroup[] = [
     {
         title: "Portal del Cliente", code: "CLIENT_PORTAL",
         accent: "teal", icon: <Briefcase size={20} />,
@@ -180,38 +163,15 @@ const NAV_GROUPS: NavGroup[] = [
             }
         ]
     },
-];
+];`;
 
-interface DashboardSidebarProps {
-    role: string;
-    name: string | null | undefined;
-    email: string | null | undefined;
-    image?: string | null | undefined;
-    companyLogoUrl?: string | null;
-    accessibleRoutes: string[];
-    badge: { label: string; color: string };
-}
+const startIdx = content.indexOf('const NAV_GROUPS: NavGroup[] = [');
+const endIdx = content.indexOf('];', startIdx) + 2;
 
-export function DashboardSidebar({ role, name, email, image, companyLogoUrl, accessibleRoutes, badge }: DashboardSidebarProps) {
-    return (
-        <aside
-            className="flex flex-row h-full shrink-0 relative transition-all duration-300 ease-in-out"
-            style={{
-                background: 'rgba(2,6,23,0.97)',
-                borderRight: '1px solid rgba(30,41,59,0.6)',
-            }}
-        >
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
-
-            <SidebarClientContent 
-                navGroups={NAV_GROUPS}
-                accessibleRoutes={accessibleRoutes}
-                companyLogoUrl={companyLogoUrl}
-                name={name}
-                email={email}
-                role={role}
-                badge={badge}
-            />
-        </aside>
-    );
+if (startIdx !== -1 && endIdx !== -1) {
+  content = content.substring(0, startIdx) + newNavGroups + content.substring(endIdx);
+  fs.writeFileSync(path, content, 'utf8');
+  console.log("Replaced successfully!");
+} else {
+  console.log("Could not find NAV_GROUPS");
 }
