@@ -1,12 +1,14 @@
-import { prisma } from "@/lib/prisma";
+const fs = require('fs');
+const path = 'apps/web/app/(dashboard)/dashboard/(sales-and-finance)/accounting/costs/page.tsx';
+let content = fs.readFileSync(path, 'utf8');
+
+const newContent = \import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import AdvancedCostAccountingClient from "./costs-client";
 
 export default async function CostAccountingPage() {
-    // Boilerplate reduced from 15 lines to 1 line!
     const { companyId } = await requireTenant(true);
     
-    // Fetch real data
     const expenses = await prisma.expense.findMany({
         where: { companyId },
         include: { costCenter: true },
@@ -18,10 +20,8 @@ export default async function CostAccountingPage() {
         orderBy: { name: 'asc' }
     });
     
-    return (
-        <AdvancedCostAccountingClient 
-            initialExpenses={expenses} 
-            initialCostCenters={costCenters} 
-        />
-    );
+    return <AdvancedCostAccountingClient initialExpenses={expenses} initialCostCenters={costCenters} />;
 }
+\;
+
+fs.writeFileSync(path, newContent, 'utf8');

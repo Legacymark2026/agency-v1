@@ -4,12 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-async function getCompanyId() {
-    const session = await auth();
-    if (!session?.user?.email) throw new Error("No session");
-    
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
+import { requireTenant } from "@/lib/tenant";,
         include: { companyUsers: true }
     });
     
@@ -18,7 +13,7 @@ async function getCompanyId() {
 }
 
 export async function createCostCenterAction(data: { name: string, code: string, description?: string }) {
-    const { companyId } = await getCompanyId();
+    const { companyId } = await requireTenant(false);
     
     await prisma.costCenter.create({
         data: {
@@ -40,7 +35,7 @@ export async function createExpenseAction(data: {
     costCenterId: string,
     isDeductible: boolean,
 }) {
-    const { companyId, userId } = await getCompanyId();
+    const { companyId, userId } = await requireTenant(false);
     
     await prisma.expense.create({
         data: {

@@ -1,35 +1,14 @@
-import { requireCompany } from "@/lib/company-utils";
-import { getWorkflows, getAutomationAnalytics, getRecentExecutions } from "@/actions/automation";
-import WorkflowListClient from "./workflow-list";
-
-export const metadata = {
-    title: "Automatización | Dashboard",
-};
+import { prisma } from "@/lib/prisma";
+import { requireTenant } from "@/lib/tenant";
+import WorkflowEngineClient from "./workflow-client";
 
 export default async function AutomationPage() {
-    // This will redirect if no company
-    const { companyId } = await requireCompany();
-
-    const [workflows, analytics, recentExecutions] = await Promise.all([
-        getWorkflows(companyId),
-        getAutomationAnalytics(companyId),
-        getRecentExecutions(companyId)
-    ]);
-
-    // Serialization for client component
-    const serializedWorkflows = workflows.map((w: any) => ({
-        ...w,
-        createdAt: w.createdAt,
-        updatedAt: w.updatedAt
-    }));
-
-    return (
-        <div className="ds-page">
-            <WorkflowListClient
-                initialWorkflows={serializedWorkflows as any}
-                analytics={analytics as any}
-                recentExecutions={recentExecutions as any}
-            />
-        </div>
-    );
+    const { companyId } = await requireTenant(true);
+    
+    const workflows = await prisma.workflow.findMany({
+        where: { companyId },
+        orderBy: { createdAt: 'desc' }
+    });
+    
+    return <WorkflowEngineClient initialWorkflows={workflows} />;
 }
