@@ -1,11 +1,15 @@
-import { Metadata } from 'next';
-import { DianClient } from './dian-client';
+import { prisma } from "@/lib/prisma";
+import { requireTenant } from "@/lib/tenant";
+import DianClient from "./dian-client";
 
-export const metadata: Metadata = {
-  title: 'Cumplimiento Fiscal DIAN | LegacyMark',
-  description: 'Monitor de facturación electrónica UBL 2.1, documento equivalente POS y nómina electrónica',
-};
-
-export default function DianPage() {
-  return <DianClient />;
+export default async function DianPage() {
+    const { companyId } = await requireTenant(true);
+    
+    // In a real app we might only want Draft or Pending invoices, or all for history.
+    const invoices = await prisma.invoice.findMany({
+        where: { companyId },
+        orderBy: { dueDate: 'asc' }
+    });
+    
+    return <DianClient initialInvoices={invoices} />;
 }
