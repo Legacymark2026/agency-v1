@@ -1,16 +1,8 @@
 "use server";
 
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-
-import { requireTenant } from "@/lib/tenant";,
-        include: { companyUsers: true }
-    });
-    
-    if (!user || user.companyUsers.length === 0) throw new Error("User has no company");
-    return { companyId: user.companyUsers[0].companyId, userId: user.id };
-}
+import { requireTenant } from "@/lib/tenant";
 
 export async function createCostCenterAction(data: { name: string, code: string, description?: string }) {
     const { companyId } = await requireTenant(false);
@@ -47,7 +39,7 @@ export async function createExpenseAction(data: {
             costType: data.costType,
             costCenterId: data.costCenterId,
             isDeductible: data.isDeductible,
-            status: "APPROVED" // auto-approve for now
+            status: "APPROVED"
         }
     });
     
