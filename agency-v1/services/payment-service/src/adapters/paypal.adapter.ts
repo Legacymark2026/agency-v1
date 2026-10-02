@@ -127,3 +127,4 @@ export class PayPalGateway implements IPaymentGatewayStrategy {
 
 export const PayPalAdapter = new PayPalGateway();
 gatewayRegistry.register(PayPalAdapter);
+

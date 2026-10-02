@@ -4,6 +4,7 @@
  */
 import { Router, Request, Response } from "express";
 import { z } from "zod";
+import { validateRequest } from "../middlewares/validateRequest";
 import { IPaymentUseCases } from "../core/ports/payment.ports";
 
 const checkoutSessionSchema = z.object({
@@ -37,28 +38,18 @@ export function createPaymentRouter(useCases: IPaymentUseCases): Router {
     res.json({ success: true, gateways });
   });
 
-  router.post("/checkout-session", async (req: Request, res: Response) => {
+  router.post("/checkout-session", validateRequest(checkoutSessionSchema), async (req: Request, res: Response) => {
     try {
-      const parsed = checkoutSessionSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ success: false, errors: parsed.error.errors });
-      }
-
-      const result = await useCases.createCheckoutSession(parsed.data as any);
+      const result = await useCases.createCheckoutSession(req.body as any);
       res.json({ success: true, ...result });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }
   });
 
-  router.post("/pos/create", async (req: Request, res: Response) => {
+  router.post("/pos/create", validateRequest(posPaymentSchema), async (req: Request, res: Response) => {
     try {
-      const parsed = posPaymentSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ success: false, errors: parsed.error.errors });
-      }
-
-      const tx = await useCases.processPOSPayment(parsed.data as any);
+      const tx = await useCases.processPOSPayment(req.body as any);
       res.status(201).json({ success: true, transaction: tx.toJSON() });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
@@ -80,3 +71,4 @@ export function createPaymentRouter(useCases: IPaymentUseCases): Router {
 
   return router;
 }
+

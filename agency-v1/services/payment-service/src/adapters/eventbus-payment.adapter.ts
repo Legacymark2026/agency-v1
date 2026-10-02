@@ -38,3 +38,4 @@ export class EventBusPaymentPublisherAdapter implements IPaymentEventPublisherPo
     console.log(`[PaymentPublisher] Payment failed for ref: ${event.reference}`);
   }
 }
+

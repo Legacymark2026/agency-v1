@@ -1,25 +1,89 @@
-import { IPaymentGatewayStrategy } from "../core/ports/payment.ports";
-import { CreateCheckoutSessionDTO } from "../core/ports/payment.ports";
-import { PaymentProvider, PaymentStatus } from "../core/domain/payment.domain";
+import { IPaymentGatewayStrategy } from '../core/ports/payment.ports';
+import { CreateCheckoutSessionDTO } from '../core/ports/payment.ports';
+import { PaymentProvider, PaymentStatus } from '../core/domain/payment.domain';
+import * as crypto from 'crypto';
 
 export class MercadoPagoAdapter implements IPaymentGatewayStrategy {
-  providerName: PaymentProvider = "MERCADOPAGO" as PaymentProvider;
+  providerName: PaymentProvider = 'MERCADOPAGO' as PaymentProvider;
   
   isAvailable(): boolean {
     return Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN);
   }
 
   async createSession(params: CreateCheckoutSessionDTO, txReference: string) {
-    // TODO: Implement MercadoPago SDK integration
-    return { url: `https://mercadopago.com/mock?ref=${txReference}`, externalId: txReference };
+    if (!this.isAvailable()) throw new Error('MercadoPago not configured');
+    
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://legacymarksas.com';
+    const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': Bearer 
+      },
+      body: JSON.stringify({
+        items: [{
+          title: params.title || 'Pago LegacyMark',
+          quantity: 1,
+          unit_price: params.amount,
+          currency_id: params.currency || 'COP'
+        }],
+        payer: { email: params.customerEmail },
+        external_reference: txReference,
+        back_urls: {
+          success: params.successUrl || ${baseUrl}/invoice/?payment_success=true,
+          failure: params.cancelUrl || ${baseUrl}/invoice/?payment_canceled=true,
+          pending: params.cancelUrl || ${baseUrl}/invoice/?payment_canceled=true
+        },
+        auto_return: 'approved'
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(MP Error: );
+    }
+
+    const data = await response.json();
+    return { url: data.init_point, externalId: data.id };
   }
 
   verifyWebhook(payload: any, signature: string) {
-    // TODO: Implement MercadoPago signature validation
-    return { isValid: true, eventType: "UNKNOWN" as any, transactionId: payload.id || "" };
+    if (!signature) return { isValid: false, eventType: 'UNKNOWN' as any, transactionId: '' };
+    // Signature format: x-signature: ts=xxx,v1=yyy
+    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    if (!secret) return { isValid: true, eventType: 'PAYMENT_APPROVED' as any, transactionId: payload?.data?.id || '' };
+    
+    try {
+      const parts = signature.split(',');
+      const tsPart = parts.find(p => p.startsWith('ts='));
+      const v1Part = parts.find(p => p.startsWith('v1='));
+      if (!tsPart || !v1Part) return { isValid: false, eventType: 'UNKNOWN' as any, transactionId: '' };
+      
+      const ts = tsPart.split('=')[1];
+      const v1 = v1Part.split('=')[1];
+      const manifest = id:;request-id:;ts:;;
+      const hash = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+      
+      if (hash === v1) {
+        return { isValid: true, eventType: payload.action === 'payment.created' ? 'PAYMENT_APPROVED' : 'UNKNOWN' as any, transactionId: payload.data.id };
+      }
+      return { isValid: false, eventType: 'UNKNOWN' as any, transactionId: '' };
+    } catch {
+      return { isValid: false, eventType: 'UNKNOWN' as any, transactionId: '' };
+    }
   }
 
   async getTransactionStatus(externalId: string): Promise<PaymentStatus> {
-    return "PENDING" as PaymentStatus;
+    if (!this.isAvailable()) return 'PENDING' as PaymentStatus;
+    const res = await fetch(https://api.mercadopago.com/v1/payments/, {
+      headers: { 'Authorization': Bearer  }
+    });
+    if (!res.ok) return 'PENDING' as PaymentStatus;
+    const data = await res.json();
+    if (data.status === 'approved') return 'APPROVED';
+    if (data.status === 'rejected') return 'DECLINED';
+    return 'PENDING';
   }
 }
+
+

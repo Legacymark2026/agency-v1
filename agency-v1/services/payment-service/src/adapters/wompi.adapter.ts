@@ -93,3 +93,4 @@ export class WompiGateway implements IPaymentGatewayStrategy {
 
 export const WompiAdapter = new WompiGateway();
 gatewayRegistry.register(WompiAdapter);
+

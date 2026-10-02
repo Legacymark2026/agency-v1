@@ -111,3 +111,4 @@ export class StripeGateway implements IPaymentGatewayStrategy {
 
 export const StripeAdapter = new StripeGateway(); // For backwards compatibility
 gatewayRegistry.register(StripeAdapter);
+

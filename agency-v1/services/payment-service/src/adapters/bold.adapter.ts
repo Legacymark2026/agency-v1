@@ -86,3 +86,4 @@ export class BoldGateway implements IPaymentGatewayStrategy {
 
 export const BoldPosAdapter = new BoldGateway();
 gatewayRegistry.register(BoldPosAdapter);
+
