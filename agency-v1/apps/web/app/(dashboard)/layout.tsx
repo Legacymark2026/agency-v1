@@ -4,6 +4,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { UserRole } from "@/types/auth";
 import { prisma } from "@/lib/prisma";
 import { MobileSidebarWrapper } from "@/components/dashboard/MobileSidebarWrapper";
+import { GlobalCommandPalette } from '@/components/GlobalCommandPalette';
 import { CognitiveAgentChat } from "@/components/ai/cognitive-agent-chat";
 import { GlobalTimer } from "@/components/operations/global-timer";
 import { SidebarController } from "@/components/dashboard/sidebar-controller";
@@ -247,6 +248,8 @@ export default async function DashboardLayout({
                         </div>
                     </main>
                 </div>
+
+                <GlobalCommandPalette />
 
                 {/* Agente de IA Flotante Nivel C-Level */}
                 <CognitiveAgentChat />
