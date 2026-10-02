@@ -358,6 +358,7 @@ model Company {
   paymentTransactions       PaymentTransaction[]
   paymentGatewayConfigs     PaymentGatewayConfig[]
 
+  costCenters CostCenter[]
   @@map("tbl_companies")
   schemaVersion Int @default(0) @map("col_schema_version")
   deletedAt DateTime? @map("col_deleted_at")
@@ -2988,6 +2989,24 @@ model EmployeeBenefit {
   deletedAt DateTime? @map("col_deleted_at")
 }
 
+
+model CostCenter {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  name        String
+  code        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@map("tbl_cost_centers")
+}
+
 model ExpenseCategory {
   id        String    @id @default(uuid())
   companyId String    @map("company_id")
@@ -3027,6 +3046,14 @@ model Expense {
   paidAt        DateTime?         @map("paid_at")
   notes         String?
   createdById   String            @map("created_by_id")
+
+  // Cost Accounting Fields
+  costType      String?           @map("cost_type") // FIXED, VARIABLE, CIF, MOD, MPD
+  costCenterId  String?           @map("cost_center_id")
+  isDeductible  Boolean           @default(true) @map("is_deductible")
+  
+  costCenter    CostCenter?       @relation(fields: [costCenterId], references: [id])
+
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
   account       FinancialAccount? @relation(fields: [accountId], references: [id])
