@@ -20,8 +20,8 @@ export default async function CostAccountingPage() {
     
     return (
         <AdvancedCostAccountingClient 
-            initialExpenses={expenses} 
-            initialCostCenters={costCenters} 
+            initialExpenses={JSON.parse(JSON.stringify(expenses))} 
+            initialCostCenters={JSON.parse(JSON.stringify(costCenters))} 
         />
     );
 }
