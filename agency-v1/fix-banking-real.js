@@ -1,4 +1,8 @@
-"use server";
+const fs = require('fs');
+const path = 'apps/web/actions/banking.actions.ts';
+let content = fs.readFileSync(path, 'utf8');
+
+const newContent = \"use server";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -16,14 +20,12 @@ export async function connectBankAction(linkId: string, institution: string) {
         throw new Error("Missing Belvo API credentials in production environment variables.");
     }
 
-    const authHeader = Buffer.from(`${SECRET}:${PASSWORD}`).toString('base64');
+    const authHeader = Buffer.from(\\\\:\\\\).toString('base64');
 
-    // 1. Fetch Real Accounts from Bank API
-    const accountsRes = await fetch(`https://sandbox.belvo.com/api/accounts/?link=${linkId}`, {
-        headers: { 'Authorization': `Basic ${authHeader}` }
+    // 1. Fetch Real Accounts from Bank
+    const accountsRes = await fetch(\https://sandbox.belvo.com/api/accounts/?link=\\, {
+        headers: { 'Authorization': \Basic \\ }
     });
-    
-    if (!accountsRes.ok) throw new Error("Error conectando con la API del banco");
     const accountsData = await accountsRes.json();
     
     if (!accountsData.results || accountsData.results.length === 0) {
@@ -46,9 +48,9 @@ export async function connectBankAction(linkId: string, institution: string) {
         }
     });
 
-    // 3. Fetch Real Transactions
-    const txRes = await fetch(`https://sandbox.belvo.com/api/transactions/?link=${linkId}&account=${realAccount.id}`, {
-        headers: { 'Authorization': `Basic ${authHeader}` }
+    // 3. Fetch Real Transactions (Last 30 days)
+    const txRes = await fetch(\https://sandbox.belvo.com/api/transactions/?link=\&account=\\, {
+        headers: { 'Authorization': \Basic \\ }
     });
     const txData = await txRes.json();
 
@@ -123,3 +125,6 @@ export async function runAutoReconciliationAction() {
     
     return reconciledCount;
 }
+\;
+
+fs.writeFileSync(path, newContent, 'utf8');
