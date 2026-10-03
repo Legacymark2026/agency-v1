@@ -152,12 +152,6 @@ export default async function HRAdminPage() {
                             <Clock className="text-teal-400" size={18} />
                             <h2 className="text-lg font-semibold text-slate-100">Control de Horas (Timesheets)</h2>
                         </div>
-                        <Link 
-                            href="/dashboard/admin/payroll/timesheets"
-                            className="text-xs text-teal-400 hover:text-teal-300 flex items-center gap-1 transition-colors"
-                        >
-                            Ver completo <ArrowRight size={12} />
-                        </Link>
                     </div>
                     <TimesheetManager companyId={companyId} initialData={timesheets} />
                 </div>
@@ -169,12 +163,6 @@ export default async function HRAdminPage() {
                             <Calendar className="text-blue-400" size={18} />
                             <h2 className="text-lg font-semibold text-slate-100">Permisos, Vacaciones y Licencias</h2>
                         </div>
-                        <Link 
-                            href="/dashboard/admin/payroll/time-off"
-                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                        >
-                            Ver completo <ArrowRight size={12} />
-                        </Link>
                     </div>
                     <TimeOffManager companyId={companyId} initialData={timeOffRequests} />
                 </div>

@@ -1,31 +1,7 @@
+import { Button } from "@/components/ui/button";
 import { getAllPosts } from "@/lib/data";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Rss } from "lucide-react";
-import { Metadata } from "next";
-import { siteConfig } from "@/lib/site-config";
-import { getTranslations } from "next-intl/server";
-
-// Force dynamic rendering to ensure the listing queries the database on every request
-export const dynamic = 'force-dynamic';
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
-    const { locale } = await params;
-    const t = await getTranslations({ locale, namespace: 'nav' });
-
-    return {
-        title: `Blog | ${siteConfig.name}`,
-        description: "Insights y estrategias de alto nivel sobre marketing digital, diseño y automatización.",
-        openGraph: {
-            title: `Blog - Insights & Estrategias | ${siteConfig.name}`,
-            description: "Contenido de alto nivel para escalar tu negocio.",
-            url: `${siteConfig.url}/${locale}/blog`,
-            siteName: siteConfig.name,
-            images: [{ url: `${siteConfig.url}/favicon.ico` }],
-            locale: locale === 'en' ? 'en_US' : 'es_ES',
-            type: 'website',
-        },
-    };
-}
 
 // ─── Decorative Components ─────────────────────────────────────────────────
 
@@ -41,8 +17,7 @@ const DotGrid = ({ cols = 8, rows = 6 }: { cols?: number; rows?: number }) => (
     </div>
 );
 
-export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
-    const { locale } = await params;
+export default async function BlogPage() {
     const posts = await getAllPosts();
 
     return (
@@ -92,7 +67,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                         <span className="text-teal-400 text-xs font-black tracking-widest uppercase">Blog & Recursos</span>
                     </div>
 
-                    <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6 break-words">
+                    <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-6">
                         <span className="block text-white">Insights &</span>
                         <span className="block bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #2dd4bf 0%, #38bdf8 50%, #a78bfa 100%)' }}>Estrategias</span>
                     </h1>
@@ -145,7 +120,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
                                 {/* Image */}
                                 <div className="aspect-video w-full bg-slate-800 relative overflow-hidden">
-                                    <Link href={`/${locale}/blog/${post.slug}`} className="block h-full w-full">
+                                    <Link href={`/blog/${post.slug}`} className="block h-full w-full">
                                         <div
                                             className="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                                             style={{ backgroundImage: `url(${post.coverImage || 'https://images.unsplash.com/photo-1432821596592-e2c18b781492?q=80&w=2070&auto=format&fit=crop'})` }}
@@ -171,7 +146,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
 
                                     {/* Title */}
                                     <h3 className="mb-3 text-lg font-black text-white group-hover:text-teal-300 transition-colors leading-snug">
-                                        <Link href={`/${locale}/blog/${post.slug}`}>
+                                        <Link href={`/blog/${post.slug}`}>
                                             {post.title}
                                         </Link>
                                     </h3>
@@ -182,7 +157,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                                     </p>
 
                                     {/* CTA */}
-                                    <Link href={`/${locale}/blog/${post.slug}`} className="inline-flex items-center gap-2 text-sm font-bold text-teal-400 hover:text-teal-300 transition-colors group/link">
+                                    <Link href={`/blog/${post.slug}`} className="inline-flex items-center gap-2 text-sm font-bold text-teal-400 hover:text-teal-300 transition-colors group/link">
                                         <span>Leer artículo</span>
                                         <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
                                     </Link>

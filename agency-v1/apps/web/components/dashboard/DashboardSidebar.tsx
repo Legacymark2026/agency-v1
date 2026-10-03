@@ -58,12 +58,10 @@ const NAV_GROUPS: NavGroup[] = [
         title: "Finanzas & Contabilidad", code: "FINANCE",
         accent: "emerald", icon: <DollarSign size={20} />,
         items: [
-            { href: "/dashboard/dian", label: "Cumplimiento Fiscal DIAN", icon: <FileCheck size={14} />, code: "DIA" },
-            { href: "/dashboard/invoicing", label: "Facturación DIAN & RADIAN", icon: <ShieldCheck size={14} />, code: "FAC" },
+            { href: "/dashboard/invoicing", label: "Facturación Electrónica DIAN & B2B", icon: <ShieldCheck size={14} />, code: "FAC" },
             { href: "/dashboard/accounting", label: "Contabilidad & PUC / Libro Mayor", icon: <BookOpen size={14} />, code: "ACC" },
             { href: "/dashboard/invoicing/ocr-scanner", label: "Escáner OCR Recibos", icon: <Scan size={14} />, code: "OCR" },
             { href: "/dashboard/invoicing/fraud-guard", label: "Guardián Anti-Fraude", icon: <AlertTriangle size={14} />, code: "FRD" },
-            { href: "/dashboard/admin/invoices", label: "Facturación B2B", icon: <CreditCard size={14} />, code: "INV" },
             { href: "/dashboard/admin/treasury", label: "Tesorería", icon: <Landmark size={14} />, code: "TRS" },
         ]
     },
@@ -111,11 +109,9 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/settings/agents/teams", label: "Equipos de Agentes (Swarm)", icon: <Users size={14} />, code: "SWM" },
             { href: "/dashboard/admin/payroll", label: "Nómina Electrónica & PILA", icon: <DollarSign size={14} />, code: "PAY" },
             { href: "/dashboard/admin/payroll/employees", label: "Personal y Contratistas", icon: <Users size={14} />, code: "EMP" },
-            { href: "/dashboard/admin/payroll/time-off", label: "Permisos y Vacaciones", icon: <Calendar size={14} />, code: "OFF" },
             { href: "/dashboard/admin/payroll/expenses", label: "Gestión de Egresos", icon: <CreditCard size={14} />, code: "EXP" },
             { href: "/dashboard/admin/payroll/reports", label: "Reportes & Certificados", icon: <BarChart2 size={14} />, code: "REP" },
-            { href: "/dashboard/admin/team", label: "Gestión de Equipo", icon: <UserCog size={14} />, code: "TEAM" },
-            { href: "/dashboard/admin/hr", label: "Time Tracking / RRHH", icon: <Activity size={14} />, code: "HR" },
+            { href: "/dashboard/admin/hr", label: "Gestión del Personal & RRHH", icon: <Activity size={14} />, code: "HR" },
         ]
     },
     {
@@ -166,12 +162,10 @@ const NAV_GROUPS: NavGroup[] = [
             { href: "/dashboard/analytics", label: "Analítica Web", icon: <BarChart2 size={14} />, code: "ANL" },
             { href: "/dashboard/security/sla", label: "Monitor SLA 99.99%", icon: <Activity size={14} />, code: "SLA" },
             { href: "/dashboard/settings", label: "Configuración DIAN & Sistema", icon: <Settings size={14} />, code: "CFG" },
-            { href: "/dashboard/admin/audit-logs", label: "Logs de Auditoría Forense", icon: <FileText size={14} />, code: "LOG" },
-            { href: "/dashboard/security/audit-ledger", label: "Ledger Forense WORM (SHA-256)", icon: <ShieldCheck size={14} />, code: "WRM" },
+            { href: "/dashboard/security", label: "Auditoría Forense & Logs", icon: <Lock size={14} />, code: "SEC" },
             { href: "/dashboard/privacy-portal", label: "Portal Privacidad & GDPR", icon: <Shield size={14} />, code: "PRV" },
             { href: "/dashboard/users", label: "Gestión de Usuarios", icon: <Users size={14} />, code: "USR" },
             { href: "/dashboard/roles", label: "Control de Roles & Permisos", icon: <Shield size={14} />, code: "ROL" },
-            { href: "/dashboard/security", label: "Bóveda de Seguridad & Logs", icon: <Lock size={14} />, code: "SEC" },
         ]
     },
 ];

@@ -1,14 +1,15 @@
-import { DianElectronicBillingHub } from "@/components/billing/dian-electronic-billing-hub";
+import { prisma } from "@/lib/prisma";
+import { requireTenant } from "@/lib/tenant";
+import DianClient from "./dian-client";
 
-export const metadata = {
-    title: "Centro de Facturación Electrónica DIAN & RADIAN | LegacyMark",
-    description: "Gestión de Facturas Electrónicas, Notas Crédito, Documento Soporte y Eventos RADIAN para la DIAN",
-};
-
-export default function InvoicingPage() {
-    return (
-        <div suppressHydrationWarning className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-            <DianElectronicBillingHub />
-        </div>
-    );
+export default async function DianPage() {
+    const { companyId } = await requireTenant(true);
+    
+    // In a real app we might only want Draft or Pending invoices, or all for history.
+    const invoices = await prisma.invoice.findMany({
+        where: { companyId },
+        orderBy: { dueDate: 'asc' }
+    });
+    
+    return <DianClient initialInvoices={invoices} />;
 }

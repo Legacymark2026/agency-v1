@@ -87,8 +87,7 @@ const FloatingParticle = ({ delay = 0, xRange = 100, yRange = 100, size = 10, co
 
     useEffect(() => {
         setIsMounted(true);
-        const timeout = setTimeout(() => setDuration(Math.random() * 10 + 10), 100);
-        return () => clearTimeout(timeout);
+        setDuration(Math.random() * 10 + 10);
     }, []);
 
     if (!isMounted) return null;
@@ -439,7 +438,7 @@ export default function ServicesPage() {
                                 >
                                     <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-teal-400 font-bold border border-teal-500/20 shrink-0 text-xl group-hover:bg-teal-500 group-hover:text-white transition-colors">1</div>
                                     <div>
-                                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors">Hipótesis de Datos</h4>
+                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors">Hipótesis de Datos</h3>
                                         <p className="text-slate-400">Analizamos tus métricas actuales para encontrar fugas de dinero y oportunidades ocultas.</p>
                                     </div>
                                 </motion.div>
@@ -449,7 +448,7 @@ export default function ServicesPage() {
                                 >
                                     <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-teal-400 font-bold border border-teal-500/20 shrink-0 text-xl group-hover:bg-teal-500 group-hover:text-white transition-colors">2</div>
                                     <div>
-                                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors">Experimentación Rápida</h4>
+                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors">Experimentación Rápida</h3>
                                         <p className="text-slate-400">Lanzamos micro-test A/B en creativos, copys y audiencias para validar ganadores.</p>
                                     </div>
                                 </motion.div>
@@ -459,7 +458,7 @@ export default function ServicesPage() {
                                 >
                                     <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-teal-400 font-bold border border-teal-500/20 shrink-0 text-xl group-hover:bg-teal-500 group-hover:text-white transition-colors">3</div>
                                     <div>
-                                        <h4 className="text-xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors">Escalado Agresivo</h4>
+                                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors">Escalado Agresivo</h3>
                                         <p className="text-slate-400">Inyectamos presupuesto solo en lo que funciona, rotando creativos para evitar la fatiga.</p>
                                     </div>
                                 </motion.div>

@@ -1,25 +1,21 @@
 import { PortfolioClient } from "@/components/portfolio/portfolio-client";
 import { getPublicProjects, getProjectCategories } from "@/actions/projects";
-import { getSocialProfiles } from "@/actions/social-profiles";
-
-export const dynamic = "force-dynamic";
 
 // Next.js 15 Server Component
 export default async function PortfolioPage() {
-    // Fetch live data directly from the DB
+    // Fetch live data directly from the DB to completely eliminate ghosting
     let projects: any[] = [];
     let categories: any[] = [];
-    let socialProfiles: any[] = [];
 
     try {
-        [projects, categories, socialProfiles] = await Promise.all([
+        [projects, categories] = await Promise.all([
             getPublicProjects(),
-            getProjectCategories(),
-            getSocialProfiles(),
+            getProjectCategories()
         ]);
     } catch (error) {
         console.error("[PortfolioPage] Non-fatal: Failed to load portfolio data:", error);
     }
 
-    return <PortfolioClient projects={projects} categories={categories} socialProfiles={socialProfiles} />;
+    return <PortfolioClient projects={projects} categories={categories} />;
 }
+
