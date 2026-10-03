@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import { emitElectronicInvoice } from "@/actions/dian.actions";
 import { 
     FileSignature, AlertCircle, CheckCircle2, Clock,
-    Send, ShieldCheck, Download, Search
+    Send, ShieldCheck, Download, Search, Plus
 } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 
 export default function DianClient({ initialInvoices }: any) {
@@ -46,6 +47,9 @@ export default function DianClient({ initialInvoices }: any) {
                         </h1>
                     </div>
                     <div className="flex gap-3">
+                        <Link href="/dashboard/invoicing/new" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold rounded-xl transition-colors shadow-lg shadow-amber-500/20 text-sm">
+                            <Plus size={16} /> Crear Factura
+                        </Link>
                         <div className="relative w-64">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                             <input 
