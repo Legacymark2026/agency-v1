@@ -1,4 +1,4 @@
-import SubscriptionCheckoutClient from "@/app/_marketing/suscripcion/checkout-client";
+import SubscriptionCheckoutClient from "@/app/[locale]/(marketing)/suscripcion/checkout-client";
 
 export const metadata = {
     title: "Suscripción SaaS & Consumo de API | LegacyMark",
