@@ -12,6 +12,8 @@ COPY package*.json turbo.json tsconfig*.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
 COPY packages/rbac/package.json ./packages/rbac/
+COPY packages/dian-engine/package.json ./packages/dian-engine/
+COPY packages/vault-client/package.json ./packages/vault-client/
 COPY packages/video-agent/package.json ./packages/video-agent/
 COPY packages/video-editor/package.json ./packages/video-editor/
 COPY packages/video-learning/package.json ./packages/video-learning/
@@ -25,6 +27,8 @@ RUN npm ci --ignore-scripts || npm install --ignore-scripts
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
 COPY packages/rbac/ ./packages/rbac/
+COPY packages/dian-engine/ ./packages/dian-engine/
+COPY packages/vault-client/ ./packages/vault-client/
 COPY packages/video-agent/ ./packages/video-agent/
 COPY packages/video-editor/ ./packages/video-editor/
 COPY packages/video-learning/ ./packages/video-learning/
@@ -73,3 +77,4 @@ COPY apps/web/inject-env.js ./apps/web/inject-env.js
 EXPOSE 3000
 WORKDIR /app/apps/web
 CMD ["node", "--require", "./inject-env.js", "server.js"]
+

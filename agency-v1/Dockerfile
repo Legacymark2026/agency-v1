@@ -11,6 +11,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/dian-engine/package.json ./packages/dian-engine/
+COPY packages/vault-client/package.json ./packages/vault-client/
 
 FROM manifests AS base
 RUN apk add --no-cache git openssl
@@ -21,6 +23,8 @@ RUN npm ci --ignore-scripts || npm install --ignore-scripts
 # Copy and build shared packages
 COPY packages/database/ ./packages/database/
 COPY packages/events/ ./packages/events/
+COPY packages/dian-engine/ ./packages/dian-engine/
+COPY packages/vault-client/ ./packages/vault-client/
 
 # Copy Prisma schema from web app for shared client generation
 COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
@@ -460,3 +464,4 @@ COPY --from=public-api-service-build /app/node_modules/.prisma ./node_modules/.p
 EXPOSE 4015
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s CMD wget -qO- http://127.0.0.1:4015/health || exit 1
 CMD ["node", "dist/index.js"]
+
