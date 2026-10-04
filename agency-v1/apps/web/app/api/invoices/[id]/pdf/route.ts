@@ -185,7 +185,7 @@ export async function GET(
         return new NextResponse(pdfBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': \`inline; filename="Factura-\${invoice.id.split('-')[0]}.pdf"\`
+                'Content-Disposition': `inline; filename="Factura-${invoice.id.split('-')[0]}.pdf"`
             }
         });
 
