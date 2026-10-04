@@ -28,6 +28,9 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
         clientAddress: "",
         clientCity: "",
         clientPhone: "",
+        clientEmail: "",
+        clientType: "PERSONA_JURIDICA",
+        paymentMethod: "TRANSFERENCIA",
         leadId: "",
         dueDate: "",
         notes: "",
@@ -95,7 +98,8 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
         setFormData(prev => ({
             ...prev,
             leadId: id,
-            clientName: lead ? (lead.company || lead.name || "") : prev.clientName
+            clientName: lead ? (lead.company || lead.name || "") : prev.clientName,
+            clientEmail: lead ? (lead.email || "") : prev.clientEmail
         }));
     };
 
@@ -126,6 +130,9 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                 notes: formData.notes,
                 terms: formData.terms,
                 isElectronic: formData.isElectronic,
+                clientEmail: formData.clientEmail,
+                clientType: formData.clientType,
+                paymentMethod: formData.paymentMethod,
                 items: calculations.calculatedItems
             };
 
@@ -157,7 +164,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                         <button
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, isElectronic: true }))}
-                            className={`flex-1 sm:flex-none px-4 py-2 text-xs font-medium rounded-md transition-colors ${formData.isElectronic ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                            className={`flex-1 sm:flex-none px-4 py-2 text-xs font-medium rounded-md transition-colors ${formData.isElectronic ? 'bg-amber-600/20 text-amber-400 border border-amber-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                         >
                             Factura Electrónica
                         </button>
@@ -178,7 +185,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-300">Vincular CRM (Opcional)</label>
                             <select
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.leadId}
                                 onChange={handleLeadSelect}
                             >
@@ -197,7 +204,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                 type="text"
                                 required
                                 placeholder="Nombre de la Institución o Cliente..."
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.clientName}
                                 onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
                             />
@@ -208,7 +215,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                             <input
                                 type="text"
                                 placeholder="Ej: 901.123.456-7"
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.clientNit}
                                 onChange={(e) => setFormData(prev => ({ ...prev, clientNit: e.target.value }))}
                             />
@@ -219,7 +226,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                             <input
                                 type="text"
                                 placeholder="Dirección del cliente"
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.clientAddress}
                                 onChange={(e) => setFormData(prev => ({ ...prev, clientAddress: e.target.value }))}
                             />
@@ -230,7 +237,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                             <input
                                 type="text"
                                 placeholder="Ciudad"
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.clientCity}
                                 onChange={(e) => setFormData(prev => ({ ...prev, clientCity: e.target.value }))}
                             />
@@ -241,17 +248,56 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                             <input
                                 type="text"
                                 placeholder="Teléfono de contacto"
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.clientPhone}
                                 onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
                             />
                         </div>
 
                         <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-300">Email (Envío Factura Electrónica) <span className="text-amber-500">*</span></label>
+                            <input
+                                type="email"
+                                required
+                                placeholder="facturacion@empresa.com"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                                value={formData.clientEmail}
+                                onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-300">Tipo de Contribuyente <span className="text-amber-500">*</span></label>
+                            <select
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                                value={formData.clientType}
+                                onChange={(e) => setFormData(prev => ({ ...prev, clientType: e.target.value }))}
+                            >
+                                <option value="PERSONA_JURIDICA">Persona Jurídica (Empresa)</option>
+                                <option value="PERSONA_NATURAL">Persona Natural</option>
+                                <option value="GRAN_CONTRIBUYENTE">Gran Contribuyente</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-300">Medio de Pago <span className="text-amber-500">*</span></label>
+                            <select
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                                value={formData.paymentMethod}
+                                onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                            >
+                                <option value="TRANSFERENCIA">Transferencia Bancaria</option>
+                                <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                                <option value="EFECTIVO">Efectivo</option>
+                                <option value="OTROS">Otros / Pendiente</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-300">Fecha de Vencimiento (Términos)</label>
                             <input
                                 type="date"
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all [color-scheme:dark]"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all [color-scheme:dark]"
                                 value={formData.dueDate}
                                 onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
                             />
@@ -259,7 +305,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-300">Cobro Recibido (%)</label>
                             <select
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                 value={formData.advancePercentage}
                                 onChange={(e) => setFormData(prev => ({ ...prev, advancePercentage: Number(e.target.value) }))}
                             >
@@ -286,7 +332,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                         type="text"
                                         placeholder="Concepto (ej. Desarrollo Frontend)"
                                         required
-                                        className="w-full bg-slate-950 border-b border-slate-700 px-2 py-1 text-sm text-white focus:border-teal-500 focus:outline-none"
+                                        className="w-full bg-slate-950 border-b border-slate-700 px-2 py-1 text-sm text-white focus:border-amber-500 focus:outline-none"
                                         value={item.title}
                                         onChange={(e) => handleItemChange(index, "title", e.target.value)}
                                     />
@@ -304,7 +350,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                         type="number"
                                         min="1"
                                         required
-                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-teal-500 focus:outline-none"
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                                         value={item.quantity}
                                         onChange={(e) => handleItemChange(index, "quantity", Number(e.target.value))}
                                     />
@@ -316,7 +362,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                         min="0"
                                         step="1"
                                         required
-                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-teal-500 focus:outline-none"
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                                         value={item.unitPrice}
                                         onChange={(e) => handleItemChange(index, "unitPrice", Number(e.target.value))}
                                     />
@@ -324,7 +370,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                 <div className="w-24">
                                     <label className="text-xs text-slate-500 block mb-1">Impuesto</label>
                                     <select
-                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-teal-500 focus:outline-none"
+                                        className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                                         value={item.taxRate}
                                         onChange={(e) => handleItemChange(index, "taxRate", Number(e.target.value))}
                                     >
@@ -345,7 +391,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                         ))}
                     </div>
 
-                    <button type="button" onClick={addItem} className="mt-4 flex items-center gap-2 text-sm text-teal-400 hover:text-teal-300 transition-colors font-medium">
+                    <button type="button" onClick={addItem} className="mt-4 flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors font-medium">
                         <Plus className="h-4 w-4" /> Agregar otro concepto
                     </button>
                 </div>
@@ -356,7 +402,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-300">Notas para el cliente</label>
                             <textarea
-                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all resize-none h-20"
+                                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all resize-none h-20"
                                 placeholder="Gracias por su negocio..."
                                 value={formData.notes}
                                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
@@ -383,7 +429,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                                 <span>-${calculations.advanceAmount.toLocaleString()}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-lg font-bold text-teal-400 pt-2 border-t border-slate-800 mt-2">
+                        <div className="flex justify-between text-lg font-bold text-amber-400 pt-2 border-t border-slate-800 mt-2">
                             <span>Total a Procesar (PayU)</span>
                             <span>${calculations.finalAmount.toLocaleString()} USD</span>
                         </div>
@@ -402,7 +448,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-teal-600 px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-teal-500 disabled:opacity-50 transition-colors"
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-amber-500 disabled:opacity-50 transition-colors"
                 >
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     Emitir y Generar Link

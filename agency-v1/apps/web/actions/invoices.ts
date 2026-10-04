@@ -14,6 +14,9 @@ export type InvoiceInput = {
     clientAddress?: string;
     clientCity?: string;
     clientPhone?: string;
+    clientEmail?: string;
+    clientType?: string;
+    paymentMethod?: string;
     subtotalAmount: number;
     taxAmount: number;
     discountAmount: number;
@@ -56,6 +59,9 @@ export async function createInvoice(data: InvoiceInput) {
                 clientAddress: data.clientAddress,
                 clientCity: data.clientCity,
                 clientPhone: data.clientPhone,
+                clientEmail: data.clientEmail,
+                clientType: data.clientType,
+                paymentMethod: data.paymentMethod,
                 subtotalAmount: data.subtotalAmount,
                 taxAmount: data.taxAmount,
                 discountAmount: data.discountAmount || 0,
