@@ -105,9 +105,9 @@ export default function DianClient({ initialInvoices }: any) {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         {inv.status === 'EMITIDA_DIAN' ? (
-                                            <button className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
+                                            <Link href={/api/invoices//pdf} target="_blank" className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors inline-block">
                                                 <Download size={18} />
-                                            </button>
+                                            </Link>
                                         ) : (
                                             <button 
                                                 onClick={() => handleEmit(inv.id)}
@@ -127,3 +127,5 @@ export default function DianClient({ initialInvoices }: any) {
         </div>
     );
 }
+
+

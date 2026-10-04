@@ -315,6 +315,7 @@ model Company {
   inboxAuditLogs            InboxAuditLog[]
   integrationConfigs        IntegrationConfig[]
   integrationLogs           IntegrationLog[]
+    dianCertificate           DianCertificate?
   invoices                  Invoice[]
   kanbanProjects            KanbanProject[]
   knowledgeBases            KnowledgeBase[]
@@ -2219,6 +2220,13 @@ model Invoice {
   taxAmount          Float                  @default(0) @map("tax_amount")
   discountAmount     Float                  @default(0) @map("discount_amount")
   totalAmount        Float                  @map("total_amount")
+    reteFuente         Float                  @default(0) @map("rete_fuente")
+    reteICA            Float                  @default(0) @map("rete_ica")
+    reteIVA            Float                  @default(0) @map("rete_iva")
+    documentNature     String                 @default("SALE") @map("document_nature")
+    parentInvoiceId    String?                @map("parent_invoice_id")
+    parentInvoice      Invoice?               @relation("CreditNotes", fields: [parentInvoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    childInvoices      Invoice[]              @relation("CreditNotes")
   advanceAmount      Float                  @map("advance_amount")
   finalAmount        Float                  @map("final_amount")
   status             String                 @default("DRAFT_AWAITING_PAYMENT")
@@ -5004,4 +5012,19 @@ model AgentDelegation {
   @@unique([agentId, companyId])
   @@index([companyId])
   @@map("tbl_agent_delegations")
+}
+
+model DianCertificate {
+  id                String   @id @default(uuid())
+  companyId         String   @unique @map("company_id")
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  certificateBase64 String   @db.Text @map("certificate_base64")
+  passwordHash      String   @map("password_hash")
+  validFrom         DateTime @map("valid_from")
+  validTo           DateTime @map("valid_to")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_dian_certificates")
 }

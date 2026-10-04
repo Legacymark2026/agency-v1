@@ -36,7 +36,10 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
         notes: "",
         terms: "",
         currency: "USD",
-        advancePercentage: 100, // 100% means total is the final amount. 60% means advance is 60.
+        advancePercentage: 100,
+        reteFuente: 0,
+        reteICA: 0,
+        reteIVA: 0,
         isElectronic: true // DIAN control
     });
 
@@ -77,20 +80,27 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
             };
         });
 
-        const total = subtotal + tax; // ignoring discount logic for MVP form
-        const finalAmount = total * (formData.advancePercentage / 100);
-        const advanceAmount = total - finalAmount;
+        const total = subtotal + tax;
+        const reteFuente = (formData.reteFuente || 0);
+        const reteICA = (formData.reteICA || 0);
+        const reteIVA = (formData.reteIVA || 0);
+        const subFinalAmount = total - reteFuente - reteICA - reteIVA;
+        const finalAmount = subFinalAmount * (formData.advancePercentage / 100);
+        const advanceAmount = subFinalAmount - finalAmount;
 
         return {
             subtotalAmount: subtotal,
             taxAmount: tax,
             discountAmount: 0,
             totalAmount: total,
-            advanceAmount: advanceAmount,
-            finalAmount: finalAmount,
+            reteFuente,
+            reteICA,
+            reteIVA,
+            advanceAmount,
+            finalAmount,
             calculatedItems
         };
-    }, [items, formData.advancePercentage]);
+    }, [items, formData.advancePercentage, formData.reteFuente, formData.reteICA, formData.reteIVA]);
 
     const handleLeadSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const id = e.target.value;
@@ -126,6 +136,9 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
                 totalAmount: calculations.totalAmount,
                 advanceAmount: calculations.advanceAmount,
                 finalAmount: calculations.finalAmount,
+                reteFuente: calculations.reteFuente,
+                reteICA: calculations.reteICA,
+                reteIVA: calculations.reteIVA,
                 dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
                 notes: formData.notes,
                 terms: formData.terms,
@@ -457,3 +470,7 @@ export function InvoiceForm({ leads }: InvoiceFormProps) {
         </form>
     );
 }
+
+
+
+

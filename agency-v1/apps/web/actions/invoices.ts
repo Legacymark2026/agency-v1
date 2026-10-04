@@ -18,9 +18,19 @@ export type InvoiceInput = {
     clientType?: string;
     paymentMethod?: string;
     subtotalAmount: number;
+    reteFuente?: number;
+    reteICA?: number;
+    reteIVA?: number;
+    documentNature?: string;
+    parentInvoiceId?: string;
     taxAmount: number;
     discountAmount: number;
     totalAmount: number;
+    reteFuente?: number;
+    reteICA?: number;
+    reteIVA?: number;
+    documentNature?: string;
+    parentInvoiceId?: string;
     advanceAmount: number;
     finalAmount: number;
     currency?: string;
@@ -37,6 +47,11 @@ export type InvoiceInput = {
         unitPrice: number;
         taxRate: number;
         totalAmount: number;
+    reteFuente?: number;
+    reteICA?: number;
+    reteIVA?: number;
+    documentNature?: string;
+    parentInvoiceId?: string;
     }[];
 };
 
@@ -66,6 +81,11 @@ export async function createInvoice(data: InvoiceInput) {
                 taxAmount: data.taxAmount,
                 discountAmount: data.discountAmount || 0,
                 totalAmount: data.totalAmount,
+                reteFuente: data.reteFuente || 0,
+                reteICA: data.reteICA || 0,
+                reteIVA: data.reteIVA || 0,
+                documentNature: data.documentNature || 'SALE',
+                parentInvoiceId: data.parentInvoiceId,
                 advanceAmount: data.advanceAmount,
                 finalAmount: data.finalAmount,
                 currency: data.currency || "USD",
