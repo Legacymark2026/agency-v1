@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { emitElectronicInvoice } from "@/actions/dian.actions";
+import { emitElectronicInvoice, sendRadianEvent } from "@/actions/dian.actions";
 import { 
     FileSignature, AlertCircle, CheckCircle2, Clock,
-    Send, ShieldCheck, Download, Search, Plus
+    Send, ShieldCheck, Download, Search, Plus, FileClock, CheckSquare
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function DianClient({ initialInvoices }: any) {
     const [isEmitting, setIsEmitting] = useState<string | null>(null);
@@ -17,12 +18,23 @@ export default function DianClient({ initialInvoices }: any) {
         setIsEmitting(id);
         try {
             const res = await emitElectronicInvoice(id);
-            alert(`Factura emitida ante la DIAN exitosamente. CUFE: ${res.cufe}`);
+            toast.success(`Factura emitida ante la DIAN exitosamente. CUFE: ${res.cufe}`);
         } catch (e: any) {
             console.error(e);
-            alert(`Error de emisión: ${e.message}`);
+            toast.error(`Error de emisión: ${e.message}`);
         } finally {
             setIsEmitting(null);
+        }
+    };
+
+    const handleRadianEvent = async (invoiceId: string, eventCode: string) => {
+        const confirmMsg = eventCode === '030' ? '¿Deseas enviar el Acuse de Recibo (030) al RADIAN?' : 
+                           eventCode === '032' ? '¿Deseas enviar el Recibo de Bien/Servicio (032) al RADIAN?' : 
+                           '¿Deseas enviar la Aceptación Expresa (033)?';
+        
+        if (confirm(confirmMsg)) {
+            // Placeholder trigger for backend action
+            await sendRadianEvent(invoiceId, eventCode as any); toast.success(`Evento Título Valor ${eventCode} transmitido al RADIAN.`);
         }
     };
 
@@ -40,9 +52,9 @@ export default function DianClient({ initialInvoices }: any) {
                             <span>Finanzas</span> <span className="text-slate-700">/</span> <span className="text-amber-500">Tributario</span>
                         </div>
                         <h1 className="text-3xl font-bold text-white flex items-center gap-3 tracking-tight">
-                            Emisión DIAN <span className="text-sm font-normal text-slate-500">UBL 2.1</span>
+                            Emisión DIAN <span className="text-sm font-normal text-slate-500">UBL 2.1 & RADIAN</span>
                             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold border border-amber-500/20 flex items-center gap-1">
-                                <ShieldCheck size={12}/> API Real
+                                <ShieldCheck size={12}/> API Nativa Activa
                             </span>
                         </h1>
                     </div>
@@ -105,9 +117,11 @@ export default function DianClient({ initialInvoices }: any) {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         {inv.status === 'EMITIDA_DIAN' ? (
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => alert('Creación de Nota Crédito próximamente en Fase 3.3')} className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-lg transition-colors">Nota Crédito</button>
-                                                <Link href={`/api/invoices/${inv.id}/pdf`} target="_blank" className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors inline-block">
+                                            <div className="flex items-center justify-end gap-2 flex-wrap max-w-sm ml-auto">
+                                                <button onClick={() => handleRadianEvent(inv.id, '030')} title="Acuse de Recibo" className="px-2 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"><FileClock size={14}/> Acuse 030</button>
+                                                <button onClick={() => handleRadianEvent(inv.id, '032')} title="Recibo del Servicio" className="px-2 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"><CheckSquare size={14}/> Recibo 032</button>
+                                                <button onClick={() => alert('Creación de Nota Crédito Electrónica - Próximamente')} className="px-2 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded-lg transition-colors">Nota Crédito</button>
+                                                <Link href={`/api/invoices/${inv.id}/pdf`} target="_blank" className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors inline-block">
                                                     <Download size={18} />
                                                 </Link>
                                             </div>
