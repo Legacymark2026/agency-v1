@@ -229,5 +229,49 @@ export function createAuthorizationRouter(useCases: AuthorizationUseCases): Rout
     }
   });
 
+  // ── POST /check-permission (Gatekeeper & RBAC Evaluation) ───────────────────
+  router.post("/check-permission", async (req: Request, res: Response) => {
+    try {
+      const {
+        userId,
+        companyId,
+        requiredPermission,
+        userRole,
+        requiredTier,
+        skipSubscriptionCheck,
+      } = req.body;
+
+      if (!requiredPermission) {
+        res.status(400).json({ success: false, error: "requiredPermission is required" });
+        return;
+      }
+
+      const actor = getActorContext(req);
+      const targetCompanyId = companyId || actor.companyId;
+      const targetUserId = userId || actor.userId;
+      const targetRole = userRole || actor.role;
+
+      const result = await useCases.checkPermission({
+        userId: targetUserId,
+        companyId: targetCompanyId,
+        requiredPermission,
+        userRole: targetRole,
+        isSuperAdmin: actor.isSuperAdmin,
+        requiredTier,
+        skipSubscriptionCheck: Boolean(skipSubscriptionCheck),
+      });
+
+      const statusCode = result.granted ? 200 : 403;
+      res.status(statusCode).json({
+        success: result.granted,
+        granted: result.granted,
+        reason: result.reason,
+        subscriptionCheck: result.subscriptionCheck,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, granted: false, error: err.message });
+    }
+  });
+
   return router;
 }

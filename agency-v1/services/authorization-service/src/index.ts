@@ -27,7 +27,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 const eventBus = new EventBus(REDIS_URL, "authorization-service");
 const adapter = new PrismaAuthorizationAdapter(eventBus);
-const useCases = new AuthorizationUseCases(adapter, adapter, adapter, adapter);
+const useCases = new AuthorizationUseCases(adapter, adapter, adapter, adapter, adapter);
 
 app.use(helmet());
 app.use(cors({
@@ -101,28 +101,39 @@ grpcServer.addService(PROTO_PATHS.authz, "authz", "AuthorizationService", {
 
   CheckPermission: async (call: any, callback: any) => {
     try {
-      const { userId, companyId, requiredPermission, userRole, isSuperAdmin } = call.request;
-      if (isSuperAdmin || userRole === "super_admin" || userRole === "SUPER_ADMIN") {
-        return callback(null, { granted: true, reason: "SuperAdmin bypass" });
-      }
+      const {
+        userId,
+        companyId,
+        requiredPermission,
+        userRole,
+        isSuperAdmin,
+        requiredTier,
+        skipSubscriptionCheck,
+      } = call.request;
 
-      const roles = await useCases.getRolesByCompany(companyId, companyId, false);
-      const matchingRole = roles.find((r) => r.name.toLowerCase() === (userRole || "").toLowerCase());
-
-      if (!matchingRole) {
-        return callback(null, { granted: false, reason: `Role ${userRole} not found for company ${companyId}` });
-      }
-
-      const hasPerm = (matchingRole.permissions || []).some(
-        (p) => p.permission?.name === requiredPermission || p.permission?.name === "*"
-      );
+      const result = await useCases.checkPermission({
+        userId,
+        companyId,
+        requiredPermission,
+        userRole,
+        isSuperAdmin,
+        requiredTier,
+        skipSubscriptionCheck,
+      });
 
       callback(null, {
-        granted: hasPerm,
-        reason: hasPerm ? "Permission granted by role" : "Permission not present in assigned role",
+        granted: result.granted,
+        reason: result.reason,
+        subscriptionStatus: result.subscriptionCheck?.code || "UNKNOWN",
+        subscriptionCode: result.subscriptionCheck?.code || "UNKNOWN",
       });
     } catch (err: any) {
-      callback(null, { granted: false, reason: err.message });
+      callback(null, {
+        granted: false,
+        reason: err.message,
+        subscriptionStatus: "ERROR",
+        subscriptionCode: "ERROR",
+      });
     }
   },
 

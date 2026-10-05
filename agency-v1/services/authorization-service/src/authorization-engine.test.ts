@@ -59,4 +59,127 @@ describe("Authorization Service (AuthZ Engine) Tests", () => {
       ).rejects.toThrow("Access denied: Tenant boundary violation");
     });
   });
+
+  describe("Subscription Gatekeeper Prior Verification", () => {
+    const mockRoleRepo: any = {
+      listRolesByCompany: async () => [dummyRole],
+    };
+
+    it("DENIES access if company subscription is past_due or canceled before checking role", async () => {
+      const mockSubRepo: any = {
+        getCompanySubscription: async () => ({
+          companyId: "company-100",
+          subscriptionTier: "pro",
+          subscriptionStatus: "past_due",
+        }),
+      };
+
+      const useCases = new AuthorizationUseCases(mockRoleRepo, {} as any, {} as any, mockSubRepo);
+
+      const result = await useCases.checkPermission({
+        userId: "user-1",
+        companyId: "company-100",
+        userRole: "Accountant",
+        requiredPermission: "invoices.read",
+      });
+
+      expect(result.granted).toBe(false);
+      expect(result.subscriptionCheck?.allowed).toBe(false);
+      expect(result.subscriptionCheck?.code).toBe("SUBSCRIPTION_INACTIVE");
+      expect(result.reason).toContain("[SUBSCRIPTION GATEKEEPER]");
+    });
+
+    it("DENIES access if required tier is higher than company subscription tier", async () => {
+      const mockSubRepo: any = {
+        getCompanySubscription: async () => ({
+          companyId: "company-100",
+          subscriptionTier: "starter",
+          subscriptionStatus: "active",
+        }),
+      };
+
+      const useCases = new AuthorizationUseCases(mockRoleRepo, {} as any, {} as any, mockSubRepo);
+
+      const result = await useCases.checkPermission({
+        userId: "user-1",
+        companyId: "company-100",
+        userRole: "Accountant",
+        requiredPermission: "invoices.read",
+        requiredTier: "enterprise",
+      });
+
+      expect(result.granted).toBe(false);
+      expect(result.subscriptionCheck?.code).toBe("TIER_INSUFFICIENT");
+    });
+
+    it("ALLOWS access when subscription is active and role has required permission", async () => {
+      const mockSubRepo: any = {
+        getCompanySubscription: async () => ({
+          companyId: "company-100",
+          subscriptionTier: "pro",
+          subscriptionStatus: "active",
+        }),
+      };
+
+      const useCases = new AuthorizationUseCases(mockRoleRepo, {} as any, {} as any, mockSubRepo);
+
+      const result = await useCases.checkPermission({
+        userId: "user-1",
+        companyId: "company-100",
+        userRole: "Accountant",
+        requiredPermission: "invoices.read",
+      });
+
+      expect(result.granted).toBe(true);
+      expect(result.subscriptionCheck?.allowed).toBe(true);
+      expect(result.subscriptionCheck?.code).toBe("ACTIVE");
+    });
+
+    it("DENIES access when subscription is active but role lacks the permission", async () => {
+      const mockSubRepo: any = {
+        getCompanySubscription: async () => ({
+          companyId: "company-100",
+          subscriptionTier: "pro",
+          subscriptionStatus: "active",
+        }),
+      };
+
+      const useCases = new AuthorizationUseCases(mockRoleRepo, {} as any, {} as any, mockSubRepo);
+
+      const result = await useCases.checkPermission({
+        userId: "user-1",
+        companyId: "company-100",
+        userRole: "Accountant",
+        requiredPermission: "payroll.execute",
+      });
+
+      expect(result.granted).toBe(false);
+      expect(result.subscriptionCheck?.allowed).toBe(true);
+      expect(result.reason).toContain("not granted for role");
+    });
+
+    it("BYPASSES subscription check for SuperAdmin", async () => {
+      const mockSubRepo: any = {
+        getCompanySubscription: async () => ({
+          companyId: "company-100",
+          subscriptionTier: "free",
+          subscriptionStatus: "canceled",
+        }),
+      };
+
+      const useCases = new AuthorizationUseCases(mockRoleRepo, {} as any, {} as any, mockSubRepo);
+
+      const result = await useCases.checkPermission({
+        userId: "admin-super",
+        companyId: "company-100",
+        userRole: "super_admin",
+        requiredPermission: "any.permission",
+        isSuperAdmin: true,
+      });
+
+      expect(result.granted).toBe(true);
+      expect(result.subscriptionCheck?.code).toBe("BYPASS_ADMIN");
+    });
+  });
 });
+

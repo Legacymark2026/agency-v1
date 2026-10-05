@@ -77,3 +77,102 @@ export class AuthorizationMatrix {
     return targetTenantId === userTenantId;
   }
 }
+
+export type SubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "incomplete"
+  | "suspended"
+  | string;
+
+export type SubscriptionTierLevel = "free" | "starter" | "pro" | "professional" | "enterprise";
+
+export interface CompanySubscriptionDomain {
+  companyId: string;
+  subscriptionTier: string;
+  subscriptionStatus: SubscriptionStatus;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
+}
+
+export interface SubscriptionVerificationResult {
+  allowed: boolean;
+  reason?: string;
+  code?: "ACTIVE" | "SUBSCRIPTION_INACTIVE" | "SUBSCRIPTION_NOT_FOUND" | "TIER_INSUFFICIENT" | "BYPASS_ADMIN";
+}
+
+export class SubscriptionGatekeeper {
+  private static readonly TIER_HIERARCHY: Record<string, number> = {
+    free: 0,
+    starter: 1,
+    pro: 2,
+    professional: 2,
+    enterprise: 3,
+  };
+
+  /**
+   * Statuses considered healthy and authorized for general service consumption
+   */
+  public static isStatusActive(status?: string | null): boolean {
+    if (!status) return false;
+    const normalized = status.trim().toLowerCase();
+    return normalized === "active" || normalized === "trialing";
+  }
+
+  /**
+   * Verifies if company tier satisfies the required tier
+   */
+  public static isTierSufficient(currentTier: string, requiredTier?: string | null): boolean {
+    if (!requiredTier) return true;
+    const curLevel = this.TIER_HIERARCHY[currentTier.trim().toLowerCase()] ?? 0;
+    const reqLevel = this.TIER_HIERARCHY[requiredTier.trim().toLowerCase()] ?? 0;
+    return curLevel >= reqLevel;
+  }
+
+  /**
+   * Performs the mandatory prior gatekeeper evaluation for authorization
+   */
+  public static verifySubscriptionAccess(
+    subscription: CompanySubscriptionDomain | null,
+    requiredTier?: string | null,
+    isSuperAdmin: boolean = false
+  ): SubscriptionVerificationResult {
+    // 1. SuperAdmin bypass
+    if (isSuperAdmin) {
+      return { allowed: true, code: "BYPASS_ADMIN" };
+    }
+
+    // 2. Company subscription must exist
+    if (!subscription) {
+      return {
+        allowed: false,
+        code: "SUBSCRIPTION_NOT_FOUND",
+        reason: "Tenant has no registered subscription record",
+      };
+    }
+
+    // 3. Status must be active or trialing
+    if (!this.isStatusActive(subscription.subscriptionStatus)) {
+      return {
+        allowed: false,
+        code: "SUBSCRIPTION_INACTIVE",
+        reason: `Company subscription is ${subscription.subscriptionStatus}. Access restricted pending resolution.`,
+      };
+    }
+
+    // 4. Validate tier requirements if specified
+    if (requiredTier && !this.isTierSufficient(subscription.subscriptionTier, requiredTier)) {
+      return {
+        allowed: false,
+        code: "TIER_INSUFFICIENT",
+        reason: `Operation requires '${requiredTier}' plan or higher. Current plan is '${subscription.subscriptionTier}'.`,
+      };
+    }
+
+    return { allowed: true, code: "ACTIVE" };
+  }
+}
+

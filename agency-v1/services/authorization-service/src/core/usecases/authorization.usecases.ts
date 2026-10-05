@@ -4,14 +4,19 @@ import {
   RoleConfigDomain,
   UserRoleAssignment,
   AuthorizationMatrix,
+  SubscriptionGatekeeper,
+  CompanySubscriptionDomain,
 } from "../domain/authorization.domain";
 import {
   IRoleRepositoryPort,
   IPermissionRepositoryPort,
   IRoleConfigRepositoryPort,
+  ISubscriptionRepositoryPort,
   IAuthorizationEventPublisherPort,
   CreateRoleDTO,
   UpdateRoleDTO,
+  CheckPermissionDTO,
+  CheckPermissionResult,
 } from "../ports/authorization.ports";
 
 export class AuthorizationUseCases {
@@ -19,8 +24,81 @@ export class AuthorizationUseCases {
     private readonly roleRepo: IRoleRepositoryPort,
     private readonly permRepo: IPermissionRepositoryPort,
     private readonly roleConfigRepo: IRoleConfigRepositoryPort,
+    private readonly subscriptionRepo?: ISubscriptionRepositoryPort,
     private readonly eventPublisher?: IAuthorizationEventPublisherPort
   ) {}
+
+  /**
+   * Main gatekeeper method:
+   * 1. Validates company subscription as mandatory prior check
+   * 2. Evaluates RBAC role and granular permission assignment
+   */
+  async checkPermission(dto: CheckPermissionDTO): Promise<CheckPermissionResult> {
+    const isSuperAdmin = dto.isSuperAdmin || dto.userRole?.toLowerCase() === "super_admin";
+
+    // ── PASO 0: SuperAdmin Bypass Inmediato ───────────────────────────────────
+    if (isSuperAdmin) {
+      return {
+        granted: true,
+        reason: "SuperAdmin bypass: full system authorization granted",
+        subscriptionCheck: { allowed: true, code: "BYPASS_ADMIN" },
+      };
+    }
+
+    // ── PASO 1: Verificación de Suscripción Previa (Subscription Gatekeeper) ───
+    let subscription: CompanySubscriptionDomain | null = null;
+    if (dto.companyId && this.subscriptionRepo && !dto.skipSubscriptionCheck) {
+      subscription = await this.subscriptionRepo.getCompanySubscription(dto.companyId);
+      const subResult = SubscriptionGatekeeper.verifySubscriptionAccess(
+        subscription,
+        dto.requiredTier,
+        false
+      );
+
+      if (!subResult.allowed) {
+        if (this.eventPublisher) {
+          await this.eventPublisher.publishAuthorizationEvent("authz.subscription.denied", {
+            userId: dto.userId,
+            companyId: dto.companyId,
+            code: subResult.code,
+            reason: subResult.reason,
+            requiredTier: dto.requiredTier,
+          }).catch((e) => console.warn("[AuthzUseCases] Event publish warning:", e.message));
+        }
+
+        return {
+          granted: false,
+          reason: `[SUBSCRIPTION GATEKEEPER] ${subResult.reason}`,
+          subscriptionCheck: subResult,
+        };
+      }
+    }
+
+    // ── PASO 2: Verificación de Rol y Permiso en Matriz RBAC ───────────────────
+    const roles = await this.roleRepo.listRolesByCompany(dto.companyId, true);
+    const matchingRole = roles.find(
+      (r) => r.name.toLowerCase() === (dto.userRole || "").toLowerCase()
+    );
+
+    if (!matchingRole) {
+      return {
+        granted: false,
+        reason: `Role '${dto.userRole}' not found or inactive for company ${dto.companyId}`,
+        subscriptionCheck: { allowed: true, code: "ACTIVE" },
+      };
+    }
+
+    const hasPerm = AuthorizationMatrix.hasPermission(matchingRole, dto.requiredPermission, false);
+
+    return {
+      granted: hasPerm,
+      reason: hasPerm
+        ? "Permission granted by role"
+        : `Permission '${dto.requiredPermission}' not granted for role '${dto.userRole}'`,
+      subscriptionCheck: { allowed: true, code: "ACTIVE" },
+    };
+  }
+
 
   async getRolesByCompany(companyId: string, requestingUserTenantId?: string, isSuperAdmin = false): Promise<RoleDomain[]> {
     if (!AuthorizationMatrix.isWithinTenantBoundary(companyId, requestingUserTenantId, isSuperAdmin)) {

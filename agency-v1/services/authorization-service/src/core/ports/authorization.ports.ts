@@ -3,6 +3,8 @@ import {
   PermissionDefinition,
   RoleConfigDomain,
   UserRoleAssignment,
+  CompanySubscriptionDomain,
+  SubscriptionVerificationResult,
 } from "../domain/authorization.domain";
 
 export interface CreateRoleDTO {
@@ -21,6 +23,26 @@ export interface UpdateRoleDTO {
   isActive?: boolean;
   priority?: number;
   isDefault?: boolean;
+}
+
+export interface CheckPermissionDTO {
+  userId: string;
+  companyId: string;
+  requiredPermission: string;
+  userRole?: string;
+  isSuperAdmin?: boolean;
+  requiredTier?: string;
+  skipSubscriptionCheck?: boolean;
+}
+
+export interface CheckPermissionResult {
+  granted: boolean;
+  reason: string;
+  subscriptionCheck?: SubscriptionVerificationResult;
+}
+
+export interface ISubscriptionRepositoryPort {
+  getCompanySubscription(companyId: string): Promise<CompanySubscriptionDomain | null>;
 }
 
 export interface IRoleRepositoryPort {
@@ -47,3 +69,4 @@ export interface IRoleConfigRepositoryPort {
 export interface IAuthorizationEventPublisherPort {
   publishAuthorizationEvent(topic: string, payload: Record<string, any>): Promise<void>;
 }
+

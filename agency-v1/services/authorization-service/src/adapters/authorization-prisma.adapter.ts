@@ -5,11 +5,13 @@ import {
   PermissionDefinition,
   RoleConfigDomain,
   UserRoleAssignment,
+  CompanySubscriptionDomain,
 } from "../core/domain/authorization.domain";
 import {
   IRoleRepositoryPort,
   IPermissionRepositoryPort,
   IRoleConfigRepositoryPort,
+  ISubscriptionRepositoryPort,
   IAuthorizationEventPublisherPort,
   CreateRoleDTO,
   UpdateRoleDTO,
@@ -20,9 +22,37 @@ export class PrismaAuthorizationAdapter
     IRoleRepositoryPort,
     IPermissionRepositoryPort,
     IRoleConfigRepositoryPort,
+    ISubscriptionRepositoryPort,
     IAuthorizationEventPublisherPort
 {
   constructor(private readonly eventBus?: EventBus) {}
+
+  /**
+   * Fast retrieval of tenant subscription state directly from Company table
+   */
+  async getCompanySubscription(companyId: string): Promise<CompanySubscriptionDomain | null> {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: {
+        id: true,
+        subscriptionTier: true,
+        subscriptionStatus: true,
+        stripeCustomerId: true,
+        stripeSubscriptionId: true,
+      },
+    });
+
+    if (!company) return null;
+
+    return {
+      companyId: company.id,
+      subscriptionTier: company.subscriptionTier || "free",
+      subscriptionStatus: company.subscriptionStatus || "active",
+      stripeCustomerId: company.stripeCustomerId,
+      stripeSubscriptionId: company.stripeSubscriptionId,
+    };
+  }
+
 
   async listRolesByCompany(companyId: string, activeOnly = true): Promise<RoleDomain[]> {
     const roles = await prisma.role.findMany({

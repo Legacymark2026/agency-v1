@@ -41,11 +41,15 @@ message CheckPermissionRequest {
   string requiredPermission = 3;
   string userRole = 4;
   bool isSuperAdmin = 5;
+  string requiredTier = 6;
+  bool skipSubscriptionCheck = 7;
 }
 
 message CheckPermissionResponse {
   bool granted = 1;
   string reason = 2;
+  string subscriptionStatus = 3;
+  string subscriptionCode = 4;
 }
 
 message GetUserRolesRequest {
