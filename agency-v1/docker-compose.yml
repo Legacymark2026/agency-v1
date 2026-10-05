@@ -924,6 +924,32 @@ services:
       - "traefik.http.routers.audit.tls.certresolver=le"
       - "traefik.http.services.audit.loadbalancer.server.port=4030"
 
+  # ── Centralized Policy Engine (PDP - Policy Decision Point / ABAC) ────────
+  policy-service:
+    <<: *microservice-base
+    build:
+      context: .
+      dockerfile: services/policy-service/Dockerfile
+    environment:
+      <<: *common-env
+      PORT: "4050"
+      OTEL_SERVICE_NAME: policy-service
+    depends_on:
+      pgbouncer: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4050/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.policy.rule=PathPrefix(`/api/policies`)"
+      - "traefik.http.routers.policy.entrypoints=websecure"
+      - "traefik.http.routers.policy.tls=true"
+      - "traefik.http.routers.policy.tls.certresolver=le"
+      - "traefik.http.services.policy.loadbalancer.server.port=4050"
+
   # ── Payment Gateway Service (Pasarelas de Pago) ───────────────────────────
   payment-service:
     <<: *microservice-base
