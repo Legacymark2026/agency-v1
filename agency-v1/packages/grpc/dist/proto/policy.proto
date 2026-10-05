@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package policy;
+
+service PolicyEngineService {
+  rpc EvaluatePolicy (PolicyEvaluationRequest) returns (PolicyEvaluationResponse);
+  rpc HealthCheck (PolicyHealthRequest) returns (PolicyHealthResponse);
+}
+
+message SubjectAttributes {
+  string id = 1;
+  string role = 2;
+  repeated string roles = 3;
+  string tenantId = 4;
+  string companyId = 5;
+  string department = 6;
+  int32 clearanceLevel = 7;
+  bool isMfaVerified = 8;
+}
+
+message ResourceAttributes {
+  string type = 1;
+  string id = 2;
+  string tenantId = 3;
+  string companyId = 4;
+  double amount = 5;
+  string classification = 6;
+  string status = 7;
+  string ownerId = 8;
+}
+
+message EnvironmentContext {
+  string currentTime = 1;
+  string ipAddress = 2;
+  bool isOffHours = 3;
+  double riskScore = 4;
+  string originatingService = 5;
+}
+
+message PolicyEvaluationRequest {
+  SubjectAttributes subject = 1;
+  string action = 2;
+  ResourceAttributes resource = 3;
+  EnvironmentContext context = 4;
+}
+
+message PolicyEvaluationResponse {
+  string decision = 1; // "PERMIT" | "DENY" | "NOT_APPLICABLE"
+  repeated string matchingPolicies = 2;
+  repeated string reasons = 3;
+  repeated string obligations = 4;
+  double evaluationDurationMs = 5;
+  string timestamp = 6;
+}
+
+message PolicyHealthRequest {}
+
+message PolicyHealthResponse {
+  string status = 1;
+  string service = 2;
+  string version = 3;
+  int32 activePoliciesCount = 4;
+}

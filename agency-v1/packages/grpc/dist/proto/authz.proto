@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package authz;
+
+service AuthorizationService {
+  rpc GetRolesByCompany (GetRolesByCompanyRequest) returns (GetRolesByCompanyResponse);
+  rpc CheckPermission (CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc GetUserRoles (GetUserRolesRequest) returns (GetUserRolesResponse);
+}
+
+message RolePermission {
+  string permissionId = 1;
+  string permissionName = 2;
+  string category = 3;
+}
+
+message RoleInfo {
+  string id = 1;
+  string name = 2;
+  string companyId = 3;
+  string description = 4;
+  bool isActive = 5;
+  repeated RolePermission permissions = 6;
+}
+
+message GetRolesByCompanyRequest {
+  string companyId = 1;
+  string requestingTenantId = 2;
+  bool isSuperAdmin = 3;
+}
+
+message GetRolesByCompanyResponse {
+  bool success = 1;
+  repeated RoleInfo roles = 2;
+  string error = 3;
+}
+
+message CheckPermissionRequest {
+  string userId = 1;
+  string companyId = 2;
+  string requiredPermission = 3;
+  string userRole = 4;
+  bool isSuperAdmin = 5;
+}
+
+message CheckPermissionResponse {
+  bool granted = 1;
+  string reason = 2;
+}
+
+message GetUserRolesRequest {
+  string userId = 1;
+  string companyId = 2;
+}
+
+message GetUserRolesResponse {
+  string userId = 1;
+  string companyId = 2;
+  string roleName = 3;
+  repeated string permissions = 4;
+}

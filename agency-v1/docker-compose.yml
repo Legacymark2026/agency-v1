@@ -933,6 +933,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4050"
+      GRPC_PORT: "50053"
       OTEL_SERVICE_NAME: policy-service
     depends_on:
       pgbouncer: { condition: service_healthy }
@@ -959,6 +960,7 @@ services:
     environment:
       <<: *common-env
       PORT: "4055"
+      GRPC_PORT: "50052"
       OTEL_SERVICE_NAME: authorization-service
     depends_on:
       pgbouncer: { condition: service_healthy }

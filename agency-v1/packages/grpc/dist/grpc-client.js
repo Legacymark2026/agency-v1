@@ -91,7 +91,7 @@ class GrpcClientHelper {
                 if (typeof rawClient[methodName] !== "function") {
                     return reject(new Error(`Method ${methodName} not found on gRPC client ${serviceClass}`));
                 }
-                const deadline = new Date(Date.now() + (this.breakerOptions?.timeoutMs || 5000));
+                const deadline = new Date(Date.now() + (breakerOptions?.timeoutMs || 5000));
                 rawClient[methodName](req, { deadline }, (err, response) => {
                     if (err)
                         return reject(err);
