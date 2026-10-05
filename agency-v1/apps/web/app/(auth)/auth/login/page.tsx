@@ -108,7 +108,7 @@ export default function LoginPage() {
                             Gestiona tus proyectos, agiliza tus operaciones y domina el ecosistema digital desde tu nuevo panel de control.
                         </p>
 
-                        <Link href="/auth/register">
+                        <Link href="/register-agency">
                             <Button variant="outline" className="mt-8 border-white/10 text-white hover:bg-white/5 hover:text-white bg-transparent rounded-full px-8 py-2 w-fit">
                                 Crear Cuenta Nueva
                             </Button>

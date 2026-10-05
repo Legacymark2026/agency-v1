@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { registerAgency } from "@/actions/onboarding";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Building, User, Mail, Lock, Briefcase, Globe, Users } from "lucide-react";
+import { Loader2, Building, User, Mail, Lock, Briefcase, Globe, Users, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getClientDeviceSignals, computeClientDeviceHash } from "@/lib/client-fingerprint";
@@ -13,10 +11,10 @@ import { getClientDeviceSignals, computeClientDeviceHash } from "@/lib/client-fi
 export function RegisterAgencyForm() {
   const [loading, setLoading] = useState(false);
   const [deviceFingerprint, setDeviceFingerprint] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Extraer y computar la huella digital del hardware del cliente de manera no bloqueante
     try {
       const signals = getClientDeviceSignals();
       computeClientDeviceHash(signals).then((hash) => {
@@ -25,7 +23,7 @@ export function RegisterAgencyForm() {
         }
       });
     } catch {
-      // Degradar pacíficamente si el navegador restringe alguna API
+      // Degradar pacíficamente
     }
   }, []);
 
@@ -52,156 +50,178 @@ export function RegisterAgencyForm() {
     }
   }
 
+  const inputClass = "block w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-colors text-xs";
+  const selectClass = "block w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-colors cursor-pointer";
+  const labelClass = "block text-[11px] font-semibold text-slate-300 uppercase tracking-wider mb-1.5";
+
   return (
-    <form onSubmit={onSubmit} className="space-y-5 w-full max-w-sm">
+    <form onSubmit={onSubmit} className="space-y-4 w-full">
       <input type="hidden" name="deviceFingerprint" value={deviceFingerprint} />
-      <div className="space-y-4">
-        {/* Nombre de la Empresa */}
-        <div className="space-y-1.5">
-          <Label htmlFor="agencyName" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-            Nombre de la Empresa / Negocio
-          </Label>
-          <div className="relative">
-            <Building className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-            <Input 
-              id="agencyName" 
-              name="agencyName" 
-              placeholder="Acme Growth S.A.S." 
-              className="pl-10 bg-slate-900/60 border-slate-800 text-slate-200 focus-visible:ring-teal-500 h-9 text-sm" 
-              required 
-            />
-          </div>
+
+      {/* Nombre de la Empresa */}
+      <div>
+        <label htmlFor="agencyName" className={labelClass}>
+          Nombre de la Empresa / Negocio
+        </label>
+        <div className="relative">
+          <Building className="absolute left-3.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+          <input
+            id="agencyName"
+            name="agencyName"
+            placeholder="Acme Growth S.A.S."
+            className={`${inputClass} pl-10`}
+            required
+          />
         </div>
+      </div>
 
-        {/* Fila Doble: Sector & Tamaño de Equipo */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="industry" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-              Sector
-            </Label>
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />
-              <select
-                id="industry"
-                name="industry"
-                defaultValue="marketing"
-                className="w-full h-9 rounded-md pl-9 pr-2 text-xs bg-slate-900/60 border border-slate-800 text-slate-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
-              >
-                <option value="marketing" className="bg-slate-900">Marketing & Ventas</option>
-                <option value="software" className="bg-slate-900">Software & TI</option>
-                <option value="real_estate" className="bg-slate-900">Inmobiliaria</option>
-                <option value="ecommerce" className="bg-slate-900">E-commerce</option>
-                <option value="professional_services" className="bg-slate-900">Servicios / Consultoría</option>
-                <option value="other" className="bg-slate-900">Otro sector</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="teamSize" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-              Equipo
-            </Label>
-            <div className="relative">
-              <Users className="absolute left-3 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />
-              <select
-                id="teamSize"
-                name="teamSize"
-                defaultValue="2-5"
-                className="w-full h-9 rounded-md pl-9 pr-2 text-xs bg-slate-900/60 border border-slate-800 text-slate-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
-              >
-                <option value="1" className="bg-slate-900">Solo yo (1)</option>
-                <option value="2-5" className="bg-slate-900">2 a 5 personas</option>
-                <option value="6-20" className="bg-slate-900">6 a 20 personas</option>
-                <option value="20+" className="bg-slate-900">Más de 20</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* País de Operación Principal */}
-        <div className="space-y-1.5">
-          <Label htmlFor="country" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-            País de Operación Principal
-          </Label>
+      {/* Fila Doble: Sector & Tamaño de Equipo */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="industry" className={labelClass}>
+            Sector
+          </label>
           <div className="relative">
-            <Globe className="absolute left-3 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />
+            <Briefcase className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
             <select
-              id="country"
-              name="country"
-              defaultValue="CO"
-              className="w-full h-9 rounded-md pl-9 pr-3 text-xs bg-slate-900/60 border border-slate-800 text-slate-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-teal-500"
+              id="industry"
+              name="industry"
+              defaultValue="marketing"
+              className={selectClass}
             >
-              <option value="CO" className="bg-slate-900">🇨🇴 Colombia (COP - Pesos)</option>
-              <option value="MX" className="bg-slate-900">🇲🇽 México (MXN - Pesos)</option>
-              <option value="US" className="bg-slate-900">🇺🇸 Estados Unidos (USD - Dólares)</option>
-              <option value="ES" className="bg-slate-900">🇪🇸 España / Europa (EUR - Euros)</option>
-              <option value="OTHER" className="bg-slate-900">🌎 Otro país (USD)</option>
+              <option value="marketing" className="bg-[#111827]">Marketing</option>
+              <option value="software" className="bg-[#111827]">Software & TI</option>
+              <option value="real_estate" className="bg-[#111827]">Inmobiliaria</option>
+              <option value="ecommerce" className="bg-[#111827]">E-commerce</option>
+              <option value="professional_services" className="bg-[#111827]">Servicios</option>
+              <option value="other" className="bg-[#111827]">Otro sector</option>
             </select>
           </div>
         </div>
 
-        {/* Nombre del Administrador */}
-        <div className="space-y-1.5">
-          <Label htmlFor="adminName" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-            Tu Nombre Completo
-          </Label>
+        <div>
+          <label htmlFor="teamSize" className={labelClass}>
+            Equipo
+          </label>
           <div className="relative">
-            <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-            <Input 
-              id="adminName" 
-              name="adminName" 
-              placeholder="Carlos Rodríguez" 
-              className="pl-10 bg-slate-900/60 border-slate-800 text-slate-200 focus-visible:ring-teal-500 h-9 text-sm" 
-              required 
-            />
-          </div>
-        </div>
-
-        {/* Correo Electrónico */}
-        <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-            Correo Electrónico Laboral
-          </Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-            <Input 
-              id="email" 
-              name="email" 
-              type="email" 
-              placeholder="carlos@tuempresa.com" 
-              className="pl-10 bg-slate-900/60 border-slate-800 text-slate-200 focus-visible:ring-teal-500 h-9 text-sm" 
-              required 
-            />
-          </div>
-        </div>
-
-        {/* Contraseña */}
-        <div className="space-y-1.5">
-          <Label htmlFor="password" className="text-slate-300 text-xs font-medium uppercase tracking-wider">
-            Contraseña Segura
-          </Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
-            <Input 
-              id="password" 
-              name="password" 
-              type="password" 
-              placeholder="••••••••" 
-              className="pl-10 bg-slate-900/60 border-slate-800 text-slate-200 focus-visible:ring-teal-500 h-9 text-sm" 
-              required 
-              minLength={8}
-            />
+            <Users className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+            <select
+              id="teamSize"
+              name="teamSize"
+              defaultValue="2-5"
+              className={selectClass}
+            >
+              <option value="1" className="bg-[#111827]">Solo yo (1)</option>
+              <option value="2-5" className="bg-[#111827]">2 a 5 pers.</option>
+              <option value="6-20" className="bg-[#111827]">6 a 20 pers.</option>
+              <option value="20+" className="bg-[#111827]">Más de 20</option>
+            </select>
           </div>
         </div>
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full bg-teal-600 hover:bg-teal-500 text-white font-medium h-10 mt-2 shadow-lg shadow-teal-900/20">
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Crear Espacio de Trabajo"}
+      {/* País de Operación Principal */}
+      <div>
+        <label htmlFor="country" className={labelClass}>
+          País de Operación Principal
+        </label>
+        <div className="relative">
+          <Globe className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+          <select
+            id="country"
+            name="country"
+            defaultValue="CO"
+            className={selectClass}
+          >
+            <option value="CO" className="bg-[#111827]">🇨🇴 Colombia (COP - Pesos)</option>
+            <option value="MX" className="bg-[#111827]">🇲🇽 México (MXN - Pesos)</option>
+            <option value="US" className="bg-[#111827]">🇺🇸 Estados Unidos (USD - Dólares)</option>
+            <option value="ES" className="bg-[#111827]">🇪🇸 España / Europa (EUR - Euros)</option>
+            <option value="OTHER" className="bg-[#111827]">🌎 Otro país (USD)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Nombre del Administrador */}
+      <div>
+        <label htmlFor="adminName" className={labelClass}>
+          Tu Nombre Completo
+        </label>
+        <div className="relative">
+          <User className="absolute left-3.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+          <input
+            id="adminName"
+            name="adminName"
+            placeholder="Carlos Rodríguez"
+            className={`${inputClass} pl-10`}
+            required
+          />
+        </div>
+      </div>
+
+      {/* Correo Electrónico */}
+      <div>
+        <label htmlFor="email" className={labelClass}>
+          Correo Electrónico Laboral
+        </label>
+        <div className="relative">
+          <Mail className="absolute left-3.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="carlos@tuempresa.com"
+            className={`${inputClass} pl-10`}
+            required
+          />
+        </div>
+      </div>
+
+      {/* Contraseña con Toggle */}
+      <div>
+        <label htmlFor="password" className={labelClass}>
+          Contraseña Segura
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Mínimo 8 caracteres"
+            className={`${inputClass} pl-10 pr-10`}
+            required
+            minLength={8}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Botón de Submit idéntico a Login */}
+      <Button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-teal-500 to-teal-400 text-white font-medium py-3 rounded-xl shadow-lg hover:shadow-teal-500/25 transition-all outline-none text-xs mt-2"
+      >
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Aprovisionando Espacio...
+          </span>
+        ) : (
+          "Crear Espacio de Trabajo"
+        )}
       </Button>
 
-      <div className="text-center text-xs text-slate-500 pt-1">
+      <p className="text-center text-[10px] text-slate-500 pt-1 leading-relaxed">
         Al crear tu cuenta, aceptas nuestros Términos de Servicio y Políticas de Privacidad.
-      </div>
+      </p>
     </form>
   );
 }

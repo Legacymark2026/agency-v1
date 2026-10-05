@@ -142,6 +142,11 @@ const nextConfig: NextConfig = {
         destination: '/auth/login',
         permanent: true,
       },
+      {
+        source: '/auth/register',
+        destination: '/register-agency',
+        permanent: true,
+      },
     ];
   },
   async headers() {
