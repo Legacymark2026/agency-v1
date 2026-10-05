@@ -11,6 +11,12 @@ export interface DianInvoiceData {
         iva: number;
         ica: number;
         inc: number;
+        bolsas?: number;
+        ibua?: number;
+        icui?: number;
+        reteIVA?: number;
+        reteFuente?: number;
+        reteICA?: number;
     };
     issuer: {
         nit: string;
@@ -115,12 +121,72 @@ export function buildUBL21Invoice(data: DianInvoiceData): { xml: string; cufe: s
         .up()
     .up();
 
-    // Legal Monetary Total
+    // Multi-Tax Total (IVA: 01, INC: 04, ICA: 03, Bolsas: 22, IBUA: 34, ICUI: 35)
+    const directTaxes = [
+        { id: "01", name: "IVA", amount: data.taxes.iva || 0 },
+        { id: "04", name: "INC", amount: data.taxes.inc || 0 },
+        { id: "03", name: "ICA", amount: data.taxes.ica || 0 },
+        { id: "22", name: "Bolsas", amount: data.taxes.bolsas || 0 },
+        { id: "34", name: "IBUA", amount: data.taxes.ibua || 0 },
+        { id: "35", name: "ICUI", amount: data.taxes.icui || 0 }
+    ].filter(t => t.amount > 0);
+
+    const totalTaxAmount = directTaxes.reduce((sum, t) => sum + t.amount, 0);
+
+    // TaxTotal
+    const taxTotalNode = root.ele('cac:TaxTotal')
+        .ele('cbc:TaxAmount', { currencyID: 'COP' }).txt(totalTaxAmount.toFixed(2)).up();
+
+    directTaxes.forEach(t => {
+        taxTotalNode.ele('cac:TaxSubtotal')
+            .ele('cbc:TaxableAmount', { currencyID: 'COP' }).txt(data.subtotal.toFixed(2)).up()
+            .ele('cbc:TaxAmount', { currencyID: 'COP' }).txt(t.amount.toFixed(2)).up()
+            .ele('cac:TaxCategory')
+                .ele('cac:TaxScheme')
+                    .ele('cbc:ID').txt(t.id).up()
+                    .ele('cbc:Name').txt(t.name).up()
+                .up()
+            .up()
+        .up();
+    });
+
+    // Withholdings (ReteIVA: 05, ReteFuente: 06, ReteICA: 07)
+    const withholdings = [
+        { id: "05", name: "ReteIVA", amount: data.taxes.reteIVA || 0 },
+        { id: "06", name: "ReteFuente", amount: data.taxes.reteFuente || 0 },
+        { id: "07", name: "ReteICA", amount: data.taxes.reteICA || 0 }
+    ].filter(w => w.amount > 0);
+
+    const totalWithholdingAmount = withholdings.reduce((sum, w) => sum + w.amount, 0);
+
+    if (withholdings.length > 0) {
+        const withNode = root.ele('cac:WithholdingTaxTotal')
+            .ele('cbc:TaxAmount', { currencyID: 'COP' }).txt(totalWithholdingAmount.toFixed(2)).up();
+
+        withholdings.forEach(w => {
+            withNode.ele('cac:TaxSubtotal')
+                .ele('cbc:TaxableAmount', { currencyID: 'COP' }).txt(data.subtotal.toFixed(2)).up()
+                .ele('cbc:TaxAmount', { currencyID: 'COP' }).txt(w.amount.toFixed(2)).up()
+                .ele('cac:TaxCategory')
+                    .ele('cac:TaxScheme')
+                        .ele('cbc:ID').txt(w.id).up()
+                        .ele('cbc:Name').txt(w.name).up()
+                    .up()
+                .up()
+            .up();
+        });
+    }
+
+    // Arithmetically balanced LegalMonetaryTotal
+    const taxInclusive = data.subtotal + totalTaxAmount;
+    const finalPayable = Math.max(0, taxInclusive - totalWithholdingAmount);
+
     root.ele('cac:LegalMonetaryTotal')
         .ele('cbc:LineExtensionAmount', { currencyID: 'COP' }).txt(data.subtotal.toFixed(2)).up()
         .ele('cbc:TaxExclusiveAmount', { currencyID: 'COP' }).txt(data.subtotal.toFixed(2)).up()
-        .ele('cbc:TaxInclusiveAmount', { currencyID: 'COP' }).txt(data.totalAmount.toFixed(2)).up()
-        .ele('cbc:PayableAmount', { currencyID: 'COP' }).txt(data.totalAmount.toFixed(2)).up()
+        .ele('cbc:TaxInclusiveAmount', { currencyID: 'COP' }).txt(taxInclusive.toFixed(2)).up()
+        .ele('cbc:PrepaidPaymentAmount', { currencyID: 'COP' }).txt(totalWithholdingAmount.toFixed(2)).up()
+        .ele('cbc:PayableAmount', { currencyID: 'COP' }).txt(finalPayable.toFixed(2)).up()
     .up();
 
     // Add 1 Line Item for schema satisfaction
