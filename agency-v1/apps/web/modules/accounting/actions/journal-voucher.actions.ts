@@ -209,11 +209,11 @@ export async function createFinancialAccountAction(params: {
 
 export async function executePeriodClosingAction(period: string): Promise<{ success: boolean; closingVoucher?: JournalVoucherRecord; error?: string }> {
   try {
-    const invoices = await prisma.invoice.findMany({ select: { total: true } });
+    const invoices = await prisma.invoice.findMany({ select: { totalAmount: true } });
     const expenses = await prisma.expense.findMany({ select: { amount: true } });
     const payrolls = await prisma.payroll.findMany({ select: { totalEarnings: true } });
 
-    const totalIncome = invoices.reduce((acc, inv) => acc + (Number(inv.total) || 0), 0);
+    const totalIncome = invoices.reduce((acc, inv) => acc + (Number(inv.totalAmount) || 0), 0);
     const totalExpenses = expenses.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
     const totalPayroll = payrolls.reduce((acc, pay) => acc + (Number(pay.totalEarnings) || 0), 0);
     const totalCostsAndExpenses = totalExpenses + totalPayroll;

@@ -44,8 +44,8 @@ export async function getRFMSmartSegmentsAction(): Promise<RFMSmartSegment[]> {
       prisma.invoice.findMany({
         select: {
           id: true,
-          customerEmail: true,
-          total: true,
+          clientEmail: true,
+          totalAmount: true,
           createdAt: true,
         },
       }),
@@ -68,9 +68,9 @@ export async function getRFMSmartSegmentsAction(): Promise<RFMSmartSegment[]> {
     // Clasificar leads según su historial real
     for (const lead of leads) {
       const leadDeals = deals.filter(d => d.contactEmail === lead.email);
-      const leadInvoices = invoices.filter(i => i.customerEmail === lead.email);
+      const leadInvoices = invoices.filter(i => i.clientEmail === lead.email);
 
-      const totalSpent = leadInvoices.reduce((s, inv) => s + (Number(inv.total) || 0), 0) +
+      const totalSpent = leadInvoices.reduce((s, inv) => s + (Number(inv.totalAmount) || 0), 0) +
         leadDeals.filter(d => d.stage === "WON" || d.stage === "CLOSED_WON").reduce((s, d) => s + (d.value || 0), 0);
 
       const lastActivity = Math.max(
@@ -185,10 +185,10 @@ export async function getMultiTouchAttributionAction(
     const [leads, deals, invoices] = await Promise.all([
       prisma.lead.findMany({ select: { id: true, source: true, value: true, stage: true } }),
       prisma.deal.findMany({ select: { id: true, value: true, stage: true } }),
-      prisma.invoice.findMany({ select: { id: true, total: true } }),
+      prisma.invoice.findMany({ select: { id: true, totalAmount: true } }),
     ]);
 
-    const totalRevenueUsd = invoices.reduce((s, inv) => s + (Number(inv.total) || 0), 0) +
+    const totalRevenueUsd = invoices.reduce((s, inv) => s + (Number(inv.totalAmount) || 0), 0) +
       deals.filter(d => d.stage === "WON" || d.stage === "CLOSED_WON").reduce((s, d) => s + (d.value || 0), 0);
 
     const totalConversions = invoices.length + deals.filter(d => d.stage === "WON" || d.stage === "CLOSED_WON").length;

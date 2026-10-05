@@ -10,14 +10,14 @@ export async function getOfficialFinancialStatementsAction(params?: {
     const year = params?.fiscalYear || new Date().getFullYear();
 
     const [invoices, expenses, payrolls, bankAccs] = await Promise.all([
-      prisma.invoice.findMany({ select: { total: true, status: true } }).catch(() => []),
+      prisma.invoice.findMany({ select: { totalAmount: true, status: true } }).catch(() => []),
       prisma.expense.findMany({ select: { amount: true, status: true } }).catch(() => []),
       prisma.payroll.findMany({ select: { totalEarnings: true } }).catch(() => []),
       prisma.financialAccount.findMany({ where: { isActive: true } }).catch(() => []),
     ]);
 
-    let totalRevenue = invoices.reduce((s, i) => s + (Number(i.total) || 0), 0);
-    let accountsReceivable = invoices.filter(i => i.status !== "PAID").reduce((s, i) => s + (Number(i.total) || 0), 0);
+    let totalRevenue = invoices.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0);
+    let accountsReceivable = invoices.filter(i => i.status !== "PAID").reduce((s, i) => s + (Number(i.totalAmount) || 0), 0);
     let totalExpenses = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
     let accountsPayable = expenses.filter(e => e.status === "PENDING").reduce((s, e) => s + (Number(e.amount) || 0), 0);
     let totalPayroll = payrolls.reduce((s, p) => s + (Number(p.totalEarnings) || 0), 0);

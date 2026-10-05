@@ -8,8 +8,8 @@ export async function getTaxCalendarAction(): Promise<{ success: boolean; obliga
   let realIncome = 0;
 
   try {
-    const invoices = await prisma.invoice.findMany({ select: { total: true } });
-    realIncome = invoices.reduce((acc, inv) => acc + (Number(inv.total) || 0), 0);
+    const invoices = await prisma.invoice.findMany({ select: { totalAmount: true } });
+    realIncome = invoices.reduce((acc, inv) => acc + (Number(inv.totalAmount) || 0), 0);
     realVat = Math.round(realIncome * 0.19);
   } catch (_) {}
 

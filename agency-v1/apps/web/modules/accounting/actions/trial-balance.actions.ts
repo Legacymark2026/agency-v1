@@ -19,14 +19,14 @@ export async function getTrialBalanceAction(): Promise<{
 
   try {
     const [invoices, expenses, payrolls, bankAccs] = await Promise.all([
-      prisma.invoice.findMany({ select: { total: true, status: true } }).catch(() => []),
+      prisma.invoice.findMany({ select: { totalAmount: true, status: true } }).catch(() => []),
       prisma.expense.findMany({ select: { amount: true, status: true } }).catch(() => []),
       prisma.payroll.findMany({ select: { totalEarnings: true, netPay: true } }).catch(() => []),
       prisma.financialAccount.findMany({ where: { isActive: true } }).catch(() => []),
     ]);
 
     invoices.forEach((inv) => {
-      const val = Number(inv.total) || 0;
+      const val = Number(inv.totalAmount) || 0;
       realRevenue += val;
       if (inv.status !== "PAID") realAccountsReceivable += val;
     });
@@ -81,13 +81,13 @@ export async function getFinancialRatiosAction(): Promise<{ success: boolean; ra
 
   try {
     const [invoices, expList, banks] = await Promise.all([
-      prisma.invoice.findMany({ select: { total: true, status: true } }).catch(() => []),
+      prisma.invoice.findMany({ select: { totalAmount: true, status: true } }).catch(() => []),
       prisma.expense.findMany({ select: { amount: true, status: true } }).catch(() => []),
       prisma.financialAccount.findMany({ where: { isActive: true } }).catch(() => []),
     ]);
 
     invoices.forEach((inv) => {
-      const val = Number(inv.total) || 0;
+      const val = Number(inv.totalAmount) || 0;
       revenue += val;
       if (inv.status !== "PAID") receivables += val;
     });

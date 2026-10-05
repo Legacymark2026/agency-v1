@@ -10,12 +10,12 @@ export async function getIncomeStatementAction(): Promise<{ success: boolean; re
 
   try {
     const [invoices, expenses, payrolls] = await Promise.all([
-      prisma.invoice.findMany({ select: { total: true } }).catch(() => []),
+      prisma.invoice.findMany({ select: { totalAmount: true } }).catch(() => []),
       prisma.expense.findMany({ select: { amount: true } }).catch(() => []),
       prisma.payroll.findMany({ select: { totalEarnings: true } }).catch(() => []),
     ]);
 
-    grossRevenue = invoices.reduce((acc, inv) => acc + (Number(inv.total) || 0), 0);
+    grossRevenue = invoices.reduce((acc, inv) => acc + (Number(inv.totalAmount) || 0), 0);
     const expTotal = expenses.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
     const payTotal = payrolls.reduce((acc, pay) => acc + (Number(pay.totalEarnings) || 0), 0);
 
@@ -59,12 +59,12 @@ export async function getCashFlowForecastAction(): Promise<{ success: boolean; f
   try {
     const [banks, invs, exps] = await Promise.all([
       prisma.financialAccount.findMany({ where: { isActive: true } }).catch(() => []),
-      prisma.invoice.findMany({ where: { status: { in: ["PENDING", "OVERDUE"] } }, select: { total: true } }).catch(() => []),
+      prisma.invoice.findMany({ where: { status: { in: ["PENDING", "OVERDUE"] } }, select: { totalAmount: true } }).catch(() => []),
       prisma.expense.findMany({ where: { status: "PENDING" }, select: { amount: true } }).catch(() => []),
     ]);
 
     bankBalance = banks.reduce((acc, b) => acc + (Number(b.balance) || 0), 0);
-    pendingReceivables = invs.reduce((acc, inv) => acc + (Number(inv.total) || 0), 0);
+    pendingReceivables = invs.reduce((acc, inv) => acc + (Number(inv.totalAmount) || 0), 0);
     pendingPayables = exps.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
   } catch (_) {}
 
