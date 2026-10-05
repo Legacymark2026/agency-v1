@@ -104,14 +104,14 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
 
     return (
         <Dialog open={open} onOpenChange={(val) => { if (!val) handleDismiss(); }}>
-            <DialogContent className="sm:max-w-[720px] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl relative">
+            <DialogContent className="w-[95vw] sm:max-w-[700px] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl relative max-h-[90vh] flex flex-col">
                 {/* Botón de Cierre */}
                 <button 
                     onClick={handleDismiss}
-                    className="absolute top-4 right-4 z-50 text-slate-400 hover:text-white p-1 rounded-md bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 transition-all"
+                    className="absolute top-3 right-3 z-50 text-slate-400 hover:text-white p-1 rounded-md bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 transition-all"
                     title="Cerrar guía"
                 >
-                    <X size={16} />
+                    <X size={15} />
                 </button>
 
                 <div className="sr-only">
@@ -124,40 +124,53 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
                 </div>
 
                 {/* Barra de Progreso */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-slate-900">
+                <div className="absolute top-0 left-0 w-full h-1 bg-slate-900 z-30">
                     <div 
                         className="h-full bg-gradient-to-r from-teal-500 via-emerald-400 to-indigo-500 transition-all duration-500" 
                         style={{ width: `${(step / 3) * 100}%` }}
                     />
                 </div>
 
-                <div className="flex flex-col md:flex-row h-full max-h-[85vh]">
-                    {/* Barra Lateral Izquierda */}
-                    <div className="w-full md:w-1/3 bg-slate-900/50 p-6 border-r border-slate-800/60 hidden md:block">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs uppercase tracking-widest text-teal-400 font-mono font-semibold">Paso a Paso</span>
+                <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
+                    {/* Barra Lateral Izquierda (Desktop) */}
+                    <div className="w-full md:w-[240px] shrink-0 bg-slate-900/50 p-5 sm:p-6 border-b md:border-b-0 md:border-r border-slate-800/60 hidden md:flex md:flex-col justify-between">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-[10px] uppercase tracking-widest text-teal-400 font-mono font-semibold">Paso a Paso</span>
+                            </div>
+                            <h2 className="text-base font-bold tracking-tight mb-6 bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent">
+                                Activación de tu Espacio
+                            </h2>
+                            <div className="space-y-5">
+                                <StepIndicator current={step} number={1} title="Notificaciones & IA" icon={<MessageSquare className="w-3.5 h-3.5" />} />
+                                <StepIndicator current={step} number={2} title="Datos Fiscales & Moneda" icon={<Building2 className="w-3.5 h-3.5" />} />
+                                <StepIndicator current={step} number={3} title="Despliegue de Motores" icon={<Zap className="w-3.5 h-3.5" />} />
+                            </div>
                         </div>
-                        <h2 className="text-lg font-bold tracking-tight mb-8 bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent">
-                            Activación de tu Espacio
-                        </h2>
-                        <div className="space-y-6">
-                            <StepIndicator current={step} number={1} title="Notificaciones & IA" icon={<MessageSquare className="w-4 h-4" />} />
-                            <StepIndicator current={step} number={2} title="Datos Fiscales & Moneda" icon={<Building2 className="w-4 h-4" />} />
-                            <StepIndicator current={step} number={3} title="Despliegue de Motores" icon={<Zap className="w-4 h-4" />} />
+                        <div className="pt-4 border-t border-slate-800/40 text-[10px] text-slate-500 font-mono">
+                            LegacyMark Engine v2.0
                         </div>
                     </div>
 
-                    {/* Contenido Derecho */}
-                    <div className="flex-1 p-8 overflow-y-auto">
+                    {/* Stepper Móvil Compacto */}
+                    <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-slate-900/60 border-b border-slate-800/60 text-xs">
+                        <span className="text-[11px] font-medium text-teal-400 font-mono">Paso {step} de 3</span>
+                        <span className="text-[11px] text-slate-300 font-semibold truncate max-w-[200px]">
+                            {step === 1 ? "Notificaciones" : step === 2 ? "Datos Fiscales" : "Activación"}
+                        </span>
+                    </div>
+
+                    {/* Contenido Derecho con Scrollbar interno */}
+                    <div className="flex-1 p-5 sm:p-7 overflow-y-auto min-h-0 space-y-4">
                         {/* PASO 1: Notificaciones WhatsApp & Agentes */}
                         {step === 1 && (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
-                                <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                    <PhoneCall className="w-5 h-5 text-emerald-400" />
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                    <PhoneCall className="w-4 h-4 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold tracking-tight">WhatsApp de Operaciones & IA</h3>
-                                    <p className="text-slate-400 mt-1.5 text-xs leading-relaxed">
+                                    <h3 className="text-lg font-bold tracking-tight">WhatsApp de Operaciones & IA</h3>
+                                    <p className="text-slate-400 mt-1 text-xs leading-relaxed">
                                         Número principal para recibir alertas automáticas de ventas POS, avisos de facturas emitidas y comunicación con los agentes de IA de LegacyMark.
                                     </p>
                                 </div>
@@ -202,13 +215,13 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
 
                         {/* PASO 2: Datos Fiscales (NIT / Régimen) & Moneda */}
                         {step === 2 && (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
-                                <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                                    <Coins className="w-5 h-5 text-indigo-400" />
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                                    <Coins className="w-4 h-4 text-indigo-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold tracking-tight">Estructuración Fiscal & Moneda</h3>
-                                    <p className="text-slate-400 mt-1.5 text-xs leading-relaxed">
+                                    <h3 className="text-lg font-bold tracking-tight">Estructuración Fiscal & Moneda</h3>
+                                    <p className="text-slate-400 mt-1 text-xs leading-relaxed">
                                         Parámetros necesarios para habilitar la facturación electrónica DIAN y sincronizar pasarelas de pago (Bold / Stripe).
                                     </p>
                                 </div>
@@ -281,29 +294,29 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
 
                         {/* PASO 3: Aprovisionamiento de Plantillas & Agentes IA */}
                         {step === 3 && (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5 flex flex-col items-center justify-center text-center h-full min-h-[290px]">
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4 flex flex-col items-center justify-center text-center py-6 min-h-[260px]">
                                 <div className="relative">
-                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-indigo-500 p-0.5 animate-pulse">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-indigo-500 p-0.5 animate-pulse">
                                         <div className="w-full h-full bg-slate-950 rounded-2xl flex items-center justify-center">
-                                            <ShieldCheck className="w-7 h-7 text-teal-400" />
+                                            <ShieldCheck className="w-6 h-6 text-teal-400" />
                                         </div>
                                     </div>
                                     {cloning && (
-                                        <div className="absolute -bottom-2 -right-2 w-7 h-7 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800">
-                                            <Loader2 className="w-3.5 h-3.5 text-teal-400 animate-spin" />
+                                        <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center border border-slate-800">
+                                            <Loader2 className="w-3 h-3 text-teal-400 animate-spin" />
                                         </div>
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold tracking-tight">Motores Listos para Operar</h3>
-                                    <p className="text-slate-400 mt-2 text-xs leading-relaxed max-w-sm mx-auto">
+                                    <h3 className="text-lg font-bold tracking-tight">Motores Listos para Operar</h3>
+                                    <p className="text-slate-400 mt-1.5 text-xs leading-relaxed max-w-sm mx-auto">
                                         Se han estructurado los permisos RBAC, compuertas de seguridad y flujos de automatización para tu espacio.
                                     </p>
                                 </div>
                                 <Button 
                                     onClick={handleComplete} 
                                     disabled={cloning}
-                                    className="bg-white text-black hover:bg-slate-200 text-xs font-semibold gap-2 w-full max-w-xs h-10 mt-3 shadow-xl"
+                                    className="bg-white text-black hover:bg-slate-200 text-xs font-semibold gap-2 w-full max-w-xs h-9 mt-2 shadow-xl"
                                 >
                                     {cloning ? "Sincronizando Motores..." : "Entrar a mi Dashboard"}
                                     {!cloning && <CheckCircle2 className="w-4 h-4" />}

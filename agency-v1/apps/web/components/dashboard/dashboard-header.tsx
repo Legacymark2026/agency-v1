@@ -32,6 +32,8 @@ interface DashboardHeaderProps {
         badge?: { label: string; color: string };
     };
     companyLogoUrl?: string | null;
+    subscriptionTier?: string | null;
+    subscriptionStatus?: string | null;
 }
 
 const ROUTE_LABELS: Record<string, { module: string; sub?: string; icon?: string }> = {
@@ -71,11 +73,21 @@ const ROUTE_LABELS: Record<string, { module: string; sub?: string; icon?: string
     "/dashboard/client/proposals": { module: "Portal Cliente", sub: "Mis Propuestas" },
 };
 
-export function DashboardHeader({ user, companyLogoUrl }: DashboardHeaderProps) {
+export function DashboardHeader({ user, companyLogoUrl, subscriptionTier, subscriptionStatus }: DashboardHeaderProps) {
     const pathname = usePathname();
     const { accent, setAccent } = useUIStore();
     const [isPending, startTransition] = useTransition();
     const [showColorPicker, setShowColorPicker] = useState(false);
+
+    // Formatear plan
+    const tier = (subscriptionTier || "free").toLowerCase();
+    const isTrial = subscriptionStatus === "trialing" || tier === "free";
+    const planDisplay = useMemo(() => {
+        if (tier === "enterprise") return { label: "Enterprise", color: "bg-purple-500/10 text-purple-400 border-purple-500/30", dot: "bg-purple-400" };
+        if (tier === "pro") return { label: "Plan Pro", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30", dot: "bg-emerald-400" };
+        if (tier === "starter") return { label: "Plan Starter", color: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30", dot: "bg-indigo-400" };
+        return { label: isTrial ? "Prueba Gratuita" : "Plan Free", color: "bg-teal-500/10 text-teal-400 border-teal-500/30", dot: "bg-teal-400" };
+    }, [tier, isTrial]);
 
     const ACCENT_COLORS = [
         { key: 'teal', bg: 'bg-teal-500', label: 'Verde Cuántico' },
@@ -149,6 +161,16 @@ export function DashboardHeader({ user, companyLogoUrl }: DashboardHeaderProps) 
 
             {/* ── Right: Utilities, Alerts, Bell & User Profile ───────────── */}
             <div className="flex items-center gap-2 md:gap-3">
+                {/* Plan Indicator Badge (Ultraprofesional) */}
+                <Link
+                    href="/dashboard/settings"
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-mono tracking-wide transition-all hover:scale-105 ${planDisplay.color}`}
+                    title="Estado del Plan de Suscripción"
+                >
+                    <span className={`h-1.5 w-1.5 rounded-full ${planDisplay.dot} animate-pulse`} />
+                    <span className="font-semibold">{planDisplay.label}</span>
+                </Link>
+
                 {/* System Status Pill (Desktop only) */}
                 <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium tracking-wide">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
@@ -268,9 +290,12 @@ export function DashboardHeader({ user, companyLogoUrl }: DashboardHeaderProps) 
                             <div className="flex flex-col gap-1">
                                 <p className="text-xs font-bold text-slate-100">{userName}</p>
                                 <p className="text-[11px] text-slate-400 truncate">{userEmail}</p>
-                                <div className="pt-1">
+                                <div className="pt-1 flex items-center gap-1.5 flex-wrap">
                                     <Badge variant="outline" className={`text-[10px] font-mono tracking-wider px-2 py-0.5 ${badgeColor}`}>
                                         {badgeLabel}
+                                    </Badge>
+                                    <Badge variant="outline" className={`text-[10px] font-mono tracking-wider px-2 py-0.5 ${planDisplay.color}`}>
+                                        {planDisplay.label}
                                     </Badge>
                                 </div>
                             </div>

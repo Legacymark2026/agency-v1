@@ -73,7 +73,7 @@ export default async function DashboardLayout({
                         logoUrl: true, 
                         whiteLabeling: true, 
                         defaultCompanySettings: true, 
-                        onboardingCompleted: true 
+                        onboardingCompleted: true, subscriptionTier: true, subscriptionStatus: true
                     } 
                 } 
             },
@@ -224,6 +224,8 @@ export default async function DashboardLayout({
                             email={session.user.email}
                             image={session.user.image}
                             companyLogoUrl={companyLogo}
+                        subscriptionTier={companyUser?.company?.subscriptionTier}
+                        subscriptionStatus={companyUser?.company?.subscriptionStatus}
                             accessibleRoutes={Array.from(accessibleRoutesSet)}
                             badge={badge}
                         />
@@ -240,6 +242,8 @@ export default async function DashboardLayout({
                             badge: badge,
                         }}
                         companyLogoUrl={companyLogo}
+                        subscriptionTier={companyUser?.company?.subscriptionTier}
+                        subscriptionStatus={companyUser?.company?.subscriptionStatus}
                     />
                     <main className="flex-1 overflow-auto relative w-full h-full"
                         style={{ background: 'transparent' }}>
