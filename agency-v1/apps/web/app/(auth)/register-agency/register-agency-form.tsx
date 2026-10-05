@@ -41,7 +41,8 @@ export function RegisterAgencyForm() {
       const res = await registerAgency(formData);
 
       if (!res.success) {
-        toast.error(!res.success && typeof (res as any).message === "string" ? (res as any).message : "Error al crear la agencia.");
+        const errorMsg = (res as any).error || (res as any).message || "Error al crear la agencia.";
+        toast.error(errorMsg);
       } else {
         toast.success("¡Agencia creada con éxito! Bienvenido a LegacyMark.");
         router.push(res.data.redirectTo);

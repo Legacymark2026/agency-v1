@@ -62,10 +62,21 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     const prismaAuth = getPrismaAuth();
     const prismaCore = getPrismaCore();
 
-    // 2. Validar que el correo no esté en uso globalmente
+    // 2. Validar si el usuario ya existe
     const existingUser = await prismaAuth.user.findUnique({ where: { email } });
     if (existingUser) {
-      return fail("El correo ya está en uso. Inicia sesión en su lugar.", 409);
+      // Verificar si el usuario ya tiene un espacio de trabajo o membresía activa en Core DB
+      const existingMembership = await prismaCore.companyUser.findFirst({
+        where: { userId: existingUser.id },
+      });
+
+      if (existingMembership) {
+        return fail("El correo ya está registrado y cuenta con un espacio de trabajo. Inicia sesión en su lugar.", 409);
+      }
+
+      // Si es un usuario huérfano (originado por un intento previo fallido sin empresa vinculada), se limpia para permitir el registro limpio
+      await prismaAuth.user.delete({ where: { id: existingUser.id } }).catch(() => {});
+      await prismaCore.user.delete({ where: { id: existingUser.id } }).catch(() => {});
     }
 
     // 3. Extraer IP y cabeceras para Análisis Silencioso de Red y Riesgo de Bot/Proxy
