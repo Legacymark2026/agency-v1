@@ -1,5 +1,5 @@
 /**
- * Auth Service — Hexagonal Ports (Inbound & Outbound Interfaces)
+ * Auth Service — Hexagonal Ports (Inbound & Outbound Interfaces for AuthN)
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { UserDomain, UserRole } from "../domain/auth.domain";
@@ -8,14 +8,12 @@ export interface RegisterDTO {
   email: string;
   role?: UserRole;
   companyId?: string;
-  permissions?: string[];
 }
 
 export interface IAuthUseCases {
   register(dto: RegisterDTO): Promise<UserDomain>;
   issueToken(user: UserDomain): string;
   verifyToken(token: string): any;
-  checkAccess(user: UserDomain, requiredPermission: string): boolean;
 }
 
 export interface IUserRepositoryPort {

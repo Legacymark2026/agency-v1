@@ -130,7 +130,6 @@ describe("Auth Service Domain Tests", () => {
         email: "cfo@company.com",
         role: "admin",
         companyId: "comp-1",
-        permissions: ["finance.read", "finance.write"],
       });
 
       expect(user.id).toBeDefined();
@@ -141,9 +140,11 @@ describe("Auth Service Domain Tests", () => {
       const token = useCases.issueToken(user);
       expect(token).toContain(user.id);
 
-      // 3. Check access
-      expect(useCases.checkAccess(user, "finance.read")).toBe(true);
-      expect(useCases.checkAccess(user, "billing.delete")).toBe(false);
+      // 3. Pure AuthN claims
+      const claims = user.toIdentityClaims();
+      expect(claims.sub).toBe(user.id);
+      expect(claims.email).toBe("cfo@company.com");
+      expect(claims.role).toBe("admin");
     });
   });
 });

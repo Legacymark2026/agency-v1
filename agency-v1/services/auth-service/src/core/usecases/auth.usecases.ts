@@ -1,5 +1,5 @@
 /**
- * Auth Service — Pure Hexagonal Use Cases Orchestration
+ * Auth Service — Pure Hexagonal Use Cases Orchestration (AuthN IdP)
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import {
@@ -29,8 +29,7 @@ export class AuthUseCases implements IAuthUseCases {
       "usr_" + Math.random().toString(36).substring(2, 9),
       dto.email.toLowerCase(),
       role,
-      dto.companyId,
-      dto.permissions || []
+      dto.companyId
     );
 
     const saved = await this.userRepo.save(user);
@@ -46,20 +45,10 @@ export class AuthUseCases implements IAuthUseCases {
   }
 
   public issueToken(user: UserDomain): string {
-    return this.tokenSigner.sign({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: user.companyId,
-      permissions: user.permissions,
-    });
+    return this.tokenSigner.sign(user.toIdentityClaims());
   }
 
   public verifyToken(token: string): any {
     return this.tokenSigner.verify(token);
-  }
-
-  public checkAccess(user: UserDomain, requiredPermission: string): boolean {
-    return user.hasPermission(requiredPermission);
   }
 }

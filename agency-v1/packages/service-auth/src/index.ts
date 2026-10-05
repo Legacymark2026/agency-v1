@@ -308,5 +308,77 @@ export const validateRequest = (schema: any) => {
   };
 };
 
+/**
+ * Standardized Policy Enforcement Point (PEP) Middleware
+ * Intercepts requests and validates authorization with the Centralized Policy Engine (PDP).
+ */
+export function createPolicyEnforcementMiddleware(
+  action: string,
+  getResource: (req: Request) => { type: string; id?: string; amount?: number; classification?: "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED" }
+) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = (req.headers["x-user-id"] as string) || (req as any).user?.id || "anonymous";
+      const companyId = (req.headers["x-company-id"] as string) || (req as any).user?.companyId;
+      const role = (req.headers["x-user-role"] as string) || (req as any).user?.role || "GUEST";
+      const policyServiceUrl = process.env.POLICY_SERVICE_URL || "http://policy-service:4050";
+
+      const evaluationPayload = {
+        subject: {
+          id: userId,
+          role: role,
+          tenantId: companyId,
+          companyId: companyId,
+        },
+        action,
+        resource: {
+          ...getResource(req),
+          tenantId: companyId,
+          companyId: companyId,
+        },
+        context: {
+          ipAddress: req.ip || req.socket.remoteAddress,
+          currentTime: new Date().toISOString(),
+          originatingService: (req.headers["x-service-name"] as string) || "gateway-or-service",
+        },
+      };
+
+      const response = await fetch(`${policyServiceUrl}/api/policies/evaluate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(evaluationPayload),
+        signal: AbortSignal.timeout(3000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Policy engine returned HTTP ${response.status}`);
+      }
+
+      const result: any = await response.json();
+
+      if (result.decision !== "PERMIT") {
+        res.status(403).json({
+          success: false,
+          error: "Forbidden by Centralized Security Policy",
+          reasons: result.reasons || [],
+          obligations: result.obligations || [],
+        });
+        return;
+      }
+
+      (req as any).policyObligations = result.obligations;
+      next();
+    } catch (err: any) {
+      console.error("[PEP] Authorization PDP evaluation error:", err.message);
+      // Zero-Trust: Fail closed
+      res.status(503).json({
+        success: false,
+        error: "Authorization Policy Decision Point unavailable (Fail Closed)",
+      });
+    }
+  };
+}
+
+
 
 

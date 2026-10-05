@@ -1,7 +1,9 @@
 /**
- * Auth Service — Pure Domain Entities & RBAC Rules
+ * Auth Service — Pure Identity & Credential Domain Entities (AuthN IdP)
  * ─────────────────────────────────────────────────────────────────────────────
- * Zero external framework dependencies.
+ * Zero framework dependencies.
+ * Confined strictly to: Identity, Credential Validation, Session Lifecycle,
+ * Cryptographic Token Claims, and Multi-Factor Authentication.
  */
 
 export const ALLOWED_ROLES = ["super_admin", "admin", "manager", "agent", "client", "user"] as const;
@@ -11,28 +13,53 @@ export function isRoleAllowed(role: string): boolean {
   return ALLOWED_ROLES.includes(role as any);
 }
 
-export function evaluatePermission(
-  userRole: string,
-  userPermissions: string[],
-  requiredPermission: string
-): boolean {
-  if (userRole === "super_admin") return true;
-  if (userPermissions.includes("*")) return true;
-  return userPermissions.includes(requiredPermission);
+export interface UserIdentityProps {
+  id: string;
+  email: string;
+  role: UserRole;
+  companyId?: string;
+  isActive?: boolean;
+  mfaEnabled?: boolean;
+  createdAt?: Date;
 }
 
 export class UserDomain {
-  constructor(
-    public readonly id: string,
-    public readonly email: string,
-    public readonly role: UserRole,
-    public readonly companyId?: string,
-    public readonly permissions: string[] = [],
-    public readonly isActive: boolean = true,
-    public readonly createdAt: Date = new Date()
-  ) {}
+  public readonly id: string;
+  public readonly email: string;
+  public readonly role: UserRole;
+  public readonly companyId?: string;
+  public readonly isActive: boolean;
+  public readonly mfaEnabled: boolean;
+  public readonly createdAt: Date;
 
-  public hasPermission(required: string): boolean {
-    return evaluatePermission(this.role, this.permissions, required);
+  constructor(
+    id: string,
+    email: string,
+    role: UserRole,
+    companyId?: string,
+    isActive: boolean = true,
+    mfaEnabled: boolean = false,
+    createdAt: Date = new Date()
+  ) {
+    this.id = id;
+    this.email = email.toLowerCase().trim();
+    this.role = role;
+    this.companyId = companyId;
+    this.isActive = isActive;
+    this.mfaEnabled = mfaEnabled;
+    this.createdAt = createdAt;
+  }
+
+  /**
+   * Generates standard identity claims for RS256 token signing
+   */
+  public toIdentityClaims(): Record<string, any> {
+    return {
+      sub: this.id,
+      email: this.email,
+      role: this.role,
+      companyId: this.companyId || null,
+      mfaVerified: this.mfaEnabled,
+    };
   }
 }

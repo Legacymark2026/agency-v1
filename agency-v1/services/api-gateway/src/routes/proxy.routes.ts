@@ -231,3 +231,11 @@ proxyRouter.use("/api/chat", createResilientProxy("chat", SERVICES.chat));
 proxyRouter.use("/api/v1/feed", createResilientProxy("feed", SERVICES.feed));
 proxyRouter.use("/api/feed", createResilientProxy("feed", SERVICES.feed));
 
+// Centralized Policy Engine (PDP - Motor de Políticas Centralizadas)
+proxyRouter.use("/api/v1/policies", createResilientProxy("policy", SERVICES.policy));
+proxyRouter.use("/api/policies", createResilientProxy("policy", SERVICES.policy));
+
+// Dedicated Authorization Microservice (AuthZ Engine - Motor de Autorización)
+proxyRouter.use("/api/v1/authz", createResilientProxy("authz", SERVICES.authz));
+proxyRouter.use("/api/authz", createResilientProxy("authz", SERVICES.authz));
+

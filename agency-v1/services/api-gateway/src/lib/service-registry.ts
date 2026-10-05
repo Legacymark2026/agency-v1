@@ -30,6 +30,8 @@ export const SERVICES = {
   payment:     process.env.PAYMENT_SERVICE_URL     || "http://payment-service:4022",
   chat:        process.env.CHAT_SERVICE_URL        || "http://chat-service:4023",
   feed:        process.env.FEED_SERVICE_URL        || "http://feed-service:4024",
+  policy:      process.env.POLICY_SERVICE_URL      || "http://policy-service:4050",
+  authz:       process.env.AUTHZ_SERVICE_URL       || "http://authorization-service:4055",
 } as const;
 
 export type ServiceName = keyof typeof SERVICES;

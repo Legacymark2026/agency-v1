@@ -950,6 +950,32 @@ services:
       - "traefik.http.routers.policy.tls.certresolver=le"
       - "traefik.http.services.policy.loadbalancer.server.port=4050"
 
+  # ── Dedicated Authorization Service (AuthZ Engine - RBAC & Permissions) ───
+  authorization-service:
+    <<: *microservice-base
+    build:
+      context: .
+      dockerfile: services/authorization-service/Dockerfile
+    environment:
+      <<: *common-env
+      PORT: "4055"
+      OTEL_SERVICE_NAME: authorization-service
+    depends_on:
+      pgbouncer: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4055/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authz.rule=PathPrefix(`/api/authz`)"
+      - "traefik.http.routers.authz.entrypoints=websecure"
+      - "traefik.http.routers.authz.tls=true"
+      - "traefik.http.routers.authz.tls.certresolver=le"
+      - "traefik.http.services.authz.loadbalancer.server.port=4055"
+
   # ── Payment Gateway Service (Pasarelas de Pago) ───────────────────────────
   payment-service:
     <<: *microservice-base
