@@ -106,7 +106,7 @@ export function createPolicyRouter(useCases: PolicyUseCases): Router {
    */
   router.delete("/:code", async (req: Request, res: Response) => {
     try {
-      const { code } = req.params;
+      const code = String(req.params.code);
       const ok = await useCases.deactivatePolicy(code);
       if (!ok) {
         res.status(404).json({ success: false, error: "Policy not found" });
