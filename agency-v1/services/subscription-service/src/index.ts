@@ -33,7 +33,14 @@ app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
   credentials: true,
 }));
-app.use(express.json({ limit: "2mb" }));
+app.use(
+  express.json({
+    limit: "2mb",
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(deviceFingerprintMiddleware());
 app.use(tenantContextMiddleware);
 app.use(metricsMiddleware("subscription-service"));
@@ -163,6 +170,43 @@ grpcServer.addService(PROTO_PATHS.subscription, "subscription", "SubscriptionSer
 grpcServer.start(GRPC_PORT).catch((err: any) => {
   console.error("[subscription-service] Failed to start gRPC server:", err.message);
 });
+
+// ── Event-Driven Autonomous Subscription Synchronization ─────────────────────
+eventBus.subscribe("payment.succeeded" as any, async (event: any) => {
+  try {
+    const payload = event?.data || event;
+    const { companyId, reference, amount } = payload;
+    if (!companyId) return;
+
+    console.log(`[subscription-service] payment.succeeded received for company: ${companyId}, ref: ${reference}`);
+    // Auto-upgrade / renew company subscription upon payment confirmation
+    await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        subscriptionStatus: "active",
+        subscriptionTier: "pro", // Default to paid pro tier on direct successful payment
+      },
+    }).catch(() => {});
+  } catch (err: any) {
+    console.warn("[subscription-service] Failed to handle payment.succeeded event:", err.message);
+  }
+}).catch((err: any) => console.warn("[subscription-service] Subscribe error for payment.succeeded:", err.message));
+
+eventBus.subscribe("invoice.paid" as any, async (event: any) => {
+  try {
+    const payload = event?.data || event;
+    const companyId = payload.companyId || payload.tenantId;
+    if (!companyId) return;
+
+    console.log(`[subscription-service] invoice.paid received for company: ${companyId}`);
+    await prisma.company.update({
+      where: { id: companyId },
+      data: { subscriptionStatus: "active" },
+    }).catch(() => {});
+  } catch (err: any) {
+    console.warn("[subscription-service] Failed to handle invoice.paid event:", err.message);
+  }
+}).catch((err: any) => console.warn("[subscription-service] Subscribe error for invoice.paid:", err.message));
 
 const server = app.listen(PORT, () => {
   console.log(`💳 Subscription Service running on port ${PORT} (HTTP) and port ${GRPC_PORT} (gRPC Encrypted)`);

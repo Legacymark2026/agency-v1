@@ -67,7 +67,8 @@ export function createPaymentRouter(useCases: IPaymentUseCases): Router {
       // NOTE: For Stripe, the payload must be received as a raw buffer for signature verification.
       // Wompi signatures are embedded in the body payload itself.
       const signature = (req.headers["stripe-signature"] || req.headers["x-signature"] || "") as string;
-      const result = await useCases.handleWebhook(provider, req.body, signature);
+      const payload = (req as any).rawBody || req.body;
+      const result = await useCases.handleWebhook(provider, payload, signature);
       res.json({ success: true, ...result });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });

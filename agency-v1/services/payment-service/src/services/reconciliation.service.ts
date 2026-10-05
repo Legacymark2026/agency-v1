@@ -52,7 +52,19 @@ export class ReconciliationWorker {
            await paymentEventBus.publish("order.completed", {
               id: row.reference,
               orderId: row.orderId || row.reference,
-              userId: row.companyId
+              userId: row.companyId,
+              amount: Number(row.amount),
+              orderAmount: Number(row.amount),
+              currency: row.currency,
+           });
+           await (paymentEventBus as any).publish("payment.succeeded", {
+              reference: row.reference,
+              invoiceId: row.invoiceId,
+              orderId: row.orderId,
+              companyId: row.companyId,
+              amount: Number(row.amount),
+              currency: row.currency,
+              provider: row.provider,
            });
            reconciledCount++;
            console.log(`[Reconciliation] Recovered lost APPROVED transaction: ${row.reference}`);

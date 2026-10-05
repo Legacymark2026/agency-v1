@@ -37,7 +37,14 @@ app.use(metricsMiddleware("payment-service"));
 app.use(helmet());
 app.use(cors());
 app.use(tenantContextMiddleware);
-app.use(express.json({ limit: "5mb" }));
+app.use(
+  express.json({
+    limit: "5mb",
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(pciDssSanitizerMiddleware);
 app.use(idempotencyMiddleware);
 

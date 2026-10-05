@@ -49,9 +49,15 @@ export class AuthorizationUseCases {
     let subscription: CompanySubscriptionDomain | null = null;
     if (dto.companyId && this.subscriptionRepo && !dto.skipSubscriptionCheck) {
       try {
-        subscription = await this.subscriptionRepo.getCompanySubscription(dto.companyId);
+        const timeoutMs = 400;
+        subscription = await Promise.race([
+          this.subscriptionRepo.getCompanySubscription(dto.companyId),
+          new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error("Subscription check timed out (400ms threshold)")), timeoutMs)
+          ),
+        ]);
       } catch (err: any) {
-        console.warn(`[AuthzUseCases] SubscriptionRepo error for tenant ${dto.companyId}: ${err.message}. Engaging Grace Policy.`);
+        console.warn(`[AuthzUseCases] SubscriptionRepo error/timeout for tenant ${dto.companyId}: ${err.message}. Engaging Grace Policy.`);
         // Resilient Degraded Grace Mode: if non-destructive action, grant conditional pass
         if (dto.requiredPermission.includes(".read") || dto.requiredPermission.includes(".list")) {
           subscription = {

@@ -13,24 +13,46 @@ export class PrismaPaymentPersistenceAdapter implements IPaymentPersistencePort 
 
   async saveTransaction(tx: PaymentTransactionDomain): Promise<PaymentTransactionDomain> {
     try {
-      await (prisma as any).paymentTransaction.upsert({
-        where: { reference: tx.reference },
-        update: { status: tx.status, updatedAt: new Date() },
-        create: {
-          id: tx.id,
-          companyId: tx.companyId,
-          reference: tx.reference,
-          amount: tx.amount,
-          currency: tx.currency,
-          provider: tx.provider,
-          category: tx.category,
-          status: tx.status,
-          orderId: tx.orderId,
-          invoiceId: tx.invoiceId,
-          customerEmail: tx.customerEmail,
-          metadata: tx.metadata ?? {},
-        },
-      });
+      const outboxId = `outbox_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await prisma.$transaction([
+        (prisma as any).paymentTransaction.upsert({
+          where: { reference: tx.reference },
+          update: { status: tx.status, updatedAt: new Date() },
+          create: {
+            id: tx.id,
+            companyId: tx.companyId,
+            reference: tx.reference,
+            amount: tx.amount,
+            currency: tx.currency,
+            provider: tx.provider,
+            category: tx.category,
+            status: tx.status,
+            orderId: tx.orderId,
+            invoiceId: tx.invoiceId,
+            customerEmail: tx.customerEmail,
+            metadata: tx.metadata ?? {},
+          },
+        }),
+        (prisma as any).paymentOutbox.create({
+          data: {
+            id: outboxId,
+            companyId: tx.companyId,
+            aggregateType: "PAYMENT",
+            aggregateId: tx.reference,
+            eventType: "payment.succeeded",
+            payload: {
+              reference: tx.reference,
+              amount: tx.amount,
+              currency: tx.currency,
+              companyId: tx.companyId,
+              provider: tx.provider,
+              orderId: tx.orderId,
+              invoiceId: tx.invoiceId,
+            },
+            status: "PENDING",
+          },
+        }),
+      ]);
       this.inMemoryFallback.set(tx.reference, tx);
       return tx;
     } catch (err: any) {
