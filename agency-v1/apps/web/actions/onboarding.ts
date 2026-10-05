@@ -7,7 +7,8 @@
  * Sincronizado atómicamente con los 5 motores: Auth, AuthZ, Policy, Subscription y Payment.
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma, getPrismaAuth, getPrismaCore } from "@/shared/lib/prisma";
+import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { ActionResult, fail, ok } from "@/types/actions";
@@ -58,8 +59,11 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
       return fail("No se permiten correos electrónicos temporales o desechables. Por favor usa tu correo corporativo o personal.", 400);
     }
 
+    const prismaAuth = getPrismaAuth();
+    const prismaCore = getPrismaCore();
+
     // 2. Validar que el correo no esté en uso globalmente
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prismaAuth.user.findUnique({ where: { email } });
     if (existingUser) {
       return fail("El correo ya está en uso. Inicia sesión en su lugar.", 409);
     }
@@ -78,9 +82,14 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
       // Ignorar fuera de contexto http
     }
 
-    // 3. Garantizar que los permisos base existan en tbl_permissions (Idempotente)
+    // 3. Garantizar que los permisos base existan en tbl_permissions (Idempotente) en ambos almacenes
     for (const p of BASE_SYSTEM_PERMISSIONS) {
-      await prisma.permission.upsert({
+      await prismaAuth.permission.upsert({
+        where: { name: p.name },
+        update: { module: p.module, description: p.description },
+        create: { name: p.name, module: p.module, description: p.description, isActive: true },
+      }).catch(() => {});
+      await prismaCore.permission.upsert({
         where: { name: p.name },
         update: { module: p.module, description: p.description },
         create: { name: p.name, module: p.module, description: p.description, isActive: true },
@@ -88,10 +97,14 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     }
 
     // Obtener los permisos registrados para su asociación
-    const permissionsInDb = await prisma.permission.findMany({
+    const permissionsInAuth = await prismaAuth.permission.findMany({
       where: { name: { in: BASE_SYSTEM_PERMISSIONS.map(p => p.name) } },
     });
-    const permMap = new Map(permissionsInDb.map(p => [p.name, p.id]));
+    const permissionsInCore = await prismaCore.permission.findMany({
+      where: { name: { in: BASE_SYSTEM_PERMISSIONS.map(p => p.name) } },
+    });
+    const authPermMap = new Map(permissionsInAuth.map(p => [p.name, p.id]));
+    const corePermMap = new Map(permissionsInCore.map(p => [p.name, p.id]));
 
     // Mapeo regional para motores de facturación y pagos
     const REGIONAL_PRESETS: Record<string, { currency: string; locale: string; timezone: string; taxRate: number }> = {
@@ -103,11 +116,11 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     };
     const region = REGIONAL_PRESETS[country || "CO"] || REGIONAL_PRESETS.CO;
 
-    // 4. Crear el Tenant (Company) con sus configuraciones regionales iniciales
+    // 4. Crear el Tenant (Company) con sus configuraciones regionales iniciales en Core DB
     const slugBase = agencyName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const uniqueSlug = `${slugBase}-${Date.now().toString().slice(-6)}`;
 
-    const company = await prisma.company.create({
+    const company = await prismaCore.company.create({
       data: {
         name: agencyName,
         slug: uniqueSlug,
@@ -139,10 +152,14 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
       },
     });
 
-    // 5. Sembrar Roles Estándar de la Empresa en tbl_roles
-    // Rol 1: Owner (Propietario - Prioridad 100)
-    const ownerRole = await prisma.role.create({
-      data: {
+    // 5. Sembrar Roles Estándar con UUIDs idénticos en Auth DB y Core DB
+    const ownerRoleId = randomUUID();
+    const adminRoleId = randomUUID();
+    const memberRoleId = randomUUID();
+
+    const rolesData = [
+      {
+        id: ownerRoleId,
         name: "owner",
         companyId: company.id,
         description: `Propietario de ${agencyName} con acceso irrestricto`,
@@ -150,11 +167,8 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
         isDefault: false,
         isActive: true,
       },
-    });
-
-    // Rol 2: Admin (Administrador - Prioridad 80)
-    const adminRole = await prisma.role.create({
-      data: {
+      {
+        id: adminRoleId,
         name: "admin",
         companyId: company.id,
         description: `Administrador operativo de ${agencyName}`,
@@ -162,11 +176,8 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
         isDefault: false,
         isActive: true,
       },
-    });
-
-    // Rol 3: Member (Miembro Operativo - Prioridad 10, Rol por defecto para nuevos invitados)
-    const memberRole = await prisma.role.create({
-      data: {
+      {
+        id: memberRoleId,
         name: "member",
         companyId: company.id,
         description: `Miembro estándar del equipo de ${agencyName}`,
@@ -174,67 +185,88 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
         isDefault: true,
         isActive: true,
       },
-    });
+    ];
 
-    // 6. Asignar Permisos a los Roles
-    const rolePermissionBindings: Array<{ roleId: string; permissionId: string }> = [];
-
-    // Owner recibe el comodín '*' y todos los permisos base
-    for (const perm of permissionsInDb) {
-      rolePermissionBindings.push({ roleId: ownerRole.id, permissionId: perm.id });
+    for (const r of rolesData) {
+      await prismaAuth.role.create({ data: r }).catch(() => {});
+      await prismaCore.role.create({ data: r }).catch(() => {});
     }
 
-    // Admin recibe permisos operativos
-    const adminPermNames = ["dashboard.view", "invoices.create", "invoices.read", "invoices.manage", "crm.view_all", "crm.edit", "pos.orders.create", "users.manage"];
-    for (const name of adminPermNames) {
-      const pId = permMap.get(name);
-      if (pId) rolePermissionBindings.push({ roleId: adminRole.id, permissionId: pId });
-    }
+    // 6. Asignar Permisos a los Roles en ambos motores
+    const bindRolePermissions = async (
+      client: any,
+      permMap: Map<string, string>,
+      perms: any[]
+    ) => {
+      const bindings: Array<{ roleId: string; permissionId: string }> = [];
+      for (const perm of perms) {
+        bindings.push({ roleId: ownerRoleId, permissionId: perm.id });
+      }
+      const adminPermNames = ["dashboard.view", "invoices.create", "invoices.read", "invoices.manage", "crm.view_all", "crm.edit", "pos.orders.create", "users.manage"];
+      for (const name of adminPermNames) {
+        const pId = permMap.get(name);
+        if (pId) bindings.push({ roleId: adminRoleId, permissionId: pId });
+      }
+      const memberPermNames = ["dashboard.view", "invoices.read", "crm.view_all"];
+      for (const name of memberPermNames) {
+        const pId = permMap.get(name);
+        if (pId) bindings.push({ roleId: memberRoleId, permissionId: pId });
+      }
+      if (bindings.length > 0) {
+        await client.rolePermission.createMany({
+          data: bindings,
+          skipDuplicates: true,
+        }).catch(() => {});
+      }
+    };
 
-    // Member recibe permisos de lectura / visualización
-    const memberPermNames = ["dashboard.view", "invoices.read", "crm.view_all"];
-    for (const name of memberPermNames) {
-      const pId = permMap.get(name);
-      if (pId) rolePermissionBindings.push({ roleId: memberRole.id, permissionId: pId });
-    }
+    await bindRolePermissions(prismaAuth, authPermMap, permissionsInAuth);
+    await bindRolePermissions(prismaCore, corePermMap, permissionsInCore);
 
-    if (rolePermissionBindings.length > 0) {
-      await prisma.rolePermission.createMany({
-        data: rolePermissionBindings,
-        skipDuplicates: true,
-      }).catch(() => {});
-    }
-
-    // 7. Crear el Usuario Administrador y vincularlo formalmente a la Empresa
+    // 7. Crear el Usuario Administrador y replicarlo para integridad referencial en Core DB
     const passwordHash = await bcrypt.hash(password, 10);
     const [firstName, ...lastNameParts] = adminName.split(" ");
     const lastName = lastNameParts.join(" ") || "";
+    const userId = randomUUID();
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name: adminName,
-        firstName,
-        lastName,
-        passwordHash,
-        role: "admin", // Rol Legacy global
-        globalRole: "agency_owner",
-      },
+    const userData = {
+      id: userId,
+      email,
+      name: adminName,
+      firstName,
+      lastName,
+      passwordHash,
+      role: "admin", // Rol Legacy global
+      globalRole: "agency_owner",
+    };
+
+    // Crear en Auth DB (para NextAuth / JWT / login)
+    const user = await prismaAuth.user.create({
+      data: userData,
     });
 
-    // Vinculación Formal Multi-Tenant con UUID de Rol real y roleName alineado
-    await prisma.companyUser.create({
+    // Replicar en Core DB (para referencialidad e integridad FK en tbl_company_users)
+    await prismaCore.user.upsert({
+      where: { email },
+      update: userData,
+      create: userData,
+    }).catch((err: any) => {
+      console.warn("[Onboarding] Replicación a Core DB:", err);
+    });
+
+    // Vinculación Formal Multi-Tenant con UUID de Rol real y roleName alineado en Core DB
+    await prismaCore.companyUser.create({
       data: {
         userId: user.id,
         companyId: company.id,
-        roleId: ownerRole.id,
+        roleId: ownerRoleId,
         roleName: "owner",
         permissions: ["*"],
       },
     });
 
-    // 8. Crear configuración de enrutamiento dinámico (RoleConfig) para compatibilidad RBAC
-    await prisma.roleConfig.upsert({
+    // 8. Crear configuración de enrutamiento dinámico (RoleConfig) para compatibilidad RBAC en Auth DB
+    await prismaAuth.roleConfig.upsert({
       where: { roleName: `admin_${company.id}` },
       update: { allowedRoutes: ["*"], isActive: true },
       create: {
@@ -269,7 +301,7 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
       if (claimRes.ok) {
         const claimData = await claimRes.json();
         if (claimData.trialEndsAt) {
-          await prisma.company.update({
+          await prismaCore.company.update({
             where: { id: company.id },
             data: { subscriptionStatus: "trialing" },
           }).catch(() => {});
