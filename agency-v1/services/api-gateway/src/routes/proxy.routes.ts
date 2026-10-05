@@ -239,3 +239,8 @@ proxyRouter.use("/api/policies", createResilientProxy("policy", SERVICES.policy)
 proxyRouter.use("/api/v1/authz", createResilientProxy("authz", SERVICES.authz));
 proxyRouter.use("/api/authz", createResilientProxy("authz", SERVICES.authz));
 
+// Dedicated SaaS Subscription & Anti-Abuse Microservice
+proxyRouter.use("/api/v1/subscriptions", createResilientProxy("subscription", SERVICES.subscription));
+proxyRouter.use("/api/subscriptions", createResilientProxy("subscription", SERVICES.subscription));
+
+

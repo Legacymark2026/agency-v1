@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package subscription;
+
+service SubscriptionService {
+  rpc CheckTrialEligibility (CheckTrialEligibilityRequest) returns (CheckTrialEligibilityResponse);
+  rpc GetSubscriptionDetails (GetSubscriptionDetailsRequest) returns (GetSubscriptionDetailsResponse);
+  rpc ClaimFreeTrial (ClaimFreeTrialRequest) returns (ClaimFreeTrialResponse);
+}
+
+message CheckTrialEligibilityRequest {
+  string companyId = 1;
+  string deviceFingerprint = 2;
+  string ipAddress = 3;
+}
+
+message CheckTrialEligibilityResponse {
+  bool eligible = 1;
+  string reason = 2;
+  string previousCompanyId = 3;
+  string deviceHash = 4;
+}
+
+message GetSubscriptionDetailsRequest {
+  string companyId = 1;
+}
+
+message GetSubscriptionDetailsResponse {
+  bool success = 1;
+  string companyId = 2;
+  string tier = 3;
+  string status = 4;
+  bool isTrialActive = 5;
+  int64 trialEndsAtUnix = 6;
+  string error = 7;
+}
+
+message ClaimFreeTrialRequest {
+  string companyId = 1;
+  string deviceFingerprint = 2;
+  string ipAddress = 3;
+  int32 durationDays = 4;
+}
+
+message ClaimFreeTrialResponse {
+  bool success = 1;
+  string message = 2;
+  int64 trialEndsAtUnix = 3;
+  string error = 4;
+}

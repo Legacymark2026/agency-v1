@@ -32,7 +32,9 @@ export const SERVICES = {
   feed:        process.env.FEED_SERVICE_URL        || "http://feed-service:4024",
   policy:      process.env.POLICY_SERVICE_URL      || "http://policy-service:4050",
   authz:       process.env.AUTHZ_SERVICE_URL       || "http://authorization-service:4055",
+  subscription:process.env.SUBSCRIPTION_SERVICE_URL|| "http://subscription-service:4060",
 } as const;
+
 
 export type ServiceName = keyof typeof SERVICES;
 

@@ -17,9 +17,11 @@ export const PROTO_PATHS = {
   auth: getProtoPath("auth.proto"),
   authz: getProtoPath("authz.proto"),
   policy: getProtoPath("policy.proto"),
+  subscription: getProtoPath("subscription.proto"),
   crm: getProtoPath("crm.proto"),
   document: getProtoPath("document.proto"),
   project: getProtoPath("project.proto"),
   notification: getProtoPath("notification.proto"),
 };
+
 

@@ -35,7 +35,10 @@ export interface EnvironmentContext {
   isOffHours?: boolean;
   riskScore?: number;
   originatingService?: string;
+  deviceFingerprint?: string;
+  isDeviceFlaggedAbuser?: boolean;
 }
+
 
 export interface EvaluationRequest {
   subject: SubjectAttributes;
@@ -359,7 +362,35 @@ export class PolicyDecisionPoint {
         ],
         createdAt: now,
         updatedAt: now
+      },
+
+      // 6. FREE TRIAL ABUSE PREVENTION (POL_FREE_TRIAL_ABUSE_PREVENTION)
+      {
+        id: "pol-006",
+        code: "POL_FREE_TRIAL_ABUSE_PREVENTION",
+        name: "Prevención de Abuso de Pruebas Gratuitas por Device Fingerprint",
+        description: "Deniega automáticamente operaciones de mutación o consumo de cómputo a dispositivos señalados por colisión de hardware en Free Trial.",
+        version: "1.0.0",
+        isActive: true,
+        combiningAlgorithm: "DENY_OVERRIDES",
+        target: { actions: ["CREATE", "UPDATE", "EXECUTE", "EMIT_DIAN", "AI_INFERENCE"], resourceTypes: ["*"] },
+        rules: [
+          {
+            id: "R-011",
+            name: "Trial Abuser Device Hard Deny",
+            effect: "DENY",
+            condition: (req) => {
+              if (req.subject.role === "SUPER_ADMIN") return false;
+              return Boolean(req.context?.isDeviceFlaggedAbuser);
+            },
+            description: "Dispositivo de hardware bloqueado por abuso recurrente de Free Trials.",
+            obligation: "UPGRADE_SUBSCRIPTION_REQUIRED"
+          }
+        ],
+        createdAt: now,
+        updatedAt: now
       }
     ];
   }
 }
+

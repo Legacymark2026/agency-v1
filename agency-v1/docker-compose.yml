@@ -978,7 +978,36 @@ services:
       - "traefik.http.routers.authz.tls.certresolver=le"
       - "traefik.http.services.authz.loadbalancer.server.port=4055"
 
+  # ── Dedicated SaaS Subscription & Anti-Abuse Service ───────────────────────
+  subscription-service:
+    <<: *microservice-base
+    build:
+      context: .
+      dockerfile: services/subscription-service/Dockerfile
+    environment:
+      <<: *common-env
+      PORT: "4060"
+      GRPC_PORT: "50054"
+      OTEL_SERVICE_NAME: subscription-service
+      FINGERPRINT_SECRET_SALT: ${FINGERPRINT_SECRET_SALT:-legacymark-antiabuse-salt-2026}
+    depends_on:
+      pgbouncer: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4060/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.subscription.rule=PathPrefix(`/api/subscriptions`)"
+      - "traefik.http.routers.subscription.entrypoints=websecure"
+      - "traefik.http.routers.subscription.tls=true"
+      - "traefik.http.routers.subscription.tls.certresolver=le"
+      - "traefik.http.services.subscription.loadbalancer.server.port=4060"
+
   # ── Payment Gateway Service (Pasarelas de Pago) ───────────────────────────
+
   payment-service:
     <<: *microservice-base
     build:

@@ -28,11 +28,15 @@ async function logActivity(
   req: Request
 ): Promise<void> {
   try {
+    const deviceFingerprint = (req as any).deviceFingerprint || req.headers["x-device-fingerprint"];
     await (prisma as any).userActivityLog.create({
       data: {
         userId,
         action,
-        details,
+        details: {
+          ...details,
+          deviceFingerprint,
+        },
         ipAddress: req.ip ?? null,
         userAgent: req.headers["user-agent"] ?? null,
       },
@@ -41,6 +45,7 @@ async function logActivity(
     // Non-critical logging failure
   }
 }
+
 
 // ── JWKS Endpoint (JSON Web Key Set - Inter-service Public Key Verification) ──
 let cachedJwks: any = null;

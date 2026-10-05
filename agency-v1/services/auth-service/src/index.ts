@@ -45,6 +45,8 @@ import { isTokenRevoked } from "./utilities/blacklist";
 import { verifyDPoPProof } from "./utilities/dpop";
 import { ReconciliationService } from "./services/reconciliation.service";
 
+import { deviceFingerprintMiddleware } from "@agency/device-fingerprint";
+
 const app = express();
 const PORT = parseInt(process.env.PORT || "4001", 10);
 const GRPC_PORT = parseInt(process.env.GRPC_PORT || "50051", 10);
@@ -57,6 +59,8 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: "2mb" }));
+app.use(deviceFingerprintMiddleware());
+
 
 // ── JWKS Endpoint (JSON Web Key Set - RFC 7517) ──────────────────────────────
 app.get("/.well-known/jwks.json", (_req, res) => {

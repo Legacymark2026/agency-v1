@@ -5,6 +5,7 @@ export declare const PROTO_PATHS: {
     auth: string;
     authz: string;
     policy: string;
+    subscription: string;
     crm: string;
     document: string;
     project: string;
