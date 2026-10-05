@@ -31,7 +31,7 @@ export class PrismaUserAdapter implements IUserRepositoryPort {
     try {
       const row = await (prisma as any).user.findUnique({ where: { email } });
       if (!row) return null;
-      return new UserDomain(row.id, row.email, row.role as any, row.companyId, [], row.isActive);
+      return new UserDomain(row.id, row.email, row.role as any, row.companyId, row.isActive ?? true, !!row.mfaEnabled);
     } catch {
       return null;
     }
@@ -41,7 +41,7 @@ export class PrismaUserAdapter implements IUserRepositoryPort {
     try {
       const row = await (prisma as any).user.findUnique({ where: { id } });
       if (!row) return null;
-      return new UserDomain(row.id, row.email, row.role as any, row.companyId, [], row.isActive);
+      return new UserDomain(row.id, row.email, row.role as any, row.companyId, row.isActive ?? true, !!row.mfaEnabled);
     } catch {
       return null;
     }
