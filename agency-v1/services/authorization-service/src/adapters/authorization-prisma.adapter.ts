@@ -221,8 +221,8 @@ export class PrismaAuthorizationAdapter
   }
 
   async listPermissions(): Promise<PermissionDefinition[]> {
-    const permissions = await prisma.permission.findMany({ orderBy: { module: "asc" } });
-    return permissions.map((p) => ({
+    const permissions: any[] = await prisma.permission.findMany({ orderBy: { module: "asc" } });
+    return permissions.map((p: any) => ({
       id: p.id,
       name: p.name,
       description: p.description,
