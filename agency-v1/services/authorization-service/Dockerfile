@@ -8,7 +8,7 @@ COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/authorization-service/package.json ./services/authorization-service/
-RUN npm ci || npm install
+RUN npm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
