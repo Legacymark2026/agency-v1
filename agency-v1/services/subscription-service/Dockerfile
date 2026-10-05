@@ -9,7 +9,7 @@ COPY packages/device-fingerprint/package.json ./packages/device-fingerprint/
 COPY packages/observability/package.json ./packages/observability/
 COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/subscription-service/package.json ./services/subscription-service/
-RUN npm ci || npm install
+RUN npm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
