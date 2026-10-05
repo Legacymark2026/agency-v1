@@ -23,8 +23,8 @@ export default auth(function middleware(req: NextRequest) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set('x-pathname', pathname);
 
-    // Si es una ruta de API, Auth o ACME /.well-known, no aplicar internacionalización
-    const isApiOrAuth = pathname.startsWith("/api") || pathname.startsWith("/auth") || pathname.startsWith("/_next") || pathname.startsWith("/.well-known");
+    // Si es una ruta de API, Auth, Registro de Agencia o ACME /.well-known, no aplicar internacionalización
+    const isApiOrAuth = pathname.startsWith("/api") || pathname.startsWith("/auth") || pathname.startsWith("/register-agency") || pathname.startsWith("/_next") || pathname.startsWith("/.well-known");
     if (isApiOrAuth) {
         const response = NextResponse.next({
             request: {
