@@ -7,7 +7,8 @@ import { AnalyticsProvider as InternalAnalyticsProvider } from "@/modules/analyt
 import { getPublicIntegrations } from "@/actions/settings";
 import { auth } from "@/lib/auth";
 import { Suspense } from "react";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations, getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
 import { ClientDecorativeElements } from "@/components/layout/client-decorative-elements";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -132,10 +133,13 @@ export default async function RootLayout({
   }
   
   let locale = "es";
+  let messages;
   try {
     locale = await getLocale();
+    messages = await getMessages();
   } catch (e) {
-    console.warn("[next-intl] getLocale failed in RootLayout (likely bypassed in middleware):", e);
+    console.warn("[next-intl] getLocale/getMessages failed in RootLayout (likely bypassed in middleware):", e);
+    messages = {};
   }
 
   let userPrefs = {
@@ -256,23 +260,25 @@ export default async function RootLayout({
             `
           }}
         />
-        <Providers session={session}>
-          <InternalAnalyticsProvider userId={session?.user?.id}>
-            <Suspense fallback={null}>
-              <AnalyticsProvider config={{
-                ...integrations,
-                userData,
-                debug: process.env.NODE_ENV === 'development'
-              }} />
-            </Suspense>
+        <NextIntlClientProvider messages={messages} locale={locale}>
+          <Providers session={session}>
+            <InternalAnalyticsProvider userId={session?.user?.id}>
+              <Suspense fallback={null}>
+                <AnalyticsProvider config={{
+                  ...integrations,
+                  userData,
+                  debug: process.env.NODE_ENV === 'development'
+                }} />
+              </Suspense>
 
-            <JsonLd locale={locale} />
-            <PageTransition>
-              {children}
-            </PageTransition>
-            <ClientDecorativeElements locale={locale} />
-          </InternalAnalyticsProvider>
-        </Providers>
+              <JsonLd locale={locale} />
+              <PageTransition>
+                {children}
+              </PageTransition>
+              <ClientDecorativeElements locale={locale} />
+            </InternalAnalyticsProvider>
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
