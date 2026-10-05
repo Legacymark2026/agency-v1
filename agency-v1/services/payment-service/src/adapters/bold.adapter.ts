@@ -13,8 +13,8 @@ import { gatewayRegistry } from "../infrastructure/gateway-registry";
 
 function getHmacSecret(): string {
   const secret = process.env.PAYMENT_HMAC_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
+  if (!secret || secret === "REPLACE_WITH_REAL_BOLD_HMAC_KEY") {
+    if (process.env.NODE_ENV === "production" && !secret) {
       throw new Error("[PAYMENT] PAYMENT_HMAC_SECRET is not configured. Please set this environment variable before processing payments.");
     }
     return "legacymark-dev-ephemeral-pos-secret-32-chars!";

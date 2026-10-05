@@ -47,7 +47,12 @@ export function createPaymentRouter(useCases: IPaymentUseCases): Router {
     }
   });
 
-  router.post("/pos/create", validateRequest(posPaymentSchema), async (req: Request, res: Response) => {
+  router.post("/pos/create", (req: Request, res: Response, next) => {
+    if (!req.body.companyId && req.headers["x-company-id"]) {
+      req.body.companyId = req.headers["x-company-id"];
+    }
+    next();
+  }, validateRequest(posPaymentSchema), async (req: Request, res: Response) => {
     try {
       const tx = await useCases.processPOSPayment(req.body as any);
       res.status(201).json({ success: true, transaction: tx.toJSON() });

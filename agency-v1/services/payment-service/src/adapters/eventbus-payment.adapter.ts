@@ -23,7 +23,16 @@ export class EventBusPaymentPublisherAdapter implements IPaymentEventPublisherPo
         userId: event.companyId,
         id: event.reference,
       });
-      console.log(`[PaymentPublisher] Published order.completed for ref: ${event.reference}`);
+      await (this.bus as any).publish("payment.succeeded", {
+        reference: event.reference,
+        invoiceId: event.invoiceId,
+        orderId: event.orderId,
+        companyId: event.companyId,
+        amount: event.amount,
+        currency: event.currency,
+        provider: event.provider,
+      });
+      console.log(`[PaymentPublisher] Published order.completed & payment.succeeded for ref: ${event.reference}`);
     } catch (err: any) {
       console.warn("[PaymentPublisher] Redis event publish skipped:", err.message);
     }
