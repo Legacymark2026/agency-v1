@@ -22,6 +22,9 @@ export class EventBusPaymentPublisherAdapter implements IPaymentEventPublisherPo
         orderId: event.orderId || event.reference,
         userId: event.companyId,
         id: event.reference,
+        amount: event.amount,
+        orderAmount: event.amount,
+        currency: event.currency,
       });
       await (this.bus as any).publish("payment.succeeded", {
         reference: event.reference,
