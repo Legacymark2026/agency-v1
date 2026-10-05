@@ -3,10 +3,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DeviceRateLimiter = void 0;
+exports.analyzeBotSignals = analyzeBotSignals;
 exports.canonicalizeIpSubnet = canonicalizeIpSubnet;
 exports.generateDeviceHash = generateDeviceHash;
 exports.deviceFingerprintMiddleware = deviceFingerprintMiddleware;
 const crypto_1 = __importDefault(require("crypto"));
+/**
+ * Analyzes hardware and runtime signals to detect headless environments,
+ * emulators, automation frameworks (Puppeteer, Selenium) and bot farms.
+ */
+function analyzeBotSignals(signals) {
+    const reasons = [];
+    let score = 0.0;
+    // 1. WebDriver automation flag
+    if (signals.isWebDriver) {
+        score += 0.8;
+        reasons.push("NAVIGATOR_WEBDRIVER_ACTIVE");
+    }
+    const ua = (signals.userAgent || "").toLowerCase();
+    // 2. Headless browser patterns
+    if (ua.includes("headlesschrome") || ua.includes("phantomjs") || ua.includes("puppeteer") || ua.includes("playwright")) {
+        score += 0.9;
+        reasons.push("HEADLESS_USER_AGENT_PATTERN");
+    }
+    // 3. Virtualized / Software WebGL Renderers (common in cloud servers / containers)
+    const renderer = (signals.webglRenderer || "").toLowerCase();
+    if (renderer.includes("llvmpipe") ||
+        renderer.includes("mesa offscreen") ||
+        renderer.includes("swiftshader") ||
+        renderer.includes("virtualbox") ||
+        renderer.includes("vmware")) {
+        score += 0.7;
+        reasons.push(`SOFTWARE_WEBGL_RENDERER: ${signals.webglRenderer}`);
+    }
+    // 4. Abnormal CPU / Screen combinations
+    if (signals.cpuCores === 0 || signals.cpuCores === "0") {
+        score += 0.3;
+        reasons.push("ZERO_CPU_CORES_REPORTED");
+    }
+    if (signals.screenResolution === "0x0" || signals.screenResolution === "800x600") {
+        score += 0.2;
+        reasons.push(`GENERIC_OR_EMPTY_RESOLUTION: ${signals.screenResolution}`);
+    }
+    const normalizedScore = Math.min(1.0, score);
+    return {
+        isBotOrHeadless: normalizedScore >= 0.7,
+        botRiskScore: Number(normalizedScore.toFixed(2)),
+        reasons,
+    };
+}
 const DEFAULT_SALT = process.env.FINGERPRINT_SECRET_SALT || "legacymark-antiabuse-salt-2026";
 /**
  * Normalizes an IP address to its /24 IPv4 or /48 IPv6 subnet
@@ -67,9 +113,38 @@ function deviceFingerprintMiddleware(salt = DEFAULT_SALT) {
         const finalHash = directHeader && directHeader.length === 64 && /^[0-9a-f]+$/i.test(directHeader)
             ? directHeader.toLowerCase()
             : generateDeviceHash(signals, salt);
+        const botAnalysis = analyzeBotSignals(signals);
         req.deviceFingerprint = finalHash;
         req.deviceSignals = signals;
+        req.botAnalysis = botAnalysis;
         res.setHeader("x-device-fingerprint", finalHash);
+        res.setHeader("x-device-bot-risk", String(botAnalysis.botRiskScore));
+        if (botAnalysis.isBotOrHeadless) {
+            res.setHeader("x-device-bot-detected", "1");
+        }
         next();
     };
 }
+/**
+ * In-memory or Redis-compatible device rate limiter
+ * Enforces a maximum number of trial requests per device within a sliding window.
+ */
+class DeviceRateLimiter {
+    static memoryStore = new Map();
+    static isRateLimited(deviceHash, maxRequests = 3, windowSeconds = 86400) {
+        const now = Date.now();
+        const entry = this.memoryStore.get(deviceHash);
+        if (!entry || entry.resetAt <= now) {
+            this.memoryStore.set(deviceHash, { count: 1, resetAt: now + windowSeconds * 1000 });
+            return { limited: false, remaining: maxRequests - 1, resetInSec: windowSeconds };
+        }
+        if (entry.count >= maxRequests) {
+            const resetInSec = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+            return { limited: true, remaining: 0, resetInSec };
+        }
+        entry.count += 1;
+        const resetInSec = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+        return { limited: false, remaining: maxRequests - entry.count, resetInSec };
+    }
+}
+exports.DeviceRateLimiter = DeviceRateLimiter;

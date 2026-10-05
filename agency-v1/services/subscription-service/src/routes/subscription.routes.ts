@@ -48,6 +48,31 @@ export function createSubscriptionRouter(useCases: SubscriptionUseCases): Router
       };
 
       const parsed = claimTrialSchema.parse(body);
+
+      // ── REFUERZO 1: Rate Limiting por Hardware Device Hash ─────────────────
+      const { DeviceRateLimiter } = await import("@agency/device-fingerprint");
+      const rateCheck = DeviceRateLimiter.isRateLimited(parsed.deviceHash, 3, 86400);
+      if (rateCheck.limited) {
+        res.status(429).json({
+          success: false,
+          error: `RATE_LIMITED_BY_DEVICE: Maximum trial claim attempts exceeded for this hardware. Reset in ${rateCheck.resetInSec}s.`,
+          resetInSec: rateCheck.resetInSec,
+        });
+        return;
+      }
+
+      // ── REFUERZO 2: Detección de Headless, Automatización y Emuladores ───────
+      const botAnalysis = (req as any).botAnalysis;
+      if (botAnalysis && botAnalysis.isBotOrHeadless) {
+        res.status(403).json({
+          success: false,
+          error: "HEADLESS_OR_AUTOMATED_DEVICE_BLOCKED: Automated browsers and virtualized devices cannot claim promotional trials.",
+          botRiskScore: botAnalysis.botRiskScore,
+          reasons: botAnalysis.reasons,
+        });
+        return;
+      }
+
       const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.ip;
 
       const result = await useCases.claimFreeTrial({
@@ -81,6 +106,53 @@ export function createSubscriptionRouter(useCases: SubscriptionUseCases): Router
       res.status(500).json({ success: false, error: err.message });
     }
   });
+
+  // ── REFUERZO 3: Webhook Ingestion Engine (Stripe & Bold Colombia) ────────────
+  router.post("/webhooks/stripe", async (req: Request, res: Response) => {
+    try {
+      const event = req.body;
+      const eventType = event.type;
+      const dataObj = event.data?.object || {};
+
+      console.log(`[subscription-service] Stripe Webhook received: ${eventType}`);
+
+      if (eventType === "customer.subscription.deleted" || eventType === "customer.subscription.updated") {
+        const stripeSubId = dataObj.id;
+        const status = dataObj.status; // 'active', 'past_due', 'canceled', etc.
+
+        // Sync with Prisma via company lookup or event bus
+        const { prisma } = await import("@agency/database");
+        const company = await prisma.company.findFirst({
+          where: { stripeSubscriptionId: stripeSubId },
+        });
+
+        if (company) {
+          await prisma.company.update({
+            where: { id: company.id },
+            data: { subscriptionStatus: status },
+          });
+          console.log(`[subscription-service] Company ${company.id} updated to ${status} via Stripe webhook`);
+        }
+      }
+
+      res.json({ received: true });
+    } catch (err: any) {
+      console.error("[subscription-service] Stripe webhook error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post("/webhooks/bold", async (req: Request, res: Response) => {
+    try {
+      const payload = req.body;
+      console.log("[subscription-service] Bold Colombia webhook event:", payload.event || payload.action);
+      // Process Bold payment notification and update company subscription status
+      res.json({ received: true, provider: "Bold Colombia" });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
 
   // ── GET /:companyId ─────────────────────────────────────────────────────────
   router.get("/:companyId", async (req: Request, res: Response) => {

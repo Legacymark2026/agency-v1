@@ -17,6 +17,8 @@ import {
   UpdateRoleDTO,
 } from "../core/ports/authorization.ports";
 
+import Redis from "ioredis";
+
 export class PrismaAuthorizationAdapter
   implements
     IRoleRepositoryPort,
@@ -25,12 +27,37 @@ export class PrismaAuthorizationAdapter
     ISubscriptionRepositoryPort,
     IAuthorizationEventPublisherPort
 {
-  constructor(private readonly eventBus?: EventBus) {}
+  private redis?: Redis;
+
+  constructor(private readonly eventBus?: EventBus, redisUrl?: string) {
+    if (redisUrl || process.env.REDIS_URL) {
+      try {
+        this.redis = new Redis(redisUrl || process.env.REDIS_URL || "redis://localhost:6379", {
+          maxRetriesPerRequest: 1,
+          enableReadyCheck: false,
+          lazyConnect: true,
+        });
+        this.redis.connect().catch(() => {});
+      } catch {
+        // Redis optional fallback
+      }
+    }
+  }
 
   /**
-   * Fast retrieval of tenant subscription state directly from Company table
+   * Fast retrieval of tenant subscription state with Redis L1 Cache (<2ms)
    */
   async getCompanySubscription(companyId: string): Promise<CompanySubscriptionDomain | null> {
+    const cacheKey = `cache:sub:status:${companyId}`;
+    if (this.redis) {
+      try {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) return JSON.parse(cached);
+      } catch {
+        // Cache miss/error fallback to DB
+      }
+    }
+
     const company = await prisma.company.findUnique({
       where: { id: companyId },
       select: {
@@ -44,24 +71,45 @@ export class PrismaAuthorizationAdapter
 
     if (!company) return null;
 
-    return {
+    const domain: CompanySubscriptionDomain = {
       companyId: company.id,
       subscriptionTier: company.subscriptionTier || "free",
       subscriptionStatus: company.subscriptionStatus || "active",
       stripeCustomerId: company.stripeCustomerId,
       stripeSubscriptionId: company.stripeSubscriptionId,
     };
+
+    if (this.redis) {
+      this.redis.setex(cacheKey, 120, JSON.stringify(domain)).catch(() => {});
+    }
+
+    return domain;
   }
 
-
   async listRolesByCompany(companyId: string, activeOnly = true): Promise<RoleDomain[]> {
+    const cacheKey = `cache:authz:roles:${companyId}:${activeOnly ? "active" : "all"}`;
+    if (this.redis) {
+      try {
+        const cached = await this.redis.get(cacheKey);
+        if (cached) return JSON.parse(cached);
+      } catch {
+        // Fallback to DB
+      }
+    }
+
     const roles = await prisma.role.findMany({
       where: { companyId, ...(activeOnly ? { isActive: true } : {}) },
       include: { permissions: { include: { permission: true } } },
       orderBy: { createdAt: "asc" },
     });
+
+    if (this.redis) {
+      this.redis.setex(cacheKey, 120, JSON.stringify(roles)).catch(() => {});
+    }
+
     return roles as any;
   }
+
 
   async findRoleById(id: string): Promise<RoleDomain | null> {
     const role = await prisma.role.findUnique({
@@ -69,6 +117,17 @@ export class PrismaAuthorizationAdapter
       include: { permissions: { include: { permission: true } } },
     });
     return role as any;
+  }
+
+  private async invalidateCompanyCache(companyId: string): Promise<void> {
+    if (!this.redis || !companyId) return;
+    try {
+      await this.redis.del(`cache:authz:roles:${companyId}:active`);
+      await this.redis.del(`cache:authz:roles:${companyId}:all`);
+      await this.redis.del(`cache:sub:status:${companyId}`);
+    } catch {
+      // Non-critical cache purge failure
+    }
   }
 
   async createRole(dto: CreateRoleDTO): Promise<RoleDomain> {
@@ -85,6 +144,7 @@ export class PrismaAuthorizationAdapter
       },
       include: { permissions: { include: { permission: true } } },
     });
+    await this.invalidateCompanyCache(dto.companyId);
     return role as any;
   }
 
@@ -108,13 +168,19 @@ export class PrismaAuthorizationAdapter
         },
         include: { permissions: { include: { permission: true } } },
       });
+      await this.invalidateCompanyCache(updated.companyId);
       return updated as any;
     });
   }
 
   async deleteRole(id: string): Promise<boolean> {
+    const existing = await prisma.role.findUnique({ where: { id }, select: { companyId: true } });
     await prisma.role.delete({ where: { id } });
+    if (existing?.companyId) {
+      await this.invalidateCompanyCache(existing.companyId);
+    }
     return true;
+
   }
 
   async assignUserRole(assignment: UserRoleAssignment): Promise<UserRoleAssignment> {

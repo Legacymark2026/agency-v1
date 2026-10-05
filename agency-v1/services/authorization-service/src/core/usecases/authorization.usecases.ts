@@ -45,10 +45,23 @@ export class AuthorizationUseCases {
       };
     }
 
-    // ── PASO 1: Verificación de Suscripción Previa (Subscription Gatekeeper) ───
+    // ── PASO 1: Verificación de Suscripción Previa (Subscription Gatekeeper con Gracia) ───
     let subscription: CompanySubscriptionDomain | null = null;
     if (dto.companyId && this.subscriptionRepo && !dto.skipSubscriptionCheck) {
-      subscription = await this.subscriptionRepo.getCompanySubscription(dto.companyId);
+      try {
+        subscription = await this.subscriptionRepo.getCompanySubscription(dto.companyId);
+      } catch (err: any) {
+        console.warn(`[AuthzUseCases] SubscriptionRepo error for tenant ${dto.companyId}: ${err.message}. Engaging Grace Policy.`);
+        // Resilient Degraded Grace Mode: if non-destructive action, grant conditional pass
+        if (dto.requiredPermission.includes(".read") || dto.requiredPermission.includes(".list")) {
+          subscription = {
+            companyId: dto.companyId,
+            subscriptionTier: "pro",
+            subscriptionStatus: "active",
+          };
+        }
+      }
+
       const subResult = SubscriptionGatekeeper.verifySubscriptionAccess(
         subscription,
         dto.requiredTier,
@@ -73,6 +86,7 @@ export class AuthorizationUseCases {
         };
       }
     }
+
 
     // ── PASO 2: Verificación de Rol y Permiso en Matriz RBAC ───────────────────
     const roles = await this.roleRepo.listRolesByCompany(dto.companyId, true);
