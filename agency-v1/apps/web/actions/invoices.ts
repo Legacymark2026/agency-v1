@@ -18,11 +18,6 @@ export type InvoiceInput = {
     clientType?: string;
     paymentMethod?: string;
     subtotalAmount: number;
-    reteFuente?: number;
-    reteICA?: number;
-    reteIVA?: number;
-    documentNature?: string;
-    parentInvoiceId?: string;
     taxAmount: number;
     discountAmount: number;
     totalAmount: number;
@@ -47,11 +42,6 @@ export type InvoiceInput = {
         unitPrice: number;
         taxRate: number;
         totalAmount: number;
-    reteFuente?: number;
-    reteICA?: number;
-    reteIVA?: number;
-    documentNature?: string;
-    parentInvoiceId?: string;
     }[];
 };
 
