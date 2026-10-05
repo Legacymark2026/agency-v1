@@ -14,6 +14,7 @@ import { ActionResult, fail, ok } from "@/types/actions";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { analyzeEmailReputation, analyzeNetworkSecurity } from "@/lib/security-signals";
 
 const RegisterAgencySchema = z.object({
   agencyName: z.string().min(2, "El nombre de la empresa es muy corto."),
@@ -51,19 +52,28 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
   const { agencyName, adminName, email, password, industry, teamSize, country, deviceFingerprint } = result.data;
 
   try {
-    // 1. Validar que el correo no esté en uso globalmente
+    // 1. Análisis de Seguridad Silenciosa: Reputación del Correo
+    const emailReputation = analyzeEmailReputation(email);
+    if (emailReputation.isDisposable) {
+      return fail("No se permiten correos electrónicos temporales o desechables. Por favor usa tu correo corporativo o personal.", 400);
+    }
+
+    // 2. Validar que el correo no esté en uso globalmente
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return fail("El correo ya está en uso. Inicia sesión en su lugar.", 409);
     }
 
-    // 2. Extraer IP y User Agent del cliente para seguridad y auditoría
+    // 3. Extraer IP y cabeceras para Análisis Silencioso de Red y Riesgo de Bot/Proxy
     let clientIp = "127.0.0.1";
     let userAgent = "Web Browser";
+    let networkRisk = { isPotentialProxyOrDatacenter: false, riskScore: 0, reasons: [] as string[] };
+
     try {
       const headerList = await headers();
       clientIp = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() || headerList.get("x-real-ip") || "127.0.0.1";
       userAgent = headerList.get("user-agent") || "Web Browser";
+      networkRisk = analyzeNetworkSecurity(clientIp, headerList as any);
     } catch {
       // Ignorar fuera de contexto http
     }
@@ -112,6 +122,14 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
           locale: region.locale,
           timezone: region.timezone,
           taxRateDefault: region.taxRate,
+          securityProfile: {
+            emailDomain: emailReputation.domain,
+            isCorporateEmail: emailReputation.isCorporate,
+            emailRiskScore: emailReputation.riskScore,
+            networkRiskScore: networkRisk.riskScore,
+            proxyDetected: networkRisk.isPotentialProxyOrDatacenter,
+            initialIp: clientIp,
+          },
         },
         whiteLabeling: {
           primaryColor: "#0d9488", // Teal 600 default
@@ -329,3 +347,77 @@ export async function completeOnboardingAndCloneTemplates() {
         return { success: false, error: e.message };
     }
 }
+
+const GuidedOnboardingSchema = z.object({
+  whatsappPhone: z.string().min(7, "Ingresa un número de WhatsApp válido").optional().or(z.literal("")),
+  taxId: z.string().min(5, "El NIT / Identificador fiscal es muy corto").optional().or(z.literal("")),
+  taxRegime: z.enum(["responsable_iva", "no_responsable_iva", "simple_tributacion"]).optional().default("no_responsable_iva"),
+  baseCurrency: z.enum(["COP", "USD", "EUR"]).optional().default("COP"),
+});
+
+export async function saveGuidedOnboardingProfile(formData: FormData): Promise<ActionResult<{ success: boolean }>> {
+  const session = await auth();
+  if (!session?.user?.companyId) return fail("No autenticado", 401);
+
+  const companyId = session.user.companyId;
+  const rawData = Object.fromEntries(formData);
+  const parsed = GuidedOnboardingSchema.safeParse(rawData);
+
+  if (!parsed.success) {
+    return fail("Datos inválidos: " + parsed.error.errors[0].message, 400);
+  }
+
+  const { whatsappPhone, taxId, taxRegime, baseCurrency } = parsed.data;
+
+  try {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { defaultCompanySettings: true },
+    });
+
+    const currentSettings = (company?.defaultCompanySettings as Record<string, any>) || {};
+
+    const updatedSettings = {
+      ...currentSettings,
+      currency: baseCurrency,
+      taxProfile: {
+        taxId: taxId || null,
+        taxRegime,
+        configuredAt: new Date().toISOString(),
+      },
+      whatsappNotificationPhone: whatsappPhone || null,
+    };
+
+    // 1. Actualizar Company con los metadatos fiscales y de moneda
+    await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        defaultCompanySettings: updatedSettings,
+      },
+    });
+
+    // 2. Si se suministró WhatsApp, sincronizar con AgentConfig para alertas automáticas del motor de IA
+    if (whatsappPhone) {
+      await prisma.agentConfig.upsert({
+        where: { companyId },
+        update: {
+          adminWhatsappPhone: whatsappPhone,
+          isActive: true,
+        },
+        create: {
+          companyId,
+          adminWhatsappPhone: whatsappPhone,
+          isActive: true,
+          systemPrompt: "Eres el asistente inteligente de operaciones y ventas de la empresa.",
+        },
+      }).catch(() => {});
+    }
+
+    revalidatePath("/", "layout");
+    return ok({ success: true });
+  } catch (error: any) {
+    console.error("[Guided Onboarding Error]:", error);
+    return fail("No se pudo guardar la configuración inicial: " + error.message, 500);
+  }
+}
+

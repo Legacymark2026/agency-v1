@@ -33,10 +33,34 @@ async function main() {
         locale: "es-CO",
         timezone: "America/Bogota",
         taxRateDefault: 19,
+        securityProfile: {
+          emailDomain: "legacymark.test",
+          isCorporateEmail: true,
+          emailRiskScore: 0.0,
+          networkRiskScore: 0.0,
+          proxyDetected: false,
+        },
       },
     },
   });
   console.log(`   ✅ Company creada con ID: ${company.id}, Slug: ${company.slug}, País: CO, Moneda: COP`);
+
+  // 1.1 Probar actualización de Fase 2 (Onboarding Guiado: NIT, Régimen, WhatsApp)
+  console.log("1️⃣.1 Actualizando perfil guiado (Fase 2: NIT, Régimen, WhatsApp)...");
+  await prisma.company.update({
+    where: { id: company.id },
+    data: {
+      defaultCompanySettings: {
+        ...(typeof company.defaultCompanySettings === "object" && company.defaultCompanySettings !== null ? company.defaultCompanySettings : {}),
+        taxProfile: {
+          taxId: "901.888.777-1",
+          taxRegime: "responsable_iva",
+        },
+        whatsappNotificationPhone: "+573009998877",
+      },
+    },
+  });
+  console.log("   ✅ Perfil Fase 2 actualizado: NIT 901.888.777-1, WhatsApp: +573009998877");
 
   // 2. Sembrar los 3 roles estándar para la empresa
   console.log("2️⃣ Creando roles estándar (owner, admin, member)...");
