@@ -21,6 +21,8 @@ const RegisterAgencySchema = z.object({
   email: z.string().email("Correo electrónico inválido."),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
   industry: z.string().optional().default("marketing"),
+  teamSize: z.string().optional().default("2-5"),
+  country: z.string().optional().default("CO"),
   deviceFingerprint: z.string().optional().nullable(),
 });
 
@@ -46,7 +48,7 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     return fail("Datos inválidos: " + result.error.errors[0].message, 400);
   }
 
-  const { agencyName, adminName, email, password, industry, deviceFingerprint } = result.data;
+  const { agencyName, adminName, email, password, industry, teamSize, country, deviceFingerprint } = result.data;
 
   try {
     // 1. Validar que el correo no esté en uso globalmente
@@ -81,6 +83,16 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     });
     const permMap = new Map(permissionsInDb.map(p => [p.name, p.id]));
 
+    // Mapeo regional para motores de facturación y pagos
+    const REGIONAL_PRESETS: Record<string, { currency: string; locale: string; timezone: string; taxRate: number }> = {
+      CO: { currency: "COP", locale: "es-CO", timezone: "America/Bogota", taxRate: 19 },
+      MX: { currency: "MXN", locale: "es-MX", timezone: "America/Mexico_City", taxRate: 16 },
+      US: { currency: "USD", locale: "en-US", timezone: "America/New_York", taxRate: 0 },
+      ES: { currency: "EUR", locale: "es-ES", timezone: "Europe/Madrid", taxRate: 21 },
+      OTHER: { currency: "USD", locale: "es-419", timezone: "UTC", taxRate: 0 },
+    };
+    const region = REGIONAL_PRESETS[country || "CO"] || REGIONAL_PRESETS.CO;
+
     // 4. Crear el Tenant (Company) con sus configuraciones regionales iniciales
     const slugBase = agencyName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const uniqueSlug = `${slugBase}-${Date.now().toString().slice(-6)}`;
@@ -94,10 +106,12 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
         subscriptionStatus: "active",
         onboardingCompleted: false,
         defaultCompanySettings: {
-          currency: "COP",
-          locale: "es-CO",
-          timezone: "America/Bogota",
-          taxRateDefault: 19,
+          country: country || "CO",
+          teamSize: teamSize || "2-5",
+          currency: region.currency,
+          locale: region.locale,
+          timezone: region.timezone,
+          taxRateDefault: region.taxRate,
         },
         whiteLabeling: {
           primaryColor: "#0d9488", // Teal 600 default

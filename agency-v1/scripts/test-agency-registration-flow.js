@@ -27,13 +27,16 @@ async function main() {
       subscriptionStatus: "active",
       onboardingCompleted: false,
       defaultCompanySettings: {
+        country: "CO",
+        teamSize: "2-5",
         currency: "COP",
         locale: "es-CO",
         timezone: "America/Bogota",
+        taxRateDefault: 19,
       },
     },
   });
-  console.log(`   ✅ Company creada con ID: ${company.id} y Slug: ${company.slug}`);
+  console.log(`   ✅ Company creada con ID: ${company.id}, Slug: ${company.slug}, País: CO, Moneda: COP`);
 
   // 2. Sembrar los 3 roles estándar para la empresa
   console.log("2️⃣ Creando roles estándar (owner, admin, member)...");
