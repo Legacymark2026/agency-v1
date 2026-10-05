@@ -221,19 +221,30 @@ export class PrismaAuthorizationAdapter
   }
 
   async listPermissions(): Promise<PermissionDefinition[]> {
-    const permissions = await prisma.permission.findMany({ orderBy: { category: "asc" } });
-    return permissions as any;
+    const permissions = await prisma.permission.findMany({ orderBy: { module: "asc" } });
+    return permissions.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      category: p.module,
+    }));
   }
 
   async syncPermissions(permissions: Array<{ name: string; description?: string; category?: string }>): Promise<PermissionDefinition[]> {
     const synced: any[] = [];
     for (const p of permissions) {
+      const moduleName = p.category || (p.name.includes(".") ? p.name.split(".")[0] : "GENERAL");
       const upserted = await prisma.permission.upsert({
         where: { name: p.name },
-        update: { description: p.description, category: p.category },
-        create: { name: p.name, description: p.description, category: p.category || "GENERAL" },
+        update: { description: p.description, module: moduleName },
+        create: { name: p.name, description: p.description, module: moduleName },
       });
-      synced.push(upserted);
+      synced.push({
+        id: upserted.id,
+        name: upserted.name,
+        description: upserted.description,
+        category: upserted.module,
+      });
     }
     return synced;
   }
