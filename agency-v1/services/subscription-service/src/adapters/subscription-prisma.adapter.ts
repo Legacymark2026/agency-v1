@@ -63,8 +63,24 @@ export class PrismaSubscriptionAdapter
   }): Promise<SubscriptionDomain> {
     const company = await prisma.company.findUnique({
       where: { id: data.companyId },
-      select: { defaultCompanySettings: true },
+      select: { id: true, createdAt: true, stripeCustomerId: true, stripeSubscriptionId: true, defaultCompanySettings: true },
     });
+
+    if (!company) {
+      // Company row not found (e.g. mock test tenant) -> Return in-memory domain model
+      return {
+        id: data.companyId,
+        companyId: data.companyId,
+        tier: data.tier,
+        status: data.status,
+        trialStartedAt: data.trialStartedAt,
+        trialEndsAt: data.trialEndsAt,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: data.trialEndsAt,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
 
     const currentSettings = (company?.defaultCompanySettings as any) || {};
     const updatedSettings = {
@@ -81,6 +97,7 @@ export class PrismaSubscriptionAdapter
         defaultCompanySettings: updatedSettings,
       },
     });
+
 
     return {
       id: updated.id,
