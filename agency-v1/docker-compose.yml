@@ -1017,6 +1017,7 @@ services:
       <<: *common-env
       PORT: "4022"
       OTEL_SERVICE_NAME: payment-service
+      PAYMENT_HMAC_SECRET: ${PAYMENT_HMAC_SECRET:-legacymark-prod-secure-pos-secret-32-chars!}
     depends_on:
       pgbouncer: { condition: service_healthy }
       redis: { condition: service_healthy }
