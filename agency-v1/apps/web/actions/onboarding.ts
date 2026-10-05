@@ -280,7 +280,7 @@ export async function registerAgency(formData: FormData): Promise<ActionResult<{
     }
 
     // 10. Éxito: Enviar al Login con redirect a Onboarding / Dashboard
-    return ok({ redirectTo: "/api/auth/signin?callbackUrl=/dashboard" });
+    return ok({ redirectTo: "/auth/login?registered=true" });
 
   } catch (error: any) {
     console.error("[SaaS Onboarding Error]:", error);

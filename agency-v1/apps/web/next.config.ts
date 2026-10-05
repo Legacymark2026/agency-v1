@@ -137,6 +137,11 @@ const nextConfig: NextConfig = {
         destination: '/rss',
         permanent: true,
       },
+      {
+        source: '/auth/signin',
+        destination: '/auth/login',
+        permanent: true,
+      },
     ];
   },
   async headers() {

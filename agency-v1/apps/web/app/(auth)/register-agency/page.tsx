@@ -37,7 +37,7 @@ export default function RegisterAgencyPage() {
         <div className="mt-8 pt-6 border-t border-slate-800/80 w-full text-center">
           <p className="text-sm text-slate-400">
             ¿Ya tienes una cuenta?{" "}
-            <Link href="/auth/signin" className="text-teal-400 hover:text-teal-300 transition-colors font-medium">
+            <Link href="/auth/login" className="text-teal-400 hover:text-teal-300 transition-colors font-medium">
               Inicia Sesión
             </Link>
           </p>
