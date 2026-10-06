@@ -691,7 +691,17 @@ export async function getUsageStats() {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        const [apiCalls, leads, emailsSent, aiTokens, members] = await Promise.all([
+        const company = await prisma.company.findUnique({
+            where: { id: session.user.companyId },
+            select: { 
+                subscriptionTier: true, 
+                subscriptionStatus: true, 
+                stripeCustomerId: true,
+                defaultCompanySettings: true 
+            }
+        });
+
+        const [apiCalls, leads, emailsSent, aiTokens, members, invoiceCount] = await Promise.all([
             prisma.usageLog.aggregate({
                 where: { companyId: session.user.companyId, metric: "API_CALLS", recordedAt: { gte: startOfMonth } },
                 _sum: { value: true },
@@ -706,18 +716,28 @@ export async function getUsageStats() {
                 _sum: { value: true },
             }),
             prisma.companyUser.count({ where: { companyId: session.user.companyId } }),
+            prisma.invoice.count({ where: { companyId: session.user.companyId } }),
         ]);
+
+        const plan = (company?.subscriptionTier || "enterprise").toLowerCase();
+        const limits = plan === "starter" || plan === "free"
+            ? { apiCalls: 5_000, leads: 1_000, emailsSent: 5_000, aiTokens: 50_000, members: 3 }
+            : plan === "pro"
+            ? { apiCalls: 50_000, leads: 5_000, emailsSent: 25_000, aiTokens: 500_000, members: 15 }
+            : { apiCalls: 100_000, leads: 10_000, emailsSent: 50_000, aiTokens: 1_000_000, members: 25 };
 
         return {
             success: true,
             data: {
+                plan,
+                subscriptionStatus: company?.subscriptionStatus || "active",
                 apiCalls: apiCalls._sum.value || 0,
                 leads,
                 emailsSent: emailsSent._sum.value || 0,
                 aiTokens: aiTokens._sum.value || 0,
                 members,
-                // Plan limits (would come from DB in production)
-                limits: { apiCalls: 100_000, leads: 10_000, emailsSent: 50_000, aiTokens: 1_000_000, members: 25 },
+                invoiceCount,
+                limits,
             },
         };
     } catch (error: any) {
@@ -738,7 +758,9 @@ export async function getInvoices() {
         const stripeKey = process.env.STRIPE_SECRET_KEY;
         const customerId = (company as any)?.stripeCustomerId;
 
-        // ── Real Stripe invoices ───────────────────────────────────────────────
+        let stripeInvoices: any[] = [];
+
+        // ── 1. Consultar facturas de Stripe si existen credenciales ────────────────
         if (stripeKey && customerId) {
             try {
                 const stripeRes = await fetch(
@@ -754,7 +776,7 @@ export async function getInvoices() {
 
                 if (stripeRes.ok) {
                     const stripeData = await stripeRes.json();
-                    const invoices = (stripeData.data || []).map((inv: any) => ({
+                    stripeInvoices = (stripeData.data || []).map((inv: any) => ({
                         id: inv.id,
                         date: new Date(inv.created * 1000),
                         amount: inv.amount_paid,          // in cents
@@ -763,27 +785,43 @@ export async function getInvoices() {
                         downloadUrl: inv.invoice_pdf || inv.hosted_invoice_url || '#',
                         number: inv.number,
                         description: inv.description || inv.lines?.data?.[0]?.description,
+                        source: 'STRIPE',
                     }));
-                    return { success: true, data: invoices, company };
                 }
-
-                const errBody = await stripeRes.json().catch(() => ({}));
-                console.error('[getInvoices] Stripe API error:', stripeRes.status, errBody);
             } catch (e) {
                 console.error('[getInvoices] Failed to fetch from Stripe:', e);
             }
         }
 
-        // ── Stripe not configured or no customer ID ───────────────────────────
-        // Return empty array — the billing UI should explain the situation honestly
+        // ── 2. Consultar facturas registradas en la base de datos (Motor DIAN / Core) ──
+        const localInvoices = await prisma.invoice.findMany({
+            where: { companyId: session.user.companyId },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+        });
+
+        const formattedLocalInvoices = localInvoices.map((inv) => ({
+            id: inv.id,
+            date: inv.createdAt,
+            amount: Math.round(inv.totalAmount * 100), // convert to cents
+            currency: (inv.currency || 'COP').toUpperCase(),
+            status: inv.status === 'PAID' || inv.status === 'EMITIDA' ? 'PAID' : inv.status,
+            downloadUrl: inv.pdfUrl || '#',
+            number: inv.cufe ? `DIAN-${inv.id.slice(0, 8)}` : `INV-${inv.id.slice(0, 8)}`,
+            description: inv.serviceDescription || `Factura a nombre de ${inv.clientName}`,
+            cufe: inv.cufe,
+            source: 'LOCAL_DIAN',
+        }));
+
+        // Combinar ambas fuentes (dando prioridad a registros reales)
+        const allInvoices = [...stripeInvoices, ...formattedLocalInvoices];
+
         return {
             success: true,
-            data: [],
+            data: allInvoices,
             company,
-            notice: !stripeKey
-                ? 'Stripe no está configurado en el servidor (STRIPE_SECRET_KEY faltante).'
-                : !customerId
-                ? 'Esta empresa aún no tiene un Customer ID de Stripe. Las facturas aparecerán aquí una vez que se realice el primer pago.'
+            notice: allInvoices.length === 0
+                ? 'No se encontraron facturas registradas en Stripe ni en el motor local.'
                 : null,
         };
     } catch (error: any) {
