@@ -11,7 +11,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { verifyPermissionOrFail, isSuperAdmin, isCompanyAdmin } from "@/lib/security";
+import { verifyPermissionOrFail, isSuperAdmin, isCompanyAdmin, isCompanyOwner } from "@/lib/security";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { CreateRoleInput, UpdateRoleInput, RoleWithPermissions } from "@/types/rbac";
 import { MASTER_PERMISSIONS } from "@/lib/rbac";
@@ -105,11 +105,11 @@ async function validateSingleRoleUserManagement(
 
   if (matchingPerms.length === 0) return;
 
-  // 1. Verificar si el usuario que ejecuta la acción es el Administrador de la empresa
-  const isAdmin = await isCompanyAdmin(userId, companyId);
-  if (!isAdmin) {
+  // 1. Verificar si el usuario que ejecuta la acción es el Propietario del plan/empresa
+  const isOwner = await isCompanyOwner(userId, companyId);
+  if (!isOwner) {
     throw new ForbiddenError(
-      "Solo el Administrador de la empresa tiene potestad para delegar la facultad de creación de usuarios y contraseñas."
+      "Solo el Propietario del plan (Owner de la empresa) tiene la facultad exclusiva de delegar la acción de gestión de usuarios y contraseñas a un rol personalizado."
     );
   }
 
@@ -132,7 +132,7 @@ async function validateSingleRoleUserManagement(
   if (otherRolesWithPerm.length > 0) {
     const existingNames = otherRolesWithPerm.map((r) => `"${r.name}"`).join(", ");
     throw new Error(
-      `Solo se permite asignar la creación de usuarios y contraseñas a UN SOLO rol en la empresa. El rol ${existingNames} ya posee esta facultad. Desasígnela de ese rol antes de otorgarla a otro.`
+      `Solo se permite asignar la creación de usuarios y contraseñas a UN SOLO rol personalizado en la empresa. El rol ${existingNames} ya posee esta facultad delegada. Desasígnela de ese rol o use la acción de transferencia directa.`
     );
   }
 }
@@ -379,4 +379,120 @@ export async function getAvailablePermissionsByModule() {
   }
 
   return { success: true, modules: grouped, total: permissions.length };
+}
+
+/**
+ * Consulta cuál rol personalizado tiene actualmente asignada la delegación de gestión de usuarios en la empresa,
+ * y verifica si el usuario actual es el Propietario del plan (Owner).
+ */
+export async function getDelegatedUserManagementRole() {
+  const session = await auth();
+  if (!session?.user?.id) throw new UnauthorizedError();
+
+  const companyId = await getSessionCompanyId();
+  const userId = session.user.id;
+
+  const isOwner = await isCompanyOwner(userId, companyId);
+
+  // Buscar rol que tiene activo alguno de los permisos de gestión de usuarios
+  const roleWithPerm = await prisma.role.findFirst({
+    where: {
+      companyId,
+      permissions: {
+        some: {
+          permission: {
+            name: { in: USER_MANAGE_PERM_NAMES },
+          },
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      priority: true,
+      _count: { select: { users: true } },
+    },
+  });
+
+  return {
+    isOwner,
+    delegatedRole: roleWithPerm,
+  };
+}
+
+/**
+ * Acción exclusiva para el Propietario del plan (Owner):
+ * Asigna la delegación de gestión de usuarios a un rol personalizado específico
+ * o revoca la delegación si roleId es null.
+ */
+export async function delegateUserManagementRole(targetRoleId: string | null) {
+  const session = await auth();
+  if (!session?.user?.id) throw new UnauthorizedError();
+
+  const companyId = await getSessionCompanyId();
+  const userId = session.user.id;
+
+  const isOwner = await isCompanyOwner(userId, companyId);
+  if (!isOwner) {
+    throw new ForbiddenError(
+      "Operación no autorizada: Solo el Propietario del plan puede delegar o revocar la gestión de usuarios."
+    );
+  }
+
+  // 1. Obtener los IDs de permisos de gestión de usuarios
+  const perms = await prisma.permission.findMany({
+    where: { name: { in: USER_MANAGE_PERM_NAMES } },
+    select: { id: true },
+  });
+
+  if (perms.length === 0) {
+    throw new Error("Permisos de gestión de usuarios no configurados en la plataforma.");
+  }
+
+  const permIds = perms.map((p) => p.id);
+
+  // 2. Transacción atómica:
+  // - Remover los permisos de cualquier otro rol en la empresa
+  // - Si targetRoleId está provisto, asignarlos al rol destino
+  await prisma.$transaction(async (tx) => {
+    // Buscar todos los roles de la empresa
+    const companyRoles = await tx.role.findMany({
+      where: { companyId },
+      select: { id: true },
+    });
+    const companyRoleIds = companyRoles.map((r) => r.id);
+
+    if (companyRoleIds.length > 0) {
+      await tx.rolePermission.deleteMany({
+        where: {
+          roleId: { in: companyRoleIds },
+          permissionId: { in: permIds },
+        },
+      });
+    }
+
+    if (targetRoleId) {
+      // Validar que el rol pertenezca a la empresa
+      const targetRole = await tx.role.findUnique({
+        where: { id: targetRoleId },
+      });
+
+      if (!targetRole || targetRole.companyId !== companyId) {
+        throw new Error("El rol seleccionado no pertenece a la empresa.");
+      }
+
+      await tx.rolePermission.createMany({
+        data: permIds.map((pId) => ({
+          roleId: targetRoleId,
+          permissionId: pId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  });
+
+  revalidatePath("/settings/roles");
+  revalidatePath("/settings/members");
+  return { success: true };
 }

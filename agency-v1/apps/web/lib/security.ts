@@ -284,6 +284,47 @@ export async function getUserRole(
   }
 }
 
+/**
+ * Determina si el usuario es el Propietario (Owner) de la cuenta / plan de la empresa.
+ * El Propietario del plan es la autoridad máxima del Tenant que posee el rol 'owner' o 'agency_owner'.
+ */
+export async function isCompanyOwner(
+  userId: string,
+  companyId: string
+): Promise<boolean> {
+  try {
+    if (await isSuperAdmin(userId)) return true;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, globalRole: true },
+    });
+    if (user?.globalRole === "agency_owner" || user?.role === "super_admin" || user?.role === "SUPER_ADMIN") {
+      return true;
+    }
+
+    const companyUser = await prisma.companyUser.findFirst({
+      where: { userId, companyId },
+      include: { role: true },
+    });
+
+    if (!companyUser) return false;
+
+    if (["owner", "OWNER"].includes(companyUser.roleName)) {
+      return true;
+    }
+
+    if (companyUser.role?.name?.toLowerCase() === "owner") {
+      return true;
+    }
+
+    return (companyUser.role?.priority ?? 0) >= 100;
+  } catch (error) {
+    console.error("[Security] Error checking company owner:", error);
+    return false;
+  }
+}
+
 export async function isCompanyAdmin(
   userId: string,
   companyId: string

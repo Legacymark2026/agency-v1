@@ -14,7 +14,9 @@ import {
   getPermissionsGroupedByModule,
   getRoleStats,
   assignUserRole,
-  getCompanyUsersWithRoles
+  getCompanyUsersWithRoles,
+  getDelegatedUserManagementRole,
+  delegateUserManagementRole
 } from "@/actions/roles";
 
 interface Role {
@@ -89,26 +91,49 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [assigningUser, setAssigningUser] = useState<UserWithRole | null>(null);
   const [activeTab, setActiveTab] = useState<"roles" | "permissions" | "users">("roles");
+  const [delegationInfo, setDelegationInfo] = useState<{ isOwner: boolean; delegatedRole: any } | null>(null);
+  const [isDelegating, setIsDelegating] = useState(false);
+  const [showDelegationModal, setShowDelegationModal] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [rolesRes, permsRes, statsRes, usersRes] = await Promise.all([
+      const [rolesRes, permsRes, statsRes, usersRes, delegRes] = await Promise.all([
         getCompanyRoles(),
         getPermissionsGroupedByModule(),
         getRoleStats(),
         getCompanyUsersWithRoles(),
+        getDelegatedUserManagementRole(),
       ]);
       
       if (Array.isArray(rolesRes)) setRoles(rolesRes);
       if (Array.isArray(permsRes)) setPermissions(permsRes as any);
       if (statsRes) setStats(statsRes);
       if (Array.isArray(usersRes)) setUsers(usersRes);
+      if (delegRes) setDelegationInfo(delegRes);
     } catch (error) {
       console.error("Error loading roles:", error);
     }
     setIsLoading(false);
   }, []);
+
+  const handleDelegateRole = async (targetRoleId: string | null) => {
+    setIsDelegating(true);
+    try {
+      await delegateUserManagementRole(targetRoleId);
+      toast.success(
+        targetRoleId
+          ? "Facultad de gestión de usuarios delegada exitosamente al rol personalizado"
+          : "Delegación de gestión de usuarios revocada exitosamente"
+      );
+      setShowDelegationModal(false);
+      await load();
+    } catch (error: any) {
+      toast.error(error.message || "Error al actualizar la delegación");
+    } finally {
+      setIsDelegating(false);
+    }
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -183,13 +208,70 @@ export default function RolesPage() {
             Gestiona los roles personalizados y permisos de tu empresa
           </p>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="ds-btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo Rol
-        </button>
+        <div className="flex items-center gap-3">
+          {delegationInfo?.isOwner && (
+            <button
+              onClick={() => setShowDelegationModal(true)}
+              className="px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:border-amber-400 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all shadow-sm"
+            >
+              <Shield className="w-4 h-4 text-amber-400" />
+              Delegar Creación de Usuarios
+            </button>
+          )}
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="ds-btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Rol
+          </button>
+        </div>
+      </div>
+
+      {/* Banner de Delegación de Control de Usuarios (Plan Owner) */}
+      <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/20 backdrop-blur-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0 mt-0.5">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-amber-200">
+                Gobernanza SaaS: Creación de Usuarios y Contraseñas
+              </h3>
+              {delegationInfo?.isOwner && (
+                <span className="text-[10px] font-mono uppercase bg-amber-500/30 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
+                  Propietario del Plan
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-amber-300/80 mt-1 max-w-2xl">
+              Por directriz estricta de seguridad, el <strong>Propietario del Plan</strong> es el único con potestad de crear credenciales o delegar dicha facultad a <strong>un solo rol personalizado específico</strong>.
+            </p>
+            <div className="flex items-center gap-2 mt-2 text-xs">
+              <span className="text-slate-400">Rol delegado actual:</span>
+              {delegationInfo?.delegatedRole ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-medium">
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  {delegationInfo.delegatedRole.name} ({delegationInfo.delegatedRole._count.users} usuarios)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  Ninguno (Facultad reservada exclusivamente al Propietario)
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {delegationInfo?.isOwner && (
+          <button
+            onClick={() => setShowDelegationModal(true)}
+            className="shrink-0 text-xs font-semibold px-3.5 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors"
+          >
+            {delegationInfo?.delegatedRole ? "Cambiar o Revocar Rol" : "Asignar a un Rol"}
+          </button>
+        )}
       </div>
 
       {stats && (
@@ -412,6 +494,132 @@ export default function RolesPage() {
           onSubmit={handleAssignRole}
         />
       )}
+
+      {showDelegationModal && (
+        <DelegateUserManagementModal
+          roles={roles}
+          currentDelegatedRoleId={delegationInfo?.delegatedRole?.id || null}
+          isSubmitting={isDelegating}
+          onClose={() => setShowDelegationModal(false)}
+          onSubmit={handleDelegateRole}
+        />
+      )}
+    </div>
+  );
+}
+
+function DelegateUserManagementModal({
+  roles,
+  currentDelegatedRoleId,
+  isSubmitting,
+  onClose,
+  onSubmit,
+}: {
+  roles: Role[];
+  currentDelegatedRoleId: string | null;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onSubmit: (roleId: string | null) => Promise<void>;
+}) {
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(currentDelegatedRoleId || "");
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(selectedRoleId || null);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="ds-card max-w-lg w-full border border-amber-500/30">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-amber-400">
+            <Shield className="w-5 h-5" />
+            <h2 className="text-lg font-bold text-[var(--ds-text-primary)]">
+              Delegación de Control de Usuarios
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-[var(--ds-surface-2)] rounded transition-colors text-[var(--ds-text-muted)] hover:text-[var(--ds-text-primary)]"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-3 mb-5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 space-y-1.5">
+          <p className="font-semibold flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            Regla de Seguridad Multi-Tenant
+          </p>
+          <p className="text-amber-300/80">
+            Como <strong>Propietario del Plan</strong>, puedes delegar la creación de usuarios y generación de contraseñas a <strong>un solo rol personalizado</strong>. Si seleccionas un rol, este asumirá la facultad de forma exclusiva.
+          </p>
+        </div>
+
+        <form onSubmit={handleFormSubmit} className="space-y-5">
+          <div>
+            <label className="ds-label block mb-2 font-medium">
+              Seleccionar Rol Personalizado Delegado
+            </label>
+            <select
+              value={selectedRoleId}
+              onChange={(e) => setSelectedRoleId(e.target.value)}
+              className="ds-input w-full bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text-primary)] focus:border-amber-500"
+            >
+              <option value="">
+                -- Ninguno (Sin delegación: solo el Propietario puede crear usuarios) --
+              </option>
+              {roles
+                .filter((r) => r.name.toLowerCase() !== "owner")
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} ({r.permissions.length} permisos, {r._count.users} miembros)
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {currentDelegatedRoleId && (
+            <div className="text-xs text-slate-400 bg-slate-900/60 p-2.5 rounded border border-slate-800 flex items-center justify-between">
+              <span>Estado actual: Rol delegado activo</span>
+              <button
+                type="button"
+                onClick={() => setSelectedRoleId("")}
+                className="text-amber-400 hover:text-amber-300 font-medium underline"
+              >
+                Revocar delegación
+              </button>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="ds-btn-outline"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-sm transition-all shadow-sm flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : selectedRoleId ? (
+                "Guardar y Asignar Rol"
+              ) : (
+                "Guardar (Sin Delegación)"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
