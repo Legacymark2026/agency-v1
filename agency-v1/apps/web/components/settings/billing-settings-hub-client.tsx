@@ -138,24 +138,44 @@ export function BillingSettingsHubClient() {
                         <div className="md:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 relative overflow-hidden shadow-sm">
                             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                                 <div>
-                                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30 uppercase tracking-wider">
-                                        Plan Activo: {usage?.plan ? usage.plan.toUpperCase() : "ENTERPRISE MULTI-TENANT"}
+                                    <span className={`text-xs font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${
+                                        usage?.plan === 'pro'
+                                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                                            : usage?.plan === 'starter' || usage?.plan === 'free'
+                                            ? 'bg-slate-800 text-slate-300 border-slate-700'
+                                            : 'bg-teal-500/10 text-teal-400 border-teal-500/30'
+                                    }`}>
+                                        Plan Activo: {
+                                            usage?.plan === 'pro'
+                                                ? 'PROFESSIONAL GROWTH'
+                                                : usage?.plan === 'starter' || usage?.plan === 'free'
+                                                ? 'STARTER B2B (GRATUITO)'
+                                                : usage?.plan === 'agency' || usage?.plan === 'enterprise'
+                                                ? 'ENTERPRISE MULTI-TENANT'
+                                                : (usage?.plan ? usage.plan.toUpperCase() : 'CARGANDO...')
+                                        }
                                     </span>
                                     <h3 className="text-xl font-bold text-white mt-3">
-                                        Suscripción Corporativa Activa
+                                        {usage?.plan === 'pro'
+                                            ? 'Suscripción Professional Activa'
+                                            : usage?.plan === 'starter' || usage?.plan === 'free'
+                                            ? 'Plan Inicial para Negocios'
+                                            : 'Suscripción Corporativa Enterprise'}
                                     </h3>
                                     <p className="text-xs text-slate-400 mt-1">
-                                        Renovación automática programada para el {fmtDate(nextBillingDate)}.
+                                        {usage?.plan === 'starter' || usage?.plan === 'free'
+                                            ? 'Plan sin costo recurrente con soporte estándar.'
+                                            : `Renovación automática programada para el ${fmtDate(nextBillingDate)}.`}
                                     </p>
                                 </div>
 
                                 <div className="text-left sm:text-right">
                                     <div className="text-3xl font-black text-white font-mono">
-                                        {usage?.plan === "pro" ? "$49" : usage?.plan === "starter" ? "$0" : "$99"}
+                                        {usage?.plan === "pro" ? "$49" : usage?.plan === "starter" || usage?.plan === "free" ? "$0" : "$99"}
                                         <span className="text-sm font-normal text-slate-400"> / mes</span>
                                     </div>
                                     <span className="text-[11px] text-emerald-400 font-semibold block mt-1">
-                                        ● Estado: Al día
+                                        ● Estado: {usage?.subscriptionStatus === 'active' ? 'Al día (Activo)' : usage?.subscriptionStatus === 'trialing' ? 'Período de Prueba' : 'Activo'}
                                     </span>
                                 </div>
                             </div>
