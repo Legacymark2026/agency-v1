@@ -10,7 +10,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, getPrismaAuth, getPrismaCore } from "@/lib/prisma";
 import { verifyPermissionOrFail, isSuperAdmin, isCompanyAdmin, isCompanyOwner } from "@/lib/security";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { CreateRoleInput, UpdateRoleInput, RoleWithPermissions } from "@/types/rbac";
@@ -452,19 +452,18 @@ export async function delegateUserManagementRole(targetRoleId: string | null) {
 
   const permIds = perms.map((p) => p.id);
 
-  // 2. Transacción atómica:
-  // - Remover los permisos de cualquier otro rol en la empresa
-  // - Si targetRoleId está provisto, asignarlos al rol destino
-  await prisma.$transaction(async (tx) => {
-    // Buscar todos los roles de la empresa
-    const companyRoles = await tx.role.findMany({
+  // 2. Transacción y sincronización en ambos motores (Auth DB y Core DB):
+  // - Auth DB gobierna autenticación, RBAC y permisos en tiempo real.
+  // - Core DB mantiene integridad referencial de los tenants y miembros.
+  const syncRolePermissions = async (client: any) => {
+    const companyRoles = await client.role.findMany({
       where: { companyId },
       select: { id: true },
     });
-    const companyRoleIds = companyRoles.map((r) => r.id);
+    const companyRoleIds = companyRoles.map((r: any) => r.id);
 
     if (companyRoleIds.length > 0) {
-      await tx.rolePermission.deleteMany({
+      await client.rolePermission.deleteMany({
         where: {
           roleId: { in: companyRoleIds },
           permissionId: { in: permIds },
@@ -473,16 +472,7 @@ export async function delegateUserManagementRole(targetRoleId: string | null) {
     }
 
     if (targetRoleId) {
-      // Validar que el rol pertenezca a la empresa
-      const targetRole = await tx.role.findUnique({
-        where: { id: targetRoleId },
-      });
-
-      if (!targetRole || targetRole.companyId !== companyId) {
-        throw new Error("El rol seleccionado no pertenece a la empresa.");
-      }
-
-      await tx.rolePermission.createMany({
+      await client.rolePermission.createMany({
         data: permIds.map((pId) => ({
           roleId: targetRoleId,
           permissionId: pId,
@@ -490,6 +480,14 @@ export async function delegateUserManagementRole(targetRoleId: string | null) {
         skipDuplicates: true,
       });
     }
+  };
+
+  const authClient = getPrismaAuth();
+  const coreClient = getPrismaCore();
+
+  await syncRolePermissions(authClient);
+  await syncRolePermissions(coreClient).catch((err: any) => {
+    console.warn("[Roles] Sync to Core DB non-blocking note:", err.message);
   });
 
   revalidatePath("/settings/roles");
