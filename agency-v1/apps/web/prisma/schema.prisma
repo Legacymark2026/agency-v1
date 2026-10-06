@@ -4575,21 +4575,88 @@ model StockItem {
   @@map("tbl_inventory_stock")
 }
 
+model WarehouseZone {
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  warehouseId      String   @map("warehouse_id")
+  zoneCode         String   @map("zone_code")
+  name             String
+  zoneType         String   @default("DRY") @map("zone_type")
+  tempMinCelsius   Float?   @map("temp_min_celsius")
+  tempMaxCelsius   Float?   @map("temp_max_celsius")
+  bins             StorageBin[]
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@unique([warehouseId, zoneCode])
+  @@index([companyId, warehouseId])
+  @@map("tbl_warehouse_zones")
+}
+
+model StorageBin {
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  warehouseId      String   @map("warehouse_id")
+  zoneId           String   @map("zone_id")
+  binCode          String   @map("bin_code")
+  aisle            String
+  rack             String
+  shelfLevel       Int      @default(1) @map("shelf_level")
+  maxWeightKg      Float    @default(500.0) @map("max_weight_kg")
+  currentWeightKg  Float    @default(0.0) @map("current_weight_kg")
+  maxVolumeCm3     Float    @default(500000.0) @map("max_volume_cm3")
+  currentVolumeCm3 Float    @default(0.0) @map("current_volume_cm3")
+  velocityTier     String   @default("FAST") @map("velocity_tier")
+  isActive         Boolean  @default(true) @map("is_active")
+  zone             WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  allocations      BinItemAllocation[]
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([warehouseId, binCode])
+  @@index([companyId, warehouseId])
+  @@index([zoneId])
+  @@map("tbl_warehouse_bins")
+}
+
+model BinItemAllocation {
+  id           String      @id @default(uuid())
+  companyId    String      @map("company_id")
+  binId        String      @map("bin_id")
+  productId    String      @map("product_id")
+  sku          String
+  lotId        String?     @map("lot_id")
+  quantity     Float       @default(0)
+  volumeCm3    Float       @default(0) @map("volume_cm3")
+  weightKg     Float       @default(0) @map("weight_kg")
+  bin          StorageBin  @relation(fields: [binId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@unique([binId, productId, lotId])
+  @@index([companyId, binId])
+  @@index([companyId, sku])
+  @@map("tbl_warehouse_bin_allocations")
+}
+
 model StockMovement {
-  id            String   @id @default(uuid())
-  companyId     String   @map("company_id")
-  warehouseId   String   @map("warehouse_id")
-  productId     String   @map("product_id")
-  sku           String?
-  movementType  String   @map("movement_type") // IN_PURCHASE, OUT_SALE, TRANSFER_IN, TRANSFER_OUT, ADJUSTMENT
-  quantity      Float
-  unitCost      Float    @default(0) @map("unit_cost")
-  totalCost     Float    @default(0) @map("total_cost")
-  balanceAfter  Float    @default(0) @map("balance_after")
-  reference     String?
-  note          String?
-  createdById   String?  @map("created_by_id")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  warehouseId      String   @map("warehouse_id")
+  productId        String   @map("product_id")
+  sku              String?
+  sourceBinId      String?  @map("source_bin_id")
+  destinationBinId String?  @map("destination_bin_id")
+  movementType     String   @map("movement_type")
+  quantity         Float
+  unitCost         Float    @default(0) @map("unit_cost")
+  totalCost        Float    @default(0) @map("total_cost")
+  balanceAfter     Float    @default(0) @map("balance_after")
+  reference        String?
+  note             String?
+  createdById      String?  @map("created_by_id")
+  operatorBadgeId  String?  @map("operator_badge_id")
+  signatureHash    String?  @map("signature_hash")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   @@index([companyId, warehouseId])
   @@index([companyId, productId])

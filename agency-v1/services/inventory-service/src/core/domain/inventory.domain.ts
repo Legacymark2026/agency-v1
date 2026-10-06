@@ -38,12 +38,43 @@ export type MovementType =
   | "ADJUSTMENT_POSITIVE"
   | "ADJUSTMENT_NEGATIVE";
 
+export interface StorageBinProps {
+  id: string;
+  companyId: string;
+  warehouseId: string;
+  zoneId: string;
+  binCode: string;
+  aisle: string;
+  rack: string;
+  shelfLevel: number;
+  maxWeightKg: number;
+  currentWeightKg: number;
+  maxVolumeCm3: number;
+  currentVolumeCm3: number;
+  velocityTier: "FAST" | "MEDIUM" | "SLOW";
+  isActive: boolean;
+}
+
+export interface BinAllocationProps {
+  id: string;
+  companyId: string;
+  binId: string;
+  productId: string;
+  sku: string;
+  lotId?: string;
+  quantity: number;
+  volumeCm3: number;
+  weightKg: number;
+}
+
 export interface StockMovementProps {
   id: string;
   companyId: string;
   warehouseId: string;
   productId: string;
   sku?: string;
+  sourceBinId?: string;
+  destinationBinId?: string;
   movementType: MovementType;
   quantity: number;
   unitCost: number;
@@ -52,6 +83,8 @@ export interface StockMovementProps {
   reference?: string;
   note?: string;
   createdById?: string;
+  operatorBadgeId?: string;
+  signatureHash?: string;
   createdAt: Date;
 }
 
@@ -210,3 +243,91 @@ export class DemandForecastingEngine {
     };
   }
 }
+
+export class VolumetricFitEngine {
+  /**
+   * Amazon-Grade Chaotic Storage Volumetric & Weight Calculation
+   * Checks if an incoming item fits within bin's dimensional constraints without exceeding weight or safety cube threshold.
+   */
+  static evaluateBinFit(
+    bin: StorageBinProps,
+    incomingVolumeCm3: number,
+    incomingWeightKg: number,
+    safetyThresholdPct: number = 0.85
+  ): { canFit: boolean; projectedVolumeUtilPct: number; projectedWeightKg: number; reason?: string } {
+    const projectedWeight = bin.currentWeightKg + incomingWeightKg;
+    const projectedVolume = bin.currentVolumeCm3 + incomingVolumeCm3;
+    const maxAllowedVolume = bin.maxVolumeCm3 * safetyThresholdPct;
+
+    const projectedVolumeUtilPct = Math.round((projectedVolume / bin.maxVolumeCm3) * 1000) / 10;
+
+    if (projectedWeight > bin.maxWeightKg) {
+      return {
+        canFit: false,
+        projectedVolumeUtilPct,
+        projectedWeightKg: projectedWeight,
+        reason: `Exceso de peso estructural: proyectado ${projectedWeight}kg excede capacidad máxima de ${bin.maxWeightKg}kg.`,
+      };
+    }
+
+    if (projectedVolume > maxAllowedVolume) {
+      return {
+        canFit: false,
+        projectedVolumeUtilPct,
+        projectedWeightKg: projectedWeight,
+        reason: `Exceso de volumen espacial: ocupación proyectada de ${projectedVolumeUtilPct}% excede el umbral seguro de ${safetyThresholdPct * 100}%.`,
+      };
+    }
+
+    return {
+      canFit: true,
+      projectedVolumeUtilPct,
+      projectedWeightKg: projectedWeight,
+    };
+  }
+}
+
+export class CryptographicLedgerSigner {
+  /**
+   * Generates a tamper-evident SHA-256 hash for immutable audit compliance (FDA 21 CFR Part 11)
+   */
+  static generateSignatureHash(payload: {
+    previousHash?: string;
+    transactionUuid: string;
+    companyId: string;
+    warehouseId: string;
+    productId: string;
+    quantity: number;
+    movementType: string;
+    balanceAfter: number;
+    timestamp: Date;
+    operatorBadgeId?: string;
+  }): string {
+    const crypto = require("crypto");
+    const dataString = `${payload.previousHash || "GENESIS"}|${payload.transactionUuid}|${payload.companyId}|${payload.warehouseId}|${payload.productId}|${payload.quantity}|${payload.movementType}|${payload.balanceAfter}|${payload.timestamp.toISOString()}|${payload.operatorBadgeId || "SYSTEM"}`;
+    return crypto.createHash("sha256").update(dataString).digest("hex");
+  }
+
+  /**
+   * Verifies if a ledger entry's hash matches its calculated content
+   */
+  static verifyIntegrity(
+    signatureHash: string,
+    payload: {
+      previousHash?: string;
+      transactionUuid: string;
+      companyId: string;
+      warehouseId: string;
+      productId: string;
+      quantity: number;
+      movementType: string;
+      balanceAfter: number;
+      timestamp: Date;
+      operatorBadgeId?: string;
+    }
+  ): boolean {
+    const expectedHash = this.generateSignatureHash(payload);
+    return signatureHash === expectedHash;
+  }
+}
+

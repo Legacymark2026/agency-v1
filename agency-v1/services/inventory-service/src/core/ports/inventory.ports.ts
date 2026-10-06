@@ -41,6 +41,16 @@ export interface IInventoryRepositoryPort {
   createTransferOrder(transfer: any): Promise<any>;
   listTransferOrders(companyId: string): Promise<any[]>;
   updateTransferStatus(id: string, status: string, timestampField: string): Promise<any>;
+
+  // Spatial Topology & Chaotic Bins
+  createStorageBin(bin: any): Promise<any>;
+  listBins(companyId: string, warehouseId?: string): Promise<any[]>;
+  getBinById(binId: string): Promise<any | null>;
+  updateBinCapacity(binId: string, currentWeightKg: number, currentVolumeCm3: number): Promise<any>;
+  allocateItemToBin(allocation: any): Promise<any>;
+
+  // Blast-Radius Recall Queries
+  getLotTraceabilityTree(companyId: string, lotId: string): Promise<any>;
 }
 
 export interface IInventoryEventPublisherPort {
@@ -51,10 +61,12 @@ export interface IInventoryEventPublisherPort {
 }
 
 export interface IInventoryUseCases {
-  registerStockEntry(params: { companyId: string; warehouseId: string; productId: string; sku: string; productName: string; quantity: number; unitCost: number; reference?: string; note?: string; lotNumber?: string; expiryDate?: Date }): Promise<{ stock: StockItemProps; movement: StockMovementProps; lot?: ProductLotProps }>;
-  registerStockExit(params: { companyId: string; warehouseId: string; productId: string; quantity: number; reference?: string; note?: string; useFefo?: boolean }): Promise<{ stock: StockItemProps; movement: StockMovementProps; allocatedLots?: { lotId: string; lotNumber: string; quantityToDeduct: number }[] }>;
+  registerStockEntry(params: { companyId: string; warehouseId: string; productId: string; sku: string; productName: string; quantity: number; unitCost: number; reference?: string; note?: string; lotNumber?: string; expiryDate?: Date; destinationBinId?: string; operatorBadgeId?: string }): Promise<{ stock: StockItemProps; movement: StockMovementProps; lot?: ProductLotProps }>;
+  registerStockExit(params: { companyId: string; warehouseId: string; productId: string; quantity: number; reference?: string; note?: string; useFefo?: boolean; sourceBinId?: string; operatorBadgeId?: string }): Promise<{ stock: StockItemProps; movement: StockMovementProps; allocatedLots?: { lotId: string; lotNumber: string; quantityToDeduct: number }[] }>;
   executeTransfer(params: { companyId: string; originWarehouseId: string; destinationWarehouseId: string; productId: string; quantity: number; notes?: string }): Promise<{ success: boolean; transferNumber: string }>;
   decomposeAndDeductBom(params: { companyId: string; warehouseId: string; parentProductId: string; parentQuantity: number; reference?: string }): Promise<{ componentsDeducted: number }>;
   generateDemandForecast(companyId: string, warehouseId?: string): Promise<DemandForecastResult[]>;
   checkExpiringLotsAlerts(companyId: string, withinDays?: number): Promise<ProductLotProps[]>;
+  stowItemChaoticBin(params: { companyId: string; warehouseId: string; binId: string; productId: string; sku: string; quantity: number; itemVolumeCm3: number; itemWeightKg: number; lotId?: string }): Promise<{ success: boolean; binId: string; projectedVolumePct: number }>;
+  traceRecallBlastRadius(companyId: string, lotId: string): Promise<{ lot: any; affectedOrders: any[]; remainingInventory: any[]; forwardBlastRadiusCount: number }>;
 }

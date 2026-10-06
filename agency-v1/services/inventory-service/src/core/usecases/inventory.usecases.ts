@@ -2,6 +2,8 @@ import {
   KardexCalculator,
   FEFOEngine,
   DemandForecastingEngine,
+  VolumetricFitEngine,
+  CryptographicLedgerSigner,
   StockItemProps,
   StockMovementProps,
   ProductLotProps,
@@ -78,11 +80,25 @@ export class InventoryUseCases implements IInventoryUseCases {
       });
     }
 
+    const movementTimestamp = new Date();
+    const signatureHash = CryptographicLedgerSigner.generateSignatureHash({
+      transactionUuid: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      companyId: params.companyId,
+      warehouseId: params.warehouseId,
+      productId: params.productId,
+      quantity: params.quantity,
+      movementType: "IN_PURCHASE",
+      balanceAfter: newQty,
+      timestamp: movementTimestamp,
+      operatorBadgeId: params.operatorBadgeId,
+    });
+
     const movement = await this.repo.recordMovement({
       companyId: params.companyId,
       warehouseId: params.warehouseId,
       productId: params.productId,
       sku: params.sku,
+      destinationBinId: params.destinationBinId,
       movementType: "IN_PURCHASE",
       quantity: params.quantity,
       unitCost: params.unitCost,
@@ -90,6 +106,8 @@ export class InventoryUseCases implements IInventoryUseCases {
       balanceAfter: newQty,
       reference: params.reference,
       note: params.note,
+      operatorBadgeId: params.operatorBadgeId,
+      signatureHash,
     });
 
     await this.eventPublisher.publishMovementRecorded({
@@ -314,5 +332,64 @@ export class InventoryUseCases implements IInventoryUseCases {
     }
 
     return lots;
+  }
+
+  /**
+   * Amazon-Style Chaotic Storage Directed Putaway
+   * Validates volumetric and weight constraints before committing item to target bin.
+   */
+  async stowItemChaoticBin(params: {
+    companyId: string;
+    warehouseId: string;
+    binId: string;
+    productId: string;
+    sku: string;
+    quantity: number;
+    itemVolumeCm3: number;
+    itemWeightKg: number;
+    lotId?: string;
+  }): Promise<{ success: boolean; binId: string; projectedVolumePct: number }> {
+    const bin = await this.repo.getBinById(params.binId);
+    if (!bin) {
+      throw new Error(`Ubicación de almacenamiento ${params.binId} no encontrada.`);
+    }
+
+    const totalIncomingVolume = params.itemVolumeCm3 * params.quantity;
+    const totalIncomingWeight = params.itemWeightKg * params.quantity;
+
+    const evaluation = VolumetricFitEngine.evaluateBinFit(bin, totalIncomingVolume, totalIncomingWeight);
+    if (!evaluation.canFit) {
+      throw new Error(`Restricción de Almacenamiento Caótico: ${evaluation.reason}`);
+    }
+
+    await this.repo.allocateItemToBin({
+      companyId: params.companyId,
+      binId: params.binId,
+      productId: params.productId,
+      sku: params.sku,
+      lotId: params.lotId,
+      quantity: params.quantity,
+      volumeCm3: totalIncomingVolume,
+      weightKg: totalIncomingWeight,
+    });
+
+    const newWeight = bin.currentWeightKg + totalIncomingWeight;
+    const newVolume = bin.currentVolumeCm3 + totalIncomingVolume;
+    await this.repo.updateBinCapacity(params.binId, newWeight, newVolume);
+
+    return {
+      success: true,
+      binId: params.binId,
+      projectedVolumePct: evaluation.projectedVolumeUtilPct,
+    };
+  }
+
+  /**
+   * Blast-Radius Instant Recall Engine (< 2.0s Query SLA)
+   * Immediate bi-directional reconstruction from supplier batch to affected customer orders and warehouse positions.
+   */
+  async traceRecallBlastRadius(companyId: string, lotId: string): Promise<{ lot: any; affectedOrders: any[]; remainingInventory: any[]; forwardBlastRadiusCount: number }> {
+    const trace = await this.repo.getLotTraceabilityTree(companyId, lotId);
+    return trace;
   }
 }

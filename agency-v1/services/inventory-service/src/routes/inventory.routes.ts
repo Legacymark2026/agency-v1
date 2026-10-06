@@ -196,6 +196,51 @@ export function createInventoryRouter(
     }
   });
 
+  // ── Spatial Topology & Chaotic Bins (Amazon Tier-1) ───────────────────────
+  router.get("/bins", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const warehouseId = req.query.warehouseId as string | undefined;
+      const bins = await repo.listBins(companyId, warehouseId);
+      res.json({ success: true, data: bins });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  router.post("/bins", async (req: Request, res: Response) => {
+    try {
+      const bin = await repo.createStorageBin(req.body);
+      res.status(201).json({ success: true, data: bin });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  router.post("/bins/stow", async (req: Request, res: Response) => {
+    try {
+      const result = await useCases.stowItemChaoticBin(req.body);
+      res.status(200).json({ success: true, data: result });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  });
+
+  // ── Blast-Radius Instant Recall (< 2.0s SLA) ──────────────────────────────
+  router.get("/traceability/recall", async (req: Request, res: Response) => {
+    try {
+      const companyId = (req.query.companyId as string) || "default";
+      const lotId = req.query.lotId as string;
+      if (!lotId) {
+        return res.status(400).json({ success: false, error: "lotId parameter is required" });
+      }
+      const recallData = await useCases.traceRecallBlastRadius(companyId, lotId);
+      res.json({ success: true, data: recallData });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return router;
 }
 
