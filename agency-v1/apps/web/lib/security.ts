@@ -1,5 +1,3 @@
-"use server";
-
 /**
  * lib/security.ts
  * ─────────────────────────────────────────────────────
@@ -24,6 +22,8 @@ import { revalidatePath } from "next/cache";
 import { ForbiddenError, UnauthorizedError } from "./errors";
 import { logger } from "@/lib/logger";
 import { GLOBAL_SUPERADMIN_EMAILS } from "@/auth.config";
+import { executeSecurityPipeline, executeSecurityPipelineOrFail } from "./security-pipeline";
+export { executeSecurityPipeline, executeSecurityPipelineOrFail } from "./security-pipeline";
 
 export interface PermissionCheckOptions {
   resourceType?: string;
@@ -88,9 +88,6 @@ export async function invalidatePermissionCache(
     await fetch(`${url}/del/${key}`, { headers: { Authorization: `Bearer ${token}` } });
   } catch { /* non-fatal */ }
 }
-
-import { executeSecurityPipeline, executeSecurityPipelineOrFail } from "./security-pipeline";
-export { executeSecurityPipeline, executeSecurityPipelineOrFail } from "./security-pipeline";
 
 export async function verifyPermission(
   userId: string,
