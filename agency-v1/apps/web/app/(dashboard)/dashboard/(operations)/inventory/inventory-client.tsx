@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Boxes,
   Warehouse,
@@ -28,8 +29,10 @@ import {
   MapPin,
   ListChecks,
   ClipboardCheck,
-  Printer
+  Printer,
+  Building2
 } from 'lucide-react';
+import { SuppliersTab } from './suppliers-tab';
 
 interface WarehouseData {
   id: string;
@@ -107,7 +110,19 @@ interface DemandForecastUI {
 }
 
 export function InventoryClient() {
-  const [activeTab, setActiveTab] = useState<'stock' | 'kardex' | 'transfers' | 'lots' | 'bom' | 'forecast' | 'locations' | 'fulfillment' | 'audit'>('stock');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
+  const [activeTab, setActiveTab] = useState<'stock' | 'kardex' | 'transfers' | 'lots' | 'bom' | 'forecast' | 'locations' | 'fulfillment' | 'audit' | 'suppliers'>(() => {
+    return tabParam === 'suppliers' ? 'suppliers' : 'stock';
+  });
+
+  useEffect(() => {
+    if (tabParam === 'suppliers') {
+      setActiveTab('suppliers');
+    }
+  }, [tabParam]);
+
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
@@ -364,6 +379,17 @@ export function InventoryClient() {
         >
           <ClipboardCheck size={16} className="text-purple-400" />
           Auditoría y Arqueo Cíclico
+        </button>
+        <button
+          onClick={() => setActiveTab('suppliers')}
+          className={`pb-3 text-sm font-medium border-b-2 flex items-center gap-2 transition whitespace-nowrap ${
+            activeTab === 'suppliers'
+              ? 'border-teal-500 text-teal-400 font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Building2 size={16} className="text-teal-400" />
+          Catálogo Proveedores & Docs
         </button>
       </div>
 
@@ -934,6 +960,11 @@ export function InventoryClient() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Tab: Suppliers Catalog & Certifications */}
+      {activeTab === 'suppliers' && (
+        <SuppliersTab />
       )}
 
       {/* Movement Modal */}

@@ -1,5 +1,5 @@
 /**
- * Inventory Microservice — Hexagonal 5.0 Entrypoint
+ * Inventory & Procurement Microservice — Hexagonal Entrypoint
  * Port: 4025
  */
 import express from "express";
@@ -8,10 +8,18 @@ import helmet from "helmet";
 import { metricsMiddleware, metricsEndpoint } from "@agency/observability";
 import { setupGracefulShutdown, tenantContextMiddleware, globalErrorHandler } from "@agency/service-auth";
 import { EventBus } from "@agency/events";
+
+// Inventory hexagonal components
 import { PrismaInventoryAdapter } from "./adapters/inventory-db.adapter";
 import { RedisInventoryEventAdapter } from "./adapters/inventory-event.adapter";
 import { InventoryUseCases } from "./core/usecases/inventory.usecases";
 import { createInventoryRouter } from "./routes/inventory.routes";
+
+// Supplier catalog hexagonal components
+import { PrismaSupplierAdapter } from "./adapters/supplier-db.adapter";
+import { RedisSupplierEventAdapter } from "./adapters/supplier-event.adapter";
+import { SupplierUseCases } from "./core/usecases/supplier.usecases";
+import { createSupplierRouter } from "./routes/supplier.routes";
 
 const app = express();
 const PORT = process.env.PORT || 4025;
@@ -25,11 +33,19 @@ app.use(tenantContextMiddleware);
 app.use(metricsMiddleware("inventory-service"));
 app.get("/metrics", metricsEndpoint);
 
+// ── Dependency Injection (Inventory) ─────────────────────────────────────────
 const dbAdapter = new PrismaInventoryAdapter();
 const eventAdapter = new RedisInventoryEventAdapter();
 const useCases = new InventoryUseCases(dbAdapter, eventAdapter);
 
+// ── Dependency Injection (Supplier Catalog) ──────────────────────────────────
+const supplierDbAdapter = new PrismaSupplierAdapter();
+const supplierEventAdapter = new RedisSupplierEventAdapter();
+export const supplierUseCases = new SupplierUseCases(supplierDbAdapter, supplierEventAdapter);
+
+// ── Mount Driving HTTP Adapters ─────────────────────────────────────────────
 app.use("/api/inventory", createInventoryRouter(useCases, dbAdapter));
+app.use("/api/inventory/suppliers", createSupplierRouter(supplierUseCases));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", service: "inventory-service", timestamp: new Date() });
@@ -58,19 +74,11 @@ eventBus.subscribe("pos.order.created" as any, async (event: any) => {
 }).catch((err: any) => console.warn("[InventoryService] EventBus subscribe warning:", err));
 
 app.use(globalErrorHandler);
+
 const server = app.listen(PORT, () => {
-  console.log(`[inventory-service] Listening on port ${PORT}`);
+  console.log(`[Inventory & Supplier Service] Running on http://localhost:${PORT}`);
 });
 
-import { prisma } from "@agency/database";
-
-setupGracefulShutdown(server, async () => {
-  await eventBus.disconnect();
-  try {
-    await (prisma as any).$disconnect();
-  } catch (err: any) {
-    console.warn("[InventoryService] Error disconnecting prisma:", err.message);
-  }
-});
+setupGracefulShutdown(server, "inventory-service");
 
 export default app;

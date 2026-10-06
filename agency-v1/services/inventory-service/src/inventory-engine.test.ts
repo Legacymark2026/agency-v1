@@ -57,10 +57,17 @@ describe("Inventory UseCases — Hexagonal Inbound & Outbound Ports", () => {
     }),
     getKardexHistory: vi.fn(),
     createPurchaseOrder: vi.fn(),
-    listPurchaseOrders: vi.fn(),
     createTransferOrder: vi.fn(),
     listTransferOrders: vi.fn(),
     updateTransferStatus: vi.fn(),
+    createProductLot: vi.fn(),
+    listLotsByProduct: async () => [],
+    listExpiringLots: async () => [],
+    deductFromLot: vi.fn(),
+    createBomEntry: vi.fn(),
+    getBomForProduct: async () => [],
+    listBoms: async () => [],
+    getSalesVolumeLast30Days: async () => 0,
   };
 
   const mockPublisher: IInventoryEventPublisherPort = {
@@ -70,6 +77,8 @@ describe("Inventory UseCases — Hexagonal Inbound & Outbound Ports", () => {
     publishMovementRecorded: async (payload) => {
       publishedEvents.push({ topic: "inventory.movement.recorded", payload });
     },
+    publishLotExpiringSoon: vi.fn(),
+    publishReorderSuggested: vi.fn(),
   };
 
   const useCases = new InventoryUseCases(mockRepo, mockPublisher);
