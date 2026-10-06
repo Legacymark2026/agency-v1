@@ -149,7 +149,15 @@ export default async function DashboardLayout({
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/master-hub", "/dashboard/tools/webhooks", "/dashboard/tools/api-docs", "/dashboard/tools/video-editor",
         "/dashboard/video", "/dashboard/voice", "/dashboard/admin/hr",
         "/dashboard/affiliate", "/dashboard/affiliate/referrals",
-        "/dashboard/affiliate/payouts", "/dashboard/affiliate/plans"
+        "/dashboard/affiliate/payouts", "/dashboard/affiliate/plans",
+        "/dashboard/accounting/costs", "/dashboard/channels",
+        "/dashboard/settings/sales", "/dashboard/settings/operations",
+        "/dashboard/settings/hr", "/dashboard/settings/support",
+        "/dashboard/settings/media", "/dashboard/settings/billing/gateways",
+        "/dashboard/settings/profile", "/dashboard/settings/appearance",
+        "/dashboard/settings/company", "/dashboard/settings/developer",
+        "/dashboard/settings/roles", "/dashboard/settings/members",
+        "/dashboard/settings/social-profiles"
     ];
 
     const isSuperAdmin = role === UserRole.SUPER_ADMIN || role === 'super_admin' || dbUser?.email?.toLowerCase() === 'administrador@legacymarksas.com' || session.user.email?.toLowerCase() === 'administrador@legacymarksas.com';

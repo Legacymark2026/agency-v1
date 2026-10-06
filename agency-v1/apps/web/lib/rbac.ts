@@ -63,6 +63,13 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     "/dashboard/users": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
     "/dashboard/security": [UserRole.SUPER_ADMIN],
     "/dashboard/settings": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/settings/sales": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/settings/operations": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/settings/hr": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/settings/support": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/settings/media": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/settings/billing": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+    "/dashboard/settings/billing/gateways": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
 
     // ── Equipo / Expertos ─────────────────────────────────
     "/dashboard/experts": [UserRole.SUPER_ADMIN, UserRole.ADMIN],
