@@ -89,6 +89,9 @@ export async function invalidatePermissionCache(
   } catch { /* non-fatal */ }
 }
 
+import { executeSecurityPipeline, executeSecurityPipelineOrFail } from "./security-pipeline";
+export { executeSecurityPipeline, executeSecurityPipelineOrFail } from "./security-pipeline";
+
 export async function verifyPermission(
   userId: string,
   companyId: string,
@@ -96,48 +99,19 @@ export async function verifyPermission(
   options?: PermissionCheckOptions
 ): Promise<boolean> {
   try {
-    // SuperAdmin bypass universal para plataforma SaaS
-    if (await isSuperAdmin(userId)) {
-      return true;
-    }
+    // Evaluación a través del pipeline secuencial de 5 motores:
+    // 1. Auth -> 2. Subscription -> 3. Billing -> 4. Policy PDP -> 5. Authorization
+    const pipelineResult = await executeSecurityPipeline({
+      userId,
+      companyId,
+      permission,
+      resourceType: options?.resourceType,
+      resourceId: options?.resourceId,
+    });
 
-    const [resourcePerm, companyUser] = await Promise.all([
-      options?.resourceType && options?.resourceId
-        ? prisma.resourcePermission.findFirst({
-            where: {
-              userId,
-              companyId,
-              resourceType: options.resourceType,
-              resourceId: options.resourceId,
-              permission,
-            },
-          })
-        : Promise.resolve(null),
-      prisma.companyUser.findFirst({
-        where: { userId, companyId },
-        include: {
-          role: {
-            include: {
-              permissions: {
-                include: { permission: true },
-              },
-            },
-          },
-        },
-      }),
-    ]);
-
-    if (resourcePerm !== null) {
-      return resourcePerm.access;
-    }
-
-    const hasPermission = companyUser?.role?.permissions.some(
-      (p) => p.permission.name === permission
-    );
-
-    return hasPermission || false;
+    return pipelineResult.allowed;
   } catch (error) {
-    console.error("[Security] Error verifying permission:", error);
+    console.error("[Security] Error verifying permission via security pipeline:", error);
     return false;
   }
 }
