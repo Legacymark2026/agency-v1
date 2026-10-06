@@ -12,8 +12,8 @@
  *      Consulta el tier del tenant (free, starter, pro, enterprise) y vigencia del plan.
  *   3. Motor de Facturación (Billing Engine)
  *      Verifica solvencia comercial, estado de pagos e invoices vencidas sin mora bloqueante.
- *   4. Motor de Políticas de Descentralización (Policy Decision Point / PDP)
- *      Aplica el límite de aislamiento multi-tenant, zero-trust boundary y gobierno.
+ *   4. Motor de Políticas Centralizadas (Centralized Policy Engine / PDP)
+ *      Aplica el límite de aislamiento multi-tenant, zero-trust boundary, gobierno y reglas ABAC/PBAC.
  *   5. Motor de Autorización (Authorization Engine / RBAC & ABAC Granular)
  *      Resuelve permisos granulares, delegaciones del administrador y roles por módulo.
  * ─────────────────────────────────────────────────────────────────────────────
@@ -212,7 +212,7 @@ export async function executeSecurityPipeline(
   }
 
   // ───────────────────────────────────────────────────────────────────────────
-  // MOTOR 4: MOTOR DE POLÍTICAS DE DESCENTRALIZACIÓN (PDP / TENANT BOUNDARY)
+  // MOTOR 4: MOTOR DE POLÍTICAS CENTRALIZADAS (PDP / CENTRALIZED POLICY ENGINE)
   // ───────────────────────────────────────────────────────────────────────────
   // Aislamiento Multi-Tenant: El usuario DEBE pertenecer formalmente al tenant solicitado
   const membership = await prisma.companyUser.findFirst({
@@ -244,7 +244,7 @@ export async function executeSecurityPipeline(
     return {
       allowed: false,
       stage: "policy",
-      reason: `Acceso denegado por política de descentralización: La membresía en esta organización está inactiva o suspendida.`,
+      reason: `Acceso denegado por política centralizada: La membresía en esta organización está inactiva o suspendida.`,
     };
   }
 
