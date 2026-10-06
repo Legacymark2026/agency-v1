@@ -79,6 +79,8 @@ const server = app.listen(PORT, () => {
   console.log(`[Inventory & Supplier Service] Running on http://localhost:${PORT}`);
 });
 
-setupGracefulShutdown(server, "inventory-service");
+setupGracefulShutdown(server, async () => {
+  console.log("[inventory-service] Performing graceful cleanup...");
+});
 
 export default app;

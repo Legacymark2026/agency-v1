@@ -60,7 +60,8 @@ export function createSupplierRouter(useCases: ISupplierUseCases): Router {
   router.get("/:id", async (req: Request, res: Response) => {
     try {
       const companyId = getCompanyId(req);
-      const result = await useCases.getSupplierDetails(req.params.id, companyId);
+      const supplierId = String(req.params.id);
+      const result = await useCases.getSupplierDetails(supplierId, companyId);
       res.json({ success: true, data: result });
     } catch (err: any) {
       res.status(404).json({ success: false, error: err.message });
@@ -85,8 +86,9 @@ export function createSupplierRouter(useCases: ISupplierUseCases): Router {
   router.patch("/:id", validateRequest(updateSupplierSchema), async (req: Request, res: Response) => {
     try {
       const companyId = getCompanyId(req);
+      const supplierId = String(req.params.id);
       const updated = await useCases.updateSupplierInformation({
-        id: req.params.id,
+        id: supplierId,
         companyId,
         ...req.body,
       });
@@ -100,8 +102,9 @@ export function createSupplierRouter(useCases: ISupplierUseCases): Router {
   router.patch("/:id/status", validateRequest(updateSupplierStatusSchema), async (req: Request, res: Response) => {
     try {
       const companyId = getCompanyId(req);
+      const supplierId = String(req.params.id);
       const updated = await useCases.changeSupplierStatus({
-        id: req.params.id,
+        id: supplierId,
         companyId,
         status: req.body.status,
         reason: req.body.reason,
@@ -116,8 +119,9 @@ export function createSupplierRouter(useCases: ISupplierUseCases): Router {
   router.post("/:id/documents", validateRequest(attachDocumentSchema), async (req: Request, res: Response) => {
     try {
       const companyId = getCompanyId(req);
+      const supplierId = String(req.params.id);
       const doc = await useCases.attachCertificationDocument({
-        supplierId: req.params.id,
+        supplierId,
         companyId,
         documentType: req.body.documentType,
         title: req.body.title,
@@ -139,9 +143,10 @@ export function createSupplierRouter(useCases: ISupplierUseCases): Router {
   router.patch("/:id/documents/:docId/verify", validateRequest(verifyDocumentSchema), async (req: Request, res: Response) => {
     try {
       const companyId = getCompanyId(req);
+      const docId = String(req.params.docId);
       const user = (req as any).user?.email || "auditor@legacymarksas.com";
       const doc = await useCases.verifyDocument({
-        documentId: req.params.docId,
+        documentId: docId,
         companyId,
         verifiedBy: user,
         isVerified: req.body.isVerified,
