@@ -2806,6 +2806,7 @@ model Employee {
   ptoDays               Int               @default(15) @map("pto_days")
   joiningDate           DateTime?         @map("joining_date") @db.Date
   isActive              Boolean           @default(true) @map("is_active")
+  employeeCode          String?           @map("employee_code")
   bankName              String?           @map("bank_name")
   bankAccount           String?           @map("bank_account")
   bankAccountType       String?           @default("AHORROS") @map("bank_account_type")
@@ -2831,7 +2832,9 @@ model Employee {
   timesheets            Timesheet[]
 
   @@unique([companyId, documentNumber])
+  @@unique([companyId, employeeCode])
   @@index([companyId])
+  @@index([employeeCode])
   @@index([isActive])
   @@map("tbl_employees")
   schemaVersion Int @default(0) @map("col_schema_version")

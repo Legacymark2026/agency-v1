@@ -45,3 +45,43 @@ export async function generateTenantUserId(companyId: string): Promise<string> {
 
   return candidateId;
 }
+
+/**
+ * Genera un código de empleado/colaborador interno único por empresa (Internal Employee Code).
+ * Formato: EMP-[SLUG_PREFIX]-[NUMERO_SECUENCIAL_O_HASH]
+ * Ejemplo: EMP-AGY-0001
+ */
+export async function generateEmployeeCode(companyId: string): Promise<string> {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { slug: true, name: true },
+  });
+
+  const rawPrefix = (company?.slug || company?.name || "CORP")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .substring(0, 4)
+    .toUpperCase();
+  const prefix = rawPrefix.length >= 2 ? rawPrefix : "EMP";
+
+  const count = await prisma.employee.count({
+    where: { companyId },
+  });
+
+  let nextSequence = count + 1;
+  let candidateCode = `EMP-${prefix}-${String(nextSequence).padStart(4, "0")}`;
+
+  let exists = await prisma.employee.findFirst({
+    where: { companyId, employeeCode: candidateCode },
+  });
+
+  while (exists) {
+    const randomSuffix = randomBytes(2).toString("hex").toUpperCase();
+    candidateCode = `EMP-${prefix}-${randomSuffix}`;
+    exists = await prisma.employee.findFirst({
+      where: { companyId, employeeCode: candidateCode },
+    });
+  }
+
+  return candidateCode;
+}
+

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { generateEmployeeCode } from "@/lib/tenant-user";
 
 const GATEWAY_URL = process.env.API_GATEWAY_URL || "http://localhost:8080";
 
@@ -81,10 +82,14 @@ export async function createEmployee(data: {
             // Gateway fallback
         }
 
+        // Generar identificador único de empleado/colaborador interno por empresa
+        const employeeCode = await generateEmployeeCode(companyId);
+
         // Direct Prisma DB Fallback
         const employee = await prisma.employee.create({
             data: {
                 companyId,
+                employeeCode,
                 firstName: data.firstName,
                 lastName: data.lastName,
                 documentType: data.documentType,

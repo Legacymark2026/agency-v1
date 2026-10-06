@@ -188,7 +188,14 @@ export default function EmployeesList() {
                                 <tr key={row.id} className="hover:bg-slate-800/40 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-white text-sm">{row.firstName} {row.lastName}</div>
-                                        <div className="text-slate-500 font-mono text-[11px]">{row.documentType} {row.documentNumber}</div>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-slate-500 font-mono text-[11px]">{row.documentType} {row.documentNumber}</span>
+                                            {row.employeeCode && (
+                                                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-950 border border-teal-500/30 text-teal-400">
+                                                    ID: {row.employeeCode}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col gap-0.5 text-slate-400">
