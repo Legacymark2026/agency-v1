@@ -432,6 +432,7 @@ model CompanyUser {
   phoneExtension String?  @map("phone_extension")
   roleId         String?  @map("role_id")
   roleName       String   @default("member") @map("role_name")
+  tenantUserId   String?  @map("tenant_user_id")
   company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   inviter        User?    @relation("InvitedBy", fields: [invitedBy], references: [id])
   role           Role?    @relation(fields: [roleId], references: [id])
@@ -439,7 +440,9 @@ model CompanyUser {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, companyId])
+  @@unique([companyId, tenantUserId])
   @@index([companyId])
+  @@index([tenantUserId])
   @@index([roleName])
   @@index([roleId])
   @@map("tbl_company_users")

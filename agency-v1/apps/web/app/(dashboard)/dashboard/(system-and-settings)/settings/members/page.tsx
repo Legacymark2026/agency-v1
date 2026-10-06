@@ -176,6 +176,13 @@ export default function MembersPage() {
                                     <div className="text-xs text-[var(--ds-text-muted)] flex items-center gap-1">
                                         <Mail className="w-3 h-3" /> {m.user?.email}
                                     </div>
+                                    {m.tenantUserId && (
+                                        <div className="mt-1">
+                                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--ds-surface)] border border-[var(--ds-border-glow)] text-[var(--ds-teal-md)]">
+                                                ID: {m.tenantUserId}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
                                     <span className={`text-xs font-bold px-2 py-1 rounded-full border ${roleCfg.color}`}>{roleCfg.label}</span>

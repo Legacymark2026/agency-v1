@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { randomBytes, createHash, createHmac } from "crypto";
 import { sendEmail } from "@/lib/email";
 import { canManageCompanyUsers } from "@/lib/security";
+import { generateTenantUserId } from "@/lib/tenant-user";
 
 const REVALIDATE = "/dashboard/settings";
 
@@ -860,12 +861,16 @@ export async function sendTeamInvite(email: string, role: string) {
 
         if (memberCheck) return { success: false, error: "Este usuario ya es miembro del equipo." };
 
-        // Add to company
+        // Generar identificador único de usuario por empresa (Tenant User ID)
+        const tenantUserId = await generateTenantUserId(session.user.companyId);
+
+        // Add to company with unique tenant-scoped identifier
         await prisma.companyUser.create({
             data: {
                 userId: existing.id,
                 companyId: session.user.companyId,
                 role,
+                tenantUserId,
                 invitedBy: session.user.id,
             } as any,
         });
