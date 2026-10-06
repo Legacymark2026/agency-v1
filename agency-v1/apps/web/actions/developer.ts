@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { randomBytes, createHash, createHmac } from "crypto";
 import { sendEmail } from "@/lib/email";
+import { canManageCompanyUsers } from "@/lib/security";
 
 const REVALIDATE = "/dashboard/settings";
 
@@ -819,8 +820,21 @@ export async function sendTeamInvite(email: string, role: string) {
         const session = await auth();
         if (!session?.user?.companyId || !session?.user?.id) return { success: false, error: "Unauthorized" };
 
+        const companyId = session.user.companyId;
+        const userId = session.user.id;
+
+        // Validación estricta RBAC SaaS:
+        // Solo el Administrador de la empresa o el único rol con la acción delegada de gestión de usuarios puede crear credenciales/usuarios.
+        const hasPermission = await canManageCompanyUsers(userId, companyId);
+        if (!hasPermission) {
+            return { 
+                success: false, 
+                error: "Acceso denegado: Solo el Administrador de la empresa o el rol asignado para gestión de usuarios puede crear y configurar usuarios." 
+            };
+        }
+
         const companyInfo = await prisma.company.findUnique({
-            where: { id: session.user.companyId },
+            where: { id: companyId },
             select: { name: true }
         });
 

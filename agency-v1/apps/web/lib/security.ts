@@ -289,14 +289,63 @@ export async function isCompanyAdmin(
   companyId: string
 ): Promise<boolean> {
   try {
+    // SuperAdmin de la plataforma siempre tiene facultades de administración
+    if (await isSuperAdmin(userId)) return true;
+
+    // Verificar en User global
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (user?.role === "admin" || user?.role === "ADMIN" || user?.role === "super_admin" || user?.role === "SUPER_ADMIN") {
+      return true;
+    }
+
     const companyUser = await prisma.companyUser.findFirst({
       where: { userId, companyId },
       include: { role: true },
     });
 
-    return companyUser?.role?.priority === 100;
+    if (!companyUser) return false;
+
+    // Propietario o Administrador operativo de la empresa
+    if (["owner", "admin", "ADMIN", "OWNER"].includes(companyUser.roleName)) {
+      return true;
+    }
+
+    return (companyUser.role?.priority ?? 0) >= 80;
   } catch (error) {
     console.error("[Security] Error checking company admin:", error);
+    return false;
+  }
+}
+
+/**
+ * Valida si un usuario tiene la facultad exclusiva o delegada para crear usuarios y credenciales.
+ * REGLA ESTRICTA SAAS:
+ * 1. El Administrador/Owner de la empresa siempre tiene esta facultad.
+ * 2. Un usuario regular SOLO puede si pertenece a la empresa y tiene asignado el rol
+ *    específico al cual el administrador le otorgó el permiso 'users.manage' o 'settings.users.manage'.
+ */
+export async function canManageCompanyUsers(
+  userId: string,
+  companyId: string
+): Promise<boolean> {
+  try {
+    if (await isCompanyAdmin(userId, companyId)) {
+      return true;
+    }
+
+    // Verificar si tiene el permiso asignado a su rol
+    const hasUsersManage = await verifyPermission(userId, companyId, "users.manage");
+    if (hasUsersManage) return true;
+
+    const hasIamManage = await verifyPermission(userId, companyId, "iam.manage_users");
+    if (hasIamManage) return true;
+
+    return await verifyPermission(userId, companyId, "settings.users.manage");
+  } catch (error) {
+    console.error("[Security] Error checking canManageCompanyUsers:", error);
     return false;
   }
 }

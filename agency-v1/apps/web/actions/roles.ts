@@ -10,7 +10,8 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { verifyPermissionOrFail, isSuperAdmin } from "@/lib/security";
+import { prisma } from "@/lib/prisma";
+import { verifyPermissionOrFail, isSuperAdmin, isCompanyAdmin } from "@/lib/security";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { CreateRoleInput, UpdateRoleInput, RoleWithPermissions } from "@/types/rbac";
 import { MASTER_PERMISSIONS } from "@/lib/rbac";
@@ -79,8 +80,67 @@ export async function getRoleById(roleId: string): Promise<RoleWithPermissions |
   return role as RoleWithPermissions;
 }
 
+const USER_MANAGE_PERM_NAMES = ["users.manage", "settings.users.manage", "iam.manage_users"];
+
+/**
+ * Valida la regla estricta SaaS:
+ * 1. Solo el Administrador de la empresa puede delegar el permiso de creación de usuarios/contraseñas.
+ * 2. Dicho permiso solo puede ser otorgado a un ÚNICO rol adicional en la empresa a la vez.
+ */
+async function validateSingleRoleUserManagement(
+  userId: string,
+  companyId: string,
+  targetRoleId: string | null,
+  permissionIds?: string[]
+) {
+  if (!permissionIds || permissionIds.length === 0) return;
+
+  // Consultar permisos correspondientes a gestión de usuarios
+  const matchingPerms = await prisma.permission.findMany({
+    where: {
+      name: { in: USER_MANAGE_PERM_NAMES },
+      id: { in: permissionIds },
+    },
+  });
+
+  if (matchingPerms.length === 0) return;
+
+  // 1. Verificar si el usuario que ejecuta la acción es el Administrador de la empresa
+  const isAdmin = await isCompanyAdmin(userId, companyId);
+  if (!isAdmin) {
+    throw new ForbiddenError(
+      "Solo el Administrador de la empresa tiene potestad para delegar la facultad de creación de usuarios y contraseñas."
+    );
+  }
+
+  // 2. Verificar si ya existe otro rol en la empresa con permisos de gestión de usuarios
+  const otherRolesWithPerm = await prisma.role.findMany({
+    where: {
+      companyId,
+      ...(targetRoleId ? { id: { not: targetRoleId } } : {}),
+      permissions: {
+        some: {
+          permission: {
+            name: { in: USER_MANAGE_PERM_NAMES },
+          },
+        },
+      },
+    },
+    select: { id: true, name: true },
+  });
+
+  if (otherRolesWithPerm.length > 0) {
+    const existingNames = otherRolesWithPerm.map((r) => `"${r.name}"`).join(", ");
+    throw new Error(
+      `Solo se permite asignar la creación de usuarios y contraseñas a UN SOLO rol en la empresa. El rol ${existingNames} ya posee esta facultad. Desasígnela de ese rol antes de otorgarla a otro.`
+    );
+  }
+}
+
 export async function createRole(data: CreateRoleInput) {
-  const { companyId } = await requireManageRoles();
+  const { userId, companyId } = await requireManageRoles();
+
+  await validateSingleRoleUserManagement(userId, companyId, null, data.permissionIds);
 
   const role = await fetchGateway(`/api/auth/roles`, {
     method: 'POST',
@@ -99,12 +159,14 @@ export async function createRole(data: CreateRoleInput) {
 }
 
 export async function updateRole(roleId: string, data: UpdateRoleInput) {
-  const { companyId } = await requireManageRoles();
+  const { userId, companyId } = await requireManageRoles();
 
   const existingRole = await fetchGateway(`/api/auth/roles/${roleId}/detail`);
   if (!existingRole || existingRole.companyId !== companyId) {
     throw new Error("Rol no encontrado");
   }
+
+  await validateSingleRoleUserManagement(userId, companyId, roleId, data.permissionIds);
 
   const role = await fetchGateway(`/api/auth/roles/${roleId}`, {
     method: 'PATCH',
@@ -140,7 +202,32 @@ export async function deleteRole(roleId: string) {
 }
 
 export async function assignUserRole(userId: string, roleId: string | null) {
-  const { companyId } = await requireManageRoles();
+  const { userId: executorId, companyId } = await requireManageRoles();
+
+  // Si se asigna un rol que confiere facultad de crear usuarios y contraseñas, solo el Administrador puede asignarlo
+  if (roleId) {
+    const targetRole = await prisma.role.findUnique({
+      where: { id: roleId },
+      include: {
+        permissions: {
+          include: { permission: true },
+        },
+      },
+    });
+
+    const hasUserMgmt = targetRole?.permissions.some((p) =>
+      USER_MANAGE_PERM_NAMES.includes(p.permission.name)
+    );
+
+    if (hasUserMgmt) {
+      const isAdmin = await isCompanyAdmin(executorId, companyId);
+      if (!isAdmin) {
+        throw new ForbiddenError(
+          "Solo el Administrador de la empresa puede asignar un rol con facultades de creación de usuarios y contraseñas."
+        );
+      }
+    }
+  }
 
   const result = await fetchGateway(`/api/auth/assign-role`, {
     method: 'PATCH',

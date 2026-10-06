@@ -574,26 +574,36 @@ function RoleFormModal({
                     {MODULE_LABELS[group.module] || group.module} ({group.permissions.length})
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {group.permissions.map((perm) => (
-                      <div
-                        key={perm.id}
-                        onClick={(e) => togglePerm(perm.id, e)}
-                        className={`flex items-center gap-2 text-xs cursor-pointer p-2 rounded border transition-all ${
-                          selectedPerms.includes(perm.id)
-                            ? "bg-[var(--ds-teal-dim)] border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] font-medium"
-                            : "hover:bg-[var(--ds-surface-2)] border-[var(--ds-border)] text-[var(--ds-text-secondary)] hover:border-[var(--ds-border-glow)]"
-                        }`}
-                      >
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                          selectedPerms.includes(perm.id)
-                            ? "bg-[var(--ds-teal)] border-[var(--ds-border-glow)] text-white"
-                            : "border-[var(--ds-border)]"
-                        }`}>
-                          {selectedPerms.includes(perm.id) && <Check className="w-3 h-3" />}
+                    {group.permissions.map((perm) => {
+                      const isUserMgmt = ["users.manage", "settings.users.manage", "iam.manage_users"].includes(perm.name);
+                      return (
+                        <div
+                          key={perm.id}
+                          onClick={(e) => togglePerm(perm.id, e)}
+                          className={`flex flex-col gap-1 text-xs cursor-pointer p-2 rounded border transition-all ${
+                            selectedPerms.includes(perm.id)
+                              ? "bg-[var(--ds-teal-dim)] border-[var(--ds-border-glow)] text-[var(--ds-teal-md)] font-medium"
+                              : "hover:bg-[var(--ds-surface-2)] border-[var(--ds-border)] text-[var(--ds-text-secondary)] hover:border-[var(--ds-border-glow)]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                              selectedPerms.includes(perm.id)
+                                ? "bg-[var(--ds-teal)] border-[var(--ds-border-glow)] text-white"
+                                : "border-[var(--ds-border)]"
+                            }`}>
+                              {selectedPerms.includes(perm.id) && <Check className="w-3 h-3" />}
+                            </div>
+                            <span className="truncate flex-1">{perm.description}</span>
+                          </div>
+                          {isUserMgmt && (
+                            <span className="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 w-fit mt-0.5">
+                              ⚠️ Exclusivo: Solo un rol por empresa
+                            </span>
+                          )}
                         </div>
-                        <span className="truncate">{perm.description}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
