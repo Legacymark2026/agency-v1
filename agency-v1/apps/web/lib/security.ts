@@ -23,6 +23,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { ForbiddenError, UnauthorizedError } from "./errors";
 import { logger } from "@/lib/logger";
+import { GLOBAL_SUPERADMIN_EMAILS } from "@/auth.config";
 
 export interface PermissionCheckOptions {
   resourceType?: string;
@@ -304,10 +305,13 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true },
+      select: { role: true, email: true },
     });
 
-    return user?.role === "super_admin";
+    if (!user) return false;
+    if (user.role === "super_admin" || user.role === "SUPER_ADMIN") return true;
+    if (user.email && GLOBAL_SUPERADMIN_EMAILS.includes(user.email.toLowerCase())) return true;
+    return false;
   } catch (error) {
     console.error("[Security] Error checking super admin:", error);
     return false;

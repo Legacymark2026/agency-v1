@@ -8,31 +8,19 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { invalidateRoleCache } from "@/lib/role-config";
-
-const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
-
-async function fetchGateway(path: string, options?: RequestInit) {
-  const response = await fetch(`${GATEWAY_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
+import { isSuperAdmin } from "@/lib/security";
 
 /** Verifica que el usuario actual es SUPER_ADMIN */
 async function requireSuperAdmin() {
     const session = await auth();
-    const role = (session?.user?.role as string)?.toLowerCase();
-    if (!session || role !== 'super_admin') {
-        throw new Error("Acceso denegado: Solo SUPER_ADMIN puede gestionar roles.");
+    if (!session?.user?.id) {
+        throw new Error("No autenticado. Por favor inicia sesión.");
+    }
+    const isSA = await isSuperAdmin(session.user.id);
+    if (!isSA) {
+        throw new Error("Acceso denegado: Solo SUPER_ADMIN puede gestionar roles globales.");
     }
     return session;
 }
@@ -49,19 +37,25 @@ export async function upsertRoleConfig(data: {
     const roleName = data.roleName.trim().toLowerCase();
     if (!roleName) throw new Error("El nombre del rol no puede estar vacío.");
 
-    const config = await fetchGateway('/api/auth/role-configs', {
-        method: 'POST',
-        body: JSON.stringify({
+    const config = await prisma.roleConfig.upsert({
+        where: { roleName },
+        create: {
             roleName,
             allowedRoutes: data.allowedRoutes,
-            description: data.description,
-            isActive: data.isActive,
-        }),
+            description: data.description ?? null,
+            isActive: data.isActive ?? true,
+        },
+        update: {
+            allowedRoutes: data.allowedRoutes,
+            description: data.description ?? null,
+            isActive: data.isActive ?? true,
+        },
     });
 
     // Invalidar cache para que el cambio tome efecto inmediatamente
     invalidateRoleCache(roleName);
 
+    revalidatePath("/dashboard/roles");
     revalidatePath("/dashboard/users");
     revalidatePath("/dashboard/security");
 
@@ -73,11 +67,12 @@ export async function deleteRoleConfig(roleName: string) {
     await requireSuperAdmin();
 
     const name = roleName.trim().toLowerCase();
-    await fetchGateway(`/api/auth/role-configs/${name}`, {
-        method: 'DELETE',
+    await prisma.roleConfig.delete({
+        where: { roleName: name },
     });
 
     invalidateRoleCache(name);
+    revalidatePath("/dashboard/roles");
     revalidatePath("/dashboard/users");
 
     return { success: true };
@@ -86,13 +81,24 @@ export async function deleteRoleConfig(roleName: string) {
 /** Obtiene todos los RoleConfigs (para la UI) */
 export async function getRoleConfigs() {
     await requireSuperAdmin();
-    return fetchGateway('/api/auth/role-configs');
+    return prisma.roleConfig.findMany({
+        orderBy: { roleName: "asc" },
+    });
 }
 
 /** Obtiene todos los usuarios con sus roles (para la UI de asignación) */
 export async function getUsersWithRoles() {
     await requireSuperAdmin();
-    return fetchGateway('/api/auth/global-users');
+    return prisma.user.findMany({
+        select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            deactivatedAt: true,
+        },
+        orderBy: { email: "asc" },
+    });
 }
 
 /** Actualiza el rol de un usuario */
@@ -102,11 +108,12 @@ export async function updateUserRole(userId: string, newRole: string) {
     const role = newRole.trim().toLowerCase();
     if (!role) throw new Error("El rol no puede estar vacío.");
 
-    await fetchGateway(`/api/auth/global-users/${userId}/role`, {
-        method: 'PATCH',
-        body: JSON.stringify({ role }),
+    await prisma.user.update({
+        where: { id: userId },
+        data: { role },
     });
 
+    revalidatePath("/dashboard/roles");
     revalidatePath("/dashboard/users");
     return { success: true };
 }
