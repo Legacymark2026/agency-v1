@@ -5034,3 +5034,73 @@ model DianCertificate {
 
   @@map("tbl_dian_certificates")
 }
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// 4. SUPPLIER CATALOG & PROCUREMENT (Hexagonal Architecture)
+// ════════════════════════════════════════════════════════════════════════════
+
+model Supplier {
+  id                    String             @id @default(uuid())
+  companyId             String             @map("company_id")
+  name                  String
+  legalName             String?            @map("legal_name")
+  taxId                 String             @map("tax_id") // NIT, RUT, RFC, CIF
+  taxType               String             @default("NIT") @map("tax_type")
+  category              String             @default("GENERAL") // RAW_MATERIALS, SERVICES, LOGISTICS, TECHNOLOGY, GENERAL
+  contactName           String?            @map("contact_name")
+  contactEmail          String?            @map("contact_email")
+  contactPhone          String?            @map("contact_phone")
+  address               String?
+  city                  String?
+  country               String             @default("Colombia")
+  paymentTermsDays      Int                @default(30) @map("payment_terms_days") // Plazo crédito en días (ej: 30, 60, 90)
+  creditLimit           Float              @default(0) @map("credit_limit")
+  currency              String             @default("COP")
+  bankName              String?            @map("bank_name")
+  bankAccountType       String?            @map("bank_account_type") // AHORROS, CORRIENTE
+  bankAccountNumber     String?            @map("bank_account_number")
+  bankAccountHolder     String?            @map("bank_account_holder")
+  discountRatePct       Float              @default(0) @map("discount_rate_pct")
+  status                String             @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED, UNDER_REVIEW
+  ratingScore           Float?             @map("rating_score") // 1.0 a 5.0
+  notes                 String?
+  customFields          Json?              @default("{}") @map("custom_fields")
+  documents             SupplierDocument[]
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  @@unique([companyId, taxId])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, category])
+  @@map("tbl_suppliers")
+}
+
+model SupplierDocument {
+  id            String    @id @default(uuid())
+  supplierId    String    @map("supplier_id")
+  companyId     String    @map("company_id")
+  documentType  String    @map("document_type") // RUT, CAMARA_COMERCIO, CERTIFICACION_BANCARIA, ISO_9001, SARLAFT, ACUERDO_CONFIDENCIALIDAD, OTRO
+  title         String
+  fileUrl       String    @map("file_url")
+  fileKey       String?   @map("file_key")
+  fileSize      Int?      @map("file_size")
+  mimeType      String?   @map("mime_type")
+  issueDate     DateTime? @map("issue_date")
+  expiryDate    DateTime? @map("expiry_date")
+  isVerified    Boolean   @default(false) @map("is_verified")
+  verifiedAt    DateTime? @map("verified_at")
+  verifiedBy    String?   @map("verified_by")
+  status        String    @default("ACTIVE") // ACTIVE, EXPIRED, PENDING_REVIEW, REJECTED
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  supplier      Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@index([companyId])
+  @@index([expiryDate])
+  @@map("tbl_supplier_documents")
+}
