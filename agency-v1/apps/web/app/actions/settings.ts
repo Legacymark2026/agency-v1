@@ -180,14 +180,94 @@ export async function fetchCompanySettings() {
 
         if (!companyUser?.company) return null;
 
+        const company = companyUser.company;
+
         return {
-            id: companyUser.company.id,
-            logoUrl: companyUser.company.logoUrl,
-            defaultSettings: companyUser.company.defaultCompanySettings || {},
-            whiteLabeling: companyUser.company.whiteLabeling || {}
+            id: company.id,
+            name: company.name,
+            slug: company.slug,
+            logoUrl: company.logoUrl,
+            industry: company.industry,
+            website: company.website,
+            subscriptionTier: company.subscriptionTier,
+            subscriptionStatus: company.subscriptionStatus,
+            defaultSettings: company.defaultCompanySettings || {},
+            whiteLabeling: company.whiteLabeling || {}
         };
     } catch (error) {
         return null;
+    }
+}
+
+export async function updateCompanyProfile(data: {
+    name?: string;
+    industry?: string;
+    website?: string;
+    legalName?: string;
+    taxId?: string;
+    dv?: string;
+    economicActivityCode?: string;
+    taxRegime?: string;
+    fiscalResponsibility?: string;
+    email?: string;
+    phone?: string;
+    country?: string;
+    state?: string;
+    city?: string;
+    address?: string;
+    postalCode?: string;
+}) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) return { success: false, error: 'Unauthorized' };
+
+        const companyUser = await prisma.companyUser.findFirst({
+            where: { userId: session.user.id },
+            include: { company: true }
+        });
+
+        if (!companyUser?.company) return { success: false, error: 'No company found' };
+
+        const currentDefaults = (companyUser.company.defaultCompanySettings as any) || {};
+        const currentLegal = currentDefaults.legalProfile || {};
+
+        const updatedLegal = {
+            ...currentLegal,
+            legalName: data.legalName ?? currentLegal.legalName,
+            taxId: data.taxId ?? currentLegal.taxId,
+            dv: data.dv ?? currentLegal.dv,
+            economicActivityCode: data.economicActivityCode ?? currentLegal.economicActivityCode,
+            taxRegime: data.taxRegime ?? currentLegal.taxRegime,
+            fiscalResponsibility: data.fiscalResponsibility ?? currentLegal.fiscalResponsibility,
+            email: data.email ?? currentLegal.email,
+            phone: data.phone ?? currentLegal.phone,
+            country: data.country ?? currentLegal.country ?? "Colombia",
+            state: data.state ?? currentLegal.state,
+            city: data.city ?? currentLegal.city,
+            address: data.address ?? currentLegal.address,
+            postalCode: data.postalCode ?? currentLegal.postalCode,
+            updatedAt: new Date().toISOString()
+        };
+
+        const updatedDefaultSettings = {
+            ...currentDefaults,
+            legalProfile: updatedLegal
+        };
+
+        await prisma.company.update({
+            where: { id: companyUser.companyId },
+            data: {
+                name: data.name ?? companyUser.company.name,
+                industry: data.industry ?? companyUser.company.industry,
+                website: data.website ?? companyUser.company.website,
+                defaultCompanySettings: updatedDefaultSettings
+            }
+        });
+
+        revalidatePath('/dashboard/settings/company');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Error updating company profile' };
     }
 }
 

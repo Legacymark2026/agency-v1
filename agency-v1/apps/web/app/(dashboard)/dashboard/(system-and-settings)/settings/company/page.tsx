@@ -1,10 +1,6 @@
-import { WhiteLabelingSettings } from "@/components/settings/white-labeling-settings";
-import { DefaultCompanySettings } from "@/components/settings/default-company-settings";
-import { DianInvoicingSettings } from "@/components/settings/dian-invoicing-settings";
-import { GlobalEmailTemplates } from "@/components/settings/global-email-templates";
-import { CustomDomainSettings } from "@/components/settings/custom-domain-settings";
 import { fetchCompanySettings } from "@/app/actions/settings";
 import { fetchEmailTemplates } from "@/app/actions/email-templates";
+import { CompanySettingsHubClient } from "@/components/settings/company-settings-hub-client";
 
 export const dynamic = 'force-dynamic';
 
@@ -13,35 +9,9 @@ export default async function SettingsCompanyPage() {
     const emailTemplates = companyData?.id ? await fetchEmailTemplates(companyData.id) : [];
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-300 pb-10">
-            <div>
-                <h2 className="text-xl font-bold tracking-tight text-[var(--ds-text-primary)] border-b border-[var(--ds-border)] pb-4">
-                    Compañía y Marca Blanca
-                </h2>
-                <p className="text-sm text-[var(--ds-text-secondary)] mt-2">
-                    Configura la apariencia global del sistema, marca blanca y la habilitación completa de Facturación Electrónica DIAN.
-                </p>
-            </div>
-
-            <section className="space-y-4">
-                <DianInvoicingSettings initialConfig={companyData?.defaultSettings} />
-            </section>
-
-            <section className="space-y-4 pt-4">
-                <WhiteLabelingSettings initialData={companyData} />
-            </section>
-
-            <section className="space-y-4 pt-4">
-                <DefaultCompanySettings initialData={companyData?.defaultSettings} />
-            </section>
-
-            <section className="space-y-4 pt-4">
-                <GlobalEmailTemplates initialTemplates={emailTemplates} companyId={companyData?.id} />
-            </section>
-
-            <section className="space-y-4 pt-4">
-                <CustomDomainSettings initialData={companyData} />
-            </section>
-        </div>
+        <CompanySettingsHubClient 
+            companyData={companyData} 
+            emailTemplates={emailTemplates} 
+        />
     );
 }
