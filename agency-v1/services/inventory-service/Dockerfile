@@ -2,13 +2,13 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json turbo.json ./
 COPY packages/vault-client/package.json ./packages/vault-client/
-COPY packages/vault-client/package.json ./packages/vault-client/
 COPY packages/database/package.json ./packages/database/
 COPY packages/events/package.json ./packages/events/
+COPY packages/grpc/package.json ./packages/grpc/
 COPY packages/observability/package.json ./packages/observability/
 COPY packages/service-auth/package.json ./packages/service-auth/
 COPY services/inventory-service/package.json ./services/inventory-service/
-RUN npm ci || npm install
+RUN npm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
