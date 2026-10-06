@@ -7,7 +7,9 @@
  */
 
 import { useState, useEffect, useTransition } from "react";
-import { Shield, Plus, Trash2, Save, ChevronDown, ChevronUp, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Shield, Plus, Trash2, Save, ChevronDown, ChevronUp, Users, Loader2 } from "lucide-react";
 import { upsertRoleConfig, deleteRoleConfig, getRoleConfigs, getUsersWithRoles, updateUserRole } from "@/actions/role-config";
 import { ALL_DASHBOARD_ROUTES } from "@/lib/rbac-routes";
 import { toast } from "sonner";
@@ -39,6 +41,8 @@ const D = {
 };
 
 export default function RolesPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const [roles, setRoles] = useState<RoleConfig[]>([]);
     const [users, setUsers] = useState<UserRow[]>([]);
     const [expandedRole, setExpandedRole] = useState<string | null>(null);
@@ -46,15 +50,24 @@ export default function RolesPage() {
     const [newRoleDesc, setNewRoleDesc] = useState("");
     const [isPending, startTransition] = useTransition();
 
+    const isSuperAdmin = (session?.user as any)?.role === "super_admin" || (session?.user as any)?.role === "SUPER_ADMIN";
+
+    useEffect(() => {
+        if (status === "authenticated" && !isSuperAdmin) {
+            router.replace("/dashboard/settings/roles");
+        }
+    }, [status, isSuperAdmin, router]);
+
     // Cargar datos iniciales
     useEffect(() => {
+        if (status === "loading" || !isSuperAdmin) return;
         async function load() {
             const [cfg, usr] = await Promise.all([getRoleConfigs(), getUsersWithRoles()]);
             setRoles((cfg as RoleConfig[]).map(r => ({ ...r, allowedRoutes: r.allowedRoutes as string[] })));
             setUsers(usr);
         }
         load();
-    }, []);
+    }, [status, isSuperAdmin]);
 
     function toggleRoute(roleName: string, route: string, checked: boolean) {
         setRoles(prev => prev.map(r => {
@@ -144,6 +157,14 @@ export default function RolesPage() {
         "super_admin", "admin", "content_manager", "client_admin", "client_user",
         ...roles.map(r => r.roleName),
     ];
+
+    if (status === "loading" || (!isSuperAdmin && status === "authenticated")) {
+        return (
+            <div style={{ minHeight: "100vh", background: D.bg, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8" }}>
+                <Loader2 className="w-8 h-8 animate-spin text-teal-400" />
+            </div>
+        );
+    }
 
     return (
         <div style={{ minHeight: "100vh", background: D.bg, padding: "2rem", color: "#e2e8f0" }}>

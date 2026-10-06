@@ -181,6 +181,23 @@ interface DashboardSidebarProps {
 }
 
 export function DashboardSidebar({ role, name, email, image, companyLogoUrl, accessibleRoutes, badge }: DashboardSidebarProps) {
+    const isSuperAdmin = role === 'super_admin' || role === 'SUPER_ADMIN';
+    const dynamicNavGroups = NAV_GROUPS.map(group => {
+        if (group.code !== 'SYSTEM') return group;
+        return {
+            ...group,
+            items: group.items.map(item => {
+                if (item.code === 'ROL') {
+                    return {
+                        ...item,
+                        href: isSuperAdmin ? '/dashboard/roles' : '/dashboard/settings/roles',
+                        label: isSuperAdmin ? 'Control Global de Roles' : 'Roles y Permisos de Empresa',
+                    };
+                }
+                return item;
+            })
+        };
+    });
     return (
         <aside
             className="flex flex-row h-full shrink-0 relative transition-all duration-300 ease-in-out"
@@ -192,7 +209,7 @@ export function DashboardSidebar({ role, name, email, image, companyLogoUrl, acc
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
 
             <SidebarClientContent 
-                navGroups={NAV_GROUPS}
+                navGroups={dynamicNavGroups}
                 accessibleRoutes={accessibleRoutes}
                 companyLogoUrl={companyLogoUrl}
                 name={name}
