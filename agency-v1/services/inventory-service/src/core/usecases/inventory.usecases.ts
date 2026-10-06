@@ -29,6 +29,8 @@ export class InventoryUseCases implements IInventoryUseCases {
     note?: string;
     lotNumber?: string;
     expiryDate?: Date;
+    destinationBinId?: string;
+    operatorBadgeId?: string;
   }): Promise<{ stock: StockItemProps; movement: StockMovementProps; lot?: ProductLotProps }> {
     if (params.quantity <= 0) {
       throw new Error("La cantidad de entrada debe ser superior a 0.");
@@ -128,6 +130,8 @@ export class InventoryUseCases implements IInventoryUseCases {
     reference?: string;
     note?: string;
     useFefo?: boolean;
+    sourceBinId?: string;
+    operatorBadgeId?: string;
   }): Promise<{ stock: StockItemProps; movement: StockMovementProps; allocatedLots?: { lotId: string; lotNumber: string; quantityToDeduct: number }[] }> {
     if (params.quantity <= 0) {
       throw new Error("La cantidad de salida debe ser superior a 0.");
@@ -165,11 +169,25 @@ export class InventoryUseCases implements IInventoryUseCases {
 
     const savedStock = await this.repo.upsertStockItem(updatedStock);
 
+    const movementTimestamp = new Date();
+    const signatureHash = CryptographicLedgerSigner.generateSignatureHash({
+      transactionUuid: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      companyId: params.companyId,
+      warehouseId: params.warehouseId,
+      productId: params.productId,
+      quantity: -params.quantity,
+      movementType: "OUT_SALE",
+      balanceAfter: newQty,
+      timestamp: movementTimestamp,
+      operatorBadgeId: params.operatorBadgeId,
+    });
+
     const movement = await this.repo.recordMovement({
       companyId: params.companyId,
       warehouseId: params.warehouseId,
       productId: params.productId,
       sku: stock.sku,
+      sourceBinId: params.sourceBinId,
       movementType: "OUT_SALE",
       quantity: params.quantity,
       unitCost: stock.averageCost,
@@ -177,6 +195,8 @@ export class InventoryUseCases implements IInventoryUseCases {
       balanceAfter: newQty,
       reference: params.reference,
       note: params.note,
+      operatorBadgeId: params.operatorBadgeId,
+      signatureHash,
     });
 
     // Validar punto de reorden
