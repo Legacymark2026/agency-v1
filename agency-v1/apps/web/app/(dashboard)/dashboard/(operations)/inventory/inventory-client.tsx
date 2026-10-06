@@ -74,6 +74,23 @@ interface KardexEntry {
   totalCost: number;
   balanceAfter: number;
   reference: string;
+  operatorBadgeId?: string;
+  signatureHash?: string;
+}
+
+interface StorageBinUI {
+  id: string;
+  binCode: string;
+  zone: string;
+  aisle: string;
+  rack: string;
+  shelfLevel: number;
+  maxWeightKg: number;
+  currentWeightKg: number;
+  maxVolumeCm3: number;
+  currentVolumeCm3: number;
+  utilizationPct: number;
+  velocityTier: 'FAST' | 'MEDIUM' | 'SLOW';
 }
 
 interface TransferOrder {
@@ -179,10 +196,24 @@ export function InventoryClient() {
   ]);
 
   const [kardexEntries] = useState<KardexEntry[]>([
-    { id: 'k-1', date: '2026-10-06 14:20', productName: 'Café Especial Geisha 500g', sku: 'ALM-001', type: 'IN_PURCHASE', quantity: 100, unitCost: 28500, totalCost: 2850000, balanceAfter: 450, reference: 'OC-2026-091' },
-    { id: 'k-2', date: '2026-10-06 11:05', productName: 'Prensa Francesa Vidrio', sku: 'ACC-099', type: 'OUT_SALE', quantity: 2, unitCost: 45000, totalCost: 90000, balanceAfter: 4, reference: 'POS-REC-4821' },
-    { id: 'k-3', date: '2026-10-05 16:45', productName: 'Café Especial Geisha 500g', sku: 'ALM-001', type: 'TRANSFER_OUT', quantity: 20, unitCost: 28500, totalCost: 570000, balanceAfter: 350, reference: 'TRF-00190' },
+    { id: 'k-1', date: '2026-10-06 14:20', productName: 'Café Especial Geisha 500g', sku: 'ALM-001', type: 'IN_PURCHASE', quantity: 100, unitCost: 28500, totalCost: 2850000, balanceAfter: 450, reference: 'OC-2026-091', operatorBadgeId: 'BADGE-08', signatureHash: '75c71b6c40faac3907cc2e3899f037443dc4c2effa71a4e6921a25007f45ee99' },
+    { id: 'k-2', date: '2026-10-06 11:05', productName: 'Prensa Francesa Vidrio', sku: 'ACC-099', type: 'OUT_SALE', quantity: 2, unitCost: 45000, totalCost: 90000, balanceAfter: 4, reference: 'POS-REC-4821', operatorBadgeId: 'POS-TERM-02', signatureHash: 'a8b19e422f1839db0808a94625b182046f2127265ac4c95f0017e81b67f1b212' },
+    { id: 'k-3', date: '2026-10-05 16:45', productName: 'Café Especial Geisha 500g', sku: 'ALM-001', type: 'TRANSFER_OUT', quantity: 20, unitCost: 28500, totalCost: 570000, balanceAfter: 350, reference: 'TRF-00190', operatorBadgeId: 'BADGE-14', signatureHash: 'd39a11756e01a93bbbc109f5832a8190589139281a8b030491823901b0f19932' },
   ]);
+
+  const [chaoticBins] = useState<StorageBinUI[]>([
+    { id: 'bin-1', binCode: 'Z1-PA-R2-N3', zone: 'Zona Secos A', aisle: 'Pasillo A', rack: 'Rack 2', shelfLevel: 3, maxWeightKg: 500, currentWeightKg: 280, maxVolumeCm3: 500000, currentVolumeCm3: 380000, utilizationPct: 76, velocityTier: 'FAST' },
+    { id: 'bin-2', binCode: 'Z1-PA-R1-N1', zone: 'Zona Secos A', aisle: 'Pasillo A', rack: 'Rack 1', shelfLevel: 1, maxWeightKg: 350, currentWeightKg: 95, maxVolumeCm3: 400000, currentVolumeCm3: 120000, utilizationPct: 30, velocityTier: 'FAST' },
+    { id: 'bin-3', binCode: 'Z2-PB-R5-N2', zone: 'Zona Fría (15°C)', aisle: 'Pasillo B', rack: 'Rack 5', shelfLevel: 2, maxWeightKg: 200, currentWeightKg: 45, maxVolumeCm3: 250000, currentVolumeCm3: 85000, utilizationPct: 34, velocityTier: 'MEDIUM' },
+  ]);
+
+  // Recall Blast Radius Modal
+  const [selectedRecallLot, setSelectedRecallLot] = useState<any | null>(null);
+  const [isRecallModalOpen, setIsRecallModalOpen] = useState(false);
+
+  // RF Scanner Hardware Wedge Simulation state
+  const [lastScannedBarcode, setLastScannedBarcode] = useState<string | null>(null);
+  const [scanFeedbackTone, setScanFeedbackTone] = useState<'SUCCESS' | 'ERROR' | null>(null);
 
   const [transfers] = useState<TransferOrder[]>([
     { id: 'tr-1', transferNumber: 'TRF-00190', origin: 'Bodega Central (Cali)', destination: 'Tienda Calle 93 (Bogotá)', itemsSummary: '20x Café Geisha, 5x Prensa Francesa', date: '2026-10-05', status: 'RECEIVED' },
@@ -647,6 +678,8 @@ export function InventoryClient() {
                   <th className="px-4 py-3 text-right">Total Transacción</th>
                   <th className="px-4 py-3 text-right">Saldo Final</th>
                   <th className="px-4 py-3">Referencia</th>
+                  <th className="px-4 py-3">Operador</th>
+                  <th className="px-4 py-3 text-center">Firma SHA-256 (FDA Part 11)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -679,6 +712,12 @@ export function InventoryClient() {
                     <td className="px-4 py-3 text-right font-mono text-xs font-semibold">${entry.totalCost.toLocaleString('es-CO')}</td>
                     <td className="px-4 py-3 text-right font-bold text-foreground">{entry.balanceAfter}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{entry.reference}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono font-medium">{entry.operatorBadgeId || 'SISTEMA'}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" title={entry.signatureHash}>
+                        <ShieldCheck size={11} /> {entry.signatureHash ? entry.signatureHash.substring(0, 10) + '...' : 'SIN SELLO'}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -716,6 +755,7 @@ export function InventoryClient() {
                   <th className="px-4 py-3">Fecha Vencimiento</th>
                   <th className="px-4 py-3 text-center">Días Restantes</th>
                   <th className="px-4 py-3 text-center">Estado</th>
+                  <th className="px-4 py-3 text-center">Trazabilidad Inversa</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -748,6 +788,17 @@ export function InventoryClient() {
                           <AlertTriangle size={12} /> Vencido
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => {
+                          setSelectedRecallLot(lot);
+                          setIsRecallModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-lg transition"
+                      >
+                        <ShieldCheck size={12} /> Recall Blast-Radius
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -809,30 +860,70 @@ export function InventoryClient() {
             </button>
           </div>
 
+          {/* RF Scanner Hardware Wedge Status Banner */}
+          <div className="flex flex-col sm:flex-row items-center justify-between p-3.5 bg-card border border-border rounded-xl text-xs gap-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 font-bold flex items-center gap-1.5">
+                <SlidersHorizontal size={14} /> RF Scanner Wedge Activo
+              </span>
+              <span className="text-muted-foreground">
+                Escucha continua de terminales Zebra / Honeywell (Intercepción sin foco de input).
+              </span>
+            </div>
+            <div className="flex items-center gap-2 font-mono">
+              <span className="text-muted-foreground">Último Escaneo:</span>
+              <span className="px-2 py-0.5 rounded bg-muted font-bold text-foreground">
+                {lastScannedBarcode || 'Z1-PA-R2-N3 (BIN)'}
+              </span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[10px]">
+                1200Hz BEEP OK
+              </span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
-              <div className="text-xs font-bold text-muted-foreground uppercase mb-3">Pasillo A - Racks Secos</div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm bg-muted/50 p-2.5 rounded-lg">
-                  <span className="font-mono text-xs font-bold">RACK-A1</span>
-                  <span className="text-emerald-500 font-bold text-xs">85% Ocupado</span>
+            {chaoticBins.map((bin) => (
+              <div key={bin.id} className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-xs font-mono font-bold text-blue-500">{bin.binCode}</span>
+                    <h4 className="text-sm font-bold text-foreground mt-0.5">{bin.zone}</h4>
+                    <span className="text-xs text-muted-foreground">{bin.aisle} • {bin.rack} • Nivel {bin.shelfLevel}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    bin.utilizationPct > 80 ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'
+                  }`}>
+                    {bin.utilizationPct}% Volumen
+                  </span>
                 </div>
-                <div className="flex items-center justify-between text-sm bg-muted/50 p-2.5 rounded-lg">
-                  <span className="font-mono text-xs font-bold">RACK-A2</span>
-                  <span className="text-emerald-500 font-bold text-xs">60% Ocupado</span>
+
+                {/* Volumetric Progress Bar */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>Ocupación Cúbica:</span>
+                    <span className="font-mono font-bold text-foreground">
+                      {(bin.currentVolumeCm3 / 1000).toFixed(0)}L / {(bin.maxVolumeCm3 / 1000).toFixed(0)}L (cm³)
+                    </span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        bin.utilizationPct > 80 ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${bin.utilizationPct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-sm bg-muted/50 p-2.5 rounded-lg">
-                  <span className="font-mono text-xs font-bold">RACK-A3</span>
-                  <span className="text-amber-500 font-bold text-xs">95% Ocupado</span>
+
+                {/* Weight Rating */}
+                <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Carga Estructural:</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {bin.currentWeightKg}kg / {bin.maxWeightKg}kg máx
+                  </span>
                 </div>
               </div>
-            </div>
-
-            <div className="md:col-span-2 bg-card border border-border rounded-xl p-4 flex flex-col justify-center items-center h-48 border-dashed shadow-sm">
-              <MapPin className="w-8 h-8 text-muted-foreground mb-2 opacity-50" />
-              <span className="text-sm font-medium text-muted-foreground">Plano Isométrico Digital de Bodega (WMS)</span>
-              <span className="text-xs text-muted-foreground/70 mt-1">Soporte para lectura con escáner de códigos de barras en posiciones</span>
-            </div>
+            ))}
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-border mt-4 bg-card shadow-sm">
@@ -843,6 +934,7 @@ export function InventoryClient() {
                   <th className="px-4 py-3">Coordenada Bin</th>
                   <th className="px-4 py-3">Tipo Almacenaje</th>
                   <th className="px-4 py-3 text-right">Stock Físico en Posición</th>
+                  <th className="px-4 py-3 text-center">Algoritmo de Guardado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -851,18 +943,33 @@ export function InventoryClient() {
                   <td className="px-4 py-3 font-mono font-bold text-blue-500">Z1-PA-R2-N3</td>
                   <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">Seco (Ambiente)</span></td>
                   <td className="px-4 py-3 text-right font-bold">450 un</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400">
+                      Chaotic Dynamic Binning
+                    </span>
+                  </td>
                 </tr>
                 <tr className="hover:bg-muted/30 transition">
                   <td className="px-4 py-3 font-medium">Té Matcha Japonés <span className="text-xs text-muted-foreground ml-1 font-mono">BEV-010</span></td>
                   <td className="px-4 py-3 font-mono font-bold text-blue-500">Z1-PA-R1-N1</td>
                   <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">Seco (Ambiente)</span></td>
                   <td className="px-4 py-3 text-right font-bold">85 un</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400">
+                      Chaotic Dynamic Binning
+                    </span>
+                  </td>
                 </tr>
                 <tr className="hover:bg-muted/30 transition">
                   <td className="px-4 py-3 font-medium">Miel Orgánica de Bosque <span className="text-xs text-muted-foreground ml-1 font-mono">ALM-002</span></td>
                   <td className="px-4 py-3 font-mono font-bold text-blue-500">Z2-PB-R5-N2</td>
                   <td className="px-4 py-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500">Refrigerado (15°C)</span></td>
                   <td className="px-4 py-3 text-right font-bold text-amber-500">18 un</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400">
+                      Chaotic Dynamic Binning
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -1202,6 +1309,105 @@ export function InventoryClient() {
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
               <button onClick={() => setIsTransferModalOpen(false)} className="px-4 py-2 text-sm text-muted-foreground hover:bg-muted rounded-lg">Cancelar</button>
               <button onClick={() => { alert('Orden de traslado TRF-00191 despachada'); setIsTransferModalOpen(false); }} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">Despachar Traslado</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Recall Blast-Radius Modal (Tier-1 SLA <2.0s Compliance) ─────────── */}
+      {isRecallModalOpen && selectedRecallLot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-rose-500/30 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-rose-500/10 text-rose-500 rounded-xl border border-rose-500/20">
+                  <ShieldAlert size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    Análisis de Blast-Radius & Retiro de Lote (Recall)
+                    <span className="text-[10px] font-mono font-normal px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                      SLA &lt;2.0s (14ms OK)
+                    </span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Trazabilidad bi-direccional instantánea: Proveedor &rarr; Bins Internos &rarr; Órdenes Despachadas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRecallModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-sm p-1 rounded-lg hover:bg-muted"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-xs">
+              <div className="bg-muted/40 p-3 rounded-xl border border-border">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block mb-1">Lote Auditado</span>
+                <span className="font-mono font-bold text-foreground text-sm">{selectedRecallLot.lotNumber}</span>
+                <span className="text-muted-foreground block text-[11px] truncate">{selectedRecallLot.productName}</span>
+              </div>
+              <div className="bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                <span className="text-[10px] text-amber-500 uppercase font-bold block mb-1">En Bodega Activa</span>
+                <span className="font-mono font-bold text-amber-500 text-sm">{selectedRecallLot.quantity} unidades</span>
+                <span className="text-amber-500/80 block text-[11px] truncate">Requiere Cuarentena Inmediata</span>
+              </div>
+              <div className="bg-rose-500/10 p-3 rounded-xl border border-rose-500/20">
+                <span className="text-[10px] text-rose-500 uppercase font-bold block mb-1">Blast-Radius Despachado</span>
+                <span className="font-mono font-bold text-rose-500 text-sm">2 Órdenes / Clientes</span>
+                <span className="text-rose-500/80 block text-[11px]">Expuestas en tránsito</span>
+              </div>
+            </div>
+
+            {/* Traceability Tree */}
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <GitBranch size={14} className="text-purple-400" /> Árbol de Dispersión Genealógica
+              </span>
+              <div className="bg-muted/30 border border-border rounded-xl p-3 space-y-2 text-xs font-mono">
+                <div className="flex items-center justify-between pb-1.5 border-b border-border/50 text-muted-foreground text-[11px]">
+                  <span>1. Recepción Dock (PO-99120)</span>
+                  <span className="text-emerald-400">Ingreso: 2026-09-15 08:30</span>
+                </div>
+                <div className="flex items-center justify-between pb-1.5 border-b border-border/50 text-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Boxes size={12} className="text-blue-400" /> Bin Actual: Z1-PA-R2-N3 ({selectedRecallLot.quantity} un)
+                  </span>
+                  <span className="text-amber-400">Listo para bloqueo</span>
+                </div>
+                <div className="flex items-center justify-between text-rose-400">
+                  <span className="flex items-center gap-1.5">
+                    <Truck size={12} /> Despacho Orden #ORD-9410 (Cliente: Café Gourmet SAS - 25 un)
+                  </span>
+                  <span className="font-bold">NOTIFICACIÓN URGENTE</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Footer */}
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <span className="text-[11px] text-muted-foreground">
+                Sellado Cryptográfico Ledger ID: <code className="text-foreground">0x9f1a...c82</code>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsRecallModalOpen(false)}
+                  className="px-3.5 py-1.5 text-xs text-muted-foreground hover:bg-muted rounded-lg"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => {
+                    alert(`Lote ${selectedRecallLot.lotNumber} puesto en CUARENTENA GxP y órdenes bloqueadas preventivamente.`);
+                    setIsRecallModalOpen(false);
+                  }}
+                  className="px-3.5 py-1.5 text-xs bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold flex items-center gap-1.5 shadow-md shadow-rose-600/20"
+                >
+                  <Lock size={12} /> Ejecutar Cuarentena GxP Inmediata
+                </button>
+              </div>
             </div>
           </div>
         </div>
