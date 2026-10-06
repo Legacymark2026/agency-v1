@@ -95,6 +95,11 @@ export async function verifyPermission(
   options?: PermissionCheckOptions
 ): Promise<boolean> {
   try {
+    // SuperAdmin bypass universal para plataforma SaaS
+    if (await isSuperAdmin(userId)) {
+      return true;
+    }
+
     const [resourcePerm, companyUser] = await Promise.all([
       options?.resourceType && options?.resourceId
         ? prisma.resourcePermission.findFirst({

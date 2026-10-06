@@ -67,6 +67,7 @@ export default async function DashboardLayout({
             where: { userId: session.user.id },
             select: { 
                 permissions: true, 
+                role: { include: { permissions: { include: { permission: true } } } }, 
                 companyId: true, 
                 company: { 
                     select: { 
@@ -95,11 +96,17 @@ export default async function DashboardLayout({
     let showOnboarding = false;
 
     if (companyUser) {
-        userPermissions = (companyUser.permissions as string[]) ?? [];
-        const settings = (companyUser.company?.defaultCompanySettings as any) || {};
-        const customRoles = settings.customRoles || [];
-        const matched = customRoles.find((r: any) => r.id === role);
-        if (matched) customRoleName = matched.name;
+        const directPerms = ((companyUser.permissions as string[]) ?? []);
+        const rolePerms = companyUser.role?.permissions?.map((p: any) => p.permission.name) ?? [];
+        userPermissions = Array.from(new Set([...directPerms, ...rolePerms]));
+        if (companyUser.role?.name) {
+            customRoleName = companyUser.role.name;
+        } else {
+            const settings = (companyUser.company?.defaultCompanySettings as any) || {};
+            const customRoles = settings.customRoles || [];
+            const matched = customRoles.find((r: any) => r.id === role);
+            if (matched) customRoleName = matched.name;
+        }
         
         // Determinar si debemos mostrar el wizard (solo para nuevas cuentas no-superadmin)
         if (companyUser.company && companyUser.company.onboardingCompleted === false && role !== UserRole.SUPER_ADMIN && (role as string) !== 'super_admin') {

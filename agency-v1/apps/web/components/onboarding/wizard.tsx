@@ -104,7 +104,7 @@ export function OnboardingWizard({ initialShow }: OnboardingWizardProps) {
 
     return (
         <Dialog open={open} onOpenChange={(val) => { if (!val) handleDismiss(); }}>
-            <DialogContent className="w-[95vw] sm:max-w-[700px] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl relative max-h-[90vh] flex flex-col">
+            <DialogContent className="w-[95vw] sm:max-w-[700px] h-[520px] max-h-[90vh] p-0 overflow-hidden bg-slate-950 border-slate-800 text-white shadow-2xl relative flex flex-col">
                 {/* Botón de Cierre */}
                 <button 
                     onClick={handleDismiss}

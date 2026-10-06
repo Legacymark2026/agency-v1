@@ -39,13 +39,14 @@ const DialogContent = React.forwardRef<
         <DialogPrimitive.Content
             ref={ref}
             className={cn(
-                "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 p-6 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.8)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden",
+                "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 flex flex-col w-full max-w-lg p-6 shadow-[0_20px_60px_-12px_rgba(0,0,0,0.8)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 overflow-hidden",
                 className
             )}
             style={{
                 background: 'var(--ds-bg-deep)',
                 border: '1px solid var(--ds-border)',
                 borderRadius: '0.15rem',
+                ...props.style,
             }}
             {...props}
         >
@@ -54,9 +55,7 @@ const DialogContent = React.forwardRef<
             {/* Ambient radial glow (top-right) */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.06),transparent_70%)] pointer-events-none" />
 
-            <div className="relative z-10">
-                {children}
-            </div>
+            {children}
 
             <DialogPrimitive.Close
                 className="absolute right-4 top-4 z-20 w-7 h-7 flex items-center justify-center transition-all opacity-60 hover:opacity-100"
