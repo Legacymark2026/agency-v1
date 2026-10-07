@@ -275,6 +275,17 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
 
+    const clearCart = useCallback(() => {
+        const pin = prompt("🔒 ACCIÓN RESTRINGIDA:\nIngrese PIN de Supervisor para anular la transacción completa (Ej. 1234):");
+        if (pin !== "1234") {
+            alert("❌ PIN Incorrecto. Operación cancelada.");
+            return;
+        }
+        setCart([]);
+        setDiscountAmount(0);
+        setCashReceived("");
+    }, []);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Prevent default browser shortcuts like Help (F1), Find (F3), etc. if needed
@@ -685,16 +696,6 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
         setCart((prev) => prev.filter((item) => item.id !== id));
     };
 
-    const clearCart = useCallback(() => {
-        const pin = prompt("🔒 ACCIÓN RESTRINGIDA:\nIngrese PIN de Supervisor para anular la transacción completa (Ej. 1234):");
-        if (pin !== "1234") {
-            alert("❌ PIN Incorrecto. Operación cancelada.");
-            return;
-        }
-        setCart([]);
-        setDiscountAmount(0);
-        setCashReceived("");
-    }, []);
 
     // Dynamic Price Tier Unit Price & Net Profit Margin
     const getEffectiveUnitPrice = (item: Product) => {
