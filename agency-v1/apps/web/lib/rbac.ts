@@ -441,7 +441,7 @@ export const MASTER_PERMISSIONS: { module: string; name: string; description: st
     { module: "iam", name: "users.manage", description: "Gestionar miembros del equipo y colaboradores" },
     { module: "iam", name: "settings.roles.manage", description: "Crear, editar y asignar roles y permisos RBAC" },
     { module: "iam", name: "iam.view_users", description: "Ver directorio de usuarios y colaboradores" },
-    { module: "iam.manage_users", name: "iam.manage_users", description: "Invitar, activar y suspender usuarios" },
+    { module: "iam", name: "iam.manage_users", description: "Invitar, activar y suspender usuarios" },
     { module: "iam", name: "iam.manage_roles", description: "Configurar jerarquías de roles y políticas de acceso" },
     { module: "iam", name: "iam.view_security", description: "Consultar registros de seguridad y autenticación" },
     { module: "iam", name: "iam.manage_settings", description: "Administrar configuración general de la organización" },
