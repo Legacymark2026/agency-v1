@@ -6,7 +6,8 @@ import {
     CheckCircle2, Printer, Wifi, RefreshCw, Key, ShieldCheck,
     DollarSign, Users, Store, ArrowRight, ToggleLeft, ToggleRight,
     Sliders, Receipt, MonitorCheck, Plus, Trash2, Edit3, CreditCard,
-    Radio, Activity, Check, X, QrCode, FileText, Smartphone, Lock, Eye
+    Radio, Activity, Check, X, QrCode, FileText, Smartphone, Lock, Eye,
+    Scan, Barcode, Volume2
 } from "lucide-react";
 import { ShiftClosingActaModal, ShiftActaData } from "@/components/pos/shift-closing-acta-modal";
 
@@ -56,6 +57,17 @@ const DEFAULT_CONFIG: PosGovernanceConfig = {
     defaultBranchName: "Sucursal Bucaramanga - Principal",
 };
 
+interface BarcodeScannerConfig {
+    enabled: boolean;
+    mode: "USB_HID" | "SERIAL_COM" | "BLUETOOTH_HID" | "CAMERA_AI";
+    prefix?: string;
+    suffix?: string; // e.g. "Enter"
+    minDigits?: number;
+    beepOnSuccess?: boolean;
+    autoSubmit?: boolean;
+    deviceModel?: string; // e.g. "Honeywell Voyager 1200g", "Zebra DS2208"
+}
+
 interface CashRegisterItem {
     id: string;
     name: string;
@@ -69,6 +81,7 @@ interface CashRegisterItem {
             ipAddress: string;
             autoOpenDrawer: boolean;
         };
+        barcodeScanner?: BarcodeScannerConfig;
         datafonoId?: string;
         qrMenu?: {
             qrSlug: string;
@@ -114,6 +127,15 @@ export default function PosSettingsPage() {
             status: "OPEN",
             config: {
                 printer: { format: "thermal_80mm", ipAddress: "192.168.1.200:9100", autoOpenDrawer: true },
+                barcodeScanner: {
+                    enabled: true,
+                    mode: "USB_HID",
+                    deviceModel: "Honeywell Voyager 1200g (USB)",
+                    suffix: "Enter",
+                    minDigits: 3,
+                    beepOnSuccess: true,
+                    autoSubmit: true,
+                },
                 datafonoId: "dat_bold_01",
                 qrMenu: {
                     qrSlug: "recepcion-caja-1",
@@ -133,6 +155,15 @@ export default function PosSettingsPage() {
             status: "CLOSED",
             config: {
                 printer: { format: "thermal_80mm", ipAddress: "192.168.2.200:9100", autoOpenDrawer: true },
+                barcodeScanner: {
+                    enabled: true,
+                    mode: "BLUETOOTH_HID",
+                    deviceModel: "Zebra DS2208 Inalámbrico",
+                    suffix: "Enter",
+                    minDigits: 3,
+                    beepOnSuccess: true,
+                    autoSubmit: true,
+                },
                 datafonoId: "dat_redeban_02",
                 qrMenu: {
                     qrSlug: "norte-caja-2",
@@ -147,7 +178,7 @@ export default function PosSettingsPage() {
     const [loadingRegisters, setLoadingRegisters] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [editingRegister, setEditingRegister] = useState<CashRegisterItem | null>(null);
-    const [registerModalTab, setRegisterModalTab] = useState<"GENERAL" | "HARDWARE" | "QR_MENU" | "DATAFONO">("GENERAL");
+    const [registerModalTab, setRegisterModalTab] = useState<"GENERAL" | "HARDWARE" | "BARCODE" | "QR_MENU" | "DATAFONO">("GENERAL");
 
     // Campos de formulario de Caja
     const [regName, setRegName] = useState("");
@@ -156,6 +187,17 @@ export default function PosSettingsPage() {
     const [regPrinterFormat, setRegPrinterFormat] = useState<"thermal_80mm" | "thermal_58mm" | "dian_a4">("thermal_80mm");
     const [regPrinterIp, setRegPrinterIp] = useState("192.168.1.200:9100");
     const [regAutoOpenDrawer, setRegAutoOpenDrawer] = useState(true);
+
+    // Campos de Lector Código de Barras por Caja
+    const [regScannerEnabled, setRegScannerEnabled] = useState(true);
+    const [regScannerMode, setRegScannerMode] = useState<"USB_HID" | "SERIAL_COM" | "BLUETOOTH_HID" | "CAMERA_AI">("USB_HID");
+    const [regScannerModel, setRegScannerModel] = useState("Honeywell Voyager 1200g / Genérico 2D");
+    const [regScannerPrefix, setRegScannerPrefix] = useState("");
+    const [regScannerSuffix, setRegScannerSuffix] = useState("Enter");
+    const [regScannerMinDigits, setRegScannerMinDigits] = useState("3");
+    const [regScannerBeep, setRegScannerBeep] = useState(true);
+    const [regScannerAutoSubmit, setRegScannerAutoSubmit] = useState(true);
+
     const [regDatafonoId, setRegDatafonoId] = useState("");
     const [regQrSlug, setRegQrSlug] = useState("");
     const [regTablePrefix, setRegTablePrefix] = useState("Mesa");
@@ -298,6 +340,17 @@ export default function PosSettingsPage() {
             setRegPrinterFormat(reg.config?.printer?.format || "thermal_80mm");
             setRegPrinterIp(reg.config?.printer?.ipAddress || "192.168.1.200:9100");
             setRegAutoOpenDrawer(reg.config?.printer?.autoOpenDrawer ?? true);
+
+            // Cargar Lector de Código de Barras por Caja
+            setRegScannerEnabled(reg.config?.barcodeScanner?.enabled ?? true);
+            setRegScannerMode(reg.config?.barcodeScanner?.mode || "USB_HID");
+            setRegScannerModel(reg.config?.barcodeScanner?.deviceModel || "Honeywell Voyager 1200g / Genérico 2D");
+            setRegScannerPrefix(reg.config?.barcodeScanner?.prefix || "");
+            setRegScannerSuffix(reg.config?.barcodeScanner?.suffix || "Enter");
+            setRegScannerMinDigits(reg.config?.barcodeScanner?.minDigits?.toString() || "3");
+            setRegScannerBeep(reg.config?.barcodeScanner?.beepOnSuccess ?? true);
+            setRegScannerAutoSubmit(reg.config?.barcodeScanner?.autoSubmit ?? true);
+
             setRegDatafonoId(reg.config?.datafonoId || "");
             setRegQrSlug(reg.config?.qrMenu?.qrSlug || `caja-${reg.id}`);
             setRegTablePrefix(reg.config?.qrMenu?.tablePrefix || "Mesa");
@@ -312,6 +365,17 @@ export default function PosSettingsPage() {
             setRegPrinterFormat("thermal_80mm");
             setRegPrinterIp("192.168.1.200:9100");
             setRegAutoOpenDrawer(true);
+
+            // Valores por defecto de Lector Código de Barras
+            setRegScannerEnabled(true);
+            setRegScannerMode("USB_HID");
+            setRegScannerModel("Lector Láser USB / Bluetooth HID");
+            setRegScannerPrefix("");
+            setRegScannerSuffix("Enter");
+            setRegScannerMinDigits("3");
+            setRegScannerBeep(true);
+            setRegScannerAutoSubmit(true);
+
             setRegDatafonoId("");
             setRegQrSlug(`caja-${tempId}`);
             setRegTablePrefix("Mesa");
@@ -333,6 +397,16 @@ export default function PosSettingsPage() {
                 format: regPrinterFormat,
                 ipAddress: regPrinterIp,
                 autoOpenDrawer: regAutoOpenDrawer,
+            },
+            barcodeScanner: {
+                enabled: regScannerEnabled,
+                mode: regScannerMode,
+                deviceModel: regScannerModel,
+                prefix: regScannerPrefix,
+                suffix: regScannerSuffix,
+                minDigits: Number(regScannerMinDigits) || 3,
+                beepOnSuccess: regScannerBeep,
+                autoSubmit: regScannerAutoSubmit,
             },
             datafonoId: regDatafonoId || undefined,
             qrMenu: {
@@ -705,6 +779,16 @@ export default function PosSettingsPage() {
                                                     </span>
                                                     <span className="font-mono text-slate-300 truncate max-w-[130px]">
                                                         {reg.config?.printer?.ipAddress || "LAN 9100"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-slate-300">
+                                                    <span className="text-slate-500 flex items-center gap-1">
+                                                        <Scan className="w-3 h-3 text-amber-400" /> Lector Barras:
+                                                    </span>
+                                                    <span className={`font-semibold truncate max-w-[130px] ${reg.config?.barcodeScanner?.enabled !== false ? "text-amber-300" : "text-slate-500"}`}>
+                                                        {reg.config?.barcodeScanner?.enabled !== false 
+                                                            ? `${reg.config?.barcodeScanner?.mode || "USB HID"} (${reg.config?.barcodeScanner?.suffix || "Enter"})`
+                                                            : "Desactivado"}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-slate-300">
@@ -1204,6 +1288,15 @@ export default function PosSettingsPage() {
                             </button>
                             <button
                                 type="button"
+                                onClick={() => setRegisterModalTab("BARCODE")}
+                                className={`py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1 ${
+                                    registerModalTab === "BARCODE" ? "border-amber-400 text-amber-300" : "border-transparent text-slate-400"
+                                }`}
+                            >
+                                <Scan className="w-3.5 h-3.5" /> Lector de Barras
+                            </button>
+                            <button
+                                type="button"
                                 onClick={() => setRegisterModalTab("QR_MENU")}
                                 className={`py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1 ${
                                     registerModalTab === "QR_MENU" ? "border-teal-400 text-teal-300" : "border-transparent text-slate-400"
@@ -1315,6 +1408,125 @@ export default function PosSettingsPage() {
                                             onChange={(e) => setRegAutoOpenDrawer(e.target.checked)}
                                             className="w-4 h-4 accent-teal-500 rounded"
                                         />
+                                    </div>
+                                </div>
+                            )}
+
+                            {registerModalTab === "BARCODE" && (
+                                <div className="space-y-4 animate-in fade-in duration-200">
+                                    <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
+                                                <Scan className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <span className="text-xs font-bold block text-white">Lector de Código de Barras en esta Caja</span>
+                                                <span className="text-[11px] text-slate-400">Permite escanear productos directamente al carrito sin usar teclado o ratón.</span>
+                                            </div>
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={regScannerEnabled}
+                                            onChange={(e) => setRegScannerEnabled(e.target.checked)}
+                                            className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-300">Tipo de Conexión del Lector</label>
+                                            <select
+                                                value={regScannerMode}
+                                                onChange={(e) => setRegScannerMode(e.target.value as any)}
+                                                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-amber-500"
+                                            >
+                                                <option value="USB_HID">USB HID (Teclado emulado - Plug & Play)</option>
+                                                <option value="BLUETOOTH_HID">Bluetooth HID Inalámbrico</option>
+                                                <option value="SERIAL_COM">Puerto Serial Virtual (COM / RS-232)</option>
+                                                <option value="CAMERA_AI">Cámara Web / Óptica AI</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-300">Modelo / Referencia del Lector</label>
+                                            <input
+                                                type="text"
+                                                value={regScannerModel}
+                                                onChange={(e) => setRegScannerModel(e.target.value)}
+                                                placeholder="Ej. Honeywell 1200g, Zebra DS2208, Datalogic"
+                                                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-amber-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-300">Sufijo Fin de Lectura</label>
+                                            <select
+                                                value={regScannerSuffix}
+                                                onChange={(e) => setRegScannerSuffix(e.target.value)}
+                                                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-amber-500 font-mono"
+                                            >
+                                                <option value="Enter">Enter (CR - Retorno de carro)</option>
+                                                <option value="Tab">Tabulador (Tab)</option>
+                                                <option value="None">Ninguno (Temporizado)</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-300">Prefijo Opcional</label>
+                                            <input
+                                                type="text"
+                                                value={regScannerPrefix}
+                                                onChange={(e) => setRegScannerPrefix(e.target.value)}
+                                                placeholder="Ej. #, @, o vacío"
+                                                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:border-amber-500"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-300">Dígitos Mínimos</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="32"
+                                                value={regScannerMinDigits}
+                                                onChange={(e) => setRegScannerMinDigits(e.target.value)}
+                                                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:border-amber-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 pt-1">
+                                        <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                                            <div>
+                                                <span className="text-xs font-bold block text-white flex items-center gap-1.5">
+                                                    <Volume2 className="w-3.5 h-3.5 text-amber-400" /> Beep de Confirmación
+                                                </span>
+                                                <span className="text-[10px] text-slate-400">Sonido auditivo al escanear</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={regScannerBeep}
+                                                onChange={(e) => setRegScannerBeep(e.target.checked)}
+                                                className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                                            <div>
+                                                <span className="text-xs font-bold block text-white flex items-center gap-1.5">
+                                                    <Check className="w-3.5 h-3.5 text-teal-400" /> Inserción Instantánea
+                                                </span>
+                                                <span className="text-[10px] text-slate-400">Añadir producto directo al carro</span>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                checked={regScannerAutoSubmit}
+                                                onChange={(e) => setRegScannerAutoSubmit(e.target.checked)}
+                                                className="w-4 h-4 accent-teal-500 rounded cursor-pointer"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             )}

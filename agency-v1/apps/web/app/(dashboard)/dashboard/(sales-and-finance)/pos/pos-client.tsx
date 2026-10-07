@@ -5,7 +5,8 @@ import {
     ShoppingCart, QrCode, CreditCard, Wallet, Building2, Plus, Minus,
     Trash2, Search, CheckCircle2, RefreshCw, Printer, AlertTriangle,
     DollarSign, ArrowRight, ShieldCheck, Lock, Sparkles, X, Check, Wifi, WifiOff, Zap, Settings,
-    Utensils, BookOpen, FileText, Users, ArrowUpRight, Tag, TrendingUp, Landmark, RotateCcw, Store
+    Utensils, BookOpen, FileText, Users, ArrowUpRight, Tag, TrendingUp, Landmark, RotateCcw, Store,
+    Scan, Barcode, Volume2
 } from "lucide-react";
 
 import { EscPosBuilder, formatEscPosTicketText } from "@/lib/escpos";
@@ -643,20 +644,62 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
         }
     }, []);
 
-    // Handle Barcode Scan
-    const handleBarcodeSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!barcodeInput.trim()) return;
+    // Audio Beep Feedback Helper for Barcode Scanner
+    const playScannerBeep = useCallback(() => {
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(1850, ctx.currentTime); // 1850Hz high pitch POS scanner beep
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08); // 80ms crisp beep
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+        } catch (_) {}
+    }, []);
+
+    // Handle Barcode Scan (Individual per cash register configuration)
+    const handleBarcodeSubmit = (e?: React.FormEvent, rawCode?: string) => {
+        if (e) e.preventDefault();
+        const codeToProcess = (rawCode !== undefined ? rawCode : barcodeInput).trim();
+        if (!codeToProcess) return;
+
+        const activeReg = cashRegisters.find(r => r.id === selectedRegisterId) || cashRegisters[0];
+        const scannerConfig = activeReg?.config?.barcodeScanner;
+
+        // If explicitly disabled in register configuration
+        if (scannerConfig && scannerConfig.enabled === false) {
+            alert(`⚠️ El Lector de Código de Barras está DESACTIVADO para la caja "${activeReg?.name}". Habilítalo en Ajustes de Caja.`);
+            return;
+        }
+
+        // Clean prefix/suffix if configured
+        let cleanCode = codeToProcess;
+        if (scannerConfig?.prefix && cleanCode.startsWith(scannerConfig.prefix)) {
+            cleanCode = cleanCode.substring(scannerConfig.prefix.length);
+        }
+        if (scannerConfig?.minDigits && cleanCode.length < scannerConfig.minDigits) {
+            alert(`⚠️ Código demasiado corto (Mínimo requerido: ${scannerConfig.minDigits} dígitos)`);
+            return;
+        }
 
         const matched = products.find(
-            (p) => p.barcode === barcodeInput.trim() || p.sku.toLowerCase() === barcodeInput.trim().toLowerCase()
+            (p) => p.barcode === cleanCode || p.sku.toLowerCase() === cleanCode.toLowerCase()
         );
 
         if (matched) {
             addToCart(matched);
             setBarcodeInput("");
+            if (scannerConfig?.beepOnSuccess !== false) {
+                playScannerBeep();
+            }
         } else {
-            alert(`No se encontró producto con código de barras: ${barcodeInput}`);
+            alert(`❌ No se encontró producto con código de barras: ${cleanCode}`);
         }
     };
 
@@ -1168,23 +1211,53 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                 <div className="lg:col-span-7 space-y-4">
                     {/* BARCODE & SEARCH CONTROLS */}
                     <div className="bg-slate-900 rounded-2xl border border-slate-800 p-4 space-y-3">
+                        {/* Dynamic Scanner Header info per Cash Register */}
+                        {(() => {
+                            const activeReg = cashRegisters.find(r => r.id === selectedRegisterId) || cashRegisters[0];
+                            const scConfig = activeReg?.config?.barcodeScanner;
+                            const isEnabled = scConfig?.enabled !== false;
+                            return (
+                                <div className="flex items-center justify-between text-xs pb-1 border-b border-slate-800/60">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
+                                            isEnabled ? "bg-amber-500/10 text-amber-400 border border-amber-500/30" : "bg-slate-800 text-slate-400"
+                                        }`}>
+                                            <Scan className="w-3.5 h-3.5 text-amber-400" />
+                                            <span>Lector de Barras ({activeReg?.name || "Caja Actual"}): {isEnabled ? (scConfig?.mode || "USB HID") : "Desactivado"}</span>
+                                        </div>
+                                        {isEnabled && scConfig?.deviceModel && (
+                                            <span className="hidden sm:inline text-[11px] text-slate-400 font-mono">
+                                                [{scConfig.deviceModel}]
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Link
+                                        href="/dashboard/settings/pos"
+                                        className="text-[11px] text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 transition-all"
+                                    >
+                                        <Settings className="w-3 h-3" /> Configurar Lector
+                                    </Link>
+                                </div>
+                            );
+                        })()}
+
                         <form onSubmit={handleBarcodeSubmit} className="flex gap-2">
                             <div className="relative flex-1">
-                                <QrCode className="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <Barcode className="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                 <input
                                     ref={barcodeRef}
                                     type="text"
-                                    placeholder="Escanea o escribe código de barras / SKU (presiona Enter)..."
+                                    placeholder="Escanea o escribe código de barras / SKU (presiona Enter o dispara el lector)..."
                                     value={barcodeInput}
                                     onChange={(e) => setBarcodeInput(e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 font-mono"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
                                 />
                             </div>
                             <button
                                 type="submit"
-                                className="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-teal-600/20 transition-all"
+                                className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-600/20 transition-all flex items-center gap-1.5"
                             >
-                                Escanear
+                                <Scan className="w-3.5 h-3.5" /> Escanear
                             </button>
                         </form>
 
