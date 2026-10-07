@@ -985,19 +985,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                         <Users className="w-3.5 h-3.5 text-sky-400" /> Historial Cajeros
                     </button>
 
-                    <button
-                        onClick={() => { fetchRegisters(); setShowCashRegisterManagerModal(true); }}
-                        className="px-3.5 py-2.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
+                    <Link
+                        href="/dashboard/settings/pos"
+                        className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all flex items-center gap-1.5"
+                        title="Ir a Configuración y Gobernanza POS (Cajas, Datáfonos y Periféricos)"
                     >
-                        <Landmark className="w-3.5 h-3.5 text-indigo-400" /> Cajas Registradoras
-                    </button>
-
-                    <button
-                        onClick={() => setShowDatafonoConfigModal(true)}
-                        className="px-3.5 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
-                    >
-                        <Settings className="w-3.5 h-3.5 text-purple-400" /> Configurar Datáfonos
-                    </button>
+                        <Settings className="w-3.5 h-3.5 text-teal-400" /> Ajustes de Caja
+                    </Link>
 
                     <button
                         onClick={() => { fetchMovements(); setShowCashMovementModal(true); }}
