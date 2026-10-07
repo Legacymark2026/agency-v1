@@ -471,6 +471,10 @@ app.post("/api/pos/orders", async (req, res) => {
             cashReceived = 0,
             discountAmount = 0,
             items = [],
+            shiftId,
+            cashierId,
+            cashierName,
+            registerId,
         } = req.body;
 
         if (!items.length) return res.status(400).json({ error: "items array required" });
@@ -529,9 +533,30 @@ app.post("/api/pos/orders", async (req, res) => {
             };
         } else {
             try {
+                // Resolver o validar turno activo en BD
+                let activeShiftRecord: any = null;
+                if (shiftId) {
+                    activeShiftRecord = await prisma.posShift.findUnique({
+                        where: { id: shiftId },
+                        include: { register: true }
+                    });
+                } else {
+                    activeShiftRecord = await prisma.posShift.findFirst({
+                        where: { companyId: cid, status: "OPEN" },
+                        include: { register: true },
+                        orderBy: { openedAt: "desc" }
+                    });
+                }
+
+                const resolvedShiftId = activeShiftRecord?.id || shiftId || null;
+                const resolvedCashierId = cashierId || activeShiftRecord?.cashierId || null;
+                const resolvedRegisterName = activeShiftRecord?.register?.name || "Caja Principal";
+
                 invoice = await prisma.invoice.create({
                     data: {
                         companyId: cid,
+                        shiftId: resolvedShiftId,
+                        cashierId: resolvedCashierId,
                         clientName: customerName,
                         clientNit: customerNit || null,
                         clientPhone: customerPhone || null,
@@ -544,11 +569,26 @@ app.post("/api/pos/orders", async (req, res) => {
                         status: "PAID",
                         currency: "COP",
                         isElectronic: true,
-                        notes: `[POS] Venta Directa en Caja | CUFE: ${cufeHash.substring(0, 16)}... | Medio: ${paymentMethod}`,
+                        notes: `[POS] ${resolvedRegisterName} | Turno: ${activeShiftRecord?.shiftCode || 'TURNO-DIRECT'} | Cajero: ${cashierName || activeShiftRecord?.cashierName || 'Cajero Principal'} | CUFE: ${cufeHash.substring(0, 16)}... | Medio: ${paymentMethod}`,
                         items: { create: processedItems },
                     },
                     include: { items: true },
                 });
+
+                // Actualizar acumuladores inmutables en PosShift (PostgreSQL)
+                if (activeShiftRecord && activeShiftRecord.status === "OPEN") {
+                    await prisma.posShift.update({
+                        where: { id: activeShiftRecord.id },
+                        data: {
+                            orderCount: { increment: 1 },
+                            totalSales: { increment: totalAmount },
+                            ...(paymentMethod === "CASH" ? { cashSalesTotal: { increment: totalAmount }, expectedCash: { increment: totalAmount } } : {}),
+                            ...(paymentMethod === "CARD_POS" ? { cardSalesTotal: { increment: totalAmount } } : {}),
+                            ...(paymentMethod === "NEQUI_PSE" ? { transferSalesTotal: { increment: totalAmount } } : {}),
+                            ...(paymentMethod === "CREDIT" ? { creditSalesTotal: { increment: totalAmount } } : {}),
+                        }
+                    }).catch(err => console.warn("[PosOrder] PosShift accumulation update warning:", err.message));
+                }
             } catch (error) {
                 console.error("Database write failed:", error);
                 return res.status(500).json({ error: 'Database write failed', message: 'Order could not be saved. Please retry.' });

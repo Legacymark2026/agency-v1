@@ -41,6 +41,10 @@ export async function POST(req: Request) {
       splitBreakdown,
       taxType = "IVA",
       tipAmount = 0,
+      shiftId,
+      cashierId,
+      cashierName,
+      registerId,
     } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -134,9 +138,30 @@ export async function POST(req: Request) {
     const cufeHash = crypto.createHash("sha384").update(rawCufeStr).digest("hex");
     const receiptNo = `POS-${Date.now().toString().slice(-6).toUpperCase()}`;
 
+    // Buscar o validar turno activo
+    let activeShiftRecord: any = null;
+    if (shiftId) {
+      activeShiftRecord = await prisma.posShift.findUnique({
+        where: { id: shiftId },
+        include: { register: true }
+      });
+    } else {
+      activeShiftRecord = await prisma.posShift.findFirst({
+        where: { companyId: targetCompanyId, status: "OPEN" },
+        include: { register: true },
+        orderBy: { openedAt: "desc" }
+      });
+    }
+
+    const resolvedShiftId = activeShiftRecord?.id || shiftId || null;
+    const resolvedCashierId = cashierId || activeShiftRecord?.cashierId || null;
+    const resolvedRegisterName = activeShiftRecord?.register?.name || "Caja Principal";
+
     const invoice = await prisma.invoice.create({
       data: {
         companyId: targetCompanyId,
+        shiftId: resolvedShiftId,
+        cashierId: resolvedCashierId,
         clientName: customerName,
         clientNit: customerNit,
         clientPhone: customerPhone || null,
@@ -149,13 +174,27 @@ export async function POST(req: Request) {
         status: "PAID",
         currency: "COP",
         isElectronic: true,
-        notes: `[POS] Venta en Mostrador | Tiquete: ${receiptNo} | CUFE: ${cufeHash.substring(0, 16)}... | Medio: ${paymentMethod}`,
+        notes: `[POS] ${resolvedRegisterName} | Turno: ${activeShiftRecord?.shiftCode || 'TURNO-DIRECT'} | Cajero: ${cashierName || activeShiftRecord?.cashierName || 'Cajero Principal'} | Tiquete: ${receiptNo} | CUFE: ${cufeHash.substring(0, 16)}... | Medio: ${paymentMethod}`,
         items: {
           create: processedItems,
         },
       },
       include: { items: true },
     });
+
+    if (activeShiftRecord && activeShiftRecord.status === "OPEN") {
+      await prisma.posShift.update({
+        where: { id: activeShiftRecord.id },
+        data: {
+          orderCount: { increment: 1 },
+          totalSales: { increment: totalAmount },
+          ...(paymentMethod === "CASH" ? { cashSalesTotal: { increment: totalAmount }, expectedCash: { increment: totalAmount } } : {}),
+          ...(paymentMethod === "CARD_POS" ? { cardSalesTotal: { increment: totalAmount } } : {}),
+          ...(paymentMethod === "NEQUI_PSE" ? { transferSalesTotal: { increment: totalAmount } } : {}),
+          ...(paymentMethod === "CREDIT" ? { creditSalesTotal: { increment: totalAmount } } : {}),
+        }
+      }).catch(err => console.warn("[POS-Orders] Shift accumulation note:", err.message));
+    }
 
     // Automated Accounting Double Entry
     let accountingResult = null;

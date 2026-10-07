@@ -2251,6 +2251,8 @@ model Invoice {
   dianStatus         String?                @map("dian_status")
   cufe               String?
   qrCode             String?                @map("qr_code")
+  shiftId            String?                @map("shift_id")
+  cashierId          String?                @map("cashier_id")
   createdAt          DateTime               @default(now()) @map("created_at")
   updatedAt          DateTime               @updatedAt @map("updated_at")
   transactions       FinancialTransaction[]
@@ -4970,14 +4972,61 @@ model PosRegister {
   closedAt       DateTime? @map("closed_at")
   config         Json?
   createdAt      DateTime  @default(now()) @map("created_at")
+  shifts         PosShift[]
 
   @@index([companyId])
   @@map("tbl_pos_registers")
 }
 
+enum PosShiftStatus {
+  OPEN
+  PENDING_SUPERVISION
+  CLOSED_BALANCED
+  CLOSED_DISCREPANCY
+  FORCE_CLOSED
+}
+
+model PosShift {
+  id                 String         @id @default(uuid())
+  shiftCode          String         @unique @map("shift_code")
+  companyId          String         @map("company_id")
+  registerId         String         @map("register_id")
+  cashierId          String         @map("cashier_id")
+  cashierName        String?        @map("cashier_name")
+  supervisorId       String?        @map("supervisor_id")
+  supervisorName     String?        @map("supervisor_name")
+  status             PosShiftStatus @default(OPEN)
+  openedAt           DateTime       @default(now()) @map("opened_at")
+  declaredClosedAt   DateTime?      @map("declared_closed_at")
+  verifiedClosedAt   DateTime?      @map("verified_closed_at")
+  openingFloat       Decimal        @default(0) @map("opening_float")
+  declaredCash       Decimal?       @map("declared_cash")
+  expectedCash       Decimal        @default(0) @map("expected_cash")
+  difference         Decimal        @default(0)
+  cashSalesTotal     Decimal        @default(0) @map("cash_sales_total")
+  cardSalesTotal     Decimal        @default(0) @map("card_sales_total")
+  transferSalesTotal Decimal        @default(0) @map("transfer_sales_total")
+  creditSalesTotal   Decimal        @default(0) @map("credit_sales_total")
+  totalSales         Decimal        @default(0) @map("total_sales")
+  orderCount         Int            @default(0) @map("order_count")
+  denominationsCount Json?          @map("denominations_count")
+  cashierNotes       String?        @map("cashier_notes")
+  supervisorNotes    String?        @map("supervisor_notes")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  register           PosRegister    @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  movements          PosMovement[]
+
+  @@index([companyId, registerId, status])
+  @@index([companyId, cashierId])
+  @@map("tbl_pos_shifts")
+}
+
 model PosMovement {
   id         String   @id
   registerId String   @map("register_id")
+  shiftId    String?  @map("shift_id")
   type       String
   amount     Decimal
   reason     String?
@@ -4985,6 +5034,9 @@ model PosMovement {
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([registerId])
+  shift      PosShift? @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
   @@map("tbl_pos_movements")
 }
 

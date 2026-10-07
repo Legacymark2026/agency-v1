@@ -414,11 +414,31 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
         window.addEventListener("online", handleOnline);
         window.addEventListener("offline", handleOffline);
 
+        // Cargar turno activo real desde PostgreSQL al montar
+        fetchActiveSession();
+        fetchRegisters();
+
         return () => {
             window.removeEventListener("online", handleOnline);
             window.removeEventListener("offline", handleOffline);
         };
     }, []);
+
+    const fetchActiveSession = async () => {
+        try {
+            const res = await fetch(`/api/pos/sessions${companyId ? `?companyId=${companyId}` : ''}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.activeSession) {
+                    setActiveSession(data.activeSession);
+                } else {
+                    setActiveSession(null);
+                }
+            }
+        } catch (e) {
+            console.warn("[POS] No se pudo sincronizar turno en vivo:", e);
+        }
+    };
 
     const handleSyncOffline = async () => {
         const pending = getOfflineOrders();
@@ -444,7 +464,8 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     companyId,
                     registerName: openRegisterName,
                     openingBalance: Number(openBaseAmount) || 0,
-                    openedById: "cajero_main",
+                    openedById: activeSession?.openedById || undefined,
+                    cashierName: configUser || "Cajero Principal",
                 }),
             });
             const data = await res.json();
@@ -473,9 +494,10 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     companyId,
-                    sessionId: activeSession?.id || "session_live_01",
+                    shiftId: activeSession?.id,
+                    sessionId: activeSession?.id,
                     registerName: activeSession?.registerName || "Caja Principal",
-                    cashierName: "Cajero Principal",
+                    cashierName: activeSession?.cashierName || configUser || "Cajero Principal",
                     expectedCash: expCash,
                     closingBalance: countToUse,
                     notes: closeNotes,
@@ -784,6 +806,10 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     paymentMethod,
                     cashReceived: receivedNum || finalTotal,
                     discountAmount: totalDiscountCombined,
+                    shiftId: activeSession?.id || undefined,
+                    cashierId: activeSession?.openedById || undefined,
+                    cashierName: activeSession?.cashierName || configUser || "Cajero Principal",
+                    registerId: activeSession?.registerId || undefined,
                     items: cart.map((i) => ({
                         productId: i.id,
                         title: i.title,
