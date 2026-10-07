@@ -66,7 +66,7 @@ export const DASHBOARD_DOMAINS_NAVIGATION: NavigationCategory[] = [
     items: [
       { title: "Monitor de SLA 99.99%", href: "/dashboard/security/sla", icon: "📉", badge: "99.99%", serviceKey: "analytics-service" },
       { title: "Seguridad & Auditoría GDPR", href: "/dashboard/security", icon: "🔒", serviceKey: "admin-service" },
-      { title: "Roles & Permisos RBAC", href: "/dashboard/roles", icon: "🔑", serviceKey: "auth-service" },
+      { title: "Roles & Permisos RBAC", href: "/dashboard/settings/roles", icon: "🔑", serviceKey: "auth-service" },
       { title: "Ajustes de Empresa", href: "/dashboard/settings", icon: "⚙️", serviceKey: "admin-service" },
     ],
   },

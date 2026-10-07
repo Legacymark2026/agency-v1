@@ -404,7 +404,7 @@ export const NAV_AREAS: NavArea[] = [
                 icon: <Users size={15} />,
                 submodules: [
                     { href: "/dashboard/users", label: "Directorio de Usuarios", icon: <Users size={13} />, code: "USR" },
-                    { href: "/dashboard/roles", label: "Control de Roles & RBAC", icon: <Shield size={13} />, code: "ROL" },
+                    { href: "/dashboard/settings/roles", label: "Control de Roles & RBAC", icon: <Shield size={13} />, code: "ROL" },
                 ]
             },
             {
@@ -447,8 +447,8 @@ export function DashboardSidebar({ role, name, email, image, companyLogoUrl, acc
                         if (sub.code === "ROL") {
                             return {
                                 ...sub,
-                                href: isSuperAdmin ? "/dashboard/roles" : "/dashboard/settings/roles",
-                                label: isSuperAdmin ? "Control Global de Roles" : "Roles y Permisos de Empresa",
+                                href: "/dashboard/settings/roles",
+                                label: "Roles y Permisos (RBAC)",
                             };
                         }
                         return sub;
