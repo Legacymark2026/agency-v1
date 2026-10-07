@@ -32,20 +32,25 @@ interface PermissionGroup {
 }
 
 const MODULE_LABELS: Record<string, { label: string; color: string }> = {
+  dashboard: { label: "Tablero Principal", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+  pos: { label: "Terminal POS y Caja", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+  invoicing: { label: "Facturación DIAN & B2B", color: "text-teal-400 bg-teal-500/10 border-teal-500/20" },
+  finance: { label: "Finanzas & Contabilidad", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
   crm: { label: "CRM & Ventas", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
   marketing: { label: "Marketing Hub", color: "text-purple-400 bg-purple-500/10 border-purple-500/20" },
-  content: { label: "Contenido & Blog", color: "text-pink-400 bg-pink-500/10 border-pink-500/20" },
-  finance: { label: "Finanzas & Tesorería", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  kanban: { label: "Kanban & Tareas", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
+  operations: { label: "Operaciones & Logística", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
   hr: { label: "Recursos Humanos & Nómina", color: "text-rose-400 bg-rose-500/10 border-rose-500/20" },
-  social: { label: "Redes Sociales", color: "text-sky-400 bg-sky-500/10 border-sky-500/20" },
-  settings: { label: "Gobernanza & Ajustes", color: "text-teal-400 bg-teal-500/10 border-teal-500/20" },
-  analytics: { label: "Analítica & KPIs", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
-  inbox: { label: "Inbox Omnicanal", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
+  inbox: { label: "Inbox Omnicanal & Soporte", color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20" },
   media: { label: "Creative Media Studio", color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
-  events: { label: "Agenda & Calendario", color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" },
+  content: { label: "Contenido & Blog", color: "text-pink-400 bg-pink-500/10 border-pink-500/20" },
   ai: { label: "Agentes Cognitivos IA", color: "text-violet-400 bg-violet-500/10 border-violet-500/20" },
+  developer: { label: "Desarrollo & APIs", color: "text-sky-400 bg-sky-500/10 border-sky-500/20" },
+  security: { label: "Seguridad & Cumplimiento", color: "text-red-400 bg-red-500/10 border-red-500/20" },
+  team: { label: "Equipo & Expertos", color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" },
+  proposals: { label: "Propuestas Comerciales", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
+  notifications: { label: "Alertas & Notificaciones", color: "text-slate-400 bg-slate-500/10 border-slate-500/20" },
   iam: { label: "Identidad & Accesos (IAM)", color: "text-teal-400 bg-teal-500/10 border-teal-500/20" },
+  system: { label: "Gobernanza del Sistema", color: "text-slate-300 bg-slate-500/10 border-slate-500/20" },
 };
 
 export function RbacMatrixView({

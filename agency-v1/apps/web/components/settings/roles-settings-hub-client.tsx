@@ -27,20 +27,25 @@ import { DelegationGovernanceCard } from "./delegation-governance-card";
 type RbacSubTab = "roles" | "matrix" | "users" | "delegation";
 
 const MODULE_LABELS: Record<string, string> = {
+  dashboard: "Tablero Principal",
+  pos: "Terminal POS y Caja",
+  invoicing: "Facturación DIAN & B2B",
+  finance: "Finanzas & Contabilidad",
   crm: "CRM y Ventas",
   marketing: "Marketing Hub",
-  content: "Contenido y Blog",
-  finance: "Finanzas y Tesorería",
-  kanban: "Kanban y Tareas",
+  operations: "Operaciones y Logística",
   hr: "Recursos Humanos y Nómina",
-  social: "Redes Sociales",
-  settings: "Configuración y Gobernanza",
-  analytics: "Analítica y Métricas",
-  inbox: "Bandeja de Entrada",
-  media: "Medios y Video",
-  events: "Eventos y Calendario",
-  ai: "Inteligencia Artificial",
-  iam: "Identidad y Accesos",
+  inbox: "Bandeja de Entrada & Soporte",
+  media: "Medios y Video Studio",
+  content: "Contenido y Blog",
+  ai: "Inteligencia Artificial & RAG",
+  developer: "Desarrollo y APIs",
+  security: "Seguridad y Cumplimiento",
+  team: "Equipo y Expertos",
+  proposals: "Propuestas Comerciales",
+  notifications: "Alertas y Notificaciones",
+  iam: "Identidad y Accesos (IAM)",
+  system: "Gobernanza del Sistema",
 };
 
 export function RolesSettingsHubClient() {

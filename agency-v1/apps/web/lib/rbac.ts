@@ -287,25 +287,50 @@ export function getAccessibleRoutes(role: UserRole): string[] {
 // Cada permiso del editor de roles controla la visibilidad de las rutas.
 // Los permisos están en formato 'scope.action' (ej. crm.view_all, mkt.view)
 export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
-    // Dashboard base
+    // Dashboard & Analítica General
     { perm: "dashboard.view", routes: ["/dashboard", "/dashboard/pos"] },
-    // POS Terminal & Catalog & Promotions
+    { perm: "dashboard.analytics", routes: ["/dashboard/analytics", "/dashboard/admin/ai-insights", "/dashboard/seo"] },
+
+    // IAM / Identidad y Roles
+    { perm: "iam.view_users", routes: ["/dashboard/users", "/dashboard/settings/members"] },
+    { perm: "iam.manage_users", routes: ["/dashboard/users", "/dashboard/experts", "/dashboard/settings/members"] },
+    { perm: "iam.manage_roles", routes: ["/dashboard/users", "/dashboard/roles", "/dashboard/settings/roles"] },
+    { perm: "iam.view_security", routes: ["/dashboard/security", "/dashboard/security/sla"] },
+    { perm: "iam.manage_settings", routes: ["/dashboard/settings", "/dashboard/settings/system-parameters"] },
+    { perm: "users.manage", routes: ["/dashboard/users", "/dashboard/experts", "/dashboard/settings/members"] },
+    { perm: "settings.roles.manage", routes: ["/dashboard/roles", "/dashboard/settings/roles"] },
+
+    // Terminal POS, Catálogo y Promociones
     { perm: "pos.view", routes: ["/dashboard/pos", "/dashboard/catalog", "/dashboard/promotions"] },
+    { perm: "pos.orders.create", routes: ["/dashboard/pos"] },
     { perm: "pos.manage", routes: ["/dashboard/pos", "/dashboard/catalog", "/dashboard/promotions"] },
-    // IAM / Admin
-    { perm: "iam.view_users", routes: ["/dashboard/users"] },
-    { perm: "iam.manage_users", routes: ["/dashboard/users", "/dashboard/experts"] },
-    { perm: "iam.manage_roles", routes: ["/dashboard/users"] },
-    { perm: "iam.view_security", routes: ["/dashboard/security"] },
-    { perm: "manage_settings", routes: ["/dashboard/settings"] },
-    // Calendario
-    { perm: "calendar.view", routes: ["/dashboard/events"] },
-    { perm: "calendar.create", routes: ["/dashboard/events"] },
-    { perm: "calendar.delete", routes: ["/dashboard/events"] },
-    // CRM
-    { perm: "crm.view_own", routes: ["/dashboard/pos", "/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
-    { perm: "crm.view_all", routes: ["/dashboard/pos", "/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
-    { perm: "crm.edit", routes: ["/dashboard/pos", "/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "catalog.view", routes: ["/dashboard/catalog"] },
+    { perm: "catalog.manage", routes: ["/dashboard/catalog"] },
+    { perm: "promotions.manage", routes: ["/dashboard/promotions"] },
+
+    // Facturación DIAN & B2B
+    { perm: "invoices.read", routes: ["/dashboard/invoicing", "/dashboard/admin/invoices"] },
+    { perm: "invoices.create", routes: ["/dashboard/invoicing", "/dashboard/admin/invoices"] },
+    { perm: "invoices.manage", routes: ["/dashboard/invoicing", "/dashboard/admin/invoices"] },
+    { perm: "invoicing.dian", routes: ["/dashboard/invoicing", "/dashboard/dian"] },
+    { perm: "invoicing.ocr", routes: ["/dashboard/invoicing/ocr-scanner"] },
+    { perm: "invoicing.fraud_guard", routes: ["/dashboard/invoicing/fraud-guard"] },
+
+    // Contabilidad & Libros
+    { perm: "accounting.view", routes: ["/dashboard/accounting", "/dashboard/accounting/costs"] },
+    { perm: "accounting.manage", routes: ["/dashboard/accounting"] },
+    { perm: "accounting.costs", routes: ["/dashboard/accounting/costs"] },
+
+    // Tesorería & Pasarelas
+    { perm: "treasury.view", routes: ["/dashboard/admin/treasury", "/dashboard/admin/invoices", "/dashboard/settings/billing"] },
+    { perm: "treasury.manage", routes: ["/dashboard/admin/treasury", "/dashboard/admin/invoices"] },
+    { perm: "treasury.export", routes: ["/dashboard/admin/treasury"] },
+    { perm: "gateways.manage", routes: ["/dashboard/settings/billing/gateways"] },
+
+    // CRM / Ventas & Pipeline
+    { perm: "crm.view_own", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.view_all", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.edit", routes: ["/dashboard/admin/crm", "/dashboard/admin/crm/leads", "/dashboard/admin/crm/deals", "/dashboard/admin/sales", "/dashboard/admin/sales/goals", "/dashboard/admin/crm/commissions", "/dashboard/admin/crm/automation", "/dashboard/admin/crm/sequences", "/dashboard/admin/crm/assignment"] },
     { perm: "crm.delete", routes: ["/dashboard/admin/crm/leads"] },
     { perm: "crm.export", routes: ["/dashboard/admin/crm"] },
     { perm: "crm.pipeline", routes: ["/dashboard/admin/crm/pipeline", "/dashboard/admin/sales"] },
@@ -313,77 +338,94 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "crm.reports", routes: ["/dashboard/admin/crm/reports"] },
     { perm: "crm.templates", routes: ["/dashboard/admin/crm/templates"] },
     { perm: "crm.scoring", routes: ["/dashboard/admin/crm/scoring"] },
-    // Marketing
+    { perm: "crm.commissions", routes: ["/dashboard/admin/crm/commissions"] },
+    { perm: "crm.sequences", routes: ["/dashboard/admin/crm/sequences"] },
+    { perm: "crm.automation", routes: ["/dashboard/admin/crm/automation", "/dashboard/admin/crm/assignment"] },
+    { perm: "crm.assignment", routes: ["/dashboard/admin/crm/assignment"] },
+
+    // Marketing & Growth
     { perm: "mkt.view", routes: ["/dashboard/marketing", "/dashboard/marketing/enterprise", "/dashboard/admin/marketing"] },
     { perm: "mkt.campaigns", routes: ["/dashboard/marketing/campaigns", "/dashboard/admin/marketing/campaigns"] },
     { perm: "mkt.spend", routes: ["/dashboard/marketing/spend", "/dashboard/admin/marketing/spend"] },
     { perm: "mkt.links", routes: ["/dashboard/marketing/links", "/dashboard/admin/marketing/links"] },
     { perm: "mkt.edit", routes: ["/dashboard/marketing", "/dashboard/marketing/enterprise", "/dashboard/admin/marketing"] },
-    { perm: "mkt.send", routes: ["/dashboard/admin/marketing/campaigns"] },
+    { perm: "mkt.send", routes: ["/dashboard/admin/marketing/campaigns", "/dashboard/marketing/email-blast"] },
     { perm: "mkt.integrations", routes: ["/dashboard/admin/marketing/settings"] },
     { perm: "mkt.creative", routes: ["/dashboard/admin/marketing/creative-studio"] },
-    // Automatización
+    { perm: "mkt.ab_testing", routes: ["/dashboard/admin/marketing/campaigns"] },
+    { perm: "mkt.broadcast", routes: ["/dashboard/marketing/email-blast"] },
+    { perm: "mkt.listening", routes: ["/dashboard/marketing/listening"] },
+    { perm: "seo.view", routes: ["/dashboard/seo"] },
+
+    // Operaciones & Logística
+    { perm: "inventory.view", routes: ["/dashboard/inventory", "/dashboard/channels"] },
+    { perm: "inventory.manage", routes: ["/dashboard/inventory", "/dashboard/channels"] },
+    { perm: "booking.view", routes: ["/dashboard/booking", "/dashboard/calendar", "/dashboard/events"] },
+    { perm: "booking.manage", routes: ["/dashboard/booking"] },
+    { perm: "calendar.view", routes: ["/dashboard/calendar", "/dashboard/events"] },
+    { perm: "calendar.create", routes: ["/dashboard/calendar", "/dashboard/events"] },
+    { perm: "calendar.delete", routes: ["/dashboard/calendar", "/dashboard/events"] },
+    { perm: "projects.view", routes: ["/dashboard/projects", "/dashboard/kanban"] },
+    { perm: "projects.create", routes: ["/dashboard/projects"] },
+    { perm: "projects.manage", routes: ["/dashboard/projects", "/dashboard/kanban"] },
+    { perm: "kanban.view", routes: ["/dashboard/kanban"] },
+
+    // Recursos Humanos & Nómina
+    { perm: "hr.view", routes: ["/dashboard/admin/hr", "/dashboard/admin/hr/time-tracking", "/dashboard/settings/hr"] },
+    { perm: "hr.manage", routes: ["/dashboard/admin/hr", "/dashboard/admin/hr/time-tracking", "/dashboard/settings/hr"] },
+    { perm: "payroll.view", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/reports", "/dashboard/admin/payroll/expenses"] },
+    { perm: "payroll.manage", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new"] },
+    { perm: "payroll.approve", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/expenses"] },
+    { perm: "payroll.expenses", routes: ["/dashboard/admin/payroll/expenses"] },
+
+    // Inbox Omnicanal & Chat
+    { perm: "inbox.view", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
+    { perm: "inbox.send", routes: ["/dashboard/inbox", "/dashboard/chat"] },
+    { perm: "inbox.manage", routes: ["/dashboard/inbox", "/dashboard/settings/inbox/macros"] },
+    { perm: "chat.view", routes: ["/dashboard/chat"] },
+    { perm: "chat.send", routes: ["/dashboard/chat"] },
+    { perm: "macros.manage", routes: ["/dashboard/settings/inbox/macros"] },
+
+    // Medios, Contenido & Video
+    { perm: "content.view", routes: ["/dashboard/feed", "/dashboard/posts", "/dashboard/posts/categories", "/dashboard/posts/comments"] },
+    { perm: "content.create", routes: ["/dashboard/posts", "/dashboard/posts/create"] },
+    { perm: "content.publish", routes: ["/dashboard/posts", "/dashboard/feed"] },
+    { perm: "content.delete", routes: ["/dashboard/posts"] },
+    { perm: "assets.upload", routes: ["/dashboard/media", "/dashboard/posts"] },
+    { perm: "assets.delete", routes: ["/dashboard/media", "/dashboard/posts"] },
+    { perm: "video.view", routes: ["/dashboard/video", "/dashboard/tools/video-editor"] },
+    { perm: "video.manage", routes: ["/dashboard/video", "/dashboard/tools/video-editor"] },
+    { perm: "voice.manage", routes: ["/dashboard/voice"] },
+
+    // Agentes de IA & Swarms
+    { perm: "agents.view", routes: ["/dashboard/settings/agents", "/dashboard/settings/agents/teams"] },
+    { perm: "agents.manage", routes: ["/dashboard/settings/agents", "/dashboard/settings/agents/teams", "/dashboard/settings/agents/delegation"] },
+    { perm: "agents.deploy", routes: ["/dashboard/settings/agents"] },
+    { perm: "knowledge.manage", routes: ["/dashboard/settings/agents/knowledge"] },
+    { perm: "skillchains.manage", routes: ["/dashboard/settings/agents/skillchains"] },
+
+    // Herramientas de Desarrollo & Automatización
+    { perm: "api.view", routes: ["/dashboard/tools/api-docs", "/dashboard/settings/developer"] },
+    { perm: "api.keys.manage", routes: ["/dashboard/settings/developer"] },
+    { perm: "webhooks.manage", routes: ["/dashboard/tools/webhooks"] },
     { perm: "automation.view", routes: ["/dashboard/admin/automation", "/dashboard/admin/architecture"] },
     { perm: "automation.manage", routes: ["/dashboard/admin/automation"] },
-    // Inbox & Chat & Feed
-    { perm: "inbox.view", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
-    { perm: "inbox.send", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
-    { perm: "inbox.manage", routes: ["/dashboard/inbox", "/dashboard/chat", "/dashboard/feed"] },
-    { perm: "chat.view", routes: ["/dashboard/chat"] },
-    { perm: "feed.view", routes: ["/dashboard/feed"] },
-    // Contenido
-    { perm: "content.view", routes: ["/dashboard/posts", "/dashboard/posts/categories"] },
-    { perm: "content.create", routes: ["/dashboard/posts", "/dashboard/posts/create"] },
-    { perm: "content.publish", routes: ["/dashboard/posts"] },
-    { perm: "content.delete", routes: ["/dashboard/posts"] },
-    // Proyectos
-    { perm: "projects.view", routes: ["/dashboard/projects"] },
-    { perm: "projects.create", routes: ["/dashboard/projects"] },
-    { perm: "projects.manage", routes: ["/dashboard/projects"] },
-    // Analítica
-    { perm: "analytics.view", routes: ["/dashboard/analytics", "/dashboard/admin/ai-insights", "/dashboard/seo"] },
-    { perm: "analytics.reports", routes: ["/dashboard/analytics", "/dashboard/admin/ai-insights", "/dashboard/seo"] },
-    { perm: "analytics.export", routes: ["/dashboard/analytics"] },
-    // Assets
-    { perm: "assets.upload", routes: ["/dashboard/posts"] },
-    { perm: "assets.delete", routes: ["/dashboard/posts"] },
-    // Equipo
-    { perm: "team.view", routes: ["/dashboard/experts"] },
-    { perm: "team.invite", routes: ["/dashboard/users", "/dashboard/experts"] },
-    { perm: "team.roles", routes: ["/dashboard/users", "/dashboard/settings"] },
-    // Finanzas y Tesorería
-    { perm: "treasury.view", routes: ["/dashboard/admin/treasury", "/dashboard/admin/invoices"] },
-    { perm: "treasury.manage", routes: ["/dashboard/admin/treasury", "/dashboard/admin/invoices"] },
-    { perm: "treasury.export", routes: ["/dashboard/admin/treasury"] },
-    // Nómina y Operaciones
-    { perm: "payroll.view", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses", "/dashboard/admin/operations"] },
-    { perm: "payroll.manage", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/expenses", "/dashboard/admin/operations"] },
-    { perm: "payroll.approve", routes: ["/dashboard/admin/payroll", "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/expenses"] },
-    // Propuestas comerciales
-    { perm: "proposals.view", routes: ["/dashboard/admin/proposals"] },
+    { perm: "architecture.view", routes: ["/dashboard/admin/architecture"] },
+
+    // Seguridad & Compliance
+    { perm: "security.view", routes: ["/dashboard/security", "/dashboard/security/audit-ledger", "/dashboard/security/sla"] },
+    { perm: "audit.view", routes: ["/dashboard/security/audit-ledger", "/dashboard/admin/audit-logs", "/dashboard/settings/audit-logs"] },
+    { perm: "privacy.manage", routes: ["/dashboard/privacy-portal", "/dashboard/settings/privacy"] },
+    { perm: "system.parameters", routes: ["/dashboard/settings/system-parameters"] },
+
+    // Propuestas y Clientes
+    { perm: "proposals.view", routes: ["/dashboard/admin/proposals", "/dashboard/client/proposals"] },
     { perm: "proposals.manage", routes: ["/dashboard/admin/proposals"] },
-    // Agentes de IA
-    { perm: "agents.view", routes: ["/dashboard/settings/agents"] },
-    { perm: "agents.manage", routes: ["/dashboard/settings/agents"] },
-    { perm: "agents.deploy", routes: ["/dashboard/settings/agents"] },
-    // Video Editor
-    { perm: "video.view", routes: ["/dashboard/tools/video-editor", "/dashboard/video"] },
-    { perm: "video.manage", routes: ["/dashboard/tools/video-editor", "/dashboard/video"] },
-    // Notificaciones
+    { perm: "team.view", routes: ["/dashboard/experts", "/dashboard/settings/members"] },
+    { perm: "team.invite", routes: ["/dashboard/users", "/dashboard/experts", "/dashboard/settings/members"] },
+    { perm: "team.roles", routes: ["/dashboard/users", "/dashboard/roles", "/dashboard/settings/roles"] },
     { perm: "notifications.view", routes: ["/dashboard/settings/notifications"] },
     { perm: "notifications.manage", routes: ["/dashboard/settings/notifications"] },
-    // HR — Time Tracking
-    { perm: "hr.view", routes: ["/dashboard/admin/hr", "/dashboard/admin/hr/time-tracking"] },
-    { perm: "hr.manage", routes: ["/dashboard/admin/hr", "/dashboard/admin/hr/time-tracking"] },
-    // Marketing — Creative Studio
-    { perm: "mkt.creative", routes: ["/dashboard/admin/marketing/creative-studio"] },
-    { perm: "mkt.ab_testing", routes: ["/dashboard/admin/marketing/campaigns"] },
-    // CRM — Advanced
-    { perm: "crm.scoring", routes: ["/dashboard/admin/crm/scoring"] },
-    { perm: "crm.templates", routes: ["/dashboard/admin/crm/templates"] },
-    { perm: "crm.commissions", routes: ["/dashboard/admin/crm/commissions"] },
-    { perm: "crm.sequences", routes: ["/dashboard/admin/crm/sequences"] },
-    { perm: "crm.automation", routes: ["/dashboard/admin/crm/automation", "/dashboard/admin/crm/assignment"] },
 ];
 
 // ─── Master Permission List (for seed scripts) ──────────────────────────────
@@ -391,92 +433,142 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
 // to ensure the Permission table is always in sync with the codebase.
 
 export const MASTER_PERMISSIONS: { module: string; name: string; description: string }[] = [
-    // Dashboard
-    { module: "dashboard", name: "dashboard.view", description: "Ver el dashboard principal" },
-    // IAM
-    { module: "iam", name: "iam.view_users", description: "Ver lista de usuarios" },
-    { module: "iam", name: "iam.manage_users", description: "Gestionar usuarios (invitar, desactivar)" },
-    { module: "iam", name: "iam.manage_roles", description: "Gestionar roles y permisos" },
-    { module: "iam", name: "iam.view_security", description: "Ver configuración de seguridad" },
-    { module: "iam", name: "manage_settings", description: "Gestionar configuración general" },
-    // Calendar
-    { module: "calendar", name: "calendar.view", description: "Ver eventos del calendario" },
-    { module: "calendar", name: "calendar.create", description: "Crear eventos" },
-    { module: "calendar", name: "calendar.delete", description: "Eliminar eventos" },
-    // CRM
-    { module: "crm", name: "crm.view_own", description: "Ver leads propios" },
-    { module: "crm", name: "crm.view_all", description: "Ver todos los leads" },
-    { module: "crm", name: "crm.edit", description: "Editar leads y deals" },
-    { module: "crm", name: "crm.delete", description: "Eliminar leads" },
-    { module: "crm", name: "crm.export", description: "Exportar datos del CRM" },
-    { module: "crm", name: "crm.pipeline", description: "Gestionar pipeline de ventas" },
-    { module: "crm", name: "crm.tasks", description: "Gestionar tareas del CRM" },
-    { module: "crm", name: "crm.reports", description: "Ver reportes del CRM" },
-    { module: "crm", name: "crm.templates", description: "Gestionar plantillas del CRM" },
-    { module: "crm", name: "crm.scoring", description: "Configurar Lead Scoring" },
-    { module: "crm", name: "crm.commissions", description: "Ver y gestionar comisiones" },
-    { module: "crm", name: "crm.sequences", description: "Gestionar secuencias de email" },
-    { module: "crm", name: "crm.automation", description: "Configurar reglas de automatización CRM" },
-    // Marketing
-    { module: "marketing", name: "mkt.view", description: "Ver módulo de marketing" },
-    { module: "marketing", name: "mkt.campaigns", description: "Gestionar campañas" },
-    { module: "marketing", name: "mkt.spend", description: "Ver presupuesto publicitario" },
-    { module: "marketing", name: "mkt.links", description: "Gestionar links de tracking" },
-    { module: "marketing", name: "mkt.edit", description: "Editar contenido de marketing" },
-    { module: "marketing", name: "mkt.send", description: "Enviar campañas" },
-    { module: "marketing", name: "mkt.integrations", description: "Configurar integraciones de marketing" },
-    { module: "marketing", name: "mkt.creative", description: "Acceder al Creative Studio" },
-    { module: "marketing", name: "mkt.ab_testing", description: "Gestionar A/B testing" },
-    // Automation
-    { module: "automation", name: "automation.view", description: "Ver workflows" },
-    { module: "automation", name: "automation.manage", description: "Crear y editar workflows" },
-    // Inbox
-    { module: "inbox", name: "inbox.view", description: "Ver conversaciones del inbox" },
-    { module: "inbox", name: "inbox.send", description: "Enviar mensajes" },
-    { module: "inbox", name: "inbox.manage", description: "Gestionar conversaciones y asignaciones" },
-    // Content
-    { module: "content", name: "content.view", description: "Ver posts y contenido" },
-    { module: "content", name: "content.create", description: "Crear contenido" },
-    { module: "content", name: "content.publish", description: "Publicar contenido" },
-    { module: "content", name: "content.delete", description: "Eliminar contenido" },
-    // Projects
-    { module: "projects", name: "projects.view", description: "Ver proyectos" },
-    { module: "projects", name: "projects.create", description: "Crear proyectos" },
-    { module: "projects", name: "projects.manage", description: "Gestionar proyectos" },
-    // Analytics
-    { module: "analytics", name: "analytics.view", description: "Ver analítica" },
-    { module: "analytics", name: "analytics.reports", description: "Ver reportes avanzados" },
-    { module: "analytics", name: "analytics.export", description: "Exportar datos analíticos" },
-    // Assets
-    { module: "assets", name: "assets.upload", description: "Subir archivos y medios" },
-    { module: "assets", name: "assets.delete", description: "Eliminar archivos y medios" },
-    // Team
-    { module: "team", name: "team.view", description: "Ver miembros del equipo" },
-    { module: "team", name: "team.invite", description: "Invitar miembros" },
-    { module: "team", name: "team.roles", description: "Asignar roles a miembros" },
-    // Finance — Treasury
-    { module: "finance", name: "treasury.view", description: "Ver tesorería y facturas" },
-    { module: "finance", name: "treasury.manage", description: "Gestionar tesorería" },
-    { module: "finance", name: "treasury.export", description: "Exportar datos financieros" },
-    // Finance — Payroll
-    { module: "finance", name: "payroll.view", description: "Ver nómina y operaciones" },
-    { module: "finance", name: "payroll.manage", description: "Procesar nómina" },
-    { module: "finance", name: "payroll.approve", description: "Aprobar pagos de nómina" },
-    // Proposals
-    { module: "proposals", name: "proposals.view", description: "Ver propuestas comerciales" },
-    { module: "proposals", name: "proposals.manage", description: "Crear y gestionar propuestas" },
-    // AI Agents
-    { module: "agents", name: "agents.view", description: "Ver agentes de IA configurados" },
-    { module: "agents", name: "agents.manage", description: "Crear y editar agentes de IA" },
-    { module: "agents", name: "agents.deploy", description: "Desplegar agentes en producción" },
-    // Video Editor
-    { module: "video", name: "video.view", description: "Ver contenido de video" },
-    { module: "video", name: "video.manage", description: "Crear y editar videos" },
-    // Notifications
-    { module: "notifications", name: "notifications.view", description: "Ver configuración de notificaciones" },
-    { module: "notifications", name: "notifications.manage", description: "Gestionar preferencias de notificaciones" },
-    // HR
-    { module: "hr", name: "hr.view", description: "Ver módulo de RRHH" },
-    { module: "hr", name: "hr.manage", description: "Gestionar RRHH y time tracking" },
+    // Dashboard & Analítica
+    { module: "dashboard", name: "dashboard.view", description: "Ver el dashboard principal de la plataforma" },
+    { module: "dashboard", name: "dashboard.analytics", description: "Consultar métricas y analítica ejecutiva global" },
+
+    // IAM (Identidad y Roles)
+    { module: "iam", name: "users.manage", description: "Gestionar miembros del equipo y colaboradores" },
+    { module: "iam", name: "settings.roles.manage", description: "Crear, editar y asignar roles y permisos RBAC" },
+    { module: "iam", name: "iam.view_users", description: "Ver directorio de usuarios y colaboradores" },
+    { module: "iam.manage_users", name: "iam.manage_users", description: "Invitar, activar y suspender usuarios" },
+    { module: "iam", name: "iam.manage_roles", description: "Configurar jerarquías de roles y políticas de acceso" },
+    { module: "iam", name: "iam.view_security", description: "Consultar registros de seguridad y autenticación" },
+    { module: "iam", name: "iam.manage_settings", description: "Administrar configuración general de la organización" },
+
+    // POS & Terminal de Ventas
+    { module: "pos", name: "pos.view", description: "Acceder al terminal de punto de venta (POS)" },
+    { module: "pos", name: "pos.orders.create", description: "Crear y cobrar órdenes de venta en caja" },
+    { module: "pos", name: "pos.manage", description: "Apertura, cierre de turnos y arqueos de caja" },
+    { module: "pos", name: "catalog.view", description: "Consultar catálogo de productos y precios" },
+    { module: "pos", name: "catalog.manage", description: "Crear y actualizar artículos, categorías y precios" },
+    { module: "pos", name: "promotions.manage", description: "Administrar cupones, promociones y descuentos" },
+
+    // Facturación Electrónica DIAN & B2B
+    { module: "invoicing", name: "invoices.read", description: "Ver facturas electrónicas emitidas y recibidas" },
+    { module: "invoicing", name: "invoices.create", description: "Emitir facturas electrónicas B2B y notas crédito" },
+    { module: "invoicing", name: "invoices.manage", description: "Anular, reenviar y conciliar facturas" },
+    { module: "invoicing", name: "invoicing.dian", description: "Gestionar resoluciones, certificados y conexión DIAN" },
+    { module: "invoicing", name: "invoicing.ocr", description: "Digitalizar facturas y recibos con escáner OCR" },
+    { module: "invoicing", name: "invoicing.fraud_guard", description: "Supervisar alertas y validaciones del guardián anti-fraude" },
+
+    // Contabilidad & Finanzas
+    { module: "finance", name: "accounting.view", description: "Consultar balance, plan único de cuentas (PUC) y libros" },
+    { module: "finance", name: "accounting.manage", description: "Asentar comprobantes contables y ajustes de periodo" },
+    { module: "finance", name: "accounting.costs", description: "Gestionar centros de costos y márgenes de rentabilidad" },
+    { module: "finance", name: "treasury.view", description: "Consultar saldos, movimientos y cuentas de tesorería" },
+    { module: "finance", name: "treasury.manage", description: "Registrar cobros, transferencias y pagos bancarios" },
+    { module: "finance", name: "treasury.export", description: "Exportar extractos e informes financieros para auditoría" },
+    { module: "finance", name: "gateways.manage", description: "Configurar pasarelas de pago (Wompi, Stripe, Bold, MercadoPago)" },
+
+    // CRM & Ventas
+    { module: "crm", name: "crm.view_own", description: "Ver prospectos y negociaciones asignadas al usuario" },
+    { module: "crm", name: "crm.view_all", description: "Ver todos los leads y negociaciones de la empresa" },
+    { module: "crm", name: "crm.edit", description: "Crear y editar prospectos, cuentas y oportunidades" },
+    { module: "crm", name: "crm.delete", description: "Eliminar prospectos y tratos cerrados o descartados" },
+    { module: "crm", name: "crm.export", description: "Exportar base de datos de leads y contactos" },
+    { module: "crm", name: "crm.pipeline", description: "Personalizar etapas y embudos de ventas" },
+    { module: "crm", name: "crm.tasks", description: "Gestionar llamadas, reuniones y tareas de seguimiento" },
+    { module: "crm", name: "crm.reports", description: "Ver informes de conversión, pronósticos y rendimiento comercial" },
+    { module: "crm", name: "crm.templates", description: "Administrar plantillas de correo y propuestas" },
+    { module: "crm", name: "crm.scoring", description: "Ajustar reglas predictivas de Lead Scoring" },
+    { module: "crm", name: "crm.commissions", description: "Calcular y liquidar comisiones de asesores comerciales" },
+    { module: "crm", name: "crm.sequences", description: "Diseñar secuencias automatizadas de prospección comercial" },
+    { module: "crm", name: "crm.automation", description: "Configurar flujos de trabajo automáticos en el CRM" },
+    { module: "crm", name: "crm.assignment", description: "Reglas de round-robin y asignación de prospectos" },
+
+    // Marketing Hub
+    { module: "marketing", name: "mkt.view", description: "Acceder al centro de mando de marketing" },
+    { module: "marketing", name: "mkt.campaigns", description: "Crear y administrar campañas omnicanal" },
+    { module: "marketing", name: "mkt.spend", description: "Supervisar gasto publicitario y retorno de inversión (ROAS)" },
+    { module: "marketing", name: "mkt.links", description: "Crear y medir enlaces de atribución y campañas" },
+    { module: "marketing", name: "mkt.edit", description: "Editar copys, creativos y recursos de campañas" },
+    { module: "marketing", name: "mkt.send", description: "Ejecutar y lanzar transmisiones de campañas activas" },
+    { module: "marketing", name: "mkt.integrations", description: "Conectar canales publicitarios (Meta Ads, Google Ads)" },
+    { module: "marketing", name: "mkt.creative", description: "Generar piezas creativas en el Creative Studio IA" },
+    { module: "marketing", name: "mkt.ab_testing", description: "Configurar experimentos y pruebas A/B de marketing" },
+    { module: "marketing", name: "mkt.broadcast", description: "Enviar difusiones masivas por correo electrónico" },
+    { module: "marketing", name: "mkt.listening", description: "Monitorear menciones sociales y radar de reputación" },
+    { module: "marketing", name: "seo.view", description: "Auditar posicionamiento orgánico, backlinks y SEO técnico" },
+
+    // Operaciones & Logística
+    { module: "operations", name: "inventory.view", description: "Consultar existencias de inventario y bodegas" },
+    { module: "operations", name: "inventory.manage", description: "Entradas, salidas, traslados y órdenes a proveedores" },
+    { module: "operations", name: "booking.view", description: "Ver calendario de agendamiento y disponibilidad de citas" },
+    { module: "operations", name: "booking.manage", description: "Configurar servicios, horarios y políticas de reserva" },
+    { module: "operations", name: "calendar.view", description: "Ver calendario corporativo y compromisos" },
+    { module: "operations", name: "calendar.create", description: "Crear citas, eventos y reuniones operativas" },
+    { module: "operations", name: "calendar.delete", description: "Cancelar o eliminar eventos programados" },
+    { module: "operations", name: "projects.view", description: "Consultar portafolio de proyectos y cronogramas" },
+    { module: "operations", name: "projects.create", description: "Iniciar nuevos proyectos y fijar hitos de entrega" },
+    { module: "operations", name: "projects.manage", description: "Asignar responsables, presupuestos y recursos de proyectos" },
+    { module: "operations", name: "kanban.view", description: "Operar tableros kanban de tareas y sprints" },
+
+    // Recursos Humanos & Nómina
+    { module: "hr", name: "hr.view", description: "Consultar expedientes de colaboradores y turnos laborales" },
+    { module: "hr", name: "hr.manage", description: "Administrar contratos, vacaciones y novedades de personal" },
+    { module: "hr", name: "payroll.view", description: "Consultar nómina electrónica, planillas PILA y liquidaciones" },
+    { module: "hr", name: "payroll.manage", description: "Calcular y procesar pagos de nómina periódicos" },
+    { module: "hr", name: "payroll.approve", description: "Autorizar desembolsos y transmisión DIAN de nómina" },
+    { module: "hr", name: "payroll.expenses", description: "Aprobar y legalizar reembolsos de viáticos y gastos de viaje" },
+
+    // Bandeja de Entrada Omnicanal & Soporte
+    { module: "inbox", name: "inbox.view", description: "Leer conversaciones entrantes de WhatsApp, Web y Redes" },
+    { module: "inbox", name: "inbox.send", description: "Responder y enviar mensajes a clientes en tiempo real" },
+    { module: "inbox", name: "inbox.manage", description: "Reasignar tickets, tipificar y cerrar conversaciones" },
+    { module: "inbox", name: "chat.view", description: "Acceder a canales de chat corporativo interno" },
+    { module: "inbox", name: "chat.send", description: "Publicar en salas de chat departamentales y directos" },
+    { module: "inbox", name: "macros.manage", description: "Crear respuestas rápidas y macros de atención" },
+
+    // Medios, Contenido & Video
+    { module: "media", name: "content.view", description: "Ver artículos, publicaciones del muro y categorías" },
+    { module: "media", name: "content.create", description: "Redactar artículos de blog y comunicados internos" },
+    { module: "media", name: "content.publish", description: "Aprobar y publicar contenidos para visualización pública" },
+    { module: "media", name: "content.delete", description: "Eliminar contenidos obsoletos o despublicados" },
+    { module: "media", name: "assets.upload", description: "Subir imágenes, videos y documentos a la bóveda" },
+    { module: "media", name: "assets.delete", description: "Eliminar archivos y recursos multimedia del almacenamiento" },
+    { module: "media", name: "video.view", description: "Reproducir y previsualizar proyectos de video editados" },
+    { module: "media", name: "video.manage", description: "Producir y renderizar videos en Video Studio Pro" },
+    { module: "media", name: "voice.manage", description: "Sintetizar y clonar locuciones en Voice Studio" },
+
+    // Inteligencia Artificial & RAG
+    { module: "ai", name: "agents.view", description: "Explorar catálogo de agentes de IA y asistentes configurados" },
+    { module: "ai", name: "agents.manage", description: "Modificar prompts, instrucciones y parámetros de agentes" },
+    { module: "ai", name: "agents.deploy", description: "Desplegar agentes autónomos y swarms a producción" },
+    { module: "ai", name: "knowledge.manage", description: "Subir documentos e indexar bases vectoriales RAG" },
+    { module: "ai", name: "skillchains.manage", description: "Encadenar herramientas y flujos de razonamiento cognitivo" },
+
+    // Herramientas de Desarrollo & Automatización
+    { module: "developer", name: "api.view", description: "Consultar especificación OpenAPI y documentación interactiva" },
+    { module: "developer", name: "api.keys.manage", description: "Generar y revocar API keys y tokens de servicio" },
+    { module: "developer", name: "webhooks.manage", description: "Suscribir y probar endpoints de webhooks salientes" },
+    { module: "developer", name: "automation.view", description: "Supervisar historial de ejecuciones de flujos automáticos" },
+    { module: "developer", name: "automation.manage", description: "Diseñar triggers, condiciones y acciones de automatización" },
+    { module: "developer", name: "architecture.view", description: "Ver mapa de salud y topología de microservicios" },
+
+    // Seguridad, Privacidad & Cumplimiento
+    { module: "security", name: "security.view", description: "Monitorear métricas de SLA y postura de seguridad global" },
+    { module: "security", name: "audit.view", description: "Inspeccionar bitácora forense y trazabilidad inmutable" },
+    { module: "security", name: "privacy.manage", description: "Atender solicitudes de derechos ARCO / GDPR y eliminación de datos" },
+    { module: "security", name: "system.parameters", description: "Ajustar variables críticas y umbrales operativos del sistema" },
+
+    // Equipo & Propuestas
+    { module: "team", name: "team.view", description: "Consultar directorio de expertos y miembros de la agencia" },
+    { module: "team", name: "team.invite", description: "Enviar invitaciones de vinculación al equipo" },
+    { module: "team", name: "team.roles", description: "Modificar asignación de roles de miembros del equipo" },
+    { module: "proposals", name: "proposals.view", description: "Visualizar propuestas comerciales y cotizaciones con firma electrónica" },
+    { module: "proposals", name: "proposals.manage", description: "Elaborar, enviar y liquidar cotizaciones contractuales" },
+    { module: "notifications", name: "notifications.view", description: "Ver historial y alertas de notificaciones del sistema" },
+    { module: "notifications", name: "notifications.manage", description: "Configurar canales y reglas de alerta inmediata" },
 ];
 
