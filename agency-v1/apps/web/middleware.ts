@@ -67,6 +67,13 @@ export default auth(function middleware(req: NextRequest) {
         return NextResponse.redirect(url);
     }
 
+    // Unificación de RBAC: Redirigir el dashboard repetido /dashboard/roles a /dashboard/settings/roles
+    if (pathname === "/dashboard/roles" || pathname === "/dashboard/roles/") {
+        const url = req.nextUrl.clone();
+        url.pathname = "/dashboard/settings/roles";
+        return NextResponse.redirect(url, 307);
+    }
+
     if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin") || pathname.startsWith("/book")) {
         return NextResponse.next({
             request: {
