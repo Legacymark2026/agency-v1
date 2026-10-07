@@ -5,7 +5,7 @@ import {
   Shield, Plus, Search, Trash2, Edit, Copy, 
   Check, X, Loader2, Users, Layers, AlertTriangle, 
   Lock, RefreshCw, Key, ShieldAlert, Sparkles, Filter,
-  UserPlus, KeyRound, Eye, EyeOff
+  UserPlus, KeyRound, Eye, EyeOff, ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -152,6 +152,7 @@ export function RolesSettingsHubClient() {
     email: string;
     password?: string;
     roleId?: string | null;
+    adminVerificationPassword?: string;
   }) => {
     try {
       await createCompanyUserWithCredentials(data);
@@ -163,9 +164,9 @@ export function RolesSettingsHubClient() {
     }
   };
 
-  const handleSetUserPassword = async (userId: string, pass: string) => {
+  const handleSetUserPassword = async (userId: string, pass: string, adminVerificationPassword?: string) => {
     try {
-      await setUserPassword(userId, pass);
+      await setUserPassword(userId, pass, adminVerificationPassword);
       toast.success("Contraseña actualizada exitosamente.");
       setPasswordResetUser(null);
       await loadData();
@@ -845,24 +846,30 @@ function CreateUserModal({
 }: {
   roles: any[];
   onClose: () => void;
-  onSubmit: (data: { name: string; email: string; password?: string; roleId?: string | null }) => Promise<void>;
+  onSubmit: (data: { name: string; email: string; password?: string; roleId?: string | null; adminVerificationPassword?: string }) => Promise<void>;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [adminVerificationPassword, setAdminVerificationPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return toast.error("El correo electrónico es requerido");
+    if (!adminVerificationPassword.trim()) {
+      return toast.error("Debes ingresar tu contraseña de administrador para verificar la acción");
+    }
     setIsSubmitting(true);
     await onSubmit({
       name: name.trim(),
       email: email.trim(),
       password: password.trim() || undefined,
       roleId: roleId || null,
+      adminVerificationPassword: adminVerificationPassword.trim(),
     });
     setIsSubmitting(false);
   };
@@ -905,7 +912,7 @@ function CreateUserModal({
           </div>
 
           <div className="space-y-1">
-            <label className="font-semibold text-slate-300 block">Contraseña de Acceso</label>
+            <label className="font-semibold text-slate-300 block">Contraseña para el Nuevo Usuario</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -941,6 +948,34 @@ function CreateUserModal({
             </select>
           </div>
 
+          {/* Verificación de identidad obligatoria */}
+          <div className="p-3 bg-slate-950/80 rounded-2xl border border-teal-500/30 space-y-2 mt-2">
+            <div className="flex items-center gap-1.5 text-teal-400 font-semibold text-[11px]">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Verificación de Identidad del Administrador</span>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Por protocolo Zero-Trust, ingresa tu contraseña actual para confirmar el aprovisionamiento de credenciales:
+            </p>
+            <div className="relative">
+              <input
+                type={showAdminPassword ? "text" : "password"}
+                required
+                placeholder="Tu contraseña actual"
+                value={adminVerificationPassword}
+                onChange={(e) => setAdminVerificationPassword(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-700 bg-slate-900 text-white p-2.5 pr-10 focus:border-teal-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAdminPassword(!showAdminPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              >
+                {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
             <button
               type="button"
@@ -970,10 +1005,12 @@ function ResetPasswordModal({
 }: {
   user: any;
   onClose: () => void;
-  onSubmit: (userId: string, pass: string) => Promise<void>;
+  onSubmit: (userId: string, pass: string, adminVerificationPassword?: string) => Promise<void>;
 }) {
   const [password, setPassword] = useState("");
+  const [adminVerificationPassword, setAdminVerificationPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -981,8 +1018,11 @@ function ResetPasswordModal({
     if (!password || password.length < 6) {
       return toast.error("La contraseña debe tener al menos 6 caracteres");
     }
+    if (!adminVerificationPassword.trim()) {
+      return toast.error("Debes ingresar tu contraseña de administrador para autorizar el cambio");
+    }
     setIsSubmitting(true);
-    await onSubmit(user.user.id, password);
+    await onSubmit(user.user.id, password, adminVerificationPassword.trim());
     setIsSubmitting(false);
   };
 
@@ -1021,6 +1061,34 @@ function ResetPasswordModal({
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Verificación de identidad obligatoria */}
+          <div className="p-3 bg-slate-950/80 rounded-2xl border border-amber-500/30 space-y-2">
+            <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-[11px]">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Verificación de Identidad del Administrador</span>
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Ingresa tu contraseña actual para autorizar el restablecimiento de esta credencial:
+            </p>
+            <div className="relative">
+              <input
+                type={showAdminPassword ? "text" : "password"}
+                required
+                placeholder="Tu contraseña actual"
+                value={adminVerificationPassword}
+                onChange={(e) => setAdminVerificationPassword(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-700 bg-slate-900 text-white p-2.5 pr-10 focus:border-amber-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAdminPassword(!showAdminPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              >
+                {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>

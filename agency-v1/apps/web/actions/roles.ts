@@ -367,6 +367,7 @@ export async function createCompanyUserWithCredentials(data: {
   email: string;
   password?: string;
   roleId?: string | null;
+  adminVerificationPassword?: string;
 }) {
   const session = await auth();
   if (!session?.user?.id) throw new UnauthorizedError();
@@ -382,13 +383,36 @@ export async function createCompanyUserWithCredentials(data: {
     );
   }
 
+  // 1.1 Verificación obligatoria de identidad del administrador/operador que ejecuta la acción
+  const authDb = getPrismaAuth();
+  const coreDb = getPrismaCore();
+
+  const executor = await authDb.user.findUnique({
+    where: { id: executorId },
+    select: { passwordHash: true, email: true },
+  });
+
+  if (executor?.passwordHash) {
+    if (!data.adminVerificationPassword?.trim()) {
+      throw new ForbiddenError(
+        "Verificación de seguridad requerida: Debes ingresar tu contraseña de usuario actual para confirmar esta operación."
+      );
+    }
+    const isPasswordValid = await bcrypt.compare(
+      data.adminVerificationPassword.trim(),
+      executor.passwordHash
+    );
+    if (!isPasswordValid) {
+      throw new ForbiddenError(
+        "Verificación de identidad fallida: Tu contraseña actual es incorrecta. Operación cancelada por seguridad."
+      );
+    }
+  }
+
   const cleanEmail = data.email.trim().toLowerCase();
   if (!cleanEmail) throw new Error("El correo electrónico es requerido");
 
   // 2. Comprobar y sincronizar el usuario en Auth DB y Core DB
-  const authDb = getPrismaAuth();
-  const coreDb = getPrismaCore();
-
   let user = await authDb.user.findUnique({
     where: { email: cleanEmail },
   });
@@ -476,7 +500,11 @@ export async function createCompanyUserWithCredentials(data: {
 /**
  * RESET O ASIGNACIÓN DIRECTA DE CONTRASEÑA A UN USUARIO
  */
-export async function setUserPassword(userId: string, newPassword: string) {
+export async function setUserPassword(
+  userId: string,
+  newPassword: string,
+  adminVerificationPassword?: string
+) {
   const session = await auth();
   if (!session?.user?.id) throw new UnauthorizedError();
 
@@ -488,6 +516,32 @@ export async function setUserPassword(userId: string, newPassword: string) {
     throw new ForbiddenError(
       "Solo el Administrador de la empresa o el rol delegado pueden cambiar contraseñas de usuarios."
     );
+  }
+
+  // Verificación obligatoria de identidad del administrador que cambia la contraseña
+  const authDb = getPrismaAuth();
+  const coreDb = getPrismaCore();
+
+  const executor = await authDb.user.findUnique({
+    where: { id: executorId },
+    select: { passwordHash: true },
+  });
+
+  if (executor?.passwordHash) {
+    if (!adminVerificationPassword?.trim()) {
+      throw new ForbiddenError(
+        "Verificación de seguridad requerida: Debes ingresar tu contraseña de administrador para autorizar el cambio de credenciales."
+      );
+    }
+    const isPasswordValid = await bcrypt.compare(
+      adminVerificationPassword.trim(),
+      executor.passwordHash
+    );
+    if (!isPasswordValid) {
+      throw new ForbiddenError(
+        "Verificación de identidad fallida: Tu contraseña actual es incorrecta. Operación cancelada por seguridad."
+      );
+    }
   }
 
   if (!newPassword || newPassword.length < 6) {
@@ -504,8 +558,6 @@ export async function setUserPassword(userId: string, newPassword: string) {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  const authDb = getPrismaAuth();
-  const coreDb = getPrismaCore();
 
   await authDb.user.update({
     where: { id: userId },

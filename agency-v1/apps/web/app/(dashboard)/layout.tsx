@@ -161,6 +161,7 @@ export default async function DashboardLayout({
     ];
 
     const isSuperAdmin = role === UserRole.SUPER_ADMIN || role === 'super_admin' || dbUser?.email?.toLowerCase() === 'administrador@legacymarksas.com' || session.user.email?.toLowerCase() === 'administrador@legacymarksas.com';
+    const hasAssignedCompanyRole = Boolean(companyUser?.roleId || companyUser?.role);
     const accessibleRoutesSet = new Set<string>();
     
     for (const href of allRoutes) {
@@ -168,6 +169,17 @@ export default async function DashboardLayout({
         
         if (isSuperAdmin) {
             hasAccess = true;
+        } else if (hasAssignedCompanyRole) {
+            if (href === '/dashboard') {
+                hasAccess = true;
+            } else {
+                for (const { perm, routes } of PERMISSION_ROUTE_MAP) {
+                    if (userPermissions.includes(perm) && routes.some(r => href === r || href.startsWith(r + '/'))) {
+                        hasAccess = true;
+                        break;
+                    }
+                }
+            }
         } else if (isCustomRole) {
             if (roleAllowedRoutes.length > 0) {
                 if (href === "/dashboard") {
