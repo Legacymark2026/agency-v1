@@ -385,35 +385,60 @@ export async function createCompanyUserWithCredentials(data: {
   const cleanEmail = data.email.trim().toLowerCase();
   if (!cleanEmail) throw new Error("El correo electrónico es requerido");
 
-  // 2. Comprobar si el usuario ya existe en User
-  let user = await prisma.user.findUnique({
+  // 2. Comprobar y sincronizar el usuario en Auth DB y Core DB
+  const authDb = getPrismaAuth();
+  const coreDb = getPrismaCore();
+
+  let user = await authDb.user.findUnique({
     where: { email: cleanEmail },
   });
 
   const passwordPlain = data.password?.trim();
   const passwordHash = passwordPlain ? await bcrypt.hash(passwordPlain, 12) : null;
 
+  const userData = {
+    name: data.name.trim() || cleanEmail.split("@")[0],
+    email: cleanEmail,
+    ...(passwordHash ? { passwordHash } : {}),
+    role: "user",
+  };
+
   if (!user) {
-    user = await prisma.user.create({
-      data: {
-        name: data.name.trim() || cleanEmail.split("@")[0],
-        email: cleanEmail,
-        ...(passwordHash ? { passwordHash } : {}),
-        role: "user",
-      },
+    user = await authDb.user.create({
+      data: userData,
     });
-  } else if (passwordHash) {
-    // Si ya existe y se asignó contraseña, actualizar credencial
-    await prisma.user.update({
+  } else if (passwordHash || data.name) {
+    user = await authDb.user.update({
       where: { id: user.id },
       data: {
-        passwordHash,
+        ...(passwordHash ? { passwordHash } : {}),
         name: data.name.trim() || user.name,
       },
     });
   }
 
-  // 3. Comprobar membresía en CompanyUser
+  // Replicar en Core DB para garantizar que tbl_company_users cumpla la Foreign Key tbl_company_users_user_id_fkey
+  await coreDb.user.upsert({
+    where: { email: cleanEmail },
+    update: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      ...(passwordHash ? { passwordHash } : {}),
+    },
+    create: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      ...(passwordHash ? { passwordHash } : {}),
+    },
+  }).catch((err: any) => {
+    console.warn("[Roles] Replicación de usuario a Core DB:", err.message);
+  });
+
+  // 3. Comprobar membresía en CompanyUser (Core DB)
   const existingMember = await prisma.companyUser.findFirst({
     where: { userId: user.id, companyId },
   });
@@ -479,9 +504,19 @@ export async function setUserPassword(userId: string, newPassword: string) {
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 12);
-  await prisma.user.update({
+  const authDb = getPrismaAuth();
+  const coreDb = getPrismaCore();
+
+  await authDb.user.update({
     where: { id: userId },
     data: { passwordHash },
+  });
+
+  await coreDb.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+  }).catch((err: any) => {
+    console.warn("[Roles] Password sync to Core DB note:", err.message);
   });
 
   return { success: true };

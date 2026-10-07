@@ -193,7 +193,7 @@ export const getPrismaAnalyticsRead = (): PrismaClient => {
 
 // Model-to-database routing maps for primary write operations
 const modelToClientGetter: Record<string, () => PrismaClient> = {
-  // Auth & RBAC
+  // Auth & Session
   user: getPrismaAuth,
   userProfile: getPrismaAuth,
   account: getPrismaAuth,
@@ -201,11 +201,13 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   verificationToken: getPrismaAuth,
   passwordResetToken: getPrismaAuth,
   roleConfig: getPrismaAuth,
-  role: getPrismaAuth,
-  permission: getPrismaAuth,
-  rolePermission: getPrismaAuth,
-  resourcePermission: getPrismaAuth,
   apiKey: getPrismaAuth,
+
+  // RBAC & Tenants (located in Core DB alongside tbl_companies and tbl_company_users)
+  role: getPrismaCore,
+  permission: getPrismaCore,
+  rolePermission: getPrismaCore,
+  resourcePermission: getPrismaCore,
 
   // Core & CRM
   company: getPrismaCore,
@@ -258,7 +260,7 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
 
 // Model-to-database routing maps for read-only operations
 const modelToReadClientGetter: Record<string, () => PrismaClient> = {
-  // Auth & RBAC
+  // Auth & Session
   user: getPrismaAuthRead,
   userProfile: getPrismaAuthRead,
   account: getPrismaAuthRead,
@@ -266,11 +268,13 @@ const modelToReadClientGetter: Record<string, () => PrismaClient> = {
   verificationToken: getPrismaAuthRead,
   passwordResetToken: getPrismaAuthRead,
   roleConfig: getPrismaAuthRead,
-  role: getPrismaAuthRead,
-  permission: getPrismaAuthRead,
-  rolePermission: getPrismaAuthRead,
-  resourcePermission: getPrismaAuthRead,
   apiKey: getPrismaAuthRead,
+
+  // RBAC & Tenants (Core DB)
+  role: getPrismaCoreRead,
+  permission: getPrismaCoreRead,
+  rolePermission: getPrismaCoreRead,
+  resourcePermission: getPrismaCoreRead,
 
   // Core & CRM
   company: getPrismaCoreRead,
