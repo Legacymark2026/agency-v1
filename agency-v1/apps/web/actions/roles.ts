@@ -2,36 +2,21 @@
 /**
  * actions/roles.ts
  * ─────────────────────────────────────────────────────────────
- * Server Actions para gestionar Roles personalizados por empresa.
- * 
- * Permite a los Admin de empresa crear y gestionar roles con
- * permisos granulares específicos para su organización.
+ * Server Actions para gestionar Roles y Permisos (RBAC Multi-Tenant).
+ * Conectado directamente a los motores de base de datos PostgreSQL y Auth Service.
  */
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma, getPrismaAuth, getPrismaCore } from "@/lib/prisma";
-import { verifyPermissionOrFail, isSuperAdmin, isCompanyAdmin, isCompanyOwner } from "@/lib/security";
+import { verifyPermissionOrFail, isSuperAdmin, isCompanyAdmin, isCompanyOwner, canManageCompanyUsers } from "@/lib/security";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { CreateRoleInput, UpdateRoleInput, RoleWithPermissions } from "@/types/rbac";
 import { MASTER_PERMISSIONS } from "@/lib/rbac";
+import bcrypt from "bcryptjs";
+import { generateTenantUserId } from "@/lib/tenant-user";
 
-const GATEWAY_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
-
-async function fetchGateway(path: string, options?: RequestInit) {
-  const response = await fetch(`${GATEWAY_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
+const USER_MANAGE_PERM_NAMES = ["users.manage", "settings.users.manage", "iam.manage_users"];
 
 async function getSessionCompanyId(): Promise<string> {
   const session = await auth();
@@ -66,25 +51,9 @@ async function requireManageRoles() {
   return { userId, companyId, isSuperAdmin: false };
 }
 
-export async function getCompanyRoles(): Promise<RoleWithPermissions[]> {
-  const { companyId } = await requireManageRoles();
-  return fetchGateway(`/api/auth/roles/full/${companyId}`);
-}
-
-export async function getRoleById(roleId: string): Promise<RoleWithPermissions | null> {
-  const { companyId } = await requireManageRoles();
-  const role = await fetchGateway(`/api/auth/roles/${roleId}/detail`);
-  if (!role || role.companyId !== companyId) {
-    return null;
-  }
-  return role as RoleWithPermissions;
-}
-
-const USER_MANAGE_PERM_NAMES = ["users.manage", "settings.users.manage", "iam.manage_users"];
-
 /**
  * Valida la regla estricta SaaS:
- * 1. Solo el Administrador de la empresa puede delegar el permiso de creación de usuarios/contraseñas.
+ * 1. Solo el Propietario (Owner) de la empresa puede delegar el permiso de creación de usuarios/contraseñas.
  * 2. Dicho permiso solo puede ser otorgado a un ÚNICO rol adicional en la empresa a la vez.
  */
 async function validateSingleRoleUserManagement(
@@ -95,7 +64,6 @@ async function validateSingleRoleUserManagement(
 ) {
   if (!permissionIds || permissionIds.length === 0) return;
 
-  // Consultar permisos correspondientes a gestión de usuarios
   const matchingPerms = await prisma.permission.findMany({
     where: {
       name: { in: USER_MANAGE_PERM_NAMES },
@@ -105,7 +73,6 @@ async function validateSingleRoleUserManagement(
 
   if (matchingPerms.length === 0) return;
 
-  // 1. Verificar si el usuario que ejecuta la acción es el Propietario del plan/empresa
   const isOwner = await isCompanyOwner(userId, companyId);
   if (!isOwner) {
     throw new ForbiddenError(
@@ -113,7 +80,6 @@ async function validateSingleRoleUserManagement(
     );
   }
 
-  // 2. Verificar si ya existe otro rol en la empresa con permisos de gestión de usuarios
   const otherRolesWithPerm = await prisma.role.findMany({
     where: {
       companyId,
@@ -137,74 +103,148 @@ async function validateSingleRoleUserManagement(
   }
 }
 
+/** Obtiene los roles de la empresa directamente desde el motor de datos */
+export async function getCompanyRoles(): Promise<RoleWithPermissions[]> {
+  const { companyId } = await requireManageRoles();
+  const roles = await prisma.role.findMany({
+    where: { companyId },
+    include: {
+      permissions: {
+        include: { permission: true },
+      },
+      _count: {
+        select: { users: true },
+      },
+    },
+    orderBy: { priority: "desc" },
+  });
+
+  return roles as unknown as RoleWithPermissions[];
+}
+
+export async function getRoleById(roleId: string): Promise<RoleWithPermissions | null> {
+  const { companyId } = await requireManageRoles();
+  const role = await prisma.role.findUnique({
+    where: { id: roleId },
+    include: {
+      permissions: {
+        include: { permission: true },
+      },
+      _count: {
+        select: { users: true },
+      },
+    },
+  });
+
+  if (!role || role.companyId !== companyId) {
+    return null;
+  }
+  return role as unknown as RoleWithPermissions;
+}
+
+/** Crea un nuevo rol en la base de datos */
 export async function createRole(data: CreateRoleInput) {
   const { userId, companyId } = await requireManageRoles();
 
   await validateSingleRoleUserManagement(userId, companyId, null, data.permissionIds);
 
-  const role = await fetchGateway(`/api/auth/roles`, {
-    method: 'POST',
-    body: JSON.stringify({
+  const role = await prisma.role.create({
+    data: {
       companyId,
       name: data.name,
-      description: data.description,
-      isDefault: data.isDefault,
-      priority: data.priority,
-      permissionIds: data.permissionIds,
-    }),
+      description: data.description || null,
+      isDefault: data.isDefault || false,
+      priority: data.priority ?? 50,
+      permissions: {
+        create: (data.permissionIds || []).map((permId) => ({
+          permission: { connect: { id: permId } },
+        })),
+      },
+    },
+    include: {
+      permissions: { include: { permission: true } },
+      _count: { select: { users: true } },
+    },
   });
 
   revalidatePath("/settings/roles");
   return role;
 }
 
+/** Actualiza un rol existente */
 export async function updateRole(roleId: string, data: UpdateRoleInput) {
   const { userId, companyId } = await requireManageRoles();
 
-  const existingRole = await fetchGateway(`/api/auth/roles/${roleId}/detail`);
+  const existingRole = await prisma.role.findUnique({ where: { id: roleId } });
   if (!existingRole || existingRole.companyId !== companyId) {
     throw new Error("Rol no encontrado");
   }
 
   await validateSingleRoleUserManagement(userId, companyId, roleId, data.permissionIds);
 
-  const role = await fetchGateway(`/api/auth/roles/${roleId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      companyId,
-      name: data.name,
-      description: data.description,
-      isDefault: data.isDefault,
-      isActive: data.isActive,
-      priority: data.priority,
-      permissionIds: data.permissionIds,
-    }),
+  // Si se envían permisos, sincronizamos limpiando e insertando
+  if (data.permissionIds) {
+    await prisma.rolePermission.deleteMany({
+      where: { roleId },
+    });
+  }
+
+  const role = await prisma.role.update({
+    where: { id: roleId },
+    data: {
+      ...(data.name ? { name: data.name } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.isDefault !== undefined ? { isDefault: data.isDefault } : {}),
+      ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+      ...(data.priority !== undefined ? { priority: data.priority } : {}),
+      ...(data.permissionIds
+        ? {
+            permissions: {
+              create: data.permissionIds.map((pId) => ({
+                permission: { connect: { id: pId } },
+              })),
+            },
+          }
+        : {}),
+    },
+    include: {
+      permissions: { include: { permission: true } },
+      _count: { select: { users: true } },
+    },
   });
 
   revalidatePath("/settings/roles");
   return role;
 }
 
+/** Elimina un rol custom */
 export async function deleteRole(roleId: string) {
   const { companyId } = await requireManageRoles();
 
-  const existingRole = await fetchGateway(`/api/auth/roles/${roleId}/detail`);
+  const existingRole = await prisma.role.findUnique({
+    where: { id: roleId },
+    include: { _count: { select: { users: true } } },
+  });
+
   if (!existingRole || existingRole.companyId !== companyId) {
     throw new Error("Rol no encontrado");
   }
 
-  const result = await fetchGateway(`/api/auth/roles/${roleId}`, {
-    method: 'DELETE',
-  });
+  if (existingRole._count.users > 0) {
+    throw new Error("No es posible eliminar un rol que tiene usuarios asignados. Reasigna los usuarios primero.");
+  }
+
+  await prisma.rolePermission.deleteMany({ where: { roleId } });
+  const result = await prisma.role.delete({ where: { id: roleId } });
 
   revalidatePath("/settings/roles");
   return result;
 }
 
+/** Asigna o reasigna un rol a un colaborador de la empresa */
 export async function assignUserRole(userId: string, roleId: string | null) {
   const { userId: executorId, companyId } = await requireManageRoles();
 
-  // Si se asigna un rol que confiere facultad de crear usuarios y contraseñas, solo el Administrador puede asignarlo
   if (roleId) {
     const targetRole = await prisma.role.findUnique({
       where: { id: roleId },
@@ -229,28 +269,79 @@ export async function assignUserRole(userId: string, roleId: string | null) {
     }
   }
 
-  const result = await fetchGateway(`/api/auth/assign-role`, {
-    method: 'PATCH',
-    body: JSON.stringify({ userId, companyId, roleId }),
+  // Actualizar CompanyUser
+  const companyUser = await prisma.companyUser.findFirst({
+    where: { userId, companyId },
   });
 
+  if (!companyUser) {
+    throw new Error("El colaborador no pertenece a esta empresa");
+  }
+
+  const roleRecord = roleId ? await prisma.role.findUnique({ where: { id: roleId } }) : null;
+
+  const result = await prisma.companyUser.update({
+    where: { id: companyUser.id },
+    data: {
+      roleId: roleId || null,
+      roleName: roleRecord?.name || "member",
+    },
+  });
+
+  revalidatePath("/settings/roles");
   revalidatePath("/settings/members");
   return result;
 }
 
+/**
+ * Obtiene el directorio de usuarios de la empresa con sus roles y credenciales asignadas
+ */
 export async function getCompanyUsersWithRoles() {
   const { companyId } = await requireManageRoles();
-  return fetchGateway(`/api/auth/users-with-roles/${companyId}`);
+
+  const companyUsers = await prisma.companyUser.findMany({
+    where: { companyId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      },
+      role: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
+    },
+    orderBy: { joinedAt: "asc" },
+  });
+
+  return companyUsers.map((cu) => ({
+    id: cu.id,
+    userId: cu.userId,
+    tenantUserId: cu.tenantUserId,
+    user: cu.user,
+    role: cu.role,
+    roleName: cu.roleName,
+    joinedAt: cu.joinedAt,
+  }));
 }
 
-export async function getAvailablePermissions() {
-  await requireManageRoles();
-  return fetchGateway(`/api/auth/permissions`);
-}
-
+/**
+ * Obtiene el catálogo de permisos disponibles en el sistema agrupados por módulo
+ */
 export async function getPermissionsGroupedByModule() {
   await requireManageRoles();
-  const permissions = await getAvailablePermissions();
+  const permissions = await prisma.permission.findMany({
+    orderBy: [{ module: "asc" }, { name: "asc" }],
+  });
+
   const grouped = permissions.reduce((acc: any, perm: any) => {
     if (!acc[perm.module]) {
       acc[perm.module] = [];
@@ -265,61 +356,155 @@ export async function getPermissionsGroupedByModule() {
   }));
 }
 
-export async function duplicateRole(sourceRoleId: string, newName: string) {
-  const { companyId } = await requireManageRoles();
+/**
+ * CREACIÓN DE USUARIO CON CREDENCIALES & CONTRASEÑA DIRECTA
+ * ────────────────────────────────────────────────────────
+ * Implementa la facultad exclusiva de crear usuario y contraseña
+ * verificando si el solicitante es Administrador/Owner o posee el rol delegado.
+ */
+export async function createCompanyUserWithCredentials(data: {
+  name: string;
+  email: string;
+  password?: string;
+  roleId?: string | null;
+}) {
+  const session = await auth();
+  if (!session?.user?.id) throw new UnauthorizedError();
 
-  const sourceRole = await fetchGateway(`/api/auth/roles/${sourceRoleId}/detail`);
-  if (!sourceRole || sourceRole.companyId !== companyId) {
-    throw new Error("Rol origen no encontrado");
+  const companyId = await getSessionCompanyId();
+  const executorId = session.user.id;
+
+  // 1. Verificación de permisos de seguridad estricta
+  const hasPermission = await canManageCompanyUsers(executorId, companyId);
+  if (!hasPermission) {
+    throw new ForbiddenError(
+      "Acceso denegado: Solo el Administrador de la empresa o el rol asignado para gestión de usuarios puede crear y configurar usuarios y contraseñas."
+    );
   }
 
-  const role = await fetchGateway(`/api/auth/roles`, {
-    method: 'POST',
-    body: JSON.stringify({
-      companyId,
-      name: newName,
-      description: sourceRole.description,
-      priority: sourceRole.priority,
-      permissionIds: sourceRole.permissions.map((p: any) => p.permission.id),
-    }),
+  const cleanEmail = data.email.trim().toLowerCase();
+  if (!cleanEmail) throw new Error("El correo electrónico es requerido");
+
+  // 2. Comprobar si el usuario ya existe en User
+  let user = await prisma.user.findUnique({
+    where: { email: cleanEmail },
   });
 
-  return role;
-}
+  const passwordPlain = data.password?.trim();
+  const passwordHash = passwordPlain ? await bcrypt.hash(passwordPlain, 12) : null;
 
-export async function setDefaultRole(roleId: string) {
-  const { companyId } = await requireManageRoles();
-
-  const existingRole = await fetchGateway(`/api/auth/roles/${roleId}/detail`);
-  if (!existingRole || existingRole.companyId !== companyId) {
-    throw new Error("Rol no encontrado");
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        name: data.name.trim() || cleanEmail.split("@")[0],
+        email: cleanEmail,
+        ...(passwordHash ? { passwordHash } : {}),
+        role: "user",
+      },
+    });
+  } else if (passwordHash) {
+    // Si ya existe y se asignó contraseña, actualizar credencial
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        name: data.name.trim() || user.name,
+      },
+    });
   }
 
-  const role = await fetchGateway(`/api/auth/roles/${roleId}`, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      isDefault: true,
-    }),
+  // 3. Comprobar membresía en CompanyUser
+  const existingMember = await prisma.companyUser.findFirst({
+    where: { userId: user.id, companyId },
   });
+
+  const targetRole = data.roleId ? await prisma.role.findUnique({ where: { id: data.roleId } }) : null;
+  const roleName = targetRole?.name || "member";
+
+  if (existingMember) {
+    await prisma.companyUser.update({
+      where: { id: existingMember.id },
+      data: {
+        roleId: data.roleId || null,
+        roleName,
+      },
+    });
+  } else {
+    const tenantUserId = await generateTenantUserId(companyId);
+    await prisma.companyUser.create({
+      data: {
+        userId: user.id,
+        companyId,
+        roleId: data.roleId || null,
+        roleName,
+        tenantUserId,
+        invitedBy: executorId,
+      },
+    });
+  }
 
   revalidatePath("/settings/roles");
-  return role;
+  revalidatePath("/settings/members");
+  return { success: true, user: { id: user.id, email: user.email, name: user.name } };
 }
 
+/**
+ * RESET O ASIGNACIÓN DIRECTA DE CONTRASEÑA A UN USUARIO
+ */
+export async function setUserPassword(userId: string, newPassword: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new UnauthorizedError();
+
+  const companyId = await getSessionCompanyId();
+  const executorId = session.user.id;
+
+  const hasPermission = await canManageCompanyUsers(executorId, companyId);
+  if (!hasPermission) {
+    throw new ForbiddenError(
+      "Solo el Administrador de la empresa o el rol delegado pueden cambiar contraseñas de usuarios."
+    );
+  }
+
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("La contraseña debe tener al menos 6 caracteres.");
+  }
+
+  // Verificar que el usuario pertenece a la empresa
+  const membership = await prisma.companyUser.findFirst({
+    where: { userId, companyId },
+  });
+
+  if (!membership) {
+    throw new Error("El usuario no pertenece a la empresa actual.");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+  });
+
+  return { success: true };
+}
+
+/** Métricas de roles y distribución */
 export async function getRoleStats() {
   const { companyId } = await requireManageRoles();
 
-  const [roles, users] = await Promise.all([
-    getCompanyRoles(),
-    getCompanyUsersWithRoles()
+  const [roles, companyUsers] = await Promise.all([
+    prisma.role.findMany({
+      where: { companyId },
+      include: { _count: { select: { users: true } } },
+    }),
+    prisma.companyUser.findMany({
+      where: { companyId },
+      select: { id: true, roleId: true },
+    }),
   ]);
 
   const totalRoles = roles.length;
-  const totalUsers = users.length;
-  const usersWithRoles = roles.reduce(
-    (sum, r) => sum + (r._count?.users || 0),
-    0
-  );
+  const totalUsers = companyUsers.length;
+  const usersWithRoles = companyUsers.filter((u) => u.roleId !== null).length;
 
   return {
     totalRoles,
@@ -333,58 +518,7 @@ export async function getRoleStats() {
   };
 }
 
-export async function syncPermissionsWithPlatform() {
-  const session = await auth();
-  if (!session?.user?.id) throw new UnauthorizedError();
-
-  const isSA = await isSuperAdmin(session.user.id);
-  if (!isSA) throw new ForbiddenError("Solo Super Admin puede sincronizar permisos");
-
-  const existing = await fetchGateway(`/api/auth/permissions`);
-  const existingNames = new Set(existing.map((p: any) => p.name));
-
-  const response = await fetchGateway(`/api/auth/permissions/sync`, {
-    method: 'POST',
-    body: JSON.stringify({ permissions: MASTER_PERMISSIONS }),
-  });
-
-  const newPerms = MASTER_PERMISSIONS.filter(p => !existingNames.has(p.name)).map(p => p.name);
-
-  revalidatePath("/dashboard/users");
-  revalidatePath("/dashboard/settings");
-
-  return {
-    success: true,
-    created: response.created,
-    total: existingNames.size + response.created,
-    newPermissions: newPerms,
-    masterTotal: MASTER_PERMISSIONS.length,
-  };
-}
-
-export async function getAvailablePermissionsByModule() {
-  await getSessionCompanyId();
-
-  const permissions = await fetchGateway(`/api/auth/permissions`);
-
-  const grouped: Record<string, { id: string; name: string; description: string | null }[]> = {};
-
-  for (const perm of permissions) {
-    if (!grouped[perm.module]) grouped[perm.module] = [];
-    grouped[perm.module].push({
-      id: perm.id,
-      name: perm.name,
-      description: perm.description,
-    });
-  }
-
-  return { success: true, modules: grouped, total: permissions.length };
-}
-
-/**
- * Consulta cuál rol personalizado tiene actualmente asignada la delegación de gestión de usuarios en la empresa,
- * y verifica si el usuario actual es el Propietario del plan (Owner).
- */
+/** Consulta de rol delegado exclusivo */
 export async function getDelegatedUserManagementRole() {
   const session = await auth();
   if (!session?.user?.id) throw new UnauthorizedError();
@@ -394,7 +528,6 @@ export async function getDelegatedUserManagementRole() {
 
   const isOwner = await isCompanyOwner(userId, companyId);
 
-  // Buscar rol que tiene activo alguno de los permisos de gestión de usuarios
   const roleWithPerm = await prisma.role.findFirst({
     where: {
       companyId,
@@ -421,11 +554,7 @@ export async function getDelegatedUserManagementRole() {
   };
 }
 
-/**
- * Acción exclusiva para el Propietario del plan (Owner):
- * Asigna la delegación de gestión de usuarios a un rol personalizado específico
- * o revoca la delegación si roleId es null.
- */
+/** Acción exclusiva para delegar o revocar la facultad de crear usuarios y contraseñas */
 export async function delegateUserManagementRole(targetRoleId: string | null) {
   const session = await auth();
   if (!session?.user?.id) throw new UnauthorizedError();
@@ -440,7 +569,6 @@ export async function delegateUserManagementRole(targetRoleId: string | null) {
     );
   }
 
-  // 1. Obtener los IDs de permisos de gestión de usuarios
   const perms = await prisma.permission.findMany({
     where: { name: { in: USER_MANAGE_PERM_NAMES } },
     select: { id: true },
@@ -452,9 +580,6 @@ export async function delegateUserManagementRole(targetRoleId: string | null) {
 
   const permIds = perms.map((p) => p.id);
 
-  // 2. Transacción y sincronización en ambos motores (Auth DB y Core DB):
-  // - Auth DB gobierna autenticación, RBAC y permisos en tiempo real.
-  // - Core DB mantiene integridad referencial de los tenants y miembros.
   const syncRolePermissions = async (client: any) => {
     const companyRoles = await client.role.findMany({
       where: { companyId },
@@ -487,7 +612,7 @@ export async function delegateUserManagementRole(targetRoleId: string | null) {
 
   await syncRolePermissions(authClient);
   await syncRolePermissions(coreClient).catch((err: any) => {
-    console.warn("[Roles] Sync to Core DB non-blocking note:", err.message);
+    console.warn("[Roles] Sync to Core DB note:", err.message);
   });
 
   revalidatePath("/settings/roles");

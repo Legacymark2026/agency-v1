@@ -4,19 +4,22 @@ import { useState, useEffect, useCallback } from "react";
 import { 
   Shield, Plus, Search, Trash2, Edit, Copy, 
   Check, X, Loader2, Users, Layers, AlertTriangle, 
-  Lock, RefreshCw, Key, ShieldAlert, Sparkles, Filter
+  Lock, RefreshCw, Key, ShieldAlert, Sparkles, Filter,
+  UserPlus, KeyRound, Eye, EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
   getCompanyRoles, 
   createRole, 
   updateRole, 
-  deleteRole,
+  deleteRole, 
   getPermissionsGroupedByModule,
   getRoleStats,
   assignUserRole,
   getCompanyUsersWithRoles,
-  getDelegatedUserManagementRole
+  getDelegatedUserManagementRole,
+  createCompanyUserWithCredentials,
+  setUserPassword
 } from "@/actions/roles";
 import { RbacMatrixView } from "./rbac-matrix-view";
 import { DelegationGovernanceCard } from "./delegation-governance-card";
@@ -52,6 +55,10 @@ export function RolesSettingsHubClient() {
   const [assigningUser, setAssigningUser] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<RbacSubTab>("roles");
   const [delegationInfo, setDelegationInfo] = useState<{ isOwner: boolean; delegatedRole: any } | null>(null);
+  
+  // Modales de usuarios y contraseñas
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [passwordResetUser, setPasswordResetUser] = useState<any | null>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -135,93 +142,164 @@ export function RolesSettingsHubClient() {
     }
   };
 
+  const handleCreateUserWithCredentials = async (data: {
+    name: string;
+    email: string;
+    password?: string;
+    roleId?: string | null;
+  }) => {
+    try {
+      await createCompanyUserWithCredentials(data);
+      toast.success("Usuario creado y aprovisionado con sus credenciales correctamente.");
+      setShowCreateUserModal(false);
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.message || "Error al crear usuario y credenciales");
+    }
+  };
+
+  const handleSetUserPassword = async (userId: string, pass: string) => {
+    try {
+      await setUserPassword(userId, pass);
+      toast.success("Contraseña actualizada exitosamente.");
+      setPasswordResetUser(null);
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.message || "Error al actualizar contraseña");
+    }
+  };
+
   const filteredRoles = roles.filter((r) =>
     r.name.toLowerCase().includes(search.toLowerCase()) ||
     (r.description && r.description.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const tabs: { id: RbacSubTab; label: string; icon: any; count?: number; badge?: string }[] = [
-    { id: "roles", label: "Directorio de Roles", icon: Shield, count: roles.length },
-    { id: "matrix", label: "Matriz RBAC Comparativa", icon: Layers, badge: "Visual" },
-    { id: "users", label: "Asignación de Usuarios", icon: Users, count: users.length },
-    { id: "delegation", label: "Gobernanza & Delegación", icon: Lock, badge: "Zero-Trust" },
-  ];
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
-      {/* Header Corporativo */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--ds-border)] pb-6">
+    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+      {/* ── Top Executive Header ────────────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-teal-500/10 text-teal-400 border border-teal-500/20">
-              Control de Accesos (IAM)
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
-              RBAC Granular
-            </span>
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-mono mb-2">
+            <ShieldAlert className="w-3.5 h-3.5" /> GOBERNANZA & ZERO-TRUST IAM
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            Roles, Permisos & Gobernanza Multi-Tenant
-          </h2>
-          <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Define la matriz de seguridad de tu organización, asigna permisos funcionales por módulo y delega la gestión de credenciales con aislamiento estricto.
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            Roles, Permisos y Credenciales
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Gestión granular de identidades, perfiles RBAC y control delegado de credenciales multi-inquilino.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20 transition flex items-center gap-2"
+            onClick={loadData}
+            disabled={isLoading}
+            className="p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 transition"
+            title="Sincronizar con el motor"
           >
-            <Plus className="w-4 h-4" /> Crear Rol Personalizado
+            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-teal-400" : ""}`} />
+          </button>
+          
+          <button
+            onClick={() => setShowCreateUserModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-teal-500/30 text-teal-300 font-bold text-xs transition shadow-sm"
+          >
+            <UserPlus className="w-4 h-4 text-teal-400" />
+            Crear Usuario & Contraseña
+          </button>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition shadow-lg shadow-teal-600/20"
+          >
+            <Plus className="w-4 h-4" />
+            Crear Nuevo Rol
           </button>
         </div>
       </div>
 
-      {/* KPI Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Roles Configurados</span>
-            <span className="text-2xl font-black text-white font-mono">{stats.totalRoles}</span>
-          </div>
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Total Usuarios</span>
-            <span className="text-2xl font-black text-white font-mono">{stats.totalUsers}</span>
-          </div>
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Con Rol Asignado</span>
-            <span className="text-2xl font-black text-teal-400 font-mono">{stats.usersWithRoles}</span>
-          </div>
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Sin Rol Asignado</span>
-            <span className="text-2xl font-black text-amber-400 font-mono">{stats.usersWithoutRole}</span>
+      {/* ── KPI Strip ───────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Roles Activos</span>
+              <span className="text-xl font-bold text-white font-mono">{stats?.totalRoles ?? roles.length}</span>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Pestañas de Navegación Segmentada */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-950/60 p-1.5 rounded-2xl border border-slate-800">
-        {tabs.map((tab) => {
+        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Permisos en Catálogo</span>
+              <span className="text-xl font-bold text-white font-mono">
+                {permissions.reduce((sum, g) => sum + g.permissions.length, 0)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Usuarios Asignados</span>
+              <span className="text-xl font-bold text-white font-mono">{users.length}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">Delegación de Creación</span>
+              <span className="text-xs font-bold text-amber-300 block truncate max-w-[120px]">
+                {delegationInfo?.delegatedRole ? delegationInfo.delegatedRole.name : "Solo Owner"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Subtabs Navigation Bar ──────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-px">
+        {[
+          { id: "roles", label: "Directorio de Roles", icon: Shield, count: roles.length },
+          { id: "matrix", label: "Matriz RBAC Comparativa", icon: Layers },
+          { id: "users", label: "Usuarios y Credenciales", icon: Users, count: users.length },
+          { id: "delegation", label: "Gobernanza & Delegación", icon: Key },
+        ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl transition-all ${
+              onClick={() => setActiveTab(tab.id as RbacSubTab)}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
                 isActive
-                  ? "bg-slate-900 text-white border border-teal-500/30 shadow-md shadow-teal-500/10 font-bold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 border border-transparent font-medium"
+                  ? "border-teal-400 text-teal-400 bg-teal-500/5 rounded-t-xl"
+                  : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-teal-400" : "text-slate-500"}`} />
-              <span className="text-xs">{tab.label}</span>
-              {tab.badge && (
-                <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+              {tab.count !== undefined && (
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-mono font-bold ${
                   isActive ? "bg-teal-500/20 text-teal-300" : "bg-slate-800 text-slate-400"
                 }`}>
-                  {tab.badge}
+                  {tab.count}
                 </span>
               )}
             </button>
@@ -229,42 +307,46 @@ export function RolesSettingsHubClient() {
         })}
       </div>
 
-      {/* ── Subtab 1: Directorio de Roles ──────────────────────────────────── */}
+      {/* ── Subtab 1: Directorio de Roles ───────────────────────────────────── */}
       {activeTab === "roles" && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 placeholder="Buscar roles por nombre o descripción..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-teal-500"
+                className="w-full pl-9 pr-4 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500"
               />
             </div>
-
-            <button
-              onClick={loadData}
-              className="px-3 py-2 text-xs rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center gap-1.5 self-start sm:self-auto font-medium transition"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} /> Actualizar
-            </button>
+            <span className="text-xs text-slate-500 font-mono">
+              Mostrando {filteredRoles.length} de {roles.length} roles
+            </span>
           </div>
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin text-teal-400 mb-2" />
-              <span className="text-xs">Cargando directorio de roles...</span>
+            <div className="p-16 flex flex-col items-center justify-center gap-3 border border-slate-800 rounded-3xl bg-slate-900/40">
+              <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
+              <span className="text-xs text-slate-400">Consultando roles en el motor de base de datos...</span>
+            </div>
+          ) : filteredRoles.length === 0 ? (
+            <div className="p-16 text-center border border-dashed border-slate-800 rounded-3xl bg-slate-900/20">
+              <Shield className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white">No se encontraron roles</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                No hay roles que coincidan con los criterios de búsqueda o aún no has creado roles personalizados.
+              </p>
             </div>
           ) : (
             <div className="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-sm overflow-hidden">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 uppercase font-semibold text-[11px]">
                   <tr>
-                    <th className="p-4">Nombre del Rol</th>
-                    <th className="p-4">Descripción Funcional</th>
-                    <th className="p-4">Permisos</th>
+                    <th className="p-4">Rol & Nivel</th>
+                    <th className="p-4">Descripción</th>
+                    <th className="p-4 text-center">Permisos</th>
                     <th className="p-4 text-center">Usuarios</th>
                     <th className="p-4 text-center">Estado</th>
                     <th className="p-4 text-right">Acciones</th>
@@ -273,27 +355,35 @@ export function RolesSettingsHubClient() {
                 <tbody className="divide-y divide-slate-800/60">
                   {filteredRoles.map((role) => (
                     <tr key={role.id} className="hover:bg-slate-800/30 transition">
-                      <td className="p-4 font-bold text-white">
-                        <div className="flex items-center gap-2">
-                          <span>{role.name}</span>
-                          {role.isDefault && (
-                            <span className="text-[10px] bg-teal-500/10 text-teal-400 border border-teal-500/20 px-2 py-0.5 rounded font-mono font-bold">
-                              DEFAULT
-                            </span>
-                          )}
+                      <td className="p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 font-bold text-xs">
+                            {role.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-sm">{role.name}</span>
+                              {role.isDefault && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                                  DEFAULT
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-500 font-mono">Prioridad: {role.priority}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-slate-400 max-w-xs truncate">
-                        {role.description || "—"}
+                        {role.description || <span className="italic text-slate-600">Sin descripción</span>}
                       </td>
-                      <td className="p-4">
-                        <span className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 font-mono text-[11px] text-teal-400">
-                          {role.permissions?.length || 0} permisos
+                      <td className="p-4 text-center">
+                        <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 font-mono font-bold text-[11px]">
+                          {role.permissions?.length || 0}
                         </span>
                       </td>
-                      <td className="p-4 text-center font-mono">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
-                          <Users className="w-3.5 h-3.5 text-slate-500" /> {role._count?.users || 0}
+                      <td className="p-4 text-center">
+                        <span className="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 font-mono font-bold text-[11px]">
+                          {role._count?.users || 0}
                         </span>
                       </td>
                       <td className="p-4 text-center">
@@ -340,15 +430,23 @@ export function RolesSettingsHubClient() {
         </div>
       )}
 
-      {/* ── Subtab 3: Asignación de Usuarios ───────────────────────────────── */}
+      {/* ── Subtab 3: Asignación de Usuarios & Credenciales ──────────────────── */}
       {activeTab === "users" && (
         <div className="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-sm overflow-hidden animate-in fade-in duration-200">
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-white">Directorio de Miembros y Roles Asignados</h3>
-              <p className="text-xs text-slate-400">Vincula o reasigna perfiles de acceso a cada usuario del equipo.</p>
+              <h3 className="text-base font-bold text-white">Directorio de Miembros, Roles y Credenciales</h3>
+              <p className="text-xs text-slate-400">Vincula perfiles de acceso, asigna o resetea contraseñas a los colaboradores de tu empresa.</p>
             </div>
-            <span className="text-xs text-slate-400 font-mono">{users.length} miembros</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 font-mono">{users.length} miembros</span>
+              <button
+                onClick={() => setShowCreateUserModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs transition"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Nuevo Usuario
+              </button>
+            </div>
           </div>
 
           <table className="w-full text-left text-xs">
@@ -357,7 +455,7 @@ export function RolesSettingsHubClient() {
                 <th className="p-4">Colaborador</th>
                 <th className="p-4">Correo Electrónico</th>
                 <th className="p-4">Rol Asignado</th>
-                <th className="p-4 text-right">Acción</th>
+                <th className="p-4 text-right">Acciones de Acceso</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -367,13 +465,22 @@ export function RolesSettingsHubClient() {
                     <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-teal-400">
                       {u.user.name ? u.user.name.slice(0, 2).toUpperCase() : "U"}
                     </div>
-                    <span>{u.user.name || "Sin nombre"}</span>
+                    <div>
+                      <span>{u.user.name || "Sin nombre"}</span>
+                      {u.tenantUserId && (
+                        <span className="block text-[10px] text-slate-500 font-mono">ID: {u.tenantUserId}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-4 text-slate-400 font-mono">{u.user.email}</td>
                   <td className="p-4">
                     {u.role ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold text-xs">
                         <Shield className="w-3 h-3" /> {u.role.name}
+                      </span>
+                    ) : u.roleName ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold text-xs">
+                        <Shield className="w-3 h-3" /> {u.roleName}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-xs">
@@ -382,12 +489,21 @@ export function RolesSettingsHubClient() {
                     )}
                   </td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => setAssigningUser(u)}
-                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-700 transition"
-                    >
-                      Reasignar Rol
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setPasswordResetUser(u)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 hover:bg-slate-800 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5"
+                        title="Asignar o cambiar contraseña de acceso"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-amber-400" /> Contraseña
+                      </button>
+                      <button
+                        onClick={() => setAssigningUser(u)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-700 transition"
+                      >
+                        Reasignar Rol
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -434,7 +550,7 @@ export function RolesSettingsHubClient() {
         </div>
       )}
 
-      {/* Modales de Creación y Edición */}
+      {/* Modales de Creación y Edición de Roles */}
       {showCreateModal && (
         <RoleFormModal
           permissions={permissions}
@@ -458,6 +574,24 @@ export function RolesSettingsHubClient() {
           roles={roles}
           onClose={() => setAssigningUser(null)}
           onSubmit={handleAssignRole}
+        />
+      )}
+
+      {/* Modal de Creación de Usuario & Contraseña Directa */}
+      {showCreateUserModal && (
+        <CreateUserModal
+          roles={roles}
+          onClose={() => setShowCreateUserModal(false)}
+          onSubmit={handleCreateUserWithCredentials}
+        />
+      )}
+
+      {/* Modal de Asignación / Reseteo de Contraseña */}
+      {passwordResetUser && (
+        <ResetPasswordModal
+          user={passwordResetUser}
+          onClose={() => setPasswordResetUser(null)}
+          onSubmit={handleSetUserPassword}
         />
       )}
     </div>
@@ -491,62 +625,56 @@ function RoleFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) return toast.error("El nombre del rol es requerido");
     setIsSubmitting(true);
-    await onSubmit({ name, description, permissionIds: selectedPerms, isDefault });
+    await onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      permissionIds: selectedPerms,
+      isDefault,
+    });
     setIsSubmitting(false);
   };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
             <Shield className="w-5 h-5 text-teal-400" />
-            {role ? "Editar Rol Personalizado" : "Crear Nuevo Rol"}
+            {role ? `Editar Rol: ${role.name}` : "Crear Rol Personalizado"}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
-          <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300 uppercase tracking-wider block">
-              Nombre del Rol
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej. Líder de Operaciones, Auditor Financiero"
-              className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-3 focus:border-teal-500 outline-none"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300 uppercase tracking-wider block">
-              Descripción de Funciones
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detalla las responsabilidades que otorga este rol..."
-              className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-3 h-20 focus:border-teal-500 outline-none"
-            />
-          </div>
-
-          <div className="flex items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <input
-              type="checkbox"
-              id="isDefault"
-              checked={isDefault}
-              onChange={(e) => setIsDefault(e.target.checked)}
-              className="w-4 h-4 accent-teal-500 rounded"
-            />
-            <label htmlFor="isDefault" className="text-xs text-slate-300 font-medium cursor-pointer">
-              Asignar automáticamente como rol por defecto a nuevos colaboradores
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4 pt-4 flex-1 overflow-y-auto text-xs pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-300 uppercase tracking-wider block">
+                Nombre del Rol
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. Gerente de Operaciones"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-teal-500 outline-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-300 uppercase tracking-wider block">
+                Descripción
+              </label>
+              <input
+                type="text"
+                placeholder="Breve descripción de las funciones"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-teal-500 outline-none"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -697,6 +825,215 @@ function AssignRoleModal({
               ) : (
                 "Guardar Asignación"
               )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function CreateUserModal({
+  roles,
+  onClose,
+  onSubmit,
+}: {
+  roles: any[];
+  onClose: () => void;
+  onSubmit: (data: { name: string; email: string; password?: string; roleId?: string | null }) => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [roleId, setRoleId] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return toast.error("El correo electrónico es requerido");
+    setIsSubmitting(true);
+    await onSubmit({
+      name: name.trim(),
+      email: email.trim(),
+      password: password.trim() || undefined,
+      roleId: roleId || null,
+    });
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-teal-500/30 rounded-3xl p-6 max-w-md w-full space-y-5 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-2 text-teal-400">
+            <UserPlus className="w-5 h-5" />
+            <h3 className="text-base font-bold text-white">Crear Usuario y Asignar Credencial</h3>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-300 block">Nombre Completo</label>
+            <input
+              type="text"
+              placeholder="Ej. Juan Pérez"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-teal-500 outline-none"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-300 block">Correo Electrónico (Login)</label>
+            <input
+              type="email"
+              required
+              placeholder="usuario@empresa.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-teal-500 outline-none"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-300 block">Contraseña de Acceso</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Mínimo 6 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 pr-10 focus:border-teal-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500">Puedes dejarlo en blanco si el usuario se activará vía invitación.</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="font-semibold text-slate-300 block">Rol / Perfil RBAC</label>
+            <select
+              value={roleId}
+              onChange={(e) => setRoleId(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 focus:border-teal-500 outline-none"
+            >
+              <option value="">-- Sin Rol Inicial --</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white rounded-xl shadow-lg shadow-teal-600/20 transition flex items-center gap-1.5"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear y Provisionar"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordModal({
+  user,
+  onClose,
+  onSubmit,
+}: {
+  user: any;
+  onClose: () => void;
+  onSubmit: (userId: string, pass: string) => Promise<void>;
+}) {
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || password.length < 6) {
+      return toast.error("La contraseña debe tener al menos 6 caracteres");
+    }
+    setIsSubmitting(true);
+    await onSubmit(user.user.id, password);
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 max-w-md w-full space-y-5 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex items-center gap-2 text-amber-400">
+            <KeyRound className="w-5 h-5" />
+            <h3 className="text-base font-bold text-white">Asignar / Cambiar Contraseña</h3>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <p className="text-slate-300">
+            Estableciendo nueva credencial para <strong className="text-white">{user.user.name || user.user.email}</strong>.
+          </p>
+
+          <div className="space-y-1.5">
+            <label className="font-semibold text-slate-300 block">Nueva Contraseña</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Mínimo 6 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full text-xs rounded-xl border border-slate-700 bg-slate-950 text-white p-2.5 pr-10 focus:border-amber-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar Contraseña"}
             </button>
           </div>
         </form>
