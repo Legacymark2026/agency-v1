@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
     User, Shield, Blocks, Bell, Palette, ArrowLeft, Building2, Users, Bot, 
     Wand2, CreditCard, Code2, Sliders, TrendingUp, Boxes, Lock, Sparkles, ChevronRight,
-    ChevronDown, Check, Layers, ExternalLink
+    ChevronDown, Check, Layers, ExternalLink, ShoppingBag
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -56,6 +56,7 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             { name: "Compañía & Marca Blanca", href: "/dashboard/settings/company", icon: Building2, desc: "RUT, NIT, logos y dominio CNAME" },
             { name: "Miembros del Equipo", href: "/dashboard/settings/members", icon: Users, desc: "Invitaciones y asignación de puestos" },
             { name: "Roles y Permisos (RBAC)", href: "/dashboard/settings/roles", icon: Shield, desc: "Matriz de control de acceso y delegación" },
+            { name: "Terminal POS Enterprise", href: "/dashboard/settings/pos", icon: ShoppingBag, desc: "Gobernanza de turnos, arqueo de caja y periféricos", badge: "POS" },
             { name: "Facturación & Plan B2B", href: "/dashboard/settings/billing", icon: CreditCard, desc: "Consumo de cuotas, plan e historial" },
             { name: "Pasarelas de Pago (BYOG)", href: "/dashboard/settings/billing/gateways", icon: CreditCard, desc: "Stripe, Wompi, MercadoPago y KMS" },
         ]
