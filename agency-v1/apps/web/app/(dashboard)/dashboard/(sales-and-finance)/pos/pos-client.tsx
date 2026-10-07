@@ -23,6 +23,7 @@ import {
     syncOfflineOrdersToServer,
     OfflineOrder
 } from "./offline-db";
+import { ShiftClosingActaModal, ShiftActaData } from "@/components/pos/shift-closing-acta-modal";
 
 interface Product {
     id: string;
@@ -197,12 +198,15 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
         initialFloat: number;
         currentBalance: number;
         status: "OPEN" | "CLOSED";
+        config?: any;
     }
 
     const [cashRegisters, setCashRegisters] = useState<CashRegisterItem[]>([
         { id: "caja_1", name: "Caja Principal 01 - Recepción", location: "Sede Bucaramanga", initialFloat: 200000, currentBalance: 850000, status: "OPEN" },
         { id: "caja_2", name: "Caja Registradora 02 - Norte", location: "Sede Bogotá", initialFloat: 150000, currentBalance: 150000, status: "CLOSED" }
     ]);
+    const [selectedRegisterId, setSelectedRegisterId] = useState<string>("caja_1");
+    const [showClosingActaModal, setShowClosingActaModal] = useState<boolean>(false);
     const [showCashRegisterManagerModal, setShowCashRegisterManagerModal] = useState(false);
     const [showCreateRegisterModal, setShowCreateRegisterModal] = useState(false);
     const [regName, setRegName] = useState("");
@@ -320,9 +324,10 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
     };
     // ==========================================
 
-    const fetchMovements = async () => {
+    const fetchMovements = async (regId?: string) => {
         try {
-            const res = await fetch("/api/pos/movements");
+            const targetReg = regId || activeSession?.registerId || selectedRegisterId || "caja_1";
+            const res = await fetch(`/api/pos/movements?registerId=${targetReg}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.movements && data.movements.length > 0) setCashMovements(data.movements);
@@ -335,16 +340,21 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
         const amt = parseFloat(movAmount);
         if (isNaN(amt) || amt <= 0) return alert("Ingresa un monto válido.");
 
+        const targetRegister = cashRegisters.find(r => r.id === selectedRegisterId) || cashRegisters[0];
+        const regIdToUse = activeSession?.registerId || targetRegister?.id || selectedRegisterId || "caja_1";
+        const currentUserName = currentUser?.name || configUser || activeSession?.cashierName || "Cajero Principal";
+
         try {
             const res = await fetch("/api/pos/movements", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    registerId: "caja_1",
+                    registerId: regIdToUse,
+                    shiftId: activeSession?.id || null,
                     type: movType,
                     amount: amt,
                     reason: movReason || (movType === "ENTRY" ? "Entrada extra de efectivo" : "Gasto menor de caja chica"),
-                    user: "Cajero Principal"
+                    user: currentUserName
                 }),
             });
             const data = await res.json();
@@ -352,7 +362,7 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                 setCashMovements(prev => [data.movement, ...prev]);
                 setMovAmount("");
                 setMovReason("");
-                alert(`✅ Movimiento de Caja (${movType === "ENTRY" ? "ENTRADA" : "SALIDA"}) por $${amt.toLocaleString("es-CO")} registrado.`);
+                alert(`✅ Movimiento de Caja Chica (${movType === "ENTRY" ? "ENTRADA" : "SALIDA"}) por $${amt.toLocaleString("es-CO")} registrado para la caja "${targetRegister?.name || regIdToUse}".`);
             }
         } catch (err: any) {
             alert(`Error al registrar movimiento: ${err.message}`);
@@ -489,11 +499,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
         e.preventDefault();
         setIsOpeningSession(true);
         try {
+            const targetRegister = cashRegisters.find(r => r.name === openRegisterName) || cashRegisters.find(r => r.id === selectedRegisterId) || cashRegisters[0];
             const res = await fetch("/api/pos/sessions/open", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     companyId,
+                    registerId: targetRegister?.id || selectedRegisterId,
                     registerName: openRegisterName,
                     openingBalance: Number(openBaseAmount) || 0,
                     openedById: currentUser?.id || activeSession?.openedById || undefined,
@@ -504,6 +516,7 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
             const data = await res.json();
             if (data.success) {
                 setActiveSession(data.session);
+                if (data.session?.registerId) setSelectedRegisterId(data.session.registerId);
                 setShowOpenModal(false);
                 alert(`✅ Caja "${openRegisterName}" abierta exitosamente con base de ${formatCOP(Number(openBaseAmount) || 0)}.`);
             } else {
@@ -738,12 +751,14 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
 
     // ESC/POS Open Cash Drawer Command via WebUSB / ESC-POS Pulse
     const handleOpenCashDrawer = async () => {
+        const activeReg = cashRegisters.find(r => r.id === selectedRegisterId) || cashRegisters[0];
+        const printerIp = activeReg?.config?.printer?.ipAddress || configPrinterIp || "192.168.1.200:9100";
         try {
             const builder = new EscPosBuilder();
             builder.openCashDrawer();
-            alert("⚡ Comando binario ESC/POS enviado al cajón monedero (Pulso RJ11 24V activo).");
+            alert(`⚡ Comando de Apertura enviado al Cajón Monedero de "${activeReg?.name || 'Caja Principal'}" (Impresora: ${printerIp} - Pulso RJ11 24V activo).`);
         } catch {
-            alert("Acción de apertura de cajón enviada.");
+            alert(`Acción de apertura de cajón enviada para ${activeReg?.name || 'Caja Principal'}.`);
         }
     };
 
@@ -944,6 +959,31 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                 </div>
 
                 <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+                    {/* REGISTER SELECTOR */}
+                    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300">
+                        <Store className="w-3.5 h-3.5 text-teal-400" />
+                        <select
+                            value={selectedRegisterId}
+                            onChange={(e) => {
+                                const regId = e.target.value;
+                                setSelectedRegisterId(regId);
+                                const found = cashRegisters.find(r => r.id === regId);
+                                if (found) {
+                                    setOpenRegisterName(found.name);
+                                    setOpenBaseAmount(found.initialFloat.toString());
+                                    fetchMovements(regId);
+                                }
+                            }}
+                            className="bg-transparent font-bold text-slate-200 focus:outline-none cursor-pointer max-w-[160px] truncate"
+                        >
+                            {cashRegisters.map(r => (
+                                <option key={r.id} value={r.id} className="bg-slate-900">
+                                    {r.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* BRANCH SWITCHER */}
                     <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300">
                         <Building2 className="w-3.5 h-3.5 text-indigo-400" />
@@ -1016,10 +1056,10 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
 
                     {activeSession?.status === "OPEN" ? (
                         <button
-                            onClick={() => setShowCashDenominationModal(true)}
+                            onClick={() => setShowClosingActaModal(true)}
                             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 font-bold text-xs transition-all flex items-center gap-2"
                         >
-                            <Lock className="w-4 h-4" /> Cierre (Arqueo Z)
+                            <Lock className="w-4 h-4" /> Cierre & Acta Z
                         </button>
                     ) : (
                         <button
@@ -2014,16 +2054,18 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
             {showQrMenuModal && (
                 <QrMenuModal
                     products={products}
+                    register={cashRegisters.find(r => r.id === selectedRegisterId) || cashRegisters[0]}
                     onClose={() => setShowQrMenuModal(false)}
                     onSubmitOrder={(selfOrder) => {
                         setShowQrMenuModal(false);
-                        setCustomerName(`Autopedido - ${selfOrder.table}`);
+                        const regName = selfOrder.registerId ? (cashRegisters.find(r => r.id === selfOrder.registerId)?.name || "") : "";
+                        setCustomerName(`Autopedido - ${selfOrder.table}${regName ? ` (${regName})` : ''}`);
                         selfOrder.items.forEach((it: any) => {
                             const p = products.find(x => x.id === it.id);
                             if (p) addToCart(p);
                         });
                         setActivePosTab("POS_VENTAS");
-                        alert(`📌 Autopedido desde ${selfOrder.table} cargado exitosamente al terminal POS.`);
+                        alert(`📌 Autopedido desde ${selfOrder.table} cargado exitosamente a la terminal POS.`);
                     }}
                 />
             )}
@@ -2513,6 +2555,68 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                     onConfirmClose={async (totalCounted) => {
                         setShowCashDenominationModal(false);
                         await handleExecuteCierreZ(totalCounted);
+                    }}
+                />
+            )}
+
+            {/* MODAL: ACTA OFICIAL DE TURNO & SUPERVISIÓN DE CIERRE Z */}
+            {showClosingActaModal && activeSession && (
+                <ShiftClosingActaModal
+                    isOpen={showClosingActaModal}
+                    onClose={() => setShowClosingActaModal(false)}
+                    isSupervisorMode={true}
+                    shiftData={{
+                        id: activeSession.id,
+                        shiftCode: activeSession.shiftCode || "Z-2026-LIVE",
+                        registerName: activeSession.registerName || "Caja Principal",
+                        cashierName: activeSession.cashierName || currentUser?.name || configUser || "Cajero Principal",
+                        supervisorName: activeSession.supervisorName || openSupervisorName || "Supervisor General",
+                        openedAt: activeSession.openedAt || new Date().toISOString(),
+                        openingFloat: activeSession.openingBalance || 0,
+                        expectedCash: (activeSession.openingBalance || 0) + (activeSession.cashSales || 0),
+                        declaredCash: null,
+                        difference: 0,
+                        totalSales: activeSession.totalSales || 0,
+                        cashSalesTotal: activeSession.cashSales || 0,
+                        cardSalesTotal: activeSession.cardSales || 0,
+                        transferSalesTotal: activeSession.transferSales || 0,
+                        creditSalesTotal: activeSession.creditSales || 0,
+                        orderCount: activeSession.orderCount || 0,
+                        status: activeSession.status || "OPEN",
+                    }}
+                    onConfirmSupervision={async (acta) => {
+                        setShowClosingActaModal(false);
+                        setIsClosingSession(true);
+                        try {
+                            const res = await fetch("/api/pos/sessions/close", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    companyId,
+                                    shiftId: activeSession.id,
+                                    sessionId: activeSession.id,
+                                    registerName: activeSession.registerName,
+                                    cashierName: activeSession.cashierName,
+                                    expectedCash: (activeSession.openingBalance || 0) + (activeSession.cashSales || 0),
+                                    closingBalance: acta.declaredCash,
+                                    supervisorName: acta.supervisorName,
+                                    supervisorNotes: acta.supervisorNotes,
+                                    denominationsCount: acta.denominations,
+                                }),
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                setCierreZSummary(data);
+                                setActiveSession((prev: any) => ({ ...prev, status: "CLOSED" }));
+                                fetchShiftsHistory();
+                            } else {
+                                alert(data.error || "Error al registrar el Cierre Z.");
+                            }
+                        } catch (err: any) {
+                            alert("Error al cerrar turno: " + err.message);
+                        } finally {
+                            setIsClosingSession(false);
+                        }
                     }}
                 />
             )}

@@ -1,19 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { QrCode, ShoppingBag, Plus, Minus, Send, CheckCircle2, Utensils, Sparkles, Smartphone } from "lucide-react";
+import { QrCode, ShoppingBag, Plus, Minus, Send, CheckCircle2, Utensils, Sparkles, Smartphone, ExternalLink, Store } from "lucide-react";
 
 interface QrMenuModalProps {
     products: any[];
     onClose: () => void;
     onSubmitOrder: (order: any) => void;
+    register?: {
+        id: string;
+        name: string;
+        location?: string;
+        config?: any;
+    };
 }
 
-export function QrMenuModal({ products, onClose, onSubmitOrder }: QrMenuModalProps) {
-    const [selectedTable, setSelectedTable] = useState<string>("Mesa 02");
+export function QrMenuModal({ products, onClose, onSubmitOrder, register }: QrMenuModalProps) {
+    const regConfig = register?.config?.qrMenu || {};
+    const registerName = register?.name || "Caja Principal";
+    const tablePrefix = regConfig.tablePrefix || "Mesa";
+    const availableTables = regConfig.tables && regConfig.tables.length > 0 
+        ? regConfig.tables 
+        : [`${tablePrefix} 01`, `${tablePrefix} 02`, `${tablePrefix} 03`, `${tablePrefix} VIP 01`, "Barra 01"];
+
+    const [selectedTable, setSelectedTable] = useState<string>(availableTables[0] || "Mesa 01");
     const [qrCart, setQrCart] = useState<Array<{ id: string; title: string; unitPrice: number; quantity: number }>>([]);
     const [customerNote, setCustomerNote] = useState("");
     const [submitted, setSubmitted] = useState(false);
+
+    // Filtrar productos por categorías permitidas para esta caja si está configurado
+    const filteredProducts = regConfig.allowedCategories && regConfig.allowedCategories.length > 0
+        ? products.filter(p => regConfig.allowedCategories.includes(p.category) || regConfig.allowedCategories.includes("Todos"))
+        : products;
+
+    const qrSlug = regConfig.qrSlug || (register?.id ? `caja-${register.id}` : "principal");
+    const publicMenuUrl = typeof window !== "undefined" ? `${window.location.origin}/menu/${qrSlug}` : `/menu/${qrSlug}`;
 
     const fmtCOP = (n: number) => `$ ${n.toLocaleString("es-CO")}`;
 
@@ -45,6 +66,7 @@ export function QrMenuModal({ products, onClose, onSubmitOrder }: QrMenuModalPro
         setTimeout(() => {
             onSubmitOrder({
                 table: selectedTable,
+                registerId: register?.id,
                 items: qrCart,
                 totalAmount,
                 customerNote,
@@ -62,34 +84,59 @@ export function QrMenuModal({ products, onClose, onSubmitOrder }: QrMenuModalPro
                             <Smartphone className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="font-extrabold text-base">Menú Digital QR & Autopedido Móvil</h3>
-                            <p className="text-xs text-slate-400">Vista previa de la interfaz que ve el cliente en su celular.</p>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-extrabold text-base">Menú Digital QR & Autopedido</h3>
+                                <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-mono border border-teal-500/30">
+                                    {registerName}
+                                </span>
+                            </div>
+                            <p className="text-xs text-slate-400">Configurado para los comensales y mesas de esta caja específica.</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+                </div>
+
+                {/* BANNER ENLACE PÚBLICO DEL QR */}
+                <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs font-mono">
+                    <div className="truncate mr-2">
+                        <span className="text-slate-400 text-[10px] block">URL Pública para escanear en {registerName}:</span>
+                        <span className="text-teal-400 truncate">{publicMenuUrl}</span>
+                    </div>
+                    <button
+                        onClick={() => {
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(publicMenuUrl);
+                                alert(`Copiada URL del QR de ${registerName}:\n${publicMenuUrl}`);
+                            }
+                        }}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-bold shrink-0 transition"
+                    >
+                        Copiar Link
+                    </button>
                 </div>
 
                 {!submitted ? (
                     <div className="space-y-4">
                         {/* TABLE SELECTOR */}
                         <div className="flex justify-between items-center bg-slate-950 p-3 rounded-2xl border border-slate-800 text-xs">
-                            <span className="text-slate-400 font-bold">Ubicación del Cliente:</span>
+                            <span className="text-slate-400 font-bold">Ubicación / Mesa asignada a esta Caja:</span>
                             <select
                                 value={selectedTable}
                                 onChange={(e) => setSelectedTable(e.target.value)}
                                 className="bg-slate-900 border border-slate-700 text-teal-300 font-bold rounded-xl px-3 py-1 focus:outline-none"
                             >
-                                <option value="Mesa 01">Mesa 01 (Comedor)</option>
-                                <option value="Mesa 02">Mesa 02 (Comedor)</option>
-                                <option value="Mesa VIP 01">Mesa VIP 01 (Terraza)</option>
-                                <option value="Barra 01">Barra 01 (Coctelería)</option>
+                                {availableTables.map((tbl: string) => (
+                                    <option key={tbl} value={tbl}>{tbl}</option>
+                                ))}
                             </select>
                         </div>
 
                         {/* PRODUCT CATALOG SIMULATION */}
                         <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                            <span className="text-xs font-bold text-slate-400 block">Carta Disponible:</span>
-                            {products.map((p) => (
+                            <span className="text-xs font-bold text-slate-400 block">
+                                Carta Disponible ({filteredProducts.length} ítems para {registerName}):
+                            </span>
+                            {filteredProducts.map((p) => (
                                 <div key={p.id} className="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
                                     <div>
                                         <span className="font-bold text-white block">{p.title}</span>
@@ -136,7 +183,7 @@ export function QrMenuModal({ products, onClose, onSubmitOrder }: QrMenuModalPro
                             disabled={qrCart.length === 0}
                             className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 text-white font-extrabold text-xs rounded-2xl shadow-xl flex items-center justify-center gap-2 disabled:opacity-40"
                         >
-                            <Send className="w-4 h-4" /> Enviar Autopedido a Cocina & POS
+                            <Send className="w-4 h-4" /> Enviar Autopedido a {registerName}
                         </button>
                     </div>
                 ) : (
@@ -144,7 +191,7 @@ export function QrMenuModal({ products, onClose, onSubmitOrder }: QrMenuModalPro
                         <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto animate-bounce" />
                         <h4 className="font-extrabold text-lg text-white">¡Autopedido Enviado!</h4>
                         <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                            Tu pedido fue transmitido en tiempo real a la Pantalla de Cocina (KDS) y a la Terminal POS en {selectedTable}.
+                            Tu pedido fue transmitido en tiempo real a la Pantalla de Cocina (KDS) y asignado a <strong>{registerName}</strong> en {selectedTable}.
                         </p>
                     </div>
                 )}
