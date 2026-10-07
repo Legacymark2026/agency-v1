@@ -14,7 +14,6 @@ import { createPaymentSession, type PaymentGateway, type BillingCycle, getPriceI
 import { fail, ok, ActionResult } from "@/types/actions";
 import { getPSEBankList, PSEBank } from "@/lib/pse";
 
-export type { PaymentGateway, BillingCycle };
 
 export async function createCheckoutSession(
   planId: string,
