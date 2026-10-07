@@ -72,6 +72,8 @@ export async function GET(req: Request) {
       registerName: activeShift.register?.name || "Caja Principal",
       openedById: activeShift.cashierId,
       cashierName: activeShift.cashierName,
+      supervisorId: activeShift.supervisorId,
+      supervisorName: activeShift.supervisorName || "Supervisor General",
       status: activeShift.status,
       openedAt: activeShift.openedAt.toISOString(),
       openingBalance: Number(activeShift.openingFloat),

@@ -28,13 +28,19 @@ export default async function PosPage() {
     };
 
     let dianConfig = null;
+    let currentUser = {
+        id: session?.user?.id || "cajero_main",
+        name: session?.user?.name || "Cajero Principal",
+        email: session?.user?.email || "cajero@legacymarksas.com",
+        role: session?.user?.role || "cashier",
+    };
 
     if (session?.user?.id) {
         try {
             const [user, companyUser] = await Promise.all([
                 prisma.user.findUnique({
                     where: { id: session.user.id },
-                    select: { name: true, email: true }
+                    select: { id: true, name: true, email: true, role: true }
                 }),
                 prisma.companyUser.findFirst({
                     where: { userId: session.user.id },
@@ -48,6 +54,15 @@ export default async function PosPage() {
                     }
                 })
             ]);
+
+            if (user) {
+                currentUser = {
+                    id: user.id,
+                    name: user.name || session.user.name || "Cajero",
+                    email: user.email || session.user.email || "",
+                    role: user.role || session.user.role || "cashier",
+                };
+            }
 
             if (companyUser?.company) {
                 const settings = (companyUser.company.defaultCompanySettings as any) || {};
@@ -80,5 +95,11 @@ export default async function PosPage() {
         }
     }
 
-    return <PosTerminalClient initialIssuer={issuerData} dianConfig={dianConfig} />;
+    return (
+        <PosTerminalClient 
+            initialIssuer={issuerData} 
+            dianConfig={dianConfig} 
+            currentUser={currentUser}
+        />
+    );
 }

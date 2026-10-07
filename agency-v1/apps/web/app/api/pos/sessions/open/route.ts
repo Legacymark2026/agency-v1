@@ -11,6 +11,8 @@ const OpenSessionSchema = z.object({
   registerName: z.string().default("Caja Principal"),
   openedById: z.string().optional(),
   cashierName: z.string().optional(),
+  supervisorId: z.string().optional(),
+  supervisorName: z.string().optional(),
   openingBalance: z.number().min(0).default(0),
 });
 
@@ -27,14 +29,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Datos inválidos", details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { companyId, registerId, registerName, openedById, cashierName, openingBalance } = parsed.data;
+    const { companyId, registerId, registerName, openedById, cashierName, supervisorId, supervisorName, openingBalance } = parsed.data;
     const finalCashierId = openedById || session.user.id || "cajero_main";
     const finalCashierName = cashierName || session.user.name || session.user.email || "Cajero Principal";
+    const finalSupervisorName = supervisorName || "Supervisor General";
 
     const payload = {
       ...parsed.data,
       cashierId: finalCashierId,
       cashierName: finalCashierName,
+      supervisorId: supervisorId || undefined,
+      supervisorName: finalSupervisorName,
     };
 
     // Intentar microservicio primero
@@ -113,6 +118,8 @@ export async function POST(req: Request) {
         registerId: register.id,
         cashierId: finalCashierId,
         cashierName: finalCashierName,
+        supervisorId: supervisorId || undefined,
+        supervisorName: finalSupervisorName,
         openingFloat: Number(openingBalance) || 0,
         expectedCash: Number(openingBalance) || 0,
         status: "OPEN",
@@ -128,6 +135,8 @@ export async function POST(req: Request) {
       registerName: register.name,
       openedById: finalCashierId,
       cashierName: finalCashierName,
+      supervisorId: newShift.supervisorId,
+      supervisorName: newShift.supervisorName || finalSupervisorName,
       openingBalance: Number(newShift.openingFloat),
       status: newShift.status,
       openedAt: newShift.openedAt.toISOString(),

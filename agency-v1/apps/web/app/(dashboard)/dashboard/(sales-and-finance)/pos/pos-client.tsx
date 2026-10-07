@@ -15,6 +15,7 @@ import { SmartPosTerminalModal } from "@/components/pos/smart-pos-terminal-modal
 import { QrMenuModal } from "@/components/pos/qr-menu-modal";
 import { CreateProductModal } from "@/components/pos/create-product-modal";
 import { DatafonoConfigModal } from "@/components/pos/datafono-config-modal";
+import { CashierShiftsHistoryModal } from "@/components/pos/cashier-shifts-history-modal";
 
 import {
     saveOfflineOrder,
@@ -55,9 +56,15 @@ import { DianInvoiceViewer, DianInvoiceData } from "@/components/billing/dian-in
 interface PosTerminalClientProps {
     initialIssuer?: DianInvoiceData["issuer"];
     dianConfig?: any;
+    currentUser?: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+    };
 }
 
-export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerminalClientProps) {
+export default function PosTerminalClient({ initialIssuer, dianConfig, currentUser }: PosTerminalClientProps) {
     const [companyId, setCompanyId] = useState("");
     const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -161,6 +168,8 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
         id: "session_live_01",
         status: "OPEN",
         registerName: "Caja Principal",
+        cashierName: "Cajero Principal",
+        supervisorName: "Supervisor General",
         openingBalance: 200000,
         cashSales: 450000,
         totalSales: 450000,
@@ -172,6 +181,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
     const [showReceiptModal, setShowReceiptModal] = useState(false);
     const [lastCompletedOrder, setLastCompletedOrder] = useState<any>(null);
     const [loadingCheckout, setLoadingCheckout] = useState(false);
+
+    // Shifts & Supervisor Audit History State
+    const [showShiftsHistoryModal, setShowShiftsHistoryModal] = useState(false);
+    const [shiftsHistory, setShiftsHistory] = useState<any[]>([]);
+    const [historyCashiers, setHistoryCashiers] = useState<any[]>([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
+    const [openSupervisorName, setOpenSupervisorName] = useState("Supervisor General");
 
     // Cash Registers CRUD
     interface CashRegisterItem {
@@ -440,6 +456,22 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
         }
     };
 
+    const fetchShiftsHistory = async () => {
+        setLoadingHistory(true);
+        try {
+            const res = await fetch(`/api/pos/shifts/history?companyId=${companyId || ''}`);
+            if (res.ok) {
+                const data = await res.json();
+                setShiftsHistory(data.shifts || []);
+                setHistoryCashiers(data.cashiers || []);
+            }
+        } catch (e) {
+            console.warn("[POS] Error al cargar historial de turnos y cajeros:", e);
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
+
     const handleSyncOffline = async () => {
         const pending = getOfflineOrders();
         if (pending.length === 0) return;
@@ -464,8 +496,9 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     companyId,
                     registerName: openRegisterName,
                     openingBalance: Number(openBaseAmount) || 0,
-                    openedById: activeSession?.openedById || undefined,
-                    cashierName: configUser || "Cajero Principal",
+                    openedById: currentUser?.id || activeSession?.openedById || undefined,
+                    cashierName: currentUser?.name || configUser || "Cajero Principal",
+                    supervisorName: openSupervisorName || "Supervisor General",
                 }),
             });
             const data = await res.json();
@@ -882,7 +915,29 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                                 </span>
                             )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">
+
+                        {/* CAJERO & SUPERVISOR BADGES */}
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800 text-xs flex items-center gap-1.5 text-slate-200">
+                                <Users className="w-3.5 h-3.5 text-teal-400" />
+                                <span className="text-slate-400 text-[11px]">Cajero:</span>
+                                <strong className="text-white font-semibold">{activeSession?.cashierName || currentUser?.name || configUser || "Cajero Principal"}</strong>
+                            </span>
+
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800 text-xs flex items-center gap-1.5 text-slate-200">
+                                <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                                <span className="text-slate-400 text-[11px]">Supervisor:</span>
+                                <strong className="text-indigo-200 font-semibold">{activeSession?.supervisorName || openSupervisorName || "Supervisor General"}</strong>
+                            </span>
+
+                            {activeSession?.shiftCode && (
+                                <span className="px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-[11px] font-mono text-indigo-300">
+                                    {activeSession.shiftCode}
+                                </span>
+                            )}
+                        </div>
+
+                        <p className="text-xs text-slate-400 mt-1">
                             {activeSession ? `${activeSession.registerName} | Base: ${formatCOP(activeSession.openingBalance)} | Ventas: ${formatCOP(activeSession.totalSales)}` : "Abre la caja para registrar ventas."}
                         </p>
                     </div>
@@ -922,6 +977,13 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                             <span>Sincronizar ({offlineCount})</span>
                         </button>
                     )}
+
+                    <button
+                        onClick={() => { fetchShiftsHistory(); setShowShiftsHistoryModal(true); }}
+                        className="px-3.5 py-2.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/40 font-bold text-xs transition-all flex items-center gap-1.5"
+                    >
+                        <Users className="w-3.5 h-3.5 text-sky-400" /> Historial Cajeros
+                    </button>
 
                     <button
                         onClick={() => { fetchRegisters(); setShowCashRegisterManagerModal(true); }}
@@ -2491,6 +2553,28 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                             </div>
 
                             <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Cajero Responsable</label>
+                                <input
+                                    type="text"
+                                    disabled
+                                    value={currentUser?.name || configUser || "Cajero Principal"}
+                                    className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-300 font-semibold cursor-not-allowed"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-300">Supervisor a Cargo de Caja</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={openSupervisorName}
+                                    onChange={(e) => setOpenSupervisorName(e.target.value)}
+                                    placeholder="Nombre del Supervisor de turno"
+                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-indigo-500"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
                                 <label className="text-xs font-bold text-slate-300">Fondo Base Inicial de Efectivo ($ COP)</label>
                                 <input
                                     type="number"
@@ -2504,7 +2588,7 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                             </div>
 
                             <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl text-[11px] text-teal-300">
-                                ℹ️ La base inicial queda registrada en el acta del turno para contrastarla en el Cierre Z de fin de jornada.
+                                ℹ️ La base inicial y el supervisor a cargo quedan registrados en el acta de turno para el arqueo y supervisión de cierre.
                             </div>
 
                             <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
@@ -2584,6 +2668,16 @@ export default function PosTerminalClient({ initialIssuer, dianConfig }: PosTerm
                     </div>
                 </div>
             )}
+
+            {/* MODAL: HISTORIAL DE TURNOS Y AUDITORÍA DE CAJEROS */}
+            <CashierShiftsHistoryModal
+                isOpen={showShiftsHistoryModal}
+                onClose={() => setShowShiftsHistoryModal(false)}
+                shifts={shiftsHistory}
+                cashiers={historyCashiers}
+                onRefresh={fetchShiftsHistory}
+                isLoading={loadingHistory}
+            />
         </div>
     );
 }
