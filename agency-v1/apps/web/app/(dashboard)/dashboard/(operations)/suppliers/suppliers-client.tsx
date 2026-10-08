@@ -51,8 +51,9 @@ import {
   Power,
   ShoppingCart,
   Barcode,
-  Tag,
   Box,
+  Boxes,
+  Edit,
   Check,
   ChevronDown
 } from 'lucide-react';
@@ -219,8 +220,10 @@ export function SuppliersClient() {
 
   // Modales y Pestaña activa
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<SupplierItem | null>(null);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [activeTabDossier, setActiveTabDossier] = useState<'GENERAL' | 'CATALOG' | 'FINANCIAL' | 'LOGISTICS' | 'CONTACTS' | 'DOCS'>('GENERAL');
 
@@ -233,6 +236,7 @@ export function SuppliersClient() {
     description: '',
     category: 'RAW_MATERIALS',
     subcategory: '',
+
     purchasePrice: 0,
     currency: 'COP',
     discountStructure: 'Descuento 5% por pedidos > 50 unidades',
@@ -329,6 +333,106 @@ export function SuppliersClient() {
     fetchSuppliers();
   }, []);
 
+  const openCreateSupplier = () => {
+    setEditingSupplier(null);
+    setFormData({
+      name: '',
+      commercialName: '',
+      legalName: '',
+      taxId: '',
+      taxType: 'NIT',
+      category: 'RAW_MATERIALS',
+      status: 'ACTIVE',
+      logoUrl: '',
+      rawMaterialsScope: 'Café Grano Verde Especial, Miel Orgánica, Empaques Kraft, Válvulas Aromáticas',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      mobilePhone: '',
+      address: '',
+      city: 'Bogotá D.C.',
+      country: 'Colombia',
+      currency: 'COP',
+      paymentTermsDays: 30,
+      creditLimit: 25000000,
+      discountRatePct: 3.0,
+      specialTaxRegime: 'REGIMEN_ORDINARIO',
+      bankName: 'Bancolombia',
+      bankAccountType: 'CORRIENTE',
+      bankAccountNumber: '',
+      bankAccountHolder: '',
+      notes: '',
+      shippingMethod: 'Transporte Terrestre Consolidado / Camión refrigerado',
+      leadTimeDays: 4,
+      incoterm: 'DDP',
+      penaltyPctPerDay: 0.5,
+      maxPenaltyPct: 15.0,
+      gracePeriodDays: 2,
+      contactSalesName: '',
+      contactSalesEmail: '',
+      contactSalesPhone: '',
+      contactBillingName: '',
+      contactBillingEmail: '',
+      contactBillingPhone: '',
+      contactLogisticsName: '',
+      contactLogisticsEmail: '',
+      contactLogisticsPhone: '',
+    });
+    setIsRegisterModalOpen(true);
+  };
+
+  const openEditSupplier = (supplier: SupplierItem) => {
+    setEditingSupplier(supplier);
+    const salesContact = supplier.departmentContacts?.find(d => d.department === 'VENTAS');
+    const billingContact = supplier.departmentContacts?.find(d => d.department === 'CARTERA');
+    const logisticsContact = supplier.departmentContacts?.find(d => d.department === 'LOGISTICA');
+
+    setFormData({
+      name: supplier.name,
+      commercialName: supplier.commercialName || supplier.name,
+      legalName: supplier.legalName || supplier.name,
+      taxId: supplier.taxId,
+      taxType: supplier.taxType || 'NIT',
+      category: supplier.category || 'RAW_MATERIALS',
+      status: supplier.status || 'ACTIVE',
+      logoUrl: supplier.logoUrl || '',
+      rawMaterialsScope: supplier.rawMaterialsScope?.join(', ') || '',
+      contactName: supplier.contactName || '',
+      contactEmail: supplier.contactEmail || '',
+      contactPhone: supplier.contactPhone || '',
+      mobilePhone: supplier.mobilePhone || '',
+      address: supplier.address || '',
+      city: supplier.city || 'Bogotá D.C.',
+      country: supplier.country || 'Colombia',
+      currency: supplier.currency || 'COP',
+      paymentTermsDays: supplier.paymentTermsDays || 30,
+      creditLimit: supplier.creditLimit || 0,
+      discountRatePct: supplier.discountRatePct || 0,
+      specialTaxRegime: supplier.specialTaxRegime || 'REGIMEN_ORDINARIO',
+      bankName: supplier.bankName || 'Bancolombia',
+      bankAccountType: supplier.bankAccountType || 'CORRIENTE',
+      bankAccountNumber: supplier.bankAccountNumber || '',
+      bankAccountHolder: supplier.bankAccountHolder || '',
+      notes: (supplier as any).notes || '',
+      shippingMethod: supplier.deliveryTerms?.shippingMethod || 'Transporte Terrestre Consolidado',
+      leadTimeDays: supplier.deliveryTerms?.leadTimeDays || 4,
+      incoterm: supplier.incoterm || 'DDP',
+      penaltyPctPerDay: supplier.delayPenaltyPolicy?.penaltyPctPerDay || 0.5,
+      maxPenaltyPct: supplier.delayPenaltyPolicy?.maxPenaltyPct || 15.0,
+      gracePeriodDays: supplier.delayPenaltyPolicy?.gracePeriodDays || 2,
+      contactSalesName: salesContact?.contactName || '',
+      contactSalesEmail: salesContact?.email || '',
+      contactSalesPhone: salesContact?.phone || '',
+      contactBillingName: billingContact?.contactName || '',
+      contactBillingEmail: billingContact?.email || '',
+      contactBillingPhone: billingContact?.phone || '',
+      contactLogisticsName: logisticsContact?.contactName || '',
+      contactLogisticsEmail: logisticsContact?.email || '',
+      contactLogisticsPhone: logisticsContact?.phone || '',
+    });
+    setIsRegisterModalOpen(true);
+  };
+
   const handleRegisterSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -375,26 +479,37 @@ export function SuppliersClient() {
           formData.contactBillingName && { department: 'CARTERA', contactName: formData.contactBillingName, email: formData.contactBillingEmail, phone: formData.contactBillingPhone },
           formData.contactLogisticsName && { department: 'LOGISTICA', contactName: formData.contactLogisticsName, email: formData.contactLogisticsEmail, phone: formData.contactLogisticsPhone },
         ].filter(Boolean),
-        accountBalance: {
+        accountBalance: editingSupplier?.accountBalance || {
           currentBalance: 0,
           pendingInvoices: 0,
           lastPaymentDate: null,
         }
       };
 
-      const res = await fetch('/api/suppliers', {
-        method: 'POST',
+      const url = editingSupplier ? `/api/suppliers/${editingSupplier.id}` : '/api/suppliers';
+      const method = editingSupplier ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && data.supplier) {
-        setSuppliers([data.supplier, ...suppliers]);
-        setSelectedSupplier(data.supplier);
+        if (editingSupplier) {
+          const updated = { ...editingSupplier, ...data.supplier };
+          setSuppliers(suppliers.map(s => s.id === updated.id ? updated : s));
+          setSelectedSupplier(updated);
+          alert('✅ Expediente del proveedor actualizado exitosamente.');
+        } else {
+          setSuppliers([data.supplier, ...suppliers]);
+          setSelectedSupplier(data.supplier);
+          alert('✅ Proveedor maestro y parámetros de comercio exterior registrados exitosamente.');
+        }
         setIsRegisterModalOpen(false);
-        alert('✅ Proveedor maestro y parámetros de comercio exterior registrados exitosamente.');
+        setEditingSupplier(null);
       } else {
-        alert(data.error || 'Error al registrar proveedor.');
+        alert(data.error || 'Error al guardar proveedor.');
       }
     } catch (err: any) {
       alert('Error de conexión: ' + err.message);
@@ -450,51 +565,101 @@ export function SuppliersClient() {
     }
   };
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
+  const openCreateProduct = () => {
+    setEditingProductId(null);
+    setProductFormData({
+      internalSku: '',
+      supplierSku: '',
+      barcode: '',
+      name: '',
+      description: '',
+      category: 'RAW_MATERIALS',
+      subcategory: '',
+      purchasePrice: 0,
+      currency: selectedSupplier?.currency || 'COP',
+      discountStructure: 'Descuento 5% por pedidos > 50 unidades',
+      taxRatePct: 19,
+      priceValidityStart: '',
+      priceValidityEnd: '',
+      purchaseUnit: 'CAJA',
+      conversionFactor: 12,
+      minOrderQty: 1,
+      orderMultiple: 1,
+      leadTimeDays: 3,
+      availabilityStatus: 'ACTIVE',
+      supplierType: 'PRIMARY',
+      shelfLifeDays: 180,
+      storageConditions: 'Almacenar en lugar fresco y seco (<20°C). Proteger de la luz solar directa.',
+      notes: '',
+    });
+    setIsProductModalOpen(true);
+  };
+
+  const openEditProduct = (prod: SupplierProductItem) => {
+    setEditingProductId(prod.id);
+    setProductFormData({
+      internalSku: prod.internalSku,
+      supplierSku: prod.supplierSku || '',
+      barcode: prod.barcode || '',
+      name: prod.name,
+      description: prod.description || '',
+      category: prod.category || 'RAW_MATERIALS',
+      subcategory: prod.subcategory || '',
+      purchasePrice: prod.purchasePrice || 0,
+      currency: prod.currency || selectedSupplier?.currency || 'COP',
+      discountStructure: prod.discountStructure || '',
+      taxRatePct: prod.taxRatePct || 19,
+      priceValidityStart: prod.priceValidityStart ? prod.priceValidityStart.slice(0, 10) : '',
+      priceValidityEnd: prod.priceValidityEnd ? prod.priceValidityEnd.slice(0, 10) : '',
+      purchaseUnit: prod.purchaseUnit || 'UNIDAD',
+      conversionFactor: prod.conversionFactor || 1,
+      minOrderQty: prod.minOrderQty || 1,
+      orderMultiple: prod.orderMultiple || 1,
+      leadTimeDays: prod.leadTimeDays || 3,
+      availabilityStatus: prod.availabilityStatus || 'ACTIVE',
+      supplierType: prod.supplierType || 'PRIMARY',
+      shelfLifeDays: prod.shelfLifeDays || 180,
+      storageConditions: prod.storageConditions || '',
+      notes: prod.notes || '',
+    });
+    setIsProductModalOpen(true);
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSupplier) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/suppliers/${selectedSupplier.id}/products`, {
-        method: 'POST',
+      const isEditing = Boolean(editingProductId);
+      const url = isEditing
+        ? `/api/suppliers/${selectedSupplier.id}/products/${editingProductId}`
+        : `/api/suppliers/${selectedSupplier.id}/products`;
+      const method = isEditing ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(productFormData),
       });
       const data = await res.json();
       if (res.ok && data.product) {
-        const updatedProducts = [data.product, ...(selectedSupplier.products || [])];
+        let updatedProducts: SupplierProductItem[];
+        if (isEditing) {
+          updatedProducts = (selectedSupplier.products || []).map(p =>
+            p.id === editingProductId ? data.product : p
+          );
+        } else {
+          updatedProducts = [data.product, ...(selectedSupplier.products || [])];
+        }
+
         const updatedSupplier = { ...selectedSupplier, products: updatedProducts };
         setSelectedSupplier(updatedSupplier);
         setSuppliers(suppliers.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
         setIsProductModalOpen(false);
-        setProductFormData({
-          internalSku: '',
-          supplierSku: '',
-          barcode: '',
-          name: '',
-          description: '',
-          category: 'RAW_MATERIALS',
-          subcategory: '',
-          purchasePrice: 0,
-          currency: selectedSupplier.currency || 'COP',
-          discountStructure: '',
-          taxRatePct: 19,
-          priceValidityStart: '',
-          priceValidityEnd: '',
-          purchaseUnit: 'UNIDAD',
-          conversionFactor: 1,
-          minOrderQty: 1,
-          orderMultiple: 1,
-          leadTimeDays: 3,
-          availabilityStatus: 'ACTIVE',
-          supplierType: 'PRIMARY',
-          shelfLifeDays: 180,
-          storageConditions: '',
-          notes: '',
-        });
-        alert('✅ Producto homologado y registrado en el catálogo del proveedor.');
+        setEditingProductId(null);
+        alert(isEditing ? '✅ Producto del catálogo actualizado exitosamente.' : '✅ Producto homologado y registrado en el catálogo del proveedor.');
       } else {
-        alert(data.error || 'Error al registrar producto en el catálogo.');
+        alert(data.error || 'Error al guardar producto en el catálogo.');
       }
     } catch (err: any) {
       alert('Error de conexión: ' + err.message);
@@ -656,7 +821,7 @@ export function SuppliersClient() {
           </button>
 
           <button
-            onClick={() => setIsRegisterModalOpen(true)}
+            onClick={openCreateSupplier}
             className="flex items-center gap-2 px-5 py-2.5 text-xs font-mono font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition shadow-[0_0_25px_-5px_rgba(20,184,166,0.5)] hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus size={15} /> NUEVO PROVEEDOR
@@ -898,16 +1063,28 @@ export function SuppliersClient() {
                         <span>Plazo: {supplier.paymentTermsDays}d</span>
                       </div>
 
-                      <div>
-                        {isCompliant ? (
-                          <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-bold">
-                            <CheckCircle2 size={12} /> Certificado
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-[11px] text-amber-400 font-bold">
-                            <AlertTriangle size={12} /> {supplier.compliance?.missingMandatoryDocs.length} faltantes
-                          </span>
-                        )}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedSupplier(supplier);
+                            openEditSupplier(supplier);
+                          }}
+                          title="Editar Proveedor"
+                          className="px-2 py-1 text-[11px] font-bold text-teal-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-lg border border-teal-500/30 transition flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit size={11} /> Editar
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSupplier(supplier.id);
+                          }}
+                          title="Eliminar Proveedor"
+                          className="p-1 text-rose-400 hover:bg-rose-500/20 rounded-lg border border-rose-500/30 transition cursor-pointer"
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -991,6 +1168,14 @@ export function SuppliersClient() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => openEditSupplier(selectedSupplier)}
+                    title="Editar expediente del proveedor"
+                    className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl transition border border-teal-500/30 shadow-sm"
+                  >
+                    <Edit size={13} /> EDITAR PROVEEDOR
+                  </button>
+
                   <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700 cursor-pointer">
                     <ImageIcon size={13} className="text-teal-400" />
                     <span>{isUploadingLogo ? 'SUBIENDO...' : 'CAMBIAR LOGO'}</span>
@@ -1156,11 +1341,8 @@ export function SuppliersClient() {
                     </div>
 
                     <button
-                      onClick={() => {
-                        setProductFormData(prev => ({ ...prev, currency: selectedSupplier.currency || 'COP' }));
-                        setIsProductModalOpen(true);
-                      }}
-                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition shadow-md shrink-0"
+                      onClick={openCreateProduct}
+                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition shadow-md shrink-0 cursor-pointer"
                     >
                       <Plus size={14} /> VINCULAR PRODUCTO AL CATÁLOGO
                     </button>
@@ -1174,11 +1356,8 @@ export function SuppliersClient() {
                         Este proveedor aún no tiene artículos registrados. Haz clic en "Vincular Producto al Catálogo" para definir precios, SKU, MOQ, múltiplos de compra y requerimientos de almacenamiento.
                       </p>
                       <button
-                        onClick={() => {
-                          setProductFormData(prev => ({ ...prev, currency: selectedSupplier.currency || 'COP' }));
-                          setIsProductModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 border border-teal-500/30 text-teal-300 rounded-xl transition"
+                        onClick={openCreateProduct}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 border border-teal-500/30 text-teal-300 rounded-xl transition cursor-pointer"
                       >
                         <Plus size={13} /> AGREGAR PRIMER ARTÍCULO
                       </button>
@@ -1226,13 +1405,22 @@ export function SuppliersClient() {
                                 )}
                               </div>
 
-                              <button
-                                onClick={() => handleDeleteProduct(prod.id)}
-                                title="Desvincular del catálogo"
-                                className="self-end sm:self-auto p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-rose-500/20 transition"
-                              >
-                                <Trash2 size={13} />
-                              </button>
+                              <div className="flex items-center gap-2 self-end sm:self-auto">
+                                <button
+                                  onClick={() => openEditProduct(prod)}
+                                  title="Editar parámetros del producto"
+                                  className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-mono font-bold text-teal-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-teal-500/30 rounded-lg transition"
+                                >
+                                  <Edit size={12} /> Editar
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(prod.id)}
+                                  title="Desvincular del catálogo"
+                                  className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-rose-500/20 transition"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Bento de 4 Columnas: Códigos, Costos, Logística, Almacenamiento */}
@@ -1585,11 +1773,15 @@ export function SuppliersClient() {
                   <Building2 size={24} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white tracking-tight">Alta de Proveedor Maestro & Comercio Exterior</h3>
-                  <p className="text-xs text-slate-400 font-mono">Catálogo SRM: Parámetros tributarios, 11 Incoterms y multi-divisas</p>
+                  <h3 className="text-lg font-black text-white tracking-tight">
+                    {editingSupplier ? 'Editar Expediente de Proveedor Maestro' : 'Alta de Proveedor Maestro & Comercio Exterior'}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    {editingSupplier ? `Actualizando parámetros de: ${editingSupplier.name}` : 'Catálogo SRM: Parámetros tributarios, 11 Incoterms y multi-divisas'}
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-white p-1">
+              <button onClick={() => { setIsRegisterModalOpen(false); setEditingSupplier(null); }} className="text-slate-400 hover:text-white p-1">
                 <X size={20} />
               </button>
             </div>
@@ -1992,18 +2184,18 @@ export function SuppliersClient() {
               <div className="pt-4 flex justify-end gap-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsRegisterModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl font-bold transition border border-slate-800"
+                  onClick={() => { setIsRegisterModalOpen(false); setEditingSupplier(null); }}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl font-bold transition border border-slate-800 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-7 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-black transition flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(20,184,166,0.6)]"
+                  className="px-7 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-black transition flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(20,184,166,0.6)] cursor-pointer"
                 >
                   {isSubmitting && <RefreshCw size={14} className="animate-spin" />}
-                  GUARDAR & REGISTRAR EN SRM
+                  {editingSupplier ? 'ACTUALIZAR EXPEDIENTE SRM' : 'GUARDAR & REGISTRAR EN SRM'}
                 </button>
               </div>
             </form>
@@ -2118,7 +2310,7 @@ export function SuppliersClient() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    HOMOLOGAR & VINCULAR ARTÍCULO AL CATÁLOGO
+                    {editingProductId ? 'EDITAR ARTÍCULO EN CATÁLOGO' : 'HOMOLOGAR & VINCULAR ARTÍCULO AL CATÁLOGO'}
                     <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30">
                       SRM 4-SECTORES
                     </span>
@@ -2129,14 +2321,14 @@ export function SuppliersClient() {
                 </div>
               </div>
               <button
-                onClick={() => setIsProductModalOpen(false)}
-                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"
+                onClick={() => { setIsProductModalOpen(false); setEditingProductId(null); }}
+                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+            <form onSubmit={handleSaveProduct} className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
               {/* SECTOR 1: IDENTIFICACIÓN Y CÓDIGOS */}
               <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-4">
                 <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
@@ -2441,18 +2633,18 @@ export function SuppliersClient() {
               <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsProductModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl font-bold transition"
+                  onClick={() => { setIsProductModalOpen(false); setEditingProductId(null); }}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl font-bold transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-7 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-black transition flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(20,184,166,0.6)]"
+                  className="px-7 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-black transition flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(20,184,166,0.6)] cursor-pointer"
                 >
                   {isSubmitting && <RefreshCw size={15} className="animate-spin" />}
-                  HOMOLOGAR & VINCULAR AL CATÁLOGO
+                  {editingProductId ? 'ACTUALIZAR ARTÍCULO EN CATÁLOGO' : 'HOMOLOGAR & VINCULAR AL CATÁLOGO'}
                 </button>
               </div>
             </form>
