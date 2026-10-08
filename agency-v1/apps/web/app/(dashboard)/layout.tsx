@@ -167,7 +167,7 @@ export default async function DashboardLayout({
     for (const href of allRoutes) {
         let hasAccess = false;
         
-        if (isSuperAdmin) {
+        if (isSuperAdmin || userPermissions.includes('*')) {
             hasAccess = true;
         } else if (hasAssignedCompanyRole) {
             if (href === '/dashboard') {
