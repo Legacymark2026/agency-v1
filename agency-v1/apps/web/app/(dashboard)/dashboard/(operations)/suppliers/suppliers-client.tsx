@@ -48,7 +48,13 @@ import {
   ImageIcon,
   Ban,
   CheckCircle,
-  Power
+  Power,
+  ShoppingCart,
+  Barcode,
+  Tag,
+  Box,
+  Check,
+  ChevronDown
 } from 'lucide-react';
 
 // ── Lista Exhaustiva de Incoterms 2020 Oficiales ─────────────────────────────
@@ -127,6 +133,36 @@ interface DelayPenaltyPolicy {
   gracePeriodDays: number;
 }
 
+interface SupplierProductItem {
+  id: string;
+  supplierId: string;
+  companyId: string;
+  internalSku: string;
+  supplierSku: string;
+  barcode?: string | null;
+  name: string;
+  description?: string | null;
+  category: string;
+  subcategory?: string | null;
+  purchasePrice: number;
+  currency: string;
+  discountStructure?: string | null;
+  taxRatePct: number;
+  priceValidityStart?: string | null;
+  priceValidityEnd?: string | null;
+  purchaseUnit: string;
+  conversionFactor: number;
+  minOrderQty: number;
+  orderMultiple: number;
+  leadTimeDays: number;
+  availabilityStatus: 'ACTIVE' | 'OUT_OF_STOCK' | 'DISCONTINUED' | 'SUSPENDED';
+  supplierType: 'PRIMARY' | 'SECONDARY' | 'BACKUP';
+  shelfLifeDays?: number | null;
+  storageConditions?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
 interface SupplierItem {
   id: string;
   name: string;
@@ -161,6 +197,7 @@ interface SupplierItem {
   incoterm?: string;
   delayPenaltyPolicy?: DelayPenaltyPolicy;
   documents?: SupplierDocument[];
+  products?: SupplierProductItem[];
   compliance?: {
     compliant: boolean;
     missingMandatoryDocs: string[];
@@ -183,10 +220,38 @@ export function SuppliersClient() {
   // Modales y Pestaña activa
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [activeTabDossier, setActiveTabDossier] = useState<'GENERAL' | 'FINANCIAL' | 'LOGISTICS' | 'CONTACTS' | 'DOCS'>('GENERAL');
+  const [activeTabDossier, setActiveTabDossier] = useState<'GENERAL' | 'CATALOG' | 'FINANCIAL' | 'LOGISTICS' | 'CONTACTS' | 'DOCS'>('GENERAL');
 
-  // Form State Completo para Alta y Edición
+  // Form State para Productos de Proveedor
+  const [productFormData, setProductFormData] = useState({
+    internalSku: '',
+    supplierSku: '',
+    barcode: '',
+    name: '',
+    description: '',
+    category: 'RAW_MATERIALS',
+    subcategory: '',
+    purchasePrice: 0,
+    currency: 'COP',
+    discountStructure: 'Descuento 5% por pedidos > 50 unidades',
+    taxRatePct: 19,
+    priceValidityStart: '',
+    priceValidityEnd: '',
+    purchaseUnit: 'CAJA',
+    conversionFactor: 12,
+    minOrderQty: 1,
+    orderMultiple: 1,
+    leadTimeDays: 3,
+    availabilityStatus: 'ACTIVE' as 'ACTIVE' | 'OUT_OF_STOCK' | 'DISCONTINUED' | 'SUSPENDED',
+    supplierType: 'PRIMARY' as 'PRIMARY' | 'SECONDARY' | 'BACKUP',
+    shelfLifeDays: 180,
+    storageConditions: 'Almacenar en lugar fresco y seco (<20°C). Proteger de la luz solar directa.',
+    notes: '',
+  });
+
+  // Form State Completo para Alta y Edición de Proveedor
   const [formData, setFormData] = useState({
     name: '',
     commercialName: '',
@@ -382,6 +447,81 @@ export function SuppliersClient() {
     } finally {
       setIsUploadingLogo(false);
       e.target.value = '';
+    }
+  };
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSupplier) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/suppliers/${selectedSupplier.id}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productFormData),
+      });
+      const data = await res.json();
+      if (res.ok && data.product) {
+        const updatedProducts = [data.product, ...(selectedSupplier.products || [])];
+        const updatedSupplier = { ...selectedSupplier, products: updatedProducts };
+        setSelectedSupplier(updatedSupplier);
+        setSuppliers(suppliers.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+        setIsProductModalOpen(false);
+        setProductFormData({
+          internalSku: '',
+          supplierSku: '',
+          barcode: '',
+          name: '',
+          description: '',
+          category: 'RAW_MATERIALS',
+          subcategory: '',
+          purchasePrice: 0,
+          currency: selectedSupplier.currency || 'COP',
+          discountStructure: '',
+          taxRatePct: 19,
+          priceValidityStart: '',
+          priceValidityEnd: '',
+          purchaseUnit: 'UNIDAD',
+          conversionFactor: 1,
+          minOrderQty: 1,
+          orderMultiple: 1,
+          leadTimeDays: 3,
+          availabilityStatus: 'ACTIVE',
+          supplierType: 'PRIMARY',
+          shelfLifeDays: 180,
+          storageConditions: '',
+          notes: '',
+        });
+        alert('✅ Producto homologado y registrado en el catálogo del proveedor.');
+      } else {
+        alert(data.error || 'Error al registrar producto en el catálogo.');
+      }
+    } catch (err: any) {
+      alert('Error de conexión: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!selectedSupplier) return;
+    if (!confirm('¿Deseas desvincular este producto del catálogo del proveedor?')) return;
+    try {
+      const res = await fetch(`/api/suppliers/${selectedSupplier.id}/products/${productId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const nextProducts = (selectedSupplier.products || []).filter(p => p.id !== productId);
+        const updatedSupplier = { ...selectedSupplier, products: nextProducts };
+        setSelectedSupplier(updatedSupplier);
+        setSuppliers(suppliers.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+        alert('🗑️ Producto eliminado del catálogo del proveedor.');
+      } else {
+        alert(data.error || 'No se pudo eliminar el producto.');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
     }
   };
 
@@ -889,7 +1029,18 @@ export function SuppliersClient() {
                       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  1. GENERAL & MATERIA PRIMA
+                  1. GENERAL
+                </button>
+                <button
+                  onClick={() => setActiveTabDossier('CATALOG')}
+                  className={`px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 ${
+                    activeTabDossier === 'CATALOG'
+                      ? 'bg-teal-500 text-slate-950 shadow-md'
+                      : 'text-teal-400 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30'
+                  }`}
+                >
+                  <ShoppingCart size={13} />
+                  <span>2. CATÁLOGO DE PRODUCTOS ({selectedSupplier.products?.length || 0})</span>
                 </button>
                 <button
                   onClick={() => setActiveTabDossier('FINANCIAL')}
@@ -899,7 +1050,7 @@ export function SuppliersClient() {
                       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  2. BANCARIO, DIVISAS & FISCAL
+                  3. BANCARIO & DIVISAS
                 </button>
                 <button
                   onClick={() => setActiveTabDossier('LOGISTICS')}
@@ -909,7 +1060,7 @@ export function SuppliersClient() {
                       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  3. INCOTERMS & PENALIZACIÓN
+                  4. INCOTERMS & LOGÍSTICA
                 </button>
                 <button
                   onClick={() => setActiveTabDossier('CONTACTS')}
@@ -919,7 +1070,7 @@ export function SuppliersClient() {
                       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  4. DEPARTAMENTOS
+                  5. DEPARTAMENTOS
                 </button>
                 <button
                   onClick={() => setActiveTabDossier('DOCS')}
@@ -929,7 +1080,7 @@ export function SuppliersClient() {
                       : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  5. EXPEDIENTE ({selectedSupplier.documents?.length || 0})
+                  6. EXPEDIENTE ({selectedSupplier.documents?.length || 0})
                 </button>
               </div>
 
@@ -991,7 +1142,155 @@ export function SuppliersClient() {
                 </div>
               )}
 
-              {/* ── TAB CONTENT 2: FINANCIERO, DIVISAS & BANCARIO ─────────────── */}
+              {/* ── TAB CONTENT 2: CATÁLOGO DE PRODUCTOS VINCULADOS ─────────── */}
+              {activeTabDossier === 'CATALOG' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-slate-800">
+                    <div>
+                      <h3 className="text-sm font-mono font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2">
+                        <ShoppingCart size={15} /> Portafolio de Suministro Homologado ({selectedSupplier.products?.length || 0} Artículos)
+                      </h3>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        Especificaciones técnicas, SKU dual, matrices de costos, MOQ y condiciones de empaque.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setProductFormData(prev => ({ ...prev, currency: selectedSupplier.currency || 'COP' }));
+                        setIsProductModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition shadow-md shrink-0"
+                    >
+                      <Plus size={14} /> VINCULAR PRODUCTO AL CATÁLOGO
+                    </button>
+                  </div>
+
+                  {(!selectedSupplier.products || selectedSupplier.products.length === 0) ? (
+                    <div className="p-12 text-center text-xs text-slate-400 bg-slate-950/40 border border-dashed border-slate-800 rounded-3xl font-mono space-y-3">
+                      <Box size={32} className="mx-auto text-slate-600 animate-pulse" />
+                      <div className="text-white font-bold text-sm">Sin catálogo de productos vinculado</div>
+                      <p className="max-w-md mx-auto text-slate-500 text-[11px]">
+                        Este proveedor aún no tiene artículos registrados. Haz clic en "Vincular Producto al Catálogo" para definir precios, SKU, MOQ, múltiplos de compra y requerimientos de almacenamiento.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setProductFormData(prev => ({ ...prev, currency: selectedSupplier.currency || 'COP' }));
+                          setIsProductModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold bg-slate-900 hover:bg-slate-800 border border-teal-500/30 text-teal-300 rounded-xl transition"
+                      >
+                        <Plus size={13} /> AGREGAR PRIMER ARTÍCULO
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedSupplier.products.map((prod) => {
+                        const isPrimary = prod.supplierType === 'PRIMARY';
+                        return (
+                          <div
+                            key={prod.id}
+                            className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-teal-500/40 transition space-y-4 font-mono text-xs"
+                          >
+                            {/* Cabecera del Artículo */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-800/80">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-black text-white text-sm tracking-tight">{prod.name}</span>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-900 border border-slate-700 text-teal-300">
+                                    {prod.category}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                      isPrimary
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                                        : prod.supplierType === 'SECONDARY'
+                                        ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
+                                        : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                    }`}
+                                  >
+                                    PROVEEDOR {prod.supplierType}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                      prod.availabilityStatus === 'ACTIVE'
+                                        ? 'bg-teal-500/10 text-teal-400 border-teal-500/30'
+                                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                                    }`}
+                                  >
+                                    {prod.availabilityStatus}
+                                  </span>
+                                </div>
+                                {prod.description && (
+                                  <p className="text-[11px] text-slate-400 pt-0.5">{prod.description}</p>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={() => handleDeleteProduct(prod.id)}
+                                title="Desvincular del catálogo"
+                                className="self-end sm:self-auto p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-rose-500/20 transition"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+
+                            {/* Bento de 4 Columnas: Códigos, Costos, Logística, Almacenamiento */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
+                              {/* 1. Identificación y Códigos */}
+                              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
+                                <div className="text-[10px] font-bold text-teal-400 uppercase flex items-center gap-1">
+                                  <Barcode size={12} /> 1. Códigos & SKU
+                                </div>
+                                <div><span className="text-slate-500">SKU Interno:</span> <span className="font-bold text-white">{prod.internalSku}</span></div>
+                                <div><span className="text-slate-500">SKU Proveedor:</span> <span className="text-teal-300 font-bold">{prod.supplierSku}</span></div>
+                                <div><span className="text-slate-500">EAN/UPC/GTIN:</span> <span className="text-slate-300">{prod.barcode || 'N/A'}</span></div>
+                              </div>
+
+                              {/* 2. Condiciones Comerciales */}
+                              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
+                                <div className="text-[10px] font-bold text-emerald-400 uppercase flex items-center gap-1">
+                                  <DollarSign size={12} /> 2. Precios & Tributos
+                                </div>
+                                <div>
+                                  <span className="text-slate-500">Costo Base:</span>{' '}
+                                  <span className="font-black text-white text-xs">
+                                    ${prod.purchasePrice.toLocaleString('es-CO')} {prod.currency}
+                                  </span>
+                                </div>
+                                <div><span className="text-slate-500">IVA/Impuestos:</span> <span className="text-amber-400">{prod.taxRatePct}%</span></div>
+                                <div className="truncate"><span className="text-slate-500">Descuentos:</span> <span className="text-slate-300">{prod.discountStructure || 'Ninguno'}</span></div>
+                              </div>
+
+                              {/* 3. Logística y Empaque */}
+                              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
+                                <div className="text-[10px] font-bold text-sky-400 uppercase flex items-center gap-1">
+                                  <Truck size={12} /> 3. Empaque & MOQ
+                                </div>
+                                <div><span className="text-slate-500">Unidad Compra:</span> <span className="font-bold text-white">{prod.purchaseUnit}</span> (x{prod.conversionFactor} un.)</div>
+                                <div><span className="text-slate-500">MOQ Mínimo:</span> <span className="text-teal-300 font-bold">{prod.minOrderQty} {prod.purchaseUnit}s</span></div>
+                                <div><span className="text-slate-500">Lead Time:</span> <span className="text-slate-300">{prod.leadTimeDays} días hábiles</span></div>
+                              </div>
+
+                              {/* 4. Control y Almacenamiento */}
+                              <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
+                                <div className="text-[10px] font-bold text-purple-400 uppercase flex items-center gap-1">
+                                  <Layers size={12} /> 4. Vida Útil & Acopio
+                                </div>
+                                <div><span className="text-slate-500">Vida Útil:</span> <span className="text-white font-bold">{prod.shelfLifeDays ? `${prod.shelfLifeDays} días` : 'No aplica'}</span></div>
+                                <div><span className="text-slate-500">Múltiplo Pedido:</span> <span className="text-slate-300">En {prod.orderMultiple}s</span></div>
+                                <div className="truncate"><span className="text-slate-500">Condición:</span> <span className="text-slate-400">{prod.storageConditions || 'Ambiente normal'}</span></div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── TAB CONTENT 3: FINANCIERO, DIVISAS & BANCARIO ─────────────── */}
               {activeTabDossier === 'FINANCIAL' && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1807,6 +2106,360 @@ export function SuppliersClient() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL: VINCULAR PRODUCTO AL CATÁLOGO DE PROVEEDOR ────────────────── */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto font-mono">
+          <div className="bg-slate-950 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl my-6">
+            <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/60 sticky top-0 z-10 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center border border-teal-500/20">
+                  <Boxes size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    HOMOLOGAR & VINCULAR ARTÍCULO AL CATÁLOGO
+                    <span className="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30">
+                      SRM 4-SECTORES
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Proveedor destino: <span className="text-teal-400 font-bold">{selectedSupplier?.commercialName || selectedSupplier?.name}</span> ({selectedSupplier?.taxId})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsProductModalOpen(false)}
+                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateProduct} className="p-6 space-y-6 overflow-y-auto flex-1 text-xs">
+              {/* SECTOR 1: IDENTIFICACIÓN Y CÓDIGOS */}
+              <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-4">
+                <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+                  <Barcode size={15} /> 1. IDENTIFICACIÓN & CODIFICACIÓN INTERNACIONAL
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">ID / SKU Interno *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: RAW-CAFE-001"
+                      value={productFormData.internalSku}
+                      onChange={e => setProductFormData({ ...productFormData, internalSku: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">SKU / Código Proveedor</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: PROV-X92"
+                      value={productFormData.supplierSku}
+                      onChange={e => setProductFormData({ ...productFormData, supplierSku: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Código de Barras (EAN / UPC / GTIN)</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 7701234567890"
+                      value={productFormData.barcode}
+                      onChange={e => setProductFormData({ ...productFormData, barcode: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-slate-300 font-bold mb-1">Nombre Comercial del Artículo *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Grano de Café Pergamino Especial Exportación"
+                      value={productFormData.name}
+                      onChange={e => setProductFormData({ ...productFormData, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Categoría Operativa</label>
+                    <select
+                      value={productFormData.category}
+                      onChange={e => setProductFormData({ ...productFormData, category: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    >
+                      <option value="RAW_MATERIALS">Materia Prima</option>
+                      <option value="PACKAGING">Empaque y Embalaje</option>
+                      <option value="EQUIPMENT">Equipos y Maquinaria</option>
+                      <option value="FINISHED_GOODS">Producto Terminado</option>
+                      <option value="SERVICES">Insumos y Servicios</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Subcategoría Específica</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Origen Nariño / Tueste Medio"
+                      value={productFormData.subcategory}
+                      onChange={e => setProductFormData({ ...productFormData, subcategory: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Descripción Técnica del Proveedor</label>
+                    <input
+                      type="text"
+                      placeholder="Especificaciones técnicas y descripción suministrada..."
+                      value={productFormData.description}
+                      onChange={e => setProductFormData({ ...productFormData, description: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTOR 2: CONDICIONES COMERCIALES Y COSTOS */}
+              <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-4">
+                <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+                  <DollarSign size={15} /> 2. CONDICIONES COMERCIALES, COSTOS & TRIBUTACIÓN
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Precio Base Compra *</label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      min={0}
+                      value={productFormData.purchasePrice}
+                      onChange={e => setProductFormData({ ...productFormData, purchasePrice: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Divisa de Compra</label>
+                    <select
+                      value={productFormData.currency}
+                      onChange={e => setProductFormData({ ...productFormData, currency: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    >
+                      {ALL_CURRENCIES.map(c => (
+                        <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Impuesto Aplicable (IVA %)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min={0}
+                      max={100}
+                      placeholder="19"
+                      value={productFormData.taxRatePct}
+                      onChange={e => setProductFormData({ ...productFormData, taxRatePct: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Estructura Descuentos</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 5% pronto pago / 8% > 100u"
+                      value={productFormData.discountStructure}
+                      onChange={e => setProductFormData({ ...productFormData, discountStructure: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/60">
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-1">Vigencia Tarifa - Fecha Inicio</label>
+                    <input
+                      type="date"
+                      value={productFormData.priceValidityStart}
+                      onChange={e => setProductFormData({ ...productFormData, priceValidityStart: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-1">Vigencia Tarifa - Fecha Fin (Expira)</label>
+                    <input
+                      type="date"
+                      value={productFormData.priceValidityEnd}
+                      onChange={e => setProductFormData({ ...productFormData, priceValidityEnd: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTOR 3: LOGÍSTICA Y EMPAQUE */}
+              <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-4">
+                <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+                  <Truck size={15} /> 3. LOGÍSTICA, EMPAQUE & CADENA DE SUMINISTRO
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Unidad de Compra</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: CAJA, BULTO, KG, PALLET"
+                      value={productFormData.purchaseUnit}
+                      onChange={e => setProductFormData({ ...productFormData, purchaseUnit: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Factor Conversión</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min={0.001}
+                      placeholder="1 caja = 12 u"
+                      value={productFormData.conversionFactor}
+                      onChange={e => setProductFormData({ ...productFormData, conversionFactor: parseFloat(e.target.value) || 1 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Mínimo Pedido (MOQ)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min={1}
+                      placeholder="1"
+                      value={productFormData.minOrderQty}
+                      onChange={e => setProductFormData({ ...productFormData, minOrderQty: parseFloat(e.target.value) || 1 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Múltiplo Pedido</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min={1}
+                      placeholder="Múltiplos de 6 o 10"
+                      value={productFormData.orderMultiple}
+                      onChange={e => setProductFormData({ ...productFormData, orderMultiple: parseFloat(e.target.value) || 1 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Lead Time (Días hábiles)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="3"
+                      value={productFormData.leadTimeDays}
+                      onChange={e => setProductFormData({ ...productFormData, leadTimeDays: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTOR 4: CONTROL Y ESTADO OPERATIVO */}
+              <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-4">
+                <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+                  <ShieldCheck size={15} /> 4. CONTROL OPERATIVO, VIDA ÚTIL & ALMACENAMIENTO
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Estado de Disponibilidad</label>
+                    <select
+                      value={productFormData.availabilityStatus}
+                      onChange={e => setProductFormData({ ...productFormData, availabilityStatus: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    >
+                      <option value="ACTIVE">Activo / En Catálogo</option>
+                      <option value="OUT_OF_STOCK">Agotado Temporalmente</option>
+                      <option value="DISCONTINUED">Descontinuado</option>
+                      <option value="SUSPENDED">Suspendido</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Tipo Proveedor para Producto</label>
+                    <select
+                      value={productFormData.supplierType}
+                      onChange={e => setProductFormData({ ...productFormData, supplierType: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    >
+                      <option value="PRIMARY">Proveedor Principal</option>
+                      <option value="SECONDARY">Proveedor Secundario</option>
+                      <option value="BACKUP">Proveedor de Respaldo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Vida Útil (Días garantía)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="180"
+                      value={productFormData.shelfLifeDays}
+                      onChange={e => setProductFormData({ ...productFormData, shelfLifeDays: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Condiciones Almacenamiento</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Refrigerar a 4°C, Proteger humedad"
+                      value={productFormData.storageConditions}
+                      onChange={e => setProductFormData({ ...productFormData, storageConditions: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Observaciones & Requisitos Técnicos</label>
+                  <input
+                    type="text"
+                    placeholder="Instrucciones especiales para inspección de recibo o calidad..."
+                    value={productFormData.notes}
+                    onChange={e => setProductFormData({ ...productFormData, notes: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* BOTONES DE ACCIÓN */}
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsProductModalOpen(false)}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl font-bold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-7 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl font-black transition flex items-center gap-2 shadow-[0_0_20px_-5px_rgba(20,184,166,0.6)]"
+                >
+                  {isSubmitting && <RefreshCw size={15} className="animate-spin" />}
+                  HOMOLOGAR & VINCULAR AL CATÁLOGO
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

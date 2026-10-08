@@ -56,6 +56,9 @@ export async function GET(req: NextRequest) {
         documents: {
           orderBy: { createdAt: "desc" },
         },
+        products: {
+          orderBy: { createdAt: "desc" },
+        },
       },
       orderBy: { name: "asc" },
       take: 200,

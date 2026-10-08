@@ -34,6 +34,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         documents: {
           orderBy: { createdAt: "desc" },
         },
+        products: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 

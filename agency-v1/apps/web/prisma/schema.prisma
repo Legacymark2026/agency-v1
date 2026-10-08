@@ -5134,6 +5134,7 @@ model Supplier {
   notes                 String?
   customFields          Json?              @default("{}") @map("custom_fields")
   documents             SupplierDocument[]
+  products              SupplierProduct[]
   createdAt             DateTime           @default(now()) @map("created_at")
   updatedAt             DateTime           @updatedAt @map("updated_at")
 
@@ -5170,4 +5171,56 @@ model SupplierDocument {
   @@index([companyId])
   @@index([expiryDate])
   @@map("tbl_supplier_documents")
+}
+
+model SupplierProduct {
+  id                    String    @id @default(uuid())
+  supplierId            String    @map("supplier_id")
+  companyId             String    @map("company_id")
+
+  // 1. Identificación y Códigos
+  internalSku           String    @map("internal_sku") // ID / SKU Interno empresa
+  supplierSku           String    @map("supplier_sku") // SKU / Código del Proveedor
+  barcode               String?   // EAN / UPC / GTIN
+  name                  String    // Nombre comercial / Denominación técnica
+  description           String?   // Descripción del producto según el proveedor
+  category              String    @default("GENERAL") // Categoría operativa
+  subcategory           String?   // Subcategoría
+
+  // 2. Condiciones Comerciales y Costos
+  purchasePrice         Float     @map("purchase_price") // Precio base de compra antes de impuestos
+  currency              String    @default("COP") // Divisa de compra (ISO 4217)
+  discountStructure     String?   @map("discount_structure") // Estructura de descuentos pactados
+  taxRatePct            Float     @default(19) @map("tax_rate_pct") // Tasa de IVA u otros tributos aplicables (%)
+  priceValidityStart    DateTime? @map("price_validity_start") // Inicio vigencia precio
+  priceValidityEnd      DateTime? @map("price_validity_end")   // Fin vigencia precio
+
+  // 3. Logística y Empaque
+  purchaseUnit          String    @default("UNIDAD") @map("purchase_unit") // caja, bulto, pallet, kilogramo, litro
+  conversionFactor      Float     @default(1.0) @map("conversion_factor") // Factor conversión (ej: 1 caja = 12 unidades)
+  minOrderQty           Float     @default(1.0) @map("min_order_qty") // MOQ: Cantidad mínima de pedido
+  orderMultiple         Float     @default(1.0) @map("order_multiple") // Múltiplo de pedido (ej: en múltiplos de 6 o 10)
+  leadTimeDays          Int       @default(3) @map("lead_time_days") // Tiempo de entrega en días hábiles
+
+  // 4. Control y Estado Operativo
+  availabilityStatus    String    @default("ACTIVE") @map("availability_status") // ACTIVE, OUT_OF_STOCK, DISCONTINUED, SUSPENDED
+  supplierType          String    @default("PRIMARY") @map("supplier_type") // PRIMARY (Principal), SECONDARY (Secundario), BACKUP (Respaldo)
+  shelfLifeDays         Int?      @map("shelf_life_days") // Vida útil / Días de caducidad garantizados
+  storageConditions     String?   @map("storage_conditions") // Requisitos: refrigeración, frágil, humedad, temperatura controlada
+  
+  notes                 String?
+  customFields          Json?     @default("{}") @map("custom_fields")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  supplier              Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, internalSku])
+  @@index([supplierId])
+  @@index([companyId])
+  @@index([internalSku])
+  @@index([supplierSku])
+  @@index([barcode])
+  @@index([availabilityStatus])
+  @@map("tbl_supplier_products")
 }
