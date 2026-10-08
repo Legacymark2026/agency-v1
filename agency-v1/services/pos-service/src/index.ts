@@ -587,7 +587,7 @@ app.post("/api/pos/orders", async (req, res) => {
                             ...(paymentMethod === "NEQUI_PSE" ? { transferSalesTotal: { increment: totalAmount } } : {}),
                             ...(paymentMethod === "CREDIT" ? { creditSalesTotal: { increment: totalAmount } } : {}),
                         }
-                    }).catch(err => console.warn("[PosOrder] PosShift accumulation update warning:", err.message));
+                    }).catch((err: any) => console.warn("[PosOrder] PosShift accumulation update warning:", err.message));
                 }
             } catch (error) {
                 console.error("Database write failed:", error);

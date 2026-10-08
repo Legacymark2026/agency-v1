@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { prisma } from "@agency/database";
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+
+export const activeSessionsMap = new Map<string, any>();
 
 export function createSessionsRouter(eventBus: any, resolveValidCompanyId: (id?: string) => Promise<string>) {
     const router = Router();
