@@ -126,7 +126,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Finanzas y Operaciones ────────────────────────────
     "/dashboard/pos": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/inventory": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
-    "/dashboard/suppliers": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/suppliers": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/sales-forecast": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/dian": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/security/audit-ledger": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
@@ -359,8 +359,10 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "seo.view", routes: ["/dashboard/seo"] },
 
     // Operaciones & Logística
-    { perm: "inventory.view", routes: ["/dashboard/inventory", "/dashboard/channels"] },
-    { perm: "inventory.manage", routes: ["/dashboard/inventory", "/dashboard/channels"] },
+    { perm: "inventory.view", routes: ["/dashboard/inventory", "/dashboard/suppliers", "/dashboard/channels"] },
+    { perm: "inventory.manage", routes: ["/dashboard/inventory", "/dashboard/suppliers", "/dashboard/channels"] },
+    { perm: "suppliers.view", routes: ["/dashboard/suppliers"] },
+    { perm: "suppliers.manage", routes: ["/dashboard/suppliers"] },
     { perm: "booking.view", routes: ["/dashboard/booking", "/dashboard/calendar", "/dashboard/events"] },
     { perm: "booking.manage", routes: ["/dashboard/booking"] },
     { perm: "calendar.view", routes: ["/dashboard/calendar", "/dashboard/events"] },
@@ -505,6 +507,8 @@ export const MASTER_PERMISSIONS: { module: string; name: string; description: st
     // Operaciones & Logística
     { module: "operations", name: "inventory.view", description: "Consultar existencias de inventario y bodegas" },
     { module: "operations", name: "inventory.manage", description: "Entradas, salidas, traslados y órdenes a proveedores" },
+    { module: "operations", name: "suppliers.view", description: "Consultar directorio de proveedores y acuerdos comerciales" },
+    { module: "operations", name: "suppliers.manage", description: "Crear, actualizar y gestionar proveedores y catálogos SRM" },
     { module: "operations", name: "booking.view", description: "Ver calendario de agendamiento y disponibilidad de citas" },
     { module: "operations", name: "booking.manage", description: "Configurar servicios, horarios y políticas de reserva" },
     { module: "operations", name: "calendar.view", description: "Ver calendario corporativo y compromisos" },
