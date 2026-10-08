@@ -17,14 +17,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
     }
 
-    const companyId = (session.user as any)?.companyId;
-    const where: any = {};
-    if (companyId) {
-      where.companyId = companyId;
-    }
-
     const users = await prisma.user.findMany({
-      where,
+      where: {
+        deactivatedAt: null,
+      },
       select: {
         id: true,
         name: true,
