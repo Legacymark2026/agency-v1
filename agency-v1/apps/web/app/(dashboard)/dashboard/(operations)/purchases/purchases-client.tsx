@@ -189,7 +189,7 @@ export function PurchasesClient() {
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
 
   // Configuración de Aprobación Multinivel
-  const [approvalThreshold] = useState<number>(10000000); // 10 millones COP requiere aprobación de Gerencia
+  const [approvalThreshold, setApprovalThreshold] = useState<number>(10000000);
 
   // Modales
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -247,6 +247,7 @@ export function PurchasesClient() {
         fetch('/api/purchases/receipts').then((r) => r.json()),
         fetch('/api/purchases/returns').then((r) => r.json()),
         fetch('/api/purchases/analytics').then((r) => r.json()),
+        fetch('/api/governance/financial-policies').then((r) => r.json()),
       ]);
 
       if (ordRes.success) {
@@ -259,6 +260,7 @@ export function PurchasesClient() {
       if (recRes.success) setReceipts(recRes.receipts);
       if (retRes.success) setReturns(retRes.returns);
       if (anaRes.success) setAnalytics(anaRes.analytics);
+      if (arguments[0]?.[5]?.success && arguments[0]?.[5]?.policies?.approvalThreshold) setApprovalThreshold(arguments[0][5].policies.approvalThreshold);
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {

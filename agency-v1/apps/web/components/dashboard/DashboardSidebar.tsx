@@ -5,7 +5,7 @@ import {
     LayoutDashboard, Users, Settings, FileText,
     Shield, ShieldCheck, BookOpen, Briefcase, BarChart2, Workflow,
     MessageSquare, Target, TrendingUp, Link2, Building2, ShoppingCart,
-    Lock, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
+    Lock, Scale, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark,
     Image as ImageIcon, Share2, Percent, ShoppingBag, Package,
     Scan, AlertTriangle, Key, Terminal, Network, Layers, Sparkles,
@@ -414,6 +414,7 @@ export const NAV_AREAS: NavArea[] = [
                 icon: <Lock size={15} />,
                 submodules: [
                     { href: "/dashboard/security", label: "Auditoría Forense & Logs", icon: <Lock size={13} />, code: "SEC" },
+                    { href: "/dashboard/settings/financial-policies", label: "Control Financiero & Gobernanza", icon: <Scale size={13} />, code: "POL" },
                     { href: "/dashboard/privacy-portal", label: "Portal Privacidad & GDPR", icon: <ShieldCheck size={13} />, code: "PRV" },
                     { href: "/dashboard/settings/system-parameters", label: "Parámetros del Sistema", icon: <Sliders size={13} />, code: "PAR" },
                     { href: "/dashboard/settings/pos", label: "Terminal POS Enterprise", icon: <ShoppingBag size={13} />, code: "POS" },

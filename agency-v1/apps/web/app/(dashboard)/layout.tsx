@@ -145,7 +145,7 @@ export default async function DashboardLayout({
         "/dashboard/admin/payroll/employees", "/dashboard/admin/payroll/employees/new", "/dashboard/admin/payroll/time-off", "/dashboard/admin/payroll/reports", "/dashboard/admin/payroll/expenses",
         "/dashboard/admin/treasury", "/dashboard/admin/audit-logs", "/dashboard/privacy-portal",
         "/dashboard/settings", "/dashboard/settings/agents", "/dashboard/settings/agents/teams", "/dashboard/settings/agents/skillchains", "/dashboard/settings/agents/knowledge",
-        "/dashboard/settings/inbox/macros", "/dashboard/settings/audit-logs", "/dashboard/settings/privacy", "/dashboard/settings/system-parameters", "/dashboard/booking",
+        "/dashboard/settings/inbox/macros", "/dashboard/settings/audit-logs", "/dashboard/settings/privacy", "/dashboard/settings/financial-policies", "/dashboard/settings/system-parameters", "/dashboard/booking",
         "/dashboard/admin/ai-insights", "/dashboard/experts", "/dashboard/tools/master-hub", "/dashboard/tools/webhooks", "/dashboard/tools/api-docs", "/dashboard/tools/video-editor",
         "/dashboard/video", "/dashboard/voice", "/dashboard/admin/hr",
         "/dashboard/affiliate", "/dashboard/affiliate/referrals",

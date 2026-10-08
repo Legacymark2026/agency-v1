@@ -177,6 +177,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     ],
     "/dashboard/settings/audit-logs": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/settings/privacy": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
+    "/dashboard/settings/financial-policies": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/settings/system-parameters": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN],
     "/dashboard/booking": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CONTENT_MANAGER, UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER],
 
@@ -422,6 +423,7 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "security.view", routes: ["/dashboard/security", "/dashboard/security/audit-ledger", "/dashboard/security/sla"] },
     { perm: "audit.view", routes: ["/dashboard/security/audit-ledger", "/dashboard/admin/audit-logs", "/dashboard/settings/audit-logs"] },
     { perm: "privacy.manage", routes: ["/dashboard/privacy-portal", "/dashboard/settings/privacy"] },
+    { perm: "financial.policies", routes: ["/dashboard/settings/financial-policies"] },
     { perm: "system.parameters", routes: ["/dashboard/settings/system-parameters"] },
 
     // Propuestas y Clientes
@@ -475,6 +477,7 @@ export const MASTER_PERMISSIONS: { module: string; name: string; description: st
     { module: "finance", name: "treasury.view", description: "Consultar saldos, movimientos y cuentas de tesorería" },
     { module: "finance", name: "treasury.manage", description: "Registrar cobros, transferencias y pagos bancarios" },
     { module: "finance", name: "treasury.export", description: "Exportar extractos e informes financieros para auditoría" },
+    { module: "finance", name: "financial.policies", description: "Configurar umbrales de compra y políticas de control financiero" },
     { module: "finance", name: "gateways.manage", description: "Configurar pasarelas de pago (Wompi, Stripe, Bold, MercadoPago)" },
 
     // CRM & Ventas
