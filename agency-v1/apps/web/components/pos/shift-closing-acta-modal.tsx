@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   FileText, ShieldCheck, Printer, CheckCircle2, AlertTriangle,
   User, Calendar, Clock, DollarSign, Calculator, Lock, X, Check,
-  Building2, Hash, ArrowDownRight, ArrowUpRight
+  Building2, Hash, ArrowDownRight, ArrowUpRight, Key, Users
 } from "lucide-react";
 
 export interface ShiftActaData {
@@ -13,9 +13,14 @@ export interface ShiftActaData {
   registerName: string;
   cashierName: string;
   cashierId?: string;
+  cashierApproved?: boolean;
+  cashierSignedAt?: string | null;
   supervisorName: string;
   supervisorId?: string;
+  supervisorApproved?: boolean;
+  supervisorSignedAt?: string | null;
   openedAt: string;
+  declaredClosedAt?: string | null;
   verifiedClosedAt?: string | null;
   openingFloat: number;
   expectedCash: number;
@@ -40,7 +45,16 @@ interface ShiftClosingActaModalProps {
   isSupervisorMode?: boolean; // Si está cerrando o auditando
   onConfirmSupervision?: (acta: {
     status: string;
+    cashierId?: string;
+    cashierName: string;
+    cashierApproved: boolean;
+    cashierSignedAt: string;
+    cashierPin?: string;
+    cashierNotes?: string;
+    supervisorId?: string;
     supervisorName: string;
+    supervisorApproved: boolean;
+    supervisorSignedAt: string;
     supervisorNotes: string;
     supervisorPin: string;
     declaredCash: number;
@@ -69,25 +83,73 @@ export function ShiftClosingActaModal({
   isSupervisorMode = false,
   onConfirmSupervision,
 }: ShiftClosingActaModalProps) {
-  // Conteo de denominaciones interactivo
+  const [activeTab, setActiveTab] = useState<"ACTA_SUMMARY" | "ARQUEO_CONTEO" | "DUAL_APPROVAL">("ACTA_SUMMARY");
+
+  // Denominaciones físicas de efectivo
   const [counts, setCounts] = useState<Record<string, number>>(() => {
-    if (shiftData.denominationsCount && typeof shiftData.denominationsCount === "object") {
-      return shiftData.denominationsCount;
-    }
-    return {};
+    return shiftData.denominationsCount || {};
   });
 
-  const [activeTab, setActiveTab] = useState<"ACTA_SUMMARY" | "ARQUEO_CONTEO" | "SUPERVISOR_SIGN">(
-    isSupervisorMode ? "ARQUEO_CONTEO" : "ACTA_SUMMARY"
-  );
+  // Usuarios elegibles activos desde la base de datos
+  const [eligibleUsers, setEligibleUsers] = useState<{
+    cashiers: Array<{ id: string; name: string; email: string; role: string }>;
+    supervisors: Array<{ id: string; name: string; email: string; role: string }>;
+  }>({ cashiers: [], supervisors: [] });
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
-  const [supervisorName, setSupervisorName] = useState(shiftData.supervisorName || "Supervisor de Turno");
-  const [supervisorNotes, setSupervisorNotes] = useState(shiftData.supervisorNotes || "");
+  // Estados de aprobación del CAJERO
+  const [selectedCashierId, setSelectedCashierId] = useState(shiftData.cashierId || "");
+  const [cashierName, setCashierName] = useState(shiftData.cashierName || "");
+  const [cashierPin, setCashierPin] = useState("");
+  const [cashierNotes, setCashierNotes] = useState(shiftData.cashierNotes || "");
+  const [cashierAprobado, setCashierAprobado] = useState(true);
+
+  // Estados de aprobación del SUPERVISOR
+  const [selectedSupervisorId, setSelectedSupervisorId] = useState(shiftData.supervisorId || "");
+  const [supervisorName, setSupervisorName] = useState(shiftData.supervisorName || "Supervisor General");
   const [supervisorPin, setSupervisorPin] = useState("");
-  const [supervisorVerdict, setSupervisorVerdict] = useState<"APPROVED" | "APPROVED_DISCREPANCY" | "REJECTED">("APPROVED");
-  const [submitting, setSubmitting] = useState(false);
+  const [supervisorNotes, setSupervisorNotes] = useState(shiftData.supervisorNotes || "");
+  const [supervisorAprobado, setSupervisorAprobado] = useState(true);
 
+  const [submitting, setSubmitting] = useState(false);
   const printableRef = useRef<HTMLDivElement>(null);
+
+  // Cargar usuarios activos elegibles
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const res = await fetch("/api/pos/users/eligible");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setEligibleUsers({
+              cashiers: data.cashiers || [],
+              supervisors: data.supervisors || [],
+            });
+            // Si el cajero actual está en la lista, asegurar su ID
+            if (!selectedCashierId && data.cashiers.length > 0) {
+              const found = data.cashiers.find((c: any) => c.name === shiftData.cashierName) || data.cashiers[0];
+              setSelectedCashierId(found.id);
+              setCashierName(found.name);
+            }
+            // Si el supervisor no tiene ID
+            if (!selectedSupervisorId && data.supervisors.length > 0) {
+              const foundSup = data.supervisors.find((s: any) => s.name === shiftData.supervisorName) || data.supervisors[0];
+              setSelectedSupervisorId(foundSup.id);
+              setSupervisorName(foundSup.name);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[ShiftClosingActaModal] Error cargando usuarios:", err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    fetchUsers();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -116,14 +178,38 @@ export function ShiftClosingActaModal({
     window.print();
   };
 
-  const handleSubmitSupervision = async (e: React.FormEvent) => {
+  const handleCashierSelect = (userId: string) => {
+    setSelectedCashierId(userId);
+    const u = eligibleUsers.cashiers.find(c => c.id === userId);
+    if (u) setCashierName(u.name);
+  };
+
+  const handleSupervisorSelect = (userId: string) => {
+    setSelectedSupervisorId(userId);
+    const u = eligibleUsers.supervisors.find(s => s.id === userId);
+    if (u) setSupervisorName(u.name);
+  };
+
+  const handleSubmitDualApproval = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supervisorPin) {
-      alert("Por favor ingrese su PIN de Supervisor para certificar el acta.");
+
+    if (!cashierAprobado) {
+      alert("El cajero debe marcar su casilla de conformidad y aprobación del arqueo.");
       return;
     }
+
+    if (!supervisorAprobado) {
+      alert("El supervisor debe marcar su casilla de verificación y dictamen favorable.");
+      return;
+    }
+
+    if (!supervisorPin) {
+      alert("Por favor ingrese el PIN de seguridad del Supervisor para sellar el acta.");
+      return;
+    }
+
     if (supervisorPin !== "1234") {
-      alert("PIN de Supervisor inválido.");
+      alert("PIN de Supervisor inválido. Ingrese el PIN autorizado para cerrar turnos.");
       return;
     }
 
@@ -132,22 +218,38 @@ export function ShiftClosingActaModal({
     setSubmitting(true);
     try {
       const finalStatus = currentDiff === 0 ? "CLOSED_BALANCED" : "CLOSED_DISCREPANCY";
+      const nowIso = new Date().toISOString();
+
       await onConfirmSupervision({
         status: finalStatus,
-        supervisorName,
-        supervisorNotes: supervisorNotes || `Arqueo validado por supervisor con diferencia de ${fmtCOP(currentDiff)}`,
+        cashierId: selectedCashierId || shiftData.cashierId,
+        cashierName: cashierName || shiftData.cashierName,
+        cashierApproved: true,
+        cashierSignedAt: nowIso,
+        cashierPin: cashierPin || undefined,
+        cashierNotes: cashierNotes || undefined,
+        supervisorId: selectedSupervisorId || shiftData.supervisorId,
+        supervisorName: supervisorName || shiftData.supervisorName,
+        supervisorApproved: true,
+        supervisorSignedAt: nowIso,
+        supervisorNotes: supervisorNotes || `Arqueo con doble firma cajero/supervisor. Diferencia: ${fmtCOP(currentDiff)}`,
         supervisorPin,
         declaredCash: declaredOrCalculated,
         denominations: counts,
       });
-      alert("✅ Acta de Cierre Z y Supervisión oficial firmada y registrada.");
+
+      alert("✅ Acta Oficial Z firmada y aprobada con éxito por ambas partes (Cajero y Supervisor).");
       onClose();
     } catch (err: any) {
-      alert("Error al guardar supervisión: " + err.message);
+      alert("Error al registrar acta de doble aprobación: " + err.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  const closedDateDisplay = shiftData.verifiedClosedAt
+    ? new Date(shiftData.verifiedClosedAt).toLocaleString("es-CO")
+    : `${new Date().toLocaleDateString("es-CO")} ${new Date().toLocaleTimeString("es-CO")} (Hora Actual de Cierre)`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200">
@@ -161,13 +263,16 @@ export function ShiftClosingActaModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white">Acta Oficial de Turno & Arqueo de Cierre Z</h2>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 text-teal-400 text-xs font-mono border border-slate-700">
+                <h2 className="text-base font-bold text-white">Acta Oficial de Turno & Arqueo Z</h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-teal-400 text-xs font-mono border border-slate-700">
                   {shiftData.shiftCode}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30">
+                  DOBLE APROBACIÓN REQUERIDA
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Auditoría fiscal de caja, cuadre contable DIAN, desglose por denominaciones y visto bueno legal.
+                Auditoría fiscal de caja, trazabilidad de horas de apertura y cierre, y firmas mancomunadas de Cajero y Supervisor.
               </p>
             </div>
           </div>
@@ -213,14 +318,14 @@ export function ShiftClosingActaModal({
           </button>
           {isSupervisorMode && (
             <button
-              onClick={() => setActiveTab("SUPERVISOR_SIGN")}
+              onClick={() => setActiveTab("DUAL_APPROVAL")}
               className={`py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === "SUPERVISOR_SIGN"
+                activeTab === "DUAL_APPROVAL"
                   ? "border-teal-400 text-teal-300"
                   : "border-transparent text-slate-400 hover:text-slate-200"
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" /> Supervisión & Firma de Cierre
+              <Users className="w-3.5 h-3.5" /> Doble Aprobación & Firmas
             </button>
           )}
         </div>
@@ -254,23 +359,45 @@ export function ShiftClosingActaModal({
                   </div>
                 </div>
 
-                {/* Metadatos del Turno */}
+                {/* Metadatos del Turno y Tiempos de Apertura / Cierre */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
                   <div>
                     <span className="text-slate-400 text-[10px] block">Caja Registradora</span>
                     <span className="text-white font-bold">{shiftData.registerName}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px] block">Cajero Responsable</span>
-                    <span className="text-white font-bold">{shiftData.cashierName}</span>
+                    <span className="text-slate-400 text-[10px] block">Cajero Asignado</span>
+                    <span className="text-white font-bold">{cashierName || shiftData.cashierName}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] block">Supervisor Encargado</span>
-                    <span className="text-teal-300 font-bold">{shiftData.supervisorName}</span>
+                    <span className="text-teal-300 font-bold">{supervisorName || shiftData.supervisorName}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px] block">Apertura</span>
-                    <span className="text-white">{new Date(shiftData.openedAt).toLocaleTimeString("es-CO")}</span>
+                    <span className="text-slate-400 text-[10px] block">Estado de Turno</span>
+                    <span className="text-amber-400 font-bold uppercase">{shiftData.status}</span>
+                  </div>
+                </div>
+
+                {/* Registro Inmutable de Tiempos de Auditoría */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-800 text-xs">
+                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <div>
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Fecha & Hora Exacta de Apertura</span>
+                      <span className="text-white font-mono font-bold">
+                        {new Date(shiftData.openedAt).toLocaleString("es-CO")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-rose-400" />
+                    <div>
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Fecha & Hora Exacta de Cierre</span>
+                      <span className="text-white font-mono font-bold">
+                        {closedDateDisplay}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -300,82 +427,84 @@ export function ShiftClosingActaModal({
                     <span className="text-base font-bold text-white">{fmtCOP(declaredOrCalculated)}</span>
                   </div>
                   <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 text-[10px] block">Efectivo Sistema (Base + Ventas)</span>
-                    <span className="text-base font-bold text-slate-300">{fmtCOP(shiftData.expectedCash)}</span>
+                    <span className="text-slate-400 text-[10px] block">Total Ventas Electrónicas</span>
+                    <span className="text-base font-bold text-sky-400">
+                      {fmtCOP(shiftData.cardSalesTotal + shiftData.transferSalesTotal)}
+                    </span>
                   </div>
                   <div className={`p-3 rounded-xl border ${
-                    currentDiff === 0 
-                      ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-300"
-                      : "bg-rose-950/30 border-rose-500/30 text-rose-300"
+                    currentDiff === 0
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                      : "bg-rose-500/10 border-rose-500/30 text-rose-300"
                   }`}>
-                    <span className="text-[10px] block">Diferencia Final</span>
+                    <span className="text-[10px] opacity-80 block">Discrepancia / Diferencia</span>
                     <span className="text-base font-bold">{fmtCOP(currentDiff)}</span>
                   </div>
                 </div>
-
-                {shiftData.cashierNotes && (
-                  <div className="pt-2 text-xs">
-                    <span className="text-slate-400 font-bold block mb-1">Observaciones del Cajero:</span>
-                    <p className="text-slate-300 bg-slate-900 p-3 rounded-xl border border-slate-800 italic">
-                      "{shiftData.cashierNotes}"
-                    </p>
-                  </div>
-                )}
-
-                {shiftData.supervisorNotes && (
-                  <div className="pt-2 text-xs">
-                    <span className="text-teal-400 font-bold block mb-1">Dictamen del Supervisor:</span>
-                    <p className="text-slate-300 bg-slate-900 p-3 rounded-xl border border-slate-800 italic">
-                      "{shiftData.supervisorNotes}"
-                    </p>
-                  </div>
-                )}
               </div>
 
-              {/* Firmas de Responsabilidad */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
-                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 text-center space-y-2">
-                  <div className="h-12 border-b border-dashed border-slate-700 flex items-end justify-center pb-1">
-                    <span className="text-xs font-mono text-teal-400 font-bold">{shiftData.cashierName}</span>
+              {/* Registro de Doble Firma en Acta */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Firmas y Certificación Mancomunada</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-teal-400" /> Firma del Cajero
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                        CONFORME
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-bold">{cashierName || shiftData.cashierName}</p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Certifico haber contado físicamente el dinero de caja en presencia de la supervisión.
+                    </p>
                   </div>
-                  <span className="text-[11px] text-slate-400 font-bold block">Firma Cajero Responsable</span>
-                  <p className="text-[10px] text-slate-500">Declara la entrega exacta del efectivo y comprobantes.</p>
-                </div>
 
-                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 text-center space-y-2">
-                  <div className="h-12 border-b border-dashed border-slate-700 flex items-end justify-center pb-1">
-                    <span className="text-xs font-mono text-indigo-400 font-bold">{shiftData.supervisorName}</span>
+                  <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" /> Firma del Supervisor
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">
+                        SUPERVISADO
+                      </span>
+                    </div>
+                    <p className="text-xs text-teal-300 font-bold">{supervisorName || shiftData.supervisorName}</p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      PIN y credenciales verificadas. Arqueo fiscal ratificado sin enmiendas.
+                    </p>
                   </div>
-                  <span className="text-[11px] text-slate-400 font-bold block">Firma & Visto Bueno Supervisor</span>
-                  <p className="text-[10px] text-slate-500">Valida la recepción conforme para ingreso a tesorería.</p>
                 </div>
               </div>
+
             </div>
           )}
 
-          {/* TAB 2: ARQUEO FÍSICO Y CONTEO POR DENOMINACIÓN */}
+          {/* TAB 2: ARQUEO FÍSICO POR DENOMINACIONES */}
           {activeTab === "ARQUEO_CONTEO" && (
-            <div className="space-y-5">
-              <div className="flex justify-between items-center bg-slate-950 p-4 rounded-2xl border border-slate-800">
+            <div className="space-y-6">
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-bold text-white">Desglose Físico por Denominación</h4>
-                  <p className="text-xs text-slate-400">Ingresa la cantidad física contada de cada billete y moneda.</p>
+                  <h4 className="text-sm font-bold text-white">Desglose Físico por Billetes y Monedas</h4>
+                  <p className="text-xs text-slate-400">Ingrese la cantidad contada de cada denominación para el arqueo ciego.</p>
                 </div>
-                <div className="text-right font-mono">
-                  <span className="text-xs text-slate-400 block">Total Físico Contado</span>
-                  <span className="text-lg font-bold text-teal-400">{fmtCOP(calculatedPhysicalCash)}</span>
+                <div className="text-right">
+                  <span className="text-xs text-slate-400 block">Total Físico Contado:</span>
+                  <span className="text-lg font-mono font-bold text-teal-400">{fmtCOP(calculatedPhysicalCash)}</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {DEFAULT_DENOMINATIONS.map((den) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {DEFAULT_DENOMINATIONS.map(den => {
                   const qty = counts[den.key] || 0;
-                  const subtotalDen = qty * den.value;
+                  const subtotal = qty * den.value;
                   return (
-                    <div key={den.key} className="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center justify-between gap-3">
+                    <div key={den.key} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
                       <div>
-                        <span className="font-bold text-xs text-white block">{den.label}</span>
-                        <span className="text-[11px] font-mono text-teal-400 font-bold">{fmtCOP(subtotalDen)}</span>
+                        <span className="text-xs font-bold text-white block">{den.label}</span>
+                        <span className="text-[11px] font-mono text-teal-400">{fmtCOP(subtotal)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -427,29 +556,93 @@ export function ShiftClosingActaModal({
             </div>
           )}
 
-          {/* TAB 3: SUPERVISIÓN Y FIRMA DE CIERRE */}
-          {activeTab === "SUPERVISOR_SIGN" && isSupervisorMode && (
-            <form onSubmit={handleSubmitSupervision} className="space-y-5">
+          {/* TAB 3: DOBLE APROBACIÓN (CAJERO & SUPERVISOR) */}
+          {activeTab === "DUAL_APPROVAL" && isSupervisorMode && (
+            <form onSubmit={handleSubmitDualApproval} className="space-y-6">
+              
+              {/* SECCIÓN 1: FIRMA Y CONFORMIDAD DEL CAJERO */}
               <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
                 <div className="flex items-center gap-2 text-teal-400">
-                  <ShieldCheck className="w-5 h-5" />
-                  <h4 className="text-sm font-bold text-white">Validación y Firma de Supervisor</h4>
+                  <User className="w-5 h-5" />
+                  <h4 className="text-sm font-bold text-white">1. Aprobación y Conformidad del Cajero</h4>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <label className="text-slate-400 font-bold block mb-1">Nombre del Supervisor *</label>
-                    <input
-                      type="text"
-                      value={supervisorName}
-                      onChange={(e) => setSupervisorName(e.target.value)}
-                      required
+                    <label className="text-slate-400 font-bold block mb-1">Cajero Activo Responsable *</label>
+                    <select
+                      value={selectedCashierId}
+                      onChange={(e) => handleCashierSelect(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-teal-500"
-                    />
+                    >
+                      {eligibleUsers.cashiers.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
-                    <label className="text-slate-400 font-bold block mb-1">PIN de Seguridad (Ej. 1234) *</label>
+                    <label className="text-slate-400 font-bold block mb-1">PIN / Validación de Cajero (Opcional)</label>
+                    <input
+                      type="password"
+                      value={cashierPin}
+                      onChange={(e) => setCashierPin(e.target.value)}
+                      placeholder="••••"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono tracking-widest focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 font-bold block mb-1 text-xs">Observaciones del Cajero</label>
+                  <input
+                    type="text"
+                    value={cashierNotes}
+                    onChange={(e) => setCashierNotes(e.target.value)}
+                    placeholder="Comentarios del cajero sobre billetes deteriorados, faltantes o turnos..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                    <span className="text-xs font-bold text-teal-300">
+                      Yo, {cashierName}, apruebo el arqueo físico y el cierre de este turno.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={cashierAprobado}
+                    onChange={(e) => setCashierAprobado(e.target.checked)}
+                    className="w-5 h-5 accent-teal-500 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* SECCIÓN 2: DICTAMEN Y FIRMA DEL SUPERVISOR */}
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div className="flex items-center gap-2 text-indigo-400">
+                  <ShieldCheck className="w-5 h-5" />
+                  <h4 className="text-sm font-bold text-white">2. Certificación y Firma del Supervisor Habilitado</h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Supervisor Activo Autorizado *</label>
+                    <select
+                      value={selectedSupervisorId}
+                      onChange={(e) => handleSupervisorSelect(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-teal-500"
+                    >
+                      {eligibleUsers.supervisors.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">PIN Maestro de Supervisor (PIN: 1234) *</label>
                     <input
                       type="password"
                       value={supervisorPin}
@@ -462,17 +655,33 @@ export function ShiftClosingActaModal({
                 </div>
 
                 <div>
-                  <label className="text-slate-400 font-bold block mb-1 text-xs">Dictamen / Notas de Cierre</label>
+                  <label className="text-slate-400 font-bold block mb-1 text-xs">Dictamen / Notas de Cierre del Supervisor</label>
                   <textarea
                     value={supervisorNotes}
                     onChange={(e) => setSupervisorNotes(e.target.value)}
-                    rows={3}
+                    rows={2}
                     placeholder="Escriba comentarios sobre el arqueo, justificación de diferencias o novedades..."
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-teal-500"
                   />
                 </div>
+
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                    <span className="text-xs font-bold text-indigo-300">
+                      Yo, {supervisorName}, valido y otorgo la aprobación de supervisión al Acta Z.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={supervisorAprobado}
+                    onChange={(e) => setSupervisorAprobado(e.target.checked)}
+                    className="w-5 h-5 accent-indigo-500 rounded cursor-pointer"
+                  />
+                </div>
               </div>
 
+              {/* BOTONES DE ACCIÓN */}
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -486,7 +695,7 @@ export function ShiftClosingActaModal({
                   disabled={submitting}
                   className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-lg shadow-teal-600/20 flex items-center gap-2"
                 >
-                  {submitting ? "Firmando Acta..." : "Aprobar & Certificar Acta Z"}
+                  {submitting ? "Firmando Acta..." : "Aprobar & Certificar con Doble Firma"}
                 </button>
               </div>
             </form>
@@ -499,7 +708,7 @@ export function ShiftClosingActaModal({
           <div className="flex items-center gap-2 font-mono">
             <span>DIAN POS 2.0</span>
             <span>•</span>
-            <span>Audit Trail Inmutable</span>
+            <span>Doble Aprobación Obligatoria</span>
           </div>
           <button
             onClick={onClose}

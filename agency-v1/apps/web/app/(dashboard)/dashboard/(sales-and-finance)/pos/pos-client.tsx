@@ -189,6 +189,15 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
     const [shiftsHistory, setShiftsHistory] = useState<any[]>([]);
     const [historyCashiers, setHistoryCashiers] = useState<any[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+
+    // Active Eligible Users from DB for Shift Lifecycle (Cashier & Supervisor)
+    const [eligibleUsers, setEligibleUsers] = useState<{
+        cashiers: Array<{ id: string; name: string; email: string; role: string }>;
+        supervisors: Array<{ id: string; name: string; email: string; role: string }>;
+    }>({ cashiers: [], supervisors: [] });
+    const [selectedOpenCashierId, setSelectedOpenCashierId] = useState("");
+    const [openCashierName, setOpenCashierName] = useState("Cajero Principal");
+    const [selectedOpenSupervisorId, setSelectedOpenSupervisorId] = useState("");
     const [openSupervisorName, setOpenSupervisorName] = useState("Supervisor General");
 
     // Cash Registers CRUD
@@ -455,12 +464,39 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
         // Cargar turno activo real desde PostgreSQL al montar
         fetchActiveSession();
         fetchRegisters();
+        fetchEligibleUsers();
 
         return () => {
             window.removeEventListener("online", handleOnline);
             window.removeEventListener("offline", handleOffline);
         };
     }, []);
+
+    const fetchEligibleUsers = async () => {
+        try {
+            const res = await fetch(`/api/pos/users/eligible${companyId ? `?companyId=${companyId}` : ""}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.cashiers && data.supervisors) {
+                    setEligibleUsers({
+                        cashiers: data.cashiers,
+                        supervisors: data.supervisors,
+                    });
+                    if (data.cashiers.length > 0 && !selectedOpenCashierId) {
+                        const defaultCashier = data.cashiers.find((u: any) => u.id === currentUser?.id) || data.cashiers[0];
+                        setSelectedOpenCashierId(defaultCashier.id);
+                        setOpenCashierName(defaultCashier.name);
+                    }
+                    if (data.supervisors.length > 0 && !selectedOpenSupervisorId) {
+                        setSelectedOpenSupervisorId(data.supervisors[0].id);
+                        setOpenSupervisorName(data.supervisors[0].name);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("[POS] No se pudieron cargar usuarios elegibles:", e);
+        }
+    };
 
     const fetchActiveSession = async () => {
         try {
@@ -520,8 +556,9 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                     registerId: targetRegister?.id || selectedRegisterId,
                     registerName: openRegisterName,
                     openingBalance: Number(openBaseAmount) || 0,
-                    openedById: currentUser?.id || activeSession?.openedById || undefined,
-                    cashierName: currentUser?.name || configUser || "Cajero Principal",
+                    openedById: selectedOpenCashierId || currentUser?.id || activeSession?.openedById || undefined,
+                    cashierName: openCashierName || currentUser?.name || configUser || "Cajero Principal",
+                    supervisorId: selectedOpenSupervisorId || undefined,
                     supervisorName: openSupervisorName || "Supervisor General",
                 }),
             });
@@ -2670,10 +2707,17 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                                     shiftId: activeSession.id,
                                     sessionId: activeSession.id,
                                     registerName: activeSession.registerName,
-                                    cashierName: activeSession.cashierName,
+                                    cashierId: acta.cashierId,
+                                    cashierName: acta.cashierName || activeSession.cashierName,
+                                    cashierApproved: acta.cashierApproved,
+                                    cashierSignedAt: acta.cashierSignedAt,
+                                    cashierNotes: acta.cashierNotes,
                                     expectedCash: (activeSession.openingBalance || 0) + (activeSession.cashSales || 0),
                                     closingBalance: acta.declaredCash,
+                                    supervisorId: acta.supervisorId,
                                     supervisorName: acta.supervisorName,
+                                    supervisorApproved: acta.supervisorApproved,
+                                    supervisorSignedAt: acta.supervisorSignedAt,
                                     supervisorNotes: acta.supervisorNotes,
                                     denominationsCount: acta.denominations,
                                 }),
@@ -2725,25 +2769,64 @@ export default function PosTerminalClient({ initialIssuer, dianConfig, currentUs
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-300">Cajero Responsable</label>
-                                <input
-                                    type="text"
-                                    disabled
-                                    value={currentUser?.name || configUser || "Cajero Principal"}
-                                    className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-300 font-semibold cursor-not-allowed"
-                                />
+                                <label className="text-xs font-bold text-slate-300">Cajero Responsable (Usuarios Activos)</label>
+                                {eligibleUsers.cashiers.length > 0 ? (
+                                    <select
+                                        value={selectedOpenCashierId}
+                                        onChange={(e) => {
+                                            const u = eligibleUsers.cashiers.find(x => x.id === e.target.value);
+                                            setSelectedOpenCashierId(e.target.value);
+                                            if (u) setOpenCashierName(u.name);
+                                        }}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-teal-500 font-semibold"
+                                    >
+                                        {eligibleUsers.cashiers.map(c => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.name} ({c.role}) - {c.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        disabled
+                                        value={currentUser?.name || configUser || "Cajero Principal"}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-300 font-semibold cursor-not-allowed"
+                                    />
+                                )}
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-300">Supervisor a Cargo de Caja</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={openSupervisorName}
-                                    onChange={(e) => setOpenSupervisorName(e.target.value)}
-                                    placeholder="Nombre del Supervisor de turno"
-                                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-indigo-500"
-                                />
+                                <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                                    <span>Supervisor a Cargo (Con Permisos Validados)</span>
+                                    <span className="text-[10px] text-teal-400 font-normal">SuperAdmin / Admin / Manager</span>
+                                </label>
+                                {eligibleUsers.supervisors.length > 0 ? (
+                                    <select
+                                        value={selectedOpenSupervisorId}
+                                        onChange={(e) => {
+                                            const s = eligibleUsers.supervisors.find(x => x.id === e.target.value);
+                                            setSelectedOpenSupervisorId(e.target.value);
+                                            if (s) setOpenSupervisorName(s.name);
+                                        }}
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-indigo-500 font-semibold"
+                                    >
+                                        {eligibleUsers.supervisors.map(s => (
+                                            <option key={s.id} value={s.id}>
+                                                🛡️ {s.name} ({s.role.toUpperCase()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        required
+                                        value={openSupervisorName}
+                                        onChange={(e) => setOpenSupervisorName(e.target.value)}
+                                        placeholder="Nombre del Supervisor de turno"
+                                        className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:border-indigo-500"
+                                    />
+                                )}
                             </div>
 
                             <div className="space-y-1">
