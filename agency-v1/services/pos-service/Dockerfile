@@ -20,7 +20,6 @@ COPY packages/events/ ./packages/events/
 COPY packages/grpc/ ./packages/grpc/
 COPY packages/observability/ ./packages/observability/
 COPY packages/service-auth/ ./packages/service-auth/
-COPY apps/web/prisma/schema.prisma ./packages/database/prisma/schema.prisma
 WORKDIR /app/packages/vault-client
 RUN npx tsc --outDir dist
 WORKDIR /app/packages/database
