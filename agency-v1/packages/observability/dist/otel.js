@@ -6,7 +6,17 @@ function initTelemetry(serviceName) {
         const { NodeSDK } = require("@opentelemetry/sdk-node");
         const { getNodeAutoInstrumentations } = require("@opentelemetry/auto-instrumentations-node");
         const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-proto");
-        const { Resource } = require("@opentelemetry/resources");
+        let Resource;
+        try {
+            Resource = require('@opentelemetry/resources').Resource;
+        }
+        catch {
+            Resource = class MinimalResource {
+                constructor(attrs) { this._attrs = attrs; }
+                _attrs;
+                static merge(r1, r2) { return r2; }
+            };
+        }
         const { ATTR_SERVICE_NAME } = require("@opentelemetry/semantic-conventions");
         const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://jaeger:4318/v1/traces";
         const exporter = new OTLPTraceExporter({

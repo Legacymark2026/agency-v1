@@ -19,4 +19,5 @@ __exportStar(require("./logger"), exports);
 __exportStar(require("./metrics"), exports);
 __exportStar(require("./rate-limiter"), exports);
 __exportStar(require("./circuit-breaker"), exports);
+__exportStar(require("./tracing"), exports);
 //# sourceMappingURL=index.js.map

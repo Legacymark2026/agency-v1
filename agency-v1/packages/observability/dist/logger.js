@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.logger = void 0;
 const api_1 = require("@opentelemetry/api");
 const winston_1 = __importDefault(require("winston"));
+const tracing_1 = require("./tracing");
 const otelFormat = winston_1.default.format((info) => {
     const activeSpan = api_1.trace.getActiveSpan();
     if (activeSpan) {
@@ -13,6 +14,12 @@ const otelFormat = winston_1.default.format((info) => {
         info.trace_id = spanContext.traceId;
         info.span_id = spanContext.spanId;
         info.trace_flags = spanContext.traceFlags.toString(16);
+    }
+    else {
+        const traceId = (0, tracing_1.getTraceId)();
+        if (traceId) {
+            info.trace_id = traceId;
+        }
     }
     return info;
 });

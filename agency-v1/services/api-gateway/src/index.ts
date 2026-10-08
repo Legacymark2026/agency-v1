@@ -103,6 +103,11 @@ app.use(apiUsageMeteringMiddleware);
 // ── Synchronous Pre-Authentication & Identity Injection (Fix C-1 & C-5) ────────
 app.use(authenticateGatewayRequest);
 
+// ── BFF (Backend For Frontend) Aggregation Engine ─────────────────────────────
+import { bffRouter } from "./routes/bff.routes";
+app.use("/api/bff", bffRouter);
+app.use("/api/v1/bff", bffRouter);
+
 // ── Microservice Proxy Router ─────────────────────────────────────────────────
 app.use(proxyRouter);
 
