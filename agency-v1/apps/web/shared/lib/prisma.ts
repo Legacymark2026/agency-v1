@@ -229,6 +229,8 @@ const modelToClientGetter: Record<string, () => PrismaClient> = {
   inboxMacro: getPrismaCore,
   emailTemplate: getPrismaCore,
   outboxEvent: getPrismaCore,
+  supplier: getPrismaCore,
+  supplierDocument: getPrismaCore,
 
   // Media, AI & Workflows
   post: getPrismaMedia,
@@ -296,6 +298,8 @@ const modelToReadClientGetter: Record<string, () => PrismaClient> = {
   inboxMacro: getPrismaCoreRead,
   emailTemplate: getPrismaCoreRead,
   outboxEvent: getPrismaCoreRead,
+  supplier: getPrismaCoreRead,
+  supplierDocument: getPrismaCoreRead,
 
   // Media, AI & Workflows
   post: getPrismaMediaRead,

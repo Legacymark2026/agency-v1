@@ -5,7 +5,7 @@ import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { 
     Search, FileText, Users, DollarSign, Settings, Box, LayoutDashboard,
-    MessageSquare, Briefcase, Zap, Terminal, Command as CommandIcon
+    MessageSquare, Briefcase, Zap, Terminal, Command as CommandIcon, Building2
 } from "lucide-react";
 
 export function GlobalCommandPalette() {
@@ -94,6 +94,11 @@ export function GlobalCommandPalette() {
                             <Command.Item onSelect={() => runCommand(() => router.push('/dashboard/inventory'))} className="flex items-center px-3 py-2 text-sm text-slate-300 rounded-lg cursor-pointer aria-selected:bg-slate-800">
                                 <Box className="w-4 h-4 mr-3 text-amber-400" />
                                 <span>Inventario & Logística</span>
+                            </Command.Item>
+
+                            <Command.Item onSelect={() => runCommand(() => router.push('/dashboard/suppliers'))} className="flex items-center px-3 py-2 text-sm text-slate-300 rounded-lg cursor-pointer aria-selected:bg-slate-800">
+                                <Building2 className="w-4 h-4 mr-3 text-teal-400" />
+                                <span>Proveedores & Homologación (SRM)</span>
                             </Command.Item>
 
                             <Command.Item onSelect={() => runCommand(() => router.push('/dashboard/tools/master-hub'))} className="flex items-center px-3 py-2 text-sm text-slate-300 rounded-lg cursor-pointer aria-selected:bg-slate-800">

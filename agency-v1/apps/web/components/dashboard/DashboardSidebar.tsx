@@ -198,7 +198,7 @@ export const NAV_AREAS: NavArea[] = [
                 icon: <Boxes size={15} />,
                 submodules: [
                     { href: "/dashboard/inventory", label: "Inventario & Bodegas", icon: <Boxes size={13} />, code: "INV" },
-                    { href: "/dashboard/inventory?tab=suppliers", label: "Catálogo Proveedores & Docs", icon: <Building2 size={13} />, code: "SUP" },
+                    { href: "/dashboard/suppliers", label: "Proveedores & SRM", icon: <Building2 size={13} />, code: "SUP" },
                     { href: "/dashboard/channels", label: "Canales y Logística", icon: <Building2 size={13} />, code: "CHL" },
                 ]
             },

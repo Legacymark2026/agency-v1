@@ -425,7 +425,7 @@ export function InventoryClient() {
 
           {/* Pillar 3 */}
           <button
-            onClick={() => setTabWithUrl('production', 'suppliers')}
+            onClick={() => setTabWithUrl('production', 'bom')}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition ${
               activePillar === 'production'
                 ? 'bg-teal-500/10 text-teal-400 border border-teal-500/30 shadow-sm'
@@ -433,11 +433,11 @@ export function InventoryClient() {
             }`}
           >
             <div className={`p-2 rounded-lg ${activePillar === 'production' ? 'bg-teal-500 text-white' : 'bg-muted text-foreground'}`}>
-              <Building2 size={18} />
+              <ChefHat size={18} />
             </div>
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider">Compras & MRP</div>
-              <div className="text-[11px] opacity-80">Proveedores, BOM y Demanda</div>
+              <div className="text-xs font-bold uppercase tracking-wider">Producción & MRP</div>
+              <div className="text-[11px] opacity-80">Recetas (BOM) y Demanda IA</div>
             </div>
           </button>
 
@@ -545,16 +545,6 @@ export function InventoryClient() {
           {activePillar === 'production' && (
             <>
               <button
-                onClick={() => setTabWithUrl('production', 'suppliers')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  activeSubTab === 'suppliers'
-                    ? 'bg-teal-600 text-white font-bold shadow-sm'
-                    : 'bg-muted text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Building2 size={14} /> Proveedores & Certificaciones
-              </button>
-              <button
                 onClick={() => setTabWithUrl('production', 'bom')}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
                   activeSubTab === 'bom'
@@ -573,6 +563,12 @@ export function InventoryClient() {
                 }`}
               >
                 <Sparkles size={14} /> Demanda & Reabastecimiento IA
+              </button>
+              <button
+                onClick={() => router.push('/dashboard/suppliers')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-muted/60 text-teal-400 hover:bg-teal-500/10 border border-teal-500/20 transition ml-auto"
+              >
+                <Building2 size={13} /> Ir a Portal Proveedores (SRM) →
               </button>
             </>
           )}
@@ -1048,9 +1044,25 @@ export function InventoryClient() {
         </div>
       )}
 
-      {/* SUBTAB: SUPPLIERS */}
+      {/* SUBTAB: SUPPLIERS (MIGRADO A MÓDULO DEDICADO) */}
       {activeSubTab === 'suppliers' && (
-        <SuppliersTab />
+        <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center mx-auto">
+            <Building2 size={24} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-foreground">El Módulo de Proveedores ahora es Independiente</h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
+              Para optimizar la operación y separar el control documental (SRM) del kárdex de bodegas, la gestión de proveedores ahora cuenta con su propio panel dedicado.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/dashboard/suppliers')}
+            className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-teal-950/20"
+          >
+            Abrir Gestión Maestra de Proveedores →
+          </button>
+        </div>
       )}
 
       {/* SUBTAB: BOM */}
