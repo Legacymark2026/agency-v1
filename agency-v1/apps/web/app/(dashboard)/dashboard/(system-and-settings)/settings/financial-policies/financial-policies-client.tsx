@@ -17,6 +17,8 @@ import {
   HelpCircle,
   Truck,
   ArrowRight
+} from 'lucide-react';
+
 // Lista Oficial de Incoterms 2020
 export const ALL_INCOTERMS = [
   { code: 'EXW', name: 'Ex Works' },
