@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
         // Parámetros comerciales y operativos
         commercialName: s.name,
         legalName: s.legalName || s.name,
+        logoUrl: extra.logoUrl || null,
         mobilePhone: extra.mobilePhone || s.contactPhone || "",
         rawMaterialsScope: extra.rawMaterialsScope || [],
         specialTaxRegime: extra.specialTaxRegime || "REGIMEN_ORDINARIO", // REGIMEN_ORDINARIO, SIMPLE, GRAN_CONTRIBUYENTE, AUTORRETENEDOR, ESPECIAL_ESAL
@@ -134,6 +135,8 @@ export async function POST(req: NextRequest) {
       taxId,
       taxType = "NIT",
       category = "RAW_MATERIALS",
+      status = "ACTIVE",
+      logoUrl,
       contactName,
       contactEmail,
       contactPhone,
@@ -183,6 +186,7 @@ export async function POST(req: NextRequest) {
     }
 
     const customFields = {
+      logoUrl,
       mobilePhone,
       rawMaterialsScope,
       specialTaxRegime,
@@ -215,7 +219,7 @@ export async function POST(req: NextRequest) {
         bankAccountNumber,
         bankAccountHolder,
         discountRatePct: Number(discountRatePct) || 0,
-        status: "ACTIVE",
+        status: status || "ACTIVE",
         ratingScore: 5.0,
         notes,
         customFields,

@@ -44,7 +44,11 @@ import {
   ArrowUpRight,
   Activity,
   Wifi,
-  Coins
+  Coins,
+  ImageIcon,
+  Ban,
+  CheckCircle,
+  Power
 } from 'lucide-react';
 
 // ── Lista Exhaustiva de Incoterms 2020 Oficiales ─────────────────────────────
@@ -78,6 +82,14 @@ export const ALL_CURRENCIES = [
   { code: 'CHF', name: 'Franco Suizo', symbol: 'CHF', flag: '🇨🇭' },
   { code: 'AUD', name: 'Dólar Australiano', symbol: 'A$', flag: '🇦🇺' },
   { code: 'AED', name: 'Dírham de Emiratos', symbol: 'AED', flag: '🇦🇪' },
+];
+
+export const SUPPLIER_STATUSES = [
+  { key: 'ACTIVE', label: 'Activado / Operativo', badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
+  { key: 'INACTIVE', label: 'Desactivado', badgeColor: 'bg-slate-700/30 text-slate-400 border-slate-700' },
+  { key: 'UNDER_REVIEW', label: 'En Auditoría / Revisión', badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
+  { key: 'SUSPENDED', label: 'Suspendido Temporalmente', badgeColor: 'bg-rose-500/10 text-rose-400 border-rose-500/30' },
+  { key: 'BLOCKED', label: 'Bloqueado por Incumplimiento', badgeColor: 'bg-red-950 text-red-400 border-red-700' },
 ];
 
 interface SupplierDocument {
@@ -123,6 +135,7 @@ interface SupplierItem {
   taxId: string;
   taxType: string;
   category: string;
+  logoUrl?: string | null;
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
@@ -138,7 +151,7 @@ interface SupplierItem {
   bankAccountNumber?: string | null;
   bankAccountHolder?: string | null;
   discountRatePct: number;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'UNDER_REVIEW';
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'UNDER_REVIEW' | 'BLOCKED';
   ratingScore: number;
   rawMaterialsScope?: string[];
   specialTaxRegime?: string;
@@ -162,6 +175,7 @@ export function SuppliersClient() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [currencyFilter, setCurrencyFilter] = useState('ALL');
   const [incotermFilter, setIncotermFilter] = useState('ALL');
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierItem | null>(null);
@@ -169,6 +183,7 @@ export function SuppliersClient() {
   // Modales y Pestaña activa
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [activeTabDossier, setActiveTabDossier] = useState<'GENERAL' | 'FINANCIAL' | 'LOGISTICS' | 'CONTACTS' | 'DOCS'>('GENERAL');
 
   // Form State Completo para Alta y Edición
@@ -179,6 +194,8 @@ export function SuppliersClient() {
     taxId: '',
     taxType: 'NIT',
     category: 'RAW_MATERIALS',
+    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'UNDER_REVIEW' | 'BLOCKED',
+    logoUrl: '',
     rawMaterialsScope: 'Café Grano Verde Especial, Miel Orgánica, Empaques Kraft, Válvulas Aromáticas',
     contactName: '',
     contactEmail: '',
@@ -258,6 +275,8 @@ export function SuppliersClient() {
         taxId: formData.taxId,
         taxType: formData.taxType,
         category: formData.category,
+        status: formData.status,
+        logoUrl: formData.logoUrl,
         contactName: formData.contactName,
         contactEmail: formData.contactEmail,
         contactPhone: formData.contactPhone,
@@ -319,6 +338,76 @@ export function SuppliersClient() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isTargetSelectedSupplier = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      const res = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: data,
+      });
+      const result = await res.json();
+      if (!res.ok || !result.url) {
+        throw new Error(result.error || 'Fallo en la subida del logotipo.');
+      }
+
+      const uploadedUrl = result.url;
+
+      if (isTargetSelectedSupplier && selectedSupplier) {
+        // Actualizar proveedor existente
+        const patchRes = await fetch(`/api/suppliers/${selectedSupplier.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logoUrl: uploadedUrl }),
+        });
+        const patchData = await patchRes.json();
+        if (patchRes.ok) {
+          const updated = { ...selectedSupplier, logoUrl: uploadedUrl };
+          setSelectedSupplier(updated);
+          setSuppliers(suppliers.map(s => s.id === updated.id ? updated : s));
+          alert('✅ Logotipo actualizado exitosamente.');
+        } else {
+          alert(patchData.error || 'No se pudo actualizar el logotipo del proveedor.');
+        }
+      } else {
+        // En modal de creación
+        setFormData(prev => ({ ...prev, logoUrl: uploadedUrl }));
+        alert('✅ Logotipo cargado listo para asociar al nuevo proveedor.');
+      }
+    } catch (err: any) {
+      alert('Error al subir imagen: ' + err.message);
+    } finally {
+      setIsUploadingLogo(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleUpdateStatus = async (supplierId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/suppliers/${supplierId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const updatedList = suppliers.map(s => s.id === supplierId ? { ...s, status: newStatus as any } : s);
+        setSuppliers(updatedList);
+        if (selectedSupplier && selectedSupplier.id === supplierId) {
+          setSelectedSupplier({ ...selectedSupplier, status: newStatus as any });
+        }
+      } else {
+        alert(data.error || 'No se pudo actualizar el estado del proveedor.');
+      }
+    } catch (err: any) {
+      alert('Error al actualizar estado: ' + err.message);
+    }
+  };
+
   const handleAttachDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSupplier) return;
@@ -376,13 +465,15 @@ export function SuppliersClient() {
       (s.city && s.city.toLowerCase().includes(term));
 
     const matchesCategory = categoryFilter === 'ALL' || s.category === categoryFilter;
+    const matchesStatus = statusFilter === 'ALL' || s.status === statusFilter;
     const matchesCurrency = currencyFilter === 'ALL' || s.currency === currencyFilter;
     const matchesIncoterm = incotermFilter === 'ALL' || s.incoterm === incotermFilter;
-    return matchesSearch && matchesCategory && matchesCurrency && matchesIncoterm;
+    return matchesSearch && matchesCategory && matchesStatus && matchesCurrency && matchesIncoterm;
   });
 
   const compliantCount = suppliers.filter(s => s.compliance?.compliant).length;
   const underReviewCount = suppliers.filter(s => s.status === 'UNDER_REVIEW').length;
+  const activeCount = suppliers.filter(s => s.status === 'ACTIVE').length;
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-white font-sans overflow-hidden space-y-8 pb-20">
@@ -451,15 +542,30 @@ export function SuppliersClient() {
 
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-widest">Compliance DIAN/RUT</span>
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-widest">Proveedores Activos</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-              <ShieldCheck size={16} />
+              <Power size={16} />
             </div>
           </div>
           <div className="text-3xl font-black text-emerald-400 mt-3 font-mono">
-            {suppliers.length > 0 ? Math.round((compliantCount / suppliers.length) * 100) : 100}%
+            {activeCount} <span className="text-xs font-normal text-slate-500">/ {suppliers.length}</span>
           </div>
           <div className="text-[11px] text-emerald-400 font-mono mt-1">
+            Operando en órdenes y compras
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-widest">Compliance DIAN/RUT</span>
+            <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center border border-teal-500/20">
+              <ShieldCheck size={16} />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-teal-400 mt-3 font-mono">
+            {suppliers.length > 0 ? Math.round((compliantCount / suppliers.length) * 100) : 100}%
+          </div>
+          <div className="text-[11px] text-teal-400 font-mono mt-1">
             {compliantCount} de {suppliers.length} expedientes 100% al día
           </div>
         </div>
@@ -514,7 +620,7 @@ export function SuppliersClient() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
@@ -526,6 +632,17 @@ export function SuppliersClient() {
                 <option value="SERVICES">Servicios</option>
                 <option value="LOGISTICS">Logística</option>
                 <option value="TECHNOLOGY">Tecnología</option>
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-[11px] text-emerald-400 focus:outline-none focus:border-teal-500 font-mono font-bold"
+              >
+                <option value="ALL">Estado (Todos)</option>
+                {SUPPLIER_STATUSES.map(st => (
+                  <option key={st.key} value={st.key}>{st.label}</option>
+                ))}
               </select>
 
               <select
@@ -569,6 +686,11 @@ export function SuppliersClient() {
                 const isCompliant = supplier.compliance?.compliant;
                 const currObj = ALL_CURRENCIES.find(c => c.code === supplier.currency) || { flag: '🌐', symbol: '$' };
 
+                const statusInfo = SUPPLIER_STATUSES.find(st => st.key === supplier.status) || {
+                  label: supplier.status,
+                  badgeColor: 'bg-slate-700/30 text-slate-400 border-slate-700'
+                };
+
                 return (
                   <div
                     key={supplier.id}
@@ -579,32 +701,48 @@ export function SuppliersClient() {
                         : 'bg-slate-900/60 border-slate-800/80 hover:border-teal-500/40 hover:bg-slate-900/90'
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white tracking-tight">
-                            {supplier.commercialName || supplier.name}
-                          </h3>
-                          {supplier.ratingScore && (
-                            <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-md border border-amber-400/20">
-                              <Star size={10} className="fill-amber-400" /> {supplier.ratingScore.toFixed(1)}
-                            </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        {/* Logo o Avatar con Glow */}
+                        <div className="w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-inner group-hover:border-teal-500/40 transition">
+                          {supplier.logoUrl ? (
+                            <img
+                              src={supplier.logoUrl}
+                              alt={supplier.commercialName || supplier.name}
+                              className="w-full h-full object-contain p-1"
+                              onError={(e) => {
+                                (e.target as any).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-teal-400 font-mono font-black text-sm">
+                              {(supplier.commercialName || supplier.name).slice(0, 2).toUpperCase()}
+                            </div>
                           )}
                         </div>
-                        <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-2">
-                          <span>{supplier.taxType}: {supplier.taxId}</span>
-                          <span>•</span>
-                          <span className="text-slate-300">{supplier.city || 'Colombia'}</span>
+
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-bold text-white tracking-tight">
+                              {supplier.commercialName || supplier.name}
+                            </h3>
+                            {supplier.ratingScore && (
+                              <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-md border border-amber-400/20">
+                                <Star size={10} className="fill-amber-400" /> {supplier.ratingScore.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-2">
+                            <span>{supplier.taxType}: {supplier.taxId}</span>
+                            <span>•</span>
+                            <span className="text-slate-300">{supplier.city || 'Colombia'}</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <span
-                          className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full border ${
-                            supplier.status === 'ACTIVE'
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                          }`}
+                          className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded-full border ${statusInfo.badgeColor}`}
                         >
                           {supplier.status}
                         </span>
@@ -646,28 +784,86 @@ export function SuppliersClient() {
             <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-md shadow-2xl space-y-6">
               {/* Dossier Header */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-slate-800/80">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                      {selectedSupplier.commercialName || selectedSupplier.name}
-                    </h2>
-                    <span className="text-xs font-mono font-bold bg-teal-500/10 text-teal-400 px-2.5 py-0.5 rounded-lg border border-teal-500/30">
-                      {selectedSupplier.taxType}: {selectedSupplier.taxId}
-                    </span>
-                    <span className="text-xs font-mono font-bold bg-slate-800 text-amber-300 px-2 py-0.5 rounded-lg border border-slate-700">
-                      INCOTERM: {selectedSupplier.incoterm || 'DDP'}
-                    </span>
+                <div className="flex items-start gap-4">
+                  {/* Logotipo en Dossier con acción de carga */}
+                  <div className="relative group/logo w-16 h-16 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
+                    {selectedSupplier.logoUrl ? (
+                      <img
+                        src={selectedSupplier.logoUrl}
+                        alt={selectedSupplier.commercialName || selectedSupplier.name}
+                        className="w-full h-full object-contain p-1.5"
+                      />
+                    ) : (
+                      <div className="text-xl font-mono font-black text-teal-400">
+                        {(selectedSupplier.commercialName || selectedSupplier.name).slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <label className="absolute inset-0 bg-black/70 opacity-0 group-hover/logo:opacity-100 flex flex-col items-center justify-center cursor-pointer transition text-[9px] font-mono text-teal-300">
+                      <Upload size={14} className="mb-0.5" />
+                      <span>{isUploadingLogo ? '...' : 'LOGO'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingLogo}
+                        onChange={(e) => handleLogoUpload(e, true)}
+                      />
+                    </label>
                   </div>
-                  <div className="text-xs text-slate-400 font-mono flex flex-wrap items-center gap-2">
-                    <span className="text-slate-200">Legal:</span> {selectedSupplier.legalName || selectedSupplier.name}
-                    <span>•</span>
-                    <span>{selectedSupplier.city || 'Bogotá'}, {selectedSupplier.country}</span>
-                    <span>•</span>
-                    <span className="text-teal-400 font-bold">Divisa: {selectedSupplier.currency}</span>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                        {selectedSupplier.commercialName || selectedSupplier.name}
+                      </h2>
+                      <span className="text-xs font-mono font-bold bg-teal-500/10 text-teal-400 px-2.5 py-0.5 rounded-lg border border-teal-500/30">
+                        {selectedSupplier.taxType}: {selectedSupplier.taxId}
+                      </span>
+                      <span className="text-xs font-mono font-bold bg-slate-800 text-amber-300 px-2 py-0.5 rounded-lg border border-slate-700">
+                        INCOTERM: {selectedSupplier.incoterm || 'DDP'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-400 font-mono flex flex-wrap items-center gap-2">
+                      <span className="text-slate-200">Legal:</span> {selectedSupplier.legalName || selectedSupplier.name}
+                      <span>•</span>
+                      <span>{selectedSupplier.city || 'Bogotá'}, {selectedSupplier.country}</span>
+                      <span>•</span>
+                      <span className="text-teal-400 font-bold">Divisa: {selectedSupplier.currency}</span>
+                    </div>
+
+                    {/* Selector de Estado Operativo */}
+                    <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                      <span className="text-slate-500 text-[11px]">Estado SRM:</span>
+                      <select
+                        value={selectedSupplier.status}
+                        onChange={(e) => handleUpdateStatus(selectedSupplier.id, e.target.value)}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-bold border focus:outline-none transition ${
+                          (SUPPLIER_STATUSES.find(st => st.key === selectedSupplier.status) || SUPPLIER_STATUSES[0]).badgeColor
+                        }`}
+                      >
+                        {SUPPLIER_STATUSES.map(st => (
+                          <option key={st.key} value={st.key} className="bg-slate-900 text-white">
+                            ● {st.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700 cursor-pointer">
+                    <ImageIcon size={13} className="text-teal-400" />
+                    <span>{isUploadingLogo ? 'SUBIENDO...' : 'CAMBIAR LOGO'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={isUploadingLogo}
+                      onChange={(e) => handleLogoUpload(e, true)}
+                    />
+                  </label>
+
                   <button
                     onClick={() => setIsDocModalOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-mono font-bold bg-teal-500 hover:bg-teal-400 text-slate-950 rounded-xl transition shadow-md"
@@ -1194,6 +1390,55 @@ export function SuppliersClient() {
                       placeholder="Bogotá D.C."
                       className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:border-teal-500"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-bold">Estado Inicial en SRM</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 font-bold focus:border-teal-500"
+                    >
+                      {SUPPLIER_STATUSES.map(st => (
+                        <option key={st.key} value={st.key}>{st.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-bold">Logotipo Corporativo</label>
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                        {formData.logoUrl ? (
+                          <img src={formData.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                        ) : (
+                          <ImageIcon size={16} className="text-slate-500" />
+                        )}
+                      </div>
+                      <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-teal-500/30 rounded-xl text-slate-300 cursor-pointer transition">
+                        <Upload size={13} className="text-teal-400" />
+                        <span>{isUploadingLogo ? 'Subiendo...' : formData.logoUrl ? 'Cambiar Imagen' : 'Subir Imagen/Logo'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={isUploadingLogo}
+                          onChange={(e) => handleLogoUpload(e, false)}
+                        />
+                      </label>
+                      {formData.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, logoUrl: '' })}
+                          className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl border border-rose-500/20"
+                          title="Quitar logo"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

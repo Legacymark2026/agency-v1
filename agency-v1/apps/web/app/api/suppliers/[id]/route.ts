@@ -49,6 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         ...supplier,
         commercialName: supplier.name,
         legalName: supplier.legalName || supplier.name,
+        logoUrl: extra.logoUrl || null,
         mobilePhone: extra.mobilePhone || supplier.contactPhone || "",
         rawMaterialsScope: extra.rawMaterialsScope || [],
         specialTaxRegime: extra.specialTaxRegime || "REGIMEN_ORDINARIO",
@@ -129,6 +130,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Merge custom fields
     const updatedCustomFields = {
       ...existingExtra,
+      ...(body.logoUrl !== undefined && { logoUrl: body.logoUrl }),
       ...(body.mobilePhone !== undefined && { mobilePhone: body.mobilePhone }),
       ...(body.rawMaterialsScope !== undefined && { rawMaterialsScope: body.rawMaterialsScope }),
       ...(body.specialTaxRegime !== undefined && { specialTaxRegime: body.specialTaxRegime }),
