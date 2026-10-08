@@ -351,11 +351,10 @@ export function SuppliersClient() {
         body: data,
       });
       const result = await res.json();
-      if (!res.ok || !result.url) {
-        throw new Error(result.error || 'Fallo en la subida del logotipo.');
+      const uploadedUrl = result.url || result.asset?.url || result.fileUrl || result.data?.url || result.secure_url;
+      if (!res.ok || !uploadedUrl) {
+        throw new Error(result.error || result.message || 'Fallo en la subida del logotipo.');
       }
-
-      const uploadedUrl = result.url;
 
       if (isTargetSelectedSupplier && selectedSupplier) {
         // Actualizar proveedor existente
