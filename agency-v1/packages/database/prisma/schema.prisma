@@ -4709,6 +4709,60 @@ model PurchaseOrder {
   @@map("tbl_inventory_purchase_orders")
 }
 
+
+model GoodsReceipt {
+  id               String    @id @default(uuid())
+  receiptNumber    String    @map("receipt_number") // REC-2026-00001
+  companyId        String    @map("company_id")
+  purchaseOrderId  String    @map("purchase_order_id")
+  orderNumber      String    @map("order_number")
+  warehouseId      String    @map("warehouse_id")
+  warehouseName    String?   @map("warehouse_name")
+  vendorId         String?   @map("vendor_id")
+  vendorName       String    @map("vendor_name")
+  carrierName      String?   @map("carrier_name")
+  trackingGuide    String?   @map("tracking_guide")
+  deliveryNoteRef  String?   @map("delivery_note_ref") // Remisión del transportista
+  status           String    @default("COMPLETED") // DRAFT, INSPECTING, COMPLETED, REJECTED
+  items            Json      @default("[]") // [{ productId, internalSku, name, orderedQty, receivedQty, acceptedQty, rejectedQty, rejectionReason, lotNumber, expiryDate, condition: "PERFECT"|"DAMAGED" }]
+  notes            String?
+  receivedBy       String?   @map("received_by")
+  receivedAt       DateTime  @default(now()) @map("received_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([companyId, receiptNumber])
+  @@index([companyId])
+  @@index([purchaseOrderId])
+  @@index([companyId, warehouseId])
+  @@map("tbl_inventory_goods_receipts")
+}
+
+model PurchaseReturn {
+  id               String    @id @default(uuid())
+  returnNumber     String    @map("return_number") // DEV-2026-00001
+  companyId        String    @map("company_id")
+  purchaseOrderId  String    @map("purchase_order_id")
+  orderNumber      String    @map("order_number")
+  goodsReceiptId   String?   @map("goods_receipt_id")
+  vendorId         String?   @map("vendor_id")
+  vendorName       String    @map("vendor_name")
+  warehouseId      String    @map("warehouse_id")
+  status           String    @default("REQUESTED") // REQUESTED, APPROVED, DISPATCHED, CREDIT_NOTE_RECEIVED, CANCELLED
+  returnType       String    @default("REJECTION_AT_DOCK") // REJECTION_AT_DOCK (En muelle), WARRANTY (Garantía), QUALITY_DEFECT (Falla calidad)
+  creditNoteRef    String?   @map("credit_note_ref")
+  items            Json      @default("[]") // [{ internalSku, name, quantity, unitCost, reason, lotNumber }]
+  totalRefund      Float     @default(0) @map("total_refund")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([companyId, returnNumber])
+  @@index([companyId])
+  @@index([purchaseOrderId])
+  @@map("tbl_inventory_purchase_returns")
+}
+
 model TransferOrder {
   id                     String    @id @default(uuid())
   transferNumber         String    @map("transfer_number")
