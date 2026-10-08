@@ -147,6 +147,11 @@ const nextConfig: NextConfig = {
         destination: '/register-agency',
         permanent: true,
       },
+      {
+        source: '/dashboard/supplier',
+        destination: '/dashboard/suppliers',
+        permanent: true,
+      },
     ];
   },
   async headers() {
