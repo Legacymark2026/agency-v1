@@ -6,15 +6,31 @@ export const dynamic = "force-dynamic";
 
 const MANDATORY_DOCS = ["RUT", "CAMARA_COMERCIO", "CERTIFICACION_BANCARIA"];
 
+// Roles autorizados para operar sobre el módulo de Proveedores
+const READ_ROLES = ["super_admin", "admin", "manager", "client_admin", "content_manager"];
+const WRITE_ROLES = ["super_admin", "admin", "client_admin", "manager"];
+
+function checkUserPermission(session: any, allowedRoles: string[]) {
+  const role = String(session?.user?.role || "").toLowerCase();
+  return allowedRoles.includes(role);
+}
+
 /**
  * GET /api/suppliers
- * Lista de proveedores con sus documentos de cumplimiento
+ * Lista de proveedores con sus documentos de cumplimiento y parámetros extendidos
  */
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
+    }
+
+    if (!checkUserPermission(session, READ_ROLES)) {
+      return NextResponse.json(
+        { success: false, error: "Acceso denegado: permisos insuficientes para consultar proveedores." },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(req.url);
@@ -55,8 +71,22 @@ export async function GET(req: NextRequest) {
         (d: any) => d.expiryDate && new Date(d.expiryDate) < now
       );
 
+      // Deserializar customFields o inicializar defaults
+      const extra = typeof s.customFields === "object" && s.customFields !== null ? s.customFields : {};
+
       return {
         ...s,
+        // Parámetros comerciales y operativos
+        commercialName: s.name,
+        legalName: s.legalName || s.name,
+        mobilePhone: extra.mobilePhone || s.contactPhone || "",
+        rawMaterialsScope: extra.rawMaterialsScope || [],
+        specialTaxRegime: extra.specialTaxRegime || "REGIMEN_ORDINARIO", // REGIMEN_ORDINARIO, SIMPLE, GRAN_CONTRIBUYENTE, AUTORRETENEDOR, ESPECIAL_ESAL
+        departmentContacts: extra.departmentContacts || [],
+        accountBalance: extra.accountBalance || { currentBalance: 0, pendingInvoices: 0, lastPaymentDate: null },
+        deliveryTerms: extra.deliveryTerms || { shippingMethod: "TERRESTRE", leadTimeDays: 3 },
+        incoterm: extra.incoterm || "DDP", // EXW, FCA, CPT, CIP, DAP, DPU, DDP, FOB, CIF
+        delayPenaltyPolicy: extra.delayPenaltyPolicy || { penaltyPctPerDay: 0, maxPenaltyPct: 0, gracePeriodDays: 2 },
         compliance: {
           compliant: missingMandatory.length === 0 && expiredDocs.length === 0,
           missingMandatoryDocs: missingMandatory,
@@ -78,7 +108,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/suppliers
- * Registrar un nuevo proveedor maestro
+ * Registrar un nuevo proveedor maestro con todos los parámetros completos
  */
 export async function POST(req: NextRequest) {
   try {
@@ -87,18 +117,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "No autenticado" }, { status: 401 });
     }
 
+    if (!checkUserPermission(session, WRITE_ROLES)) {
+      return NextResponse.json(
+        { success: false, error: "Acceso denegado: rol sin privilegios para dar de alta proveedores." },
+        { status: 403 }
+      );
+    }
+
     const companyId = (session.user as any)?.companyId || "default_company";
     const body = await req.json();
 
     const {
       name,
+      commercialName,
       legalName,
       taxId,
       taxType = "NIT",
-      category = "GENERAL",
+      category = "RAW_MATERIALS",
       contactName,
       contactEmail,
       contactPhone,
+      mobilePhone,
       address,
       city,
       country = "Colombia",
@@ -111,11 +150,20 @@ export async function POST(req: NextRequest) {
       bankAccountHolder,
       discountRatePct = 0,
       notes,
+      rawMaterialsScope = [],
+      specialTaxRegime = "REGIMEN_ORDINARIO",
+      departmentContacts = [],
+      accountBalance = { currentBalance: 0, pendingInvoices: 0, lastPaymentDate: null },
+      deliveryTerms = { shippingMethod: "TERRESTRE", leadTimeDays: 3 },
+      incoterm = "DDP",
+      delayPenaltyPolicy = { penaltyPctPerDay: 0, maxPenaltyPct: 0, gracePeriodDays: 2 },
     } = body;
 
-    if (!name || !taxId) {
+    const finalName = commercialName || name;
+
+    if (!finalName || !taxId) {
       return NextResponse.json(
-        { success: false, error: "Razón social / Nombre y Documento Tributario (NIT/RUT) son obligatorios." },
+        { success: false, error: "Razón social / Nombre Comercial y Documento Tributario (NIT/RUT) son obligatorios." },
         { status: 400 }
       );
     }
@@ -134,11 +182,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const customFields = {
+      mobilePhone,
+      rawMaterialsScope,
+      specialTaxRegime,
+      departmentContacts,
+      accountBalance,
+      deliveryTerms,
+      incoterm,
+      delayPenaltyPolicy,
+    };
+
     const supplier = await (prisma as any).supplier.create({
       data: {
         companyId,
-        name,
-        legalName: legalName || name,
+        name: finalName,
+        legalName: legalName || finalName,
         taxId,
         taxType,
         category,
@@ -159,6 +218,7 @@ export async function POST(req: NextRequest) {
         status: "ACTIVE",
         ratingScore: 5.0,
         notes,
+        customFields,
       },
       include: {
         documents: true,
@@ -167,9 +227,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Proveedor registrado exitosamente.",
+      message: "Proveedor registrado exitosamente en el catálogo maestro.",
       supplier: {
         ...supplier,
+        ...customFields,
+        commercialName: supplier.name,
         compliance: {
           compliant: false,
           missingMandatoryDocs: MANDATORY_DOCS,
