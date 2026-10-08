@@ -4668,24 +4668,44 @@ model StockMovement {
 }
 
 model PurchaseOrder {
-  id          String   @id @default(uuid())
-  orderNumber String   @map("order_number")
-  companyId   String   @map("company_id")
-  warehouseId String   @map("warehouse_id")
-  vendorId    String?  @map("vendor_id")
-  vendorName  String   @map("vendor_name")
-  vendorNit   String?  @map("vendor_nit")
-  status      String   @default("DRAFT") // DRAFT, APPROVED, RECEIVED, CANCELLED
-  subtotal    Float    @default(0)
-  taxAmount   Float    @default(0) @map("tax_amount")
-  total       Float    @default(0)
-  items       Json     @default("[]")
-  notes       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                 String    @id @default(uuid())
+  orderNumber        String    @map("order_number")
+  companyId          String    @map("company_id")
+  warehouseId        String    @map("warehouse_id")
+  vendorId           String?   @map("vendor_id")
+  vendorName         String    @map("vendor_name")
+  vendorNit          String?   @map("vendor_nit")
+  vendorEmail        String?   @map("vendor_email")
+  vendorPhone        String?   @map("vendor_phone")
+  vendorAddress      String?   @map("vendor_address")
+  status             String    @default("DRAFT") // DRAFT, ISSUED, CONFIRMED, IN_TRANSIT, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  currency           String    @default("COP")
+  exchangeRate       Float     @default(1.0) @map("exchange_rate")
+  incoterm           String?   // EXW, FCA, CPT, CIP, DAP, DPU, DDP, FAS, FOB, CFR, CIF
+  incotermPlace      String?   @map("incoterm_place")
+  paymentTermsDays   Int       @default(30) @map("payment_terms_days")
+  deliveryDate       DateTime? @map("delivery_date")
+  shippingMethod     String?   @map("shipping_method") // TERRESTRE, AEREO, MARITIMO, MULTIMODAL
+  subtotal           Float     @default(0)
+  discountTotal      Float     @default(0) @map("discount_total")
+  taxAmount          Float     @default(0) @map("tax_amount")
+  shippingCost       Float     @default(0) @map("shipping_cost")
+  otherCosts         Float     @default(0) @map("other_costs")
+  total              Float     @default(0)
+  items              Json      @default("[]")
+  notes              String?
+  rejectionReason    String?   @map("rejection_reason")
+  customFields       Json?     @default("{}") @map("custom_fields")
+  issuedAt           DateTime? @map("issued_at")
+  confirmedAt        DateTime? @map("confirmed_at")
+  cancelledAt        DateTime? @map("cancelled_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   @@unique([companyId, orderNumber])
   @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, vendorId])
   @@map("tbl_inventory_purchase_orders")
 }
 

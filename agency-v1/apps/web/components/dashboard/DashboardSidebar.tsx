@@ -4,7 +4,7 @@ import React from "react";
 import {
     LayoutDashboard, Users, Settings, FileText,
     Shield, ShieldCheck, BookOpen, Briefcase, BarChart2, Workflow,
-    MessageSquare, Target, TrendingUp, Link2, Building2,
+    MessageSquare, Target, TrendingUp, Link2, Building2, ShoppingCart,
     Lock, DollarSign, CheckSquare, Zap, Mail, Calendar, Wand2,
     Activity, Wifi, Bot, Trello, CreditCard, Landmark,
     Image as ImageIcon, Share2, Percent, ShoppingBag, Package,
@@ -198,6 +198,7 @@ export const NAV_AREAS: NavArea[] = [
                 icon: <Boxes size={15} />,
                 submodules: [
                     { href: "/dashboard/inventory", label: "Inventario & Bodegas", icon: <Boxes size={13} />, code: "INV" },
+                    { href: "/dashboard/purchases", label: "Compras & Órdenes", icon: <ShoppingCart size={13} />, code: "PUR" },
                     { href: "/dashboard/suppliers", label: "Proveedores & SRM", icon: <Building2 size={13} />, code: "SUP" },
                     { href: "/dashboard/channels", label: "Canales y Logística", icon: <Building2 size={13} />, code: "CHL" },
                 ]

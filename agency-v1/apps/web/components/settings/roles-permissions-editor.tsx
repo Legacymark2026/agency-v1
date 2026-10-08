@@ -146,6 +146,7 @@ const PERMISSIONS = [
             { id: "payroll.view", label: "Ver Nómina y Operaciones" },
             { id: "payroll.manage", label: "Gestionar Nómina y Kanban" },
             { id: "inventory.view", label: "Ver Inventario, Proveedores y Canales" },
+            { id: "purchases.manage", label: "Gestionar Órdenes de Compra y Aprovisionamiento" },
             { id: "suppliers.manage", label: "Gestionar Proveedores y Catálogos SRM" },
         ]
     },

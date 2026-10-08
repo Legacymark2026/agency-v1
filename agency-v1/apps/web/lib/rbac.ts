@@ -126,6 +126,7 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
     // ── Finanzas y Operaciones ────────────────────────────
     "/dashboard/pos": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/inventory": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
+    "/dashboard/purchases": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/suppliers": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/sales-forecast": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
     "/dashboard/dian": [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.CLIENT_ADMIN, UserRole.CONTENT_MANAGER],
@@ -359,8 +360,10 @@ export const PERMISSION_ROUTE_MAP: { perm: string; routes: string[] }[] = [
     { perm: "seo.view", routes: ["/dashboard/seo"] },
 
     // Operaciones & Logística
-    { perm: "inventory.view", routes: ["/dashboard/inventory", "/dashboard/suppliers", "/dashboard/channels"] },
-    { perm: "inventory.manage", routes: ["/dashboard/inventory", "/dashboard/suppliers", "/dashboard/channels"] },
+    { perm: "inventory.view", routes: ["/dashboard/inventory", "/dashboard/purchases", "/dashboard/suppliers", "/dashboard/channels"] },
+    { perm: "inventory.manage", routes: ["/dashboard/inventory", "/dashboard/purchases", "/dashboard/suppliers", "/dashboard/channels"] },
+    { perm: "purchases.view", routes: ["/dashboard/purchases"] },
+    { perm: "purchases.manage", routes: ["/dashboard/purchases"] },
     { perm: "suppliers.view", routes: ["/dashboard/suppliers"] },
     { perm: "suppliers.manage", routes: ["/dashboard/suppliers"] },
     { perm: "booking.view", routes: ["/dashboard/booking", "/dashboard/calendar", "/dashboard/events"] },
@@ -507,6 +510,8 @@ export const MASTER_PERMISSIONS: { module: string; name: string; description: st
     // Operaciones & Logística
     { module: "operations", name: "inventory.view", description: "Consultar existencias de inventario y bodegas" },
     { module: "operations", name: "inventory.manage", description: "Entradas, salidas, traslados y órdenes a proveedores" },
+    { module: "operations", name: "purchases.view", description: "Consultar órdenes de compra y aprovisionamiento" },
+    { module: "operations", name: "purchases.manage", description: "Crear, emitir y gestionar órdenes de compra a proveedores" },
     { module: "operations", name: "suppliers.view", description: "Consultar directorio de proveedores y acuerdos comerciales" },
     { module: "operations", name: "suppliers.manage", description: "Crear, actualizar y gestionar proveedores y catálogos SRM" },
     { module: "operations", name: "booking.view", description: "Ver calendario de agendamiento y disponibilidad de citas" },
