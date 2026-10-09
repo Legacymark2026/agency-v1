@@ -111,6 +111,15 @@ export interface PurchaseOrder {
   updatedAt: string;
 }
 
+export const getOrderItems = (order?: Partial<PurchaseOrder> | null): PurchaseOrderItem[] => {
+  if (!order || !order.items) return [];
+  if (Array.isArray(order.items)) return order.items;
+  if (typeof order.items === 'object' && Array.isArray((order.items as any).items)) {
+    return (order.items as any).items;
+  }
+  return [];
+};
+
 export const PURCHASE_STATUS_CONFIG: Record<
   string,
   { label: string; badge: string; desc: string; step: number }
@@ -253,9 +262,13 @@ export function PurchasesClient() {
       ]);
 
       if (ordRes?.success && Array.isArray(ordRes.orders)) {
-        setOrders(ordRes.orders);
-        if (ordRes.orders.length > 0 && !selectedOrder) {
-          setSelectedOrder(ordRes.orders[0]);
+        const normalized = ordRes.orders.map((o: any) => ({
+          ...o,
+          items: getOrderItems(o),
+        }));
+        setOrders(normalized);
+        if (normalized.length > 0 && !selectedOrder) {
+          setSelectedOrder(normalized[0]);
         }
       } else {
         setOrders([]);
@@ -445,13 +458,14 @@ export function PurchasesClient() {
 
   // Abrir Modal de Recepción en Muelle
   const openReceivingModal = (order: PurchaseOrder) => {
+    const orderItems = getOrderItems(order);
     setReceivingData({
       purchaseOrderId: order.id,
       carrierName: order.shippingMethod || 'Transportes Nacionales',
       trackingGuide: '',
       deliveryNoteRef: '',
       notes: '',
-      items: order.items.map((it) => ({
+      items: orderItems.map((it) => ({
         productId: it.productId,
         internalSku: it.internalSku,
         name: it.name,
@@ -751,7 +765,7 @@ export function PurchasesClient() {
                     <div className="flex items-center justify-between pt-3 mt-3 border-t border-border/60 text-[11px] text-muted-foreground">
                       <div className="flex items-center gap-1.5">
                         <Boxes size={12} className="text-teal-400" />
-                        <span>{order.items?.length || 0} artículos</span>
+                        <span>{getOrderItems(order).length} artículos</span>
                         {order.incoterm && (
                           <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold">
                             {order.incoterm}
@@ -914,7 +928,7 @@ export function PurchasesClient() {
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                       <Package size={14} className="text-teal-400" />
-                      Artículos Solicitados ({selectedOrder.items?.length || 0})
+                      Artículos Solicitados ({getOrderItems(selectedOrder).length})
                     </h3>
 
                     <div className="overflow-x-auto rounded-xl border border-border">
@@ -930,7 +944,7 @@ export function PurchasesClient() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/60">
-                          {selectedOrder.items?.map((item, idx) => (
+                          {getOrderItems(selectedOrder).map((item, idx) => (
                             <tr key={idx} className="hover:bg-muted/20">
                               <td className="p-3">
                                 <div className="font-bold text-foreground">{item.name}</div>
