@@ -414,7 +414,7 @@ export const NAV_AREAS: NavArea[] = [
                 icon: <Lock size={15} />,
                 submodules: [
                     { href: "/dashboard/security", label: "Auditoría Forense & Logs", icon: <Lock size={13} />, code: "SEC" },
-                    { href: "/dashboard/settings/financial-policies", label: "Control Financiero & Gobernanza", icon: <Scale size={13} />, code: "POL" },
+                    { href: "/dashboard/settings/financial-policies", label: "Políticas de Aprobación & Umbrales de Compra", icon: <Scale size={13} />, code: "POL" },
                     { href: "/dashboard/privacy-portal", label: "Portal Privacidad & GDPR", icon: <ShieldCheck size={13} />, code: "PRV" },
                     { href: "/dashboard/settings/system-parameters", label: "Parámetros del Sistema", icon: <Sliders size={13} />, code: "PAR" },
                     { href: "/dashboard/settings/pos", label: "Terminal POS Enterprise", icon: <ShoppingBag size={13} />, code: "POS" },
