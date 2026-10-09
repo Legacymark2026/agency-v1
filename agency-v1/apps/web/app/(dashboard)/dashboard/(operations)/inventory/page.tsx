@@ -7,5 +7,12 @@ export const metadata: Metadata = {
 };
 
 export default function InventoryPage() {
-  return <InventoryClient />;
+  return (
+    <div className="ds-page w-full">
+      <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.025] pointer-events-none mix-blend-screen" />
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <InventoryClient />
+      </div>
+    </div>
+  );
 }

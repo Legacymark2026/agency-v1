@@ -42,8 +42,10 @@ import {
   SlidersHorizontal,
   ClipboardCheck,
   Award,
-  Zap
+  Zap,
+  Sparkles
 } from 'lucide-react';
+import { InteractiveSpotlight } from '@/components/dashboard/InteractiveSpotlight';
 import { ALL_INCOTERMS, ALL_CURRENCIES } from '../suppliers/suppliers-client';
 
 // ── Tipos y Configuraciones ──────────────────────────────────────────────────
@@ -504,36 +506,46 @@ export function PurchasesClient() {
 
   return (
     <div className="space-y-6">
-      {/* ── Cabecera Quantum Enterprise ─────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/80 border border-border shadow-2xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ── Cabecera Quantum Enterprise (Estilo Home / Dashboard) ── */}
+      <InteractiveSpotlight
+        className="relative z-10 ds-card group"
+        style={{ padding: '2rem 2.5rem' }}
+      >
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.12),transparent_70%)] pointer-events-none" />
+        <div className="absolute top-4 right-4 font-mono text-xs text-slate-600 uppercase tracking-widest">[OPS_PUR · SRM]</div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              <ShoppingCart size={13} />
-              <span>Aprovisionamiento, Recepción & Control de Calidad</span>
+            <div className="mb-2">
+              <span className="ds-badge ds-badge-teal">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
+                </span>
+                <Sparkles size={8} /> Aprovisionamiento, Recepción & Control de Calidad
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
-              Centro Integral de Compras & SRM
-              <span className="text-xs font-normal px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                Aprobación Multinivel + Cross-Docking
+
+            <h1 className="text-3xl md:text-4xl font-black tracking-[-0.04em] text-white">
+              Centro Integral de{" "}
+              <span className="font-mono text-transparent bg-clip-text bg-[linear-gradient(110deg,#0d9488,45%,#34d399,55%,#0d9488)] bg-[length:200%_100%] animate-[shine_3s_linear_infinite]">
+                Compras & SRM
               </span>
             </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              Flujo unificado: Desde la requisición aprobada por gerencia hasta la recepción física en muelle,
-              contrastación de cantidades pedidas vs entregadas y gestión de rechazos.
+            <p className="ds-subtext mt-1 max-w-3xl">
+              Flujo unificado: Desde la requisición aprobada por gerencia hasta la recepción física en muelle, contrastación de cantidades pedidas vs entregadas y gestión de rechazos.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
               onClick={fetchAllData}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-card/60 hover:bg-card text-foreground text-xs font-semibold shadow-sm transition"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-sm font-mono text-xs text-teal-400 uppercase tracking-widest hover:border-teal-500/60 transition"
+              style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)' }}
             >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               Actualizar
             </button>
             <button
@@ -561,83 +573,83 @@ export function PurchasesClient() {
                 });
                 setIsCreateModalOpen(true);
               }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition transform active:scale-95"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_-5px_rgba(20,184,166,0.4)] transition transform active:scale-95"
             >
-              <Plus size={16} />
-              NUEVA ORDEN DE COMPRA
+              <Plus size={15} />
+              Nueva Orden de Compra
             </button>
           </div>
         </div>
 
-        {/* ── 4 Pilares de Navegación del Módulo ───────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-8 pt-6 border-t border-border/60">
+        {/* ── 4 Pilares de Navegación del Módulo ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
           <button
             onClick={() => setActiveTab('ORDERS')}
-            className={`p-3.5 rounded-xl text-left border transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activeTab === 'ORDERS'
-                ? 'bg-teal-500/10 border-teal-500/40 text-teal-400 shadow-md'
-                : 'bg-card/40 border-border/80 text-muted-foreground hover:bg-card/60'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold uppercase tracking-wider">Órdenes de Compra</span>
-              <ShoppingCart size={16} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Órdenes de Compra</span>
+              <ShoppingCart size={15} className={activeTab === 'ORDERS' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div className="text-xl font-black text-foreground">{orders.length}</div>
-            <span className="text-[11px] opacity-80">Emisión y aprobaciones</span>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">{orders.length}</div>
+            <span className="text-[10px] font-mono text-slate-400">Emisión y aprobaciones</span>
           </button>
 
           <button
             onClick={() => setActiveTab('RECEIVING')}
-            className={`p-3.5 rounded-xl text-left border transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activeTab === 'RECEIVING'
-                ? 'bg-blue-500/10 border-blue-500/40 text-blue-400 shadow-md'
-                : 'bg-card/40 border-border/80 text-muted-foreground hover:bg-card/60'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold uppercase tracking-wider">Recepción en Muelle</span>
-              <ClipboardCheck size={16} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Recepción en Muelle</span>
+              <ClipboardCheck size={15} className={activeTab === 'RECEIVING' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div className="text-xl font-black text-foreground">{receipts.length}</div>
-            <span className="text-[11px] opacity-80">Inspección vs lo pedido</span>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">{receipts.length}</div>
+            <span className="text-[10px] font-mono text-slate-400">Inspección vs lo pedido</span>
           </button>
 
           <button
             onClick={() => setActiveTab('RETURNS')}
-            className={`p-3.5 rounded-xl text-left border transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activeTab === 'RETURNS'
-                ? 'bg-rose-500/10 border-rose-500/40 text-rose-400 shadow-md'
-                : 'bg-card/40 border-border/80 text-muted-foreground hover:bg-card/60'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold uppercase tracking-wider">Devoluciones / Rechazos</span>
-              <RotateCcw size={16} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Devoluciones / Rechazos</span>
+              <RotateCcw size={15} className={activeTab === 'RETURNS' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div className="text-xl font-black text-foreground">{returns.length}</div>
-            <span className="text-[11px] opacity-80">Notas crédito y garantías</span>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">{returns.length}</div>
+            <span className="text-[10px] font-mono text-slate-400">Notas crédito y garantías</span>
           </button>
 
           <button
             onClick={() => setActiveTab('ANALYTICS')}
-            className={`p-3.5 rounded-xl text-left border transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activeTab === 'ANALYTICS'
-                ? 'bg-purple-500/10 border-purple-500/40 text-purple-400 shadow-md'
-                : 'bg-card/40 border-border/80 text-muted-foreground hover:bg-card/60'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold uppercase tracking-wider">Reportes & Desempeño</span>
-              <BarChart3 size={16} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Reportes & Desempeño</span>
+              <BarChart3 size={15} className={activeTab === 'ANALYTICS' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div className="text-xl font-black text-foreground">
+            <div className="text-2xl font-black font-mono text-white tabular-nums">
               {analytics?.acceptanceRatePct ?? 100}%
             </div>
-            <span className="text-[11px] opacity-80">OTIF y costos por proveedor</span>
+            <span className="text-[10px] font-mono text-slate-400">OTIF y costos por proveedor</span>
           </button>
         </div>
-      </div>
+      </InteractiveSpotlight>
 
       {/* ── Pestaña 1: GESTIÓN DE ÓRDENES Y FLUJO MULTINIVEL ─────────────── */}
       {activeTab === 'ORDERS' && (

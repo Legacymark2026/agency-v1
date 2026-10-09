@@ -36,6 +36,7 @@ import {
   ArrowUpCircle,
   FileCheck2
 } from 'lucide-react';
+import { InteractiveSpotlight } from '@/components/dashboard/InteractiveSpotlight';
 import { SuppliersTab } from './suppliers-tab';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -268,42 +269,56 @@ export function InventoryClient() {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* ── Enterprise Header & Global Warehouse Selector ───────────────────── */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl border border-amber-500/20">
-                <Boxes size={24} />
+  return (
+    <div className="space-y-6">
+      {/* ── Enterprise Header (Quantum Home Style) ── */}
+      <InteractiveSpotlight
+        className="relative z-10 ds-card group"
+        style={{ padding: '2rem 2.5rem' }}
+      >
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.12),transparent_70%)] pointer-events-none" />
+        <div className="absolute top-4 right-4 font-mono text-xs text-slate-600 uppercase tracking-widest">[OPS_INV · WMS]</div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="mb-2">
+              <span className="ds-badge ds-badge-teal">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500" />
+                </span>
+                <Sparkles size={8} /> WMS Multisede &amp; Kárdex Ponderado
               </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-black tracking-tight text-foreground">Gestión de Inventario & Bodegas</h1>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">
-                    WMS & ERP Pro
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Control multisede de existencias, kárdex ponderado, trazabilidad FEFO, MRP de ensamble y cadena de suministro.
-                </p>
-              </div>
             </div>
+
+            <h1 className="text-3xl md:text-4xl font-black tracking-[-0.04em] text-white">
+              Gestión de{" "}
+              <span className="font-mono text-transparent bg-clip-text bg-[linear-gradient(110deg,#0d9488,45%,#34d399,55%,#0d9488)] bg-[length:200%_100%] animate-[shine_3s_linear_infinite]">
+                Inventario &amp; Bodegas
+              </span>
+            </h1>
+            <p className="ds-subtext mt-1 max-w-3xl">
+              Control multisede de existencias, kárdex contable automatizado, trazabilidad FEFO por lotes, ensambles (BOM) y auditorías a ciegas.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {/* Global Warehouse Filter */}
-            <div className="flex items-center gap-2 bg-muted/60 border border-border px-3 py-2 rounded-xl text-xs">
-              <Warehouse size={15} className="text-amber-500" />
-              <span className="font-semibold text-muted-foreground">Sede:</span>
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-sm font-mono text-xs text-teal-400 uppercase tracking-widest"
+              style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)' }}
+            >
+              <Warehouse size={14} className="text-teal-400" />
+              <span className="text-slate-400">Sede:</span>
               <select
                 value={selectedWarehouse}
                 onChange={(e) => setSelectedWarehouse(e.target.value)}
-                className="bg-transparent font-medium text-foreground focus:outline-none cursor-pointer"
+                className="bg-transparent font-mono text-teal-300 focus:outline-none cursor-pointer"
               >
-                <option value="ALL" className="bg-card text-foreground">Todas las Sedes (Consolidado)</option>
+                <option value="ALL" className="bg-slate-950 text-white">Todas las Sedes (Consolidado)</option>
                 {warehouses.map(w => (
-                  <option key={w.id} value={w.id} className="bg-card text-foreground">
+                  <option key={w.id} value={w.id} className="bg-slate-950 text-white">
                     {w.name} ({w.code})
                   </option>
                 ))}
@@ -313,14 +328,15 @@ export function InventoryClient() {
             {/* Quick Actions */}
             <button
               onClick={() => setIsTransferModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold border border-border bg-card hover:bg-accent rounded-xl transition shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-sm font-mono text-xs text-teal-400 uppercase tracking-widest hover:border-teal-500/60 transition"
+              style={{ background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)' }}
             >
-              <ArrowRightLeft size={15} className="text-blue-500" />
+              <ArrowRightLeft size={14} className="text-teal-400" />
               Traslado Inter-Sede
             </button>
             <button
               onClick={() => setIsMovementModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md hover:shadow-amber-600/20 transition"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_-5px_rgba(20,184,166,0.4)] transition transform active:scale-95"
             >
               <Plus size={15} />
               Nuevo Movimiento
@@ -328,138 +344,132 @@ export function InventoryClient() {
           </div>
         </div>
 
-        {/* ── Contextual KPI Strip ─────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border">
-          <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Valoración Contable</span>
-              <DollarSign size={16} className="text-emerald-500" />
+        {/* ── Contextual KPI Strip (Estilo Home / Dashboard) ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+          <div className="p-4 rounded-sm bg-slate-900/40 border border-slate-800/80">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Valoración Contable</span>
+              <DollarSign size={15} className="text-teal-400" />
             </div>
-            <div className="text-xl font-black mt-1.5 text-foreground">
-              ${totalValue.toLocaleString('es-CO')} <span className="text-[10px] font-normal text-muted-foreground">COP</span>
+            <div className="text-2xl font-black font-mono mt-1 text-white tabular-nums">
+              ${totalValue.toLocaleString('es-CO')} <span className="text-[10px] font-mono text-slate-400">COP</span>
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <TrendingUp size={12} className="text-emerald-500" /> Costeo Promedio Ponderado
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Sedes Operativas</span>
-              <Warehouse size={16} className="text-blue-500" />
-            </div>
-            <div className="text-xl font-black mt-1.5 text-foreground">
-              {warehouses.length} <span className="text-xs font-normal text-muted-foreground">Bodegas</span>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              1 Principal, 2 Sucursales activas
+            <div className="text-[10px] font-mono text-slate-400 mt-1 flex items-center gap-1">
+              <TrendingUp size={11} className="text-emerald-400" /> Promedio Ponderado
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Catálogo de SKUs</span>
-              <Package size={16} className="text-purple-500" />
+          <div className="p-4 rounded-sm bg-slate-900/40 border border-slate-800/80">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Sedes Operativas</span>
+              <Warehouse size={15} className="text-teal-400" />
             </div>
-            <div className="text-xl font-black mt-1.5 text-foreground">
-              {stockItems.length} <span className="text-xs font-normal text-muted-foreground">Ítems</span>
+            <div className="text-2xl font-black font-mono mt-1 text-white tabular-nums">
+              {warehouses.length} <span className="text-xs font-mono text-slate-400">Bodegas</span>
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Control multisede automatizado
+            <div className="text-[10px] font-mono text-slate-400 mt-1">
+              1 Principal · 2 Sucursales activas
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-muted/30 border border-border/60">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span className="text-[11px] font-semibold uppercase tracking-wider">Riesgo & Reorden</span>
-              <AlertTriangle size={16} className="text-amber-500" />
+          <div className="p-4 rounded-sm bg-slate-900/40 border border-slate-800/80">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Catálogo de SKUs</span>
+              <Package size={15} className="text-teal-400" />
             </div>
-            <div className="text-xl font-black mt-1.5 text-amber-500">
-              {lowStockCount} <span className="text-xs font-normal text-muted-foreground">SKUs críticos</span>
+            <div className="text-2xl font-black font-mono mt-1 text-white tabular-nums">
+              {stockItems.length} <span className="text-xs font-mono text-slate-400">Ítems</span>
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <TrendingDown size={12} className="text-amber-500" /> {expiringLotsCount} lotes en alerta FEFO
+            <div className="text-[10px] font-mono text-slate-400 mt-1">
+              Sincronización en tiempo real
+            </div>
+          </div>
+
+          <div className="p-4 rounded-sm bg-slate-900/40 border border-slate-800/80">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Riesgo &amp; Reorden</span>
+              <AlertTriangle size={15} className="text-amber-400" />
+            </div>
+            <div className="text-2xl font-black font-mono mt-1 text-amber-400 tabular-nums">
+              {lowStockCount} <span className="text-xs font-mono text-slate-400">SKUs críticos</span>
+            </div>
+            <div className="text-[10px] font-mono text-slate-400 mt-1 flex items-center gap-1">
+              <TrendingDown size={11} className="text-amber-400" /> {expiringLotsCount} lotes en alerta FEFO
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Architecture Pillars (Primary Tabs) ─────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl p-1.5 shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+        {/* ── Architecture Pillars (Primary Tabs) ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
           {/* Pillar 1 */}
           <button
             onClick={() => setTabWithUrl('stock', 'stock')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activePillar === 'stock'
-                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 shadow-sm'
-                : 'hover:bg-muted/50 text-muted-foreground'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className={`p-2 rounded-lg ${activePillar === 'stock' ? 'bg-amber-500 text-black' : 'bg-muted text-foreground'}`}>
-              <Layers size={18} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Existencias &amp; Kárdex</span>
+              <Layers size={15} className={activePillar === 'stock' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider">Existencias & Kárdex</div>
-              <div className="text-[11px] opacity-80">Stock, costeo y lotes FEFO</div>
-            </div>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">{stockItems.length}</div>
+            <span className="text-[10px] font-mono text-slate-400">Stock, costeo y lotes FEFO</span>
           </button>
 
           {/* Pillar 2 */}
           <button
             onClick={() => setTabWithUrl('logistics', 'transfers')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activePillar === 'logistics'
-                ? 'bg-blue-500/10 text-blue-500 border border-blue-500/30 shadow-sm'
-                : 'hover:bg-muted/50 text-muted-foreground'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className={`p-2 rounded-lg ${activePillar === 'logistics' ? 'bg-blue-500 text-white' : 'bg-muted text-foreground'}`}>
-              <Truck size={18} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Logística &amp; WMS</span>
+              <Truck size={15} className={activePillar === 'logistics' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider">Logística & WMS</div>
-              <div className="text-[11px] opacity-80">Racks, traslados y picking</div>
-            </div>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">{warehouses.length} Sedes</div>
+            <span className="text-[10px] font-mono text-slate-400">Racks, traslados y picking</span>
           </button>
 
           {/* Pillar 3 */}
           <button
             onClick={() => setTabWithUrl('production', 'bom')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activePillar === 'production'
-                ? 'bg-teal-500/10 text-teal-400 border border-teal-500/30 shadow-sm'
-                : 'hover:bg-muted/50 text-muted-foreground'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className={`p-2 rounded-lg ${activePillar === 'production' ? 'bg-teal-500 text-white' : 'bg-muted text-foreground'}`}>
-              <ChefHat size={18} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Producción &amp; MRP</span>
+              <ChefHat size={15} className={activePillar === 'production' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider">Producción & MRP</div>
-              <div className="text-[11px] opacity-80">Recetas (BOM) y Demanda IA</div>
-            </div>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">BOM</div>
+            <span className="text-[10px] font-mono text-slate-400">Recetas y Demanda IA</span>
           </button>
 
           {/* Pillar 4 */}
           <button
             onClick={() => setTabWithUrl('governance', 'audit')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition ${
+            className={`p-4 rounded-sm text-left transition relative border ${
               activePillar === 'governance'
-                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30 shadow-sm'
-                : 'hover:bg-muted/50 text-muted-foreground'
+                ? 'bg-teal-950/40 border-teal-500/50 text-teal-400 shadow-sm'
+                : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-900/60'
             }`}
           >
-            <div className={`p-2 rounded-lg ${activePillar === 'governance' ? 'bg-purple-500 text-white' : 'bg-muted text-foreground'}`}>
-              <ShieldCheck size={18} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-bold">Auditoría &amp; Control</span>
+              <ShieldCheck size={15} className={activePillar === 'governance' ? 'text-teal-400' : 'text-slate-500'} />
             </div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider">Auditoría & Control</div>
-              <div className="text-[11px] opacity-80">Arqueos a ciegas y ajustes</div>
-            </div>
+            <div className="text-2xl font-black font-mono text-white tabular-nums">Kárdex</div>
+            <span className="text-[10px] font-mono text-slate-400">Arqueos a ciegas y ajustes</span>
           </button>
         </div>
-      </div>
+      </InteractiveSpotlight>
 
       {/* ── Sub-navigation Pills per Pillar ─────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
