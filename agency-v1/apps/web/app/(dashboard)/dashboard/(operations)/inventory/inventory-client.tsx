@@ -269,7 +269,6 @@ export function InventoryClient() {
   });
 
   return (
-  return (
     <div className="space-y-6">
       {/* ── Enterprise Header (Quantum Home Style) ── */}
       <InteractiveSpotlight
