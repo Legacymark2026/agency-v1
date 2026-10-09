@@ -1336,46 +1336,54 @@ export function PurchasesClient() {
         </div>
       )}
 
-      {/* ── Modal de Creación de Orden de Compra ──────────────────────────── */}
+      {/* ── Modal de Creación de Orden de Compra (Quantum Enterprise Style) ── */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-4xl bg-slate-950 border border-border rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="relative w-full max-w-4xl ds-card shadow-[0_0_50px_-10px_rgba(20,184,166,0.2)] p-6 sm:p-8 max-h-[90vh] overflow-y-auto space-y-6">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.15),transparent_70%)] pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/50 to-transparent" />
+
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 relative z-10">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                  <ShoppingCart size={20} />
+                <div className="p-2.5 rounded-sm bg-teal-950/60 text-teal-400 border border-teal-500/40">
+                  <ShoppingCart size={18} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-foreground">Emitir Nueva Orden de Compra</h2>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-black text-white tracking-tight">Emitir Nueva Orden de Compra</h2>
+                    <span className="ds-badge ds-badge-teal text-[10px]">
+                      <Sparkles size={8} /> SRM Conectado
+                    </span>
+                  </div>
+                  <p className="ds-subtext mt-0.5 text-xs">
                     Flujo sincronizado con el catálogo técnico del proveedor y validación de límites de crédito.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 transition"
+                className="p-2 rounded-sm text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent hover:border-slate-700 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveOrder} className="space-y-6">
+            <form onSubmit={handleSaveOrder} className="space-y-6 relative z-10">
               {/* Selector de Proveedor & Bodega */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                  <label className="block text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Proveedor Homologado *
                   </label>
                   <select
                     value={formData.vendorId}
                     onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2.5 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                     required
                   >
-                    <option value="">Seleccione proveedor...</option>
+                    <option value="" className="bg-slate-950 text-slate-400">Seleccione proveedor...</option>
                     {suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>
+                      <option key={s.id} value={s.id} className="bg-slate-950 text-white">
                         {s.name} ({s.taxId})
                       </option>
                     ))}
@@ -1383,17 +1391,17 @@ export function PurchasesClient() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                  <label className="block text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Bodega de Destino *
                   </label>
                   <select
                     value={formData.warehouseId}
                     onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2.5 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                     required
                   >
                     {warehouses.map((w) => (
-                      <option key={w.id} value={w.id}>
+                      <option key={w.id} value={w.id} className="bg-slate-950 text-white">
                         {w.name} ({w.code})
                       </option>
                     ))}
@@ -1401,16 +1409,16 @@ export function PurchasesClient() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                  <label className="block text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Divisa de Compra *
                   </label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2.5 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                   >
                     {ALL_CURRENCIES.map((c) => (
-                      <option key={c.code} value={c.code}>
+                      <option key={c.code} value={c.code} className="bg-slate-950 text-white">
                         {c.flag} {c.code} - {c.name}
                       </option>
                     ))}
@@ -1419,16 +1427,16 @@ export function PurchasesClient() {
               </div>
 
               {/* Incoterms y Condiciones */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl bg-muted/20 border border-border">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-sm bg-slate-900/40 border border-slate-800/80">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Incoterm 2020</label>
+                  <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">Incoterm 2020</label>
                   <select
                     value={formData.incoterm}
                     onChange={(e) => setFormData({ ...formData, incoterm: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                   >
                     {ALL_INCOTERMS.map((inc) => (
-                      <option key={inc.code} value={inc.code}>
+                      <option key={inc.code} value={inc.code} className="bg-slate-950 text-white">
                         {inc.code} - {inc.name}
                       </option>
                     ))}
@@ -1436,39 +1444,39 @@ export function PurchasesClient() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Lugar Convenido</label>
+                  <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">Lugar Convenido</label>
                   <input
                     type="text"
                     placeholder="Puerto / Terminal"
                     value={formData.incotermPlace}
                     onChange={(e) => setFormData({ ...formData, incotermPlace: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                  <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Plazo de Pago (Días)
                   </label>
                   <input
                     type="number"
                     value={formData.paymentTermsDays}
                     onChange={(e) => setFormData({ ...formData, paymentTermsDays: Number(e.target.value) })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Método de Envío</label>
+                  <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">Método de Envío</label>
                   <select
                     value={formData.shippingMethod}
                     onChange={(e) => setFormData({ ...formData, shippingMethod: e.target.value })}
-                    className="w-full text-xs px-3 py-2.5 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                   >
-                    <option value="TERRESTRE">Terrestre</option>
-                    <option value="AEREO">Aéreo</option>
-                    <option value="MARITIMO">Marítimo</option>
-                    <option value="MULTIMODAL">Multimodal</option>
+                    <option value="TERRESTRE" className="bg-slate-950 text-white">Terrestre</option>
+                    <option value="AEREO" className="bg-slate-950 text-white">Aéreo</option>
+                    <option value="MARITIMO" className="bg-slate-950 text-white">Marítimo</option>
+                    <option value="MULTIMODAL" className="bg-slate-950 text-white">Multimodal</option>
                   </select>
                 </div>
               </div>
@@ -1476,27 +1484,27 @@ export function PurchasesClient() {
               {/* Constructor de Artículos desde Catálogo */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="text-xs font-mono font-bold text-teal-400 uppercase tracking-wider flex items-center gap-2">
                     <Boxes size={14} className="text-teal-400" />
                     Artículos a Ordenar ({formData.items.length})
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 rounded-xl bg-muted/30 border border-border items-end">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 rounded-sm bg-slate-900/40 border border-slate-800/80 items-end">
                   <div className="md:col-span-5">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                    <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1">
                       Artículo del Catálogo
                     </label>
                     <select
                       value={selectedProductToAdd}
                       onChange={(e) => handleSelectProductChange(e.target.value)}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-slate-900 border border-border text-foreground focus:outline-none"
+                      className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                     >
                       {availableProducts.length === 0 ? (
-                        <option value="">Seleccione proveedor para ver catálogo</option>
+                        <option value="" className="bg-slate-950 text-slate-400">Seleccione proveedor para ver catálogo</option>
                       ) : (
                         availableProducts.map((p) => (
-                          <option key={p.id} value={p.id}>
+                          <option key={p.id} value={p.id} className="bg-slate-950 text-white">
                             [{p.internalSku}] {p.name} - ${p.purchasePrice}
                           </option>
                         ))
@@ -1505,33 +1513,33 @@ export function PurchasesClient() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">Cantidad</label>
+                    <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1">Cantidad</label>
                     <input
                       type="number"
                       min="1"
                       value={itemQtyToAdd}
                       onChange={(e) => setItemQtyToAdd(Number(e.target.value))}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-slate-900 border border-border text-foreground focus:outline-none font-mono"
+                      className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">Precio Unit.</label>
+                    <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1">Precio Unit.</label>
                     <input
                       type="number"
                       value={itemPriceToAdd}
                       onChange={(e) => setItemPriceToAdd(Number(e.target.value))}
-                      className="w-full text-xs px-3 py-2 rounded-xl bg-slate-900 border border-border text-foreground focus:outline-none font-mono"
+                      className="w-full text-xs px-3 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                     />
                   </div>
 
                   <div className="md:col-span-1">
-                    <label className="block text-[11px] font-semibold text-muted-foreground mb-1">Desc %</label>
+                    <label className="block text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-1">Desc %</label>
                     <input
                       type="number"
                       value={itemDiscToAdd}
                       onChange={(e) => setItemDiscToAdd(Number(e.target.value))}
-                      className="w-full text-xs px-2 py-2 rounded-xl bg-slate-900 border border-border text-foreground focus:outline-none font-mono text-center"
+                      className="w-full text-xs px-2 py-2 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono text-center"
                     />
                   </div>
 
@@ -1540,16 +1548,16 @@ export function PurchasesClient() {
                       type="button"
                       onClick={handleAddItemToOrder}
                       disabled={!selectedProductToAdd}
-                      className="w-full py-2 px-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                      className="w-full py-2 px-3 rounded-sm bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition disabled:opacity-50"
                     >
                       <Plus size={14} /> Agregar
                     </button>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border border-border max-h-48 overflow-y-auto">
+                <div className="overflow-x-auto rounded-sm border border-slate-800/80 max-h-48 overflow-y-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/60 text-muted-foreground font-semibold border-b border-border sticky top-0">
+                    <thead className="bg-slate-900/60 text-slate-400 font-mono uppercase text-[10px] tracking-wider border-b border-slate-800 sticky top-0">
                       <tr>
                         <th className="p-2.5">Producto</th>
                         <th className="p-2.5 text-center">Cant.</th>
@@ -1559,14 +1567,14 @@ export function PurchasesClient() {
                         <th className="p-2.5 text-center">Quitar</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60">
+                    <tbody className="divide-y divide-slate-800/60 font-mono">
                       {formData.items.map((it, idx) => (
-                        <tr key={idx} className="hover:bg-muted/10">
-                          <td className="p-2.5 font-bold text-foreground">{it.name}</td>
-                          <td className="p-2.5 text-center font-bold">{it.quantity}</td>
+                        <tr key={idx} className="hover:bg-slate-900/30">
+                          <td className="p-2.5 font-bold text-white">{it.name}</td>
+                          <td className="p-2.5 text-center font-bold text-teal-400">{it.quantity}</td>
                           <td className="p-2.5 text-right font-mono">${it.unitPrice.toLocaleString('es-CO')}</td>
-                          <td className="p-2.5 text-center text-muted-foreground">{it.discountPct}%</td>
-                          <td className="p-2.5 text-right font-bold font-mono">
+                          <td className="p-2.5 text-center text-slate-400">{it.discountPct}%</td>
+                          <td className="p-2.5 text-right font-bold font-mono text-white">
                             ${it.total.toLocaleString('es-CO')}
                           </td>
                           <td className="p-2.5 text-center">
@@ -1588,32 +1596,32 @@ export function PurchasesClient() {
               {/* Liquidación Final */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                  <label className="block text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                     Observaciones para el Proveedor
                   </label>
                   <textarea
                     rows={3}
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full text-xs p-3 rounded-xl bg-muted/40 border border-border text-foreground focus:outline-none"
+                    className="w-full text-xs p-3 rounded-sm bg-slate-950/80 border border-slate-800 text-white focus:outline-none focus:border-teal-500 font-mono"
                     placeholder="Referencias de cotización o detalles de entrega..."
                   />
                 </div>
 
-                <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-1.5 text-xs">
-                  <div className="flex justify-between text-muted-foreground">
+                <div className="p-4 rounded-sm bg-slate-900/40 border border-slate-800/80 space-y-1.5 text-xs font-mono">
+                  <div className="flex justify-between text-slate-400">
                     <span>Subtotal:</span>
-                    <span className="font-mono">${computedFormTotals.subtotal.toLocaleString('es-CO')}</span>
+                    <span className="font-mono text-white">${computedFormTotals.subtotal.toLocaleString('es-CO')}</span>
                   </div>
                   <div className="flex justify-between text-emerald-400">
                     <span>Descuentos:</span>
                     <span className="font-mono">-${computedFormTotals.discountTotal.toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
+                  <div className="flex justify-between text-slate-400">
                     <span>IVA Estimado:</span>
-                    <span className="font-mono">${computedFormTotals.taxAmount.toLocaleString('es-CO')}</span>
+                    <span className="font-mono text-white">${computedFormTotals.taxAmount.toLocaleString('es-CO')}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-black text-foreground pt-2 border-t border-border">
+                  <div className="flex justify-between text-sm font-black text-white pt-2 border-t border-slate-800">
                     <span>TOTAL ESTIMADO:</span>
                     <span className="font-mono text-teal-400">
                       ${computedFormTotals.total.toLocaleString('es-CO')} {formData.currency}
@@ -1622,20 +1630,20 @@ export function PurchasesClient() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800/80">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-border text-xs font-semibold text-muted-foreground hover:bg-muted"
+                  className="px-5 py-2.5 rounded-sm border border-slate-800 text-xs font-mono uppercase tracking-wider text-slate-400 hover:text-white hover:bg-slate-900 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || formData.items.length === 0}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-sm bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_25px_-5px_rgba(20,184,166,0.4)] transition disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Guardando...' : 'CREAR ORDEN DE COMPRA'}
+                  {isSubmitting ? 'Guardando...' : 'Crear Orden de Compra'}
                 </button>
               </div>
             </form>

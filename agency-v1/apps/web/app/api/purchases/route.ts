@@ -62,11 +62,31 @@ export async function GET(req: NextRequest) {
 
     const warehouseMap = new Map(warehouses.map((w: any) => [w.id, w.name]));
 
-    const enrichedOrders = orders.map((o: any) => ({
-      ...o,
-      warehouseName: warehouseMap.get(o.warehouseId) || o.warehouseId || "Bodega Central",
-      itemsCount: Array.isArray(o.items) ? o.items.length : 0,
-    }));
+    const enrichedOrders = orders.map((o: any) => {
+      const rawItems = o.items;
+      const itemList = Array.isArray(rawItems) ? rawItems : (rawItems?.items || []);
+      const meta = !Array.isArray(rawItems) && typeof rawItems === 'object' ? rawItems : {};
+
+      return {
+        ...o,
+        currency: meta.currency || o.currency || 'COP',
+        exchangeRate: meta.exchangeRate || o.exchangeRate || 1.0,
+        incoterm: meta.incoterm || o.incoterm || 'DAP',
+        incotermPlace: meta.incotermPlace || o.incotermPlace || null,
+        paymentTermsDays: meta.paymentTermsDays || o.paymentTermsDays || 30,
+        shippingMethod: meta.shippingMethod || o.shippingMethod || 'TERRESTRE',
+        shippingCost: meta.shippingCost || 0,
+        otherCosts: meta.otherCosts || 0,
+        discountTotal: meta.discountTotal || 0,
+        vendorEmail: meta.vendorEmail || o.vendorEmail || null,
+        vendorPhone: meta.vendorPhone || o.vendorPhone || null,
+        vendorAddress: meta.vendorAddress || o.vendorAddress || null,
+        deliveryDate: meta.deliveryDate || o.deliveryDate || null,
+        warehouseName: warehouseMap.get(o.warehouseId) || o.warehouseId || "Bodega Central",
+        items: itemList,
+        itemsCount: itemList.length,
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -184,26 +204,27 @@ export async function POST(req: NextRequest) {
         vendorId: vendorId || null,
         vendorName,
         vendorNit: vendorNit || null,
-        vendorEmail: vendorEmail || null,
-        vendorPhone: vendorPhone || null,
-        vendorAddress: vendorAddress || null,
         status: "DRAFT",
-        currency,
-        exchangeRate: Number(exchangeRate) || 1.0,
-        incoterm: incoterm || null,
-        incotermPlace: incotermPlace || null,
-        paymentTermsDays: Number(paymentTermsDays) || 30,
-        deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-        shippingMethod: shippingMethod || "TERRESTRE",
         subtotal,
-        discountTotal,
         taxAmount,
-        shippingCost: Number(shippingCost) || 0,
-        otherCosts: Number(otherCosts) || 0,
         total,
-        items: validatedItems,
+        items: {
+          items: validatedItems,
+          currency,
+          exchangeRate: Number(exchangeRate) || 1.0,
+          incoterm: incoterm || null,
+          incotermPlace: incotermPlace || null,
+          paymentTermsDays: Number(paymentTermsDays) || 30,
+          shippingMethod: shippingMethod || "TERRESTRE",
+          shippingCost: Number(shippingCost) || 0,
+          otherCosts: Number(otherCosts) || 0,
+          discountTotal,
+          vendorEmail: vendorEmail || null,
+          vendorPhone: vendorPhone || null,
+          vendorAddress: vendorAddress || null,
+          deliveryDate: deliveryDate ? new Date(deliveryDate).toISOString() : null,
+        },
         notes: notes || null,
-        issuedAt: null,
       },
     });
 
