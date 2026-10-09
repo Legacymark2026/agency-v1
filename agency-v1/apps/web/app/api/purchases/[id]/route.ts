@@ -76,16 +76,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.action) {
       if (body.action === "ISSUE") {
         updateData.status = "ISSUED";
-        updateData.issuedAt = new Date();
       } else if (body.action === "CONFIRM") {
         updateData.status = "CONFIRMED";
-        updateData.confirmedAt = new Date();
       } else if (body.action === "IN_TRANSIT") {
         updateData.status = "IN_TRANSIT";
       } else if (body.action === "CANCEL") {
         updateData.status = "CANCELLED";
-        updateData.cancelledAt = new Date();
-        updateData.rejectionReason = body.rejectionReason || "Cancelada por el comprador";
       }
     }
 
@@ -94,13 +90,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (body.notes !== undefined) updateData.notes = body.notes;
-    if (body.incoterm !== undefined) updateData.incoterm = body.incoterm;
-    if (body.incotermPlace !== undefined) updateData.incotermPlace = body.incotermPlace;
-    if (body.paymentTermsDays !== undefined) updateData.paymentTermsDays = Number(body.paymentTermsDays);
-    if (body.shippingMethod !== undefined) updateData.shippingMethod = body.shippingMethod;
-    if (body.deliveryDate !== undefined) updateData.deliveryDate = body.deliveryDate ? new Date(body.deliveryDate) : null;
-    if (body.shippingCost !== undefined) updateData.shippingCost = Number(body.shippingCost);
-    if (body.otherCosts !== undefined) updateData.otherCosts = Number(body.otherCosts);
 
     // Si se enviaron items actualizados
     if (Array.isArray(body.items) && body.items.length > 0) {

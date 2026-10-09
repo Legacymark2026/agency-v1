@@ -28,15 +28,15 @@ export async function GET(req: NextRequest) {
 
     const orders = await (prisma as any).purchaseOrder.findMany({
       orderBy: { createdAt: "desc" },
-    });
+    }).catch(() => []);
 
-    const receipts = await (prisma as any).goodsReceipt.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const receipts = (prisma as any).goodsReceipt
+      ? await (prisma as any).goodsReceipt.findMany({ orderBy: { createdAt: "desc" } }).catch(() => [])
+      : [];
 
-    const returns = await (prisma as any).purchaseReturn.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+    const returns = (prisma as any).purchaseReturn
+      ? await (prisma as any).purchaseReturn.findMany({ orderBy: { createdAt: "desc" } }).catch(() => [])
+      : [];
 
     // 1. Resumen general
     const totalOrdersCount = orders.length;

@@ -243,26 +243,30 @@ export function PurchasesClient() {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [ordRes, supRes, recRes, retRes, anaRes] = await Promise.all([
-        fetch('/api/purchases').then((r) => r.json()),
-        fetch('/api/suppliers').then((r) => r.json()),
-        fetch('/api/purchases/receipts').then((r) => r.json()),
-        fetch('/api/purchases/returns').then((r) => r.json()),
-        fetch('/api/purchases/analytics').then((r) => r.json()),
-        fetch('/api/governance/financial-policies').then((r) => r.json()),
+      const [ordRes, supRes, recRes, retRes, anaRes, govRes] = await Promise.all([
+        fetch('/api/purchases').then((r) => r.json()).catch(() => ({ success: false, orders: [] })),
+        fetch('/api/suppliers').then((r) => r.json()).catch(() => ({ success: false, suppliers: [] })),
+        fetch('/api/purchases/receipts').then((r) => r.json()).catch(() => ({ success: false, receipts: [] })),
+        fetch('/api/purchases/returns').then((r) => r.json()).catch(() => ({ success: false, returns: [] })),
+        fetch('/api/purchases/analytics').then((r) => r.json()).catch(() => ({ success: false, analytics: null })),
+        fetch('/api/governance/financial-policies').then((r) => r.json()).catch(() => ({ success: false, policies: null })),
       ]);
 
-      if (ordRes.success) {
+      if (ordRes?.success && Array.isArray(ordRes.orders)) {
         setOrders(ordRes.orders);
         if (ordRes.orders.length > 0 && !selectedOrder) {
           setSelectedOrder(ordRes.orders[0]);
         }
+      } else {
+        setOrders([]);
       }
-      if (supRes.success) setSuppliers(supRes.suppliers);
-      if (recRes.success) setReceipts(recRes.receipts);
-      if (retRes.success) setReturns(retRes.returns);
-      if (anaRes.success) setAnalytics(anaRes.analytics);
-      if (arguments[0]?.[5]?.success && arguments[0]?.[5]?.policies?.approvalThreshold) setApprovalThreshold(arguments[0][5].policies.approvalThreshold);
+      if (supRes?.success && Array.isArray(supRes.suppliers)) setSuppliers(supRes.suppliers);
+      if (recRes?.success && Array.isArray(recRes.receipts)) setReceipts(recRes.receipts);
+      if (retRes?.success && Array.isArray(retRes.returns)) setReturns(retRes.returns);
+      if (anaRes?.success) setAnalytics(anaRes.analytics);
+      if (govRes?.success && govRes?.policies?.approvalThreshold) {
+        setApprovalThreshold(govRes.policies.approvalThreshold);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
